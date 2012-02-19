@@ -1,0 +1,50 @@
+ONE:
+
+Looks like the on-behalf-of functionality in python novaclient is borked in association w/ keystone
+*There are 2 different calls to keystone to get token info, and they return different hash's
+*The service catalog borks out if 'access' is not the main key, but in the 2nd case 'token' is the main key.
+
+Modified Files
+* novaclient/service_catalog.py
+
+Until this is fixed you need to mod python-novaclient after it gets downloaded via devstack
+###### BEGIN PATCH
+@@ -44,12 +44,17 @@ class ServiceCatalog(object):
+                 raise novaclient.exceptions.EndpointNotFound()
+
+         # We don't always get a service catalog back ...
+-        if not 'serviceCatalog' in self.catalog['access']:
++        try:
++            if 'serviceCatalog' in self.catalog['access']:
++                # Full catalog ...
++                catalog = self.catalog['access']['serviceCatalog']
++        except KeyError:
++            if 'serviceCatalog' in self.catalog['token']:
++                # Full catalog ...
++                catalog = self.catalog['token']['serviceCatalog']
++        if catalog is None:
+             return None
+
+-        # Full catalog ...
+-        catalog = self.catalog['access']['serviceCatalog']
+-
+         for service in catalog:
+             if service.get("type") != service_type:
+                 continue
+###### END PATCH
+
+TWO:
+
+Looks like there is a missing import in nova/api/openstack/auth.py
+from nova.auth import manager
+
+Until this is fixed you need to mod nova after its gets downloaded via devstack
+###### BEGIN PATCH
+@@ -80,6 +80,7 @@ class AuthMiddleware(base_wsgi.Middleware):
+         if not db_driver:
+             db_driver = FLAGS.db_driver
+         self.db = utils.import_object(db_driver)
++        from nova.auth import manager
+         self.auth = auth.manager.AuthManager()
+         super(AuthMiddleware, self).__init__(application)
+###### END PATCH
