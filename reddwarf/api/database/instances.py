@@ -50,21 +50,28 @@ class Controller(wsgi.Controller):
     def __init__(self, **kwargs):
         super(Controller, self).__init__(**kwargs)
 
-    def get_client(self, proxy_token):
+    def get_client(self, req):
+        proxy_token = req.headers["X-Auth-Token"]
         client = Client(FLAGS.reddwarf_proxy_admin_user, FLAGS.reddwarf_proxy_admin_pass,
             FLAGS.reddwarf_proxy_admin_tenant_name, FLAGS.reddwarf_auth_url, token=proxy_token)
         client.authenticate()
         return client
-
+    
     def index(self, req):
         """Return all instances."""
-        servers = self.get_client(req.headers["X-Auth-Token"]).servers.list()
+        servers = self.get_client(req).servers.list()
         for server in servers:
             LOG.info(server.__dict__)
         return self._view_builder.index(req, servers)
 
+    @wsgi.response(204)
+    def delete(self, req, id):
+        """Deletes an instance."""
+        self.get_client(req).servers.delete(id)
+
     def create(self, req, body):
-        resp = self.get_client(req.headers["X-Auth-Token"]).servers.create(body['name'], body['image'], body['flavor'])
+        """Creates an instance"""
+        resp = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
         LOG.info(resp)
         return "i got a server back %s " % resp.__dict__
 
