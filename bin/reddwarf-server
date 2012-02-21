@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-#TODO(jkoelker) Convert this to an entry_point
-
 import gettext
 import optparse
 import os
@@ -35,12 +33,9 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-#from melange import ipv4
-#from melange import mac
 from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import wsgi
-#from melange.db import db_api
 
 
 def create_options(parser):
@@ -65,7 +60,6 @@ if __name__ == '__main__':
     (options, args) = config.parse_options(oparser)
     try:
         conf, app = config.Config.load_paste_app('reddwarf', options, args)
-        #        db_api.configure_db(conf, ipv4.plugin(), mac.plugin())
         server = wsgi.Server()
         server.start(app, options.get('port', conf['bind_port']),
             conf['bind_host'])
