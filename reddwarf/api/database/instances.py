@@ -69,11 +69,32 @@ class Controller(wsgi.Controller):
         """Deletes an instance."""
         self.get_client(req).servers.delete(id)
 
+    @wsgi.response(202)
+    @wsgi.serializers(xml=FullServerTemplate)
+    @wsgi.deserializers(xml=CreateDeserializer)
     def create(self, req, body):
         """Creates an instance"""
-        resp = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
-        LOG.info(resp)
-        return "i got a server back %s " % resp.__dict__
+        server = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
+        LOG.info(server)
+        robj = wsgi.ResponseObject(server)
+
+        return self._add_location(robj)
+
+    @staticmethod
+    def _add_location(robj):
+        """Stolen form compute/servers. do we need it?"""
+        # Just in case...
+        if 'server' not in robj.obj:
+            return robj
+
+        link = filter(lambda l: l['rel'] == 'self',
+            robj.obj['server']['links'])
+        if link:
+            robj['Location'] = link[0]['href']
+
+        # Convenience return
+        return robj
+
 
 def create_resource():
     return wsgi.Resource(Controller())
