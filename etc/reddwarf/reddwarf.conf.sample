@@ -33,6 +33,15 @@ db_api_implementation = "reddwarf.db.sqlalchemy.api"
 # Path to the extensions
 api_extensions_path = reddwarf/extensions
 
+# Configuration options for talking to nova via the novaclient.
+# These options are for an admin user in your keystone config.
+# It proxy's the token received from the user to send to nova via this admin users creds,
+# basically acting like the client via that proxy token.
+reddwarf_proxy_admin_user = admin
+reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
+reddwarf_proxy_admin_tenant_name = admin
+reddwarf_auth_url = http://0.0.0.0:5000/v2.0
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

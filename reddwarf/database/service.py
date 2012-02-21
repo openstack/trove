@@ -19,6 +19,8 @@ import logging
 import routes
 import webob.exc
 
+from novaclient.v1_1.client import Client
+from reddwarf.common import config
 from reddwarf.common import wsgi
 
 LOG = logging.getLogger('reddwarf.database.service')
@@ -27,12 +29,27 @@ LOG = logging.getLogger('reddwarf.database.service')
 class BaseController(wsgi.Controller):
     """Base controller class."""
 
+    def __init__(self):
+        self.proxy_admin_user = config.Config.get('reddwarf_proxy_admin_user', 'admin')
+        self.proxy_admin_pass = config.Config.get('reddwarf_proxy_admin_pass', '3de4922d8b6ac5a1aad9')
+        self.proxy_admin_tenant_name = config.Config.get('reddwarf_proxy_admin_tenant_name', 'admin')
+        self.auth_url = config.Config.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
+
+
+    def get_client(self, req):
+        proxy_token = req.headers["X-Auth-Token"]
+        client = Client(self.proxy_admin_user, self.proxy_admin_pass,
+            self.proxy_admin_tenant_name, self.auth_url, token=proxy_token)
+        client.authenticate()
+        return client
+
 class InstanceController(BaseController):
     """Controller for instance functionality"""
 
     def index(self, req, tenant_id):
         """Return all instances."""
         LOG.info("in index!")
+        LOG.info(self.get_client(req).servers.list())
         return "Im in index!"
 
 
