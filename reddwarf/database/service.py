@@ -50,6 +50,8 @@ class InstanceController(BaseController):
     def index(self, req, tenant_id):
         """Return all instances."""
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
+        # Test to check that the db code works. this will eventually be removed
+        models.DBInstance.create(name='foo', status='status_foo')
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):

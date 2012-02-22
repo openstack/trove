@@ -19,7 +19,12 @@
 
 import logging
 import netaddr
+
+from reddwarf import db
+
 from reddwarf.common import config
+from reddwarf.common import exception
+from reddwarf.common import utils
 from novaclient.v1_1.client import Client
 
 LOG = logging.getLogger('reddwarf.database.models')
@@ -40,6 +45,30 @@ class ModelBase(object):
     def data(self, **options):
         data_fields = self._data_fields + self._auto_generated_attrs
         return dict([(field, self[field]) for field in data_fields])
+
+    def is_valid(self):
+        self.errors = {}
+#        self._validate_columns_type()
+#        self._before_validate()
+#        self._validate()
+        return self.errors == {}
+
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def __eq__(self, other):
+        if not hasattr(other, 'id'):
+            return False
+        return type(other) == type(self) and other.id == self.id
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return self.id.__hash__()
 
 
 class RemoteModelBase(ModelBase):
@@ -89,4 +118,49 @@ class Instances(Instance):
 
 
 class DatabaseModelBase(ModelBase):
-    _auto_generated_attrs = ["id", "created_at", "updated_at"]
+    _auto_generated_attrs = ['id']
+
+    @classmethod
+    def create(cls, **values):
+        values['id'] = utils.generate_uuid()
+        print values
+#        values['created_at'] = utils.utcnow()
+        instance = cls(**values).save()
+#        instance._notify_fields("create")
+        return instance
+
+    def save(self):
+        if not self.is_valid():
+            raise InvalidModelError(self.errors)
+#        self._convert_columns_to_proper_type()
+#        self._before_save()
+        self['updated_at'] = utils.utcnow()
+        LOG.debug("Saving %s: %s" % (self.__class__.__name__, self.__dict__))
+        return db.db_api.save(self)
+
+    def __init__(self, **kwargs):
+        self.merge_attributes(kwargs)
+
+    def merge_attributes(self, values):
+        """dict.update() behaviour."""
+        for k, v in values.iteritems():
+            self[k] = v
+
+
+
+class DBInstance(DatabaseModelBase):
+    _data_fields = ['name', 'status']
+
+def persisted_models():
+    return {
+        'instance': DBInstance,
+        }
+
+class InvalidModelError(exception.ReddwarfError):
+
+    message = _("The following values are invalid: %(errors)s")
+
+    def __init__(self, errors, message=None):
+        super(InvalidModelError, self).__init__(message, errors=errors)
+
+

@@ -16,10 +16,31 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
+import datetime
+import inspect
+import re
+import uuid
+
+from reddwarf.openstack.common import utils as openstack_utils
+
+
+import_class = openstack_utils.import_class
+import_object = openstack_utils.import_object
+bool_from_string = openstack_utils.bool_from_string
+
+
 def stringify_keys(dictionary):
     if dictionary is None:
         return None
     return dict((str(key), value) for key, value in dictionary.iteritems())
+
+
+def generate_uuid():
+    return str(uuid.uuid4())
+
+
+def utcnow():
+    return datetime.datetime.utcnow()
 
 
 class cached_property(object):
@@ -50,3 +71,42 @@ class cached_property(object):
         value = self.func(obj)
         setattr(obj, self.__name__, value)
         return value
+
+class MethodInspector(object):
+
+    def __init__(self, func):
+        self._func = func
+
+    @cached_property
+    def required_args(self):
+        return self.args[0:self.required_args_count]
+
+    @cached_property
+    def optional_args(self):
+        keys = self.args[self.required_args_count: len(self.args)]
+        return zip(keys, self.defaults)
+
+    @cached_property
+    def defaults(self):
+        return self.argspec.defaults or ()
+
+    @cached_property
+    def required_args_count(self):
+        return len(self.args) - len(self.defaults)
+
+    @cached_property
+    def args(self):
+        args = self.argspec.args
+        if inspect.ismethod(self._func):
+            args.pop(0)
+        return args
+
+    @cached_property
+    def argspec(self):
+        return inspect.getargspec(self._func)
+
+    def __str__(self):
+        optionals = ["[{0}=<{0}>]".format(k) for k, v in self.optional_args]
+        required = ["{0}=<{0}>".format(arg) for arg in self.required_args]
+        args_str = ' '.join(required + optionals)
+        return "%s %s" % (self._func.__name__, args_str)

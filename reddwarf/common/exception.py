@@ -33,9 +33,9 @@ class ReddwarfError(openstack_exception.OpenstackException):
         super(ReddwarfError, self).__init__(**kwargs)
 
 
-class ThisIsATestError(ReddwarfError):
+class DBConstraintError(ReddwarfError):
 
-    message = _("Data Missing")
+    message = _("Failed to save %(model_name)s because: %(error)s")
 
 
 
