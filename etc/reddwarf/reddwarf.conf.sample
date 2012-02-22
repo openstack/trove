@@ -61,11 +61,11 @@ use = call:reddwarf.common.wsgi:versioned_urlmap
 paste.app_factory = reddwarf.versions:app_factory
 
 [pipeline:reddwarfapi]
-pipeline = tokenauth authorization reddwarfapp
+pipeline = tokenauth authorization extensions reddwarfapp
 #pipeline = debug extensions reddwarfapp
 
-#[filter:extensions]
-#paste.filter_factory = reddwarf.common.extensions:factory
+[filter:extensions]
+paste.filter_factory = reddwarf.common.extensions:factory
 
 [filter:tokenauth]
 paste.filter_factory = keystone.middleware.auth_token:filter_factory
@@ -77,7 +77,6 @@ auth_port = 35357
 auth_protocol = http
 auth_uri = http://127.0.0.1:5000/
 admin_token = be19c524ddc92109a224
-
 
 [filter:authorization]
 paste.filter_factory = reddwarf.common.auth:AuthorizationMiddleware.factory

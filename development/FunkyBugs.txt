@@ -48,3 +48,8 @@ Until this is fixed you need to mod nova after its gets downloaded via devstack
          self.auth = auth.manager.AuthManager()
          super(AuthMiddleware, self).__init__(application)
 ###### END PATCH
+
+THREE:
+
+funkyness w/ the extensions. the extensions url itself wont load. Seems to have to do with authorization & tenants.
+ * mitigated in reddwarf/common/extensions.py, see for more information
