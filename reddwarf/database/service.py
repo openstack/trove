@@ -22,6 +22,8 @@ import webob.exc
 from novaclient.v1_1.client import Client
 from reddwarf.common import config
 from reddwarf.common import wsgi
+from reddwarf.database import models
+from reddwarf.database import views
 
 LOG = logging.getLogger('reddwarf.database.service')
 
@@ -35,7 +37,6 @@ class BaseController(wsgi.Controller):
         self.proxy_admin_tenant_name = config.Config.get('reddwarf_proxy_admin_tenant_name', 'admin')
         self.auth_url = config.Config.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
 
-
     def get_client(self, req):
         proxy_token = req.headers["X-Auth-Token"]
         client = Client(self.proxy_admin_user, self.proxy_admin_pass,
@@ -48,9 +49,18 @@ class InstanceController(BaseController):
 
     def index(self, req, tenant_id):
         """Return all instances."""
-        LOG.info("in index!")
-        LOG.info(self.get_client(req).servers.list())
-        return "Im in index!"
+        servers = models.Instances(req.headers["X-Auth-Token"]).data()
+        return wsgi.Result(views.InstancesView(servers).data(), 201)
+
+    def show(self, req, tenant_id, id):
+        """Return a single instance."""
+        server = models.Instance(req.headers["X-Auth-Token"], id).data()
+        return wsgi.Result(views.InstanceView(server).data(), 201)
+
+    def create(self, req, body, tenant_id):
+        server = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
+        LOG.info(server)
+        return "server created %s" % server.__dict__
 
 
 class API(wsgi.Router):
