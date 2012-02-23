@@ -2,6 +2,10 @@
 # 1 install nova via devstack
 # 2 install reddwarf via this (or eventually mod devstack)
 # 3 run tempest tests
+
+#Kind of annoying, but the lxml stuff does not work unless u have these installed
+sudo apt-get install libxml2-dev libxslt-dev
+
 cd ~
 git clone git://github.com/openstack-dev/devstack.git
 cd devstack
@@ -36,4 +40,4 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # curl -H'X-Auth-Token:AUTH_TOKEN' http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances
 
 # Also, you should start up the api node like this
-# bin/reddwarf-api-os-database --flagfile=etc/nova/nova.conf.template
+# bin/reddwarf-server --config-file=etc/reddwarf/reddwarf.conf.sample 

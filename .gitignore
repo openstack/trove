@@ -2,3 +2,5 @@ vagrant/
 *.pyc
 .idea
 reddwarf_test.sqlite
+.venv
+run_tests.log
