@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+# Copyright 2011 OpenStack LLC.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+import gettext
+import optparse
+import os
+import sys
+
+
+gettext.install('reddwarf', unicode=1)
+
+
+# If ../reddwarf/__init__.py exists, add ../ to Python search path, so that
+# it will override what happens to be installed in /usr/(local/)lib/python...
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+    os.pardir,
+    os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from reddwarf import version
+from reddwarf.common import config
+from reddwarf.common import utils
+from reddwarf.db import db_api
+
+
+def create_options(parser):
+    """Sets up the CLI and config-file options.
+
+    :param parser: The option parser
+    :returns: None
+    """
+    parser.add_option('-p', '--port', dest="port", metavar="PORT",
+        type=int, default=9898,
+        help="Port the Reddwarf API host listens on. "
+             "Default: %default")
+    config.add_common_options(parser)
+    config.add_log_options(parser)
+
+
+class Commands(object):
+
+    def __init__(self, conf):
+        self.conf = conf
+
+    def db_sync(self, repo_path=None):
+        db_api.db_sync(self.conf, repo_path=None)
+
+    def db_upgrade(self, version=None, repo_path=None):
+        db_api.db_upgrade(self.conf, version, repo_path=None)
+
+    def db_downgrade(self, version, repo_path=None):
+        db_api.db_downgrade(self.conf, version, repo_path=None)
+
+    def execute(self, command_name, *args):
+        if self.has(command_name):
+            return getattr(self, command_name)(*args)
+
+    _commands = ['db_sync', 'db_upgrade', 'db_downgrade']
+
+    @classmethod
+    def has(cls, command_name):
+        return (command_name in cls._commands)
+
+    @classmethod
+    def all(cls):
+        return cls._commands
+
+    def params_of(self, command_name):
+        if Commands.has(command_name):
+            return utils.MethodInspector(getattr(self, command_name))
+
+
+def usage():
+    usage = """
+%prog action [args] [options]
+
+Available actions:
+
+    """
+    for action in Commands.all():
+        usage = usage + ("\t%s\n" % action)
+    return usage.strip()
+
+
+if __name__ == '__main__':
+    oparser = optparse.OptionParser(version="%%prog %s"
+    % version.version_string(),
+        usage=usage())
+    create_options(oparser)
+    (options, args) = config.parse_options(oparser)
+
+    if len(args) < 1 or not Commands.has(args[0]):
+        oparser.print_usage()
+        sys.exit(2)
+
+    try:
+        conf = config.Config.load_paste_config('reddwarf', options, args)
+        config.setup_logging(options, conf)
+
+        command_name = args.pop(0)
+        Commands(conf).execute(command_name, *args)
+        sys.exit(0)
+    except TypeError:
+        print _("Possible wrong number of arguments supplied")
+        command_params = Commands(conf).params_of(command_name)
+        print "Usage: reddwarf-manage %s" % command_params
+        sys.exit(2)
+    except Exception:
+        print _("Command failed, please check log for more info")
+        raise
