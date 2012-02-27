@@ -35,21 +35,5 @@ Until this is fixed you need to mod python-novaclient after it gets downloaded v
 
 TWO:
 
-Looks like there is a missing import in nova/api/openstack/auth.py
-from nova.auth import manager
-
-Until this is fixed you need to mod nova after its gets downloaded via devstack
-###### BEGIN PATCH
-@@ -80,6 +80,7 @@ class AuthMiddleware(base_wsgi.Middleware):
-         if not db_driver:
-             db_driver = FLAGS.db_driver
-         self.db = utils.import_object(db_driver)
-+        from nova.auth import manager
-         self.auth = auth.manager.AuthManager()
-         super(AuthMiddleware, self).__init__(application)
-###### END PATCH
-
-THREE:
-
 funkyness w/ the extensions. the extensions url itself wont load. Seems to have to do with authorization & tenants.
  * mitigated in reddwarf/common/extensions.py, see for more information
