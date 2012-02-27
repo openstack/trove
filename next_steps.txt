@@ -1,0 +1,4 @@
+image registration for a service
+guest agent
+fix the defaults problem w/ the flagfile... its not overriding
+initial mysql hardening
