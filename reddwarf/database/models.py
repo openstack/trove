@@ -146,14 +146,33 @@ class DatabaseModelBase(ModelBase):
         for k, v in values.iteritems():
             self[k] = v
 
+    @classmethod
+    def find_by(cls, **conditions):
+        model = cls.get_by(**conditions)
+        if model == None:
+            raise ModelNotFoundError(_("%s Not Found") % cls.__name__)
+        return model
+
+    @classmethod
+    def get_by(cls, **kwargs):
+        return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
+
+    @classmethod
+    def _process_conditions(cls, raw_conditions):
+        """Override in inheritors to format/modify any conditions."""
+        return raw_conditions
 
 
 class DBInstance(DatabaseModelBase):
     _data_fields = ['name', 'status']
 
+class ServiceImage(DatabaseModelBase):
+    _data_fields = ['service_name', 'image_id']
+
 def persisted_models():
     return {
         'instance': DBInstance,
+        'service_image': ServiceImage,
         }
 
 class InvalidModelError(exception.ReddwarfError):
@@ -164,3 +183,6 @@ class InvalidModelError(exception.ReddwarfError):
         super(InvalidModelError, self).__init__(message, errors=errors)
 
 
+class ModelNotFoundError(exception.ReddwarfError):
+
+    message = _("Not Found")

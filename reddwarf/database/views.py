@@ -25,6 +25,7 @@ class InstanceView(object):
         return {"instance": {
             "id": self.instance['id'],
             "name": self.instance['name'],
+            "status": self.instance['status'],
             "links": "Links will be coming in the future"
             },
         }

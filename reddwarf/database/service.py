@@ -50,8 +50,6 @@ class InstanceController(BaseController):
     def index(self, req, tenant_id):
         """Return all instances."""
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
-        # Test to check that the db code works. this will eventually be removed
-        models.DBInstance.create(name='foo', status='status_foo')
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
@@ -60,7 +58,10 @@ class InstanceController(BaseController):
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
     def create(self, req, body, tenant_id):
-        server = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
+        # find the service id (cant be done yet at startup due to inconsitencies w/ the load app paste
+        # TODO(hub-cap): figure out how to get this to work in __init__ time
+        image_id = models.ServiceImage.find_by(service_name="database")['image_id']
+        server = self.get_client(req).servers.create(body['name'], image_id, body['flavor'])
         LOG.info(server)
         return "server created %s" % server.__dict__
 
