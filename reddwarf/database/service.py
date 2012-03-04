@@ -57,12 +57,26 @@ class InstanceController(BaseController):
         server = models.Instance(req.headers["X-Auth-Token"], id).data()
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
+    def delete(self, req, tenant_id, id):
+        """Delete a single instance."""
+        result = models.Instance.delete(req.headers["X-Auth-Token"], id)
+        # TODO(hub-cap): fixgure out why the result is coming back as None
+        LOG.info("result of delete %s" % result)
+        return wsgi.Result(202)
+
     def create(self, req, body, tenant_id):
         # find the service id (cant be done yet at startup due to inconsitencies w/ the load app paste
         # TODO(hub-cap): figure out how to get this to work in __init__ time
+        # TODO(hub-cap): The problem with this in __init__ is that the paste config
+        #   is generated w/ the same config file as the db flags that are needed
+        #   for init. These need to be split so the db can be init'd w/o the paste
+        #   stuff. Since the paste stuff inits the database.service module, it
+        #   is a chicken before the egg problem. Simple refactor will fix it and
+        #   we can move this into the __init__ code. Or maybe we shouldnt due to
+        #   the nature of changing images. This needs discussion.
         image_id = models.ServiceImage.find_by(service_name="database")['image_id']
         server = self.get_client(req).servers.create(body['name'], image_id, body['flavor'])
-        LOG.info(server)
+        # Now wait for the response from the create to do additional work
         return "server created %s" % server.__dict__
 
 

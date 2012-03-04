@@ -98,7 +98,6 @@ class RemoteModelBase(ModelBase):
         else:
             return self.data_item(self._data_object)
 
-
 class Instance(RemoteModelBase):
 
     _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
@@ -106,6 +105,9 @@ class Instance(RemoteModelBase):
     def __init__(self, proxy_token, uuid):
         self._data_object = self.get_client(proxy_token).servers.get(uuid)
 
+    @classmethod
+    def delete(cls, proxy_token, uuid):
+        return cls.get_client(proxy_token).servers.delete(uuid)
 
 class Instances(Instance):
 

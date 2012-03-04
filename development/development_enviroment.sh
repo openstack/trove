@@ -37,7 +37,9 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 #  now get a list of instances, which connects over python-novaclient to nova
 # NOTE THIS AUTH TOKEN NEEDS TO BE CHANGED
 # Also note that keystone uses the tenant id now and _not_ the name
-# curl -H'X-Auth-Token:AUTH_TOKEN' http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances
+# curl -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances
+# curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" \
+#  http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'
 
 # Also, you should start up the api node like this
 # bin/reddwarf-server --config-file=etc/reddwarf/reddwarf.conf.sample 
