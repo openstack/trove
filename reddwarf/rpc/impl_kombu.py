@@ -149,12 +149,12 @@ class TopicConsumer(ConsumerBase):
         Other kombu options may be passed
         """
         # Default options
-        options = {'durable': config.Config.get('rabbit_durable_queues', True),
+        options = {'durable': config.Config.get('rabbit_durable_queues', False),
                 'auto_delete': False,
                 'exclusive': False}
         options.update(kwargs)
         exchange = kombu.entity.Exchange(
-                name=config.Config.get('control_exchange', 'nova'),
+                name=config.Config.get('control_exchange', 'reddwarf'),
                 type='topic',
                 durable=options['durable'],
                 auto_delete=options['auto_delete'])
@@ -262,7 +262,7 @@ class TopicPublisher(Publisher):
                 'exclusive': False}
         options.update(kwargs)
         super(TopicPublisher, self).__init__(channel,
-            config.Config.get('control_exchange', 'nova'),
+                config.Config.get('control_exchange', 'reddwarf'),
                 topic,
                 type='topic',
                 **options)
@@ -334,7 +334,7 @@ class Connection(object):
             p_key = server_params_to_kombu_params.get(sp_key, sp_key)
             params[p_key] = value
 
-        params.setdefault('hostname', config.Config.get('rabbit_host','localhost'))
+        params.setdefault('hostname', config.Config.get('rabbit_host','127.0.0.1'))
         params.setdefault('port', config.Config.get('rabbit_port',5672))
         params.setdefault('userid', config.Config.get('rabbit_userid','guest'))
         params.setdefault('password', config.Config.get('rabbit_password','f7999d1955c5014aa32c'))

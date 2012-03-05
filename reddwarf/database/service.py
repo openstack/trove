@@ -52,6 +52,9 @@ class InstanceController(BaseController):
     def index(self, req, tenant_id):
         """Return all instances."""
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
+        #TODO(hub-cap): Remove this, this is only for testing communication between services
+        rpc.cast(context.ReddwarfContext(), "foo.ubuntu", {"method":"ZOMG", "BARRRR":"ARGGGGG"})
+
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
