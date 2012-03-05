@@ -11,6 +11,9 @@ bind_host = 0.0.0.0
 # Port the bind the API server to
 bind_port = 8779
 
+# AMQP Connection info
+rabbit_password=f7999d1955c5014aa32c
+
 # SQLAlchemy connection string for the reference implementation
 # registry server. Any valid SQLAlchemy connection string is fine.
 # See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine

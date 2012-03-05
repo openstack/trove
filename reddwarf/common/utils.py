@@ -27,7 +27,7 @@ from reddwarf.openstack.common import utils as openstack_utils
 import_class = openstack_utils.import_class
 import_object = openstack_utils.import_object
 bool_from_string = openstack_utils.bool_from_string
-
+isotime = openstack_utils.isotime
 
 def stringify_keys(dictionary):
     if dictionary is None:

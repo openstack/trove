@@ -24,6 +24,8 @@ from reddwarf.common import config
 from reddwarf.common import wsgi
 from reddwarf.database import models
 from reddwarf.database import views
+from reddwarf.common import context
+from reddwarf import rpc
 
 LOG = logging.getLogger('reddwarf.database.service')
 

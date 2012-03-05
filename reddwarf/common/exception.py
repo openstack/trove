@@ -22,7 +22,7 @@ from reddwarf.openstack.common import exception as openstack_exception
 ClientConnectionError = openstack_exception.ClientConnectionError
 ProcessExecutionError = openstack_exception.ProcessExecutionError
 DatabaseMigrationError = openstack_exception.DatabaseMigrationError
-
+wrap_exception = openstack_exception.wrap_exception
 
 class ReddwarfError(openstack_exception.OpenstackException):
     """Base exception that all custom reddwarf app exceptions inherit from."""
@@ -36,6 +36,11 @@ class ReddwarfError(openstack_exception.OpenstackException):
 class DBConstraintError(ReddwarfError):
 
     message = _("Failed to save %(model_name)s because: %(error)s")
+
+
+class InvalidRPCConnectionReuse(ReddwarfError):
+
+    message = _("Invalid RPC Connection Reuse")
 
 
 

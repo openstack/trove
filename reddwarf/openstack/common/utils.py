@@ -28,11 +28,12 @@ import sys
 
 from eventlet import greenthread
 from eventlet.green import subprocess
+import iso8601
 
 from reddwarf.openstack.common import exception
 
 
-TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 LOG = logging.getLogger(__name__)
 
 
@@ -163,13 +164,29 @@ def import_object(import_str):
 
 
 def isotime(at=None):
+    """Stringify time in ISO 8601 format"""
     if not at:
         at = datetime.datetime.utcnow()
-    return at.strftime(TIME_FORMAT)
+    str = at.strftime(TIME_FORMAT)
+    tz = at.tzinfo.tzname(None) if at.tzinfo else 'UTC'
+    str += ('Z' if tz == 'UTC' else tz)
+    return str
 
 
 def parse_isotime(timestr):
-    return datetime.datetime.strptime(timestr, TIME_FORMAT)
+    """Parse time from ISO 8601 format"""
+    try:
+        return iso8601.parse_date(timestr)
+    except iso8601.ParseError as e:
+        raise ValueError(e.message)
+    except TypeError as e:
+        raise ValueError(e.message)
+
+
+def normalize_time(timestamp):
+    """Normalize time in arbitrary timezone to UTC"""
+    offset = timestamp.utcoffset()
+    return timestamp.replace(tzinfo=None) - offset if offset else timestamp
 
 
 def utcnow():

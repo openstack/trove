@@ -1,3 +1,4 @@
-guest agent
+update impl_qpid so it works with reddwarf
 fix the defaults problem w/ the flagfile... its not overriding
+better implementation of a python guest agent
 initial mysql hardening
