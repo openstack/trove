@@ -21,12 +21,18 @@ import inspect
 import re
 import uuid
 
+from eventlet import event
+from eventlet import greenthread
+from eventlet import semaphore
+from eventlet.green import subprocess
+
 from reddwarf.openstack.common import utils as openstack_utils
 
 
 import_class = openstack_utils.import_class
 import_object = openstack_utils.import_object
 bool_from_string = openstack_utils.bool_from_string
+execute = openstack_utils.execute
 isotime = openstack_utils.isotime
 
 def stringify_keys(dictionary):
@@ -110,3 +116,62 @@ class MethodInspector(object):
         required = ["{0}=<{0}>".format(arg) for arg in self.required_args]
         args_str = ' '.join(required + optionals)
         return "%s %s" % (self._func.__name__, args_str)
+
+class LoopingCallDone(Exception):
+    """Exception to break out and stop a LoopingCall.
+
+    The poll-function passed to LoopingCall can raise this exception to
+    break out of the loop normally. This is somewhat analogous to
+    StopIteration.
+
+    An optional return-value can be included as the argument to the exception;
+    this return-value will be returned by LoopingCall.wait()
+
+    """
+
+    def __init__(self, retvalue=True):
+        """:param retvalue: Value that LoopingCall.wait() should return."""
+        self.retvalue = retvalue
+
+
+class LoopingCall(object):
+    """Nabbed from nova."""
+    def __init__(self, f=None, *args, **kw):
+        self.args = args
+        self.kw = kw
+        self.f = f
+        self._running = False
+
+    def start(self, interval, now=True):
+        self._running = True
+        done = event.Event()
+
+        def _inner():
+            if not now:
+                greenthread.sleep(interval)
+            try:
+                while self._running:
+                    self.f(*self.args, **self.kw)
+                    if not self._running:
+                        break
+                    greenthread.sleep(interval)
+            except LoopingCallDone, e:
+                self.stop()
+                done.send(e.retvalue)
+            except Exception:
+                LOG.exception(_('in looping call'))
+                done.send_exception(*sys.exc_info())
+                return
+            else:
+                done.send(True)
+
+        self.done = done
+
+        greenthread.spawn(_inner)
+        return self.done
+
+    def stop(self):
+        self._running = False
+
+    def wait(self):
+        return self.done.wait()
