@@ -37,3 +37,32 @@ TWO:
 
 funkyness w/ the extensions. the extensions url itself wont load. Seems to have to do with authorization & tenants.
  * mitigated in reddwarf/common/extensions.py, see for more information
+
+
+keystone haves issues with the get endpoints method and causing NotImplementedError/ClientException HTTP/500:
+###### BEGIN PATCH
+diff --git a/keystone/service.py b/keystone/service.py
+index d0d4470..4feb966 100644
+--- a/keystone/service.py
++++ b/keystone/service.py
+@@ -408,8 +408,17 @@ class TokenController(wsgi.Application):
+         self.token_api.delete_token(context=context, token_id=token_id)
+
+     def endpoints(self, context, token_id):
+-        """Return a list of endpoints available to the token."""
+-        raise NotImplementedError()
++        """Return service catalog endpoints."""
++        try:
++            token_ref = self.token_api.get_token(context=context,
++                                                 token_id=token_id)
++        except exception.NotFound:
++            raise exception.Unauthorized()
++
++        catalog_ref = self.catalog_api.get_catalog(context,
++                                                   token_ref['user']['id'],
++                                                   token_ref['tenant']['id'])
++        return {'token': {'serviceCatalog': self._format_catalog(catalog_ref)}}
+
+     def _format_authenticate(self, token_ref, roles_ref, catalog_ref):
+         o = self._format_token(token_ref, roles_ref)
+###### END PATCH

@@ -32,10 +32,18 @@ REDDWARF_ROLE=`get_id keystone --endpoint http://localhost:35357/v2.0 --token be
 keystone --endpoint http://localhost:35357/v2.0 --token be19c524ddc92109a224 user-role-add --tenant_id $REDDWARF_TENANT \
                                  --user $REDDWARF_USER \
                                  --role $REDDWARF_ROLE
+# These are the values
+REDDWARF_TENANT=reddwarf
+echo $REDDWARF_TENANT
+echo $REDDWARF_USER
+echo $REDDWARF_ROLE
+
+# These all need to be set tenant did not work with the id but the name did match in the auth shim.
+# REDDWARF_TOKEN=
 
 # Now attempt a login
 curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' \
-     -H "Content-type: application/json" http://localhost:35357/v2.0/tokens
+     -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool
 
 #  now get a list of instances, which connects over python-novaclient to nova
 # NOTE THIS AUTH TOKEN NEEDS TO BE CHANGED
@@ -49,4 +57,6 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # bin/reddwarf-manage --config-file=etc/reddwarf/reddwarf.conf.sample db_sync
 
 # Also, you should start up the api node like this
-# bin/reddwarf-server --config-file=etc/reddwarf/reddwarf.conf.sample 
+# bin/reddwarf-server --config-file=etc/reddwarf/reddwarf.conf.sample
+
+
