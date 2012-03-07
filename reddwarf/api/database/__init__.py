@@ -31,6 +31,7 @@ from nova import log as logging
 LOG = logging.getLogger('reddwarf.api.database')
 FLAGS = flags.FLAGS
 
+
 class APIRouter(nova.api.openstack.APIRouter):
     """
     Routes requests on the OpenStack API to the appropriate controller
@@ -51,5 +52,3 @@ class APIRouter(nova.api.openstack.APIRouter):
                         controller=self.resources['instances'],
                         collection={'detail': 'GET'},
                         member={'action': 'POST'})
-
-

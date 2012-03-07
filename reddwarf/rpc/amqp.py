@@ -43,11 +43,13 @@ from reddwarf.common import context
 
 LOG = logging.getLogger(__name__)
 
+
 class Pool(pools.Pool):
     """Class that implements a Pool of Connections."""
     def __init__(self, *args, **kwargs):
         self.connection_cls = kwargs.pop("connection_cls", None)
-        kwargs.setdefault("max_size", config.Config.get('rpc_conn_pool_size', 30))
+        kwargs.setdefault("max_size",
+                          config.Config.get('rpc_conn_pool_size', 30))
         kwargs.setdefault("order_as_stack", True)
         super(Pool, self).__init__(*args, **kwargs)
 
@@ -205,7 +207,8 @@ class ProxyCallback(object):
 
     def __init__(self, proxy, connection_pool):
         self.proxy = proxy
-        self.pool = greenpool.GreenPool(config.Config.get('rpc_thread_pool_size',1024))
+        self.pool = greenpool.GreenPool(
+            config.Config.get('rpc_thread_pool_size', 1024))
         self.connection_pool = connection_pool
 
     def __call__(self, message_data):
@@ -265,8 +268,8 @@ class ProxyCallback(object):
 class MulticallWaiter(object):
     def __init__(self, connection, timeout):
         self._connection = connection
-        self._iterator = connection.iterconsume(
-                                timeout=timeout or config.Config.get('rpc_response_timeout', 3600))
+        timeout = timeout or config.Config.get('rpc_response_timeout', 3600)
+        self._iterator = connection.iterconsume(timeout)
         self._result = None
         self._done = False
         self._got_ending = False

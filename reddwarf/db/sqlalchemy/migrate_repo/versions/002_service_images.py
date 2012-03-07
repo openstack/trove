@@ -40,9 +40,9 @@ service_images = Table('service_images', meta,
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([service_images,])
+    create_tables([service_images, ])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([service_images,])
+    drop_tables([service_images, ])

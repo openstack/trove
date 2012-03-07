@@ -24,6 +24,7 @@ ProcessExecutionError = openstack_exception.ProcessExecutionError
 DatabaseMigrationError = openstack_exception.DatabaseMigrationError
 wrap_exception = openstack_exception.wrap_exception
 
+
 class ReddwarfError(openstack_exception.OpenstackException):
     """Base exception that all custom reddwarf app exceptions inherit from."""
 
@@ -41,6 +42,3 @@ class DBConstraintError(ReddwarfError):
 class InvalidRPCConnectionReuse(ReddwarfError):
 
     message = _("Invalid RPC Connection Reuse")
-
-
-

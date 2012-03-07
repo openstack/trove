@@ -36,6 +36,7 @@ from reddwarf.rpc import common as rpc_common
 LOG = logging.getLogger(__name__)
 SSL_VERSION = "SSLv2"
 
+
 class ConsumerBase(object):
     """Consumer base class."""
 
@@ -149,7 +150,8 @@ class TopicConsumer(ConsumerBase):
         Other kombu options may be passed
         """
         # Default options
-        options = {'durable': config.Config.get('rabbit_durable_queues', False),
+        options = {'durable': config.Config.get('rabbit_durable_queues',
+                                                False),
                 'auto_delete': False,
                 'exclusive': False}
         options.update(kwargs)
@@ -255,9 +257,10 @@ class TopicPublisher(Publisher):
 
         Kombu options may be passed as keyword args to override defaults
         """
-        options = {'durable': config.Config.get('rabbit_durable_queues', False),
-                'auto_delete': False,
-                'exclusive': False}
+        options = {'durable': config.Config.get('rabbit_durable_queues',
+                                                 False),
+                   'auto_delete': False,
+                   'exclusive': False }
         options.update(kwargs)
         super(TopicPublisher, self).__init__(channel,
                 config.Config.get('control_exchange', 'reddwarf'),
@@ -288,7 +291,8 @@ class NotifyPublisher(TopicPublisher):
     """Publisher class for 'notify'"""
 
     def __init__(self, *args, **kwargs):
-        self.durable = kwargs.pop('durable', config.Config.get('rabbit_durable_queues', False))
+        default = config.Config.get('rabbit_durable_queues', False)
+        self.durable = kwargs.pop('durable', default)
         super(NotifyPublisher, self).__init__(*args, **kwargs)
 
     def reconnect(self, channel):
@@ -315,7 +319,7 @@ class Connection(object):
         # Try forever?
         if self.max_retries <= 0:
             self.max_retries = None
-        self.interval_start = config.Config.get('rabbit_retry_interval',1)
+        self.interval_start = config.Config.get('rabbit_retry_interval', 1)
         self.interval_stepping = config.Config.get('rabbit_retry_backoff', 2)
         # max retry-interval = 30 seconds
         self.interval_max = 30
@@ -332,15 +336,19 @@ class Connection(object):
             p_key = server_params_to_kombu_params.get(sp_key, sp_key)
             params[p_key] = value
 
-        params.setdefault('hostname', config.Config.get('rabbit_host','127.0.0.1'))
-        params.setdefault('port', config.Config.get('rabbit_port',5672))
-        params.setdefault('userid', config.Config.get('rabbit_userid','guest'))
-        params.setdefault('password', config.Config.get('rabbit_password','f7999d1955c5014aa32c'))
-        params.setdefault('virtual_host', config.Config.get('rabbit_virtual_host','/'))
+        params.setdefault('hostname', config.Config.get('rabbit_host',
+                                                        '127.0.0.1'))
+        params.setdefault('port', config.Config.get('rabbit_port', 5672))
+        params.setdefault('userid',
+                          config.Config.get('rabbit_userid', 'guest'))
+        params.setdefault('password',
+                          config.Config.get('rabbit_password', 'guest'))
+        params.setdefault('virtual_host',
+                          config.Config.get('rabbit_virtual_host', '/'))
 
         self.params = params
 
-        if config.Config.get('fake_rabbit',False):
+        if config.Config.get('fake_rabbit', False):
             self.params['transport'] = 'memory'
             self.memory_transport = True
         else:
@@ -570,7 +578,8 @@ class Connection(object):
 
         def _publish():
             publisher = cls(self.channel, topic, **kwargs)
-            LOG.info("_publish info%s %s %s %s" % (self.channel, topic, kwargs,publisher))
+            LOG.info("_publish info%s %s %s %s" % (self.channel, topic,
+                                                   kwargs, publisher))
             publisher.send(msg)
 
         self.ensure(_error_callback, _publish)

@@ -26,6 +26,7 @@ from reddwarf.common import exception
 
 LOG = logging.getLogger(__name__)
 
+
 class RemoteError(exception.ReddwarfError):
     """Signifies that a remote class has raised an exception.
 

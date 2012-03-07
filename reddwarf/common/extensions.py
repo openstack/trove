@@ -21,6 +21,7 @@ from reddwarf.openstack.common import extensions
 ExtensionsDescriptor = extensions.ExtensionDescriptor
 ResourceExtension = extensions.ResourceExtension
 
+
 def factory(global_config, **local_config):
     """Paste factory."""
     def _factory(app):

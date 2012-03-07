@@ -27,13 +27,18 @@ from reddwarf.common import exception
 from reddwarf.common import utils
 from novaclient.v1_1.client import Client
 
+CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
 
-PROXY_ADMIN_USER = config.Config.get('reddwarf_proxy_admin_user', 'admin')
-PROXY_ADMIN_PASS = config.Config.get('reddwarf_proxy_admin_pass', '3de4922d8b6ac5a1aad9')
-PROXY_ADMIN_TENANT_NAME = config.Config.get('reddwarf_proxy_admin_tenant_name', 'admin')
-PROXY_AUTH_URL = config.Config.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
-PROXY_TENANT_ID = config.Config.get('reddwarf_tenant_id', 'f5f71240a97c411e977452370422d7cc')
+PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
+PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
+                              '3de4922d8b6ac5a1aad9')
+PROXY_ADMIN_TENANT_NAME = CONFIG.get('reddwarf_proxy_admin_tenant_name',
+                                     'admin')
+PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
+PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
+                             'f5f71240a97c411e977452370422d7cc')
+
 
 class ModelBase(object):
 
@@ -92,7 +97,8 @@ class RemoteModelBase(ModelBase):
 
     def data_item(self, data_object):
         data_fields = self._data_fields + self._auto_generated_attrs
-        return dict([(field, getattr(data_object,field)) for field in data_fields])
+        return dict([(field, getattr(data_object, field))
+                     for field in data_fields])
 
     # data magic that will allow for a list of _data_object or a single item
     # if the object is a list, it will turn it into a list of hash's again
@@ -104,6 +110,7 @@ class RemoteModelBase(ModelBase):
         else:
             return self.data_item(self._data_object)
 
+
 class Instance(RemoteModelBase):
 
     _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
@@ -114,6 +121,7 @@ class Instance(RemoteModelBase):
     @classmethod
     def delete(cls, proxy_token, uuid):
         return cls.get_client(proxy_token).servers.delete(uuid)
+
 
 class Instances(Instance):
 
@@ -174,14 +182,17 @@ class DatabaseModelBase(ModelBase):
 class DBInstance(DatabaseModelBase):
     _data_fields = ['name', 'status']
 
+
 class ServiceImage(DatabaseModelBase):
     _data_fields = ['service_name', 'image_id']
+
 
 def persisted_models():
     return {
         'instance': DBInstance,
         'service_image': ServiceImage,
         }
+
 
 class InvalidModelError(exception.ReddwarfError):
 
