@@ -33,6 +33,7 @@ PROXY_ADMIN_USER = config.Config.get('reddwarf_proxy_admin_user', 'admin')
 PROXY_ADMIN_PASS = config.Config.get('reddwarf_proxy_admin_pass', '3de4922d8b6ac5a1aad9')
 PROXY_ADMIN_TENANT_NAME = config.Config.get('reddwarf_proxy_admin_tenant_name', 'admin')
 PROXY_AUTH_URL = config.Config.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
+PROXY_TENANT_ID = config.Config.get('reddwarf_tenant_id', 'f5f71240a97c411e977452370422d7cc')
 
 class ModelBase(object):
 
@@ -80,7 +81,12 @@ class RemoteModelBase(ModelBase):
     @classmethod
     def get_client(cls, proxy_token):
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
-            PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL, token=proxy_token)
+            PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
+            proxy_tenant_id=PROXY_TENANT_ID,
+            proxy_token=proxy_token,
+            region_name='RegionOne',
+            service_type='compute',
+            service_name="'Compute Service'")
         client.authenticate()
         return client
 
