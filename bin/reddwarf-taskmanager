@@ -46,7 +46,8 @@ if __name__ == '__main__':
 
     (options, args) = config.parse_options(parser)
     try:
-        conf, app = config.Config.load_paste_app('reddwarf-taskmanager', options, args)
+        conf, app = config.Config.load_paste_app('reddwarf-taskmanager',
+                                                 options, args)
         server = service.Service.create(binary='reddwarf-taskmanager')
         service.serve(server)
         service.wait()

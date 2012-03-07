@@ -31,6 +31,7 @@ from reddwarf import version
 
 LOG = logging.getLogger(__name__)
 
+
 class Launcher(object):
     """Launch one or more services and wait for them to complete."""
 
@@ -65,7 +66,6 @@ class Launcher(object):
                 pass
 
 
-
 class Service(object):
     """Generic code to start services and get them listening on rpc"""
 
@@ -94,7 +94,6 @@ class Service(object):
         """This method proxy's the calls to the manager implementation"""
         manager = self.__dict__.get('manager', None)
         return getattr(manager, key)
-
 
     def start(self):
         vcs_string = version.version_string_with_vcs()
@@ -165,12 +164,14 @@ class Service(object):
 
 _launcher = None
 
+
 def serve(*servers):
     global _launcher
     if not _launcher:
         _launcher = Launcher()
     for server in servers:
         _launcher.launch_server(server)
+
 
 def wait():
     try:

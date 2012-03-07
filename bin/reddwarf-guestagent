@@ -46,7 +46,8 @@ if __name__ == '__main__':
 
     (options, args) = config.parse_options(parser)
     try:
-        conf, app = config.Config.load_paste_app('reddwarf-guestagent', options, args)
+        conf, app = config.Config.load_paste_app('reddwarf-guestagent',
+                                                 options, args)
         server = service.Service.create(binary='reddwarf-guestagent')
         service.serve(server)
         service.wait()
@@ -54,4 +55,3 @@ if __name__ == '__main__':
         import traceback
         print traceback.format_exc()
         sys.exit("ERROR: %s" % error)
-

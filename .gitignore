@@ -5,3 +5,5 @@ reddwarf_test.sqlite
 .venv
 run_tests.log
 guest-agent-files.txt
+reddwarf.egg*
+reddwarf/vcsversion.py
