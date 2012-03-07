@@ -25,6 +25,7 @@ context or provide additional information in their specific WSGI pipeline.
 from reddwarf.openstack.common import context
 from reddwarf.common import utils
 
+
 class ReddwarfContext(context.RequestContext):
 
     """

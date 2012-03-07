@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 class InstanceView(object):
 
     def __init__(self, instance):
@@ -29,6 +30,7 @@ class InstanceView(object):
             "links": "Links will be coming in the future"
             },
         }
+
 
 class InstancesView(object):
 

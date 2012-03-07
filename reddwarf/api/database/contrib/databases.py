@@ -22,11 +22,13 @@ from nova import log as logging
 
 LOG = logging.getLogger('reddwarf.api.database.contrib.databases')
 
+
 class DatabasesController(object):
 
     def index(self, req):
         LOG.info("index call databases")
         return "This is a index of databases"
+
 
 class UsersController(object):
 
@@ -34,12 +36,6 @@ class UsersController(object):
         LOG.info("index call users")
         return "This is a index of users"
 
-
-#class DatabasesControllerExtension(wsgi.Controller):
-#    @wsgi.action('test_func')
-#    def _test_func(self, req, id, body):
-#
-#        return "Test Func called."
 
 class Databases(extensions.ExtensionDescriptor):
     """The Databases Extension"""

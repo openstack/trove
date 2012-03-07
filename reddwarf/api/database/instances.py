@@ -30,10 +30,12 @@ reddwarf_opts = [
         help='User by which you make proxy requests to the nova api with'),
     cfg.StrOpt('reddwarf_proxy_admin_pass',
         default='3de4922d8b6ac5a1aad9',
-        help='Password for the admin user defined in reddwarf_proxy_admin_user'),
+        help='Password for the admin user defined in '
+             'reddwarf_proxy_admin_user'),
     cfg.StrOpt('reddwarf_proxy_admin_tenant_name',
         default='admin',
-        help='Tenant name fro teh admin user defined in reddwarf_proxy_admin_user'),
+        help='Tenant name for the admin user defined in '
+             'reddwarf_proxy_admin_user'),
     cfg.StrOpt('reddwarf_auth_url',
         default='http://0.0.0.0:5000/v2.0',
         help='Auth url for authing against reddwarf_proxy_admin_user'),
@@ -52,11 +54,14 @@ class Controller(wsgi.Controller):
 
     def get_client(self, req):
         proxy_token = req.headers["X-Auth-Token"]
-        client = Client(FLAGS.reddwarf_proxy_admin_user, FLAGS.reddwarf_proxy_admin_pass,
-            FLAGS.reddwarf_proxy_admin_tenant_name, FLAGS.reddwarf_auth_url, token=proxy_token)
+        client = Client(FLAGS.reddwarf_proxy_admin_user,
+                        FLAGS.reddwarf_proxy_admin_pass,
+                        FLAGS.reddwarf_proxy_admin_tenant_name,
+                        FLAGS.reddwarf_auth_url,
+                        token=proxy_token)
         client.authenticate()
         return client
-    
+
     def index(self, req):
         """Return all instances."""
         servers = self.get_client(req).servers.list()
@@ -74,7 +79,8 @@ class Controller(wsgi.Controller):
     @wsgi.deserializers(xml=CreateDeserializer)
     def create(self, req, body):
         """Creates an instance"""
-        server = self.get_client(req).servers.create(body['name'], body['image'], body['flavor'])
+        server = self.get_client(req).servers.create(
+            body['name'], body['image'], body['flavor'])
         LOG.info(server)
         robj = wsgi.ResponseObject(server)
 

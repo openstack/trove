@@ -83,7 +83,8 @@ class Request(openstack_wsgi.Request):
             if format in ['json', 'xml']:
                 return 'application/{0}'.format(parts[1])
 
-        ctypes = {'application/vnd.openstack.reddwarf+json': "application/json",
+        ctypes = {'application/vnd.openstack.reddwarf+json':
+                      "application/json",
                   'application/vnd.openstack.reddwarf+xml': "application/xml",
                   'application/json': "application/json",
                   'application/xml': "application/xml"}

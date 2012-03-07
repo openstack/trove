@@ -38,7 +38,7 @@ from nova import utils
 from nova import wsgi
 from nova.openstack.common import cfg
 
-SERVICE_NAME="reddwarfapi_database"
+SERVICE_NAME = "reddwarfapi_database"
 
 reddwarf_opts = [
     cfg.StrOpt('reddwarf_api_paste_config',

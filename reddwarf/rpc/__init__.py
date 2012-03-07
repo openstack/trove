@@ -24,7 +24,8 @@ from reddwarf.common import config
 
 LOG = logging.getLogger(__name__)
 
-rpc_backend_opt = config.Config.get('rpc_backend','reddwarf.rpc.impl_kombu')
+rpc_backend_opt = config.Config.get('rpc_backend', 'reddwarf.rpc.impl_kombu')
+
 
 def create_connection(new=True):
     """Create a connection to the message bus used for rpc.

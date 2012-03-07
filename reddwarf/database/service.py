@@ -27,6 +27,7 @@ from reddwarf.database import views
 from reddwarf.common import context
 from reddwarf import rpc
 
+CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.service')
 
 
@@ -34,10 +35,14 @@ class BaseController(wsgi.Controller):
     """Base controller class."""
 
     def __init__(self):
-        self.proxy_admin_user = config.Config.get('reddwarf_proxy_admin_user', 'admin')
-        self.proxy_admin_pass = config.Config.get('reddwarf_proxy_admin_pass', '3de4922d8b6ac5a1aad9')
-        self.proxy_admin_tenant_name = config.Config.get('reddwarf_proxy_admin_tenant_name', 'admin')
-        self.auth_url = config.Config.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
+        self.proxy_admin_user = CONFIG.get('reddwarf_proxy_admin_user',
+                                           'admin')
+        self.proxy_admin_pass = CONFIG.get('reddwarf_proxy_admin_pass',
+                                           '3de4922d8b6ac5a1aad9')
+        self.proxy_admin_tenant_name = CONFIG.get(
+            'reddwarf_proxy_admin_tenant_name', 'admin')
+        self.auth_url = CONFIG.get('reddwarf_auth_url',
+                                   'http://0.0.0.0:5000/v2.0')
 
     def get_client(self, req):
         proxy_token = req.headers["X-Auth-Token"]
@@ -46,6 +51,7 @@ class BaseController(wsgi.Controller):
         client.authenticate()
         return client
 
+
 class InstanceController(BaseController):
     """Controller for instance functionality"""
 
@@ -53,7 +59,8 @@ class InstanceController(BaseController):
         """Return all instances."""
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
         #TODO(hub-cap): Remove this, this is only for testing communication between services
-        rpc.cast(context.ReddwarfContext(), "taskmanager.None", {"method":"test_method", "BARRRR":"ARGGGGG"})
+        rpc.cast(context.ReddwarfContext(), "taskmanager.None",
+                 {"method": "test_method", "BARRRR": "ARGGGGG"})
 
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
@@ -70,17 +77,21 @@ class InstanceController(BaseController):
         return wsgi.Result(202)
 
     def create(self, req, body, tenant_id):
-        # find the service id (cant be done yet at startup due to inconsitencies w/ the load app paste
+        # find the service id (cant be done yet at startup due to
+        # inconsitencies w/ the load app paste
         # TODO(hub-cap): figure out how to get this to work in __init__ time
-        # TODO(hub-cap): The problem with this in __init__ is that the paste config
-        #   is generated w/ the same config file as the db flags that are needed
-        #   for init. These need to be split so the db can be init'd w/o the paste
-        #   stuff. Since the paste stuff inits the database.service module, it
-        #   is a chicken before the egg problem. Simple refactor will fix it and
-        #   we can move this into the __init__ code. Or maybe we shouldnt due to
-        #   the nature of changing images. This needs discussion.
-        image_id = models.ServiceImage.find_by(service_name="database")['image_id']
-        server = self.get_client(req).servers.create(body['name'], image_id, body['flavor'])
+        # TODO(hub-cap): The problem with this in __init__ is that the paste
+        #   config is generated w/ the same config file as the db flags that
+        #   are needed for init. These need to be split so the db can be init'd
+        #   w/o the paste stuff. Since the paste stuff inits the
+        #   database.service module, it is a chicken before the egg problem.
+        #   Simple refactor will fix it and we can move this into the __init__
+        #   code. Or maybe we shouldnt due to the nature of changing images.
+        #   This needs discussion.
+        database = models.ServiceImage.find_by(service_name="database")
+        image_id = database['image_id']
+        server = self.get_client(req).servers.create(body['name'], image_id,
+                                                     body['flavor'])
         # Now wait for the response from the create to do additional work
         return "server created %s" % server.__dict__
 

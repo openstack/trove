@@ -40,9 +40,9 @@ instances = Table('instances', meta,
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([instances,])
+    create_tables([instances, ])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([instances,])
+    drop_tables([instances, ])

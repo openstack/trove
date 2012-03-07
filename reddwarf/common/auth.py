@@ -52,7 +52,8 @@ class AuthorizationMiddleware(wsgi.Middleware):
 
 class TenantBasedAuth(object):
 
-    # The paths differ from melange, so the regex must differ as well, reddwarf starts with a tenant_id
+    # The paths differ from melange, so the regex must differ as well,
+    # reddwarf starts with a tenant_id
     tenant_scoped_url = re.compile("/(?P<tenant_id>.*?)/.*")
 
     def authorize(self, request, tenant_id, roles):
@@ -67,4 +68,3 @@ class TenantBasedAuth(object):
             return True
         raise webob.exc.HTTPForbidden(_("User with tenant id %s cannot "
                                         "access this resource") % tenant_id)
-

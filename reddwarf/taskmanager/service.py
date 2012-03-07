@@ -74,4 +74,3 @@ class API(wsgi.Router):
 
 def app_factory(global_conf, **local_conf):
     return API()
-

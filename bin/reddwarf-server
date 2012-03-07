@@ -38,6 +38,7 @@ from reddwarf.common import config
 from reddwarf.common import wsgi
 from reddwarf.db import db_api
 
+
 def create_options(parser):
     """Sets up the CLI and config-file options
 
@@ -69,4 +70,3 @@ if __name__ == '__main__':
         import traceback
         print traceback.format_exc()
         sys.exit("ERROR: %s" % error)
-

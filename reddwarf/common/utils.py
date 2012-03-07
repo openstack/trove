@@ -35,6 +35,7 @@ bool_from_string = openstack_utils.bool_from_string
 execute = openstack_utils.execute
 isotime = openstack_utils.isotime
 
+
 def stringify_keys(dictionary):
     if dictionary is None:
         return None
@@ -77,6 +78,7 @@ class cached_property(object):
         value = self.func(obj)
         setattr(obj, self.__name__, value)
         return value
+
 
 class MethodInspector(object):
 
