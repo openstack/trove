@@ -45,6 +45,9 @@ reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 reddwarf_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
 
+# Manager impl for the taskmanager
+taskmanager_manager=reddwarf.taskmanager.manager.TaskManager
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

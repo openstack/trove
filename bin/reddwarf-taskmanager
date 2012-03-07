@@ -16,14 +16,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import eventlet
+eventlet.monkey_patch()
+
 import gettext
 import optparse
 import os
 import sys
 
-
 gettext.install('reddwarf', unicode=1)
-
 
 # If ../reddwarf/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
@@ -35,36 +36,20 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 
 from reddwarf import version
 from reddwarf.common import config
-from reddwarf.common import wsgi
-#from reddwarf.db import db_api
+from reddwarf.common import service
 
-def create_options(parser):
-    """Sets up the CLI and config-file options
-
-    :param parser: The option parser
-    :returns: None
-
-    """
-    parser.add_option('-p', '--port', dest="port", metavar="PORT",
-        type=int, default=8778,
-        help="Port the Reddwarf Work Manager listens on. "
-             "Default: %default")
+if __name__ == '__main__':
+    parser = optparse.OptionParser(version="%%prog %s"
+    % version.version_string())
     config.add_common_options(parser)
     config.add_log_options(parser)
 
-
-if __name__ == '__main__':
-    oparser = optparse.OptionParser(version="%%prog %s"
-    % version.version_string())
-    create_options(oparser)
-    (options, args) = config.parse_options(oparser)
+    (options, args) = config.parse_options(parser)
     try:
         conf, app = config.Config.load_paste_app('reddwarf-taskmanager', options, args)
-        #db_api.configure_db(conf)
-        server = wsgi.Server()
-        server.start(app, options.get('port', conf['bind_port']),
-            conf['bind_host'])
-        server.wait()
+        server = service.Service.create(binary='reddwarf-taskmanager')
+        service.serve(server)
+        service.wait()
     except RuntimeError as error:
         import traceback
         print traceback.format_exc()

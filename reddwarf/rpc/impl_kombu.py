@@ -226,8 +226,6 @@ class Publisher(object):
 
     def send(self, msg):
         """Send a message"""
-        LOG.info("send %s" % self.producer)
-        LOG.info("%s %s %s" % (self.exchange_name,self.routing_key,self.kwargs))
         self.producer.publish(msg)
 
 
