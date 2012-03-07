@@ -58,7 +58,8 @@ class InstanceController(BaseController):
     def index(self, req, tenant_id):
         """Return all instances."""
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
-        #TODO(hub-cap): Remove this, this is only for testing communication between services
+        #TODO(hub-cap): Remove this, this is only for testing communication
+        #               between services
         rpc.cast(context.ReddwarfContext(), "taskmanager.None",
                  {"method": "test_method", "BARRRR": "ARGGGGG"})
 

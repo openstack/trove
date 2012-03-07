@@ -29,6 +29,7 @@ class Controller(wsgi.Controller):
     """Base controller class."""
     pass
 
+
 class API(wsgi.Router):
     """API"""
     def __init__(self):
@@ -44,4 +45,3 @@ class API(wsgi.Router):
 
 def app_factory(global_conf, **local_conf):
     return API()
-

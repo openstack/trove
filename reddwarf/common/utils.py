@@ -119,6 +119,7 @@ class MethodInspector(object):
         args_str = ' '.join(required + optionals)
         return "%s %s" % (self._func.__name__, args_str)
 
+
 class LoopingCallDone(Exception):
     """Exception to break out and stop a LoopingCall.
 
