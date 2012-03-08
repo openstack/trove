@@ -54,15 +54,16 @@ class InstanceController(BaseController):
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        server = models.Instance(proxy_token=req.headers["X-Auth-Token"], uuid=id).data()
+        server = models.Instance(proxy_token=req.headers["X-Auth-Token"],
+                                 uuid=id).data()
         #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
 
-        models.Instance.delete(proxy_token=req.headers["X-Auth-Token"], uuid=id)
-
+        models.Instance.delete(proxy_token=req.headers["X-Auth-Token"],
+                               uuid=id)
 
         # TODO(hub-cap): fixgure out why the result is coming back as None
         LOG.info("result of delete %s" % result)

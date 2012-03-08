@@ -38,7 +38,8 @@ PROXY_ADMIN_TENANT_NAME = CONFIG.get('reddwarf_proxy_admin_tenant_name',
                                      'admin')
 PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
 PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
-                             'f5f71240a97c411e977452370422d7cc')
+                             '60fdac4a02aa4a8e87d772c61081b16a')
+print "PROXY_TENANT_ID : %s" % PROXY_TENANT_ID
 
 
 class ModelBase(object):
@@ -135,10 +136,11 @@ class Instance(RemoteModelBase):
         except nova_exceptions.ClientException, e:
             raise rd_exceptions.ReddwarfError()
 
-
     @classmethod
     def create(cls, proxy_token, name, image_id, flavor):
-        srv = cls.get_client(proxy_token).servers.create(name, image_id, flavor)
+        srv = cls.get_client(proxy_token).servers.create(name,
+                                                         image_id,
+                                                         flavor)
         return Instance(server=srv)
 
 
