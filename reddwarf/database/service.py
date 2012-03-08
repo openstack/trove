@@ -21,7 +21,7 @@ import webob.exc
 
 from reddwarf import rpc
 from reddwarf.common import config
-from reddwarf.common import context
+from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.database import models
@@ -44,7 +44,7 @@ class InstanceController(BaseController):
     def index(self, req, tenant_id):
         """Return all instances."""
         # TODO(hub-cap): turn this into middleware
-        context = context.ReddwarfContext(
+        context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         servers = models.Instances(context).data()
@@ -54,7 +54,7 @@ class InstanceController(BaseController):
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         # TODO(hub-cap): turn this into middleware
-        context = context.ReddwarfContext(
+        context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         server = models.Instance(context=context, uuid=id).data()
@@ -64,7 +64,7 @@ class InstanceController(BaseController):
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
         # TODO(hub-cap): turn this into middleware
-        context = context.ReddwarfContext(
+        context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         models.Instance.delete(context=context, uuid=id)
@@ -87,7 +87,7 @@ class InstanceController(BaseController):
         #   code. Or maybe we shouldnt due to the nature of changing images.
         #   This needs discussion.
         # TODO(hub-cap): turn this into middleware
-        context = context.ReddwarfContext(
+        context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         database = models.ServiceImage.find_by(service_name="database")
