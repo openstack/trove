@@ -43,31 +43,35 @@ class InstanceController(BaseController):
 
     def index(self, req, tenant_id):
         """Return all instances."""
-        servers = models.Instances(req.headers["X-Auth-Token"]).data()
-        #TODO(hub-cap): Remove this, this is only for testing communication
-        #               between services
-        # rpc.cast(context.ReddwarfContext(), "taskmanager.None",
-        #         {"method": "test_method", "BARRRR": "ARGGGGG"})
-
-        #TODO(cp16net): need to set the return code correctly
+        # TODO(hub-cap): turn this into middleware
+        context = context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        servers = models.Instances(context).data()
+        # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        server = models.Instance(proxy_token=req.headers["X-Auth-Token"],
-                                 uuid=id).data()
-        #TODO(cp16net): need to set the return code correctly
+        # TODO(hub-cap): turn this into middleware
+        context = context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        server = models.Instance(context=context, uuid=id).data()
+        # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
-
-        models.Instance.delete(proxy_token=req.headers["X-Auth-Token"],
-                               uuid=id)
+        # TODO(hub-cap): turn this into middleware
+        context = context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        models.Instance.delete(context=context, uuid=id)
 
         # TODO(hub-cap): fixgure out why the result is coming back as None
         LOG.info("result of delete %s" % result)
-        #TODO(cp16net): need to set the return code correctly
+        # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 
     def create(self, req, body, tenant_id):
@@ -82,9 +86,13 @@ class InstanceController(BaseController):
         #   Simple refactor will fix it and we can move this into the __init__
         #   code. Or maybe we shouldnt due to the nature of changing images.
         #   This needs discussion.
+        # TODO(hub-cap): turn this into middleware
+        context = context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
-        server = models.Instance.create(req.headers["X-Auth-Token"],
+        server = models.Instance.create(context,
                                         body['name'],
                                         image_id,
                                         body['flavor']).data()
