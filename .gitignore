@@ -7,3 +7,4 @@ run_tests.log
 guest-agent-files.txt
 reddwarf.egg*
 reddwarf/vcsversion.py
+*py*.egg

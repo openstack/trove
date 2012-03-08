@@ -29,6 +29,7 @@ import urlparse
 import mox
 
 from reddwarf.db import db_api
+from reddwarf.common import config
 from reddwarf.common import utils
 
 
@@ -55,6 +56,9 @@ class BaseTest(unittest.TestCase):
         self.maxDiff = None
 
         self.mock = mox.Mox()
+        conf, reddwarf_app = config.Config.load_paste_app('reddwarfapp',
+                        {"config_file": test_config_file()}, None)
+        db_api.configure_db(conf)
         db_api.clean_db()
         super(BaseTest, self).setUp()
 
