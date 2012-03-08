@@ -9,7 +9,7 @@ fi
 REDDWARF_TOKEN=$1
 #
 # This takes about ~12 minutes to finish
-sudo apt-get install kvm-pxe
+sudo apt-get -y install kvm-pxe ubuntu-vm-builder
 VM_PATH=~/oneiric_mysql_image
 UBUNTU_DISTRO="ubuntu 11.10"
 UBUNTU_DISTRO_NAME=oneiric

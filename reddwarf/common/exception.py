@@ -42,3 +42,9 @@ class DBConstraintError(ReddwarfError):
 class InvalidRPCConnectionReuse(ReddwarfError):
 
     message = _("Invalid RPC Connection Reuse")
+
+
+class NotFound(ReddwarfError):
+
+    message = _("Resource %(uuid)s cannot be found")
+

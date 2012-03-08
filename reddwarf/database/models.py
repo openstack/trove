@@ -23,9 +23,10 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
-from reddwarf.common import exception
+from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from novaclient.v1_1.client import Client
+from novaclient import exceptions as nova_exceptions
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
@@ -115,12 +116,30 @@ class Instance(RemoteModelBase):
 
     _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
 
-    def __init__(self, proxy_token, uuid):
-        self._data_object = self.get_client(proxy_token).servers.get(uuid)
+    def __init__(self, server=None, proxy_token=None, uuid=None):
+        if server is None and proxy_token is None and uuid is None:
+            #TODO(cp16et): what to do now?
+            msg = "server, proxy_token, and uuid are not defined"
+            raise InvalidModelError(msg)
+        elif server is None:
+            self._data_object = self.get_client(proxy_token).servers.get(uuid)
+        else:
+            self._data_object = server
 
     @classmethod
     def delete(cls, proxy_token, uuid):
-        return cls.get_client(proxy_token).servers.delete(uuid)
+        try:
+            cls.get_client(proxy_token).servers.delete(uuid)
+        except nova_exceptions.NotFound, e:
+            raise rd_exceptions.NotFound(uuid=uuid)
+        except nova_exceptions.ClientException, e:
+            raise rd_exceptions.ReddwarfError()
+
+
+    @classmethod
+    def create(cls, proxy_token, name, image_id, flavor):
+        srv = cls.get_client(proxy_token).servers.create(name, image_id, flavor)
+        return Instance(server=srv)
 
 
 class Instances(Instance):
@@ -194,7 +213,7 @@ def persisted_models():
         }
 
 
-class InvalidModelError(exception.ReddwarfError):
+class InvalidModelError(rd_exceptions.ReddwarfError):
 
     message = _("The following values are invalid: %(errors)s")
 
@@ -202,6 +221,6 @@ class InvalidModelError(exception.ReddwarfError):
         super(InvalidModelError, self).__init__(message, errors=errors)
 
 
-class ModelNotFoundError(exception.ReddwarfError):
+class ModelNotFoundError(rd_exceptions.ReddwarfError):
 
     message = _("Not Found")
