@@ -23,21 +23,13 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
-from reddwarf.common import exception
+from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from novaclient.v1_1.client import Client
+from novaclient import exceptions as nova_exceptions
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
-
-PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
-PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
-                              '3de4922d8b6ac5a1aad9')
-PROXY_ADMIN_TENANT_NAME = CONFIG.get('reddwarf_proxy_admin_tenant_name',
-                                     'admin')
-PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
-PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
-                             'f5f71240a97c411e977452370422d7cc')
 
 
 class ModelBase(object):
@@ -85,6 +77,15 @@ class RemoteModelBase(ModelBase):
 
     @classmethod
     def get_client(cls, proxy_token):
+        PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
+        PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
+                                      '3de4922d8b6ac5a1aad9')
+        PROXY_ADMIN_TENANT_NAME = CONFIG.get(
+                                        'reddwarf_proxy_admin_tenant_name',
+                                        'admin')
+        PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
+                                    'http://0.0.0.0:5000/v2.0')
+
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
             PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
             proxy_tenant_id=PROXY_TENANT_ID,
@@ -115,12 +116,31 @@ class Instance(RemoteModelBase):
 
     _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
 
-    def __init__(self, proxy_token, uuid):
-        self._data_object = self.get_client(proxy_token).servers.get(uuid)
+    def __init__(self, server=None, proxy_token=None, uuid=None):
+        if server is None and proxy_token is None and uuid is None:
+            #TODO(cp16et): what to do now?
+            msg = "server, proxy_token, and uuid are not defined"
+            raise InvalidModelError(msg)
+        elif server is None:
+            self._data_object = self.get_client(proxy_token).servers.get(uuid)
+        else:
+            self._data_object = server
 
     @classmethod
     def delete(cls, proxy_token, uuid):
-        return cls.get_client(proxy_token).servers.delete(uuid)
+        try:
+            cls.get_client(proxy_token).servers.delete(uuid)
+        except nova_exceptions.NotFound, e:
+            raise rd_exceptions.NotFound(uuid=uuid)
+        except nova_exceptions.ClientException, e:
+            raise rd_exceptions.ReddwarfError()
+
+    @classmethod
+    def create(cls, proxy_token, name, image_id, flavor):
+        srv = cls.get_client(proxy_token).servers.create(name,
+                                                         image_id,
+                                                         flavor)
+        return Instance(server=srv)
 
 
 class Instances(Instance):
@@ -194,7 +214,7 @@ def persisted_models():
         }
 
 
-class InvalidModelError(exception.ReddwarfError):
+class InvalidModelError(rd_exceptions.ReddwarfError):
 
     message = _("The following values are invalid: %(errors)s")
 
@@ -202,6 +222,6 @@ class InvalidModelError(exception.ReddwarfError):
         super(InvalidModelError, self).__init__(message, errors=errors)
 
 
-class ModelNotFoundError(exception.ReddwarfError):
+class ModelNotFoundError(rd_exceptions.ReddwarfError):
 
     message = _("Not Found")

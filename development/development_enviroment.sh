@@ -52,6 +52,9 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" \
 #  http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'
 
+# update the etc/reddwarf/reddwarf.conf.sample
+# add this config setting
+# reddwarf_tenant_id = f5f71240a97c411e977452370422d7cc
 
 # sync up the database on first run!
 # bin/reddwarf-manage --config-file=etc/reddwarf/reddwarf.conf.sample db_sync
@@ -59,4 +62,18 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # Also, you should start up the api node like this
 # bin/reddwarf-server --config-file=etc/reddwarf/reddwarf.conf.sample
 
+# need to build the image before we can create a new instance
+# need an rsa key to build the
+
+# ssh-keygen
+
+# build the image for reddwarf
+# ./bootstrap/bootstrap.sh
+
+# add the image to the reddwarf database
+# get the image id from glance
+# glance index -A $REDDWARF_TOKEN
+# REDDWARF_IMAGE_ID=a92615d7-a8ba-45ff-b29f-ec2baf6b8348
+# (sqlite)
+# sqlite3 reddwarf_test.sqlite "insert into service_images values ('$REDDWARF_IMAGE_ID','database', '$REDDWARF_IMAGE_ID');"
 

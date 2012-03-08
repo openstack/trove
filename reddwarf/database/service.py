@@ -19,13 +19,13 @@ import logging
 import routes
 import webob.exc
 
-from novaclient.v1_1.client import Client
+from reddwarf import rpc
 from reddwarf.common import config
+from reddwarf.common import context
+from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.database import models
 from reddwarf.database import views
-from reddwarf.common import context
-from reddwarf import rpc
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.service')
@@ -35,21 +35,7 @@ class BaseController(wsgi.Controller):
     """Base controller class."""
 
     def __init__(self):
-        self.proxy_admin_user = CONFIG.get('reddwarf_proxy_admin_user',
-                                           'admin')
-        self.proxy_admin_pass = CONFIG.get('reddwarf_proxy_admin_pass',
-                                           '3de4922d8b6ac5a1aad9')
-        self.proxy_admin_tenant_name = CONFIG.get(
-            'reddwarf_proxy_admin_tenant_name', 'admin')
-        self.auth_url = CONFIG.get('reddwarf_auth_url',
-                                   'http://0.0.0.0:5000/v2.0')
-
-    def get_client(self, req):
-        proxy_token = req.headers["X-Auth-Token"]
-        client = Client(self.proxy_admin_user, self.proxy_admin_pass,
-            self.proxy_admin_tenant_name, self.auth_url, token=proxy_token)
-        client.authenticate()
-        return client
+        pass
 
 
 class InstanceController(BaseController):
@@ -60,21 +46,28 @@ class InstanceController(BaseController):
         servers = models.Instances(req.headers["X-Auth-Token"]).data()
         #TODO(hub-cap): Remove this, this is only for testing communication
         #               between services
-        rpc.cast(context.ReddwarfContext(), "taskmanager.None",
-                 {"method": "test_method", "BARRRR": "ARGGGGG"})
+        # rpc.cast(context.ReddwarfContext(), "taskmanager.None",
+        #         {"method": "test_method", "BARRRR": "ARGGGGG"})
 
+        #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        server = models.Instance(req.headers["X-Auth-Token"], id).data()
+        server = models.Instance(proxy_token=req.headers["X-Auth-Token"],
+                                 uuid=id).data()
+        #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
-        result = models.Instance.delete(req.headers["X-Auth-Token"], id)
+
+        models.Instance.delete(proxy_token=req.headers["X-Auth-Token"],
+                               uuid=id)
+
         # TODO(hub-cap): fixgure out why the result is coming back as None
         LOG.info("result of delete %s" % result)
+        #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 
     def create(self, req, body, tenant_id):
@@ -91,10 +84,14 @@ class InstanceController(BaseController):
         #   This needs discussion.
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
-        server = self.get_client(req).servers.create(body['name'], image_id,
-                                                     body['flavor'])
+        server = models.Instance.create(req.headers["X-Auth-Token"],
+                                        body['name'],
+                                        image_id,
+                                        body['flavor']).data()
+
         # Now wait for the response from the create to do additional work
-        return "server created %s" % server.__dict__
+        #TODO(cp16net): need to set the return code correctly
+        return wsgi.Result(views.InstanceView(server).data(), 201)
 
 
 class API(wsgi.Router):
