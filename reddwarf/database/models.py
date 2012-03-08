@@ -76,7 +76,9 @@ class RemoteModelBase(ModelBase):
     _data_object = None
 
     @classmethod
-    def get_client(cls, proxy_token):
+    def get_client(cls, context):
+        # Quite annoying but due to a paste config loading bug.
+        # TODO(hub-cap): talk to the openstack-common people about this
         PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
         PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
                                       '3de4922d8b6ac5a1aad9')
@@ -88,8 +90,8 @@ class RemoteModelBase(ModelBase):
 
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
             PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
-            proxy_tenant_id=PROXY_TENANT_ID,
-            proxy_token=proxy_token,
+            proxy_tenant_id=context.tenant,
+            proxy_token=context.auth_tok,
             region_name='RegionOne',
             service_type='compute',
             service_name="'Compute Service'")
@@ -116,37 +118,37 @@ class Instance(RemoteModelBase):
 
     _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
 
-    def __init__(self, server=None, proxy_token=None, uuid=None):
-        if server is None and proxy_token is None and uuid is None:
+    def __init__(self, server=None, context=None, uuid=None):
+        if server is None and context is None and uuid is None:
             #TODO(cp16et): what to do now?
-            msg = "server, proxy_token, and uuid are not defined"
+            msg = "server, content, and uuid are not defined"
             raise InvalidModelError(msg)
         elif server is None:
-            self._data_object = self.get_client(proxy_token).servers.get(uuid)
+            self._data_object = self.get_client(context).servers.get(uuid)
         else:
             self._data_object = server
 
     @classmethod
-    def delete(cls, proxy_token, uuid):
+    def delete(cls, context, uuid):
         try:
-            cls.get_client(proxy_token).servers.delete(uuid)
+            cls.get_client(context).servers.delete(uuid)
         except nova_exceptions.NotFound, e:
             raise rd_exceptions.NotFound(uuid=uuid)
         except nova_exceptions.ClientException, e:
             raise rd_exceptions.ReddwarfError()
 
     @classmethod
-    def create(cls, proxy_token, name, image_id, flavor):
-        srv = cls.get_client(proxy_token).servers.create(name,
-                                                         image_id,
-                                                         flavor)
+    def create(cls, context, name, image_id, flavor):
+        srv = cls.get_client(context).servers.create(name,
+                                                     image_id,
+                                                     flavor)
         return Instance(server=srv)
 
 
 class Instances(Instance):
 
-    def __init__(self, proxy_token):
-        self._data_object = self.get_client(proxy_token).servers.list()
+    def __init__(self, context):
+        self._data_object = self.get_client(context).servers.list()
 
     def __iter__(self):
         for item in self._data_object:
