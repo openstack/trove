@@ -19,13 +19,13 @@ import logging
 import routes
 import webob.exc
 
-#TODO(cp16et) need to remove all novaclient references from the service
-from novaclient import exceptions
-from reddwarf.common import wsgi
+from reddwarf import rpc
 from reddwarf.common import config
+from reddwarf.common import context
+from reddwarf.common import exception
+from reddwarf.common import wsgi
 from reddwarf.database import models
 from reddwarf.database import views
-from reddwarf.common import exception
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.service')

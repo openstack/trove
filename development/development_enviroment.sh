@@ -50,7 +50,7 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # Also note that keystone uses the tenant id now and _not_ the name
 # curl -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances
 # curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" \
-  http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'
+#  http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'
 
 # update the etc/reddwarf/reddwarf.conf.sample
 # add this config setting
@@ -73,7 +73,7 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 # add the image to the reddwarf database
 # get the image id from glance
 # glance index -A $REDDWARF_TOKEN
+# REDDWARF_IMAGE_ID=a92615d7-a8ba-45ff-b29f-ec2baf6b8348
 # (sqlite)
-# sqlite3 ../../reddwarf_test.sqlite
-# insert into service_images values ('a92615d7-a8ba-45ff-b29f-ec2baf6b8348','database', 'a92615d7-a8ba-45ff-b29f-ec2baf6b8348');
+# sqlite3 reddwarf_test.sqlite "insert into service_images values ('$REDDWARF_IMAGE_ID','database', '$REDDWARF_IMAGE_ID');"
 

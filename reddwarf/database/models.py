@@ -31,16 +31,6 @@ from novaclient import exceptions as nova_exceptions
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
 
-PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
-PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
-                              '3de4922d8b6ac5a1aad9')
-PROXY_ADMIN_TENANT_NAME = CONFIG.get('reddwarf_proxy_admin_tenant_name',
-                                     'admin')
-PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url', 'http://0.0.0.0:5000/v2.0')
-PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
-                             '60fdac4a02aa4a8e87d772c61081b16a')
-print "PROXY_TENANT_ID : %s" % PROXY_TENANT_ID
-
 
 class ModelBase(object):
 
@@ -87,6 +77,18 @@ class RemoteModelBase(ModelBase):
 
     @classmethod
     def get_client(cls, proxy_token):
+        PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
+        PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
+                                      '3de4922d8b6ac5a1aad9')
+        PROXY_ADMIN_TENANT_NAME = CONFIG.get(
+                                        'reddwarf_proxy_admin_tenant_name',
+                                        'admin')
+        PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
+                                    'http://0.0.0.0:5000/v2.0')
+        PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
+                                     'aaaaaaaaaaaaaaaaaaaaaaa')
+        print "PROXY_TENANT_ID : %s" % PROXY_TENANT_ID
+
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
             PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
             proxy_tenant_id=PROXY_TENANT_ID,

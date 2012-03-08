@@ -317,8 +317,6 @@ def load_paste_app(app_name, options, args, config_dir=None):
 
 
 def get_option(options, option, **kwargs):
-    print __name__
-    print options
     if option in options:
         value = options[option]
         type_ = kwargs.get('type', 'str')

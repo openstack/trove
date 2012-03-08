@@ -44,9 +44,6 @@ class Config(object):
 
     @classmethod
     def get(cls, key, default=None):
-        print cls
-        print key
-        print default
         return cls.instance.get(key, default)
 
     @classmethod
