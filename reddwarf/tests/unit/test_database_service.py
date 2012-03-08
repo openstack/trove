@@ -16,9 +16,12 @@
 
 import mox
 import logging
+import json
+import novaclient
 
 from reddwarf import tests
 from reddwarf.common import config
+from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.database import models
 from reddwarf.database import service
@@ -49,18 +52,28 @@ class DummyApp(wsgi.Router):
 class TestInstanceController(ControllerTestBase):
 
     DUMMY_INSTANCE_ID = "123"
+    DUMMY_INSTANCE = {"id": DUMMY_INSTANCE_ID,
+    "name": "DUMMY_NAME",
+    "status": "BUILD",
+    "created": "createtime",
+    "updated": "updatedtime",
+    "flavor": {},
+    "links": [],
+    "addresses": {}}
 
     def setUp(self):
         self.instances_path = "/tenant/instances"
         super(TestInstanceController, self).setUp()
 
     def test_show(self):
-        # block = factory_models.IpBlockFactory()
-        instance = mox.MockAnything()
+        response = self.app.get("%s/%s" % (self.instances_path,
+                                           self.DUMMY_INSTANCE_ID),
+                                           headers={'X-Auth-Token': '123'})
+        self.assertEqual(response.status_int, 404)
+
+    def test_show(self):
         self.mock.StubOutWithMock(models.Instance, 'data')
-        models.Instance.data().AndReturn({"id": self.DUMMY_INSTANCE_ID,
-                                   "name": "DUMMY_NAME",
-                                   "status": "BUILD"})
+        models.Instance.data().AndReturn(self.DUMMY_INSTANCE)
         self.mock.StubOutWithMock(models.Instance, '__init__')
         models.Instance.__init__(context=mox.IgnoreArg(), uuid=mox.IgnoreArg())
         self.mock.ReplayAll()
@@ -69,4 +82,83 @@ class TestInstanceController(ControllerTestBase):
                                            self.DUMMY_INSTANCE_ID),
                                            headers={'X-Auth-Token': '123'})
 
+        self.assertEqual(response.status_int, 201)
+
+    def test_index(self):
+        self.mock.StubOutWithMock(models.Instances, 'data')
+        models.Instances.data().AndReturn([self.DUMMY_INSTANCE])
+        self.mock.StubOutWithMock(models.Instances, '__init__')
+        models.Instances.__init__(mox.IgnoreArg())
+        self.mock.ReplayAll()
+        response = self.app.get("%s" % (self.instances_path),
+                                           headers={'X-Auth-Token': '123'})
+        self.assertEqual(response.status_int, 201)
+
+    def mock_out_client_create(self):
+        """Stubs out a fake server returned from novaclient.
+           This is akin to calling Client.servers.get(uuid)
+           and getting the server object back."""
+        self.FAKE_SERVER = self.mock.CreateMock(object)
+        self.FAKE_SERVER.name = 'my_name'
+        self.FAKE_SERVER.status = 'ACTIVE'
+        self.FAKE_SERVER.updated = utils.utcnow()
+        self.FAKE_SERVER.created = utils.utcnow()
+        self.FAKE_SERVER.id = utils.generate_uuid()
+        self.FAKE_SERVER.flavor = 'http://localhost/1234/flavors/1234'
+        self.FAKE_SERVER.links = [{
+                    "href": "http://localhost/1234/instances/123",
+                    "rel": "self"
+                },
+                {
+                    "href": "http://localhost/1234/instances/123",
+                    "rel": "bookmark"
+                }]
+        self.FAKE_SERVER.addresses = {
+                "private": [
+                    {
+                        "addr": "10.0.0.4",
+                        "version": 4
+                    }
+                ]
+            }
+
+        client = self.mock.CreateMock(novaclient.v1_1.Client)
+        servers = self.mock.CreateMock(novaclient.v1_1.servers.ServerManager)
+        servers.create(mox.IgnoreArg(),
+                       mox.IgnoreArg(),
+                       mox.IgnoreArg()).AndReturn(self.FAKE_SERVER)
+        client.servers = servers
+        self.mock.StubOutWithMock(models.RemoteModelBase, 'get_client')
+        models.RemoteModelBase.get_client(mox.IgnoreArg()).AndReturn(client)
+
+    def test_create(self):
+        self.mock.StubOutWithMock(models.Instance, 'data')
+        models.Instance.data().AndReturn(self.DUMMY_INSTANCE)
+
+        self.mock.StubOutWithMock(models.ServiceImage, 'find_by')
+        models.ServiceImage.find_by(service_name=mox.IgnoreArg()).AndReturn(
+                {'image_id': 1234})
+
+        self.mock_out_client_create()
+        self.mock.ReplayAll()
+
+        body = {
+            "instance": {
+                "databases": [
+                    {
+                        "character_set": "utf8",
+                        "collate": "utf8_general_ci",
+                        "name": "sampledb"
+                    },
+                    {
+                        "name": "nextround"
+                    }
+                ],
+                "flavorRef": "http://localhost/v0.1/tenant/flavors/1",
+                "name": "json_rack_instance",
+            }
+        }
+        response = self.app.post_json("%s" % (self.instances_path), body=body,
+                                           headers={'X-Auth-Token': '123'},
+                                           )
         self.assertEqual(response.status_int, 201)

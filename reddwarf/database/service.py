@@ -23,19 +23,41 @@ from reddwarf import rpc
 from reddwarf.common import config
 from reddwarf.common import context as rd_context
 from reddwarf.common import exception
+from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.database import models
 from reddwarf.database import views
 
 CONFIG = config.Config
-LOG = logging.getLogger('reddwarf.database.service')
+LOG = logging.getLogger(__name__)
 
 
 class BaseController(wsgi.Controller):
     """Base controller class."""
 
+    exclude_attr = []
+    exception_map = {
+        webob.exc.HTTPUnprocessableEntity: [
+            ],
+        webob.exc.HTTPBadRequest: [
+            models.InvalidModelError,
+            ],
+        webob.exc.HTTPNotFound: [
+            exception.NotFound,
+            models.ModelNotFoundError,
+            ],
+        webob.exc.HTTPConflict: [
+            ],
+        }
+
     def __init__(self):
         pass
+
+    def _extract_required_params(self, params, model_name):
+        params = params or {}
+        model_params = params.get(model_name, {})
+        return utils.stringify_keys(utils.exclude(model_params,
+                                                  *self.exclude_attr))
 
 
 class InstanceController(BaseController):
@@ -67,10 +89,11 @@ class InstanceController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
+        # TODO(cp16net) : need to handle exceptions here if the delete fails
         models.Instance.delete(context=context, uuid=id)
 
         # TODO(hub-cap): fixgure out why the result is coming back as None
-        LOG.info("result of delete %s" % result)
+        # LOG.info("result of delete %s" % result)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 
@@ -87,15 +110,17 @@ class InstanceController(BaseController):
         #   code. Or maybe we shouldnt due to the nature of changing images.
         #   This needs discussion.
         # TODO(hub-cap): turn this into middleware
+        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("body : '%s'\n\n" % body)
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
         server = models.Instance.create(context,
-                                        body['name'],
                                         image_id,
-                                        body['flavor']).data()
+                                        body).data()
 
         # Now wait for the response from the create to do additional work
         #TODO(cp16net): need to set the return code correctly

@@ -116,7 +116,8 @@ class RemoteModelBase(ModelBase):
 
 class Instance(RemoteModelBase):
 
-    _data_fields = ['name', 'status', 'updated', 'id', 'flavor']
+    _data_fields = ['name', 'status', 'id', 'created', 'updated',
+                    'flavor', 'links', 'addresses']
 
     def __init__(self, server=None, context=None, uuid=None):
         if server is None and context is None and uuid is None:
@@ -124,7 +125,12 @@ class Instance(RemoteModelBase):
             msg = "server, content, and uuid are not defined"
             raise InvalidModelError(msg)
         elif server is None:
-            self._data_object = self.get_client(context).servers.get(uuid)
+            try:
+                self._data_object = self.get_client(context).servers.get(uuid)
+            except nova_exceptions.NotFound, e:
+                raise rd_exceptions.NotFound(uuid=uuid)
+            except nova_exceptions.ClientException, e:
+                raise rd_exceptions.ReddwarfError()
         else:
             self._data_object = server
 
@@ -138,10 +144,13 @@ class Instance(RemoteModelBase):
             raise rd_exceptions.ReddwarfError()
 
     @classmethod
-    def create(cls, context, name, image_id, flavor):
-        srv = cls.get_client(context).servers.create(name,
+    def create(cls, context, image_id, body):
+        # self.is_valid()
+        LOG.info("instance body : '%s'\n\n" % body)
+        flavorRef = body['instance']['flavorRef']
+        srv = cls.get_client(context).servers.create(body['instance']['name'],
                                                      image_id,
-                                                     flavor)
+                                                     flavorRef)
         return Instance(server=srv)
 
 

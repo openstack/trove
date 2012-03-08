@@ -21,15 +21,25 @@ class InstanceView(object):
     def __init__(self, instance):
         self.instance = instance
 
-    #TODO(hub-cap): fix the link generation
     def data(self):
         return {"instance": {
             "id": self.instance['id'],
             "name": self.instance['name'],
             "status": self.instance['status'],
-            "links": "Links will be coming in the future"
+            "created": self.instance['created'],
+            "updated": self.instance['updated'],
+            "flavor": self.instance['flavor'],
+            "links": self._build_links(self.instance['links']),
+            "addresses": self.instance['addresses'],
             },
         }
+
+    @staticmethod
+    def _build_links(links):
+        """Build the links for the instance"""
+        for link in links:
+            link['href'] = link['href'].replace('servers', 'instances')
+        return links
 
 
 class InstancesView(object):

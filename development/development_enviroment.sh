@@ -35,22 +35,52 @@ keystone --endpoint http://localhost:35357/v2.0 --token be19c524ddc92109a224 use
 # These are the values
 REDDWARF_TENANT=reddwarf
 echo $REDDWARF_TENANT
+REDDWARF_USER=$(mysql keystone -e "select id from user where name='reddwarf';" | awk 'NR==2')
 echo $REDDWARF_USER
+REDDWARF_ROLE=$(mysql keystone -e "select id from role where name='reddwarf';" | awk 'NR==2')
 echo $REDDWARF_ROLE
 
 # These all need to be set tenant did not work with the id but the name did match in the auth shim.
-# REDDWARF_TOKEN=
+REDDWARF_TOKEN=$(curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool | grep id | tr -s ' ' | cut -d ' ' -f 3 | sed s/\"/''/g | awk 'NR==2' | cut -d ',' -f 1)
+echo $REDDWARF_TOKEN
+
 
 # Now attempt a login
-curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' \
-     -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool
+#curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' \
+#     -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool
 
 #  now get a list of instances, which connects over python-novaclient to nova
 # NOTE THIS AUTH TOKEN NEEDS TO BE CHANGED
 # Also note that keystone uses the tenant id now and _not_ the name
-# curl -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances
-# curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" \
-#  http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'
+# list instances
+# curl -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances | python -mjson.tool
+# old create instance:
+# curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"name":"my_test","flavor":"1"}'  | python -mjson.tool
+# create instance:
+# curl -H"Content-type:application/json" -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances -d '{"instance": {"databases": [{"character_set": "utf8", "collate": "utf8_general_ci", "name": "sampledb"}, {"name": "nextround"}], "flavorRef": "http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/flavors/1", "name": "json_rack_instance", "volume": {"size": "2"}}}'| python -mjson.tool
+# {
+#     "instance": {
+#         "databases": [
+#             {
+#                 "character_set": "utf8",
+#                 "collate": "utf8_general_ci",
+#                 "name": "sampledb"
+#             },
+#             {
+#                 "name": "nextround"
+#             }
+#         ],
+#         "flavorRef": "http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/flavors/1",
+#         "name": "json_rack_instance",
+#         "volume": {
+#             "size": "2"
+#         }
+#     }
+# }
+
+# DELETE INSTANCE
+# curl -H"X-Auth-Token:$REDDWARF_TOKEN" http://0.0.0.0:8779/v0.1/$REDDWARF_TENANT/instances/id -X DELETE | python -mjson.tool
+
 
 # update the etc/reddwarf/reddwarf.conf.sample
 # add this config setting
@@ -67,8 +97,23 @@ curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "RE
 
 # ssh-keygen
 
-# build the image for reddwarf
+# first time build the image for reddwarf
 # ./bootstrap/bootstrap.sh
+
+##### re-add image manually #####
+VM_PATH=~/oneiric_mysql_image
+UBUNTU_DISTRO="ubuntu 11.10"
+UBUNTU_DISTRO_NAME=oneiric
+QCOW_IMAGE=`find $VM_PATH -name '*.qcow2'`
+function get_glance_id () {
+    echo `$@ | awk '{print $6}'`
+}
+glance add name="oneiric_mysql_image" is_public=true container_format=ovf disk_format=qcow2 distro='"ubuntu 11.10"' -A $REDDWARF_TOKEN < $QCOW_IMAGE
+# GLANCE_IMAGEID=
+echo "updating your database - $GLANCE_IMAGEID"
+sqlite3 /src/reddwarf_test.sqlite "INSERT INTO service_images VALUES('1', 'database', '$GLANCE_IMAGEID');"
+#sqlite3 /src/reddwarf_test.sqlite "UPDATE service_images set image_id='$GLANCE_IMAGEID';"
+echo "done GLANCE IMAGE ID = $GLANCE_IMAGEID"
 
 # add the image to the reddwarf database
 # get the image id from glance

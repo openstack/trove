@@ -8,3 +8,5 @@ guest-agent-files.txt
 reddwarf.egg*
 reddwarf/vcsversion.py
 *py*.egg
+.coverage
+covhtml/
