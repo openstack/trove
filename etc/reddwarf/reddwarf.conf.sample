@@ -44,8 +44,6 @@ reddwarf_proxy_admin_user = admin
 reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 reddwarf_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
-reddwarf_tenant_id = 60fdac4a02aa4a8e87d772c61081b16a
-	
 
 # ============ notifer queue kombu connection options ========================
 

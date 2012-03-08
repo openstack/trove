@@ -85,9 +85,6 @@ class RemoteModelBase(ModelBase):
                                         'admin')
         PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
                                     'http://0.0.0.0:5000/v2.0')
-        PROXY_TENANT_ID = CONFIG.get('reddwarf_tenant_id',
-                                     'aaaaaaaaaaaaaaaaaaaaaaa')
-        print "PROXY_TENANT_ID : %s" % PROXY_TENANT_ID
 
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
             PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
