@@ -41,9 +41,26 @@ class TestInstance(tests.BaseTest):
         self.FAKE_SERVER.name = 'my_name'
         self.FAKE_SERVER.status = 'ACTIVE'
         self.FAKE_SERVER.updated = utils.utcnow()
+        self.FAKE_SERVER.created = utils.utcnow()
         self.FAKE_SERVER.id = utils.generate_uuid()
         self.FAKE_SERVER.flavor = ('http://localhost/1234/flavors/',
                                    '52415800-8b69-11e0-9b19-734f1195ff37')
+        self.FAKE_SERVER.links = [{
+                    "href": "http://localhost/1234/instances/123",
+                    "rel": "self"
+                },
+                {
+                    "href": "http://localhost/1234/instances/123",
+                    "rel": "bookmark"
+                }]
+        self.FAKE_SERVER.addresses = {
+                "private": [
+                    {
+                        "addr": "10.0.0.4",
+                        "version": 4
+                    }
+                ]
+            }
 
         client = self.mock.CreateMock(novaclient.v1_1.Client)
         servers = self.mock.CreateMock(novaclient.v1_1.servers.ServerManager)
@@ -64,5 +81,8 @@ class TestInstance(tests.BaseTest):
         self.assertEqual(instance['name'], self.FAKE_SERVER.name)
         self.assertEqual(instance['status'], self.FAKE_SERVER.status)
         self.assertEqual(instance['updated'], self.FAKE_SERVER.updated)
+        self.assertEqual(instance['created'], self.FAKE_SERVER.created)
         self.assertEqual(instance['id'], self.FAKE_SERVER.id)
         self.assertEqual(instance['flavor'], self.FAKE_SERVER.flavor)
+        self.assertEqual(instance['links'], self.FAKE_SERVER.links)
+        self.assertEqual(instance['addresses'], self.FAKE_SERVER.addresses)
