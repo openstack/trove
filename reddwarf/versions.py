@@ -32,24 +32,24 @@ class VersionsController(wsgi.Controller):
 
 class Version(object):
 
-    def __init__(self, name, status, base_url):
-        self.name = name
+    def __init__(self, id, status, base_url):
+        self.id = id
         self.status = status
         self.base_url = base_url
 
     def data(self):
-        return dict(name=self.name,
+        return dict(id=self.id,
             status=self.status,
             links=[dict(rel="self",
                 href=self.url())])
 
     def url(self):
-        return os.path.join(self.base_url, self.name)
+        return os.path.join(self.base_url, self.id)
 
     def to_xml(self):
         doc = minidom.Document()
         version_elem = doc.createElement("version")
-        version_elem.setAttribute("name", self.name)
+        version_elem.setAttribute("id", self.id)
         version_elem.setAttribute("status", self.status)
         links_elem = doc.createElement("links")
         link_elem = doc.createElement("link")
