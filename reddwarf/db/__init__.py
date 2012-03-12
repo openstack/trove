@@ -54,19 +54,21 @@ class Query(object):
     def delete(self):
         db_api.delete_all(self._query_func, self._model, **self._conditions)
 
-    def limit(self, limit=200, marker=None, marker_column=None):
-        return db_api.find_all_by_limit(self._query_func,
-            self._model,
-            self._conditions,
-            limit=limit,
-            marker=marker,
-            marker_column=marker_column)
-
-    def paginated_collection(self, limit=200, marker=None, marker_column=None):
-        collection = self.limit(int(limit) + 1, marker, marker_column)
-        if len(collection) > int(limit):
-            return (collection[0:-1], collection[-2]['id'])
-        return (collection, None)
+    #TODO(hub-cap): Reenable pagination when we have a need for it
+    # def limit(self, limit=200, marker=None, marker_column=None):
+    #     return db_api.find_all_by_limit(self._query_func,
+    #         self._model,
+    #         self._conditions,
+    #         limit=limit,
+    #         marker=marker,
+    #         marker_column=marker_column)
+    #
+    # def paginated_collection(self, limit=200, marker=None,
+    #                          marker_column=None):
+    #     collection = self.limit(int(limit) + 1, marker, marker_column)
+    #     if len(collection) > int(limit):
+    #         return (collection[0:-1], collection[-2]['id'])
+    #     return (collection, None)
 
 
 class Queryable(object):

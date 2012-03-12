@@ -25,37 +25,10 @@ from reddwarf.common import wsgi
 from reddwarf.db import db_api
 
 
-def sanitize(data):
-    serializer = wsgi.JSONDictSerializer()
-    return json.loads(serializer.serialize(data))
-
-
-class StubConfig():
-
-    def __init__(self, **options):
-        self.options = options
-
-    def __enter__(self):
-        self.actual_config = config.Config.instance
-        temp_config = self.actual_config.copy()
-        temp_config.update(self.options)
-        config.Config.instance = temp_config
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        config.Config.instance = self.actual_config
-
-
-class StubTime(object):
-
-    def __init__(self, time):
-        self.time = time
-
-    def __enter__(self):
-        self.actual_provider = utils.utcnow
-        utils.utcnow = lambda: self.time
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        utils.utcnow = self.actual_provider
+# TODO(hub-cap): we will probably use this later
+# def sanitize(data):
+#     serializer = wsgi.JSONDictSerializer()
+#     return json.loads(serializer.serialize(data))
 
 
 class TestApp(webtest.TestApp):

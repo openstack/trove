@@ -40,15 +40,6 @@ class ControllerTestBase(tests.BaseTest):
         self.app = unit.TestApp(reddwarf_app)
 
 
-class DummyApp(wsgi.Router):
-
-    def __init__(self, controller):
-        mapper = routes.Mapper()
-        mapper.resource("resource", "/resources",
-                                controller=controller.create_resource())
-        super(DummyApp, self).__init__(mapper)
-
-
 class TestInstanceController(ControllerTestBase):
 
     DUMMY_INSTANCE_ID = "123"
@@ -65,11 +56,12 @@ class TestInstanceController(ControllerTestBase):
         self.instances_path = "/tenant/instances"
         super(TestInstanceController, self).setUp()
 
-    def test_show(self):
-        response = self.app.get("%s/%s" % (self.instances_path,
-                                           self.DUMMY_INSTANCE_ID),
-                                           headers={'X-Auth-Token': '123'})
-        self.assertEqual(response.status_int, 404)
+    # TODO(hub-cap): Start testing the failure cases
+    # def test_show_broken(self):
+    #     response = self.app.get("%s/%s" % (self.instances_path,
+    #                                        self.DUMMY_INSTANCE_ID),
+    #                                        headers={'X-Auth-Token': '123'})
+    #     self.assertEqual(response.status_int, 404)
 
     def test_show(self):
         self.mock.StubOutWithMock(models.Instance, 'data')

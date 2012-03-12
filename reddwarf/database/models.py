@@ -130,7 +130,7 @@ class Instance(RemoteModelBase):
             except nova_exceptions.NotFound, e:
                 raise rd_exceptions.NotFound(uuid=uuid)
             except nova_exceptions.ClientException, e:
-                raise rd_exceptions.ReddwarfError()
+                raise rd_exceptions.ReddwarfError(str(e))
         else:
             self._data_object = server
 
