@@ -10,3 +10,4 @@ reddwarf/vcsversion.py
 *py*.egg
 .coverage
 covhtml/
+.DS_Store

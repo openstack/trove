@@ -79,7 +79,13 @@ class InstanceController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        server = models.Instance(context=context, uuid=id).data()
+        try:
+            # TODO(hub-cap): start testing the failure cases here
+            server = models.Instance(context=context, uuid=id).data()
+        except exception.ReddwarfError, e:
+            # TODO(hub-cap): come up with a better way than
+            #    this to get the message
+            return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
 
@@ -92,8 +98,6 @@ class InstanceController(BaseController):
         # TODO(cp16net) : need to handle exceptions here if the delete fails
         models.Instance.delete(context=context, uuid=id)
 
-        # TODO(hub-cap): fixgure out why the result is coming back as None
-        # LOG.info("result of delete %s" % result)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 

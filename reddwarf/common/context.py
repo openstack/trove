@@ -37,7 +37,6 @@ class ReddwarfContext(context.RequestContext):
         super(ReddwarfContext, self).__init__(**kwargs)
 
     def to_dict(self):
-#        self.auth_tok = auth_tok
         return {'user': self.user,
                 'tenant': self.tenant,
                 'is_admin': self.is_admin,
