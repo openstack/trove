@@ -94,7 +94,7 @@ class RemoteModelBase(ModelBase):
         #TODO(cp16net) need to fix this proxy_tenant_id
         client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
             PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
-            proxy_tenant_id='reddwarf',
+            proxy_tenant_id="reddwarf",
             proxy_token=context.auth_tok,
             region_name=REGION_NAME,
             service_type=SERVICE_TYPE,
