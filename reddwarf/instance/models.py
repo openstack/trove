@@ -45,6 +45,7 @@ def load_server(client, uuid):
     try:
         server = client.servers.get(uuid)
     except nova_exceptions.NotFound, e:
+        #TODO(cp16net) would this be the wrong id to show the user?
         raise rd_exceptions.NotFound(uuid=uuid)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
@@ -55,6 +56,7 @@ def delete_server(client, server_id):
     try:
         client.servers.delete(server_id)
     except nova_exceptions.NotFound, e:
+        #TODO(cp16net) would this be the wrong id to show the user?
         raise rd_exceptions.NotFound(uuid=server_id)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError()
@@ -173,20 +175,23 @@ class Instance(object):
         return links
 
 
-class Instances(Instance):
-
-    def __init__(self, context):
-        #TODO(hub-cap): Fix this, this just cant be right
-        client = create_nova_client(context)
-        self._data_object = client.servers.list()
-
-    def __iter__(self):
-        for item in self._data_object:
-            yield item
+class Instances(object):
 
     @staticmethod
     def load(context):
-        raise Exception("Implement this!")
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        client = create_nova_client(context)
+        servers = client.servers.list()
+        db_infos = DBInstance.find_all()
+        ret = []
+        for db in db_infos:
+            status = InstanceServiceStatus.find_by(instance_id=db.id)
+            for server in servers:
+                if server.id == db.compute_instance_id:
+                    ret.append(Instance(context, db, server, status))
+                    break
+        return ret
 
 
 class DatabaseModelBase(ModelBase):
@@ -220,13 +225,17 @@ class DatabaseModelBase(ModelBase):
     @classmethod
     def find_by(cls, **conditions):
         model = cls.get_by(**conditions)
-        if model == None:
+        if model is None:
             raise ModelNotFoundError(_("%s Not Found") % cls.__name__)
         return model
 
     @classmethod
     def get_by(cls, **kwargs):
         return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
+
+    @classmethod
+    def find_all(cls, **kwargs):
+        return db.db_query.find_all(cls, **cls._process_conditions(kwargs))
 
     @classmethod
     def _process_conditions(cls, raw_conditions):
@@ -249,10 +258,10 @@ class DBInstance(DatabaseModelBase):
         self.set_task_status(task_status)
 
     def _validate(self, errors):
-        if self.task_status is None:
-            errors['task_status'] = "Cannot be none."
         if InstanceTask.from_code(self.task_id) is None:
             errors['task_id'] = "Not valid."
+        if self.task_status is None:
+            errors['task_status'] = "Cannot be none."
 
     def get_task_status(self):
         return InstanceTask.from_code(self.task_id)

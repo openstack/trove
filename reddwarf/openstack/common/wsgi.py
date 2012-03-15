@@ -578,7 +578,7 @@ class RequestDeserializer(object):
     def deserialize_body(self, request, action):
         if not len(request.body) > 0:
             LOG.debug(_("Empty body provided in request"))
-            return {}
+            return self._return_empty_body(action)
 
         try:
             content_type = request.get_content_type()
@@ -588,7 +588,7 @@ class RequestDeserializer(object):
 
         if content_type is None:
             LOG.debug(_("No Content-Type provided in request"))
-            return {}
+            return self._return_empty_body(action)
 
         try:
             deserializer = self.get_body_deserializer(content_type)
@@ -597,6 +597,12 @@ class RequestDeserializer(object):
             raise
 
         return deserializer.deserialize(request.body, action)
+
+    def _return_empty_body(self, action):
+        if action in ["create", "update", "action"]:
+            return {'body': None}
+        else:
+            return {}
 
     def get_body_deserializer(self, content_type):
         try:

@@ -22,7 +22,7 @@ import webob.exc
 import wsgi
 
 
-LOG = logging.getLogger("reddwarf.common.auth")
+LOG = logging.getLogger(__name__)
 
 
 class AuthorizationMiddleware(wsgi.Middleware):

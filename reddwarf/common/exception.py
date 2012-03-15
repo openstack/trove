@@ -53,3 +53,8 @@ class GuestError(ReddwarfError):
 
     message = _("An error occurred communicating with the guest: "
                 "%(original_message).")
+
+
+class BadRequest(openstack_exception.MalformedRequestBody):
+
+    message = _("Required element/key - %(key)s was not specified")
