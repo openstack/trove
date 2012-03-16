@@ -63,8 +63,9 @@ class TestInstance(tests.BaseTest):
         servers = self.mock.CreateMock(novaclient.v1_1.servers.ServerManager)
         servers.get(mox.IgnoreArg()).AndReturn(self.FAKE_SERVER)
         client.servers = servers
-        self.mock.StubOutWithMock(models.RemoteModelBase, 'get_client')
-        models.RemoteModelBase.get_client(mox.IgnoreArg()).AndReturn(client)
+        self.mock.StubOutWithMock(models.NovaRemoteModelBase, 'get_client')
+        models.NovaRemoteModelBase.get_client(mox.IgnoreArg()). \
+            AndReturn(client)
         self.mock.ReplayAll()
 
     def test_create_instance_data(self):

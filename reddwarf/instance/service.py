@@ -138,7 +138,6 @@ class InstanceController(BaseController):
                                         image_id,
                                         body).data()
 
-
         # Now wait for the response from the create to do additional work
         #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
