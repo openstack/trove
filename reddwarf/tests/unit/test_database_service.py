@@ -117,8 +117,9 @@ class TestInstanceController(ControllerTestBase):
                        mox.IgnoreArg(),
                        mox.IgnoreArg()).AndReturn(self.FAKE_SERVER)
         client.servers = servers
-        self.mock.StubOutWithMock(models.RemoteModelBase, 'get_client')
-        models.RemoteModelBase.get_client(mox.IgnoreArg()).AndReturn(client)
+        self.mock.StubOutWithMock(models.NovaRemoteModelBase, 'get_client')
+        models.NovaRemoteModelBase.get_client(mox.IgnoreArg()). \
+            AndReturn(client)
 
     def test_create(self):
         self.mock.StubOutWithMock(models.Instance, 'data')
