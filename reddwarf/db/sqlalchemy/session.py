@@ -21,7 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
 
-from reddwarf import database
+from reddwarf import instance
 from reddwarf.common import config
 from reddwarf.db.sqlalchemy import mappers
 
@@ -40,7 +40,7 @@ def configure_db(options, models_mapper=None):
     if models_mapper:
         models_mapper.map(_ENGINE)
     else:
-        mappers.map(_ENGINE, database.models.persisted_models())
+        mappers.map(_ENGINE, instance.models.persisted_models())
 
 
 def configure_sqlalchemy_log(options):

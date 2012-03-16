@@ -11,3 +11,4 @@ reddwarf/vcsversion.py
 .coverage
 covhtml/
 .DS_Store
+host-syslog.log
