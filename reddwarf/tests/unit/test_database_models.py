@@ -18,11 +18,8 @@ import mox
 import novaclient
 
 from reddwarf import tests
-from reddwarf.common import exception
 from reddwarf.common import utils
-from reddwarf.database import models
-from reddwarf.db import db_query
-from reddwarf.tests import unit
+from reddwarf.instance import models
 from reddwarf.tests.factories import models as factory_models
 
 

@@ -19,7 +19,7 @@ import factory
 
 from reddwarf.common import context
 from reddwarf.common import utils
-from reddwarf.database import models
+from reddwarf.instance import models
 
 
 class Instance(factory.Factory):

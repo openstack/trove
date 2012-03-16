@@ -16,15 +16,12 @@
 
 import mox
 import logging
-import json
 import novaclient
 
 from reddwarf import tests
 from reddwarf.common import config
 from reddwarf.common import utils
-from reddwarf.common import wsgi
-from reddwarf.database import models
-from reddwarf.database import service
+from reddwarf.instance import models
 from reddwarf.tests import unit
 
 

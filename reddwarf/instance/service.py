@@ -19,14 +19,12 @@ import logging
 import routes
 import webob.exc
 
-from reddwarf import rpc
 from reddwarf.common import config
 from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common import wsgi
-from reddwarf.database import models
-from reddwarf.database import views
+from reddwarf.instance import models, views
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
@@ -63,8 +61,16 @@ class BaseController(wsgi.Controller):
 class InstanceController(BaseController):
     """Controller for instance functionality"""
 
+    def detail(self, req, tenant_id):
+        """Return all instances."""
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        return self.index(req, tenant_id)
+
     def index(self, req, tenant_id):
         """Return all instances."""
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
@@ -75,6 +81,9 @@ class InstanceController(BaseController):
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
@@ -91,6 +100,9 @@ class InstanceController(BaseController):
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
@@ -125,6 +137,7 @@ class InstanceController(BaseController):
         server = models.Instance.create(context,
                                         image_id,
                                         body).data()
+
 
         # Now wait for the response from the create to do additional work
         #TODO(cp16net): need to set the return code correctly

@@ -37,10 +37,6 @@ REDDWARF_TENANT=reddwarf
 echo $REDDWARF_TENANT
 REDDWARF_USER=$(mysql keystone -e "select id from user where name='reddwarf';" | awk 'NR==2')
 echo $REDDWARF_USER
-REDDWARF_ROLE=$(mysql keystone -e "select id from role where name='reddwarf';" | awk 'NR==2')
-echo $REDDWARF_ROLE
-
-# These all need to be set tenant did not work with the id but the name did match in the auth shim.
 REDDWARF_TOKEN=$(curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool | grep id | tr -s ' ' | cut -d ' ' -f 3 | sed s/\"/''/g | awk 'NR==2' | cut -d ',' -f 1)
 echo $REDDWARF_TOKEN
 
