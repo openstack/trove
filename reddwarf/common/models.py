@@ -45,6 +45,12 @@ class ModelBase(object):
 #        self._validate()
         return self.errors == {}
 
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __eq__(self, other):
         if not hasattr(other, 'id'):
             return False
