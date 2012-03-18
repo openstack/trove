@@ -22,7 +22,9 @@ eventlet.monkey_patch()
 import gettext
 import optparse
 import os
+import socket
 import sys
+
 
 gettext.install('reddwarf', unicode=1)
 
@@ -37,6 +39,9 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import service
+# TODO(hub-cap): find out why the db api isint being imported properly
+#from reddwarf.db import db_api
+
 
 if __name__ == '__main__':
     parser = optparse.OptionParser(version="%%prog %s"
@@ -48,7 +53,9 @@ if __name__ == '__main__':
     try:
         conf, app = config.Config.load_paste_app('reddwarf-guestagent',
                                                  options, args)
-        server = service.Service.create(binary='reddwarf-guestagent')
+        # db_api.configure_db(conf)
+        server = service.Service.create(binary='reddwarf-guestagent',
+                                        host=socket.gethostname())
         service.serve(server)
         service.wait()
     except RuntimeError as error:

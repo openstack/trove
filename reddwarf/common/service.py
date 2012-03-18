@@ -162,6 +162,27 @@ class Service(object):
         return service_obj
 
 
+class Manager(object):
+    def __init__(self, host=None):
+        if not host:
+            #TODO(hub-cap): We need to fix this
+            host = "ubuntu"
+        self.host = host
+        super(Manager, self).__init__()
+
+    def periodic_tasks(self, raise_on_error=False):
+        """Tasks to be run at a periodic interval."""
+        pass
+
+    def init_host(self):
+        """Handle initialization if this is a standalone service.
+
+        Child classes should override this method.
+
+        """
+        pass
+
+
 _launcher = None
 
 
