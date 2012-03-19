@@ -82,6 +82,23 @@ def cast(context, topic, msg):
     return _get_impl().cast(context, topic, msg)
 
 
+def cast_with_consumer(context, topic, msg):
+    """Invoke a remote method that does not return anything.
+
+    :param context: Information that identifies the user that has made this
+                    request.
+    :param topic: The topic to send the rpc message to.  This correlates to the
+                  topic argument of
+                  nova.rpc.common.Connection.create_consumer() and only applies
+                  when the consumer was created with fanout=False.
+    :param msg: This is a dict in the form { "method" : "method_to_invoke",
+                                             "args" : dict_of_kwargs }
+
+    :returns: None
+    """
+    return _get_impl().cast_with_consumer(context, topic, msg)
+
+
 def fanout_cast(context, topic, msg):
     """Broadcast a remote method invocation with no return.
 

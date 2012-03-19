@@ -256,11 +256,11 @@ class DBaaSAgent(object):
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
 
-    def prepare(self, databases):
+    def prepare(self, databases, memory_mb):
         """Makes ready DBAAS on a Guest container."""
         global PREPARING
         PREPARING = True
-        from reddwarf.guest.pkg import PkgAgent
+        from reddwarf.guestagent.pkg import PkgAgent
         if not isinstance(self, PkgAgent):
             raise TypeError("This must also be an instance of Pkg agent.")
         preparer = DBaaSPreparer(self)

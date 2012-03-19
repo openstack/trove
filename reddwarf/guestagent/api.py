@@ -26,7 +26,6 @@ from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
 # from nova.db import api as dbapi
-# from nova.db import base
 
 
 LOG = logging.getLogger(__name__)
@@ -123,7 +122,6 @@ class API(object):
         """Make an asynchronous call to prepare the guest
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
-        #TODO(hub-cap): add this to the kombu api
         rpc.cast_with_consumer(context, self._get_routing_key(context, id),
                  {"method": "prepare",
                   "args": {"databases": databases,
