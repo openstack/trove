@@ -18,7 +18,9 @@
 
 import datetime
 import inspect
+import logging
 import re
+import sys
 import uuid
 
 from eventlet import event
@@ -29,6 +31,7 @@ from eventlet.green import subprocess
 from reddwarf.openstack.common import utils as openstack_utils
 
 
+LOG = logging.getLogger(__name__)
 import_class = openstack_utils.import_class
 import_object = openstack_utils.import_object
 bool_from_string = openstack_utils.bool_from_string

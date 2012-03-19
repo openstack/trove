@@ -24,6 +24,7 @@ from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common import wsgi
+from reddwarf.guestagent import api as guest_api
 from reddwarf.instance import models, views
 
 CONFIG = config.Config
@@ -139,6 +140,7 @@ class InstanceController(BaseController):
                                         body).data()
 
         # Now wait for the response from the create to do additional work
+        guest_api.API().prepare(context, server['id'], [], 512)
         #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
 

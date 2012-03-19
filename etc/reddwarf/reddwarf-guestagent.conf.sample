@@ -46,17 +46,11 @@ reddwarf_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
 
 # Manager impl for the taskmanager
-guestagent_manager=reddwarf.guestagent.manager.GuestAgent
+guestagent_manager=reddwarf.guestagent.manager.GuestManager
 
-# ============ notifer queue kombu connection options ========================
+# ============ kombu connection options ========================
 
-notifier_queue_hostname = localhost
-notifier_queue_userid = guest
-notifier_queue_password = guest
-notifier_queue_ssl = False
-notifier_queue_port = 5672
-notifier_queue_virtual_host = /
-notifier_queue_transport = memory
+rabbit_host=10.0.0.1
 
 [composite:reddwarf-guestagent]
 use = call:reddwarf.common.wsgi:versioned_urlmap

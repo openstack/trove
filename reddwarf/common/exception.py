@@ -47,3 +47,9 @@ class InvalidRPCConnectionReuse(ReddwarfError):
 class NotFound(ReddwarfError):
 
     message = _("Resource %(uuid)s cannot be found")
+
+
+class GuestError(ReddwarfError):
+
+    message = _("An error occurred communicating with the guest: "
+                "%(original_message).")

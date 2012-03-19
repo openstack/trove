@@ -349,6 +349,15 @@ def cast(context, topic, msg, connection_pool):
         conn.topic_send(topic, msg)
 
 
+def cast_with_consumer(context, topic, msg, connection_pool):
+    """Sends a message on a topic without waiting for a response."""
+    LOG.debug(_('Making asynchronous cast on %s...'), topic)
+    pack_context(msg, context)
+    with ConnectionContext(connection_pool) as conn:
+        consumer = conn.declare_topic_consumer(topic=topic)
+        conn.topic_send(topic, msg)
+
+
 def fanout_cast(context, topic, msg, connection_pool):
     """Sends a message on a fanout exchange without waiting for a response."""
     LOG.debug(_('Making asynchronous fanout cast...'))
