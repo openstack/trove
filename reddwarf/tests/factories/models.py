@@ -22,6 +22,12 @@ from reddwarf.common import utils
 from reddwarf.instance import models
 
 
+class DBInstance(factory.Factory):
+    FACTORY_FOR = models.DBInstance
+    context = context.ReddwarfContext()
+    uuid = utils.generate_uuid()
+
+
 class Instance(factory.Factory):
     FACTORY_FOR = models.Instance
     context = context.ReddwarfContext()

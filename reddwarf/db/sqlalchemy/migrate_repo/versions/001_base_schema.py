@@ -34,15 +34,20 @@ meta = MetaData()
 
 instances = Table('instances', meta,
         Column('id', String(36), primary_key=True, nullable=False),
+        Column('created', DateTime()),
+        Column('updated', DateTime()),
         Column('name', String(255)),
-        Column('status', String(255)))
+        Column('compute_instance_id', String(36)),
+        Column('task_id', Integer()),
+        Column('task_description', String(32)),
+        Column('task_start_time', DateTime()))
 
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([instances, ])
+    create_tables([instances])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([instances, ])
+    drop_tables([instances])

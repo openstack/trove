@@ -90,13 +90,13 @@ class InstanceController(BaseController):
                           tenant=tenant_id)
         try:
             # TODO(hub-cap): start testing the failure cases here
-            server = models.Instance(context=context, uuid=id).data()
+            server = models.Instance.load(context=context, uuid=id)
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceView(server).data(), 201)
+        return wsgi.Result(views.InstanceView(server), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -134,13 +134,13 @@ class InstanceController(BaseController):
                           tenant=tenant_id)
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
-        server = models.Instance.create(context,
-                                        image_id,
-                                        body).data()
+        name = body['instance']['name']
+        flavor_ref = body['instance']['flavorRef']
+        instance = models.Instance.create(context, name, flavor_ref, image_id)
 
         # Now wait for the response from the create to do additional work
         #TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceView(server).data(), 201)
+        return wsgi.Result(views.InstanceView(instance).data(), 201)
 
 
 class API(wsgi.Router):

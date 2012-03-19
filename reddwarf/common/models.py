@@ -18,48 +18,63 @@
 """Model classes that form the core of instances functionality."""
 
 import logging
+from reddwarf.common import remote
 
-from reddwarf.common import config
-from novaclient.v1_1.client import Client
 
-CONFIG = config.Config
-LOG = logging.getLogger('reddwarf.database.models')
+LOG = logging.getLogger(__name__)
 
 
 class ModelBase(object):
+    """
+    An object which can be stored in the database.
+    """
 
     _data_fields = []
     _auto_generated_attrs = []
 
-    def _validate(self):
+    def _validate(self, errors):
+        """Subclasses override this to offer additional validation.
+
+        For each validation error a key with the field name and an error
+        message is added to the dict.
+
+        """
         pass
 
     def data(self, **options):
+        """Called to serialize object to a dictionary."""
         data_fields = self._data_fields + self._auto_generated_attrs
         return dict([(field, self[field]) for field in data_fields])
 
     def is_valid(self):
+        """Called when persisting data to ensure the format is correct."""
         self.errors = {}
+        self._validate(self.errors)
 #        self._validate_columns_type()
 #        self._before_validate()
 #        self._validate()
         return self.errors == {}
 
     def __setitem__(self, key, value):
+        """Overloaded to cause this object to look like a data entity."""
         setattr(self, key, value)
 
     def __getitem__(self, key):
+        """Overloaded to cause this object to look like a data entity."""
         return getattr(self, key)
 
     def __eq__(self, other):
+        """Overloaded to cause this object to look like a data entity."""
         if not hasattr(other, 'id'):
             return False
         return type(other) == type(self) and other.id == self.id
 
     def __ne__(self, other):
+        """Overloaded to cause this object to look like a data entity."""
         return not self == other
 
     def __hash__(self):
+        """Overloaded to cause this object to look like a data entity."""
         return self.id.__hash__()
 
 
@@ -71,30 +86,7 @@ class NovaRemoteModelBase(ModelBase):
 
     @classmethod
     def get_client(cls, context):
-        # Quite annoying but due to a paste config loading bug.
-        # TODO(hub-cap): talk to the openstack-common people about this
-        PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
-        PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
-                                      '3de4922d8b6ac5a1aad9')
-        PROXY_ADMIN_TENANT_NAME = CONFIG.get(
-                                        'reddwarf_proxy_admin_tenant_name',
-                                        'admin')
-        PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
-                                    'http://0.0.0.0:5000/v2.0')
-        REGION_NAME = CONFIG.get('nova_region_name', 'RegionOne')
-        SERVICE_TYPE = CONFIG.get('nova_service_type', 'compute')
-        SERVICE_NAME = CONFIG.get('nova_service_name', 'Compute Service')
-
-        #TODO(cp16net) need to fix this proxy_tenant_id
-        client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
-            PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
-            proxy_tenant_id="reddwarf",
-            proxy_token=context.auth_tok,
-            region_name=REGION_NAME,
-            service_type=SERVICE_TYPE,
-            service_name=SERVICE_NAME)
-        client.authenticate()
-        return client
+        return remote.create_nova_client(context)
 
     def _data_item(self, data_object):
         data_fields = self._data_fields + self._auto_generated_attrs

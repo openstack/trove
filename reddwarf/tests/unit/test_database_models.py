@@ -20,6 +20,7 @@ import novaclient
 from reddwarf import tests
 from reddwarf.common import utils
 from reddwarf.instance import models
+from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.tests.factories import models as factory_models
 
 
@@ -29,17 +30,19 @@ class TestInstance(tests.BaseTest):
 
     def setUp(self):
         super(TestInstance, self).setUp()
+        self.expected_name = 'my_name'
+        self.expected_id = utils.generate_uuid()
 
     def mock_out_client(self):
         """Stubs out a fake server returned from novaclient.
            This is akin to calling Client.servers.get(uuid)
            and getting the server object back."""
         self.FAKE_SERVER = self.mock.CreateMock(object)
-        self.FAKE_SERVER.name = 'my_name'
+        self.FAKE_SERVER.name = self.expected_name
         self.FAKE_SERVER.status = 'ACTIVE'
         self.FAKE_SERVER.updated = utils.utcnow()
         self.FAKE_SERVER.created = utils.utcnow()
-        self.FAKE_SERVER.id = utils.generate_uuid()
+        self.FAKE_SERVER.id = self.expected_id
         self.FAKE_SERVER.flavor = ('http://localhost/1234/flavors/',
                                    '52415800-8b69-11e0-9b19-734f1195ff37')
         self.FAKE_SERVER.links = [{
@@ -68,19 +71,20 @@ class TestInstance(tests.BaseTest):
             AndReturn(client)
         self.mock.ReplayAll()
 
-    def test_create_instance_data(self):
+    def test_create_dbinstance_data(self):
         """This ensures the data() call in a new
-           Instance object returns the proper mapped data
+           DBInstance object returns the proper mapped data
            to a dict from attr's"""
-        self.mock_out_client()
         # Creates the instance via __init__
-        instance = factory_models.Instance().data()
+        from reddwarf.instance import tasks
+        instance = factory_models.DBInstance(
+            task_status=InstanceTasks.BUILDING,
+            name=self.expected_name,
+            compute_instance_id=self.expected_id,
+            task_start_time=None).data()
 
-        self.assertEqual(instance['name'], self.FAKE_SERVER.name)
-        self.assertEqual(instance['status'], self.FAKE_SERVER.status)
-        self.assertEqual(instance['updated'], self.FAKE_SERVER.updated)
-        self.assertEqual(instance['created'], self.FAKE_SERVER.created)
-        self.assertEqual(instance['id'], self.FAKE_SERVER.id)
-        self.assertEqual(instance['flavor'], self.FAKE_SERVER.flavor)
-        self.assertEqual(instance['links'], self.FAKE_SERVER.links)
-        self.assertEqual(instance['addresses'], self.FAKE_SERVER.addresses)
+        self.assertEqual(instance['name'], self.expected_name)
+        self.assertEqual(instance['compute_instance_id'], self.expected_id)
+        self.assertEqual(instance['task_id'], InstanceTasks.BUILDING.code)
+        self.assertEqual(instance['task_description'],
+                         InstanceTasks.BUILDING.db_text)

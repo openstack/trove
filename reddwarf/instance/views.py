@@ -23,19 +23,20 @@ class InstanceView(object):
 
     def data(self):
         return {"instance": {
-            "id": self.instance['id'],
-            "name": self.instance['name'],
-            "status": self.instance['status'],
-            "created": self.instance['created'],
-            "updated": self.instance['updated'],
-            "flavor": self.instance['flavor'],
-            "links": self._build_links(self.instance['links']),
-            "addresses": self.instance['addresses'],
+            "id": self.instance.id,
+            "name": self.instance.name,
+            "status": self.instance.status,
+            "created": self.instance.created,
+            "updated": self.instance.updated,
+            "flavor": self.instance.flavor,
+            "links": self._build_links(self.instance.links),
+            "addresses": self.instance.addresses,
             },
         }
 
     @staticmethod
     def _build_links(links):
+        #TODO(tim.simpson): Move this to the model.
         """Build the links for the instance"""
         for link in links:
             link['href'] = link['href'].replace('servers', 'instances')
