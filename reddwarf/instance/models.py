@@ -25,53 +25,119 @@ from reddwarf import db
 from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
+from reddwarf.instance.tasks import InstanceTask
+from reddwarf.instance.tasks import InstanceTasks
 from novaclient.v1_1.client import Client
 from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common.models import NovaRemoteModelBase
+from reddwarf.common.remote import create_nova_client
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
 
 
-class Instance(NovaRemoteModelBase):
+def load_server_or_raise(client, uuid):
+    """Loads a server or raises an exception."""
+    if uuid is None:
+        raise TypeError("Argument uuid not defined.")
+    try:
+        server = client.servers.get(uuid)
+    except nova_exceptions.NotFound, e:
+        raise rd_exceptions.NotFound(uuid=uuid)
+    except nova_exceptions.ClientException, e:
+        raise rd_exceptions.ReddwarfError(str(e))
+    return Instance(context, uuid, server)
+
+
+def delete_server_or_raise(server):
+    try:
+        server.delete()
+    except nova_exceptions.NotFound, e:
+        raise rd_exceptions.NotFound(uuid=uuid)
+    except nova_exceptions.ClientException, e:
+        raise rd_exceptions.ReddwarfError()
+
+
+class Instance(object):
 
     _data_fields = ['name', 'status', 'id', 'created', 'updated',
                     'flavor', 'links', 'addresses']
 
-    def __init__(self, server=None, context=None, uuid=None):
-        if server is None and context is None and uuid is None:
-            #TODO(cp16et): what to do now?
-            msg = "server, content, and uuid are not defined"
-            raise InvalidModelError(msg)
-        elif server is None:
-            try:
-                self._data_object = self.get_client(context).servers.get(uuid)
-            except nova_exceptions.NotFound, e:
-                raise rd_exceptions.NotFound(uuid=uuid)
-            except nova_exceptions.ClientException, e:
-                raise rd_exceptions.ReddwarfError(str(e))
-        else:
-            self._data_object = server
+    def __init__(self, context, db_info, server, service_status):
+        self.context = context
+        self.db_info = db_info
+        self.server = server
+        self.service_status = service_status
+
+    @staticmethod
+    def load(context, uuid):
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        elif uuid is None:
+            raise TypeError("Argument uuid not defined.")
+        client = create_nova_client(context)
+        instance_info = DBInstance.find_by(id=uuid)
+        server = load_server_or_raise(client,
+                                      instance_info.compute_instance_id)
+        task_status = instance_info.task_status
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=uuid, service_name=service_name)
+        return Instance(context, uuid, server, task_status, service_status)
 
     @classmethod
     def delete(cls, context, uuid):
-        try:
-            cls.get_client(context).servers.delete(uuid)
-        except nova_exceptions.NotFound, e:
-            raise rd_exceptions.NotFound(uuid=uuid)
-        except nova_exceptions.ClientException, e:
-            raise rd_exceptions.ReddwarfError()
+        instance = cls.load(context, uuid)
+        delete_server_or_raise(instance.server)
 
     @classmethod
-    def create(cls, context, image_id, body):
-        # self.is_valid()
-        LOG.info("instance body : '%s'\n\n" % body)
-        flavorRef = body['instance']['flavorRef']
-        srv = cls.get_client(context).servers.create(body['instance']['name'],
-                                                     image_id,
-                                                     flavorRef)
-        return Instance(server=srv)
+    def create(cls, context, name, flavor_ref, image_id):
+        client = create_nova_client(context)
+        server = client.servers.create(name, image_id, flavor_ref)
+        db_info = DBInstance.create(name=name,
+            compute_instance_id=server.id,
+            task_status=InstanceTasks.BUILDING)
+        service_status = InstanceServiceStatus(name="MySQL",
+            instance_id=db_info.id, status=ServiceStatuses.NEW)
+        return Instance(context, db_info, server, service_status)
+
+    @property
+    def id(self):
+        return self.db_info.id
+
+    @property
+    def name(self):
+        return self.server.name
+
+    @property
+    def status(self):
+        #TODO(tim.simpson): Introduce logic to determine status as a function
+        # of the current task progress, service status, and server status.
+        return "BUILDING"
+
+    @property
+    def created(self):
+        return self.db_info.created
+
+    @property
+    def updated(self):
+        return self.db_info.updated
+
+    @property
+    def flavor(self):
+        return self.server.flavor
+
+    @property
+    def links(self):
+        #TODO(tim.simpson): Review whether we should be returning the server
+        # links.
+        return self.server.links
+
+    @property
+    def addresses(self):
+        #TODO(tim.simpson): Review whether we should be returning the server
+        # addresses.
+        return self.server.addresses
 
 
 class Instances(Instance):
@@ -93,6 +159,9 @@ class DatabaseModelBase(ModelBase):
         print values
 #        values['created_at'] = utils.utcnow()
         instance = cls(**values).save()
+        if not instance.is_valid():
+            raise InvalidModelError(instance.errors)
+
 #        instance._notify_fields("create")
         return instance
 
@@ -107,6 +176,8 @@ class DatabaseModelBase(ModelBase):
 
     def __init__(self, **kwargs):
         self.merge_attributes(kwargs)
+        if not self.is_valid():
+            raise InvalidModelError(self.errors)
 
     def merge_attributes(self, values):
         """dict.update() behaviour."""
@@ -131,17 +202,73 @@ class DatabaseModelBase(ModelBase):
 
 
 class DBInstance(DatabaseModelBase):
-    _data_fields = ['name', 'status']
+    """Defines the task being executed plus the start time."""
+
+    #TODO(tim.simpson): Add start time.
+
+    _data_fields = ['name', 'created', 'compute_instance_id',
+                    'task_id', 'task_description', 'task_start_time']
+
+    def __init__(self, task_status=None, **kwargs):
+        kwargs["task_id"] = task_status.code
+        kwargs["task_description"] = task_status.db_text
+        super(DBInstance, self).__init__(**kwargs)
+        self.set_task_status(task_status)
+
+    def _validate(self, errors):
+        if self.task_status is None:
+            errors['task_status'] = "Cannot be none."
+        if InstanceTask.from_code(self.task_id) is None:
+            errors['task_id'] = "Not valid."
+
+    def get_task_status(self):
+        return InstanceTask.from_code(self.task_id)
+
+    def set_task_status(self, value):
+        self.task_id = value.code
+        self.task_description = value.db_text
+
+    task_status = property(get_task_status, set_task_status)
 
 
 class ServiceImage(DatabaseModelBase):
+    """Defines the status of the service being run."""
+
     _data_fields = ['service_name', 'image_id']
+
+
+class InstanceServiceStatus(DatabaseModelBase):
+
+    _data_fields = ['instance_id', 'service_name', 'status_id',
+                    'status_description']
+
+    def __init__(self, status=None, **kwargs):
+        kwargs["status_id"] = status.code
+        kwargs["status_description"] = status.description
+        super(InstanceServiceStatus, self).__init__(**kwargs)
+        self.set_status(status)
+
+    def _validate(self, errors):
+        if self.status is None:
+            errors['status'] = "Cannot be none."
+        if ServiceStatus.from_code(self.status_id) is None:
+            errors['status_id'] = "Not valid."
+
+    def get_status(self):
+        return ServiceStatus.from_code(self.status_id)
+
+    def set_status(self, value):
+        self.status_id = value.code
+        self.status_description = value.description
+
+    status = property(get_status, set_status)
 
 
 def persisted_models():
     return {
         'instance': DBInstance,
         'service_image': ServiceImage,
+        'service_statuses': InstanceServiceStatus,
         }
 
 
@@ -156,3 +283,71 @@ class InvalidModelError(rd_exceptions.ReddwarfError):
 class ModelNotFoundError(rd_exceptions.ReddwarfError):
 
     message = _("Not Found")
+
+
+class ServiceStatus(object):
+    """Represents the status of the app and in some rare cases the agent.
+
+    Code and description are what is stored in the database. "api_status"
+    refers to the status which comes back from the REST API.
+    """
+    _lookup = {}
+
+    def __init__(self, code, description, api_status):
+        self._code = code
+        self._description = description
+        self._api_status = api_status
+        ServiceStatus._lookup[code] = self
+
+    @property
+    def api_status(self):
+        return self._api_status
+
+    @property
+    def code(self):
+        return self._code
+
+    @property
+    def description(self):
+        return self._description
+
+    def __eq__(self, other):
+        if not isinstance(other, ServiceStatus):
+            return False
+        return self.code == other.code
+
+    @staticmethod
+    def from_code(code):
+        if code not in ServiceStatus._lookup:
+            msg = 'Status code %s is not a valid ServiceStatus integer code.'
+            raise ValueError(msg % code)
+        return ServiceStatus._lookup[code]
+
+    @staticmethod
+    def from_description(desc):
+        all_items = ServiceStatus._lookup.items()
+        status_codes = [code for (code, status) in all_items if status == desc]
+        if not status_codes:
+            msg = 'Status description %s is not a valid ServiceStatus.'
+            raise ValueError(msg % desc)
+        return ServiceStatus._lookup[status_codes[0]]
+
+    @staticmethod
+    def is_valid_code(code):
+        return code in ServiceStatus._lookup
+
+
+class ServiceStatuses(object):
+    RUNNING = ServiceStatus(0x01, 'running', 'ACTIVE')
+    BLOCKED = ServiceStatus(0x02, 'blocked', 'BLOCKED')
+    PAUSED = ServiceStatus(0x03, 'paused', 'SHUTDOWN')
+    SHUTDOWN = ServiceStatus(0x04, 'shutdown', 'SHUTDOWN')
+    CRASHED = ServiceStatus(0x06, 'crashed', 'SHUTDOWN')
+    FAILED = ServiceStatus(0x08, 'failed to spawn', 'FAILED')
+    BUILDING = ServiceStatus(0x09, 'building', 'BUILD')
+    UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
+    NEW = ServiceStatus(0x17, 'new', 'NEW')
+
+
+# Dissuade further additions at run-time.
+ServiceStatus.__init__ = None
