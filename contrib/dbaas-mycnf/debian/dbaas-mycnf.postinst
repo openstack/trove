@@ -1,0 +1,37 @@
+#!/bin/bash -e
+
+# Get the multiplier based on the memvalue
+mem=`cat /proc/meminfo | grep MemTotal | awk '{print $2/524288}'`
+base_cutoff="0.7"
+
+ceil() {
+    awk -vnumber="$mem" '
+        function ceiling(x){return (x == int(x)) ? x : int(x)+1 }
+        BEGIN{ print ceiling(number) }'
+}
+
+multiplier=`ceil`
+
+# If the mem is less than base_cutoff which is 512MB, just use
+# the default which is for anything less than 512MB
+if [[ $mem < $base_cutoff ]]; then
+   exit 0
+fi
+
+MYSQL_CONF_DIR="/etc/dbaas/my.cnf"
+
+# Create the individual templates from the master template
+if [ -e "$MYSQL_CONF_DIR/my.cnf.base" ]; then
+    cat $MYSQL_CONF_DIR/my.cnf.base | while read line; do
+        if [[ `expr "$line" : ".*{.*}"` != "0" ]]; then
+            oldval=`echo $line | sed -e 's/.*{\(.*\)}.*/\1/'`
+            newval=`echo "$oldval * $multiplier" | bc`
+            line=`echo $line | sed -e "s/{$oldval}/$newval/"`
+        fi
+        echo $line >> $MYSQL_CONF_DIR/my.cnf.default.tmp
+    done
+    mv $MYSQL_CONF_DIR/my.cnf.default.tmp $MYSQL_CONF_DIR/my.cnf.default
+fi
+
+
+#DEBHELPER#

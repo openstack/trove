@@ -1,0 +1,15 @@
+Source: dbaas-mycnf
+Priority: extra
+Maintainer: DBaaS-Dev <dbaas-dev@rackspace.com>
+Standards-Version: 3.9.1
+
+
+Package: dbaas-mycnf
+Architecture: all
+Provides: dbaas-mycnf
+Section: utils
+Depends: bc
+Description: my.cnf tempaltes for Database as a Service.
+ Contains various mysql configuration templates for use within
+ Database as a Service. 
+
