@@ -106,6 +106,10 @@ class Instance(object):
         return self.db_info.id
 
     @property
+    def is_building(self):
+        return self.status == "BUILDING"
+
+    @property
     def name(self):
         return self.server.name
 
@@ -131,13 +135,21 @@ class Instance(object):
     def links(self):
         #TODO(tim.simpson): Review whether we should be returning the server
         # links.
-        return self.server.links
+        return self._build_links(self.server.links)
 
     @property
     def addresses(self):
         #TODO(tim.simpson): Review whether we should be returning the server
         # addresses.
         return self.server.addresses
+
+    @staticmethod
+    def _build_links(links):
+        #TODO(tim.simpson): Don't return the Nova port.
+        """Build the links for the instance"""
+        for link in links:
+            link['href'] = link['href'].replace('servers', 'instances')
+        return links
 
 
 class Instances(Instance):
@@ -156,13 +168,9 @@ class DatabaseModelBase(ModelBase):
     @classmethod
     def create(cls, **values):
         values['id'] = utils.generate_uuid()
-        print values
-#        values['created_at'] = utils.utcnow()
         instance = cls(**values).save()
         if not instance.is_valid():
             raise InvalidModelError(instance.errors)
-
-#        instance._notify_fields("create")
         return instance
 
     def save(self):
