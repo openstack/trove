@@ -23,6 +23,7 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
+from reddwarf.guestagent import api as guest_api
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.instance.tasks import InstanceTask
@@ -47,7 +48,7 @@ def load_server_or_raise(client, uuid):
         raise rd_exceptions.NotFound(uuid=uuid)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
-    return Instance(context, uuid, server)
+    return server
 
 
 def delete_server_or_raise(server):
@@ -81,8 +82,7 @@ class Instance(object):
         server = load_server_or_raise(client,
                                       instance_info.compute_instance_id)
         task_status = instance_info.task_status
-        service_status = InstanceServiceStatus.find_by(
-            instance_id=uuid, service_name=service_name)
+        service_status = InstanceServiceStatus.find_by(instance_id=uuid)
         return Instance(context, uuid, server, task_status, service_status)
 
     @classmethod
@@ -97,8 +97,10 @@ class Instance(object):
         db_info = DBInstance.create(name=name,
             compute_instance_id=server.id,
             task_status=InstanceTasks.BUILDING)
-        service_status = InstanceServiceStatus(name="MySQL",
-            instance_id=db_info.id, status=ServiceStatuses.NEW)
+        service_status = InstanceServiceStatus(instance_id=db_info.id,
+            status=ServiceStatuses.NEW)
+        # Now wait for the response from the create to do additional work
+        guest_api.API().prepare(context, db_info.id, [], 512)
         return Instance(context, db_info, server, service_status)
 
     @property
@@ -247,8 +249,7 @@ class ServiceImage(DatabaseModelBase):
 
 class InstanceServiceStatus(DatabaseModelBase):
 
-    _data_fields = ['instance_id', 'service_name', 'status_id',
-                    'status_description']
+    _data_fields = ['instance_id', 'status_id', 'status_description']
 
     def __init__(self, status=None, **kwargs):
         kwargs["status_id"] = status.code
