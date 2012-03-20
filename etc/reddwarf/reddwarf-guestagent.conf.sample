@@ -52,6 +52,10 @@ guestagent_manager=reddwarf.guestagent.manager.GuestManager
 
 rabbit_host=10.0.0.1
 
+# ============ Logging information =============================
+log_dir = /tmp/
+log_file = logfile.txt
+
 [composite:reddwarf-guestagent]
 use = call:reddwarf.common.wsgi:versioned_urlmap
 /: versions

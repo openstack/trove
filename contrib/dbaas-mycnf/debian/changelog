@@ -1,0 +1,64 @@
+dbaas-mycnf (1.0-8) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Generating all the flavor templates by default
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Wed, 08 Feb 2012 17:00:27 +0600
+
+dbaas-mycnf (1.0-7) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Changing the error logs back to /var/log/mysql/mysqld.log
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Thu, 07 Apr 2011 17:00:27 +0600
+
+dbaas-mycnf (1.0-6) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Changing mysql bin logs location to /var/lib/mysql, same as the mysql data
+    directory
+  * Setting query_cache_type=1
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Wed, 23 Mar 2011 10:24:27 +0600
+
+dbaas-mycnf (1.0-5) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Moved the replacing the templates part to a post install script
+  * Added the bc depends
+  * Added a build_templates script to build out the various flavored tempaltes
+    which could be used for testing purposes to verify working of post install
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Mon, 21 Mar 2011 14:02:27 +0600
+
+dbaas-mycnf (1.0-4) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Re-tagging due to build failure and broken package if rebuilt with the
+    same tag
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Fri, 18 Mar 2011 13:51:27 +0600
+
+dbaas-mycnf (1.0-3) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Created a base template which is for 512M container
+  * Generated my.cnf for 512M to 32G containers
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Fri, 18 Mar 2011 11:51:27 +0600
+
+dbaas-mycnf (1.0-2) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Update my.cnf.default to ideal values, still some values are for 256M and
+    needs to be updated
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Thu, 17 Mar 2011 16:32:03 +0600
+
+dbaas-mycnf (1.0-1) lucid; urgency=low
+
+  [ Nirmal Ranganathan ]
+  * Created the initial default my.cnf template
+
+ -- DBaaS-Dev <dbaas-dev@rackspace.com>  Fri, 11 Mar 2011 14:32:03 +0600
+
