@@ -78,12 +78,12 @@ class Instance(object):
         elif uuid is None:
             raise TypeError("Argument uuid not defined.")
         client = create_nova_client(context)
-        instance_info = DBInstance.find_by(id=uuid)
+        db_info = DBInstance.find_by(id=uuid)
         server = load_server_or_raise(client,
-                                      instance_info.compute_instance_id)
-        task_status = instance_info.task_status
+                                      db_info.compute_instance_id)
+        task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=uuid)
-        return Instance(context, uuid, server, task_status, service_status)
+        return Instance(context, db_info, server, service_status)
 
     @classmethod
     def delete(cls, context, uuid):
@@ -97,10 +97,10 @@ class Instance(object):
         db_info = DBInstance.create(name=name,
             compute_instance_id=server.id,
             task_status=InstanceTasks.BUILDING)
-        service_status = InstanceServiceStatus(instance_id=db_info.id,
+        service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
-        guest_api.API().prepare(context, db_info.id, [], 512)
+        guest_api.API().prepare(context, db_info.id, 512, [])
         return Instance(context, db_info, server, service_status)
 
     @property
@@ -157,11 +157,17 @@ class Instance(object):
 class Instances(Instance):
 
     def __init__(self, context):
-        self._data_object = self.get_client(context).servers.list()
+        #TODO(hub-cap): Fix this, this just cant be right
+        client = create_nova_client(context)
+        self._data_object = client.servers.list()
 
     def __iter__(self):
         for item in self._data_object:
             yield item
+
+    @staticmethod
+    def load(context):
+        raise Exception("Implement this!")
 
 
 class DatabaseModelBase(ModelBase):
@@ -178,8 +184,6 @@ class DatabaseModelBase(ModelBase):
     def save(self):
         if not self.is_valid():
             raise InvalidModelError(self.errors)
-#        self._convert_columns_to_proper_type()
-#        self._before_save()
         self['updated_at'] = utils.utcnow()
         LOG.debug("Saving %s: %s" % (self.__class__.__name__, self.__dict__))
         return db.db_api.save(self)
