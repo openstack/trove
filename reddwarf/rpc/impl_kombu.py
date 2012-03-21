@@ -670,7 +670,7 @@ def cast(context, topic, msg):
 
 def cast_with_consumer(context, topic, msg):
     """Sends a message on a topic without waiting for a response."""
-    return rpc_amqp.cast(context, topic, msg, Connection.pool)
+    return rpc_amqp.cast_with_consumer(context, topic, msg, Connection.pool)
 
 
 def fanout_cast(context, topic, msg):

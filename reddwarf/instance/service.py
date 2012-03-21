@@ -75,14 +75,14 @@ class InstanceController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        servers = models.Instances(context).data()
+        servers = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstancesView(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("Getting a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
@@ -96,7 +96,7 @@ class InstanceController(BaseController):
             #    this to get the message
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceView(server), 201)
+        return wsgi.Result(views.InstanceView(server).data(), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""

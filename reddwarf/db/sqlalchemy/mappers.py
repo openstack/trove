@@ -30,6 +30,8 @@ def map(engine, models):
     orm.mapper(models['instance'], Table('instances', meta, autoload=True))
     orm.mapper(models['service_image'],
                Table('service_images', meta, autoload=True))
+    orm.mapper(models['service_statuses'],
+               Table('service_statuses', meta, autoload=True))
 
 
 def mapping_exists(model):
