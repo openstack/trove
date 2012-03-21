@@ -33,7 +33,7 @@ class InstanceView(object):
         }
         if not self.instance.is_building:
             instance_dict["addresses"] = self.instance.addresses
-        return { "instance": instance_dict }
+        return {"instance": instance_dict}
 
 
 class InstancesView(object):

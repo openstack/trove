@@ -34,10 +34,9 @@ meta = MetaData()
 
 service_statuses = Table('service_statuses', meta,
     Column('id', String(36), primary_key=True, nullable=False),
-    Column('instance_id', String(36)),
-    Column('service_name', String(64)),
-    Column('status_id', Integer()),
-    Column('status_description', String(64)))
+    Column('instance_id', String(36), nullable=False),
+    Column('status_id', Integer(), nullable=False),
+    Column('status_description', String(64), nullable=False))
 
 
 def upgrade(migrate_engine):
