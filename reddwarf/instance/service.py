@@ -64,13 +64,13 @@ class InstanceController(BaseController):
     def detail(self, req, tenant_id):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("Detailing a database instance for tenant '%s'" % tenant_id)
         return self.index(req, tenant_id)
 
     def index(self, req, tenant_id):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("Indexing a database instance for tenant '%s'" % tenant_id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
@@ -82,7 +82,7 @@ class InstanceController(BaseController):
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Getting a database instance for tenant '%s'" % tenant_id)
+        LOG.info("Showing a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
@@ -101,7 +101,7 @@ class InstanceController(BaseController):
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
         LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
+        LOG.info("Deleting a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
