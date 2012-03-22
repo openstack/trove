@@ -35,10 +35,10 @@ from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
 
 CONFIG = config.Config
-LOG = logging.getLogger('reddwarf.database.models')
+LOG = logging.getLogger(__name__)
 
 
-def load_server_or_raise(client, uuid):
+def load_server(client, uuid):
     """Loads a server or raises an exception."""
     if uuid is None:
         raise TypeError("Argument uuid not defined.")
@@ -51,11 +51,11 @@ def load_server_or_raise(client, uuid):
     return server
 
 
-def delete_server_or_raise(server):
+def delete_server(client, server_id):
     try:
-        server.delete()
+        client.servers.delete(server_id)
     except nova_exceptions.NotFound, e:
-        raise rd_exceptions.NotFound(uuid=uuid)
+        raise rd_exceptions.NotFound(uuid=server_id)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError()
 
@@ -79,7 +79,7 @@ class Instance(object):
             raise TypeError("Argument uuid not defined.")
         client = create_nova_client(context)
         db_info = DBInstance.find_by(id=uuid)
-        server = load_server_or_raise(client,
+        server = load_server(client,
                                       db_info.compute_instance_id)
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=uuid)
@@ -87,16 +87,32 @@ class Instance(object):
 
     @classmethod
     def delete(cls, context, uuid):
-        instance = cls.load(context, uuid)
-        delete_server_or_raise(instance.server)
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        if uuid is None:
+            raise TypeError("Argument uuid not defined.")
+        LOG.debug("Deleting instance %s..." % uuid)
+        LOG.debug("Creating nova client...")
+        client = create_nova_client(context)
+        instance_info = DBInstance.find_by(id=uuid)
+        LOG.debug("  ... deleting compute id = %s" %
+                  instance_info.compute_instance_id)
+        delete_server(client, instance_info.compute_instance_id)
+        LOG.debug(" ... setting status to DELETING.")
+        instance_info.task_status = InstanceTasks.DELETING
+        instance_info.save()
+        #TODO(tim.simpson): Put this in the task manager somehow to shepard
+        #                   deletion?
 
     @classmethod
     def create(cls, context, name, flavor_ref, image_id):
         client = create_nova_client(context)
         server = client.servers.create(name, image_id, flavor_ref)
+        LOG.debug("Created new compute instance %s." % server.id)
         db_info = DBInstance.create(name=name,
             compute_instance_id=server.id,
             task_status=InstanceTasks.BUILDING)
+        LOG.debug("Created new Reddwarf instance %s..." % db_info.id)
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
@@ -109,7 +125,7 @@ class Instance(object):
 
     @property
     def is_building(self):
-        return self.status == "BUILDING"
+        return self.status in ["BUILDING"]
 
     @property
     def name(self):
@@ -119,7 +135,10 @@ class Instance(object):
     def status(self):
         #TODO(tim.simpson): Introduce logic to determine status as a function
         # of the current task progress, service status, and server status.
-        return "BUILDING"
+        if self.db_info.task_status == InstanceTasks.BUILDING:
+            return "BUILDING"
+        if self.db_info.task_status == InstanceTasks.DELETING:
+            return "SHUTDOWN"
 
     @property
     def created(self):
