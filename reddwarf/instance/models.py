@@ -62,6 +62,15 @@ def delete_server(client, server_id):
         raise rd_exceptions.ReddwarfError()
 
 
+class InstanceStatus(object):
+
+    ACTIVE = "ACTIVE"
+    BLOCKED = "BLOCKED"
+    BUILD = "BUILD"
+    FAILED = "FAILED"
+    SHUTDOWN = "SHUTDOWN"
+
+
 class Instance(object):
 
     _data_fields = ['name', 'status', 'id', 'created', 'updated',
@@ -127,7 +136,7 @@ class Instance(object):
 
     @property
     def is_building(self):
-        return self.status in ["BUILDING"]
+        return self.status in [InstanceStatus.BUILD]
 
     @property
     def name(self):
@@ -138,9 +147,9 @@ class Instance(object):
         #TODO(tim.simpson): Introduce logic to determine status as a function
         # of the current task progress, service status, and server status.
         if self.db_info.task_status == InstanceTasks.BUILDING:
-            return "BUILDING"
+            return InstanceStatus.BUILD
         if self.db_info.task_status == InstanceTasks.DELETING:
-            return "SHUTDOWN"
+            return InstanceStatus.SHUTDOWN
 
     @property
     def created(self):
