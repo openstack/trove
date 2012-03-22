@@ -33,9 +33,10 @@ keystone --endpoint http://localhost:35357/v2.0 --token be19c524ddc92109a224 use
                                  --user $REDDWARF_USER \
                                  --role $REDDWARF_ROLE
 # These are the values
-REDDWARF_TENANT=reddwarf
+#REDDWARF_TENANT=reddwarf
+REDDWARF_TENANT=`keystone --endpoint http://localhost:35357/v2.0 --token be19c524ddc92109a224 tenant-list| grep reddwarf | cut -d ' ' -f 2`
 echo $REDDWARF_TENANT
-REDDWARF_USER=$(mysql keystone -e "select id from user where name='reddwarf';" | awk 'NR==2')
+REDDWARF_USER=`keystone --endpoint http://localhost:35357/v2.0 --token be19c524ddc92109a224 user-list| grep reddwarf | cut -d ' ' -f 2`
 echo $REDDWARF_USER
 REDDWARF_TOKEN=$(curl -d '{"auth":{"passwordCredentials":{"username": "reddwarf", "password": "REDDWARF-PASS"},"tenantName":"reddwarf"}}' -H "Content-type: application/json" http://localhost:35357/v2.0/tokens | python -mjson.tool | grep id | tr -s ' ' | cut -d ' ' -f 3 | sed s/\"/''/g | awk 'NR==2' | cut -d ',' -f 1)
 echo $REDDWARF_TOKEN

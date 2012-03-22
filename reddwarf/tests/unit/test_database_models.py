@@ -19,6 +19,7 @@ import novaclient
 
 from reddwarf import tests
 from reddwarf.common import utils
+from reddwarf.common import exception
 from reddwarf.instance import models
 from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.tests.factories import models as factory_models
@@ -88,3 +89,9 @@ class TestInstance(tests.BaseTest):
         self.assertEqual(instance['task_id'], InstanceTasks.BUILDING.code)
         self.assertEqual(instance['task_description'],
                          InstanceTasks.BUILDING.db_text)
+
+    def test_create_instance_data_without_flavorref(self):
+        #todo(cp16net) fix this to work with the factory
+        self.mock_out_client()
+        self.FAKE_SERVER.flavor = None
+        self.assertRaises(exception.BadRequest, factory_models.Instance())

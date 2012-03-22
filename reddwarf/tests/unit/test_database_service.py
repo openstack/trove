@@ -55,11 +55,12 @@ class TestInstanceController(ControllerTestBase):
         super(TestInstanceController, self).setUp()
 
     # TODO(hub-cap): Start testing the failure cases
-    # def test_show_broken(self):
-    #     response = self.app.get("%s/%s" % (self.instances_path,
-    #                                        self.DUMMY_INSTANCE_ID),
-    #                                        headers={'X-Auth-Token': '123'})
-    #     self.assertEqual(response.status_int, 404)
+    def test_show_broken(self):
+        raise SkipTest()
+        response = self.app.get("%s/%s" % (self.instances_path,
+                                           self.DUMMY_INSTANCE_ID),
+                                headers={'X-Auth-Token': '123'})
+        self.assertEqual(response.status_int, 404)
 
     def test_show(self):
         raise SkipTest()

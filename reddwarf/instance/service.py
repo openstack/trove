@@ -25,6 +25,7 @@ from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.instance import models, views
+from reddwarf.common import exception as rd_exceptions
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPBadRequest: [
             models.InvalidModelError,
+            exception.BadRequest,
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
@@ -58,6 +60,23 @@ class BaseController(wsgi.Controller):
                                                   *self.exclude_attr))
 
 
+class api_validation:
+    """ api validation wrapper """
+    def __init__(self, action=None):
+        self.action = action
+
+    def __call__(self, f):
+        """
+        Apply validation of the api body
+        """
+        def wrapper(*args, **kwargs):
+            body = kwargs['body']
+            if self.action == 'create':
+                InstanceController._validate(body)
+            return f(*args, **kwargs)
+        return wrapper
+
+
 class InstanceController(BaseController):
     """Controller for instance functionality"""
 
@@ -65,6 +84,7 @@ class InstanceController(BaseController):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Detailing a database instance for tenant '%s'" % tenant_id)
+        #TODO(cp16net) return a detailed list instead of index
         return self.index(req, tenant_id)
 
     def index(self, req, tenant_id):
@@ -94,6 +114,7 @@ class InstanceController(BaseController):
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
+            LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(server).data(), 201)
@@ -107,15 +128,14 @@ class InstanceController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        # TODO(cp16net) : need to handle exceptions here if the delete fails
         models.Instance.delete(context=context, uuid=id)
-
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 
+    @api_validation(action="create")
     def create(self, req, body, tenant_id):
         # find the service id (cant be done yet at startup due to
-        # inconsitencies w/ the load app paste
+        # inconsistencies w/ the load app paste
         # TODO(hub-cap): figure out how to get this to work in __init__ time
         # TODO(hub-cap): The problem with this in __init__ is that the paste
         #   config is generated w/ the same config file as the db flags that
@@ -140,6 +160,97 @@ class InstanceController(BaseController):
 
         #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceView(instance).data(), 201)
+
+    @staticmethod
+    def _validate_empty_body(body):
+        """Check that the body is not empty"""
+        if not body:
+            msg = "The request contains an empty body"
+            raise rd_exceptions.ReddwarfError(msg)
+
+    @staticmethod
+    def _validate_volume_size(size):
+        """Validate the various possible errors for volume size"""
+        try:
+            volume_size = float(size)
+        except (ValueError, TypeError) as err:
+            LOG.error(err)
+            msg = ("Required element/key - instance volume"
+                   "'size' was not specified as a number")
+            raise rd_exceptions.ReddwarfError(msg)
+        if int(volume_size) != volume_size or int(volume_size) < 1:
+            msg = ("Volume 'size' needs to be a positive "
+                   "integer value, %s cannot be accepted."
+                   % volume_size)
+            raise rd_exceptions.ReddwarfError(msg)
+        #TODO(cp16net) add in the volume validation when volumes are supported
+#        max_size = FLAGS.reddwarf_max_accepted_volume_size
+#        if int(volume_size) > max_size:
+#            msg = ("Volume 'size' cannot exceed maximum "
+#                   "of %d Gb, %s cannot be accepted."
+#                   % (max_size, volume_size))
+#            raise rd_exceptions.ReddwarfError(msg)
+
+    @staticmethod
+    def _validate(body):
+        """Validate that the request has all the required parameters"""
+        InstanceController._validate_empty_body(body)
+        try:
+            body['instance']
+            body['instance']['flavorRef']
+            # TODO(cp16net) add in volume to the mix
+#            volume_size = body['instance']['volume']['size']
+        except KeyError as e:
+            LOG.error("Create Instance Required field(s) - %s" % e)
+            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+                                       "was not specified" % e)
+#        Instance._validate_volume_size(volume_size)
+
+    @staticmethod
+    def _validate_resize_instance(body):
+        """ Validate that the resize body has the attributes for flavorRef """
+        try:
+            body['resize']
+            body['resize']['flavorRef']
+        except KeyError as e:
+            LOG.error("Resize Instance Required field(s) - %s" % e)
+            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+                                       "was not specified" % e)
+
+    @staticmethod
+    def _validate_single_resize_in_body(body):
+        # Validate body resize does not have both volume and flavorRef
+        try:
+            resize = body['resize']
+            if 'volume' in resize and 'flavorRef' in resize:
+                msg = ("Not allowed to resize volume "
+                       "and flavor at the same time")
+                LOG.error(msg)
+                raise rd_exceptions.ReddwarfError(msg)
+        except KeyError as e:
+            LOG.error("Resize Instance Required field(s) - %s" % e)
+            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+                                              "was not specified" % e)
+
+    @staticmethod
+    def _validate_resize(body, old_volume_size):
+        """
+        We are going to check that volume resizing data is present.
+        """
+        InstanceController._validate_empty_body(body)
+        try:
+            body['resize']
+            body['resize']['volume']
+            new_volume_size = body['resize']['volume']['size']
+        except KeyError as e:
+            LOG.error("Resize Instance Required field(s) - %s" % e)
+            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+                                       "was not specified" % e)
+        Instance._validate_volume_size(new_volume_size)
+        if int(new_volume_size) <= old_volume_size:
+            raise rd_exceptions.ReddwarfError("The new volume 'size' cannot "
+                                       "be less than the current volume size "
+                                       "of '%s'" % old_volume_size)
 
 
 class API(wsgi.Router):
