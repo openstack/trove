@@ -40,6 +40,7 @@ from sqlalchemy.sql.expression import text
 
 from reddwarf import db
 from reddwarf.common.exception import ProcessExecutionError
+from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
 from reddwarf.instance import models
@@ -266,18 +267,17 @@ class DBaaSAgent(object):
         preparer.prepare()
         self.create_database(databases)
         PREPARING = False
-        # TODO(hub-cap):fix this UGLY hack!
-        global UUID
-        UUID = uuid
+        # Writing the UUID to the guest agent guest_info file
+        conf_loc = '%s/%s' % (config.Config.get('here'), 'conf.d/guest_info')
+        config.Config.write_config_values('reddwarf-guestagent',
+            {'config_file': conf_loc}, None, guest_id=uuid)
 
     def update_status(self):
         """Update the status of the MySQL service"""
         global MYSQLD_ARGS
         global PREPARING
-        # TODO(hub-cap):fix this UGLY hack!
-        global UUID
-        # instance_id = guest_utils.get_instance_id()
-        status = models.InstanceServiceStatus.find_by(instance_id=UUID)
+        id = config.Config.get('guest_id')
+        status = models.InstanceServiceStatus.find_by(instance_id=id)
 
         if PREPARING:
             status.set_status(models.ServiceStatuses.BUILDING)
