@@ -17,8 +17,8 @@ rabbit_password=f7999d1955c5014aa32c
 # SQLAlchemy connection string for the reference implementation
 # registry server. Any valid SQLAlchemy connection string is fine.
 # See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine
-sql_connection = sqlite:///reddwarf_test.sqlite
-# sql_connection = mysql://root:root@localhost/reddwarf
+# sql_connection = sqlite:///reddwarf_test.sqlite
+sql_connection = mysql://root:e1a2c042c828d3566d0a@localhost/reddwarf
 #sql_connection = postgresql://reddwarf:reddwarf@localhost/reddwarf
 
 # Period in seconds after which SQLAlchemy should reestablish its connection

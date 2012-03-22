@@ -40,7 +40,7 @@ from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import service
 # TODO(hub-cap): find out why the db api isint being imported properly
-#from reddwarf.db import db_api
+from reddwarf.db import db_api
 
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     try:
         conf, app = config.Config.load_paste_app('reddwarf-guestagent',
                                                  options, args)
-        # db_api.configure_db(conf)
+        db_api.configure_db(conf)
         server = service.Service.create(binary='reddwarf-guestagent',
                                         host=socket.gethostname())
         service.serve(server)
