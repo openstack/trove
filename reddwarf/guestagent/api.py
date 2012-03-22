@@ -125,7 +125,8 @@ class API(object):
         rpc.cast_with_consumer(context, self._get_routing_key(context, id),
                  {"method": "prepare",
                   "args": {"databases": databases,
-                           "memory_mb": memory_mb}
+                           "memory_mb": memory_mb,
+                           "uuid": id}
                  })
 
     def restart(self, context, id):

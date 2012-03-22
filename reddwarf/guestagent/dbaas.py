@@ -38,13 +38,11 @@ from sqlalchemy import exc
 from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
-# from nova.compute import power_state
-# from nova.exception import ProcessExecutionError
-# from reddwarf.db import api as dbapi
+from reddwarf import db
 from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import utils
-# from reddwarf.guestagent import utils as guest_utils
 from reddwarf.guestagent.db import models
+from reddwarf.instance import models
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -53,6 +51,7 @@ FLUSH = text("""FLUSH PRIVILEGES;""")
 ENGINE = None
 MYSQLD_ARGS = None
 PREPARING = False
+UUID = False
 
 
 def generate_random_password():
@@ -256,7 +255,7 @@ class DBaaSAgent(object):
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
 
-    def prepare(self, databases, memory_mb):
+    def prepare(self, databases, memory_mb, uuid):
         """Makes ready DBAAS on a Guest container."""
         global PREPARING
         PREPARING = True
@@ -267,46 +266,48 @@ class DBaaSAgent(object):
         preparer.prepare()
         self.create_database(databases)
         PREPARING = False
+        # TODO(hub-cap):fix this UGLY hack!
+        global UUID
+        UUID = uuid
 
     def update_status(self):
         """Update the status of the MySQL service"""
         global MYSQLD_ARGS
         global PREPARING
+        # TODO(hub-cap):fix this UGLY hack!
+        global UUID
         # instance_id = guest_utils.get_instance_id()
+        status = models.InstanceServiceStatus.find_by(instance_id=UUID)
 
         if PREPARING:
-            #TODO(hub-cap): Fix the guest_status_update
-            # dbapi.guest_status_update(instance_id, power_state.BUILDING)
+            status.set_status(models.ServiceStatuses.BUILDING)
+            status.save()
             return
 
         try:
             out, err = utils.execute("/usr/bin/mysqladmin", "ping",
                                      run_as_root=True)
-            #TODO(hub-cap): Fix the guest_status_update
-            # dbapi.guest_status_update(instance_id, power_state.RUNNING)
+            status.set_status(models.ServiceStatuses.RUNNING)
+            status.save()
         except ProcessExecutionError as e:
             try:
                 out, err = utils.execute("ps", "-C", "mysqld", "h")
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
-                #TODO(hub-cap): Fix the guest_status_update
-                # dbapi.guest_status_update(instance_id, power_state.BLOCKED)
+                status.set_status(models.ServiceStatuses.BLOCKED)
+                status.save()
             except ProcessExecutionError as e:
                 if not MYSQLD_ARGS:
                     MYSQLD_ARGS = load_mysqld_options()
                 pid_file = MYSQLD_ARGS.get('pid-file',
                                            '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
-                    pass
-                    #TODO(hub-cap): Fix the guest_status_update
-                    # dbapi.guest_status_update(instance_id,
-                    #                           power_state.CRASHED)
+                    status.set_status(models.ServiceStatuses.CRASHED)
+                    status.save()
                 else:
-                    pass
-                    #TODO(hub-cap): Fix the guest_status_update
-                    # dbapi.guest_status_update(instance_id,
-                    #                           power_state.SHUTDOWN)
+                    status.set_status(models.ServiceStatuses.SHUTDOWN)
+                    status.save()
 
 
 class LocalSqlClient(object):
