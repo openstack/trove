@@ -16,6 +16,8 @@
 #    under the License.
 """Routines for configuring Reddwarf."""
 
+import re
+
 from reddwarf.openstack.common import config as openstack_config
 
 
@@ -41,6 +43,33 @@ class Config(object):
         conf_file, conf = openstack_config.load_paste_config(*args, **kwargs)
         cls.instance = conf
         return conf
+
+    @classmethod
+    def append_to_config_values(cls, *args):
+        config_file = openstack_config.find_config_file(*args)
+        if not config_file:
+            raise RuntimeError("Unable to locate any configuration file. "
+                                "Cannot load application %s" % app_name)
+        # Now take the conf file values and append them to the current conf
+        with open(config_file, 'r') as conf:
+            for line in conf.readlines():
+                    m = re.match("\s*([^#]\S+)\s*=\s*(\S+)\s*", line)
+                    if m:
+                        cls.instance[m.group(1)] = m.group(2)
+
+    @classmethod
+    def write_config_values(cls, *args, **kwargs):
+        # Pass in empty kwargs so it doesnt mess up the config find
+        config_file = openstack_config.find_config_file(*args)
+        if not config_file:
+            raise RuntimeError("Unable to locate any configuration file. "
+                                "Cannot load application %s" % app_name)
+        with open(config_file, 'a') as conf:
+            for k, v in kwargs.items():
+                # Start with newline to be sure its on a new line
+                conf.write("\n%s=%s" % (k, v))
+        # Now append them to the cls instance
+        cls.append_to_config_values(*args)
 
     @classmethod
     def get(cls, key, default=None):

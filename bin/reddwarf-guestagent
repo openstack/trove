@@ -53,6 +53,10 @@ if __name__ == '__main__':
     try:
         conf, app = config.Config.load_paste_app('reddwarf-guestagent',
                                                  options, args)
+        # Use the config file location for putting the new config values
+        conf_loc = '%s/%s' % (config.Config.get('here'), 'conf.d/guest_info')
+        config.Config.append_to_config_values('reddwarf-guestagent',
+            {'config_file': conf_loc}, None)
         db_api.configure_db(conf)
         server = service.Service.create(binary='reddwarf-guestagent',
                                         host=socket.gethostname())
