@@ -128,7 +128,21 @@ class InstanceController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        models.Instance.delete(context=context, uuid=id)
+        try:
+            # TODO(hub-cap): start testing the failure cases here
+            instance = models.Instance.load(context=context, uuid=id)
+        except exception.ReddwarfError, e:
+            # TODO(hub-cap): come up with a better way than
+            #    this to get the message
+            LOG.error(e)
+            return wsgi.Result(str(e), 404)
+        try:
+            instance.delete()
+        except exception.UnprocessableEntity as ue:
+            #TODO(tim.simpson): Figure out someway to surface the code from
+            #                   exceptions like this automatically.
+            return wsgi.Result(str(ue), ue.code)
+
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
 

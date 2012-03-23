@@ -52,16 +52,6 @@ def load_server(client, uuid):
     return server
 
 
-def delete_server(client, server_id):
-    try:
-        client.servers.delete(server_id)
-    except nova_exceptions.NotFound, e:
-        #TODO(cp16net) would this be the wrong id to show the user?
-        raise rd_exceptions.NotFound(uuid=server_id)
-    except nova_exceptions.ClientException, e:
-        raise rd_exceptions.ReddwarfError()
-
-
 class InstanceStatus(object):
 
     ACTIVE = "ACTIVE"
@@ -69,6 +59,13 @@ class InstanceStatus(object):
     BUILD = "BUILD"
     FAILED = "FAILED"
     SHUTDOWN = "SHUTDOWN"
+
+
+# If the compute server is in any of these states we can't delete it.
+SERVER_INVALID_DELETE_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
+
+# Statuses in which an instance can have an action performed.
+VALID_ACTION_STATUSES = ["ACTIVE"]
 
 
 class Instance(object):
@@ -96,24 +93,27 @@ class Instance(object):
         service_status = InstanceServiceStatus.find_by(instance_id=uuid)
         return Instance(context, db_info, server, service_status)
 
-    @classmethod
-    def delete(cls, context, uuid):
-        if context is None:
-            raise TypeError("Argument context not defined.")
-        if uuid is None:
-            raise TypeError("Argument uuid not defined.")
-        LOG.debug("Deleting instance %s..." % uuid)
-        LOG.debug("Creating nova client...")
-        client = create_nova_client(context)
-        instance_info = DBInstance.find_by(id=uuid)
+    def delete(self, force=False):
+        LOG.debug("Deleting instance %s..." % self.id)
+        if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
+            raise rd_exceptions.UnprocessableEntity
+
         LOG.debug("  ... deleting compute id = %s" %
-                  instance_info.compute_instance_id)
-        delete_server(client, instance_info.compute_instance_id)
+                  self.server.id)
+        self._delete_server()
         LOG.debug(" ... setting status to DELETING.")
-        instance_info.task_status = InstanceTasks.DELETING
-        instance_info.save()
+        self.db_info.task_status = InstanceTasks.DELETING
+        self.db_info.save()
         #TODO(tim.simpson): Put this in the task manager somehow to shepard
         #                   deletion?
+
+    def _delete_server(self):
+        try:
+            self.server.delete()
+        except nova_exceptions.NotFound, e:
+            raise rd_exceptions.NotFound(uuid=self.id)
+        except nova_exceptions.ClientException, e:
+            raise rd_exceptions.ReddwarfError()
 
     @classmethod
     def create(cls, context, name, flavor_ref, image_id):
@@ -139,17 +139,32 @@ class Instance(object):
         return self.status in [InstanceStatus.BUILD]
 
     @property
+    def is_sql_running(self):
+        """True if the service status indicates MySQL is up and running."""
+        return service_status.status in MYSQL_RESPONSIVE_STATUSES
+
+    @property
     def name(self):
         return self.server.name
 
     @property
     def status(self):
-        #TODO(tim.simpson): Introduce logic to determine status as a function
-        # of the current task progress, service status, and server status.
-        if self.db_info.task_status == InstanceTasks.BUILDING:
+        #TODO(tim.simpson): As we enter more advanced cases dealing with
+        # timeouts determine if the task_status should be integrated here
+        # or removed entirely.
+        # If the server is in any of these states they take precedence.
+        if self.server.status in ["ERROR", "REBOOT", "RESIZE"]:
+            return self.server.status
+        # The service is only paused during a reboot.
+        if ServiceStatuses.PAUSED == self.service_status.status:
+            return "REBOOT"
+        if ServiceStatuses.NEW == self.service_status.status:
+            return "REBOOT"
+        # If the service status is NEW, then we are building.
+        if self.service_status.status == ServiceStatuses.NEW:
             return InstanceStatus.BUILD
-        if self.db_info.task_status == InstanceTasks.DELETING:
-            return InstanceStatus.SHUTDOWN
+        # For everything else we can look at the service status mapping.
+        return self.service_status.status.api_status
 
     @property
     def created(self):
@@ -182,6 +197,16 @@ class Instance(object):
         for link in links:
             link['href'] = link['href'].replace('servers', 'instances')
         return links
+
+    def _validate_can_perform_action(self):
+        """
+        Raises an exception if the instance can't perform an action.
+        """
+        if self.status not in VALID_ACTION_STATUSES:
+            msg = "Instance is not currently available for an action to be " \
+                  "performed. Status [%s]" % self.status
+            LOG.debug(msg)
+            raise rd_exceptions.UnprocessableEntity(msg)
 
 
 class Instances(object):
@@ -397,6 +422,9 @@ class ServiceStatuses(object):
     BUILDING = ServiceStatus(0x09, 'building', 'BUILD')
     UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
     NEW = ServiceStatus(0x17, 'new', 'NEW')
+
+
+MYSQL_RESPONSIVE_STATUSES = [ServiceStatuses.RUNNING]
 
 
 # Dissuade further additions at run-time.

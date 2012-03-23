@@ -17,6 +17,7 @@
 """I totally stole most of this from melange, thx guys!!!"""
 
 from reddwarf.openstack.common import exception as openstack_exception
+from webob import exc
 
 
 ClientConnectionError = openstack_exception.ClientConnectionError
@@ -58,3 +59,11 @@ class GuestError(ReddwarfError):
 class BadRequest(openstack_exception.MalformedRequestBody):
 
     message = _("Required element/key - %(key)s was not specified")
+
+
+class UnprocessableEntity(exc.HTTPUnprocessableEntity, ReddwarfError):
+    def __init__(self, message="Unable to process the contained request"):
+        self.explanation = message
+        self.code = 422
+        errstr = '%s: %s' % (self.code, self.explanation)
+        super(UnprocessableEntity, self).__init__(errstr)
