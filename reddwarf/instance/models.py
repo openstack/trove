@@ -149,15 +149,19 @@ class Instance(object):
 
     @property
     def status(self):
+        #TODO(tim.simpson): As we enter more advanced cases dealing with
+        # timeouts determine if the task_status should be integrated here
+        # or removed entirely.
         # If the server is in any of these states they take precedence.
         if self.server.status in ["ERROR", "REBOOT", "RESIZE"]:
             return self.server.status
         # The service is only paused during a reboot.
         if ServiceStatuses.PAUSED == self.service_status.status:
             return "REBOOT"
-        # The service status is NEW when we first build.
-        if self.db_info.task_status == InstanceTasks.BUILDING and \
-            self.service_status.status == ServiceStatuses.NEW:
+        if ServiceStatuses.NEW == self.service_status.status:
+            return "REBOOT"
+        # If the service status is NEW, then we are building.
+        if self.service_status.status == ServiceStatuses.NEW:
             return InstanceStatus.BUILD
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
