@@ -96,7 +96,8 @@ class Instance(object):
     def delete(self, force=False):
         LOG.debug("Deleting instance %s..." % self.id)
         if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
-            raise rd_exceptions.UnprocessableEntity
+            raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
+                                                    % self.id)
 
         LOG.debug("  ... deleting compute id = %s" %
                   self.server.id)
@@ -158,10 +159,8 @@ class Instance(object):
         # The service is only paused during a reboot.
         if ServiceStatuses.PAUSED == self.service_status.status:
             return "REBOOT"
-        if ServiceStatuses.NEW == self.service_status.status:
-            return "REBOOT"
         # If the service status is NEW, then we are building.
-        if self.service_status.status == ServiceStatuses.NEW:
+        if ServiceStatuses.NEW == self.service_status.status:
             return InstanceStatus.BUILD
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
