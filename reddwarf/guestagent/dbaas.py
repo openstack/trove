@@ -43,7 +43,6 @@ from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
-from reddwarf.instance import models
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
