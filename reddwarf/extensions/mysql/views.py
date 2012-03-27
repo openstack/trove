@@ -41,3 +41,31 @@ class UsersView(object):
             data.append(UserView(user).data())
 
         return data
+
+
+class SchemaView(object):
+
+    def __init__(self, schema):
+        self.schema = schema
+
+    def data(self):
+        schema_dict = {
+            "name": self.schema.name,
+            "collate": self.schema.collate,
+            "character_set": self.schema.character_set
+        }
+        return {"databases": schema_dict}
+
+
+class SchemasView(object):
+
+    def __init__(self, schemas):
+        self.schemas = schemas
+
+    def data(self):
+        data = []
+        # These are model instances
+        for schema in self.schemas:
+            data.append(SchemaView(schema).data())
+
+        return data

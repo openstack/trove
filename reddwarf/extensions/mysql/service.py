@@ -73,6 +73,37 @@ class UserController(BaseController):
 class SchemaController(BaseController):
     """Controller for instance functionality"""
 
-    def index(self, req, tenant_id):
+    def index(self, req, tenant_id, instance_id):
         """Return all schemas."""
-        return "Schema list"
+        LOG.info("Listing schemas for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        schemas = models.Schemas.load(context, instance_id)
+        # Not exactly sure why we cant return a wsgi.Result() here
+        return views.SchemasView(schemas).data()
+
+    def create(self, req, body, tenant_id, instance_id):
+        """Creates a set of schemas"""
+        LOG.info("Creating schema for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("body : '%s'\n\n" % body)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        schemas = body['databases']
+        model_schemas = models.populate_databases(schemas)
+        models.Schema.create(context, instance_id, model_schemas)
+        return webob.exc.HTTPAccepted()
+
+    def delete(self, req, tenant_id, instance_id, id):
+        LOG.info("Deleting schema for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        schema = guest_models.MySQLDatabase()
+        schema.name = id
+        models.Schema.delete(context, instance_id, schema.serialize())
+        return webob.exc.HTTPAccepted()

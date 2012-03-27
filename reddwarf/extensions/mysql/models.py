@@ -102,3 +102,36 @@ class Users(object):
                                     mysql_user.password,
                                     dbs))
         return model_users
+
+
+class Schema(object):
+
+    _data_fields = ['name', 'collate', 'character_set']
+
+    def __init__(self, name, collate, character_set):
+        self.name = name
+        self.collate = collate
+        self.character_set = character_set
+
+    @classmethod
+    def create(cls, context, instance_id, schemas):
+        guest_api.API().create_database(context, instance_id, schemas)
+
+    @classmethod
+    def delete(cls, context, instance_id, schema):
+        guest_api.API().delete_database(context, instance_id, schema)
+
+
+class Schemas(object):
+
+    @classmethod
+    def load(cls, context, instance_id):
+        schema_list = guest_api.API().list_databases(context, instance_id)
+        model_schemas = []
+        for schema in schema_list:
+            mysql_schema = guest_models.MySQLDatabase()
+            mysql_schema.deserialize(schema)
+            model_schemas.append(Schema(mysql_schema.name,
+                                        mysql_schema.collate,
+                                        mysql_schema.character_set))
+        return model_schemas
