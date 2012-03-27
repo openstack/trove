@@ -12,3 +12,4 @@ reddwarf/vcsversion.py
 covhtml/
 .DS_Store
 host-syslog.log
+tags

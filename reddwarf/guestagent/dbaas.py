@@ -43,7 +43,7 @@ from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
-from reddwarf.instance import models
+from reddwarf.instance import models as rd_models
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -277,17 +277,17 @@ class DBaaSAgent(object):
         global MYSQLD_ARGS
         global PREPARING
         id = config.Config.get('guest_id')
-        status = models.InstanceServiceStatus.find_by(instance_id=id)
+        status = rd_models.InstanceServiceStatus.find_by(instance_id=id)
 
         if PREPARING:
-            status.set_status(models.ServiceStatuses.BUILDING)
+            status.set_status(rd_models.ServiceStatuses.BUILDING)
             status.save()
             return
 
         try:
             out, err = utils.execute("/usr/bin/mysqladmin", "ping",
                                      run_as_root=True)
-            status.set_status(models.ServiceStatuses.RUNNING)
+            status.set_status(rd_models.ServiceStatuses.RUNNING)
             status.save()
         except ProcessExecutionError as e:
             try:
@@ -295,7 +295,7 @@ class DBaaSAgent(object):
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
-                status.set_status(models.ServiceStatuses.BLOCKED)
+                status.set_status(rd_models.ServiceStatuses.BLOCKED)
                 status.save()
             except ProcessExecutionError as e:
                 if not MYSQLD_ARGS:
@@ -303,10 +303,10 @@ class DBaaSAgent(object):
                 pid_file = MYSQLD_ARGS.get('pid-file',
                                            '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
-                    status.set_status(models.ServiceStatuses.CRASHED)
+                    status.set_status(rd_models.ServiceStatuses.CRASHED)
                     status.save()
                 else:
-                    status.set_status(models.ServiceStatuses.SHUTDOWN)
+                    status.set_status(rd_models.ServiceStatuses.SHUTDOWN)
                     status.save()
 
 

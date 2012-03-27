@@ -17,50 +17,11 @@
 
 import logging
 
-from novaclient.v1_1.client import Client
-from reddwarf.common import config
 from reddwarf.common import extensions
+from reddwarf.extensions.mysql import service
 
 
-CONFIG = config.Config
-LOG = logging.getLogger('reddwarf.extensions.mysql')
-
-
-class BaseController(object):
-    """Base controller class."""
-
-    def __init__(self):
-        self.proxy_admin_user = CONFIG.get('reddwarf_proxy_admin_user',
-                                           'admin')
-        self.proxy_admin_pass = CONFIG.get('reddwarf_proxy_admin_pass',
-                                           '3de4922d8b6ac5a1aad9')
-        self.proxy_admin_tenant_name = CONFIG.get(
-            'reddwarf_proxy_admin_tenant_name', 'admin')
-        self.auth_url = CONFIG.get('reddwarf_auth_url',
-                                   'http://0.0.0.0:5000/v2.0')
-
-    def get_client(self, req):
-        proxy_token = req.headers["X-Auth-Token"]
-        client = Client(self.proxy_admin_user, self.proxy_admin_pass,
-            self.proxy_admin_tenant_name, self.auth_url, token=proxy_token)
-        client.authenticate()
-        return client
-
-
-class UserController(BaseController):
-    """Controller for instance functionality"""
-
-    def index(self, req, tenant_id):
-        """Return all users."""
-        return "User List"
-
-
-class SchemaController(BaseController):
-    """Controller for instance functionality"""
-
-    def index(self, req, tenant_id):
-        """Return all schemas."""
-        return "Schema list"
+LOG = logging.getLogger(__name__)
 
 
 class Mysql(extensions.ExtensionsDescriptor):
@@ -82,11 +43,13 @@ class Mysql(extensions.ExtensionsDescriptor):
 
     def get_resources(self):
         resources = []
-        resource = extensions.ResourceExtension('{tenant_id}/schemas',
-            SchemaController())
+        resource = extensions.ResourceExtension(
+            '{tenant_id}/schemas/{instance_id}',
+            service.SchemaController())
         resources.append(resource)
-        resource = extensions.ResourceExtension('{tenant_id}/users',
-            UserController())
+        resource = extensions.ResourceExtension(
+            '{tenant_id}/users/{instance_id}',
+            service.UserController())
         resources.append(resource)
 
         return resources
