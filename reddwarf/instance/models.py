@@ -38,15 +38,17 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-def load_server(client, uuid):
+def load_server(client, instance_id, server_id):
     """Loads a server or raises an exception."""
     if uuid is None:
         raise TypeError("Argument uuid not defined.")
     try:
-        server = client.servers.get(uuid)
+        server = client.servers.get(server_id)
     except nova_exceptions.NotFound, e:
         #TODO(cp16net) would this be the wrong id to show the user?
-        raise rd_exceptions.NotFound(uuid=uuid)
+        LOG.error("Server %s for instance %s was not found!"
+                  % (server_id, instance_id))
+        raise rd_exceptions.NotFound(uuid=instance_id)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
     return server
@@ -86,9 +88,11 @@ class Instance(object):
         elif uuid is None:
             raise TypeError("Argument uuid not defined.")
         client = create_nova_client(context)
-        db_info = DBInstance.find_by(id=uuid)
-        server = load_server(client,
-                                      db_info.compute_instance_id)
+        try:
+            db_info = DBInstance.find_by(id=uuid)
+        except rd_exceptions.NotFound:
+            raise rd_exceptions.NotFound(uuid=uuid)
+        server = load_server(client, db_info.id, db_info.compute_instance_id)
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=uuid)
         return Instance(context, db_info, server, service_status)
@@ -98,7 +102,6 @@ class Instance(object):
         if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
             raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
-
         LOG.debug("  ... deleting compute id = %s" %
                   self.server.id)
         self._delete_server()
@@ -162,6 +165,13 @@ class Instance(object):
         # If the service status is NEW, then we are building.
         if ServiceStatuses.NEW == self.service_status.status:
             return InstanceStatus.BUILD
+        if InstanceTasks.DELETING == self.db_info.task_status:
+            if self.server.status in ["ACTIVE", "SHUTDOWN"]:
+                return InstanceStatus.SHUTDOWN
+            else:
+                LOG.error("While shutting down instance %s: server had status "
+                          " %s." % (self.id, self.server.status))
+                return InstanceStatus.ERROR
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
 
