@@ -37,6 +37,10 @@ class User(object):
         self.password = password
         self.databases = databases
 
+    @classmethod
+    def create(cls, context, instance_id, users):
+        guest_api.API().create_user(context, instance_id, users)
+
 
 class Users(object):
 

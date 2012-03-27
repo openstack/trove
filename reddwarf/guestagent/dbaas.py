@@ -43,6 +43,7 @@ from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
+from reddwarf.instance import models as rd_models
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -111,15 +112,17 @@ class DBaaSAgent(object):
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
                 t = text("""CREATE USER `%s`@:host IDENTIFIED BY '%s';"""
-                         % (user.name, user.password))
+                         % (user.__dict__['name'], user.__dict__['password']))
                 client.execute(t, host=host)
-                for database in user.databases:
-                    mydb = models.MySQLDatabase()
-                    mydb.deserialize(database)
-                    t = text("""
-                            GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;"""
-                            % (mydb.name, user.name))
-                    client.execute(t, host=host)
+                databases = user.__dict__.get('databases')
+                if databases is not None:
+                    for database in databases:
+                        mydb = models.MySQLDatabase()
+                        mydb.deserialize({"name": database})
+                        t = text("""
+                                GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;"""
+                                % (mydb.__dict__['name'], user.__dict__['name']))
+                        client.execute(t, host=host)
 
     def list_users(self):
         """List users that have access to the database"""
@@ -276,17 +279,17 @@ class DBaaSAgent(object):
         global MYSQLD_ARGS
         global PREPARING
         id = config.Config.get('guest_id')
-        status = models.InstanceServiceStatus.find_by(instance_id=id)
+        status = rd_models.InstanceServiceStatus.find_by(instance_id=id)
 
         if PREPARING:
-            status.set_status(models.ServiceStatuses.BUILDING)
+            status.set_status(rd_models.ServiceStatuses.BUILDING)
             status.save()
             return
 
         try:
             out, err = utils.execute("/usr/bin/mysqladmin", "ping",
                                      run_as_root=True)
-            status.set_status(models.ServiceStatuses.RUNNING)
+            status.set_status(rd_models.ServiceStatuses.RUNNING)
             status.save()
         except ProcessExecutionError as e:
             try:
@@ -294,7 +297,7 @@ class DBaaSAgent(object):
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
-                status.set_status(models.ServiceStatuses.BLOCKED)
+                status.set_status(rd_models.ServiceStatuses.BLOCKED)
                 status.save()
             except ProcessExecutionError as e:
                 if not MYSQLD_ARGS:
@@ -302,10 +305,10 @@ class DBaaSAgent(object):
                 pid_file = MYSQLD_ARGS.get('pid-file',
                                            '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
-                    status.set_status(models.ServiceStatuses.CRASHED)
+                    status.set_status(rd_models.ServiceStatuses.CRASHED)
                     status.save()
                 else:
-                    status.set_status(models.ServiceStatuses.SHUTDOWN)
+                    status.set_status(rd_models.ServiceStatuses.SHUTDOWN)
                     status.save()
 
 

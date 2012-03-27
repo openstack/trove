@@ -16,6 +16,7 @@
 #    under the License.
 
 import logging
+import webob.exc
 
 from reddwarf.common import context as rd_context
 from reddwarf.common import wsgi
@@ -40,6 +41,18 @@ class UserController(BaseController):
         users = models.Users.load(context, instance_id)
         # Not exactly sure why we cant return a wsgi.Result() here
         return views.UsersView(users).data()
+
+    def create(self, req, body, tenant_id, instance_id):
+        """Creates a set of users"""
+        LOG.info("Creating users for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("body : '%s'\n\n" % body)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        users = body['users']
+        models.User.create(context, instance_id, users)
+        return webob.exc.HTTPAccepted()
 
 
 class SchemaController(BaseController):
