@@ -112,17 +112,15 @@ class DBaaSAgent(object):
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
                 t = text("""CREATE USER `%s`@:host IDENTIFIED BY '%s';"""
-                         % (user.__dict__['name'], user.__dict__['password']))
+                         % (user.name, user.password))
                 client.execute(t, host=host)
-                databases = user.__dict__.get('databases')
-                if databases is not None:
-                    for database in databases:
-                        mydb = models.MySQLDatabase()
-                        mydb.deserialize({"name": database})
-                        t = text("""
-                                GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;"""
-                                % (mydb.__dict__['name'], user.__dict__['name']))
-                        client.execute(t, host=host)
+                for database in user.databases:
+                    mydb = models.MySQLDatabase()
+                    mydb.deserialize(database)
+                    t = text("""
+                            GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;"""
+                            % (mydb.name, user.name))
+                    client.execute(t, host=host)
 
     def list_users(self):
         """List users that have access to the database"""

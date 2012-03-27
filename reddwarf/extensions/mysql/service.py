@@ -20,6 +20,7 @@ import webob.exc
 
 from reddwarf.common import context as rd_context
 from reddwarf.common import wsgi
+from reddwarf.guestagent.db import models as guest_models
 from reddwarf.extensions.mysql import models
 from reddwarf.extensions.mysql import views
 
@@ -35,6 +36,8 @@ class UserController(BaseController):
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
+        LOG.info("Listing users for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
@@ -51,7 +54,19 @@ class UserController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         users = body['users']
-        models.User.create(context, instance_id, users)
+        model_users = models.populate_users(users)
+        models.User.create(context, instance_id, model_users)
+        return webob.exc.HTTPAccepted()
+
+    def delete(self, req, tenant_id, instance_id, id):
+        LOG.info("Deleting user for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        user = guest_models.MySQLUser()
+        user.name = id
+        models.User.delete(context, instance_id, user.serialize())
         return webob.exc.HTTPAccepted()
 
 
