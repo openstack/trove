@@ -118,13 +118,15 @@ class Instance(object):
 
     @classmethod
     def create(cls, context, name, flavor_ref, image_id):
-        client = create_nova_client(context)
-        server = client.servers.create(name, image_id, flavor_ref)
-        LOG.debug("Created new compute instance %s." % server.id)
         db_info = DBInstance.create(name=name,
-            compute_instance_id=server.id,
             task_status=InstanceTasks.BUILDING)
         LOG.debug("Created new Reddwarf instance %s..." % db_info.id)
+        client = create_nova_client(context)
+        server = client.servers.create(name, image_id, flavor_ref, 
+                     files={"/etc/guest_info":"guest_id=%s" % db_info.id})
+        LOG.debug("Created new compute instance %s." % server.id)
+        db_info.compute_instance_id = server.id
+        db_info.save()
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
