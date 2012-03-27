@@ -23,12 +23,23 @@ from reddwarf import db
 
 from reddwarf.common import config
 from reddwarf.common import exception
+from reddwarf.instance import models as base_models
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.guestagent import api as guest_api
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
+def load_and_verify(context, instance_id):
+    # Load InstanceServiceStatus to verify if its running
+    instance = base_models.Instance.load(context, instance_id)
+    LOG.info("found instance %s" % instance)
+    LOG.info("is sql running %s" % instance.is_sql_running)
+    if not instance.is_sql_running:
+        raise exception.UnprocessableEntity(
+                    "Instance %s is not ready." % instance.id)
+    else:
+        return instance
 
 def populate_databases(dbs):
     """
@@ -77,10 +88,13 @@ class User(object):
 
     @classmethod
     def create(cls, context, instance_id, users):
+        # Load InstanceServiceStatus to verify if its running
+        load_and_verify(context, instance_id)
         guest_api.API().create_user(context, instance_id, users)
 
     @classmethod
     def delete(cls, context, instance_id, username):
+        load_and_verify(context, instance_id)
         guest_api.API().delete_user(context, instance_id, username)
 
 
@@ -88,6 +102,7 @@ class Users(object):
 
     @classmethod
     def load(cls, context, instance_id):
+        load_and_verify(context, instance_id)
         user_list = guest_api.API().list_users(context, instance_id)
         model_users = []
         for user in user_list:
@@ -115,10 +130,12 @@ class Schema(object):
 
     @classmethod
     def create(cls, context, instance_id, schemas):
+        load_and_verify(context, instance_id)
         guest_api.API().create_database(context, instance_id, schemas)
 
     @classmethod
     def delete(cls, context, instance_id, schema):
+        load_and_verify(context, instance_id)
         guest_api.API().delete_database(context, instance_id, schema)
 
 
@@ -126,6 +143,7 @@ class Schemas(object):
 
     @classmethod
     def load(cls, context, instance_id):
+        load_and_verify(context, instance_id)
         schema_list = guest_api.API().list_databases(context, instance_id)
         model_schemas = []
         for schema in schema_list:

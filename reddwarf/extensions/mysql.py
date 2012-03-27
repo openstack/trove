@@ -44,12 +44,16 @@ class Mysql(extensions.ExtensionsDescriptor):
     def get_resources(self):
         resources = []
         resource = extensions.ResourceExtension(
-            '{tenant_id}/schemas/{instance_id}',
-            service.SchemaController())
+            'databases',
+            service.SchemaController(),
+            parent={'member_name': 'instance',
+                     'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
         resource = extensions.ResourceExtension(
-            '{tenant_id}/users/{instance_id}',
-            service.UserController())
+            'users',
+            service.UserController(),
+            parent={'member_name': 'instance',
+                     'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
 
         return resources

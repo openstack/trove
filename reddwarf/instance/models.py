@@ -142,7 +142,7 @@ class Instance(object):
     @property
     def is_sql_running(self):
         """True if the service status indicates MySQL is up and running."""
-        return service_status.status in MYSQL_RESPONSIVE_STATUSES
+        return self.service_status.status in MYSQL_RESPONSIVE_STATUSES
 
     @property
     def name(self):
