@@ -67,7 +67,7 @@ class RootController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         is_root_enabled = models.Root.load(context, instance_id)
-        return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 201)
+        return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """ Enable the root user for the db instance """
@@ -77,7 +77,7 @@ class RootController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         root = models.Root.create(context, instance_id)
-        return wsgi.Result(views.RootCreatedView(root).data(), 201)
+        return wsgi.Result(views.RootCreatedView(root).data(), 200)
 
 
 class UserController(BaseController):
@@ -105,7 +105,7 @@ class UserController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         users = models.Users.load(context, instance_id)
-        return wsgi.Result(views.UsersView(users).data(), 201)
+        return wsgi.Result(views.UsersView(users).data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users"""
@@ -156,7 +156,7 @@ class SchemaController(BaseController):
                           tenant=tenant_id)
         schemas = models.Schemas.load(context, instance_id)
         # Not exactly sure why we cant return a wsgi.Result() here
-        return wsgi.Result(views.SchemasView(schemas).data(), 201)
+        return wsgi.Result(views.SchemasView(schemas).data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas"""
