@@ -16,6 +16,7 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
+import logging
 from reddwarf.openstack.common import exception as openstack_exception
 from webob import exc
 
@@ -23,6 +24,7 @@ from webob import exc
 ClientConnectionError = openstack_exception.ClientConnectionError
 ProcessExecutionError = openstack_exception.ProcessExecutionError
 DatabaseMigrationError = openstack_exception.DatabaseMigrationError
+LOG = logging.getLogger(__name__)
 wrap_exception = openstack_exception.wrap_exception
 
 
@@ -32,6 +34,11 @@ class ReddwarfError(openstack_exception.OpenstackException):
     def __init__(self, message=None, **kwargs):
         if message is not None:
             self.message = message
+        if self.internal_message:
+            try:
+                LOG.error(self.internal_message % kwargs)
+            except Exception:
+                LOG.error(self.internal_message)
         super(ReddwarfError, self).__init__(**kwargs)
 
 
@@ -48,6 +55,14 @@ class InvalidRPCConnectionReuse(ReddwarfError):
 class NotFound(ReddwarfError):
 
     message = _("Resource %(uuid)s cannot be found")
+
+
+class ComputeInstanceNotFound(NotFound):
+
+    internal_message = _("Cannot find compute instance %(server_id)s for "
+                         "instance %(instance_id)s.")
+
+    message = _("Resource %(instance_id)s can not be retrieved.")
 
 
 class GuestError(ReddwarfError):

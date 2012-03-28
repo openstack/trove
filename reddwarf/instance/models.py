@@ -38,15 +38,14 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-def load_server(client, instance_id, server_id):
+def load_server(context, instance_id, server_id):
     """Loads a server or raises an exception."""
+    client = create_nova_client(context)
     try:
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound, e:
-        #TODO(cp16net) would this be the wrong id to show the user?
-        LOG.error("Server %s for instance %s was not found!"
-                  % (server_id, instance_id))
-        raise rd_exceptions.NotFound(uuid=instance_id)
+        raise rd_exceptions.ComputeInstanceNotFound(instance_id=instance_id,
+                                                  server_id=server_id)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
     return server
@@ -90,7 +89,7 @@ class Instance(object):
             db_info = DBInstance.find_by(id=uuid)
         except rd_exceptions.NotFound:
             raise rd_exceptions.NotFound(uuid=uuid)
-        server = load_server(client, db_info.id, db_info.compute_instance_id)
+        server = load_server(context, db_info.id, db_info.compute_instance_id)
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=uuid)
         return Instance(context, db_info, server, service_status)
@@ -218,6 +217,23 @@ class Instance(object):
             raise rd_exceptions.UnprocessableEntity(msg)
 
 
+def create_server_list_matcher(server_list):
+    # Returns a method which finds a server from the given list.
+    def find_server(instance_id, server_id):
+        matches = [server for server in server_list if server.id == server_id]
+        if len(matches) == 1:
+            return matches[0]
+        elif len(matches) < 1:
+            raise rd_exceptions.ComputeInstanceNotFound(
+                instance_id=instance_id, server_id=server_id)
+        else:
+            # Should never happen, but never say never.
+            LOG.error("Server %s for instance %s was found twice!"
+                  % (server_id, instance_id))
+            raise rd_exceptions.ReddwarfError(uuid=instance_id)
+    return find_server
+
+
 class Instances(object):
 
     @staticmethod
@@ -228,12 +244,11 @@ class Instances(object):
         servers = client.servers.list()
         db_infos = DBInstance.find_all()
         ret = []
+        find_server = create_server_list_matcher(servers)
         for db in db_infos:
             status = InstanceServiceStatus.find_by(instance_id=db.id)
-            for server in servers:
-                if server.id == db.compute_instance_id:
-                    ret.append(Instance(context, db, server, status))
-                    break
+            server = find_server(db.id, db.compute_instance_id)
+            ret.append(Instance(context, db, server, status))
         return ret
 
 
