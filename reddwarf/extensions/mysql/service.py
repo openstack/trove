@@ -19,6 +19,7 @@ import logging
 import webob.exc
 
 from reddwarf.common import context as rd_context
+from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.extensions.mysql import models
@@ -59,6 +60,23 @@ class RootController(BaseController):
 class UserController(BaseController):
     """Controller for instance functionality"""
 
+    @classmethod
+    def validate(cls, body):
+        """Validate that the request has all the required parameters"""
+        if not body:
+            raise exception.BadRequest("The request contains an empty body")
+
+        if not body.get('users', ''):
+            raise exception.BadRequest("Required element/key 'users' was not "
+                                       "specified")
+        for user in body.get('users'):
+            if not user.get('name'):
+                raise exception.BadRequest("Required attribute/key 'name' was "
+                                           "not specified")
+            if not user.get('password'):
+                raise exception.BadRequest("Required attribute/key 'password' "
+                                           "was not specified")
+
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
         LOG.info("Listing users for instance '%s'" % instance_id)
@@ -78,6 +96,10 @@ class UserController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
+        try:
+            self.validate(body)
+        except exception.BadRequest as br:
+            return webob.exc.HTTPBadRequest(br)
         users = body['users']
         model_users = models.populate_users(users)
         models.User.create(context, instance_id, model_users)
@@ -98,6 +120,17 @@ class UserController(BaseController):
 class SchemaController(BaseController):
     """Controller for instance functionality"""
 
+    @classmethod
+    def validate(cls, body):
+        """Validate that the request has all the required parameters"""
+        if not body:
+            raise exception.BadRequest("The request contains an empty body")
+        if not body.get('databases', ''):
+            raise exception.BadRequest(key='databases')
+        for database in body.get('databases'):
+            if not database.get('name', ''):
+                raise exception.BadRequest(key='name')
+
     def index(self, req, tenant_id, instance_id):
         """Return all schemas."""
         LOG.info("Listing schemas for instance '%s'" % instance_id)
@@ -117,6 +150,10 @@ class SchemaController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
+        try:
+            self.validate(body)
+        except exception.BadRequest as br:
+            return webob.exc.HTTPBadRequest(br)
         schemas = body['databases']
         model_schemas = models.populate_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)
