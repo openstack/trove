@@ -26,14 +26,19 @@ class InstanceView(object):
             "id": self.instance.id,
             "name": self.instance.name,
             "status": self.instance.status,
-            "created": self.instance.created,
-            "updated": self.instance.updated,
-            "flavor": self.instance.flavor,
             "links": self.instance.links
         }
-        if not self.instance.is_building:
-            instance_dict["addresses"] = self.instance.addresses
         return {"instance": instance_dict}
+
+
+class InstanceDetailView(InstanceView):
+
+    def data(self):
+        result = super(InstanceDetailView, self).data()
+        result['instance']['created'] = self.instance.created
+        result['instance']['flavor'] = self.instance.flavor
+        result['instance']['updated'] = self.instance.updated
+        return result
 
 
 class InstancesView(object):
@@ -45,6 +50,14 @@ class InstancesView(object):
         data = []
         # These are model instances
         for instance in self.instances:
-            data.append(InstanceView(instance).data())
+            data.append(self.data_for_instance(instance))
+        return {'instances': data}
 
-        return data
+    def data_for_instance(self, instance):
+        return InstanceView(instance).data()['instance']
+
+
+class InstancesDetailView(InstancesView):
+
+    def data_for_instance(self, instance):
+        return InstanceDetailView(instance).data()['instance']

@@ -85,9 +85,9 @@ class InstanceController(BaseController):
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Detailing a database instance for tenant '%s'" % tenant_id)
         #TODO(cp16net) return a detailed list instead of index
-        return self.index(req, tenant_id)
+        return self.index(req, tenant_id, detailed=True)
 
-    def index(self, req, tenant_id):
+    def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Indexing a database instance for tenant '%s'" % tenant_id)
@@ -97,13 +97,16 @@ class InstanceController(BaseController):
                           tenant=tenant_id)
         servers = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstancesView(servers).data(), 201)
+        view_cls = views.InstancesDetailView if detailed \
+                                             else views.InstancesView
+        return wsgi.Result(view_cls(servers).data(), 201)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Showing a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
+
         # TODO(hub-cap): turn this into middleware
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
@@ -117,7 +120,7 @@ class InstanceController(BaseController):
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceView(server).data(), 201)
+        return wsgi.Result(views.InstanceDetailView(server).data(), 201)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -173,7 +176,7 @@ class InstanceController(BaseController):
         instance = models.Instance.create(context, name, flavor_ref, image_id)
 
         #TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceView(instance).data(), 201)
+        return wsgi.Result(views.InstanceDetailView(instance).data(), 201)
 
     @staticmethod
     def _validate_empty_body(body):
@@ -277,7 +280,8 @@ class API(wsgi.Router):
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()
         path = "/{tenant_id}/instances"
-        mapper.resource("instance", path, controller=instance_resource)
+        mapper.resource("instance", path, controller=instance_resource,
+                        collection={'detail': 'GET'})
 
 
 def app_factory(global_conf, **local_conf):
