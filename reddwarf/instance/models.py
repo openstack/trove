@@ -40,8 +40,6 @@ LOG = logging.getLogger(__name__)
 
 def load_server(client, instance_id, server_id):
     """Loads a server or raises an exception."""
-    if uuid is None:
-        raise TypeError("Argument uuid not defined.")
     try:
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound, e:
@@ -125,8 +123,8 @@ class Instance(object):
             task_status=InstanceTasks.BUILDING)
         LOG.debug("Created new Reddwarf instance %s..." % db_info.id)
         client = create_nova_client(context)
-        server = client.servers.create(name, image_id, flavor_ref, 
-                     files={"/etc/guest_info":"guest_id=%s" % db_info.id})
+        server = client.servers.create(name, image_id, flavor_ref,
+                     files={"/etc/guest_info": "guest_id=%s" % db_info.id})
         LOG.debug("Created new compute instance %s." % server.id)
         db_info.compute_instance_id = server.id
         db_info.save()

@@ -55,5 +55,11 @@ class Mysql(extensions.ExtensionsDescriptor):
             parent={'member_name': 'instance',
                      'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
+        resource = extensions.ResourceExtension(
+            'root',
+            service.RootController(),
+            parent={'member_name': 'instance',
+                     'collection_name': '{tenant_id}/instances'})
+        resources.append(resource)
 
         return resources

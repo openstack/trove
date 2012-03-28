@@ -31,6 +31,31 @@ class BaseController(wsgi.Controller):
     """Base controller class."""
 
 
+class RootController(BaseController):
+    """Controller for instance functionality"""
+
+    def index(self, req, tenant_id, instance_id):
+        """ Returns True if root is enabled for the given instance;
+                    False otherwise. """
+        LOG.info("Getting root enabled for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        is_root_enabled = models.Root.load(context, instance_id)
+        return views.RootEnabledView(is_root_enabled).data()
+
+    def create(self, req, body, tenant_id, instance_id):
+        """ Enable the root user for the db instance """
+        LOG.info("Enabling root for instance '%s'" % instance_id)
+        LOG.info("req : '%s'\n\n" % req)
+        context = rd_context.ReddwarfContext(
+                          auth_tok=req.headers["X-Auth-Token"],
+                          tenant=tenant_id)
+        root = models.Root.create(context, instance_id)
+        return views.RootCreatedView(root).data()
+
+
 class UserController(BaseController):
     """Controller for instance functionality"""
 
