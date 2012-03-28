@@ -39,9 +39,7 @@ class API(object):
 
     def _get_routing_key(self, context, id):
         """Create the routing key based on the container id"""
-        # TODO(hub-cap): make this work in a real environment with
-        # more than one guest
-        return "guestagent.ubuntu"
+        return "guestagent.%s" % id
 
     def create_user(self, context, id, users):
         """Make an asynchronous call to create a new database user"""
@@ -125,8 +123,7 @@ class API(object):
         rpc.cast_with_consumer(context, self._get_routing_key(context, id),
                  {"method": "prepare",
                   "args": {"databases": databases,
-                           "memory_mb": memory_mb,
-                           "uuid": id}
+                           "memory_mb": memory_mb}
                  })
 
     def restart(self, context, id):

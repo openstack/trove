@@ -57,9 +57,13 @@ if __name__ == '__main__':
         conf_loc = '%s/%s' % (config.Config.get('here'), 'conf.d/guest_info')
         config.Config.append_to_config_values('reddwarf-guestagent',
             {'config_file': conf_loc}, None)
+        # Now do the same for the /etc/guest_info file 
+        # that is injected into the VM
+        config.Config.append_to_config_values('reddwarf-guestagent',
+            {'config_file': '/etc/guest_info'}, None)
         db_api.configure_db(conf)
         server = service.Service.create(binary='reddwarf-guestagent',
-                                        host=socket.gethostname())
+                                        host=config.Config.get('guest_id'))
         service.serve(server)
         service.wait()
     except RuntimeError as error:

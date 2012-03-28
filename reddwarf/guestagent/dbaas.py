@@ -256,7 +256,7 @@ class DBaaSAgent(object):
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
 
-    def prepare(self, databases, memory_mb, uuid):
+    def prepare(self, databases, memory_mb):
         """Makes ready DBAAS on a Guest container."""
         global PREPARING
         PREPARING = True
@@ -267,10 +267,6 @@ class DBaaSAgent(object):
         preparer.prepare()
         self.create_database(databases)
         PREPARING = False
-        # Writing the UUID to the guest agent guest_info file
-        conf_loc = '%s/%s' % (config.Config.get('here'), 'conf.d/guest_info')
-        config.Config.write_config_values('reddwarf-guestagent',
-            {'config_file': conf_loc}, None, guest_id=uuid)
 
     def update_status(self):
         """Update the status of the MySQL service"""
