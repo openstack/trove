@@ -30,16 +30,16 @@ from reddwarf.guestagent import api as guest_api
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
+
 def load_and_verify(context, instance_id):
     # Load InstanceServiceStatus to verify if its running
     instance = base_models.Instance.load(context, instance_id)
-    LOG.info("found instance %s" % instance)
-    LOG.info("is sql running %s" % instance.is_sql_running)
     if not instance.is_sql_running:
         raise exception.UnprocessableEntity(
                     "Instance %s is not ready." % instance.id)
     else:
         return instance
+
 
 def populate_databases(dbs):
     """
@@ -96,6 +96,22 @@ class User(object):
     def delete(cls, context, instance_id, username):
         load_and_verify(context, instance_id)
         guest_api.API().delete_user(context, instance_id, username)
+
+
+class Root(object):
+
+    @classmethod
+    def load(cls, context, instance_id):
+        load_and_verify(context, instance_id)
+        return guest_api.API().is_root_enabled(context, instance_id)
+
+    @classmethod
+    def create(cls, context, instance_id):
+        load_and_verify(context, instance_id)
+        root = guest_api.API().enable_root(context, instance_id)
+        root_user = guest_models.MySQLUser()
+        root_user.deserialize(root)
+        return root_user
 
 
 class Users(object):
