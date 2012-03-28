@@ -18,6 +18,7 @@
 import logging
 
 from reddwarf.common import extensions
+from reddwarf.common import wsgi
 from reddwarf.extensions.mysql import service
 
 
@@ -43,23 +44,34 @@ class Mysql(extensions.ExtensionsDescriptor):
 
     def get_resources(self):
         resources = []
+        serializer = wsgi.ReddwarfResponseSerializer(
+            body_serializers={'application/xml':
+                              wsgi.ReddwarfXMLDictSerializer()})
         resource = extensions.ResourceExtension(
             'databases',
             service.SchemaController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'})
+                     'collection_name': '{tenant_id}/instances'},
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer)
         resources.append(resource)
         resource = extensions.ResourceExtension(
             'users',
             service.UserController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'})
+                     'collection_name': '{tenant_id}/instances'},
+            # deserializer=extensions.ExtensionsXMLSerializer()
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer)
         resources.append(resource)
         resource = extensions.ResourceExtension(
             'root',
             service.RootController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'})
+                     'collection_name': '{tenant_id}/instances'},
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer)
+
         resources.append(resource)
 
         return resources

@@ -35,6 +35,8 @@ Server = openstack_wsgi.Server
 Debug = openstack_wsgi.Debug
 Middleware = openstack_wsgi.Middleware
 JSONDictSerializer = openstack_wsgi.JSONDictSerializer
+XMLDictSerializer = openstack_wsgi.XMLDictSerializer
+RequestDeserializer = openstack_wsgi.RequestDeserializer
 
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
@@ -60,7 +62,6 @@ class VersionedURLMap(object):
             app = self.urlmap.get(version, Fault(http_exc))
         else:
             app = self.urlmap
-
         return app(environ, start_response)
 
 

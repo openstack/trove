@@ -31,6 +31,29 @@ LOG = logging.getLogger(__name__)
 class BaseController(wsgi.Controller):
     """Base controller class."""
 
+    exclude_attr = []
+    exception_map = {
+        webob.exc.HTTPUnprocessableEntity: [
+            ],
+        webob.exc.HTTPBadRequest: [
+            exception.BadRequest,
+            ],
+        webob.exc.HTTPNotFound: [
+            exception.NotFound,
+            ],
+        webob.exc.HTTPConflict: [
+            ],
+        }
+
+    def __init__(self):
+        pass
+
+    def _extract_required_params(self, params, model_name):
+        params = params or {}
+        model_params = params.get(model_name, {})
+        return utils.stringify_keys(utils.exclude(model_params,
+                                                  *self.exclude_attr))
+
 
 class RootController(BaseController):
     """Controller for instance functionality"""
@@ -44,7 +67,7 @@ class RootController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         is_root_enabled = models.Root.load(context, instance_id)
-        return views.RootEnabledView(is_root_enabled).data()
+        return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 201)
 
     def create(self, req, body, tenant_id, instance_id):
         """ Enable the root user for the db instance """
@@ -54,7 +77,7 @@ class RootController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         root = models.Root.create(context, instance_id)
-        return views.RootCreatedView(root).data()
+        return wsgi.Result(views.RootCreatedView(root).data(), 201)
 
 
 class UserController(BaseController):
@@ -67,15 +90,12 @@ class UserController(BaseController):
             raise exception.BadRequest("The request contains an empty body")
 
         if not body.get('users', ''):
-            raise exception.BadRequest("Required element/key 'users' was not "
-                                       "specified")
+            raise exception.BadRequest(key='users')
         for user in body.get('users'):
             if not user.get('name'):
-                raise exception.BadRequest("Required attribute/key 'name' was "
-                                           "not specified")
+                raise exception.BadRequest(key='name')
             if not user.get('password'):
-                raise exception.BadRequest("Required attribute/key 'password' "
-                                           "was not specified")
+                raise exception.BadRequest(key='password')
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
@@ -85,8 +105,7 @@ class UserController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         users = models.Users.load(context, instance_id)
-        # Not exactly sure why we cant return a wsgi.Result() here
-        return views.UsersView(users).data()
+        return wsgi.Result(views.UsersView(users).data(), 201)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users"""
@@ -96,14 +115,11 @@ class UserController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        try:
-            self.validate(body)
-        except exception.BadRequest as br:
-            return webob.exc.HTTPBadRequest(br)
+        self.validate(body)
         users = body['users']
         model_users = models.populate_users(users)
         models.User.create(context, instance_id, model_users)
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(202)
 
     def delete(self, req, tenant_id, instance_id, id):
         LOG.info("Deleting user for instance '%s'" % instance_id)
@@ -114,7 +130,7 @@ class UserController(BaseController):
         user = guest_models.MySQLUser()
         user.name = id
         models.User.delete(context, instance_id, user.serialize())
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(202)
 
 
 class SchemaController(BaseController):
@@ -140,7 +156,7 @@ class SchemaController(BaseController):
                           tenant=tenant_id)
         schemas = models.Schemas.load(context, instance_id)
         # Not exactly sure why we cant return a wsgi.Result() here
-        return views.SchemasView(schemas).data()
+        return wsgi.Result(views.SchemasView(schemas).data(), 201)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas"""
@@ -150,14 +166,11 @@ class SchemaController(BaseController):
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        try:
-            self.validate(body)
-        except exception.BadRequest as br:
-            return webob.exc.HTTPBadRequest(br)
+        self.validate(body)
         schemas = body['databases']
         model_schemas = models.populate_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(202)
 
     def delete(self, req, tenant_id, instance_id, id):
         LOG.info("Deleting schema for instance '%s'" % instance_id)
@@ -168,4 +181,4 @@ class SchemaController(BaseController):
         schema = guest_models.MySQLDatabase()
         schema.name = id
         models.Schema.delete(context, instance_id, schema.serialize())
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(202)
