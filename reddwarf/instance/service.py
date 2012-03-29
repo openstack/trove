@@ -20,7 +20,6 @@ import routes
 import webob.exc
 
 from reddwarf.common import config
-from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common import wsgi
@@ -91,15 +90,12 @@ class InstanceController(BaseController):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Indexing a database instance for tenant '%s'" % tenant_id)
-        # TODO(hub-cap): turn this into middleware
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.ContextKey]
         servers = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
         view_cls = views.InstancesDetailView if detailed \
                                              else views.InstancesView
-        return wsgi.Result(view_cls(servers).data(), 201)
+        return wsgi.Result(view_cls(servers).data(), 200)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
@@ -107,10 +103,7 @@ class InstanceController(BaseController):
         LOG.info("Showing a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
 
-        # TODO(hub-cap): turn this into middleware
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.ContextKey]
         try:
             # TODO(hub-cap): start testing the failure cases here
             server = models.Instance.load(context=context, uuid=id)
@@ -120,7 +113,7 @@ class InstanceController(BaseController):
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceDetailView(server).data(), 201)
+        return wsgi.Result(views.InstanceDetailView(server).data(), 200)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -128,9 +121,7 @@ class InstanceController(BaseController):
         LOG.info("Deleting a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.ContextKey]
         try:
             # TODO(hub-cap): start testing the failure cases here
             instance = models.Instance.load(context=context, uuid=id)
@@ -166,9 +157,7 @@ class InstanceController(BaseController):
         LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("body : '%s'\n\n" % body)
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.ContextKey]
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
         name = body['instance']['name']
@@ -176,7 +165,7 @@ class InstanceController(BaseController):
         instance = models.Instance.create(context, name, flavor_ref, image_id)
 
         #TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceDetailView(instance).data(), 201)
+        return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
 
     @staticmethod
     def _validate_empty_body(body):

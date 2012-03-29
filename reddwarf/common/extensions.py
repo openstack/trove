@@ -1,7 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 # Copyright 2011 OpenStack LLC.
-# Copyright 2011 Justin Santa Barbara
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -39,7 +38,6 @@ class ReddwarfExtensionMiddleware(extensions.ExtensionMiddleware):
         # extended resources
         for resource_ext in ext_mgr.get_resources():
             LOG.debug(_('Extended resource: %s'), resource_ext.collection)
-            LOG.debug(resource_ext.deserializer)
             # The only difference here is that we are using our common
             # wsgi.Resource instead of the openstack common wsgi.Resource
             controller_resource = wsgi.Resource(resource_ext.controller,
