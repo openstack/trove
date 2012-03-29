@@ -40,9 +40,13 @@ class ReddwarfExtensionMiddleware(extensions.ExtensionMiddleware):
             LOG.debug(_('Extended resource: %s'), resource_ext.collection)
             # The only difference here is that we are using our common
             # wsgi.Resource instead of the openstack common wsgi.Resource
+            exception_map = None
+            if hasattr(resource_ext.controller, 'exception_map'):
+                exception_map = resource_ext.controller.exception_map
             controller_resource = wsgi.Resource(resource_ext.controller,
                                                 resource_ext.deserializer,
-                                                resource_ext.serializer)
+                                                resource_ext.serializer,
+                                                exception_map)
 
             self._map_custom_collection_actions(resource_ext, mapper,
                                                 controller_resource)

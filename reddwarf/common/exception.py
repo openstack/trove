@@ -77,9 +77,6 @@ class BadRequest(ReddwarfError):
     message = _("Required element/key - %(key)s was not specified")
 
 
-class UnprocessableEntity(exc.HTTPUnprocessableEntity, ReddwarfError):
-    def __init__(self, message="Unable to process the contained request"):
-        self.explanation = message
-        self.code = 422
-        errstr = '%s: %s' % (self.code, self.explanation)
-        super(UnprocessableEntity, self).__init__(errstr)
+class UnprocessableEntity(ReddwarfError):
+
+    message = _("Unable to process the contained request")
