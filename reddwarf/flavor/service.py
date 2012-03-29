@@ -19,14 +19,42 @@ import logging
 import routes
 import webob.exc
 
-from reddwarf.common import BaseController
 from reddwarf.common import config
 from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import wsgi
+from reddwarf.flavor import models
+from reddwarf.flavor import views
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
+
+
+class BaseController(wsgi.Controller):
+    """Base controller class."""
+
+    exclude_attr = []
+    exception_map = {
+        webob.exc.HTTPUnprocessableEntity: [
+            ],
+        webob.exc.HTTPBadRequest: [
+            exception.BadRequest,
+            ],
+        webob.exc.HTTPNotFound: [
+            exception.NotFound,
+            ],
+        webob.exc.HTTPConflict: [
+            ],
+        }
+
+    def __init__(self):
+        pass
+
+    def _extract_required_params(self, params, model_name):
+        params = params or {}
+        model_params = params.get(model_name, {})
+        return utils.stringify_keys(utils.exclude(model_params,
+                                                  *self.exclude_attr))
 
 
 class FlavorController(BaseController):
@@ -38,11 +66,11 @@ class FlavorController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         try:
-            flavor = flavormodels.Flavor(context=context, flavor_id=id).data()
-            print "Flavor in show: %s" % flavor
+            flavor = models.Flavor(context=context, flavor_id=id)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(flavorviews.FlavorView(flavor).data(), 201)
+        # Pass in the request to build accurate links.
+        return wsgi.Result(views.FlavorView(flavor).data(req), 201)
 
     def detail(self, req, tenant_id):
         """Return a list of flavors, with additional data about each flavor."""
@@ -50,19 +78,18 @@ class FlavorController(BaseController):
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
         try:
-            flavors = flavormodels.Flavors(context=context)
+            flavors = models.Flavors(context=context)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(flavorviews.FlavorsView(flavors).data(), 201)
+        return wsgi.Result(views.FlavorsView(flavors).data(req, detailed=True), 201)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        flavors = flavormodels.Flavors(context)
-        return wsgi.Result(flavorviews.FlavorsView(flavors).data(), 201)
-
+        flavors = models.Flavors(context)
+        return wsgi.Result(views.FlavorsView(flavors).data(req), 201)
 
 class API(wsgi.Router):
     """API"""

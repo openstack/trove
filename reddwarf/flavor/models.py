@@ -27,50 +27,89 @@ from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.common.models import NovaRemoteModelBase
+from reddwarf.common.remote import create_nova_client
 
 CONFIG = config.Config
 LOG = logging.getLogger('reddwarf.database.models')
 
 
-class Flavor(NovaRemoteModelBase):
+class Flavor(object):
 
     _data_fields = ['id', 'links', 'name', 'ram']
 
     def __init__(self, flavor=None, context=None, flavor_id=None):
         if flavor:
-            self._data_object = flavor
+            self.flavor = flavor
+            LOG.debug("FLAVOR IS NOW %s" % self.flavor)
             return
         if flavor_id and context:
             try:
-                client = self.get_client(context)
-                self._data_object = client.flavors.get(flavor_id)
+                client = create_nova_client(context)
+                self.flavor = client.flavors.get(flavor_id)
             except nova_exceptions.NotFound, e:
                 raise rd_exceptions.NotFound(uuid=flavor_id)
             except nova_exceptions.ClientException, e:
                 raise rd_exceptions.ReddwarfError(str(e))
-            # Now modify the links
             return
         msg = ("Flavor is not defined, and"
                " context and flavor_id were not specified.")
         raise InvalidModelError(msg)
 
     @property
+    def id(self):
+        return self.flavor.id
+
+    @property
+    def name(self):
+        return self.flavor.name
+
+    @property
+    def ram(self):
+        return self.flavor.ram
+
+    @property
+    def vcpus(self):
+        return self.flavor.vcpus
+
+    @property
     def links(self):
         return self._build_links()
 
     def _build_links(self):
-        # TODO(ed-): Fix this URL: Change the endpoint, port, auth version,
-        # and the presence of the tenant id.
-        return self._data_object.links
+        if self.req is None:
+            # If there's no request available, don't modify the links.
+            return self.flavor.links
+        result = []
+        scheme = self.req.scheme
+        endpoint = self.req.host
+        path = self.req.path
+        href_template = "%(scheme)s://%(endpoint)s%(path)s"
+        for link in self.flavor.links:
+            rlink = link
+            href = rlink['href']
+            if rlink['rel'] == 'self':
+                path = path.split('/')
+                path.pop(2) # Remove the instance id.
+                path = '/'.join(path)
+                href = href_template % locals()
+            elif rlink['rel'] == 'bookmark':
+                path = path.split('/')
+                path.pop(1) # Remove the version.
+                path = '/'.join(path)
+                href = href_template % locals()
+
+            rlink['href'] = href
+            result.append(rlink)
+        return result
+
 
 class Flavors(NovaRemoteModelBase):
-    # Flavors HASA list of Flavor objects.
 
     def __init__(self, context):
-        nova_flavors = self.get_client(context).flavors.list()
-        self._data_object = [Flavor(flavor=item).data() for item in nova_flavors]
+        nova_flavors = create_nova_client(context).flavors.list()
+        self.flavors = [Flavor(flavor=item) for item in nova_flavors]
 
     def __iter__(self):
-        for item in self._data_object:
+        for item in self.flavors:
             yield item
 

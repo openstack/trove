@@ -20,21 +20,22 @@ class FlavorView(object):
     def __init__(self, flavor):
         self.flavor = flavor
 
-    def data(self):
+    def data(self, req=None):
+        self.flavor.req = req # For building the links.
         return {"flavor": {
-            "id": self.flavor['id'],
-            "links": self.flavor['links'],
-            "name": self.flavor['name'],
-            "ram": self.flavor['ram'],
+            'id': self.flavor.id,
+            'links': self.flavor.links,
+            'name': self.flavor.name,
+            'ram': self.flavor.ram,
             }}
 
 
 class FlavorDetailView(FlavorView):
 
-    def data(self):
-        result = super(FlavorDetailView, self).data()
+    def data(self, req=None):
+        result = super(FlavorDetailView, self).data(req)
         details = {
-            "vcpus": self.flavor['vcpus'],
+            "vcpus": self.flavor.vcpus,
             }
         result["flavor"].update(details)
         return result
@@ -45,12 +46,12 @@ class FlavorsView(object):
     def __init__(self, flavors):
         self.flavors = flavors
 
-    def data(self, detailed=False):
+    def data(self, req=None, detailed=False):
         data = []
         for flavor in self.flavors:
             if detailed:
-                data.append(FlavorDetailView(flavor).data()['flavor'])
+                data.append(FlavorDetailView(flavor).data(req)['flavor'])
             else:
-                data.append(FlavorView(flavor).data()['flavor'])
+                data.append(FlavorView(flavor).data(req)['flavor'])
 
         return {"flavors": data}

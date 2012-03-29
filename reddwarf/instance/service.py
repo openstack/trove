@@ -26,7 +26,7 @@ from reddwarf.common import wsgi
 from reddwarf.instance import models, views
 from reddwarf.common import exception as rd_exceptions
 
-#TODO(ed-): Import these properly after baz restructures
+#TODO(ed-): Import these properly after this is restructured
 from reddwarf.flavor import models as flavormodels
 from reddwarf.flavor import views as flavorviews
 from reddwarf.flavor import service as flavorservice
