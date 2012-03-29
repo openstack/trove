@@ -37,6 +37,7 @@ class BaseController(wsgi.Controller):
     exclude_attr = []
     exception_map = {
         webob.exc.HTTPUnprocessableEntity: [
+            exception.UnprocessableEntity,
             ],
         webob.exc.HTTPBadRequest: [
             models.InvalidModelError,
@@ -139,12 +140,8 @@ class InstanceController(BaseController):
             #    this to get the message
             LOG.error(e)
             return wsgi.Result(str(e), 404)
-        try:
-            instance.delete()
-        except exception.UnprocessableEntity as ue:
-            #TODO(tim.simpson): Figure out someway to surface the code from
-            #                   exceptions like this automatically.
-            return wsgi.Result(str(ue), ue.code)
+
+        instance.delete()
 
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(202)
