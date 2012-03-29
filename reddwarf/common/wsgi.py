@@ -25,11 +25,12 @@ import webob
 import webob.dec
 import webob.exc
 
+from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.openstack.common import wsgi as openstack_wsgi
 
-
+CONTEXT_KEY = 'reddwarf.context'
 Router = openstack_wsgi.Router
 Server = openstack_wsgi.Server
 Debug = openstack_wsgi.Debug
@@ -257,3 +258,24 @@ class Fault(webob.exc.HTTPException):
         self.wrapped_exc.body = serializer.serialize(fault_data, content_type)
         self.wrapped_exc.content_type = content_type
         return self.wrapped_exc
+
+
+class ContextMiddleware(openstack_wsgi.Middleware):
+
+    def __init__(self, application):
+        super(ContextMiddleware, self).__init__(application)
+
+    def process_request(self, request):
+        tenant_id = request.headers.get('X-Tenant-Id', None)
+        auth_tok = request.headers["X-Auth-Token"]
+        context = rd_context.ReddwarfContext(auth_tok=auth_tok,
+                                             tenant=tenant_id)
+        request.environ[CONTEXT_KEY] = context
+
+    @classmethod
+    def factory(cls, global_config, **local_config):
+        def _factory(app):
+            LOG.debug("Created context middleware with config: %s" %
+                       local_config)
+            return cls(app)
+        return _factory

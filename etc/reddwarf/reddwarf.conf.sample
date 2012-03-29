@@ -68,7 +68,7 @@ use = call:reddwarf.common.wsgi:versioned_urlmap
 paste.app_factory = reddwarf.versions:app_factory
 
 [pipeline:reddwarfapi]
-pipeline = tokenauth authorization extensions reddwarfapp
+pipeline = tokenauth authorization contextwrapper extensions reddwarfapp
 #pipeline = debug extensions reddwarfapp
 
 [filter:extensions]
@@ -87,6 +87,9 @@ admin_token = be19c524ddc92109a224
 
 [filter:authorization]
 paste.filter_factory = reddwarf.common.auth:AuthorizationMiddleware.factory
+
+[filter:contextwrapper]
+paste.filter_factory = reddwarf.common.wsgi:ContextMiddleware.factory
 
 [app:reddwarfapp]
 paste.app_factory = reddwarf.instance.service:app_factory
