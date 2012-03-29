@@ -34,6 +34,7 @@ class BaseController(wsgi.Controller):
     exclude_attr = []
     exception_map = {
         webob.exc.HTTPUnprocessableEntity: [
+            exception.UnprocessableEntity,
             ],
         webob.exc.HTTPBadRequest: [
             exception.BadRequest,
