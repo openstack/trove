@@ -83,8 +83,9 @@ class InstanceStatus(object):
     SHUTDOWN = "SHUTDOWN"
 
 
-# If the compute server is in any of these states we can't delete it.
-SERVER_INVALID_DELETE_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
+# If the compute server is in any of these states we can't perform any
+# actions (delete, resize, etc).
+SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 
 # Statuses in which an instance can have an action performed.
 VALID_ACTION_STATUSES = ["ACTIVE"]
@@ -118,8 +119,7 @@ class Instance(object):
         return Instance(context, db_info, server, service_status)
 
     def delete(self, force=False):
-        LOG.debug(_("Deleting instance %s...") % self.id)
-        if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
+        if not force and self.server.status in SERVER_INVALID_ACTION_STATUSES:
             raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
@@ -241,6 +241,41 @@ class Instance(object):
                   "performed. Status [%s]"
             LOG.debug(_(msg) % self.status)
             raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
+
+    def resize_flavor(self, new_flavor_id):
+        LOG.info("Resizing flavor of instance %s..." % self.id)
+        # TODO(tim.simpson): Validate the new flavor ID can be found or
+        #                    raise FlavorNotFound exception.
+        # TODO(tim.simpson): Actually perform flavor resize.
+        raise RuntimeError("Not implemented (yet).")
+
+    def resize_volume(self, new_size):
+        LOG.info("Resizing volume of instance %s..." % self.id)
+        # TODO(tim.simpson): Validate old_size < new_size, or raise
+        #                    rd_exceptions.BadRequest.
+        # TODO(tim.simpson): resize volume.
+        raise RuntimeError("Not implemented (yet).")
+
+    def restart(self):
+        if instance_state in SERVER_INVALID_ACTION_STATUSES:
+            LOG.debug("Restart instance not allowed while instance is in %s "
+                      "status." % instance_state)
+            # If the state is building then we throw an exception back
+            raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
+                                                % id)
+        else:
+            LOG.info("Restarting instance %s..." % self.id)
+
+    def validate_can_perform_action_on_instance():
+        """
+        Raises exception if an instance action cannot currently be performed.
+        """
+        if self.status != InstanceStatus.ACTIVE:
+            msg = "Instance is not currently available for an action to be "
+                  "performed (status was %s)." % self.status
+            LOG.trace(msg)
+            raise UnprocessableEntity(msg)
+
 
 
 def create_server_list_matcher(server_list):

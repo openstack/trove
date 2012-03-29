@@ -88,12 +88,12 @@ class UserController(BaseController):
             raise exception.BadRequest("The request contains an empty body")
 
         if not body.get('users', ''):
-            raise exception.BadRequest(key='users')
+            raise exception.MissingKey(key='users')
         for user in body.get('users'):
             if not user.get('name'):
-                raise exception.BadRequest(key='name')
+                raise exception.MissingKey(key='name')
             if not user.get('password'):
-                raise exception.BadRequest(key='password')
+                raise exception.MissingKey(key='password')
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
@@ -134,10 +134,10 @@ class SchemaController(BaseController):
         if not body:
             raise exception.BadRequest("The request contains an empty body")
         if not body.get('databases', ''):
-            raise exception.BadRequest(key='databases')
+            raise exception.MissingKey(key='databases')
         for database in body.get('databases'):
             if not database.get('name', ''):
-                raise exception.BadRequest(key='name')
+                raise exception.MissingKey(key='name')
 
     def index(self, req, tenant_id, instance_id):
         """Return all schemas."""

@@ -188,3 +188,17 @@ class LoopingCall(object):
 
     def wait(self):
         return self.done.wait()
+
+
+# Copied from nova.api.openstack.common in the old code.
+def get_id_from_href(href):
+    """Return the id or uuid portion of a url.
+
+    Given: 'http://www.foo.com/bar/123?q=4'
+    Returns: '123'
+
+    Given: 'http://www.foo.com/bar/abc123?q=4'
+    Returns: 'abc123'
+
+    """
+    return urlparse.urlsplit("%s" % href).path.split('/')[-1]
