@@ -30,7 +30,7 @@ from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.openstack.common import wsgi as openstack_wsgi
 
-ContextKey = 'reddwarf.context'
+CONTEXT_KEY = 'reddwarf.context'
 Router = openstack_wsgi.Router
 Server = openstack_wsgi.Server
 Debug = openstack_wsgi.Debug
@@ -270,7 +270,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
         auth_tok = request.headers["X-Auth-Token"]
         context = rd_context.ReddwarfContext(auth_tok=auth_tok,
                                              tenant=tenant_id)
-        request.environ[ContextKey] = context
+        request.environ[CONTEXT_KEY] = context
 
     @classmethod
     def factory(cls, global_config, **local_config):

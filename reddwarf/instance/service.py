@@ -90,7 +90,7 @@ class InstanceController(BaseController):
         """Return all instances."""
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Indexing a database instance for tenant '%s'" % tenant_id)
-        context = req.environ[wsgi.ContextKey]
+        context = req.environ[wsgi.CONTEXT_KEY]
         servers = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
         view_cls = views.InstancesDetailView if detailed \
@@ -103,7 +103,7 @@ class InstanceController(BaseController):
         LOG.info("Showing a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
 
-        context = req.environ[wsgi.ContextKey]
+        context = req.environ[wsgi.CONTEXT_KEY]
         try:
             # TODO(hub-cap): start testing the failure cases here
             server = models.Instance.load(context=context, uuid=id)
@@ -121,7 +121,7 @@ class InstanceController(BaseController):
         LOG.info("Deleting a database instance for tenant '%s'" % tenant_id)
         LOG.info("id : '%s'\n\n" % id)
         # TODO(hub-cap): turn this into middleware
-        context = req.environ[wsgi.ContextKey]
+        context = req.environ[wsgi.CONTEXT_KEY]
         try:
             # TODO(hub-cap): start testing the failure cases here
             instance = models.Instance.load(context=context, uuid=id)
@@ -157,7 +157,7 @@ class InstanceController(BaseController):
         LOG.info("Creating a database instance for tenant '%s'" % tenant_id)
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("body : '%s'\n\n" % body)
-        context = req.environ[wsgi.ContextKey]
+        context = req.environ[wsgi.CONTEXT_KEY]
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
         name = body['instance']['name']
