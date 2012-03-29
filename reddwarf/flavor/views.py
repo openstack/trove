@@ -26,7 +26,6 @@ class FlavorView(object):
             'id': self.flavor.id,
             'links': self.flavor.links,
             'name': self.flavor.name,
-            'ram': self.flavor.ram,
             }}
 
 
@@ -35,7 +34,8 @@ class FlavorDetailView(FlavorView):
     def data(self, req=None):
         result = super(FlavorDetailView, self).data(req)
         details = {
-            "vcpus": self.flavor.vcpus,
+            'ram': self.flavor.ram,
+            'vcpus': self.flavor.vcpus,
             }
         result["flavor"].update(details)
         return result

@@ -70,7 +70,7 @@ class FlavorController(BaseController):
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
         # Pass in the request to build accurate links.
-        return wsgi.Result(views.FlavorView(flavor).data(req), 201)
+        return wsgi.Result(views.FlavorDetailView(flavor).data(req), 200)
 
     def detail(self, req, tenant_id):
         """Return a list of flavors, with additional data about each flavor."""
@@ -81,15 +81,18 @@ class FlavorController(BaseController):
             flavors = models.Flavors(context=context)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(views.FlavorsView(flavors).data(req, detailed=True), 201)
+        return wsgi.Result(views.FlavorsView(flavors).data(req, detailed=True), 200)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
         context = rd_context.ReddwarfContext(
                           auth_tok=req.headers["X-Auth-Token"],
                           tenant=tenant_id)
-        flavors = models.Flavors(context)
-        return wsgi.Result(views.FlavorsView(flavors).data(req), 201)
+        try:
+            flavors = models.Flavors(context=context)
+        except exception.ReddwarfError, e:
+            return wsgi.Result(str(e), 404)
+        return wsgi.Result(views.FlavorsView(flavors).data(req), 200)
 
 class API(wsgi.Router):
     """API"""
@@ -102,7 +105,7 @@ class API(wsgi.Router):
         flavor_resource = FlavorController().create_resource()
         path = "/{tenant_id}/flavors"
         mapper.resource("flavor", path, controller=flavor_resource,
-                        collection={'detail': 'GET'})
+                        collection={'detail': 'GET', '': 'GET'})
 
 
 def app_factory(global_conf, **local_conf):

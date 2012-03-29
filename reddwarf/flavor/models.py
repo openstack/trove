@@ -40,7 +40,6 @@ class Flavor(object):
     def __init__(self, flavor=None, context=None, flavor_id=None):
         if flavor:
             self.flavor = flavor
-            LOG.debug("FLAVOR IS NOW %s" % self.flavor)
             return
         if flavor_id and context:
             try:
@@ -82,20 +81,25 @@ class Flavor(object):
         result = []
         scheme = self.req.scheme
         endpoint = self.req.host
-        path = self.req.path
-        href_template = "%(scheme)s://%(endpoint)s%(path)s"
+        splitpath = self.req.path.split('/')
+        detailed = ''
+        if splitpath[-1] == 'detail':
+            detailed = '/detail'
+            splitpath.pop(-1)
+        flavorid = self.flavor.id
+        if splitpath[-1] == flavorid:
+            splitpath.pop(-1)
+        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
         for link in self.flavor.links:
             rlink = link
             href = rlink['href']
             if rlink['rel'] == 'self':
-                path = path.split('/')
-                path.pop(2) # Remove the instance id.
-                path = '/'.join(path)
+                path = '/'.join(splitpath)
                 href = href_template % locals()
             elif rlink['rel'] == 'bookmark':
-                path = path.split('/')
-                path.pop(1) # Remove the version.
-                path = '/'.join(path)
+                splitpath.pop(2) # Remove the version.
+                splitpath.pop(1) # Remove the tenant id.
+                path = '/'.join(splitpath)
                 href = href_template % locals()
 
             rlink['href'] = href
