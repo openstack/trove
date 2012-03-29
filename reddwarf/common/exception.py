@@ -30,15 +30,16 @@ wrap_exception = openstack_exception.wrap_exception
 
 class ReddwarfError(openstack_exception.OpenstackException):
     """Base exception that all custom reddwarf app exceptions inherit from."""
+    internal_message = None
 
     def __init__(self, message=None, **kwargs):
         if message is not None:
             self.message = message
-        # if self.internal_message:
-        #     try:
-        #         LOG.error(self.internal_message % kwargs)
-        #     except Exception:
-        #         LOG.error(self.internal_message)
+        if self.internal_message is not None:
+            try:
+                LOG.error(self.internal_message % kwargs)
+            except Exception:
+                LOG.error(self.internal_message)
         super(ReddwarfError, self).__init__(**kwargs)
 
 
