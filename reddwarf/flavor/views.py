@@ -19,14 +19,43 @@ class FlavorView(object):
 
     def __init__(self, flavor, req=None):
         self.flavor = flavor
-        self.flavor.req = req
+        self.req = req
 
     def data(self):
         return {"flavor": {
             'id': self.flavor.id,
-            'links': self.flavor.links,
+            'links': self._build_links(),
             'name': self.flavor.name,
             }}
+
+    def _build_links(self):
+        result = []
+        scheme = self.req.scheme
+        endpoint = self.req.host
+        splitpath = self.req.path.split('/')
+        detailed = ''
+        if splitpath[-1] == 'detail':
+            detailed = '/detail'
+            splitpath.pop(-1)
+        flavorid = self.flavor.id
+        if splitpath[-1] == flavorid:
+            splitpath.pop(-1)
+        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
+        for link in self.flavor.links:
+            rlink = link
+            href = rlink['href']
+            if rlink['rel'] == 'self':
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+            elif rlink['rel'] == 'bookmark':
+                splitpath.pop(2) # Remove the version.
+                splitpath.pop(1) # Remove the tenant id.
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+
+            rlink['href'] = href
+            result.append(rlink)
+        return result
 
 
 class FlavorDetailView(FlavorView):
@@ -42,6 +71,7 @@ class FlavorDetailView(FlavorView):
 
 
 class FlavorsView(object):
+    view = FlavorView
 
     def __init__(self, flavors, req=None):
         self.flavors = flavors
@@ -50,9 +80,9 @@ class FlavorsView(object):
     def data(self, detailed=False):
         data = []
         for flavor in self.flavors:
-            if detailed:
-                data.append(FlavorDetailView(flavor, req=self.req).data()['flavor'])
-            else:
-                data.append(FlavorView(flavor, req=self.req).data()['flavor'])
-
+            data.append(self.view(flavor, req=self.req).data()['flavor'])
         return {"flavors": data}
+
+
+class FlavorsDetailView(FlavorsView):
+    view = FlavorDetailView

@@ -15,18 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import routes
 import webob.exc
 
-from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.flavor import models
 from reddwarf.flavor import views
-
-CONFIG = config.Config
-LOG = logging.getLogger(__name__)
 
 
 class BaseController(wsgi.Controller):
@@ -62,29 +57,20 @@ class FlavorController(BaseController):
     def show(self, req, tenant_id, id):
         """Return a single flavor."""
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            flavor = models.Flavor(context=context, flavor_id=id)
-        except exception.ReddwarfError, e:
-            return wsgi.Result(str(e), 404)
+        flavor = models.Flavor(context=context, flavor_id=id)
         # Pass in the request to build accurate links.
         return wsgi.Result(views.FlavorDetailView(flavor, req).data(), 200)
 
     def detail(self, req, tenant_id):
         """Return a list of flavors, with additional data about each flavor."""
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            flavors = models.Flavors(context=context)
-        except exception.ReddwarfError, e:
-            return wsgi.Result(str(e), 404)
-        return wsgi.Result(views.FlavorsView(flavors, req).data(detailed=True), 200)
+        flavors = models.Flavors(context=context)
+        return wsgi.Result(views.FlavorsDetailView(flavors, req).data(), 200)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            flavors = models.Flavors(context=context)
-        except exception.ReddwarfError, e:
-            return wsgi.Result(str(e), 404)
+        flavors = models.Flavors(context=context)
         return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 
 class API(wsgi.Router):

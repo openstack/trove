@@ -22,7 +22,6 @@ import logging
 from reddwarf import db
 
 from novaclient import exceptions as nova_exceptions
-from novaclient.v1_1.client import Client
 from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
@@ -35,7 +34,7 @@ LOG = logging.getLogger('reddwarf.database.models')
 
 class Flavor(object):
 
-    _data_fields = ['id', 'links', 'name', 'ram']
+    _data_fields = ['id', 'links', 'name', 'ram', 'vcpus']
 
     def __init__(self, flavor=None, context=None, flavor_id=None):
         if flavor:
@@ -72,39 +71,7 @@ class Flavor(object):
 
     @property
     def links(self):
-        return self._build_links()
-
-    def _build_links(self):
-        if self.req is None:
-            # If there's no request available, don't modify the links.
-            return self.flavor.links
-        result = []
-        scheme = self.req.scheme
-        endpoint = self.req.host
-        splitpath = self.req.path.split('/')
-        detailed = ''
-        if splitpath[-1] == 'detail':
-            detailed = '/detail'
-            splitpath.pop(-1)
-        flavorid = self.flavor.id
-        if splitpath[-1] == flavorid:
-            splitpath.pop(-1)
-        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
-        for link in self.flavor.links:
-            rlink = link
-            href = rlink['href']
-            if rlink['rel'] == 'self':
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-            elif rlink['rel'] == 'bookmark':
-                splitpath.pop(2) # Remove the version.
-                splitpath.pop(1) # Remove the tenant id.
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-
-            rlink['href'] = href
-            result.append(rlink)
-        return result
+        return self.flavor.links
 
 
 class Flavors(NovaRemoteModelBase):
