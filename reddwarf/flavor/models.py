@@ -17,19 +17,13 @@
 
 """Model classes that form the core of instance flavor functionality."""
 
-import logging
-
 from reddwarf import db
 
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
-
-CONFIG = config.Config
-LOG = logging.getLogger('reddwarf.database.models')
 
 
 class Flavor(object):
