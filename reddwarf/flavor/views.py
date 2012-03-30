@@ -30,7 +30,8 @@ class FlavorView(object):
 
     def _build_links(self):
         result = []
-        scheme = self.req.scheme
+        #scheme = self.req.scheme
+        scheme = 'https' # Forcing https
         endpoint = self.req.host
         splitpath = self.req.path.split('/')
         detailed = ''
