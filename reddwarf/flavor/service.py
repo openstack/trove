@@ -20,7 +20,6 @@ import routes
 import webob.exc
 
 from reddwarf.common import config
-from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.flavor import models
@@ -62,37 +61,31 @@ class FlavorController(BaseController):
 
     def show(self, req, tenant_id, id):
         """Return a single flavor."""
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
         try:
             flavor = models.Flavor(context=context, flavor_id=id)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
         # Pass in the request to build accurate links.
-        return wsgi.Result(views.FlavorDetailView(flavor).data(req), 200)
+        return wsgi.Result(views.FlavorDetailView(flavor, req).data(), 200)
 
     def detail(self, req, tenant_id):
         """Return a list of flavors, with additional data about each flavor."""
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
         try:
             flavors = models.Flavors(context=context)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(views.FlavorsView(flavors).data(req, detailed=True), 200)
+        return wsgi.Result(views.FlavorsView(flavors, req).data(detailed=True), 200)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
         try:
             flavors = models.Flavors(context=context)
         except exception.ReddwarfError, e:
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(views.FlavorsView(flavors).data(req), 200)
+        return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 
 class API(wsgi.Router):
     """API"""
