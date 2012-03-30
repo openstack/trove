@@ -112,7 +112,7 @@ class InstanceController(BaseController):
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             # TODO(hub-cap): start testing the failure cases here
-            server = models.Instance.load(context=context, uuid=id)
+            server = models.Instance.load(context=context, id=id)
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
@@ -130,7 +130,7 @@ class InstanceController(BaseController):
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             # TODO(hub-cap): start testing the failure cases here
-            instance = models.Instance.load(context=context, uuid=id)
+            instance = models.Instance.load(context=context, id=id)
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
@@ -166,7 +166,6 @@ class InstanceController(BaseController):
         flavor_ref = body['instance']['flavorRef']
         instance = models.Instance.create(context, name, flavor_ref, image_id)
 
-        #TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
 
     @staticmethod

@@ -17,8 +17,14 @@
 
 from reddwarf.common import config
 from novaclient.v1_1.client import Client
+from reddwarf.guestagent.api import API
+
 
 CONFIG = config.Config
+
+
+def create_guest_client(context, id):
+    return API(context, id)
 
 
 def create_nova_client(context):
@@ -46,3 +52,17 @@ def create_nova_client(context):
         service_name=SERVICE_NAME)
     client.authenticate()
     return client
+
+
+if CONFIG.get("remote_implementation", "real") == "fake":
+    # Override the functions above with fakes.
+
+    from reddwarf.tests.fakes.nova import fake_create_nova_client
+    from reddwarf.tests.fakes.guestagent import fake_create_guest_client
+
+    def create_guest_client(context, id):
+        return fake_create_guest_client(context, id)
+
+    def create_nova_client(context):
+        return fake_create_nova_client(context)
+

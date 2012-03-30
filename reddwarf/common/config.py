@@ -35,13 +35,13 @@ class Config(object):
     @classmethod
     def load_paste_app(cls, *args, **kwargs):
         conf, app = openstack_config.load_paste_app(*args, **kwargs)
-        cls.instance = conf
+        cls.instance.update(conf)
         return conf, app
 
     @classmethod
     def load_paste_config(cls, *args, **kwargs):
         conf_file, conf = openstack_config.load_paste_config(*args, **kwargs)
-        cls.instance = conf
+        cls.instance.update(conf)
         return conf
 
     @classmethod
