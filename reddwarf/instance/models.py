@@ -33,6 +33,8 @@ from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
+from reddwarf.common.remote import create_guest_client
+
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
@@ -79,19 +81,19 @@ class Instance(object):
         self.service_status = service_status
 
     @staticmethod
-    def load(context, uuid):
+    def load(context, id):
         if context is None:
             raise TypeError("Argument context not defined.")
-        elif uuid is None:
-            raise TypeError("Argument uuid not defined.")
-        client = create_nova_client(context)
+        elif id is None:
+            raise TypeError("Argument id not defined.")
         try:
-            db_info = DBInstance.find_by(id=uuid)
+            db_info = DBInstance.find_by(id=id)
         except rd_exceptions.NotFound:
-            raise rd_exceptions.NotFound(uuid=uuid)
+            raise rd_exceptions.NotFound(uuid=id)
         server = load_server(context, db_info.id, db_info.compute_instance_id)
         task_status = db_info.task_status
-        service_status = InstanceServiceStatus.find_by(instance_id=uuid)
+        service_status = InstanceServiceStatus.find_by(instance_id=id)
+        LOG.info("service status=%s" % service_status)
         return Instance(context, db_info, server, service_status)
 
     def delete(self, force=False):
@@ -130,7 +132,8 @@ class Instance(object):
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
-        guest_api.API().prepare(context, db_info.id, 512, [])
+        guest = create_guest_client(context, db_info.id)
+        guest.prepare(512, [])
         return Instance(context, db_info, server, service_status)
 
     @property
@@ -156,7 +159,7 @@ class Instance(object):
         # timeouts determine if the task_status should be integrated here
         # or removed entirely.
         # If the server is in any of these states they take precedence.
-        if self.server.status in ["ERROR", "REBOOT", "RESIZE"]:
+        if self.server.status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
             return self.server.status
         # The service is only paused during a reboot.
         if ServiceStatuses.PAUSED == self.service_status.status:
