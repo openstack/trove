@@ -132,9 +132,9 @@ class DBaaSAgent(object):
             t = text("""select User from mysql.user where host !=
                      'localhost';""")
             result = client.execute(t)
-            LOG.debug(_("result = " + str(result)))
+            LOG.debug(_("result = %s") % str(result))
             for row in result:
-                LOG.debug(_("user = " + str(row)))
+                LOG.debug(_("user = %s" % str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
                 # Now get the databases
@@ -150,7 +150,7 @@ class DBaaSAgent(object):
                         mysql_db.name = db['table_schema']
                         mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
-        LOG.debug(_("users = " + str(users)))
+        LOG.debug(_("users = %s") str(users))
         return users
 
     def delete_user(self, user):
@@ -198,15 +198,15 @@ class DBaaSAgent(object):
                 schema_name ASC;
             ''')
             database_names = client.execute(t)
-            LOG.debug(_("database_names = %r" % database_names))
+            LOG.debug(_("database_names = %r") % database_names)
             for database in database_names:
-                LOG.debug(_("database = %s " % str(database)))
+                LOG.debug(_("database = %s ") % str(database))
                 mysql_db = models.MySQLDatabase()
                 mysql_db.name = database[0]
                 mysql_db.character_set = database[1]
                 mysql_db.collate = database[2]
                 databases.append(mysql_db.serialize())
-        LOG.debug(_("databases = " + str(databases)))
+        LOG.debug(_("databases = ") + str(databases))
         return databases
 
     def delete_database(self, database):
@@ -265,7 +265,7 @@ class DBaaSAgent(object):
             t = text("""SELECT User FROM mysql.user where User = 'root'
                         and host != 'localhost';""")
             result = client.execute(t)
-            LOG.debug(_("result = " + str(result)))
+            LOG.debug(_("result = ") + str(result))
             return result.rowcount != 0
 
     def prepare(self, databases, memory_mb):

@@ -97,12 +97,12 @@ class Instance(object):
         return Instance(context, db_info, server, service_status)
 
     def delete(self, force=False):
-        LOG.debug(_("Deleting instance %s..." % self.id))
+        LOG.debug(_("Deleting instance %s...") % self.id)
         if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
             raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
-        LOG.debug(_("  ... deleting compute id = %s" %
-                  self.server.id))
+        LOG.debug(_("  ... deleting compute id = %s") %
+                  self.server.id)
         self._delete_server()
         LOG.debug(_(" ... setting status to DELETING."))
         self.db_info.task_status = InstanceTasks.DELETING
@@ -122,11 +122,11 @@ class Instance(object):
     def create(cls, context, name, flavor_ref, image_id):
         db_info = DBInstance.create(name=name,
             task_status=InstanceTasks.BUILDING)
-        LOG.debug(_("Created new Reddwarf instance %s..." % db_info.id))
+        LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
         client = create_nova_client(context)
         server = client.servers.create(name, image_id, flavor_ref,
                      files={"/etc/guest_info": "guest_id=%s" % db_info.id})
-        LOG.debug(_("Created new compute instance %s." % server.id))
+        LOG.debug(_("Created new compute instance %s.") % server.id)
         db_info.compute_instance_id = server.id
         db_info.save()
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
@@ -172,7 +172,7 @@ class Instance(object):
                 return InstanceStatus.SHUTDOWN
             else:
                 LOG.error(_("While shutting down instance %s: server had status "
-                          " %s." % (self.id, self.server.status)))
+                          " %s.") % (self.id, self.server.status))
                 return InstanceStatus.ERROR
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
@@ -231,8 +231,8 @@ def create_server_list_matcher(server_list):
                 instance_id=instance_id, server_id=server_id)
         else:
             # Should never happen, but never say never.
-            LOG.error(_("Server %s for instance %s was found twice!"
-                  % (server_id, instance_id)))
+            LOG.error(_("Server %s for instance %s was found twice!")
+                  % (server_id, instance_id))
             raise rd_exceptions.ReddwarfError(uuid=instance_id)
     return find_server
 
@@ -281,7 +281,7 @@ class DatabaseModelBase(ModelBase):
         if not self.is_valid():
             raise InvalidModelError(self.errors)
         self['updated_at'] = utils.utcnow()
-        LOG.debug(_("Saving %s: %s" % (self.__class__.__name__, self.__dict__)))
+        LOG.debug(_("Saving %s: %s") % (self.__class__.__name__, self.__dict__))
         return db.db_api.save(self)
 
     def __init__(self, **kwargs):

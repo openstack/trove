@@ -87,15 +87,15 @@ class InstanceController(BaseController):
 
     def detail(self, req, tenant_id):
         """Return all instances."""
-        LOG.info(_("req : '%s'\n\n" % req))
-        LOG.info(_("Detailing a database instance for tenant '%s'" % tenant_id))
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Detailing a database instance for tenant '%s'") % tenant_id)
         #TODO(cp16net) return a detailed list instead of index
         return self.index(req, tenant_id, detailed=True)
 
     def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
-        LOG.info(_("req : '%s'\n\n" % req))
-        LOG.info(_("Indexing a database instance for tenant '%s'" % tenant_id))
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         servers = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
@@ -105,9 +105,9 @@ class InstanceController(BaseController):
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        LOG.info(_("req : '%s'\n\n" % req))
-        LOG.info(_("Showing a database instance for tenant '%s'" % tenant_id))
-        LOG.info(_("id : '%s'\n\n" % id))
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Showing a database instance for tenant '%s'") % tenant_id)
+        LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
@@ -123,9 +123,9 @@ class InstanceController(BaseController):
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
-        LOG.info(_("req : '%s'\n\n" % req))
-        LOG.info(_("Deleting a database instance for tenant '%s'" % tenant_id))
-        LOG.info(_("id : '%s'\n\n" % id))
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Deleting a database instance for tenant '%s'") % tenant_id)
+        LOG.info(_("id : '%s'\n\n") % id)
         # TODO(hub-cap): turn this into middleware
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
@@ -156,9 +156,9 @@ class InstanceController(BaseController):
         #   code. Or maybe we shouldnt due to the nature of changing images.
         #   This needs discussion.
         # TODO(hub-cap): turn this into middleware
-        LOG.info(_("Creating a database instance for tenant '%s'" % tenant_id))
-        LOG.info(_("req : '%s'\n\n" % req))
-        LOG.info(_("body : '%s'\n\n" % body))
+        LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
         database = models.ServiceImage.find_by(service_name="database")
         image_id = database['image_id']
@@ -208,7 +208,7 @@ class InstanceController(BaseController):
             # TODO(cp16net) add in volume to the mix
 #            volume_size = body['instance']['volume']['size']
         except KeyError as e:
-            LOG.error(_("Create Instance Required field(s) - %s" % e))
+            LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 #        Instance._validate_volume_size(volume_size)
@@ -220,7 +220,7 @@ class InstanceController(BaseController):
             body['resize']
             body['resize']['flavorRef']
         except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s" % e))
+            LOG.error(_("Resize Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 
@@ -235,7 +235,7 @@ class InstanceController(BaseController):
                 LOG.error(_(msg))
                 raise rd_exceptions.ReddwarfError(msg)
         except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s" % e))
+            LOG.error(_("Resize Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                               "was not specified" % e)
 
@@ -250,7 +250,7 @@ class InstanceController(BaseController):
             body['resize']['volume']
             new_volume_size = body['resize']['volume']['size']
         except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s" % e))
+            LOG.error(_("Resize Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
         Instance._validate_volume_size(new_volume_size)

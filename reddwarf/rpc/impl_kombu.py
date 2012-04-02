@@ -415,7 +415,7 @@ class Connection(object):
         for consumer in self.consumers:
             consumer.reconnect(self.channel)
         LOG.info(_('Connected to AMQP server on '
-                '%(hostname)s:%(port)d' % self.params))
+                '%(hostname)s:%(port)d') % self.params)
 
     def reconnect(self):
         """Handles reconnecting and re-establishing queues.
@@ -578,8 +578,8 @@ class Connection(object):
 
         def _publish():
             publisher = cls(self.channel, topic, **kwargs)
-            LOG.info(_("_publish info%s %s %s %s" % (self.channel, topic,
-                                                   kwargs, publisher)))
+            LOG.info(_("_publish info%s %s %s %s") % (self.channel, topic,
+                                                   kwargs, publisher))
             publisher.send(msg)
 
         self.ensure(_error_callback, _publish)

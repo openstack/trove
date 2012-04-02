@@ -275,7 +275,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
     @classmethod
     def factory(cls, global_config, **local_config):
         def _factory(app):
-            LOG.debug(_("Created context middleware with config: %s" %
-                       local_config))
+            LOG.debug(_("Created context middleware with config: %s") %
+                       local_config)
             return cls(app)
         return _factory
