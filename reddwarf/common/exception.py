@@ -37,9 +37,9 @@ class ReddwarfError(openstack_exception.OpenstackException):
             self.message = message
         if self.internal_message is not None:
             try:
-                LOG.error(self.internal_message % kwargs)
+                LOG.error(_(self.internal_message % kwargs))
             except Exception:
-                LOG.error(self.internal_message)
+                LOG.error(_(self.internal_message))
         super(ReddwarfError, self).__init__(**kwargs)
 
 

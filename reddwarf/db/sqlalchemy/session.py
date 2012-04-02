@@ -64,7 +64,7 @@ def _create_engine(options):
                                   type='bool',
                                   default=False),
     }
-    LOG.info("Creating SQLAlchemy engine with args: %s" % engine_args)
+    LOG.info(_("Creating SQLAlchemy engine with args: %s" % engine_args))
     return create_engine(options['sql_connection'], **engine_args)
 
 

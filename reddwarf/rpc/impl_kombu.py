@@ -578,8 +578,8 @@ class Connection(object):
 
         def _publish():
             publisher = cls(self.channel, topic, **kwargs)
-            LOG.info("_publish info%s %s %s %s" % (self.channel, topic,
-                                                   kwargs, publisher))
+            LOG.info(_("_publish info%s %s %s %s" % (self.channel, topic,
+                                                   kwargs, publisher)))
             publisher.send(msg)
 
         self.ensure(_error_callback, _publish)

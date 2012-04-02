@@ -150,14 +150,14 @@ class Resource(openstack_wsgi.Resource):
             return result
 
         except exception.ReddwarfError as reddwarf_error:
-            LOG.debug(traceback.format_exc())
+            LOG.debug(_(traceback.format_exc()))
             httpError = self._get_http_error(reddwarf_error)
             return Fault(httpError(str(reddwarf_error), request=request))
         except webob.exc.HTTPError as http_error:
-            LOG.debug(traceback.format_exc())
+            LOG.debug(_(traceback.format_exc()))
             return Fault(http_error)
         except Exception as error:
-            LOG.exception(error)
+            LOG.exception(_(error))
             return Fault(webob.exc.HTTPInternalServerError(str(error),
                 request=request))
 
@@ -275,7 +275,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
     @classmethod
     def factory(cls, global_config, **local_config):
         def _factory(app):
-            LOG.debug("Created context middleware with config: %s" %
-                       local_config)
+            LOG.debug(_("Created context middleware with config: %s" %
+                       local_config))
             return cls(app)
         return _factory

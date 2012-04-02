@@ -62,7 +62,7 @@ class Launcher(object):
             try:
                 service.wait()
             except greenlet.GreenletExit:
-                LOG.error("greenthread exited")
+                LOG.error(_("greenthread exited"))
                 pass
 
 

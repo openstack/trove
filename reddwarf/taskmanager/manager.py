@@ -24,10 +24,10 @@ class TaskManager(object):
     """Task manager impl"""
 
     def __init__(self, *args, **kwargs):
-        LOG.info("TaskManager init %s %s" % (args, kwargs))
+        LOG.info(_("TaskManager init %s %s" % (args, kwargs)))
 
     def periodic_tasks(self, raise_on_error=False):
-        LOG.info("Launching a periodic task")
+        LOG.info(_("Launching a periodic task"))
 
     def test_method(self, context):
-        LOG.info("test_method called with context %s" % context)
+        LOG.info(_("test_method called with context %s" % context))

@@ -124,7 +124,7 @@ class DBaaSAgent(object):
 
     def list_users(self):
         """List users that have access to the database"""
-        LOG.debug("---Listing Users---")
+        LOG.debug(_("---Listing Users---"))
         users = []
         client = LocalSqlClient(get_engine())
         with client:
@@ -132,9 +132,9 @@ class DBaaSAgent(object):
             t = text("""select User from mysql.user where host !=
                      'localhost';""")
             result = client.execute(t)
-            LOG.debug("result = " + str(result))
+            LOG.debug(_("result = " + str(result)))
             for row in result:
-                LOG.debug("user = " + str(row))
+                LOG.debug(_("user = " + str(row)))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
                 # Now get the databases
@@ -150,7 +150,7 @@ class DBaaSAgent(object):
                         mysql_db.name = db['table_schema']
                         mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
-        LOG.debug("users = " + str(users))
+        LOG.debug(_("users = " + str(users)))
         return users
 
     def delete_user(self, user):
@@ -176,7 +176,7 @@ class DBaaSAgent(object):
 
     def list_databases(self):
         """List databases the user created on this mysql instance"""
-        LOG.debug("---Listing Databases---")
+        LOG.debug(_("---Listing Databases---"))
         databases = []
         client = LocalSqlClient(get_engine())
         with client:
@@ -198,15 +198,15 @@ class DBaaSAgent(object):
                 schema_name ASC;
             ''')
             database_names = client.execute(t)
-            LOG.debug("database_names = %r" % database_names)
+            LOG.debug(_("database_names = %r" % database_names))
             for database in database_names:
-                LOG.debug("database = %s " % str(database))
+                LOG.debug(_("database = %s " % str(database)))
                 mysql_db = models.MySQLDatabase()
                 mysql_db.name = database[0]
                 mysql_db.character_set = database[1]
                 mysql_db.collate = database[2]
                 databases.append(mysql_db.serialize())
-        LOG.debug("databases = " + str(databases))
+        LOG.debug(_("databases = " + str(databases)))
         return databases
 
     def delete_database(self, database):
@@ -232,7 +232,7 @@ class DBaaSAgent(object):
             except exc.OperationalError as err:
                 # Ignore, user is already created, just reset the password
                 # TODO(rnirmal): More fine grained error checking later on
-                LOG.debug(err)
+                LOG.debug(_(err))
         with client:
             t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
                            WHERE User=:user;""")
@@ -265,7 +265,7 @@ class DBaaSAgent(object):
             t = text("""SELECT User FROM mysql.user where User = 'root'
                         and host != 'localhost';""")
             result = client.execute(t)
-            LOG.debug("result = " + str(result))
+            LOG.debug(_("result = " + str(result)))
             return result.rowcount != 0
 
     def prepare(self, databases, memory_mb):
