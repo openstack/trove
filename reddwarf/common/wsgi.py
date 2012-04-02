@@ -150,14 +150,14 @@ class Resource(openstack_wsgi.Resource):
             return result
 
         except exception.ReddwarfError as reddwarf_error:
-            LOG.debug(_(traceback.format_exc()))
+            LOG.debug(traceback.format_exc())
             httpError = self._get_http_error(reddwarf_error)
             return Fault(httpError(str(reddwarf_error), request=request))
         except webob.exc.HTTPError as http_error:
-            LOG.debug(_(traceback.format_exc()))
+            LOG.debug(traceback.format_exc())
             return Fault(http_error)
         except Exception as error:
-            LOG.exception(_(error))
+            LOG.exception(error)
             return Fault(webob.exc.HTTPInternalServerError(str(error),
                 request=request))
 
