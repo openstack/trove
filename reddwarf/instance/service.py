@@ -26,6 +26,11 @@ from reddwarf.common import wsgi
 from reddwarf.instance import models, views
 from reddwarf.common import exception as rd_exceptions
 
+#TODO(ed-): Import these properly after this is restructured
+from reddwarf.flavor import models as flavormodels
+from reddwarf.flavor import views as flavorviews
+from reddwarf.flavor import service as flavorservice
+
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
@@ -262,11 +267,19 @@ class API(wsgi.Router):
         mapper = routes.Mapper()
         super(API, self).__init__(mapper)
         self._instance_router(mapper)
+        self._flavor_router(mapper) #TODO(ed-): Remove after restructure
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()
         path = "/{tenant_id}/instances"
         mapper.resource("instance", path, controller=instance_resource,
+                        collection={'detail': 'GET'})
+
+    #TODO(ed-): remove this when all mention of flavorservice et cetera are moved away
+    def _flavor_router(self, mapper):
+        flavor_resource = flavorservice.FlavorController().create_resource()
+        path = "/{tenant_id}/flavors"
+        mapper.resource("flavor", path, controller=flavor_resource,
                         collection={'detail': 'GET'})
 
 
