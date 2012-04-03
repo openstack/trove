@@ -56,6 +56,7 @@ class BaseController(wsgi.Controller):
         }
 
     def __init__(self):
+        self.add_addresses = config.Config.get('add_addresses', False)
         pass
 
     def _extract_required_params(self, params, model_name):
@@ -101,7 +102,8 @@ class InstanceController(BaseController):
         # TODO(cp16net): need to set the return code correctly
         view_cls = views.InstancesDetailView if detailed \
                                              else views.InstancesView
-        return wsgi.Result(view_cls(servers).data(), 200)
+        return wsgi.Result(view_cls(servers,
+                           add_addresses=self.add_addresses).data(), 200)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
@@ -119,7 +121,8 @@ class InstanceController(BaseController):
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceDetailView(server).data(), 200)
+        return wsgi.Result(views.InstanceDetailView(server,
+                           add_addresses=self.add_addresses).data(), 200)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""

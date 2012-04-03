@@ -49,6 +49,9 @@ nova_region_name = RegionOne
 nova_service_type = compute
 nova_service_name = Compute Service
 
+# Config option for showing the IP address that nova doles out
+add_addresses = True
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

@@ -15,19 +15,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+def get_ip_address(addresses):
+    if addresses is not None and \
+       addresses.get('private') is not None and \
+       len(addresses['private']) > 0:
+            return addresses['private'][0].get('addr')
 
 class InstanceView(object):
 
-    def __init__(self, instance):
+    def __init__(self, instance, add_addresses=False):
         self.instance = instance
+        self.add_addresses = add_addresses
 
     def data(self):
+        ip = get_ip_address(self.instance.addresses)
         instance_dict = {
             "id": self.instance.id,
             "name": self.instance.name,
             "status": self.instance.status,
             "links": self.instance.links
         }
+        if self.add_addresses and ip is not None:
+            instance_dict['ip'] = ip
         return {"instance": instance_dict}
 
 
@@ -43,8 +52,9 @@ class InstanceDetailView(InstanceView):
 
 class InstancesView(object):
 
-    def __init__(self, instances):
+    def __init__(self, instances, add_addresses=False):
         self.instances = instances
+        self.add_addresses = add_addresses
 
     def data(self):
         data = []
@@ -54,10 +64,12 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        return InstanceView(instance).data()['instance']
+        return InstanceView(instance,
+                            self.add_addresses).data()['instance']
 
 
 class InstancesDetailView(InstancesView):
 
     def data_for_instance(self, instance):
-        return InstanceDetailView(instance).data()['instance']
+        return InstanceDetailView(instance,
+                                  self.add_addresses).data()['instance']
