@@ -53,7 +53,7 @@ class API(object):
     def list_users(self):
         """Make an asynchronous call to list database users"""
         LOG.debug("Listing Users for Instance %s", self.id)
-        return rpc.call(context, self._get_routing_key(),
+        return rpc.call(self.context, self._get_routing_key(),
                  {"method": "list_users"})
 
     def delete_user(self, user):

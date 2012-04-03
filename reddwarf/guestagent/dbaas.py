@@ -137,6 +137,18 @@ class DBaaSAgent(object):
                 LOG.debug("user = " + str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
+                # Now get the databases
+                t = text("""SELECT grantee, table_schema
+                            from information_schema.SCHEMA_PRIVILEGES
+                            group by grantee, table_schema;""")
+                db_result = client.execute(t)
+                for db in db_result:
+                    matches = re.match("^'(.+)'@", db['grantee'])
+                    if matches is not None and \
+                       matches.group(1) == mysql_user.name:
+                        mysql_db = models.MySQLDatabase()
+                        mysql_db.name = db['table_schema']
+                        mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
         LOG.debug("users = " + str(users))
         return users

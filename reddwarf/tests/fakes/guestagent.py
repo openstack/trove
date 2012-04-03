@@ -33,6 +33,7 @@ class FakeGuest(object):
     def prepare(self, memory_mb, databases):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             status.status = ServiceStatuses.RUNNING

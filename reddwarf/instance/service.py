@@ -266,7 +266,8 @@ class API(wsgi.Router):
         mapper = routes.Mapper()
         super(API, self).__init__(mapper)
         self._instance_router(mapper)
-        self._flavor_router(mapper) #TODO(ed-): Remove after restructure
+        # TODO(ed-): Remove after restructure
+        self._flavor_router(mapper)
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()
@@ -274,7 +275,8 @@ class API(wsgi.Router):
         mapper.resource("instance", path, controller=instance_resource,
                         collection={'detail': 'GET'})
 
-    #TODO(ed-): remove this when all mention of flavorservice et cetera are moved away
+    # TODO(ed-): remove this when all mention of flavorservice
+    # et cetera are moved away
     def _flavor_router(self, mapper):
         flavor_resource = flavorservice.FlavorController().create_resource()
         path = "/{tenant_id}/flavors"

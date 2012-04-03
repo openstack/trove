@@ -65,4 +65,3 @@ if CONFIG.get("remote_implementation", "real") == "fake":
 
     def create_nova_client(context):
         return fake_create_nova_client(context)
-

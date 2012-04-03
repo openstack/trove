@@ -26,7 +26,7 @@ class UserView(object):
             "name": self.user.name,
             "databases": self.user.databases
         }
-        return {"users": user_dict}
+        return user_dict
 
 
 class UsersView(object):
@@ -40,7 +40,7 @@ class UsersView(object):
         for user in self.users:
             data.append(UserView(user).data())
 
-        return data
+        return {"users": data}
 
 
 class RootCreatedView(UserView):
@@ -68,12 +68,7 @@ class SchemaView(object):
         self.schema = schema
 
     def data(self):
-        schema_dict = {
-            "name": self.schema.name,
-            "collate": self.schema.collate,
-            "character_set": self.schema.character_set
-        }
-        return {"databases": schema_dict}
+        return {"name": self.schema.name}
 
 
 class SchemasView(object):
@@ -87,4 +82,4 @@ class SchemasView(object):
         for schema in self.schemas:
             data.append(SchemaView(schema).data())
 
-        return data
+        return {"databases": data}

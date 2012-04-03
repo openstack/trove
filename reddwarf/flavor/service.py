@@ -73,6 +73,7 @@ class FlavorController(BaseController):
         flavors = models.Flavors(context=context)
         return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 
+
 class API(wsgi.Router):
     """API"""
     def __init__(self):
