@@ -15,6 +15,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
+LOG = logging.getLogger(__name__)
+
 
 def get_ip_address(addresses):
     if addresses is not None and \
@@ -23,14 +26,22 @@ def get_ip_address(addresses):
         return [addr.get('addr') for addr in addresses['private']]
 
 
+def get_volumes(volumes):
+    LOG.debug("volumes - %s" % volumes)
+    if volumes is not None and len(volumes) > 0:
+        return {'size': volumes[0].get('size')}
+
+
 class InstanceView(object):
 
-    def __init__(self, instance, add_addresses=False):
+    def __init__(self, instance, add_addresses=False, add_volumes=False):
         self.instance = instance
         self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
 
     def data(self):
         ip = get_ip_address(self.instance.addresses)
+        volumes = get_volumes(self.instance.volumes)
         instance_dict = {
             "id": self.instance.id,
             "name": self.instance.name,
@@ -39,6 +50,9 @@ class InstanceView(object):
         }
         if self.add_addresses and ip is not None and len(ip) > 0:
             instance_dict['ip'] = ip
+        if self.add_volumes and volumes is not None:
+            instance_dict['volume'] = volumes
+        LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
 
@@ -61,9 +75,10 @@ class InstanceDetailView(InstanceView):
 
 class InstancesView(object):
 
-    def __init__(self, instances, add_addresses=False):
+    def __init__(self, instances, add_addresses=False, add_volumes=False):
         self.instances = instances
         self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
 
     def data(self):
         data = []
@@ -81,4 +96,5 @@ class InstancesDetailView(InstancesView):
 
     def data_for_instance(self, instance):
         return InstanceDetailView(instance,
-                                  self.add_addresses).data()['instance']
+                                  self.add_addresses,
+                                  self.add_volumes).data()['instance']

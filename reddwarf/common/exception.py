@@ -87,3 +87,8 @@ class UnprocessableEntity(ReddwarfError):
 
     message = _("Unable to process the contained request")
 
+
+class VolumeAttachmentsNotFound(NotFound):
+
+    message = _("Cannot find the volumes attached to compute "
+                "instance %(server_id)")

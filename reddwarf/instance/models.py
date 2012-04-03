@@ -23,17 +23,18 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
-#from reddwarf.guestagent import api as guest_api
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
-from novaclient.v1_1.client import Client
 from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
+from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.common.remote import create_guest_client
+
+
+from eventlet import greenthread
 
 
 CONFIG = config.Config
@@ -45,12 +46,40 @@ def load_server(context, instance_id, server_id):
     client = create_nova_client(context)
     try:
         server = client.servers.get(server_id)
+        volumes = load_volumes(context, server_id, client=client)
     except nova_exceptions.NotFound, e:
+        LOG.debug("Could not find nova server_id(%s)" % server_id)
         raise rd_exceptions.ComputeInstanceNotFound(instance_id=instance_id,
                                                   server_id=server_id)
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
-    return server
+    return server, volumes
+
+
+def load_volumes(context, server_id, client=None):
+    volume_support = config.Config.get("reddwarf_volume_support", 'False')
+    if utils.bool_from_string(volume_support):
+        if client is None:
+            client = create_nova_client(context)
+        volume_client = create_nova_volume_client(context)
+        try:
+            volumes = []
+            if utils.bool_from_string(volume_support):
+                volumes_info = client.volumes.get_server_volumes(server_id)
+                volume_ids = [attachments.volumeId for attachments in
+                              volumes_info]
+                for volume_id in volume_ids:
+                    volume_info = volume_client.volumes.get(volume_id)
+                    volume = {'id': volume_info.id,
+                              'size': volume_info.size}
+                    volumes.append(volume)
+        except nova_exceptions.NotFound, e:
+            LOG.debug("Could not find nova server_id(%s)" % server_id)
+            raise rd_exceptions.VolumeAttachmentsNotFound(server_id=server_id)
+        except nova_exceptions.ClientException, e:
+            raise rd_exceptions.ReddwarfError(str(e))
+        return volumes
+    return None
 
 
 # This probably should not happen here. Seems like it should
@@ -71,7 +100,7 @@ def populate_databases(dbs):
             databases.append(mydb.serialize())
         return databases
     except ValueError as ve:
-        raise exception.BadRequest(ve.message)
+        raise rd_exceptions.BadRequest(ve.message)
 
 
 class InstanceStatus(object):
@@ -95,13 +124,14 @@ VALID_ACTION_STATUSES = ["ACTIVE"]
 class Instance(object):
 
     _data_fields = ['name', 'status', 'id', 'created', 'updated',
-                    'flavor', 'links', 'addresses']
+                    'flavor', 'links', 'addresses', 'volume']
 
-    def __init__(self, context, db_info, server, service_status):
+    def __init__(self, context, db_info, server, service_status, volumes):
         self.context = context
         self.db_info = db_info
         self.server = server
         self.service_status = service_status
+        self.volumes = volumes
 
     @staticmethod
     def load(context, id):
@@ -113,11 +143,12 @@ class Instance(object):
             db_info = DBInstance.find_by(id=id)
         except rd_exceptions.NotFound:
             raise rd_exceptions.NotFound(uuid=id)
-        server = load_server(context, db_info.id, db_info.compute_instance_id)
+        server, volumes = load_server(context, db_info.id,
+                                      db_info.compute_instance_id)
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=id)
         LOG.info("service status=%s" % service_status)
-        return Instance(context, db_info, server, service_status)
+        return Instance(context, db_info, server, service_status, volumes)
 
     def delete(self, force=False):
         if not force and self.server.status in SERVER_INVALID_ACTION_STATUSES:
@@ -141,25 +172,93 @@ class Instance(object):
             raise rd_exceptions.ReddwarfError()
 
     @classmethod
+    def _create_volume(cls, context, db_info, volume_size):
+        volume_support = config.Config.get("reddwarf_volume_support", 'False')
+        LOG.debug(_("Volume support = %s") % volume_support)
+        if utils.bool_from_string(volume_support):
+            LOG.debug(_("Starting to create the volume for the instance"))
+            volume_client = create_nova_volume_client(context)
+            volume_desc = ("mysql volume for %s" % context.tenant)
+            volume_ref = volume_client.volumes.create(
+                                        volume_size,
+                                        display_name="mysql-%s" % db_info.id,
+                                        display_description=volume_desc)
+            #TODO(cp16net) this is bad to wait here for the volume create
+            # before returning but this was a quick way to get it working
+            # for now we need this to go into the task manager
+            v_ref = volume_client.volumes.get(volume_ref.id)
+            while not v_ref.status in ['available', 'error']:
+                LOG.debug(_("waiting for volume [volume.status=%s]") %
+                            v_ref.status)
+                greenthread.sleep(1)
+                v_ref = volume_client.volumes.get(volume_ref.id)
+
+            if v_ref.status in ['error']:
+                raise rd_exceptions.ReddwarfError(
+                                    _("Could not create volume"))
+            LOG.debug(_("Created volume %s") % v_ref)
+            # The mapping is in the format:
+            # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
+            # setting the delete_on_terminate instance to true=1
+            mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
+            # TODO(rnirmal) This mapping device needs to be configurable.
+            # and we may have to do a little more trickery here.
+            # We don't know what's the next device available on the
+            # guest. Also in cases for ovz where this is mounted on
+            # the host, that's not going to work for us.
+            block_device = {'vdb': mapping}
+            volume = [{'id': v_ref.id,
+                       'size': v_ref.size}]
+            LOG.debug("block_device = %s" % block_device)
+            LOG.debug("volume = %s" % volume)
+
+            device_path = CONFIG.get('device_path')
+            mount_point = CONFIG.get('mount_point')
+            LOG.debug(_("device_path = %s") % device_path)
+            LOG.debug(_("mount_point = %s") % mount_point)
+        else:
+            LOG.debug(_("Skipping setting up the volume"))
+            block_device = None
+            device_path = None
+            mount_point = None
+            volume = None
+            #end volume_support
+        volume_info = {'block_device': block_device,
+                       'device_path': device_path,
+                       'mount_point': mount_point}
+        return volume, volume_info
+
+    @classmethod
     def create(cls, context, name, flavor_ref, image_id,
-               databases, service_type):
+               databases, service_type, volume_size):
         db_info = DBInstance.create(name=name,
             task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
+        volume, volume_info = cls._create_volume(context,
+                                                     db_info,
+                                                     volume_size)
         client = create_nova_client(context)
         files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
                  (db_info.id, service_type)}
         server = client.servers.create(name, image_id, flavor_ref,
-                     files=files)
+                     files=files,
+                     block_device_mapping=volume_info['block_device'])
         LOG.debug(_("Created new compute instance %s.") % server.id)
+
         db_info.compute_instance_id = server.id
         db_info.save()
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
+
         guest = create_guest_client(context, db_info.id)
-        guest.prepare(databases=[], memory_mb=512, users=[])
-        return Instance(context, db_info, server, service_status)
+
+        # populate the databases
+        model_schemas = populate_databases(databases)
+        guest.prepare(512, model_schemas, users=[],
+                      device_path=volume_info['device_path'],
+                      mount_point=volume_info['mount_point'])
+        return Instance(context, db_info, server, service_status, volume)
 
     def get_guest(self):
         return create_guest_client(self.context, self.db_info.id)
@@ -201,8 +300,8 @@ class Instance(object):
             if self.server.status in ["ACTIVE", "SHUTDOWN"]:
                 return InstanceStatus.SHUTDOWN
             else:
-                LOG.error(_("While shutting down instance %s: server had status "
-                          " %s.") % (self.id, self.server.status))
+                LOG.error(_("While shutting down instance (%s): server had "
+                          " status (%s).") % (self.id, self.server.status))
                 return InstanceStatus.ERROR
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
@@ -311,7 +410,6 @@ class Instance(object):
             raise rd_exceptions.UnprocessableEntity(msg)
 
 
-
 def create_server_list_matcher(server_list):
     # Returns a method which finds a server from the given list.
     def find_server(instance_id, server_id):
@@ -319,6 +417,9 @@ def create_server_list_matcher(server_list):
         if len(matches) == 1:
             return matches[0]
         elif len(matches) < 1:
+            # The instance was not found in the list and
+            # this can happen if the instance is deleted from
+            # nova but still in reddwarf database
             raise rd_exceptions.ComputeInstanceNotFound(
                 instance_id=instance_id, server_id=server_id)
         else:
@@ -341,7 +442,8 @@ class Instances(object):
         ret = []
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
-            status = InstanceServiceStatus.find_by(instance_id=db.id)
+            LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
+                      (db.id, db.compute_instance_id))
             try:
                 # TODO(hub-cap): Figure out if this is actually correct.
                 # We are not sure if we should be doing some validation.
@@ -350,11 +452,28 @@ class Instances(object):
                 # nova db has compared to what we have. We should have
                 # a way to handle this.
                 server = find_server(db.id, db.compute_instance_id)
+                volumes = load_volumes(context, db.compute_instance_id)
+                status = InstanceServiceStatus.find_by(instance_id=db.id)
+                LOG.info(_("Server api_status(%s)") %
+                           (status.status.api_status))
+
+                if not status.status:
+                    LOG.info(_("Server status could not be read for "
+                               "instance id(%s)") % (db.compute_instance_id))
+                    continue
+                if status.status.api_status in ['SHUTDOWN']:
+                    LOG.info(_("Server was shutdown id(%s)") %
+                           (db.compute_instance_id))
+                    continue
             except rd_exceptions.ComputeInstanceNotFound:
                 LOG.info(_("Could not find server %s") %
                            db.compute_instance_id)
                 continue
-            ret.append(Instance(context, db, server, status))
+            except ModelNotFoundError:
+                LOG.info(_("Status entry not found either failed to start "
+                           "or instance was deleted"))
+                continue
+            ret.append(Instance(context, db, server, status, volumes))
         return ret
 
 
@@ -364,6 +483,7 @@ class DatabaseModelBase(ModelBase):
     @classmethod
     def create(cls, **values):
         values['id'] = utils.generate_uuid()
+        values['created'] = utils.utcnow()
         instance = cls(**values).save()
         if not instance.is_valid():
             raise InvalidModelError(instance.errors)
@@ -372,9 +492,16 @@ class DatabaseModelBase(ModelBase):
     def save(self):
         if not self.is_valid():
             raise InvalidModelError(self.errors)
-        self['updated_at'] = utils.utcnow()
-        LOG.debug(_("Saving %s: %s") % (self.__class__.__name__, self.__dict__))
+        self['updated'] = utils.utcnow()
+        LOG.debug(_("Saving %s: %s") %
+            (self.__class__.__name__, self.__dict__))
         return db.db_api.save(self)
+
+    def delete(self):
+        self['updated'] = utils.utcnow()
+        LOG.debug(_("Deleting %s: %s") %
+            (self.__class__.__name__, self.__dict__))
+        return db.db_api.delete(self)
 
     def __init__(self, **kwargs):
         self.merge_attributes(kwargs)

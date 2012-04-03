@@ -96,7 +96,7 @@ class FakeServer(object):
 
     @property
     def addresses(self):
-        return {"private":[{"addr":"123.123.123.123"}]}
+        return {"private": [{"addr":"123.123.123.123"}]}
 
     def delete(self):
         self.schedule_status = []
@@ -193,4 +193,8 @@ class FakeClient(object):
 
 
 def fake_create_nova_client(context):
+    return FakeClient(context)
+
+
+def fake_create_nova_volume_client(context):
     return FakeClient(context)

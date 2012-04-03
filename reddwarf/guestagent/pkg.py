@@ -18,8 +18,10 @@
 """
 Manages packages on the Guest VM.
 """
+import commands
 import logging
 import pexpect
+import re
 
 from reddwarf.common import exception
 from reddwarf.common.exception import ProcessExecutionError
@@ -27,7 +29,6 @@ from reddwarf.common import utils
 
 
 LOG = logging.getLogger(__name__)
-# FLAGS = flags.FLAGS
 
 
 class PkgAdminLockError(exception.ReddwarfError):
@@ -157,7 +158,8 @@ class PkgAgent(object):
     def pkg_install(self, package_name, time_out):
         """Installs a package."""
         try:
-            utils.execute("apt-get", "update", run_as_root=True)
+            utils.execute("apt-get", "update", run_as_root=True,
+                          root_helper="sudo")
         except ProcessExecutionError as e:
             LOG.error(_("Error updating the apt sources"))
 
@@ -171,44 +173,45 @@ class PkgAgent(object):
                                            % package_name)
 
     def pkg_version(self, package_name):
-        """Returns the installed version of the given package.
-
-        It is sometimes impossible to know if a package is completely
-        unavailable before you attempt to install.  Some packages may return
-        no information from the dpkg command but then install fine with apt-get
-        install.
-
-        """
-        child = pexpect.spawn("dpkg -l %s" % package_name)
-        i = child.expect([".*No packages found matching*", "\+\+\+\-"])
-        if i == 0:
-            #raise PkgNotFoundError()
+        cmd_list = ["dpkg", "-l", package_name]
+        p = commands.getstatusoutput(' '.join(cmd_list))
+        # check the command status code
+        if not p[0] == 0:
             return None
         # Need to capture the version string
-        child.expect("\n")
-        i = child.expect(["<none>", ".*"])
-        if i == 0:
-            return None
-        line = child.match.group()
-        parts = line.split()
-        # Should be something like:
-        # ['un', 'cowsay', '<none>', '(no', 'description', 'available)']
-        try:
-            wait_and_close_proc(child)
-        except pexpect.TIMEOUT:
-            kill_proc(child)
-            raise PkgTimeout("Remove process took too long.")
-        if len(parts) <= 2:
-            raise Error("Unexpected output.")
-        if parts[1] != package_name:
-            raise Error("Unexpected output:[1] == " + str(parts[1]))
-        if parts[0] == 'un' or parts[2] == '<none>':
-            return None
-        return parts[2]
+        # check the command output
+        std_out = p[1]
+        patterns = ['.*No packages found matching.*',
+                    "\w\w\s+(\S+)\s+(\S+)\s+(.*)$"]
+        for line in std_out.split("\n"):
+            for p in patterns:
+                regex = re.compile(p)
+                matches = regex.match(line)
+                if matches:
+                    line = matches.group()
+                    parts = line.split()
+                    if not parts:
+                        msg = _("returned nothing")
+                        LOG.error(msg)
+                        raise exception.GuestError(msg)
+                    if len(parts) <= 2:
+                        msg = _("Unexpected output.")
+                        LOG.error(msg)
+                        raise exception.GuestError(msg)
+                    if parts[1] != package_name:
+                        msg = _("Unexpected output:[1] = %s" % str(parts[1]))
+                        LOG.error(msg)
+                        raise exception.GuestError(msg)
+                    if parts[0] == 'un' or parts[2] == '<none>':
+                        return None
+                    return parts[2]
+        msg = _("version() saw unexpected output from dpkg!")
+        LOG.error(msg)
+        raise exception.GuestError(msg)
 
     def pkg_remove(self, package_name, time_out):
         """Removes a package."""
-        if self.pkg_version(package_name) == None:
+        if self.pkg_version(package_name) is None:
             return
         result = self._remove(package_name, time_out)
 

@@ -69,9 +69,11 @@ class FakeGuest(object):
     def list_users(self):
         return [self.users[name] for name in self.users]
 
-    def prepare(self, memory_mb, databases, users):
+    def prepare(self, databases, memory_mb, users, device_path=None,
+                mount_point=None):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             status.status = ServiceStatuses.RUNNING
@@ -87,6 +89,7 @@ class FakeGuest(object):
     def start_mysql_with_conf_changes(self, updated_memory_size):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             status.status = ServiceStatuses.RUNNING
@@ -96,6 +99,7 @@ class FakeGuest(object):
     def stop_mysql(self):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             status.status = ServiceStatuses.SHUTDOWN
