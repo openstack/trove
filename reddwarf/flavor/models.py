@@ -77,4 +77,3 @@ class Flavors(NovaRemoteModelBase):
     def __iter__(self):
         for item in self.flavors:
             yield item
-

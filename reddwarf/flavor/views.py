@@ -15,6 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 class FlavorView(object):
 
     def __init__(self, flavor, req=None):
@@ -31,7 +32,7 @@ class FlavorView(object):
     def _build_links(self):
         result = []
         #scheme = self.req.scheme
-        scheme = 'https' # Forcing https
+        scheme = 'https'  # Forcing https
         endpoint = self.req.host
         splitpath = self.req.path.split('/')
         detailed = ''
@@ -49,8 +50,8 @@ class FlavorView(object):
                 path = '/'.join(splitpath)
                 href = href_template % locals()
             elif rlink['rel'] == 'bookmark':
-                splitpath.pop(2) # Remove the version.
-                splitpath.pop(1) # Remove the tenant id.
+                splitpath.pop(2)  # Remove the version.
+                splitpath.pop(1)  # Remove the tenant id.
                 path = '/'.join(splitpath)
                 href = href_template % locals()
 

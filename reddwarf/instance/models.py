@@ -250,7 +250,18 @@ class Instances(object):
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
             status = InstanceServiceStatus.find_by(instance_id=db.id)
-            server = find_server(db.id, db.compute_instance_id)
+            try:
+                # TODO(hub-cap): Figure out if this is actually correct.
+                # We are not sure if we should be doing some validation.
+                # Basically if the server find returns nothing, but we 
+                # have something, there is a mismatch between what the
+                # nova db has compared to what we have. We should have
+                # a way to handle this.
+                server = find_server(db.id, db.compute_instance_id)
+            except rd_exceptions.ComputeInstanceNotFound:
+                LOG.info(_("Could not find server %s") %
+                           db.compute_instance_id)
+                continue
             ret.append(Instance(context, db, server, status))
         return ret
 

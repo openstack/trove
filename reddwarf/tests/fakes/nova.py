@@ -46,7 +46,8 @@ class FakeFlavor(object):
         return "flavors/%s" % self.id
 
     def to_dict(self):
-        return {"id":self.id, "links":self.links}
+        return {"id": self.id, "links": self.links}
+
 
 class FakeFlavors(object):
 
@@ -75,6 +76,7 @@ class FakeFlavors(object):
             if href.endswith(value.href_suffix):
                 return value
         raise nova_exceptions.NotFound(404, "Flavor href not found %s" % href)
+
 
 class FakeServer(object):
 
@@ -131,7 +133,7 @@ class FakeServers(object):
     def __init__(self, flavors):
         self.db = {}
         self.flavors = flavors
-        self.next_id = 10;
+        self.next_id = 10
         self.events = EventSimulator()
 
     def create(self, name, image_id, flavor_ref, files):
