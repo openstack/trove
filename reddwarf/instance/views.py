@@ -15,11 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 def get_ip_address(addresses):
     if addresses is not None and \
        addresses.get('private') is not None and \
        len(addresses['private']) > 0:
             return addresses['private'][0].get('addr')
+
 
 class InstanceView(object):
 

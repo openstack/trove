@@ -167,7 +167,11 @@ class InstanceController(BaseController):
         image_id = database['image_id']
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
-        instance = models.Instance.create(context, name, flavor_ref, image_id)
+        databases = body['instance'].get('databases')
+        if databases is None:
+            databases = []
+        instance = models.Instance.create(context, name, flavor_ref,
+                                          image_id, databases)
 
         return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
 
