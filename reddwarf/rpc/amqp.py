@@ -143,7 +143,7 @@ def msg_reply(msg_id, connection_pool, reply=None, failure=None, ending=False):
             message = str(failure[1])
             tb = traceback.format_exception(*failure)
             LOG.error(_("Returning exception %s to caller"), message)
-            LOG.error(_(tb))
+            LOG.error(tb)
             failure = (failure[0].__name__, str(failure[1]), tb)
 
         try:

@@ -144,7 +144,7 @@ class API(object):
                      "args": {'updated_memory_size': updated_memory_size}
                     })
         except Exception as e:
-            LOG.error(_(e))
+            LOG.error(e)
             raise exception.GuestError(original_message=str(e))
 
     def stop_mysql(self):
@@ -156,7 +156,7 @@ class API(object):
                      "args": {}
                     })
         except Exception as e:
-            LOG.error(_(e))
+            LOG.error(e)
             raise exception.GuestError(original_message=str(e))
 
     def upgrade(self):

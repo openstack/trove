@@ -215,9 +215,9 @@ class Instance(object):
         """
         if self.status not in VALID_ACTION_STATUSES:
             msg = "Instance is not currently available for an action to be " \
-                  "performed. Status [%s]" % self.status
-            LOG.debug(_(msg))
-            raise rd_exceptions.UnprocessableEntity(msg)
+                  "performed. Status [%s]"
+            LOG.debug(_(msg) % self.status)
+            raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
 
 
 def create_server_list_matcher(server_list):

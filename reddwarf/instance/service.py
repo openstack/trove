@@ -116,7 +116,7 @@ class InstanceController(BaseController):
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
-            LOG.error(_(e))
+            LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceDetailView(server).data(), 200)
@@ -134,7 +134,7 @@ class InstanceController(BaseController):
         except exception.ReddwarfError, e:
             # TODO(hub-cap): come up with a better way than
             #    this to get the message
-            LOG.error(_(e))
+            LOG.error(e)
             return wsgi.Result(str(e), 404)
 
         instance.delete()
@@ -181,7 +181,7 @@ class InstanceController(BaseController):
         try:
             volume_size = float(size)
         except (ValueError, TypeError) as err:
-            LOG.error(_(err))
+            LOG.error(err)
             msg = ("Required element/key - instance volume"
                    "'size' was not specified as a number")
             raise rd_exceptions.ReddwarfError(msg)

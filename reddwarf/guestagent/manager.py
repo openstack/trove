@@ -46,7 +46,7 @@ class GuestManager(service.Manager):
                              'reddwarf.guestagent.pkg.PkgAgent']
         classes = []
         for guest_driver in guest_drivers:
-            LOG.info(_(guest_driver))
+            LOG.info(guest_driver)
             driver = utils.import_class(guest_driver)
             classes.append(driver)
         try:

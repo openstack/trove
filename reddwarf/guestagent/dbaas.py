@@ -76,7 +76,7 @@ def get_engine():
                                    pool_recycle=7200, echo=True,
                                    listeners=[KeepAliveConnection()])
         else:
-            LOG.error(_(err))
+            LOG.error(err)
         return ENGINE
 
 
@@ -232,7 +232,7 @@ class DBaaSAgent(object):
             except exc.OperationalError as err:
                 # Ignore, user is already created, just reset the password
                 # TODO(rnirmal): More fine grained error checking later on
-                LOG.debug(_(err))
+                LOG.debug(err)
         with client:
             t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
                            WHERE User=:user;""")
