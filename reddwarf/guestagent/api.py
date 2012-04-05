@@ -38,6 +38,31 @@ class API(object):
         self.context = context
         self.id = id
 
+    def _call(self, method_name, **kwargs):
+        try:
+            return rpc.call(self.context, self._get_routing_key(),
+                            {"method": method_name, "args": kwargs})
+        except Exception as e:
+            LOG.error(e)
+            raise exception.GuestError(original_message=str(e))
+
+    def _cast(self, method_name, **kwargs):
+        try:
+            rpc.cast(self.context, self._get_routing_key(),
+                     {"method": method_name,
+                      "args": kwargs})
+        except Exception as e:
+            LOG.error(e)
+            raise exception.GuestError(original_message=str(e))
+
+    def _cast_with_consumer(self, method_name, **kwargs):
+        try:
+            rpc.cast_with_consumer(self.context, self._get_routing_key(),
+                                   {"method": method_name, "args": kwargs})
+        except Exception as e:
+            LOG.error(e)
+            raise exception.GuestError(original_message=str(e))
+
     def _get_routing_key(self):
         """Create the routing key based on the container id"""
         return "guestagent.%s" % self.id
@@ -45,122 +70,82 @@ class API(object):
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
         LOG.debug(_("Creating Users for Instance %s"), self.id)
-        rpc.cast(self.context, self._get_routing_key(),
-                 {"method": "create_user",
-                  "args": {"users": users}
-                 })
+        self._cast("create_user", users=users)
 
     def list_users(self):
         """Make an asynchronous call to list database users"""
         LOG.debug(_("Listing Users for Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "list_users"})
+        return self._call("list_users")
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
-        LOG.debug(_("Deleting user %s for Instance %s"),
-                  user, self.id)
-        rpc.cast(self.context, self._get_routing_key(),
-                 {"method": "delete_user",
-                  "args": {"user": user}
-                 })
+        LOG.debug(_("Deleting user %s for Instance %s"), user, self.id)
+        return self._cast("delete_user", user=user)
 
     def create_database(self, databases):
         """Make an asynchronous call to create a new database
            within the specified container"""
         LOG.debug(_("Creating databases for Instance %s"), self.id)
-        rpc.cast(self.context, self._get_routing_key(),
-                 {"method": "create_database",
-                  "args": {"databases": databases}
-                 })
+        self._cast("create_database", databases=databases)
 
     def list_databases(self):
         """Make an asynchronous call to list database users"""
         LOG.debug(_("Listing Users for Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "list_databases"})
+        return self._call("list_databases")
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database
            within the specified container"""
-        LOG.debug(_("Deleting database %s for Instance %s"),
-                  database, self.id)
-        rpc.cast(self.context, self._get_routing_key(),
-                 {"method": "delete_database",
-                  "args": {"database": database}
-                 })
+        LOG.debug(_("Deleting database %s for Instance %s"), database, self.id)
+        self._cast("delete_database", database=database)
 
     def enable_root(self):
         """Make a synchronous call to enable the root user for
            access from anywhere"""
         LOG.debug(_("Enable root user for Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "enable_root"})
+        return self._call("enable_root")
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere"""
         LOG.debug(_("Disable root user for Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "disable_root"})
+        return self._call("disable_root")
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
            available for the container"""
         LOG.debug(_("Check root access for Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "is_root_enabled"})
+        return self._call("is_root_enabled")
 
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
         LOG.debug(_("Check diagnostics on Instance %s"), self.id)
-        return rpc.call(self.context, self._get_routing_key(),
-                 {"method": "get_diagnostics"})
+        return self._call("get_diagnostics")
 
-    def prepare(self, memory_mb, databases):
+    def prepare(self, memory_mb, databases, users):
         """Make an asynchronous call to prepare the guest
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
-        rpc.cast_with_consumer(self.context, self._get_routing_key(),
-                 {"method": "prepare",
-                  "args": {"databases": databases,
-                           "memory_mb": memory_mb}
-                 })
+        self._cast_with_consumer("prepare", databases=databases,
+            memory_mb=memory_mb, users=users)
 
     def restart(self):
         """Restart the MySQL server."""
         LOG.debug(_("Sending the call to restart MySQL on the Guest."))
-        rpc.call(self.context, self._get_routing_key(),
-                 {"method": "restart",
-                  "args": {}
-                 })
+        self.call("restart")
 
     def start_mysql_with_conf_changes(self, updated_memory_size):
         """Start the MySQL server."""
         LOG.debug(_("Sending the call to start MySQL on the Guest."))
-        try:
-            rpc.call(self.context, self._get_routing_key(),
-                    {"method": "start_mysql_with_conf_changes",
-                     "args": {'updated_memory_size': updated_memory_size}
-                    })
-        except Exception as e:
-            LOG.error(e)
-            raise exception.GuestError(original_message=str(e))
+        self._call("start_mysql_with_conf_changes",
+                   updated_memory_size=updated_memory_size)
 
     def stop_mysql(self):
         """Stop the MySQL server."""
         LOG.debug(_("Sending the call to stop MySQL on the Guest."))
-        try:
-            rpc.call(self.context, self._get_routing_key(),
-                    {"method": "stop_mysql",
-                     "args": {}
-                    })
-        except Exception as e:
-            LOG.error(e)
-            raise exception.GuestError(original_message=str(e))
+        self._call("stop_mysql")
 
     def upgrade(self):
         """Make an asynchronous call to self upgrade the guest agent"""
-        topic = self._get_routing_key(self.context, self.id)
         LOG.debug(_("Sending an upgrade call to nova-guest %s"), topic)
-        rpc.cast_with_consumer(self.context, topic, {"method": "upgrade"})
+        self._cast_with_consumer("upgrade")

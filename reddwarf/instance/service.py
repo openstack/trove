@@ -90,9 +90,7 @@ class InstanceController(BaseController):
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Comitting an ACTION again instance %s for tenant '%s'"
                  % (id, tenant_id))
-        context = rd_context.ReddwarfContext(
-                          auth_tok=req.headers["X-Auth-Token"],
-                          tenant=tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         instance.validate_can_perform_action_on_instance()
         _actions = {

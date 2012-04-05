@@ -69,12 +69,13 @@ class GuestManager(service.Manager):
            Right now does the status updates"""
         status_method = "update_status"
         try:
-            getattr(self.driver, status_method)()
+            method = getattr(self.driver, status_method)
         except AttributeError as ae:
             LOG.error(_("Method %s not found for driver %s"), status_method,
                       self.driver)
             if raise_on_error:
                 raise ae
+        method()
 
     def upgrade(self, context):
         """Upgrade the guest agent and restart the agent"""
@@ -87,8 +88,10 @@ class GuestManager(service.Manager):
     def _mapper(self, method, context, *args, **kwargs):
         """ Tries to call the respective driver method """
         try:
-            return getattr(self.driver, method)(*args, **kwargs)
+            method = getattr(self.driver, method)
         except AttributeError:
-            LOG.error(_("Method %s not found for driver %s"), method, self.driver)
-            raise exception.NotFound("Method not available for the "
-                                     "chosen driver")
+            LOG.error(_("Method %s not found for driver %s"), method,
+                      self.driver)
+            raise exception.NotFound("Method %s is not available for the "
+                                     "chosen driver.")
+        method(*args, **kwargs)

@@ -142,7 +142,7 @@ class Instance(object):
     @classmethod
     def create(cls, context, name, flavor_ref, image_id, databases):
         db_info = DBInstance.create(name=name,
-            task_status=InstanceTasks.BUILDING)
+            task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
         client = create_nova_client(context)
         server = client.servers.create(name, image_id, flavor_ref,
@@ -154,10 +154,11 @@ class Instance(object):
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
         guest = create_guest_client(context, db_info.id)
-        # populate the databases
-        model_schemas = populate_databases(databases)
-        guest.prepare(512, model_schemas)
+        guest.prepare(databases=[], memory_mb=512, users=[])
         return Instance(context, db_info, server, service_status)
+
+    def get_guest(self):
+        return create_guest_client(self.context, self.db_info.id)
 
     @property
     def id(self):
@@ -181,6 +182,8 @@ class Instance(object):
         #TODO(tim.simpson): As we enter more advanced cases dealing with
         # timeouts determine if the task_status should be integrated here
         # or removed entirely.
+        if InstanceTasks.REBOOTING == self.db_info.task_status:
+            return "REBOOT"
         # If the server is in any of these states they take precedence.
         if self.server.status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
             return self.server.status
@@ -258,20 +261,35 @@ class Instance(object):
 
     def restart(self):
         if instance_state in SERVER_INVALID_ACTION_STATUSES:
-            LOG.debug("Restart instance not allowed while instance is in %s "
-                      "status." % instance_state)
+            msg = _("Restart instance not allowed while instance %s is in %s "
+                    "status.") % (self.id, instance_state)
+            LOG.debug(msg)
             # If the state is building then we throw an exception back
-            raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
-                                                % id)
+            raise rd_exceptions.UnprocessableEntity(msg)
         else:
             LOG.info("Restarting instance %s..." % self.id)
+        # Set our local status since Nova might not change it quick enough.
+        #TODO(tim.simpson): Possible bad stuff can happen if this service
+        #                   shuts down before it can set status to NONE.
+        #                   We need a last updated time to mitigate this;
+        #                   after some period of tolerance, we'll assume the
+        #                   status is no longer in effect.
+        self.db_info.task_status = InstanceTasks.REBOOTING
+        self.db_info.save()
+        try:
+            self.get_guest().restart()
+        except RemoteError:
+            LOG.error("Failure to restart MySQL.")
+        finally:
+            self.db_info.task_status = InstanceTasks.NONE
+            self._instance_update(context,instance_id, task_state=None)
 
     def validate_can_perform_action_on_instance():
         """
         Raises exception if an instance action cannot currently be performed.
         """
         if self.status != InstanceStatus.ACTIVE:
-            msg = "Instance is not currently available for an action to be "
+            msg = "Instance is not currently available for an action to be " \
                   "performed (status was %s)." % self.status
             LOG.trace(msg)
             raise UnprocessableEntity(msg)
@@ -506,6 +524,9 @@ class ServiceStatus(object):
     @staticmethod
     def is_valid_code(code):
         return code in ServiceStatus._lookup
+
+    def __str__(self):
+        return self._description
 
 
 class ServiceStatuses(object):
