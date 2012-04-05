@@ -134,7 +134,7 @@ class DBaaSAgent(object):
             result = client.execute(t)
             LOG.debug(_("result = %s") % str(result))
             for row in result:
-                LOG.debug(_("user = %s" % str(row))
+                LOG.debug(_("user = %s") % str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
                 # Now get the databases
@@ -150,7 +150,7 @@ class DBaaSAgent(object):
                         mysql_db.name = db['table_schema']
                         mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
-        LOG.debug(_("users = %s") str(users))
+        LOG.debug(_("users = %s") % str(users))
         return users
 
     def delete_user(self, user):
