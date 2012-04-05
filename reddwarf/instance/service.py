@@ -160,7 +160,7 @@ class InstanceController(BaseController):
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("body : '%s'\n\n" % body)
         context = req.environ[wsgi.CONTEXT_KEY]
-        database = models.ServiceImage.find_by(service_name="database")
+        database = models.ServiceImage.find_by(service_name='mysql')
         image_id = database['image_id']
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
