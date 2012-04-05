@@ -34,6 +34,7 @@ from novaclient import exceptions as nova_exceptions
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_guest_client
+from reddwarf.guestagent.db import models as guest_models
 
 
 CONFIG = config.Config
@@ -51,6 +52,26 @@ def load_server(context, instance_id, server_id):
     except nova_exceptions.ClientException, e:
         raise rd_exceptions.ReddwarfError(str(e))
     return server
+
+
+# This probably should not happen here. Seems like it should
+# be in an extension instead
+def populate_databases(dbs):
+    """
+    Create a serializable request with user provided data
+    for creating new databases.
+    """
+    try:
+        databases = []
+        for database in dbs:
+            mydb = guest_models.MySQLDatabase()
+            mydb.name = database.get('name', '')
+            mydb.character_set = database.get('character_set', '')
+            mydb.collate = database.get('collate', '')
+            databases.append(mydb.serialize())
+        return databases
+    except ValueError as ve:
+        raise exception.BadRequest(ve.message)
 
 
 class InstanceStatus(object):
@@ -119,7 +140,7 @@ class Instance(object):
             raise rd_exceptions.ReddwarfError()
 
     @classmethod
-    def create(cls, context, name, flavor_ref, image_id):
+    def create(cls, context, name, flavor_ref, image_id, databases):
         db_info = DBInstance.create(name=name,
             task_status=InstanceTasks.BUILDING)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
@@ -133,7 +154,9 @@ class Instance(object):
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
         guest = create_guest_client(context, db_info.id)
-        guest.prepare(512, [])
+        # populate the databases
+        model_schemas = populate_databases(databases)
+        guest.prepare(512, model_schemas)
         return Instance(context, db_info, server, service_status)
 
     @property
@@ -253,7 +276,7 @@ class Instances(object):
             try:
                 # TODO(hub-cap): Figure out if this is actually correct.
                 # We are not sure if we should be doing some validation.
-                # Basically if the server find returns nothing, but we 
+                # Basically if the server find returns nothing, but we
                 # have something, there is a mismatch between what the
                 # nova db has compared to what we have. We should have
                 # a way to handle this.
