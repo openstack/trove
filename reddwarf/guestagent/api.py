@@ -44,7 +44,7 @@ class API(object):
 
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
-        LOG.debug("Creating Users for Instance %s", self.id)
+        LOG.debug(_("Creating Users for Instance %s"), self.id)
         rpc.cast(self.context, self._get_routing_key(),
                  {"method": "create_user",
                   "args": {"users": users}
@@ -52,13 +52,14 @@ class API(object):
 
     def list_users(self):
         """Make an asynchronous call to list database users"""
-        LOG.debug("Listing Users for Instance %s", self.id)
+        LOG.debug(_("Listing Users for Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "list_users"})
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
-        LOG.debug("Deleting user %s for Instance %s", user, self.id)
+        LOG.debug(_("Deleting user %s for Instance %s"),
+                  user, self.id)
         rpc.cast(self.context, self._get_routing_key(),
                  {"method": "delete_user",
                   "args": {"user": user}
@@ -67,7 +68,7 @@ class API(object):
     def create_database(self, databases):
         """Make an asynchronous call to create a new database
            within the specified container"""
-        LOG.debug("Creating databases for Instance %s", self.id)
+        LOG.debug(_("Creating databases for Instance %s"), self.id)
         rpc.cast(self.context, self._get_routing_key(),
                  {"method": "create_database",
                   "args": {"databases": databases}
@@ -75,14 +76,15 @@ class API(object):
 
     def list_databases(self):
         """Make an asynchronous call to list database users"""
-        LOG.debug("Listing Users for Instance %s", self.id)
+        LOG.debug(_("Listing Users for Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "list_databases"})
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database
            within the specified container"""
-        LOG.debug("Deleting database %s for Instance %s", database, self.id)
+        LOG.debug(_("Deleting database %s for Instance %s"),
+                  database, self.id)
         rpc.cast(self.context, self._get_routing_key(),
                  {"method": "delete_database",
                   "args": {"database": database}
@@ -91,27 +93,27 @@ class API(object):
     def enable_root(self):
         """Make a synchronous call to enable the root user for
            access from anywhere"""
-        LOG.debug("Enable root user for Instance %s", self.id)
+        LOG.debug(_("Enable root user for Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "enable_root"})
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere"""
-        LOG.debug("Disable root user for Instance %s", self.id)
+        LOG.debug(_("Disable root user for Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "disable_root"})
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
            available for the container"""
-        LOG.debug("Check root access for Instance %s", self.id)
+        LOG.debug(_("Check root access for Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "is_root_enabled"})
 
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
-        LOG.debug("Check diagnostics on Instance %s", self.id)
+        LOG.debug(_("Check diagnostics on Instance %s"), self.id)
         return rpc.call(self.context, self._get_routing_key(),
                  {"method": "get_diagnostics"})
 
@@ -159,6 +161,6 @@ class API(object):
 
     def upgrade(self):
         """Make an asynchronous call to self upgrade the guest agent"""
-        topic = self._get_routing_key()
-        LOG.debug("Sending an upgrade call to nova-guest %s", topic)
+        topic = self._get_routing_key(self.context, self.id)
+        LOG.debug(_("Sending an upgrade call to nova-guest %s"), topic)
         rpc.cast_with_consumer(self.context, topic, {"method": "upgrade"})

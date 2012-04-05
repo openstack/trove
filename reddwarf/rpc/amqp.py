@@ -55,7 +55,7 @@ class Pool(pools.Pool):
 
     # TODO(comstud): Timeout connections not used in a while
     def create(self):
-        LOG.debug('Pool creating new connection')
+        LOG.debug(_('Pool creating new connection'))
         return self.connection_cls()
 
     def empty(self):
@@ -259,7 +259,7 @@ class ProxyCallback(object):
             # This final None tells multicall that it is done.
             ctxt.reply(ending=True, connection_pool=self.connection_pool)
         except Exception as e:
-            LOG.exception('Exception during message handling')
+            LOG.exception(_('Exception during message handling'))
             ctxt.reply(None, sys.exc_info(),
                        connection_pool=self.connection_pool)
         return

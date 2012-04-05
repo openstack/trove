@@ -61,16 +61,16 @@ class RootController(BaseController):
     def index(self, req, tenant_id, instance_id):
         """ Returns True if root is enabled for the given instance;
                     False otherwise. """
-        LOG.info("Getting root enabled for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Getting root enabled for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         is_root_enabled = models.Root.load(context, instance_id)
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """ Enable the root user for the db instance """
-        LOG.info("Enabling root for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Enabling root for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         root = models.Root.create(context, instance_id)
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
@@ -95,17 +95,17 @@ class UserController(BaseController):
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
-        LOG.info("Listing users for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Listing users for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         users = models.Users.load(context, instance_id)
         return wsgi.Result(views.UsersView(users).data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users"""
-        LOG.info("Creating users for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
-        LOG.info("body : '%s'\n\n" % body)
+        LOG.info(_("Creating users for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         users = body['users']
@@ -114,8 +114,8 @@ class UserController(BaseController):
         return wsgi.Result(202)
 
     def delete(self, req, tenant_id, instance_id, id):
-        LOG.info("Deleting user for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Deleting user for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user = guest_models.MySQLUser()
         user.name = id
@@ -139,8 +139,8 @@ class SchemaController(BaseController):
 
     def index(self, req, tenant_id, instance_id):
         """Return all schemas."""
-        LOG.info("Listing schemas for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Listing schemas for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         schemas = models.Schemas.load(context, instance_id)
         # Not exactly sure why we cant return a wsgi.Result() here
@@ -148,9 +148,9 @@ class SchemaController(BaseController):
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas"""
-        LOG.info("Creating schema for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
-        LOG.info("body : '%s'\n\n" % body)
+        LOG.info(_("Creating schema for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         schemas = body['databases']
@@ -159,8 +159,8 @@ class SchemaController(BaseController):
         return wsgi.Result(202)
 
     def delete(self, req, tenant_id, instance_id, id):
-        LOG.info("Deleting schema for instance '%s'" % instance_id)
-        LOG.info("req : '%s'\n\n" % req)
+        LOG.info(_("Deleting schema for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         schema = guest_models.MySQLDatabase()
         schema.name = id

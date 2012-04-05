@@ -71,7 +71,7 @@ class GuestManager(service.Manager):
         try:
             getattr(self.driver, status_method)()
         except AttributeError as ae:
-            LOG.error("Method %s not found for driver %s", status_method,
+            LOG.error(_("Method %s not found for driver %s"), status_method,
                       self.driver)
             if raise_on_error:
                 raise ae
@@ -89,6 +89,6 @@ class GuestManager(service.Manager):
         try:
             return getattr(self.driver, method)(*args, **kwargs)
         except AttributeError:
-            LOG.error("Method %s not found for driver %s", method, self.driver)
+            LOG.error(_("Method %s not found for driver %s"), method, self.driver)
             raise exception.NotFound("Method not available for the "
                                      "chosen driver")
