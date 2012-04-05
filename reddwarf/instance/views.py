@@ -20,7 +20,7 @@ def get_ip_address(addresses):
     if addresses is not None and \
        addresses.get('private') is not None and \
        len(addresses['private']) > 0:
-            return addresses['private'][0].get('addr')
+        return [addr.get('addr') for addr in addresses['private']]
 
 
 class InstanceView(object):
@@ -37,7 +37,7 @@ class InstanceView(object):
             "status": self.instance.status,
             "links": self.instance.links
         }
-        if self.add_addresses and ip is not None:
+        if self.add_addresses and ip is not None and len(ip) > 0:
             instance_dict['ip'] = ip
         return {"instance": instance_dict}
 
