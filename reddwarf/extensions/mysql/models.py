@@ -88,7 +88,7 @@ class User(object):
 
     @classmethod
     def create(cls, context, instance_id, users):
-        # Load InstanceServiceStatus to verify if its running
+        # Load InstanceServiceStatus to verify if it's running
         load_and_verify(context, instance_id)
         create_guest_client(context, instance_id).create_user(users)
 
@@ -111,7 +111,18 @@ class Root(object):
         root = create_guest_client(context, instance_id).enable_root()
         root_user = guest_models.MySQLUser()
         root_user.deserialize(root)
+        # Ledger
         return root_user
+
+class RootHistory(object):
+
+    @classmethod
+    def load(cls, context, instance_id, user):
+        pass
+
+    @classmethod
+    def create(cls, context, instance_id, user):
+        pass
 
 
 class Users(object):

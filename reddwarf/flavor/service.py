@@ -19,6 +19,7 @@ import routes
 import webob.exc
 
 from reddwarf.common import exception
+from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.flavor import models
 from reddwarf.flavor import views
