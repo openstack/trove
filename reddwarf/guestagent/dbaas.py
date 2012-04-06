@@ -147,7 +147,7 @@ class MySqlAppStatus(object):
 
     def begin_mysql_restart(self):
         """Called before restarting MySQL."""
-        self.restart_mode = true
+        self.restart_mode = True
 
     def end_install_or_restart(self):
         """Called after MySQL is installed or restarted.
@@ -232,7 +232,7 @@ class MySqlAppStatus(object):
 
         The database is update and the status is also returned.
         """
-        if self.is_mysql_installed and self.is_mysql_running:
+        if self.is_mysql_installed and not self._is_mysql_restarting:
             LOG.info("Determining status of MySQL app...")
             status = self._get_actual_db_status()
             self.set_status(status)
@@ -501,12 +501,8 @@ class DBaaSAgent(object):
         LOG.info('"prepare" call has finished.')
 
     def restart(self):
-        try:
-            self.begin_mysql_restart()
-            self._internal_stop_mysql()
-            self._start_mysql()
-        finally:
-            self.end_install_or_restart()
+        app = MySqlApp(self.status)
+        app.restart()
 
     def update_status(self):
         """Update the status of the MySQL service"""
@@ -626,7 +622,7 @@ class MySqlApp(object):
         try:
             self.status.begin_mysql_restart()
             self._internal_stop_mysql()
-            self.start_mysql()
+            self._start_mysql()
         finally:
             self.status.end_install_or_restart()
 

@@ -310,6 +310,8 @@ def load_paste_app(app_name, options, args, config_dir=None):
             logger.debug("*" * 80)
         app = deploy.loadapp("config:%s" % conf_file, name=app_name)
     except (LookupError, ImportError), e:
+        import traceback
+        print traceback.format_exc()
         raise RuntimeError("Unable to load %(app_name)s from "
                            "configuration file %(conf_file)s."
                            "\nGot: %(e)r" % locals())

@@ -109,7 +109,7 @@ class InstanceController(BaseController):
                 raise rd_exceptions.BadRequest(msg)
 
         if selected_action:
-            return selected_action(self, instance, body)
+            return selected_action(instance, body)
         else:
             raise rd_exceptions.BadRequest(_("Invalid request body."))
 

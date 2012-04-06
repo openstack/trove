@@ -132,7 +132,7 @@ class API(object):
     def restart(self):
         """Restart the MySQL server."""
         LOG.debug(_("Sending the call to restart MySQL on the Guest."))
-        self.call("restart")
+        self._call("restart")
 
     def start_mysql_with_conf_changes(self, updated_memory_size):
         """Start the MySQL server."""

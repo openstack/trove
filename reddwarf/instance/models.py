@@ -23,7 +23,6 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
-from reddwarf.guestagent import api as guest_api
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.instance.tasks import InstanceTask
@@ -260,7 +259,7 @@ class Instance(object):
         raise RuntimeError("Not implemented (yet).")
 
     def restart(self):
-        if instance_state in SERVER_INVALID_ACTION_STATUSES:
+        if self.server.status in SERVER_INVALID_ACTION_STATUSES:
             msg = _("Restart instance not allowed while instance %s is in %s "
                     "status.") % (self.id, instance_state)
             LOG.debug(msg)
@@ -278,21 +277,21 @@ class Instance(object):
         self.db_info.save()
         try:
             self.get_guest().restart()
-        except RemoteError:
+        except rd_exceptions.GuestError:
             LOG.error("Failure to restart MySQL.")
         finally:
             self.db_info.task_status = InstanceTasks.NONE
-            self._instance_update(context,instance_id, task_state=None)
+            self.db_info.save()
 
-    def validate_can_perform_action_on_instance():
+    def validate_can_perform_action_on_instance(self):
         """
         Raises exception if an instance action cannot currently be performed.
         """
         if self.status != InstanceStatus.ACTIVE:
             msg = "Instance is not currently available for an action to be " \
                   "performed (status was %s)." % self.status
-            LOG.trace(msg)
-            raise UnprocessableEntity(msg)
+            LOG.error(msg)
+            raise rd_exceptions.UnprocessableEntity(msg)
 
 
 
