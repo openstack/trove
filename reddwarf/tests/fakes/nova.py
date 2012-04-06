@@ -32,6 +32,7 @@ class FakeFlavor(object):
         self.disk = disk
         self.name = name
         self.ram = ram
+        self.vcpus = 10
 
     @property
     def links(self):
@@ -77,10 +78,14 @@ class FakeFlavors(object):
                 return value
         raise nova_exceptions.NotFound(404, "Flavor href not found %s" % href)
 
+    def list(self):
+        return [self.get(id) for id in self.db]
+
 
 class FakeServer(object):
 
-    def __init__(self, parent, id, name, image_id, flavor_ref):
+    def __init__(self, parent, owner, id, name, image_id, flavor_ref):
+        self.owner = owner  # This is a context.
         self.id = id
         self.parent = parent
         self.name = name
@@ -91,7 +96,7 @@ class FakeServer(object):
 
     @property
     def addresses(self):
-        return ["We don't even use this."]
+        return {"private":[{"addr":"123.123.123.123"}]}
 
     def delete(self):
         self.schedule_status = []
@@ -128,18 +133,30 @@ class FakeServer(object):
         return "2012-01-25T21:55:51Z"
 
 
+# The global var contains the servers dictionary in use for the life of these
+# tests.
+FAKE_SERVERS_DB = {}
+
+
 class FakeServers(object):
 
-    def __init__(self, flavors):
-        self.db = {}
+    def __init__(self, context, flavors):
+        self.context = context
+        self.db = FAKE_SERVERS_DB
         self.flavors = flavors
         self.next_id = 10
         self.events = EventSimulator()
 
+    def can_see(self, id):
+        """Can this FakeServers, with its context, see some resource?"""
+        server = self.db[id]
+        return self.context.is_admin or \
+               server.owner.tenant == self.context.tenant
+
     def create(self, name, image_id, flavor_ref, files):
         id = "FAKE_%d" % self.next_id
         self.next_id += 1
-        server = FakeServer(self, id, name, image_id, flavor_ref)
+        server = FakeServer(self, self.context, id, name, image_id, flavor_ref)
         self.db[id] = server
         server.schedule_status("ACTIVE", 1)
         return server
@@ -149,10 +166,13 @@ class FakeServers(object):
             LOG.error("Couldn't find id %s, collection=%s" % (id, self.db))
             raise nova_exceptions.NotFound(404, "Not found")
         else:
-            return self.db[id]
+            if self.can_see(id):
+                return self.db[id]
+            else:
+                raise nova_exceptions.NotFound(404, "Bad permissions")
 
     def list(self):
-        return [v for (k, v) in self.db.items()]
+        return [v for (k, v) in self.db.items() if self.can_see(v.id)]
 
     def schedule_delete(self, id, time_from_now):
         def delete_server():
@@ -161,18 +181,16 @@ class FakeServers(object):
         self.events.add_event(time_from_now, delete_server)
 
 
-# The global var contains the servers dictionary in use for the life of these
-# tests.
 FLAVORS = FakeFlavors()
-SERVERS = FakeServers(FLAVORS)
 
 
 class FakeClient(object):
 
-    def __init__(self):
-        self.servers = SERVERS
+    def __init__(self, context):
+        self.context = context
         self.flavors = FLAVORS
+        self.servers = FakeServers(context, self.flavors)
 
 
-def fake_create_nova_client(*args, **kwargs):
-    return FakeClient()
+def fake_create_nova_client(context):
+    return FakeClient(context)
