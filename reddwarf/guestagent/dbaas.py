@@ -67,8 +67,8 @@ def generate_random_password():
 
 
 def get_auth_password():
-    pwd, err = utils.execute("sudo", "awk", "/password\\t=/{print $3}",
-                                 "/etc/mysql/my.cnf")
+    pwd, err = utils.execute_with_timeout("sudo", "awk",
+        "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
     if err:
         LOG.err(err)
     raise RuntimeError("Problem reading my.cnf! : %s" % err)
@@ -83,8 +83,8 @@ def get_engine():
         if ENGINE:
             return ENGINE
         #ENGINE = create_engine(name_or_url=url)
-        pwd, err = utils.execute("sudo", "awk", "/password\\t=/{print $3}",
-                                 "/etc/mysql/my.cnf")
+        pwd, err = utils.execute_with_timeout("sudo", "awk",
+            "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
         if not err:
             ENGINE = create_engine("mysql://%s:%s@localhost:3306" %
                                    (ADMIN_USER_NAME, pwd.strip()),
@@ -155,6 +155,7 @@ class MySqlAppStatus(object):
         Updates the database with the actual MySQL status.
         """
         LOG.info("Ending install or restart.")
+        self.restart_mode = False
         real_status = self._get_actual_db_status()
         LOG.info("Updating status to %s" % real_status)
         self.set_status(real_status)
@@ -168,14 +169,15 @@ class MySqlAppStatus(object):
     def _get_actual_db_status(self):
         global MYSQLD_ARGS
         try:
-            out, err = utils.execute("/usr/bin/mysqladmin", "ping",
-                                     run_as_root=True)
+            out, err = utils.execute_with_timeout("/usr/bin/mysqladmin",
+                "ping", run_as_root=True)
             LOG.info("Service Status is RUNNING.")
             return rd_models.ServiceStatuses.RUNNING
         except ProcessExecutionError as e:
             LOG.error("Process execution ")
             try:
-                out, err = utils.execute("ps", "-C", "mysqld", "h")
+                out, err = utils.execute_with_timeout("/bin/ps", "-C", "mysqld",
+                                                      "h")
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
@@ -256,7 +258,7 @@ class MySqlAppStatus(object):
             LOG.info("Waiting for MySQL status to change to %s..." % status)
             actual_status = self._get_actual_db_status()
             LOG.info("MySQL status was %s after %d seconds."
-                     % (status, waited_time))
+                     % (actual_status, waited_time))
             if actual_status == status:
                 if update_db:
                     self.set_status(actual_status)
@@ -472,7 +474,7 @@ class DBaaSAgent(object):
         return MySqlAdmin().delete_database(database)
 
     def delete_user(self, user):
-        MySqlAdmin().delete_user()
+        MySqlAdmin().delete_user(user)
 
     def list_databases(self):
         return MySqlAdmin().list_databases()
@@ -600,7 +602,7 @@ class MySqlApp(object):
 
     def _internal_stop_mysql(self, update_db=False):
         LOG.info(_("Stopping mysql..."))
-        utils.execute("sudo", "service", "mysql", "stop")
+        utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
         if not self.status.wait_for_real_status_to_change_to(
             rd_models.ServiceStatuses.SHUTDOWN,
             self.state_change_wait_time, update_db):
@@ -638,10 +640,11 @@ class MySqlApp(object):
 
     def _replace_mycnf_with_template(self, template_path, original_path):
         if os.path.isfile(template_path):
-            utils.execute("sudo", "mv", original_path, "%(name)s.%(date)s"
-                          % {'name': original_path,
-                             'date': date.today().isoformat()})
-            utils.execute("sudo", "cp", template_path, original_path)
+            utils.execute_with_timeout("sudo", "mv", original_path,
+                "%(name)s.%(date)s" % {'name': original_path,
+                                       'date': date.today().isoformat()})
+            utils.execute_with_timeout("sudo", "cp", template_path,
+                                       original_path)
 
     def _write_temp_mycnf_with_admin_account(self, original_file_path,
                                              temp_file_path, password):
@@ -657,8 +660,10 @@ class MySqlApp(object):
 
     def wipe_ib_logfiles(self):
         LOG.info(_("Wiping ib_logfiles..."))
-        utils.execute("sudo", "rm", "%s/ib_logfile0" % MYSQL_BASE_DIR)
-        utils.execute("sudo", "rm", "%s/ib_logfile1" % MYSQL_BASE_DIR)
+        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile0"
+                                   % MYSQL_BASE_DIR)
+        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile1"
+                                   % MYSQL_BASE_DIR)
 
     def _write_mycnf(self, pkg, update_memory_mb, admin_password):
         """
@@ -690,17 +695,33 @@ class MySqlApp(object):
                                                   admin_password)
         # permissions work-around
         LOG.info(_("Moving tmp into final."))
-        utils.execute("sudo", "mv", TMP_MYCNF, FINAL_MYCNF)
+        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF, FINAL_MYCNF)
         LOG.info(_("Removing original my.cnf."))
-        utils.execute("sudo", "rm", ORIG_MYCNF)
+        utils.execute_with_timeout("sudo", "rm", ORIG_MYCNF)
         LOG.info(_("Symlinking final my.cnf."))
-        utils.execute("sudo", "ln", "-s", FINAL_MYCNF, ORIG_MYCNF)
+        utils.execute_with_timeout("sudo", "ln", "-s", FINAL_MYCNF, ORIG_MYCNF)
         self.wipe_ib_logfiles()
 
 
     def _start_mysql(self, update_db=False):
         LOG.info(_("Starting mysql..."))
-        utils.execute("sudo", "service", "mysql", "start")
+        # This is the site of all the trouble in the restart tests.
+        # Essentially what happens is thaty mysql start fails, but does not
+        # die. It is then impossible to kill the original, so
+
+        try:
+            utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "start")
+        except ProcessExecutionError:
+            # If it won't start, but won't die either, kill it by hand so we
+            # don't let a rouge process wander around.
+            try:
+                utils.execute_with_timeout("sudo", "pkill", "-9", "mysql")
+            except ProcessExecutionError, p:
+                LOG.error("Error killing stalled mysql start command.")
+                LOG.error(p)
+            # There's nothing more we can do...
+            raise RuntimeError("Can't start MySQL!")
+
         if not self.status.wait_for_real_status_to_change_to(
             rd_models.ServiceStatuses.RUNNING,
             self.state_change_wait_time, update_db):

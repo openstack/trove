@@ -26,6 +26,7 @@ handles RPC calls relating to Platform specific operations.
 
 import functools
 import logging
+import traceback
 
 from reddwarf.common import exception
 from reddwarf.common import utils
@@ -75,7 +76,11 @@ class GuestManager(service.Manager):
                       self.driver)
             if raise_on_error:
                 raise ae
-        method()
+        try:
+            method()
+        except Exception as e:
+            LOG.error("Got an error during periodic tasks!")
+            LOG.debug(traceback.format_exc())
 
     def upgrade(self, context):
         """Upgrade the guest agent and restart the agent"""
@@ -88,10 +93,14 @@ class GuestManager(service.Manager):
     def _mapper(self, method, context, *args, **kwargs):
         """ Tries to call the respective driver method """
         try:
-            method = getattr(self.driver, method)
+            func = getattr(self.driver, method)
         except AttributeError:
             LOG.error(_("Method %s not found for driver %s"), method,
                       self.driver)
             raise exception.NotFound("Method %s is not available for the "
                                      "chosen driver.")
-        method(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            LOG.error("Got an error running %s!" % method)
+            LOG.debug(traceback.format_exc())

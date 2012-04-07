@@ -23,6 +23,7 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
+#from reddwarf.guestagent import api as guest_api
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.instance.tasks import InstanceTask
@@ -33,7 +34,6 @@ from novaclient import exceptions as nova_exceptions
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_guest_client
-from reddwarf.guestagent.db import models as guest_models
 
 
 CONFIG = config.Config
@@ -60,6 +60,7 @@ def populate_databases(dbs):
     Create a serializable request with user provided data
     for creating new databases.
     """
+    from reddwarf.guestagent.db import models as guest_models
     try:
         databases = []
         for database in dbs:
@@ -283,7 +284,19 @@ class Instance(object):
             self.db_info.task_status = InstanceTasks.NONE
             self.db_info.save()
 
-    def validate_can_perform_action_on_instance(self):
+    def validate_can_perform_restart_or_reboot(self):
+        """
+        Raises exception if an instance action cannot currently be performed.
+        """
+        if self.db_info.task_status != InstanceTasks.NONE or \
+           not self.service_status.status.restart_is_allowed:
+            msg = "Instance is not currently available for an action to be " \
+                  "performed (task status was %s, service status was %s)." \
+                  % (self.db_info.task_status, self.service_status.status)
+            LOG.error(msg)
+            raise rd_exceptions.UnprocessableEntity(msg)
+
+    def validate_can_perform_resize(self):
         """
         Raises exception if an instance action cannot currently be performed.
         """
@@ -523,6 +536,12 @@ class ServiceStatus(object):
     @staticmethod
     def is_valid_code(code):
         return code in ServiceStatus._lookup
+
+    @property
+    def restart_is_allowed(self):
+        return self._code in [ServiceStatuses.RUNNING._code,
+            ServiceStatuses.SHUTDOWN._code, ServiceStatuses.CRASHED._code,
+            ServiceStatuses.BLOCKED._code]
 
     def __str__(self):
         return self._description

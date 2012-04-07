@@ -20,6 +20,7 @@ import datetime
 import inspect
 import logging
 import re
+import signal
 import sys
 import uuid
 
@@ -27,9 +28,10 @@ from eventlet import event
 from eventlet import greenthread
 from eventlet import semaphore
 from eventlet.green import subprocess
+from eventlet.timeout import Timeout
 
 from reddwarf.openstack.common import utils as openstack_utils
-
+from reddwarf.common import exception
 
 LOG = logging.getLogger(__name__)
 import_class = openstack_utils.import_class
@@ -202,3 +204,24 @@ def get_id_from_href(href):
 
     """
     return urlparse.urlsplit("%s" % href).path.split('/')[-1]
+
+
+def execute_with_timeout(*args, **kwargs):
+    time = kwargs.get('timeout', 30)
+    def cb_timeout():
+       raise exception.ProcessExecutionError("Time out after waiting "
+           + str(time) + " seconds when running proc: " + str(args)
+           + str(kwargs))
+
+    timeout = Timeout(time)
+    try:
+        return execute(*args, **kwargs)
+    except Timeout as t:
+        if t is not timeout:
+            raise
+        else:
+            raise exception.ProcessExecutionError("Time out after waiting "
+               + str(time) + " seconds when running proc: " + str(args)
+               + str(kwargs))
+    finally:
+        timeout.cancel()

@@ -92,7 +92,6 @@ class InstanceController(BaseController):
                  % (id, tenant_id))
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
-        instance.validate_can_perform_action_on_instance()
         _actions = {
             'restart': self._action_restart,
             'resize': self._action_resize
@@ -114,6 +113,7 @@ class InstanceController(BaseController):
             raise rd_exceptions.BadRequest(_("Invalid request body."))
 
     def _action_restart(self, instance, body):
+        instance.validate_can_perform_restart_or_reboot()
         instance.restart()
         return webob.exc.HTTPAccepted()
 
@@ -127,6 +127,7 @@ class InstanceController(BaseController):
 
         If the body has both we will throw back an error.
         """
+        instance.validate_can_perform_resize()
         options = {
             'volume': self._action_resize_volume,
             'flavorRef': self._action_resize_flavor

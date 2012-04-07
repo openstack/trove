@@ -89,8 +89,8 @@ class API(object):
         self._cast("create_database", databases=databases)
 
     def list_databases(self):
-        """Make an asynchronous call to list database users"""
-        LOG.debug(_("Listing Users for Instance %s"), self.id)
+        """Make an asynchronous call to list databases"""
+        LOG.debug(_("Listing databases for Instance %s"), self.id)
         return self._call("list_databases")
 
     def delete_database(self, database):
