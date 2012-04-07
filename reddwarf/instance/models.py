@@ -24,17 +24,20 @@ import time
 
 from reddwarf import db
 
+from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
+from reddwarf.common import pagination
 from reddwarf.common import utils
-from reddwarf.instance.tasks import InstanceTask
-from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common.remote import create_dns_client
+from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
-from reddwarf.common.remote import create_guest_client
+from reddwarf.guestagent import api as guest_api
+from reddwarf.instance.tasks import InstanceTask
+from reddwarf.instance.tasks import InstanceTasks
 
 
 from eventlet import greenthread
@@ -568,11 +571,14 @@ class Instances(object):
         client = create_nova_client(context)
         servers = client.servers.list()
         db_infos = DBInstance.find_all()
+        data_view = DBInstance.find_by_pagination('instances', db_infos, "foo", limit=context.limit, marker=context.marker)
         ret = []
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
             LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
                       (db.id, db.compute_instance_id))
+        for db in data_view.collection:
+            status = InstanceServiceStatus.find_by(instance_id=db.id)
             try:
                 # TODO(hub-cap): Figure out if this is actually correct.
                 # We are not sure if we should be doing some validation.
@@ -661,6 +667,16 @@ class DatabaseModelBase(ModelBase):
     def _process_conditions(cls, raw_conditions):
         """Override in inheritors to format/modify any conditions."""
         return raw_conditions
+
+    @classmethod
+    def find_by_pagination(cls, collection_type, collection_query, 
+                            paginated_url, **kwargs):
+        elements, next_marker = collection_query.paginated_collection(**kwargs)
+
+        return pagination.PaginatedDataView(collection_type,
+                                            elements,
+                                            paginated_url,
+                                            next_marker)
 
 
 class DBInstance(DatabaseModelBase):

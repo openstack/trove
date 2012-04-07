@@ -189,6 +189,9 @@ class InstanceController(BaseController):
         # TODO(cp16net): need to set the return code correctly
         view_cls = views.InstancesDetailView if detailed \
                                              else views.InstancesView
+        LOG.info("ZOMG %s" % context)
+        LOG.info("ZOMG %s" % context.limit)
+        LOG.info("ZOMG %s" % context.marker)
         return wsgi.Result(view_cls(servers,
                            add_addresses=self.add_addresses,
                            add_volumes=self.add_volumes).data(), 200)
