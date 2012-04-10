@@ -86,6 +86,83 @@ class api_validation:
 class InstanceController(BaseController):
     """Controller for instance functionality"""
 
+    def action(self, req, body, tenant_id, id):
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Comitting an ACTION again instance %s for tenant '%s'"
+                 % (id, tenant_id))
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        _actions = {
+            'restart': self._action_restart,
+            'resize': self._action_resize
+            }
+        selected_action = None
+        for key in body:
+            if key in _actions:
+                if selected_action is not None:
+                    msg = _("Only one action can be specified per request.")
+                    raise rd_exceptions.BadRequest(msg)
+                selected_action = _actions[key]
+            else:
+                msg = _("Invalid instance action: %s") % key
+                raise rd_exceptions.BadRequest(msg)
+
+        if selected_action:
+            return selected_action(instance, body)
+        else:
+            raise rd_exceptions.BadRequest(_("Invalid request body."))
+
+    def _action_restart(self, instance, body):
+        instance.validate_can_perform_restart_or_reboot()
+        instance.restart()
+        return webob.exc.HTTPAccepted()
+
+    def _action_resize(self, instance, body):
+        """
+        Handles 2 cases
+        1. resize volume
+            body only contains {volume: {size: x}}
+        2. resize instance
+            body only contains {flavorRef: http.../2}
+
+        If the body has both we will throw back an error.
+        """
+        instance.validate_can_perform_resize()
+        options = {
+            'volume': self._action_resize_volume,
+            'flavorRef': self._action_resize_flavor
+        }
+        selected_option = None
+        args = None
+        for key in body['resize']:
+            if key in options:
+                if selected_option is not None:
+                    msg = _("Not allowed to resize volume and flavor at the "
+                            "same time.")
+                    raise rd_exceptions.BadRequest(msg)
+                selected_option = options[key]
+                args = body['resize'][key]
+            else:
+                raise rd_exceptions.BadRequest("Invalid resize argument %s"
+                                               % key)
+        if selected_option:
+            return selected_option(self, instance, args)
+        else:
+            raise rd_exceptions.BadRequest(_("Missing resize arguments."))
+
+    def _action_resize_volume(self, instance, volume):
+        if 'size' not in volume:
+            raise rd_exceptions.BadRequest(
+                    "Missing 'size' property of 'volume' in request body.")
+        new_size = volume['size']
+        instance.resize_volume(new_size)
+        return webob.exc.HTTPAccepted()
+
+    def _action_resize_flavor(self, instance, flavorRef):
+        new_flavor_id = utils.get_id_from_href(flavorRef)
+        instance.resize_flavor(new_flavor_id)
+        return webob.exc.HTTPAccepted()
+
     def detail(self, req, tenant_id):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -179,7 +256,7 @@ class InstanceController(BaseController):
         return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
 
     @staticmethod
-    def _validate_empty_body(body):
+    def _validate_body_not_empty(body):
         """Check that the body is not empty"""
         if not body:
             msg = "The request contains an empty body"
@@ -211,7 +288,7 @@ class InstanceController(BaseController):
     @staticmethod
     def _validate(body):
         """Validate that the request has all the required parameters"""
-        InstanceController._validate_empty_body(body)
+        InstanceController._validate_body_not_empty(body)
         try:
             body['instance']
             body['instance']['flavorRef']
@@ -234,41 +311,6 @@ class InstanceController(BaseController):
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 
-    @staticmethod
-    def _validate_single_resize_in_body(body):
-        # Validate body resize does not have both volume and flavorRef
-        try:
-            resize = body['resize']
-            if 'volume' in resize and 'flavorRef' in resize:
-                msg = ("Not allowed to resize volume "
-                       "and flavor at the same time")
-                LOG.error(_(msg))
-                raise rd_exceptions.ReddwarfError(msg)
-        except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s") % e)
-            raise rd_exceptions.ReddwarfError("Required element/key - %s "
-                                              "was not specified" % e)
-
-    @staticmethod
-    def _validate_resize(body, old_volume_size):
-        """
-        We are going to check that volume resizing data is present.
-        """
-        InstanceController._validate_empty_body(body)
-        try:
-            body['resize']
-            body['resize']['volume']
-            new_volume_size = body['resize']['volume']['size']
-        except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s") % e)
-            raise rd_exceptions.ReddwarfError("Required element/key - %s "
-                                       "was not specified" % e)
-        Instance._validate_volume_size(new_volume_size)
-        if int(new_volume_size) <= old_volume_size:
-            raise rd_exceptions.ReddwarfError("The new volume 'size' cannot "
-                                       "be less than the current volume size "
-                                       "of '%s'" % old_volume_size)
-
 
 class API(wsgi.Router):
     """API"""
@@ -283,7 +325,8 @@ class API(wsgi.Router):
         instance_resource = InstanceController().create_resource()
         path = "/{tenant_id}/instances"
         mapper.resource("instance", path, controller=instance_resource,
-                        collection={'detail': 'GET'})
+                        collection={'detail': 'GET'},
+                        member={'action': 'POST'})
 
     # TODO(ed-): remove this when all mention of flavorservice
     # et cetera are moved away

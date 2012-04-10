@@ -22,6 +22,8 @@ import logging
 import pexpect
 
 from reddwarf.common import exception
+from reddwarf.common.exception import ProcessExecutionError
+from reddwarf.common import utils
 
 
 LOG = logging.getLogger(__name__)
@@ -102,10 +104,16 @@ class PkgAgent(object):
                 return RUN_DPKG_FIRST
             elif i == 4:
                 raise PkgAdminLockError()
-            wait_and_close_proc(child)
         except pexpect.TIMEOUT:
             kill_proc(child)
             raise PkgTimeout("Process timeout after %i seconds." % time_out)
+        try:
+            wait_and_close_proc(child)
+        except pexpect.TIMEOUT as e:
+            LOG.error("wait_and_close_proc failed: %s" % e)
+            #TODO(tim.simpson): As of RDL, and on my machine exclusively (in
+            #                   both Virtual Box and VmWare!) this fails, but
+            #                   the package is installed.
         return OK
 
     def _remove(self, package_name, time_out):
@@ -148,6 +156,11 @@ class PkgAgent(object):
 
     def pkg_install(self, package_name, time_out):
         """Installs a package."""
+        try:
+            utils.execute("apt-get", "update", run_as_root=True)
+        except ProcessExecutionError as e:
+            LOG.error(_("Error updating the apt sources"))
+
         result = self._install(package_name, time_out)
         if result != OK:
             if result == RUN_DPKG_FIRST:

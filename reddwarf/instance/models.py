@@ -23,7 +23,7 @@ import netaddr
 from reddwarf import db
 
 from reddwarf.common import config
-from reddwarf.guestagent import api as guest_api
+#from reddwarf.guestagent import api as guest_api
 from reddwarf.common import exception as rd_exceptions
 from reddwarf.common import utils
 from reddwarf.instance.tasks import InstanceTask
@@ -34,7 +34,6 @@ from novaclient import exceptions as nova_exceptions
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_guest_client
-from reddwarf.guestagent.db import models as guest_models
 
 
 CONFIG = config.Config
@@ -61,6 +60,7 @@ def populate_databases(dbs):
     Create a serializable request with user provided data
     for creating new databases.
     """
+    from reddwarf.guestagent.db import models as guest_models
     try:
         databases = []
         for database in dbs:
@@ -83,8 +83,9 @@ class InstanceStatus(object):
     SHUTDOWN = "SHUTDOWN"
 
 
-# If the compute server is in any of these states we can't delete it.
-SERVER_INVALID_DELETE_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
+# If the compute server is in any of these states we can't perform any
+# actions (delete, resize, etc).
+SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 
 # Statuses in which an instance can have an action performed.
 VALID_ACTION_STATUSES = ["ACTIVE"]
@@ -118,8 +119,7 @@ class Instance(object):
         return Instance(context, db_info, server, service_status)
 
     def delete(self, force=False):
-        LOG.debug(_("Deleting instance %s...") % self.id)
-        if not force and self.server.status in SERVER_INVALID_DELETE_STATUSES:
+        if not force and self.server.status in SERVER_INVALID_ACTION_STATUSES:
             raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
@@ -142,7 +142,7 @@ class Instance(object):
     @classmethod
     def create(cls, context, name, flavor_ref, image_id, databases):
         db_info = DBInstance.create(name=name,
-            task_status=InstanceTasks.BUILDING)
+            task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
         client = create_nova_client(context)
         server = client.servers.create(name, image_id, flavor_ref,
@@ -154,10 +154,11 @@ class Instance(object):
             status=ServiceStatuses.NEW)
         # Now wait for the response from the create to do additional work
         guest = create_guest_client(context, db_info.id)
-        # populate the databases
-        model_schemas = populate_databases(databases)
-        guest.prepare(512, model_schemas)
+        guest.prepare(databases=[], memory_mb=512, users=[])
         return Instance(context, db_info, server, service_status)
+
+    def get_guest(self):
+        return create_guest_client(self.context, self.db_info.id)
 
     @property
     def id(self):
@@ -181,6 +182,8 @@ class Instance(object):
         #TODO(tim.simpson): As we enter more advanced cases dealing with
         # timeouts determine if the task_status should be integrated here
         # or removed entirely.
+        if InstanceTasks.REBOOTING == self.db_info.task_status:
+            return "REBOOT"
         # If the server is in any of these states they take precedence.
         if self.server.status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
             return self.server.status
@@ -241,6 +244,68 @@ class Instance(object):
                   "performed. Status [%s]"
             LOG.debug(_(msg) % self.status)
             raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
+
+    def resize_flavor(self, new_flavor_id):
+        LOG.info("Resizing flavor of instance %s..." % self.id)
+        # TODO(tim.simpson): Validate the new flavor ID can be found or
+        #                    raise FlavorNotFound exception.
+        # TODO(tim.simpson): Actually perform flavor resize.
+        raise RuntimeError("Not implemented (yet).")
+
+    def resize_volume(self, new_size):
+        LOG.info("Resizing volume of instance %s..." % self.id)
+        # TODO(tim.simpson): Validate old_size < new_size, or raise
+        #                    rd_exceptions.BadRequest.
+        # TODO(tim.simpson): resize volume.
+        raise RuntimeError("Not implemented (yet).")
+
+    def restart(self):
+        if self.server.status in SERVER_INVALID_ACTION_STATUSES:
+            msg = _("Restart instance not allowed while instance %s is in %s "
+                    "status.") % (self.id, instance_state)
+            LOG.debug(msg)
+            # If the state is building then we throw an exception back
+            raise rd_exceptions.UnprocessableEntity(msg)
+        else:
+            LOG.info("Restarting instance %s..." % self.id)
+        # Set our local status since Nova might not change it quick enough.
+        #TODO(tim.simpson): Possible bad stuff can happen if this service
+        #                   shuts down before it can set status to NONE.
+        #                   We need a last updated time to mitigate this;
+        #                   after some period of tolerance, we'll assume the
+        #                   status is no longer in effect.
+        self.db_info.task_status = InstanceTasks.REBOOTING
+        self.db_info.save()
+        try:
+            self.get_guest().restart()
+        except rd_exceptions.GuestError:
+            LOG.error("Failure to restart MySQL.")
+        finally:
+            self.db_info.task_status = InstanceTasks.NONE
+            self.db_info.save()
+
+    def validate_can_perform_restart_or_reboot(self):
+        """
+        Raises exception if an instance action cannot currently be performed.
+        """
+        if self.db_info.task_status != InstanceTasks.NONE or \
+           not self.service_status.status.restart_is_allowed:
+            msg = "Instance is not currently available for an action to be " \
+                  "performed (task status was %s, service status was %s)." \
+                  % (self.db_info.task_status, self.service_status.status)
+            LOG.error(msg)
+            raise rd_exceptions.UnprocessableEntity(msg)
+
+    def validate_can_perform_resize(self):
+        """
+        Raises exception if an instance action cannot currently be performed.
+        """
+        if self.status != InstanceStatus.ACTIVE:
+            msg = "Instance is not currently available for an action to be " \
+                  "performed (status was %s)." % self.status
+            LOG.error(msg)
+            raise rd_exceptions.UnprocessableEntity(msg)
+
 
 
 def create_server_list_matcher(server_list):
@@ -471,6 +536,15 @@ class ServiceStatus(object):
     @staticmethod
     def is_valid_code(code):
         return code in ServiceStatus._lookup
+
+    @property
+    def restart_is_allowed(self):
+        return self._code in [ServiceStatuses.RUNNING._code,
+            ServiceStatuses.SHUTDOWN._code, ServiceStatuses.CRASHED._code,
+            ServiceStatuses.BLOCKED._code]
+
+    def __str__(self):
+        return self._description
 
 
 class ServiceStatuses(object):

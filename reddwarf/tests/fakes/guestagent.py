@@ -65,7 +65,7 @@ class FakeGuest(object):
     def list_users(self):
         return [self.users[name] for name in self.users]
 
-    def prepare(self, memory_mb, databases):
+    def prepare(self, memory_mb, databases, users):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
         def update_db():

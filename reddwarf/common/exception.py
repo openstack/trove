@@ -74,9 +74,16 @@ class GuestError(ReddwarfError):
 
 class BadRequest(ReddwarfError):
 
+    message = _("The server could not comply with the request since it is "
+                "either malformed or otherwise incorrect.")
+
+
+class MissingKey(BadRequest):
+
     message = _("Required element/key - %(key)s was not specified")
 
 
 class UnprocessableEntity(ReddwarfError):
 
     message = _("Unable to process the contained request")
+

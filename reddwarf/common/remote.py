@@ -17,13 +17,14 @@
 
 from reddwarf.common import config
 from novaclient.v1_1.client import Client
-from reddwarf.guestagent.api import API
+
 
 
 CONFIG = config.Config
 
 
 def create_guest_client(context, id):
+    from reddwarf.guestagent.api import API
     return API(context, id)
 
 

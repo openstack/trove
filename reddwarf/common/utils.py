@@ -20,6 +20,7 @@ import datetime
 import inspect
 import logging
 import re
+import signal
 import sys
 import uuid
 
@@ -27,9 +28,10 @@ from eventlet import event
 from eventlet import greenthread
 from eventlet import semaphore
 from eventlet.green import subprocess
+from eventlet.timeout import Timeout
 
 from reddwarf.openstack.common import utils as openstack_utils
-
+from reddwarf.common import exception
 
 LOG = logging.getLogger(__name__)
 import_class = openstack_utils.import_class
@@ -188,3 +190,38 @@ class LoopingCall(object):
 
     def wait(self):
         return self.done.wait()
+
+
+# Copied from nova.api.openstack.common in the old code.
+def get_id_from_href(href):
+    """Return the id or uuid portion of a url.
+
+    Given: 'http://www.foo.com/bar/123?q=4'
+    Returns: '123'
+
+    Given: 'http://www.foo.com/bar/abc123?q=4'
+    Returns: 'abc123'
+
+    """
+    return urlparse.urlsplit("%s" % href).path.split('/')[-1]
+
+
+def execute_with_timeout(*args, **kwargs):
+    time = kwargs.get('timeout', 30)
+    def cb_timeout():
+       raise exception.ProcessExecutionError("Time out after waiting "
+           + str(time) + " seconds when running proc: " + str(args)
+           + str(kwargs))
+
+    timeout = Timeout(time)
+    try:
+        return execute(*args, **kwargs)
+    except Timeout as t:
+        if t is not timeout:
+            raise
+        else:
+            raise exception.ProcessExecutionError("Time out after waiting "
+               + str(time) + " seconds when running proc: " + str(args)
+               + str(kwargs))
+    finally:
+        timeout.cancel()

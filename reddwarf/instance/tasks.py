@@ -55,8 +55,9 @@ class InstanceTask(object):
 
 
 class InstanceTasks(object):
-    BUILDING = InstanceTask(0x01, 'BUILDING')
+    NONE = InstanceTask(0x01, 'NONE')
     DELETING = InstanceTask(0x02, 'DELETING')
+    REBOOTING = InstanceTask(0x03, 'REBOOTING')
 
 
 # Dissuade further additions at run-time.

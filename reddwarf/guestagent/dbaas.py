@@ -30,6 +30,7 @@ import logging
 import os
 import re
 import sys
+import time
 import uuid
 
 from datetime import date
@@ -54,9 +55,23 @@ MYSQLD_ARGS = None
 PREPARING = False
 UUID = False
 
+ORIG_MYCNF = "/etc/mysql/my.cnf"
+FINAL_MYCNF = "/var/lib/mysql/my.cnf"
+TMP_MYCNF = "/tmp/my.cnf.tmp"
+DBAAS_MYCNF = "/etc/dbaas/my.cnf/my.cnf.%dM"
+MYSQL_BASE_DIR = "/var/lib/mysql"
+
 
 def generate_random_password():
     return str(uuid.uuid4())
+
+
+def get_auth_password():
+    pwd, err = utils.execute_with_timeout("sudo", "awk",
+        "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
+    if err:
+        LOG.err(err)
+    raise RuntimeError("Problem reading my.cnf! : %s" % err)
 
 
 def get_engine():
@@ -68,8 +83,8 @@ def get_engine():
         if ENGINE:
             return ENGINE
         #ENGINE = create_engine(name_or_url=url)
-        pwd, err = utils.execute("sudo", "awk", "/password\\t=/{print $3}",
-                                 "/etc/mysql/my.cnf")
+        pwd, err = utils.execute_with_timeout("sudo", "awk",
+            "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
         if not err:
             ENGINE = create_engine("mysql://%s:%s@localhost:3306" %
                                    (ADMIN_USER_NAME, pwd.strip()),
@@ -97,8 +112,206 @@ def load_mysqld_options():
         return None
 
 
-class DBaaSAgent(object):
-    """ Database as a Service Agent Controller """
+class MySqlAppStatus(object):
+    """
+    Answers the question "what is the status of the MySQL application on
+    this box?" The answer can be that the application is not installed, or
+    the state of the application is determined by calling a series of
+    commands.
+
+    This class also handles saving and load the status of the MySQL application
+    in the database.
+    The status is updated whenever the update() method is called, except
+    if the state is changed to building or restart mode using the
+     "begin_mysql_install" and "begin_mysql_restart" methods.
+    The building mode persists in the database while restarting mode does
+    not (so if there is a Python Pete crash update() will set the status to
+    show a failure).
+    These modes are exited and functionality to update() returns when
+    end_install_or_restart() is called, at which point the status again
+    reflects the actual status of the MySQL app.
+    """
+
+    _instance = None
+
+    def __init__(self):
+        if self._instance is not None:
+            raise RuntimeError("Cannot instantiate twice.")
+        self.status = self._load_status()
+        self.restart_mode = False
+
+
+    def begin_mysql_install(self):
+        """Called right before MySQL is prepared."""
+        self.set_status(rd_models.ServiceStatuses.BUILDING)
+
+    def begin_mysql_restart(self):
+        """Called before restarting MySQL."""
+        self.restart_mode = True
+
+    def end_install_or_restart(self):
+        """Called after MySQL is installed or restarted.
+
+        Updates the database with the actual MySQL status.
+        """
+        LOG.info("Ending install or restart.")
+        self.restart_mode = False
+        real_status = self._get_actual_db_status()
+        LOG.info("Updating status to %s" % real_status)
+        self.set_status(real_status)
+
+    @classmethod
+    def get(cls):
+        if not cls._instance:
+            cls._instance = MySqlAppStatus()
+        return cls._instance
+
+    def _get_actual_db_status(self):
+        global MYSQLD_ARGS
+        try:
+            out, err = utils.execute_with_timeout("/usr/bin/mysqladmin",
+                "ping", run_as_root=True)
+            LOG.info("Service Status is RUNNING.")
+            return rd_models.ServiceStatuses.RUNNING
+        except ProcessExecutionError as e:
+            LOG.error("Process execution ")
+            try:
+                out, err = utils.execute_with_timeout("/bin/ps", "-C", "mysqld",
+                                                      "h")
+                pid = out.split()[0]
+                # TODO(rnirmal): Need to create new statuses for instances
+                # where the mysql service is up, but unresponsive
+                LOG.info("Service Status is BLOCKED.")
+                return rd_models.ServiceStatuses.BLOCKED
+            except ProcessExecutionError as e:
+                if not MYSQLD_ARGS:
+                    MYSQLD_ARGS = load_mysqld_options()
+                pid_file = MYSQLD_ARGS.get('pid-file',
+                                           '/var/run/mysqld/mysqld.pid')
+                if os.path.exists(pid_file):
+                    LOG.info("Service Status is CRASHED.")
+                    return rd_models.ServiceStatuses.CRASHED
+                else:
+                    LOG.info("Service Status is SHUTDOWN.")
+                    return rd_models.ServiceStatuses.SHUTDOWN
+
+    @property
+    def is_mysql_installed(self):
+        """
+        True if MySQL app should be installed and attempts to ascertain
+        its status won't result in nonsense.
+        """
+        return self.status is not None and \
+               self.status != rd_models.ServiceStatuses.BUILDING and \
+               self.status != rd_models.ServiceStatuses.FAILED
+
+    @property
+    def _is_mysql_restarting(self):
+        return self.restart_mode
+
+    @property
+    def is_mysql_running(self):
+        """True if MySQL is running."""
+        return self.status is not None and \
+               self.status == rd_models.ServiceStatuses.RUNNING
+
+    @staticmethod
+    def _load_status():
+        """Loads the status from the database."""
+        id = config.Config.get('guest_id')
+        return rd_models.InstanceServiceStatus.find_by(instance_id=id)
+
+    def set_status(self, status):
+        """Changes the status of the MySQL app in the database."""
+        db_status = self._load_status()
+        db_status.set_status(status)
+        db_status.save()
+        self.status = status
+
+
+    def update(self):
+        """Find and report status of MySQL on this machine.
+
+        The database is update and the status is also returned.
+        """
+        if self.is_mysql_installed and not self._is_mysql_restarting:
+            LOG.info("Determining status of MySQL app...")
+            status = self._get_actual_db_status()
+            self.set_status(status)
+        else:
+            LOG.info("MySQL is not installed or is in restart mode, so for "
+                     "now we'll skip determining the status of MySQL on this "
+                     "box.")
+
+    def wait_for_real_status_to_change_to(self, status, max_time,
+                                          update_db=False):
+        """
+        Waits the given time for the real status to change to the one
+        specified. Does not update the publicly viewable status Unless
+        "update_db" is True.
+        """
+        WAIT_TIME = 3
+        waited_time = 0
+        while(waited_time < max_time):
+            time.sleep(WAIT_TIME)
+            waited_time += WAIT_TIME
+            LOG.info("Waiting for MySQL status to change to %s..." % status)
+            actual_status = self._get_actual_db_status()
+            LOG.info("MySQL status was %s after %d seconds."
+                     % (actual_status, waited_time))
+            if actual_status == status:
+                if update_db:
+                    self.set_status(actual_status)
+                return True
+        LOG.error("Time out while waiting for MySQL app status to change!")
+        return False
+
+
+class LocalSqlClient(object):
+    """A sqlalchemy wrapper to manage transactions"""
+
+    def __init__(self, engine, use_flush=True):
+        self.engine = engine
+        self.use_flush = use_flush
+
+    def __enter__(self):
+        self.conn = self.engine.connect()
+        self.trans = self.conn.begin()
+        return self.conn
+
+    def __exit__(self, type, value, traceback):
+        if self.trans:
+            if type is not None:  # An error occurred
+                self.trans.rollback()
+            else:
+                if self.use_flush:
+                    self.conn.execute(FLUSH)
+                self.trans.commit()
+        self.conn.close()
+
+    def execute(self, t, **kwargs):
+        try:
+            return self.conn.execute(t, kwargs)
+        except:
+            self.trans.rollback()
+            self.trans = None
+            raise
+
+
+class MySqlAdmin(object):
+    """Handles administrative tasks on the MySQL database."""
+
+    def create_database(self, databases):
+        """Create the list of specified databases"""
+        client = LocalSqlClient(get_engine())
+        with client:
+            for item in databases:
+                mydb = models.MySQLDatabase()
+                mydb.deserialize(item)
+                t = text("""CREATE DATABASE IF NOT EXISTS
+                            `%s` CHARACTER SET = %s COLLATE = %s;"""
+                         % (mydb.name, mydb.character_set, mydb.collate))
+                client.execute(t)
 
     def create_user(self, users):
         """Create users and grant them privileges for the
@@ -122,36 +335,14 @@ class DBaaSAgent(object):
                             % (mydb.name, user.name))
                     client.execute(t, host=host)
 
-    def list_users(self):
-        """List users that have access to the database"""
-        LOG.debug(_("---Listing Users---"))
-        users = []
+    def delete_database(self, database):
+        """Delete the specified database"""
         client = LocalSqlClient(get_engine())
         with client:
-            mysql_user = models.MySQLUser()
-            t = text("""select User from mysql.user where host !=
-                     'localhost';""")
-            result = client.execute(t)
-            LOG.debug(_("result = %s") % str(result))
-            for row in result:
-                LOG.debug(_("user = %s") % str(row))
-                mysql_user = models.MySQLUser()
-                mysql_user.name = row['User']
-                # Now get the databases
-                t = text("""SELECT grantee, table_schema
-                            from information_schema.SCHEMA_PRIVILEGES
-                            group by grantee, table_schema;""")
-                db_result = client.execute(t)
-                for db in db_result:
-                    matches = re.match("^'(.+)'@", db['grantee'])
-                    if matches is not None and \
-                       matches.group(1) == mysql_user.name:
-                        mysql_db = models.MySQLDatabase()
-                        mysql_db.name = db['table_schema']
-                        mysql_user.databases.append(mysql_db.serialize())
-                users.append(mysql_user.serialize())
-        LOG.debug(_("users = %s") % str(users))
-        return users
+            mydb = models.MySQLDatabase()
+            mydb.deserialize(database)
+            t = text("""DROP DATABASE `%s`;""" % mydb.name)
+            client.execute(t)
 
     def delete_user(self, user):
         """Delete the specified users"""
@@ -162,17 +353,40 @@ class DBaaSAgent(object):
             t = text("""DROP USER `%s`""" % mysql_user.name)
             client.execute(t)
 
-    def create_database(self, databases):
-        """Create the list of specified databases"""
+    def enable_root(self):
+        """Enable the root user global access and/or reset the root password"""
+        host = "%"
+        user = models.MySQLUser()
+        user.name = "root"
+        user.password = generate_random_password()
         client = LocalSqlClient(get_engine())
         with client:
-            for item in databases:
-                mydb = models.MySQLDatabase()
-                mydb.deserialize(item)
-                t = text("""CREATE DATABASE IF NOT EXISTS
-                            `%s` CHARACTER SET = %s COLLATE = %s;"""
-                         % (mydb.name, mydb.character_set, mydb.collate))
-                client.execute(t)
+            try:
+                t = text("""CREATE USER :user@:host;""")
+                client.execute(t, user=user.name, host=host, pwd=user.password)
+            except exc.OperationalError as err:
+                # Ignore, user is already created, just reset the password
+                # TODO(rnirmal): More fine grained error checking later on
+                LOG.debug(err)
+        with client:
+            t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
+                           WHERE User=:user;""")
+            client.execute(t, user=user.name, pwd=user.password)
+            t = text("""GRANT ALL PRIVILEGES ON *.* TO :user@:host
+                        WITH GRANT OPTION;""")
+            client.execute(t, user=user.name, host=host)
+            return user.serialize()
+
+    def is_root_enabled(self):
+        """Return True if root access is enabled; False otherwise."""
+        client = LocalSqlClient(get_engine())
+        with client:
+            mysql_user = models.MySQLUser()
+            t = text("""SELECT User FROM mysql.user where User = 'root'
+                        and host != 'localhost';""")
+            result = client.execute(t)
+            LOG.debug("result = " + str(result))
+            return result.rowcount != 0
 
     def list_databases(self):
         """List databases the user created on this mysql instance"""
@@ -209,144 +423,92 @@ class DBaaSAgent(object):
         LOG.debug(_("databases = ") + str(databases))
         return databases
 
-    def delete_database(self, database):
-        """Delete the specified database"""
-        client = LocalSqlClient(get_engine())
-        with client:
-            mydb = models.MySQLDatabase()
-            mydb.deserialize(database)
-            t = text("""DROP DATABASE `%s`;""" % mydb.name)
-            client.execute(t)
-
-    def enable_root(self):
-        """Enable the root user global access and/or reset the root password"""
-        host = "%"
-        user = models.MySQLUser()
-        user.name = "root"
-        user.password = generate_random_password()
-        client = LocalSqlClient(get_engine())
-        with client:
-            try:
-                t = text("""CREATE USER :user@:host;""")
-                client.execute(t, user=user.name, host=host, pwd=user.password)
-            except exc.OperationalError as err:
-                # Ignore, user is already created, just reset the password
-                # TODO(rnirmal): More fine grained error checking later on
-                LOG.debug(err)
-        with client:
-            t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                           WHERE User=:user;""")
-            client.execute(t, user=user.name, pwd=user.password)
-            t = text("""GRANT ALL PRIVILEGES ON *.* TO :user@:host
-                        WITH GRANT OPTION;""")
-            client.execute(t, user=user.name, host=host)
-            return user.serialize()
-
-    def disable_root(self):
-        """Disable root access apart from localhost"""
-        host = "localhost"
-        pwd = generate_random_password()
-        user = "root"
-        client = LocalSqlClient(get_engine())
-        with client:
-            t = text("""DELETE FROM mysql.user where User=:user
-                        and Host!=:host""")
-            client.execute(t, user=user, host=host)
-            t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                        WHERE User=:user;""")
-            client.execute(t, pwd=pwd, user=user)
-        return True
-
-    def is_root_enabled(self):
-        """Return True if root access is enabled; False otherwise."""
+    def list_users(self):
+        """List users that have access to the database"""
+        LOG.debug(_("---Listing Users---"))
+        users = []
         client = LocalSqlClient(get_engine())
         with client:
             mysql_user = models.MySQLUser()
-            t = text("""SELECT User FROM mysql.user where User = 'root'
-                        and host != 'localhost';""")
+            t = text("""select User from mysql.user where host !=
+                     'localhost';""")
             result = client.execute(t)
-            LOG.debug(_("result = ") + str(result))
-            return result.rowcount != 0
+            LOG.debug("result = " + str(result))
+            for row in result:
+                LOG.debug("user = " + str(row))
+                mysql_user = models.MySQLUser()
+                mysql_user.name = row['User']
+                # Now get the databases
+                t = text("""SELECT grantee, table_schema
+                            from information_schema.SCHEMA_PRIVILEGES
+                            group by grantee, table_schema;""")
+                db_result = client.execute(t)
+                for db in db_result:
+                    matches = re.match("^'(.+)'@", db['grantee'])
+                    if matches is not None and \
+                       matches.group(1) == mysql_user.name:
+                        mysql_db = models.MySQLDatabase()
+                        mysql_db.name = db['table_schema']
+                        mysql_user.databases.append(mysql_db.serialize())
+                users.append(mysql_user.serialize())
+        LOG.debug("users = " + str(users))
+        return users
 
-    def prepare(self, databases, memory_mb):
+
+class DBaaSAgent(object):
+    """ Database as a Service Agent Controller """
+
+    def __init__(self):
+        self.status = MySqlAppStatus.get()
+
+    def begin_mysql_restart(self):
+        self.restart_mode = True
+
+    def create_database(self, databases):
+        return MySqlAdmin().create_database(databases)
+
+    def create_user(self, users):
+        MySqlAdmin().create_user(users)
+
+    def delete_database(self, database):
+        return MySqlAdmin().delete_database(database)
+
+    def delete_user(self, user):
+        MySqlAdmin().delete_user(user)
+
+    def list_databases(self):
+        return MySqlAdmin().list_databases()
+
+    def list_users(self):
+        return MySqlAdmin().list_users()
+
+    def enable_root(self):
+        return MySqlAdmin().enable_root()
+
+    def is_root_enabled(self):
+        return MySqlAdmin().is_root_enabled()
+
+    def prepare(self, databases, memory_mb, users):
         """Makes ready DBAAS on a Guest container."""
-        global PREPARING
-        PREPARING = True
         from reddwarf.guestagent.pkg import PkgAgent
         if not isinstance(self, PkgAgent):
             raise TypeError("This must also be an instance of Pkg agent.")
-        preparer = DBaaSPreparer(self)
-        preparer.prepare()
+        pkg = self  # Python cast.
+        app = MySqlApp(self.status)
+        app.install_and_secure(pkg, memory_mb)
+        LOG.info("Creating initial databases and users following successful "
+                 "prepare.")
         self.create_database(databases)
-        PREPARING = False
+        self.create_user(users)
+        LOG.info('"prepare" call has finished.')
+
+    def restart(self):
+        app = MySqlApp(self.status)
+        app.restart()
 
     def update_status(self):
         """Update the status of the MySQL service"""
-        global MYSQLD_ARGS
-        global PREPARING
-        id = config.Config.get('guest_id')
-        status = rd_models.InstanceServiceStatus.find_by(instance_id=id)
-
-        if PREPARING:
-            status.set_status(rd_models.ServiceStatuses.BUILDING)
-            status.save()
-            return
-
-        try:
-            out, err = utils.execute("/usr/bin/mysqladmin", "ping",
-                                     run_as_root=True)
-            status.set_status(rd_models.ServiceStatuses.RUNNING)
-            status.save()
-        except ProcessExecutionError as e:
-            try:
-                out, err = utils.execute("ps", "-C", "mysqld", "h")
-                pid = out.split()[0]
-                # TODO(rnirmal): Need to create new statuses for instances
-                # where the mysql service is up, but unresponsive
-                status.set_status(rd_models.ServiceStatuses.BLOCKED)
-                status.save()
-            except ProcessExecutionError as e:
-                if not MYSQLD_ARGS:
-                    MYSQLD_ARGS = load_mysqld_options()
-                pid_file = MYSQLD_ARGS.get('pid-file',
-                                           '/var/run/mysqld/mysqld.pid')
-                if os.path.exists(pid_file):
-                    status.set_status(rd_models.ServiceStatuses.CRASHED)
-                    status.save()
-                else:
-                    status.set_status(rd_models.ServiceStatuses.SHUTDOWN)
-                    status.save()
-
-
-class LocalSqlClient(object):
-    """A sqlalchemy wrapper to manage transactions"""
-
-    def __init__(self, engine, use_flush=True):
-        self.engine = engine
-        self.use_flush = use_flush
-
-    def __enter__(self):
-        self.conn = self.engine.connect()
-        self.trans = self.conn.begin()
-        return self.conn
-
-    def __exit__(self, type, value, traceback):
-        if self.trans:
-            if type is not None:  # An error occurred
-                self.trans.rollback()
-            else:
-                if self.use_flush:
-                    self.conn.execute(FLUSH)
-                self.trans.commit()
-        self.conn.close()
-
-    def execute(self, t, **kwargs):
-        try:
-            return self.conn.execute(t, kwargs)
-        except:
-            self.trans.rollback()
-            self.trans = None
-            raise
+        MySqlAppStatus.get().update()
 
 
 class KeepAliveConnection(interfaces.PoolListener):
@@ -370,68 +532,16 @@ class KeepAliveConnection(interfaces.PoolListener):
                 raise
 
 
-class DBaaSPreparer(object):
+class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
 
-    def __init__(self, pkg_agent):
+    def __init__(self, status):
         """ By default login with root no password for initial setup. """
-        self.engine = create_engine("mysql://root:@localhost:3306", echo=True)
-        self.pkg = pkg_agent
-
-    def _generate_root_password(self, client):
-        """ Generate and set a random root password and forget about it. """
-        t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                           WHERE User='root';""")
-        client.execute(t, pwd=generate_random_password())
-
-    def _init_mycnf(self, password):
-        """
-        Install the set of mysql my.cnf templates from dbaas-mycnf package.
-        The package generates a template suited for the current
-        container flavor. Update the os_admin user and password
-        to the my.cnf file for direct login from localhost
-        """
-        orig_mycnf = "/etc/mysql/my.cnf"
-        final_mycnf = "/var/lib/mysql/my.cnf"
-        tmp_mycnf = "/tmp/my.cnf.tmp"
-        dbaas_mycnf = "/etc/dbaas/my.cnf/my.cnf.default"
-
-        LOG.debug(_("Installing my.cnf templates"))
-        self.pkg.pkg_install("dbaas-mycnf", self.TIME_OUT)
-
-        if os.path.isfile(dbaas_mycnf):
-            utils.execute("sudo", "mv", orig_mycnf,
-                          "%(name)s.%(date)s"
-                          % {'name': orig_mycnf,
-                             'date': date.today().isoformat()})
-            utils.execute("sudo", "cp", dbaas_mycnf, orig_mycnf)
-
-        mycnf_file = open(orig_mycnf, 'r')
-        tmp_file = open(tmp_mycnf, 'w')
-
-        for line in mycnf_file:
-            tmp_file.write(line)
-            if "[client]" in line:
-                tmp_file.write("user\t\t= %s\n" % ADMIN_USER_NAME)
-                tmp_file.write("password\t= %s\n" % password)
-
-        mycnf_file.close()
-        tmp_file.close()
-        utils.execute("sudo", "mv", tmp_mycnf, final_mycnf)
-        utils.execute("sudo", "rm", orig_mycnf)
-        utils.execute("sudo", "ln", "-s", final_mycnf, orig_mycnf)
-
-    def _remove_anonymous_user(self, client):
-        t = text("""DELETE FROM mysql.user WHERE User='';""")
-        client.execute(t)
-
-    def _remove_remote_root_access(self, client):
-        t = text("""DELETE FROM mysql.user
-                           WHERE User='root'
-                           AND Host!='localhost';""")
-        client.execute(t)
+        self.state_change_wait_time = config.Config.get(
+            'state_change_wait_time', 2 * 60)
+        self.status = status
 
     def _create_admin_user(self, client, password):
         """
@@ -451,54 +561,183 @@ class DBaaSPreparer(object):
                  """)
         client.execute(t, user=ADMIN_USER_NAME)
 
-    def _install_mysql(self):
-        """Install mysql server. The current version is 5.1"""
-        LOG.debug(_("Installing mysql server"))
-        self.pkg.pkg_install("mysql-server-5.1", self.TIME_OUT)
-        #TODO(rnirmal): Add checks to make sure the package got installed
+    @staticmethod
+    def _generate_root_password(client):
+        """ Generate and set a random root password and forget about it. """
+        t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
+                           WHERE User='root';""")
+        client.execute(t, pwd=generate_random_password())
 
-    def _restart_mysql(self):
-        """
-        Restart mysql after all the modifications are completed.
-        List of modifications:
-        - Remove existing ib_logfile*
-        """
-        # TODO(rnirmal): To be replaced by the mounted volume location
-        # FIXME once we have volumes in place, use default till then
-        mysql_base_dir = "/var/lib/mysql"
-        try:
-            LOG.debug(_("Restarting mysql..."))
-            utils.execute("sudo", "service", "mysql", "stop")
-
-            # Remove the ib_logfile, if not mysql won't start.
-            # For some reason wildcards don't seem to work, so
-            # deleting both the files separately
-            utils.execute("sudo", "rm", "%s/ib_logfile0" % mysql_base_dir)
-            utils.execute("sudo", "rm", "%s/ib_logfile1" % mysql_base_dir)
-
-            utils.execute("sudo", "service", "mysql", "start")
-        except ProcessExecutionError:
-            LOG.error(_("Unable to restart mysql server."))
-
-    def prepare(self):
+    def install_and_secure(self, pkg, memory_mb):
         """Prepare the guest machine with a secure mysql server installation"""
         LOG.info(_("Preparing Guest as MySQL Server"))
-        try:
-            utils.execute("apt-get", "update", run_as_root=True)
-        except ProcessExecutionError as e:
-            LOG.error(_("Error updating the apt sources"))
 
-        self._install_mysql()
-
+        #TODO(tim.simpson): Check that MySQL is not already installed.
+        self.status.begin_mysql_install()
+        self._install_mysql(pkg)
+        LOG.info(_("Generating root password..."))
         admin_password = generate_random_password()
 
-        client = LocalSqlClient(self.engine)
+        engine = create_engine("mysql://root:@localhost:3306", echo=True)
+        client = LocalSqlClient(engine)
         with client:
             self._generate_root_password(client)
             self._remove_anonymous_user(client)
             self._remove_remote_root_access(client)
             self._create_admin_user(client, admin_password)
 
-        self._init_mycnf(admin_password)
-        self._restart_mysql()
+        self._internal_stop_mysql()
+        self._write_mycnf(pkg, memory_mb, admin_password)
+        self._start_mysql()
+
+        self.status.end_install_or_restart()
         LOG.info(_("Dbaas preparation complete."))
+
+    def _install_mysql(self, pkg):
+        """Install mysql server. The current version is 5.1"""
+        LOG.debug(_("Installing mysql server"))
+        pkg.pkg_install("mysql-server-5.1", self.TIME_OUT)
+        LOG.debug(_("Finished installing mysql server"))
+        #TODO(rnirmal): Add checks to make sure the package got installed
+
+    def _internal_stop_mysql(self, update_db=False):
+        LOG.info(_("Stopping mysql..."))
+        utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
+        if not self.status.wait_for_real_status_to_change_to(
+            rd_models.ServiceStatuses.SHUTDOWN,
+            self.state_change_wait_time, update_db):
+            LOG.error(_("Could not stop MySQL!"))
+            self.status.end_install_or_restart()
+            raise RuntimeError("Could not stop MySQL!")
+
+    def _remove_anonymous_user(self, client):
+        t = text("""DELETE FROM mysql.user WHERE User='';""")
+        client.execute(t)
+
+    def _remove_remote_root_access(self, client):
+        t = text("""DELETE FROM mysql.user
+                           WHERE User='root'
+                           AND Host!='localhost';""")
+        client.execute(t)
+
+    def restart(self):
+        try:
+            self.status.begin_mysql_restart()
+            self._internal_stop_mysql()
+            self._start_mysql()
+        finally:
+            self.status.end_install_or_restart()
+
+    # def _restart_mysql_and_wipe_ib_logfiles(self):
+    #     """Stops MySQL and restarts it, wiping the ib_logfiles in-between.
+
+    #     This should never be done unless the innodb_log_file_size changes.
+    #     """
+    #     LOG.info("Restarting mysql...")
+    #     self._internal_stop_mysql()
+    #     self._wipe_ib_logfiles()
+    #     self._start_mysql()
+
+    def _replace_mycnf_with_template(self, template_path, original_path):
+        if os.path.isfile(template_path):
+            utils.execute_with_timeout("sudo", "mv", original_path,
+                "%(name)s.%(date)s" % {'name': original_path,
+                                       'date': date.today().isoformat()})
+            utils.execute_with_timeout("sudo", "cp", template_path,
+                                       original_path)
+
+    def _write_temp_mycnf_with_admin_account(self, original_file_path,
+                                             temp_file_path, password):
+        mycnf_file = open(original_file_path, 'r')
+        tmp_file = open(temp_file_path, 'w')
+        for line in mycnf_file:
+            tmp_file.write(line)
+            if "[client]" in line:
+                tmp_file.write("user\t\t= %s\n" % ADMIN_USER_NAME)
+                tmp_file.write("password\t= %s\n" % password)
+        mycnf_file.close()
+        tmp_file.close()
+
+    def wipe_ib_logfiles(self):
+        LOG.info(_("Wiping ib_logfiles..."))
+        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile0"
+                                   % MYSQL_BASE_DIR)
+        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile1"
+                                   % MYSQL_BASE_DIR)
+
+    def _write_mycnf(self, pkg, update_memory_mb, admin_password):
+        """
+        Install the set of mysql my.cnf templates from dbaas-mycnf package.
+        The package generates a template suited for the current
+        container flavor. Update the os_admin user and password
+        to the my.cnf file for direct login from localhost
+        """
+        LOG.info(_("Writing my.cnf templates."))
+        if admin_password is None:
+            admin_password = get_auth_password()
+
+        # As of right here, the admin_password contains the password to be
+        # applied to the my.cnf file, whether it was there before (and we
+        # passed it in) or we generated a new one just now (because we didn't
+        # find it).
+
+        LOG.debug(_("Installing my.cnf templates"))
+        pkg.pkg_install("dbaas-mycnf", self.TIME_OUT)
+
+        LOG.info(_("Replacing my.cnf with template."))
+        template_path = DBAAS_MYCNF % update_memory_mb
+
+        # replace my.cnf with template.
+        self._replace_mycnf_with_template(template_path, ORIG_MYCNF)
+
+        LOG.info(_("Writing new temp my.cnf."))
+        self._write_temp_mycnf_with_admin_account(ORIG_MYCNF, TMP_MYCNF,
+                                                  admin_password)
+        # permissions work-around
+        LOG.info(_("Moving tmp into final."))
+        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF, FINAL_MYCNF)
+        LOG.info(_("Removing original my.cnf."))
+        utils.execute_with_timeout("sudo", "rm", ORIG_MYCNF)
+        LOG.info(_("Symlinking final my.cnf."))
+        utils.execute_with_timeout("sudo", "ln", "-s", FINAL_MYCNF, ORIG_MYCNF)
+        self.wipe_ib_logfiles()
+
+
+    def _start_mysql(self, update_db=False):
+        LOG.info(_("Starting mysql..."))
+        # This is the site of all the trouble in the restart tests.
+        # Essentially what happens is thaty mysql start fails, but does not
+        # die. It is then impossible to kill the original, so
+
+        try:
+            utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "start")
+        except ProcessExecutionError:
+            # If it won't start, but won't die either, kill it by hand so we
+            # don't let a rouge process wander around.
+            try:
+                utils.execute_with_timeout("sudo", "pkill", "-9", "mysql")
+            except ProcessExecutionError, p:
+                LOG.error("Error killing stalled mysql start command.")
+                LOG.error(p)
+            # There's nothing more we can do...
+            raise RuntimeError("Can't start MySQL!")
+
+        if not self.status.wait_for_real_status_to_change_to(
+            rd_models.ServiceStatuses.RUNNING,
+            self.state_change_wait_time, update_db):
+            LOG.error(_("Start up of MySQL failed!"))
+            self.status.end_install_or_restart()
+            raise RuntimeError("Could not start MySQL!")
+
+    def start_mysl_with_conf_changes(self, pkg, updated_memory_mb):
+        LOG.info(_("Starting mysql with conf changes..."))
+        if self.status.is_mysql_running:
+            LOG.error(_("Cannot execute start_mysql_with_conf_changes because "
+                        "MySQL state == %s!") % self.status)
+            raise RuntimeError("MySQL not stopped.")
+        LOG.info(_("Initiating config."))
+        self._write_mycnf(pkg, update_memory_mb, None)
+        self._start_mysql(True)
+
+    def stop_mysql(self):
+        self._internal_stop_mysql(True)
