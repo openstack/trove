@@ -251,7 +251,7 @@ class InstanceController(BaseController):
         if databases is None:
             databases = []
         instance = models.Instance.create(context, name, flavor_ref,
-                                          image_id, databases)
+                                          image_id, databases, service_type)
 
         return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
 

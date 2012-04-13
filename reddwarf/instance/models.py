@@ -140,13 +140,16 @@ class Instance(object):
             raise rd_exceptions.ReddwarfError()
 
     @classmethod
-    def create(cls, context, name, flavor_ref, image_id, databases):
+    def create(cls, context, name, flavor_ref, image_id,
+               databases, service_type):
         db_info = DBInstance.create(name=name,
             task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
         client = create_nova_client(context)
+        files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
+                 (db_info.id, service_type)}
         server = client.servers.create(name, image_id, flavor_ref,
-                     files={"/etc/guest_info": "guest_id=%s" % db_info.id})
+                     files=files)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         db_info.compute_instance_id = server.id
         db_info.save()
