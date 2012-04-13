@@ -28,12 +28,15 @@ import functools
 import logging
 import traceback
 
+from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common import service
 
 
 LOG = logging.getLogger(__name__)
+CONFIG = config.Config
+GUEST_SERVICES = {'mysql': 'reddwarf.guestagent.dbaas.DBaaSAgent'}
 
 
 class GuestManager(service.Manager):
@@ -41,10 +44,19 @@ class GuestManager(service.Manager):
     """Manages the tasks within a Guest VM."""
 
     def __init__(self, guest_drivers=None, *args, **kwargs):
-        if not guest_drivers:
-            #TODO(hub-cap): fix this, maybe make it a flag
-            guest_drivers = ['reddwarf.guestagent.dbaas.DBaaSAgent',
-                             'reddwarf.guestagent.pkg.PkgAgent']
+        try:
+            service_impl = GUEST_SERVICES[CONFIG.get('service_type')]
+        except KeyError as e:
+            LOG.error(_("Could not create guest, no impl for key - %s") %
+                     service_type)
+            raise e
+        LOG.info("Create guest driver %s" % service_impl)
+        self.create_guest_driver(service_impl)
+        super(GuestManager, self).__init__(*args, **kwargs)
+
+    def create_guest_driver(self, service_impl):
+        guest_drivers = [service_impl,
+                         'reddwarf.guestagent.pkg.PkgAgent']
         classes = []
         for guest_driver in guest_drivers:
             LOG.info(guest_driver)
@@ -58,7 +70,6 @@ class GuestManager(service.Manager):
                   "following classes: " + str(classes) + \
                   " Exception=" + str(te)
             raise TypeError(msg)
-        super(GuestManager, self).__init__(*args, **kwargs)
 
     def init_host(self):
         """Method for any service initialization"""
