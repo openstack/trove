@@ -20,11 +20,9 @@ from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 from sqlalchemy.schema import UniqueConstraint
 
-from reddwarf.db.sqlalchemy.migrate_repo.schema import Boolean
 from reddwarf.db.sqlalchemy.migrate_repo.schema import create_tables
 from reddwarf.db.sqlalchemy.migrate_repo.schema import DateTime
 from reddwarf.db.sqlalchemy.migrate_repo.schema import drop_tables
-from reddwarf.db.sqlalchemy.migrate_repo.schema import Integer
 from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
@@ -33,8 +31,7 @@ meta = MetaData()
 
 root_enabled_history = Table('root_enabled_history', meta,
     Column('id', String(36), primary_key=True, nullable=False),
-    Column('instance_id', String(36), nullable=False),
-    Column('user_id', String(length=255)),
+    Column('user', String(length=255)),
     Column('created', DateTime()),
     )
 

@@ -106,23 +106,13 @@ class Root(object):
         return create_guest_client(context, instance_id).is_root_enabled()
 
     @classmethod
-    def create(cls, context, instance_id):
+    def create(cls, context, instance_id, user):
         load_and_verify(context, instance_id)
         root = create_guest_client(context, instance_id).enable_root()
         root_user = guest_models.MySQLUser()
         root_user.deserialize(root)
-        # Ledger
+        root_history = base_models.RootHistory.create(context, instance_id, user)
         return root_user
-
-class RootHistory(object):
-
-    @classmethod
-    def load(cls, context, instance_id, user):
-        pass
-
-    @classmethod
-    def create(cls, context, instance_id, user):
-        pass
 
 
 class Users(object):

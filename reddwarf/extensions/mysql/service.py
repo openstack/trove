@@ -74,7 +74,8 @@ class RootController(BaseController):
         LOG.info(_("Enabling root for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        root = models.Root.create(context, instance_id)
+        user_name = req.headers.get('X-User', None)
+        root = models.Root.create(context, instance_id, user_name)
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
 
 
