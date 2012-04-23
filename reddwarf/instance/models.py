@@ -577,7 +577,6 @@ class RootHistory(ModelBase):
         history = cls.load(context, instance_id)
         if history is not None:
             return history
-        LOG.debug("Context right now is: %s" % str(context.to_dict()))
         history = RootHistory(instance_id, user)
         history.save()
         return history
