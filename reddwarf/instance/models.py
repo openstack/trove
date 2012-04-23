@@ -81,6 +81,7 @@ class InstanceStatus(object):
     BUILD = "BUILD"
     FAILED = "FAILED"
     SHUTDOWN = "SHUTDOWN"
+    ERROR = "ERROR"
 
 
 # If the compute server is in any of these states we can't perform any

@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Model classes that form the core of instances functionality."""
+"""Model classes that extend the instances functionality for MySQL instances.."""
 
 import logging
 
