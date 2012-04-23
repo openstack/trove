@@ -18,45 +18,16 @@
 import logging
 import webob.exc
 
-from reddwarf.common import exception, config
+from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mgmt import views
+from reddwarf.instance.service import InstanceController
 
 LOG = logging.getLogger(__name__)
 
 
-class BaseController(wsgi.Controller):
-    """Base controller class."""
-
-    exclude_attr = []
-    exception_map = {
-        webob.exc.HTTPUnprocessableEntity: [
-            exception.UnprocessableEntity,
-            ],
-        webob.exc.HTTPBadRequest: [
-            exception.BadRequest,
-            ],
-        webob.exc.HTTPNotFound: [
-            exception.NotFound,
-            instance_models.ModelNotFoundError,
-            ],
-        webob.exc.HTTPConflict: [
-            ],
-        }
-
-    def __init__(self):
-        self.add_addresses = config.Config.get('add_addresses', False)
-        pass
-
-    def _extract_required_params(self, params, model_name):
-        params = params or {}
-        model_params = params.get(model_name, {})
-        return utils.stringify_keys(utils.exclude(model_params,
-                                                  *self.exclude_attr))
-
-
-class InstanceController(BaseController):
+class MgmtInstanceController(InstanceController):
     """Controller for instance functionality"""
 
     def index(self, req, tenant_id, detailed=False):

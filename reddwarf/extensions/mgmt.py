@@ -48,7 +48,7 @@ class Mgmt(extensions.ExtensionsDescriptor):
             body_serializers={'application/xml':
                               wsgi.ReddwarfXMLDictSerializer()})
         resource = extensions.ResourceExtension('{tenant_id}/mgmt/instances',
-            service.InstanceController(),
+            service.MgmtInstanceController(),
             deserializer=wsgi.RequestDeserializer(),
             serializer=serializer)
         resources.append(resource)
