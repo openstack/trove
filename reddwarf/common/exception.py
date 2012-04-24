@@ -58,12 +58,23 @@ class NotFound(ReddwarfError):
     message = _("Resource %(uuid)s cannot be found")
 
 
+class FlavorNotFound(ReddwarfError):
+
+    message = _("Resource %(uuid)s cannot be found")
+
+
 class ComputeInstanceNotFound(NotFound):
 
     internal_message = _("Cannot find compute instance %(server_id)s for "
                          "instance %(instance_id)s.")
 
     message = _("Resource %(instance_id)s can not be retrieved.")
+
+
+class OverLimit(ReddwarfError):
+
+    internal_message = _("The server rejected the request due to its size or "
+                         "rate.")
 
 
 class GuestError(ReddwarfError):

@@ -122,9 +122,6 @@ VALID_ACTION_STATUSES = ["ACTIVE"]
 
 class Instance(object):
 
-    _data_fields = ['name', 'status', 'id', 'created', 'updated',
-                    'flavor', 'links', 'addresses', 'volume']
-
     def __init__(self, context, db_info, server, service_status, volumes):
         self.context = context
         self.db_info = db_info
@@ -349,9 +346,26 @@ class Instance(object):
 
     def resize_flavor(self, new_flavor_id):
         LOG.info("Resizing flavor of instance %s..." % self.id)
-        # TODO(tim.simpson): Validate the new flavor ID can be found or
-        #                    raise FlavorNotFound exception.
+        if self.server.status in SERVER_INVALID_ACTION_STATUSES:
+            msg = _("Resize flavor not allowed while instance %s is in %s "
+                    "status.") % (self.id, instance_state)
+            LOG.debug(msg)
+            # If the state is building then we throw an exception back
+            raise rd_exceptions.UnprocessableEntity(msg)
+        try:
+            self.server.resize(new_flavor_id)
+        except nova_exceptions.NotFound:
+            raise rd_exceptions.FlavorNotFound(uuid=new_flavor_id)
+        except nova_exceptions.OverLimit:
+            raise rd_exceptions.OverLimit()
+
+        #TODO(tim.simpson): This next part needs to be in the task manager.
+
+
+         # if raised will be returned as is.
         # TODO(tim.simpson): Actually perform flavor resize.
+        self.server.confirm_resize()
+        self.get_guest().instance
         raise RuntimeError("Not implemented (yet).")
 
     def resize_volume(self, new_size):

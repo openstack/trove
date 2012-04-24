@@ -53,6 +53,9 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPConflict: [
             ],
+        webob.exc.HTTPRequestEntityTooLarge: [
+            exception.OverLimit,
+            ]
         }
 
     def __init__(self):

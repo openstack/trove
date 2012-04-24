@@ -646,6 +646,14 @@ class MySqlApp(object):
                            AND Host!='localhost';""")
         client.execute(t)
 
+    def restart_with_sync(self, migration_function):
+        """Restarts MySQL, doing some action in-between.
+
+        Does not update the database."""
+        self._internal_stop_mysql()
+        migration_function()
+        self._start_mysql()
+
     def restart(self):
         try:
             self.status.begin_mysql_restart()
