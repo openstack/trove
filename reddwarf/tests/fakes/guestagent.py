@@ -54,7 +54,11 @@ class FakeGuest(object):
 
     def enable_root(self):
         self.root_was_enabled = True
-        return self._create_user({"_name":"root", "_password":"12345"})
+        return self._create_user({
+            "_name": "root",
+            "_password": "12345",
+            "_databases": [],
+        })
 
     def is_root_enabled(self):
         return self.root_was_enabled
