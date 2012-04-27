@@ -267,8 +267,9 @@ class ContextMiddleware(openstack_wsgi.Middleware):
 
     def process_request(self, request):
         tenant_id = request.headers.get('X-Tenant-Id', None)
-        auth_tok = request.headers["X-Auth-Token"]
-        context = rd_context.ReddwarfContext(auth_tok=auth_tok,
+        auth_tok = request.headers['X-Auth-Token']
+        user = request.headers.get('X-User', None)
+        context = rd_context.ReddwarfContext(auth_tok=auth_tok, user=user,
                                              tenant=tenant_id)
         request.environ[CONTEXT_KEY] = context
 
