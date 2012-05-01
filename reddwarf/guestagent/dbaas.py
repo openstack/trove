@@ -411,7 +411,8 @@ class MySqlAdmin(object):
                 information_schema.schemata
             WHERE
                 schema_name not in
-                ('mysql', 'information_schema', 'lost+found')
+                ('mysql', 'information_schema',
+                 'lost+found', '#mysql50#lost+found')
             ORDER BY
                 schema_name ASC;
             ''')
@@ -503,7 +504,7 @@ class DBaaSAgent(object):
         # status end_mysql_install set with install_and_secure()
         app = MySqlApp(self.status)
         restart_mysql = False
-        if not device_path is None:
+        if device_path:
             VolumeHelper.format(device_path)
             if app.is_installed(pkg):
                 #stop and do not update database

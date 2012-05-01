@@ -56,7 +56,7 @@ nova_service_name = Compute Service
 add_addresses = True
 
 # Config options for enabling volume service
-reddwarf_volume_support = False
+reddwarf_volume_support = True
 nova_volume_service_type = volume
 nova_volume_service_name = Volume Service
 device_path = /dev/vdb

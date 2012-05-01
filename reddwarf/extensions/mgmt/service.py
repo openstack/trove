@@ -56,4 +56,3 @@ class MgmtInstanceController(InstanceController):
             return wsgi.Result(str(e), 404)
         return wsgi.Result(views.InstanceView(server,
             add_addresses=self.add_addresses).data(), 200)
-

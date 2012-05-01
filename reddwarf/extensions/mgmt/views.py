@@ -45,6 +45,7 @@ class InstanceView(object):
             instance_dict['ip'] = ip
         return {"instance": instance_dict}
 
+
 class InstancesView(InstanceView):
 
     def __init__(self, instances, add_addresses=False):

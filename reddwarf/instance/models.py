@@ -64,15 +64,14 @@ def load_volumes(context, server_id, client=None):
         volume_client = create_nova_volume_client(context)
         try:
             volumes = []
-            if utils.bool_from_string(volume_support):
-                volumes_info = client.volumes.get_server_volumes(server_id)
-                volume_ids = [attachments.volumeId for attachments in
-                              volumes_info]
-                for volume_id in volume_ids:
-                    volume_info = volume_client.volumes.get(volume_id)
-                    volume = {'id': volume_info.id,
-                              'size': volume_info.size}
-                    volumes.append(volume)
+            volumes_info = client.volumes.get_server_volumes(server_id)
+            volume_ids = [attachments.volumeId for attachments in
+                          volumes_info]
+            for volume_id in volume_ids:
+                volume_info = volume_client.volumes.get(volume_id)
+                volume = {'id': volume_info.id,
+                          'size': volume_info.size}
+                volumes.append(volume)
         except nova_exceptions.NotFound, e:
             LOG.debug("Could not find nova server_id(%s)" % server_id)
             raise rd_exceptions.VolumeAttachmentsNotFound(server_id=server_id)
@@ -174,11 +173,11 @@ class Instance(object):
     @classmethod
     def _create_volume(cls, context, db_info, volume_size):
         volume_support = config.Config.get("reddwarf_volume_support", 'False')
-        LOG.debug(_("Volume support = %s") % volume_support)
+        LOG.debug(_("reddwarf volume support = %s") % volume_support)
         if utils.bool_from_string(volume_support):
             LOG.debug(_("Starting to create the volume for the instance"))
             volume_client = create_nova_volume_client(context)
-            volume_desc = ("mysql volume for %s" % context.tenant)
+            volume_desc = ("mysql volume for %s" % db_info.id)
             volume_ref = volume_client.volumes.create(
                                         volume_size,
                                         display_name="mysql-%s" % db_info.id,
