@@ -46,6 +46,7 @@ class BaseController(wsgi.Controller):
         webob.exc.HTTPBadRequest: [
             models.InvalidModelError,
             exception.BadRequest,
+            exception.CannotResizeToSameSize,
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
@@ -152,7 +153,7 @@ class InstanceController(BaseController):
                 raise rd_exceptions.BadRequest("Invalid resize argument %s"
                                                % key)
         if selected_option:
-            return selected_option(self, instance, args)
+            return selected_option(instance, args)
         else:
             raise rd_exceptions.BadRequest(_("Missing resize arguments."))
 

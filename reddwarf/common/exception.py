@@ -80,7 +80,7 @@ class OverLimit(ReddwarfError):
 class GuestError(ReddwarfError):
 
     message = _("An error occurred communicating with the guest: "
-                "%(original_message).")
+                "%(original_message)s.")
 
 
 class BadRequest(ReddwarfError):
@@ -97,6 +97,11 @@ class MissingKey(BadRequest):
 class UnprocessableEntity(ReddwarfError):
 
     message = _("Unable to process the contained request")
+
+
+class CannotResizeToSameSize(ReddwarfError):
+
+    message = _("When resizing, instances must change size!")
 
 
 class VolumeAttachmentsNotFound(NotFound):

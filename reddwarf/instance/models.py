@@ -17,8 +17,10 @@
 
 """Model classes that form the core of instances functionality."""
 
+import eventlet
 import logging
 import netaddr
+import time
 
 from reddwarf import db
 
@@ -108,6 +110,8 @@ class InstanceStatus(object):
     BLOCKED = "BLOCKED"
     BUILD = "BUILD"
     FAILED = "FAILED"
+    REBOOT = "REBOOT"
+    RESIZE = "RESIZE"
     SHUTDOWN = "SHUTDOWN"
     ERROR = "ERROR"
 
@@ -120,7 +124,22 @@ SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 VALID_ACTION_STATUSES = ["ACTIVE"]
 
 
+def ExecuteInstanceMethod(context, id, method_name, *args, **kwargs):
+    """Loads an instance and executes a method."""
+    arg_str = utils.create_method_args_string(*args, **kwargs)
+    LOG.debug("Loading instance %s to make the following call: %s(%s)."
+              % (id, method_name, arg_str))
+    instance = Instance.load(context, id)
+    func = getattr(instance, method_name)
+    func(*args, **kwargs)
+
+
 class Instance(object):
+    """Represents an instance.
+
+    The life span of this object should be limited. Do not store them or
+    pass them between threads.
+    """
 
     def __init__(self, context, db_info, server, service_status, volumes):
         self.context = context
@@ -128,6 +147,16 @@ class Instance(object):
         self.server = server
         self.service_status = service_status
         self.volumes = volumes
+
+    def call_async(self, method, *args, **kwargs):
+        """Calls a method on this instance in the background and returns.
+
+        This will be a call to some module similar to the guest API, but for
+        now we just call the real method in eventlet.
+
+        """
+        eventlet.spawn(ExecuteInstanceMethod, self.context, self.db_info.id,
+                       method.__name__, *args, **kwargs)
 
     @staticmethod
     def load(context, id):
@@ -282,13 +311,15 @@ class Instance(object):
         # timeouts determine if the task_status should be integrated here
         # or removed entirely.
         if InstanceTasks.REBOOTING == self.db_info.task_status:
-            return "REBOOT"
+            return InstanceStatus.REBOOT
+        if InstanceTasks.RESIZING == self.db_info.task_status:
+            return InstanceStatus.RESIZE
         # If the server is in any of these states they take precedence.
         if self.server.status in ["BUILD", "ERROR", "REBOOT", "RESIZE"]:
             return self.server.status
         # The service is only paused during a reboot.
         if ServiceStatuses.PAUSED == self.service_status.status:
-            return "REBOOT"
+            return InstanceStatus.REBOOT
         # If the service status is NEW, then we are building.
         if ServiceStatuses.NEW == self.service_status.status:
             return InstanceStatus.BUILD
@@ -344,29 +375,69 @@ class Instance(object):
             LOG.debug(_(msg) % self.status)
             raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
 
+    def _refresh_compute_server_info(self):
+        """Refreshes the compute server field."""
+        server = load_server(self.context, self.db_info.id,
+                             self.db_info.compute_instance_id)
+        self.server = server
+        return server
+
     def resize_flavor(self, new_flavor_id):
-        LOG.info("Resizing flavor of instance %s..." % self.id)
-        if self.server.status in SERVER_INVALID_ACTION_STATUSES:
-            msg = _("Resize flavor not allowed while instance %s is in %s "
-                    "status.") % (self.id, instance_state)
-            LOG.debug(msg)
-            # If the state is building then we throw an exception back
-            raise rd_exceptions.UnprocessableEntity(msg)
+        self.validate_can_perform_resize()
+
+        # Validate that the flavor can be found and that it isn't the same size
+        # as the current one.
+        client = create_nova_client(self.context)
         try:
-            self.server.resize(new_flavor_id)
+            new_flavor = client.flavors.get(new_flavor_id)
         except nova_exceptions.NotFound:
             raise rd_exceptions.FlavorNotFound(uuid=new_flavor_id)
-        except nova_exceptions.OverLimit:
-            raise rd_exceptions.OverLimit()
+        old_flavor = client.flavors.get(self.server.flavor['id'])
+        new_flavor_size = new_flavor.ram
+        old_flavor_size = old_flavor.ram
+        if new_flavor_size == old_flavor_size:
+            raise rd_exceptions.CannotResizeToSameSize()
 
-        #TODO(tim.simpson): This next part needs to be in the task manager.
+        # Set the task to RESIZING and begin the async call before returning.
+        self.db_info.task_status = InstanceTasks.RESIZING
+        self.db_info.save()
+        self.call_async(self.resize_flavor_async, new_flavor_id,
+                        old_flavor_size, new_flavor_size)
 
+    def resize_flavor_async(self, new_flavor_id, old_memory_size,
+                            updated_memory_size):
+        try:
+            guest = create_guest_client(self.context, self.db_info.id)
+            guest.stop_mysql()
+            try:
+                self.server.resize(new_flavor_id)
+                #TODO(tim.simpson): Figure out some way to message the
+                #                   following exceptions:
+                # nova_exceptions.NotFound (for the flavor)
+                # nova_exceptions.OverLimit
 
-         # if raised will be returned as is.
-        # TODO(tim.simpson): Actually perform flavor resize.
-        self.server.confirm_resize()
-        self.get_guest().instance
-        raise RuntimeError("Not implemented (yet).")
+                # Wait for the flavor to change.
+                #TODO(tim.simpson): Bring back our good friend poll_until.
+                while(self.server.status == "RESIZE" or
+                      self.flavor['id'] != new_flavor_id):
+                    time.sleep(1)
+                    info = self._refresh_compute_server_info()
+                # Confirm the resize with Nova.
+                self.server.confirm_resize()
+            except Exception as ex:
+                updated_memory_size = old_memory_size
+                LOG.error("Error during resize compute! Aborting action.")
+                LOG.error(ex)
+                raise
+            finally:
+                # Tell the guest to restart MySQL with the new RAM size.
+                # This is in the finally because we have to call this, or
+                # else MySQL could stay turned off on an otherwise usable
+                # instance.
+                guest.start_mysql_with_conf_changes(updated_memory_size)
+        finally:
+            self.db_info.task_status = InstanceTasks.NONE
+            self.db_info.save()
 
     def resize_volume(self, new_size):
         LOG.info("Resizing volume of instance %s..." % self.id)

@@ -77,7 +77,8 @@ def get_auth_password():
         "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
     if err:
         LOG.err(err)
-    raise RuntimeError("Problem reading my.cnf! : %s" % err)
+        raise RuntimeError("Problem reading my.cnf! : %s" % err)
+    return pwd.strip()
 
 
 def get_engine():
@@ -89,15 +90,11 @@ def get_engine():
         if ENGINE:
             return ENGINE
         #ENGINE = create_engine(name_or_url=url)
-        pwd, err = utils.execute_with_timeout("sudo", "awk",
-            "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
-        if not err:
-            ENGINE = create_engine("mysql://%s:%s@localhost:3306" %
-                                   (ADMIN_USER_NAME, pwd.strip()),
-                                   pool_recycle=7200, echo=True,
-                                   listeners=[KeepAliveConnection()])
-        else:
-            LOG.error(err)
+        pwd = get_auth_password()
+        ENGINE = create_engine("mysql://%s:%s@localhost:3306" %
+                               (ADMIN_USER_NAME, pwd.strip()),
+                               pool_recycle=7200, echo=True,
+                               listeners=[KeepAliveConnection()])
         return ENGINE
 
 
@@ -328,9 +325,10 @@ class MySqlAdmin(object):
                 user.deserialize(item)
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
-                t = text("""CREATE USER `%s`@:host IDENTIFIED BY '%s';"""
-                         % (user.name, user.password))
-                client.execute(t, host=host)
+                t = text("""GRANT USAGE ON *.* TO '%s'@\"%s\"
+                            IDENTIFIED BY '%s';"""
+                         % (user.name, host, user.password))
+                client.execute(t)
                 for database in user.databases:
                     mydb = models.MySQLDatabase()
                     mydb.deserialize(database)
@@ -531,6 +529,15 @@ class DBaaSAgent(object):
         app = MySqlApp(self.status)
         app.restart()
 
+    def start_mysql_with_conf_changes(self, updated_memory_size):
+        app = MySqlApp(self.status)
+        pkg = self  # Python cast.
+        app.start_mysql_with_conf_changes(pkg, updated_memory_size)
+
+    def stop_mysql(self):
+        app = MySqlApp(self.status)
+        app.stop_mysql()
+
     def update_status(self):
         """Update the status of the MySQL service"""
         MySqlAppStatus.get().update()
@@ -652,7 +659,7 @@ class MySqlApp(object):
         Does not update the database."""
         self._internal_stop_mysql()
         migration_function()
-        self._start_mysql()
+        self.start_mysql()
 
     def restart(self):
         try:
@@ -661,16 +668,6 @@ class MySqlApp(object):
             self.start_mysql()
         finally:
             self.status.end_install_or_restart()
-
-    # def _restart_mysql_and_wipe_ib_logfiles(self):
-    #     """Stops MySQL and restarts it, wiping the ib_logfiles in-between.
-
-    #     This should never be done unless the innodb_log_file_size changes.
-    #     """
-    #     LOG.info("Restarting mysql...")
-    #     self._internal_stop_mysql()
-    #     self._wipe_ib_logfiles()
-    #     self._start_mysql()
 
     def _replace_mycnf_with_template(self, template_path, original_path):
         if os.path.isfile(template_path):
@@ -694,10 +691,20 @@ class MySqlApp(object):
 
     def wipe_ib_logfiles(self):
         LOG.info(_("Wiping ib_logfiles..."))
-        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile0"
-                                   % MYSQL_BASE_DIR)
-        utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile1"
-                                   % MYSQL_BASE_DIR)
+        def delete_log(index):
+            # On restarts, sometimes these are wiped. So it can be a race to
+            # have MySQL start up before it's restarted and these have to be
+            # deleted. That's why its ok if they aren't found.
+            try:
+                utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile%d"
+                                           % (MYSQL_BASE_DIR, index))
+            except ProcessExecutionError as pe:
+                LOG.error("Could not delete logfile!")
+                LOG.error(pe)
+                if "No such file or directory" not in str(pe):
+                    raise
+        delete_log(0)
+        delete_log(1)
 
     def _write_mycnf(self, pkg, update_memory_mb, admin_password):
         """
@@ -762,7 +769,7 @@ class MySqlApp(object):
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 
-    def start_mysl_with_conf_changes(self, pkg, updated_memory_mb):
+    def start_mysql_with_conf_changes(self, pkg, updated_memory_mb):
         LOG.info(_("Starting mysql with conf changes..."))
         if self.status.is_mysql_running:
             LOG.error(_("Cannot execute start_mysql_with_conf_changes because "

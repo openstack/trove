@@ -58,6 +58,7 @@ class InstanceTasks(object):
     NONE = InstanceTask(0x01, 'NONE')
     DELETING = InstanceTask(0x02, 'DELETING')
     REBOOTING = InstanceTask(0x03, 'REBOOTING')
+    RESIZING = InstanceTask(0x03, 'RESIZING')
 
 
 # Dissuade further additions at run-time.
