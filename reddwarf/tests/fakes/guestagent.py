@@ -89,23 +89,16 @@ class FakeGuest(object):
     def start_mysql_with_conf_changes(self, updated_memory_size):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
-
-        def update_db():
-            status = InstanceServiceStatus.find_by(instance_id=self.id)
-            status.status = ServiceStatuses.RUNNING
-            status.save()
-        EventSimulator.add_event(0.5, update_db)
+        status = InstanceServiceStatus.find_by(instance_id=self.id)
+        status.status = ServiceStatuses.RUNNING
+        status.save()
 
     def stop_mysql(self):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
-
-        def update_db():
-            status = InstanceServiceStatus.find_by(instance_id=self.id)
-            status.status = ServiceStatuses.SHUTDOWN
-            status.save()
-        EventSimulator.add_event(0.5, update_db)
-
+        status = InstanceServiceStatus.find_by(instance_id=self.id)
+        status.status = ServiceStatuses.SHUTDOWN
+        status.save()
 
 def get_or_create(id):
     if id not in DB:

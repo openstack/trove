@@ -65,6 +65,7 @@ class FakeFlavors(object):
         self.db[new_flavor.id] = new_flavor
 
     def get(self, id):
+        id = int(id)
         if id not in self.db:
             raise nova_exceptions.NotFound(404, "Flavor id not found %s" % id)
         return self.db[id]
@@ -101,6 +102,12 @@ class FakeServer(object):
     def addresses(self):
         return {"private": [{"addr":"123.123.123.123"}]}
 
+    def confirm_resize(self):
+        if self.status != "VERIFY_RESIZE":
+            raise RuntimeError("Not in resize confirm mode.")
+        self._current_status = "ACTIVE"
+
+
     def delete(self):
         self.schedule_status = []
         self._current_status = "SHUTDOWN"
@@ -116,6 +123,16 @@ class FakeServer(object):
             "href": "https://localhost:9999/v1.0/1234/instances/%s" % self.id,
             "rel": link_type
             } for link_type in ['self', 'bookmark']]
+
+    def resize(self, new_flavor_id):
+        self._current_status = "RESIZE"
+        def set_to_confirm_mode():
+            self._current_status = "VERIFY_RESIZE"
+        def set_flavor():
+            flavor = self.parent.flavors.get(new_flavor_id)
+            self.flavor_ref = flavor.links[0]['href']
+            self.events.add_event(1, set_to_confirm_mode)
+        self.events.add_event(1, set_flavor)
 
     def schedule_status(self, new_status, time_from_now):
         """Makes a new status take effect at the given time."""

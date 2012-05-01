@@ -384,7 +384,8 @@ class Instance(object):
 
     def resize_flavor(self, new_flavor_id):
         self.validate_can_perform_resize()
-
+        LOG.debug("resizing instance %s flavor to %s"
+                  % (self.id, new_flavor_id))
         # Validate that the flavor can be found and that it isn't the same size
         # as the current one.
         client = create_nova_client(self.context)
@@ -401,15 +402,18 @@ class Instance(object):
         # Set the task to RESIZING and begin the async call before returning.
         self.db_info.task_status = InstanceTasks.RESIZING
         self.db_info.save()
+        LOG.debug("Instance %s set to RESIZING." % self.id)
         self.call_async(self.resize_flavor_async, new_flavor_id,
                         old_flavor_size, new_flavor_size)
 
     def resize_flavor_async(self, new_flavor_id, old_memory_size,
                             updated_memory_size):
         try:
+            LOG.debug("Instance %s calling stop_mysql..." % self.id)
             guest = create_guest_client(self.context, self.db_info.id)
             guest.stop_mysql()
             try:
+                LOG.debug("Instance %s calling Compute resize..." % self.id)
                 self.server.resize(new_flavor_id)
                 #TODO(tim.simpson): Figure out some way to message the
                 #                   following exceptions:
@@ -419,10 +423,12 @@ class Instance(object):
                 # Wait for the flavor to change.
                 #TODO(tim.simpson): Bring back our good friend poll_until.
                 while(self.server.status == "RESIZE" or
-                      self.flavor['id'] != new_flavor_id):
+                      str(self.flavor['id']) != str(new_flavor_id)):
                     time.sleep(1)
                     info = self._refresh_compute_server_info()
                 # Confirm the resize with Nova.
+                LOG.debug("Instance %s calling Compute confirm resize..."
+                          % self.id)
                 self.server.confirm_resize()
             except Exception as ex:
                 updated_memory_size = old_memory_size
@@ -434,6 +440,7 @@ class Instance(object):
                 # This is in the finally because we have to call this, or
                 # else MySQL could stay turned off on an otherwise usable
                 # instance.
+                LOG.debug("Instance %s starting mysql..." % self.id)
                 guest.start_mysql_with_conf_changes(updated_memory_size)
         finally:
             self.db_info.task_status = InstanceTasks.NONE
