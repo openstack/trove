@@ -48,11 +48,11 @@ def create_method_args_string(*args, **kwargs):
     I.e. for args=1,2,3 and kwargs={'a':4, 'b':5} you'd get: "1,2,3,a=4,b=5"
     """
     # While %s turns a var into a string but in some rare cases explicit
-    # str() is less likely to raise an exception.
+    # repr() is less likely to raise an exception.
     arg_strs = [repr(arg) for arg in args]
     arg_strs += ['%s=%s' % (repr(key), repr(value))
                  for (key, value) in kwargs.items()]
-    return ','.join(arg_strs)
+    return ', '.join(arg_strs)
 
 
 def stringify_keys(dictionary):

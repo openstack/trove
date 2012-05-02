@@ -690,21 +690,25 @@ class MySqlApp(object):
         tmp_file.close()
 
     def wipe_ib_logfiles(self):
+        """Destroys the iblogfiles.
+
+        If for some reason the selected log size in the conf changes from the
+        current size of the files MySQL will fail to start, so we delete the
+        files to be safe.
+        """
         LOG.info(_("Wiping ib_logfiles..."))
-        def delete_log(index):
-            # On restarts, sometimes these are wiped. So it can be a race to
-            # have MySQL start up before it's restarted and these have to be
-            # deleted. That's why its ok if they aren't found.
+        for index in range(2):
             try:
                 utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile%d"
                                            % (MYSQL_BASE_DIR, index))
             except ProcessExecutionError as pe:
+                # On restarts, sometimes these are wiped. So it can be a race
+                # to have MySQL start up before it's restarted and these have
+                # to be deleted. That's why its ok if they aren't found.
                 LOG.error("Could not delete logfile!")
                 LOG.error(pe)
                 if "No such file or directory" not in str(pe):
                     raise
-        delete_log(0)
-        delete_log(1)
 
     def _write_mycnf(self, pkg, update_memory_mb, admin_password):
         """
