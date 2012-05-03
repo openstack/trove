@@ -58,8 +58,11 @@ class InstanceView(object):
 
 class InstanceDetailView(InstanceView):
 
-    def __init__(self, instance, add_addresses=False, roothistory=None):
-        super(InstanceDetailView, self).__init__(instance, add_addresses)
+    def __init__(self, instance, roothistory=None, add_addresses=False,
+                 add_volumes=False):
+        super(InstanceDetailView, self).__init__(instance,
+                                                 add_addresses=add_addresses,
+                                                 add_volumes=add_volumes)
         self.roothistory = roothistory
 
     def data(self):
@@ -96,5 +99,5 @@ class InstancesDetailView(InstancesView):
 
     def data_for_instance(self, instance):
         return InstanceDetailView(instance,
-                                  self.add_addresses,
-                                  self.add_volumes).data()['instance']
+                               add_addresses=self.add_addresses,
+                               add_volumes=self.add_volumes).data()['instance']

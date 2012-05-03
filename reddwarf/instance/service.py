@@ -204,7 +204,8 @@ class InstanceController(BaseController):
         # TODO(cp16net): need to set the return code correctly
         # Adding the root history, if it exists.
         history = models.RootHistory.load(context=context, instance_id=id)
-        return wsgi.Result(views.InstanceDetailView(server, roothistory=history,
+        return wsgi.Result(views.InstanceDetailView(server,
+                           roothistory=history,
                            add_addresses=self.add_addresses,
                            add_volumes=self.add_volumes).data(), 200)
 

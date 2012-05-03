@@ -35,6 +35,7 @@ root_enabled_history = Table('root_enabled_history', meta,
     Column('created', DateTime()),
     )
 
+
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
     create_tables([root_enabled_history])
