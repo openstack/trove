@@ -341,8 +341,8 @@ if __name__ == '__main__':
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(logging.DEBUG)
-    # If any argument looks like a test name but doesn't have "reddwarf.tests" in
-    # front of it, automatically add that so we don't have to type as much
+    # If any argument looks like a test name but doesn't have "reddwarf.tests"
+    # in front of it, automatically add that so we don't have to type as much
     show_elapsed = True
     argv = []
     for x in sys.argv:
