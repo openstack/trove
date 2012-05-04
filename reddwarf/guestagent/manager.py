@@ -44,8 +44,9 @@ class GuestManager(service.Manager):
     """Manages the tasks within a Guest VM."""
 
     def __init__(self, guest_drivers=None, *args, **kwargs):
+        service_type = CONFIG.get('service_type')
         try:
-            service_impl = GUEST_SERVICES[CONFIG.get('service_type')]
+            service_impl = GUEST_SERVICES[service_type]
         except KeyError as e:
             LOG.error(_("Could not create guest, no impl for key - %s") %
                      service_type)

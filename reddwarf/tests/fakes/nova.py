@@ -84,7 +84,8 @@ class FakeFlavors(object):
 
 class FakeServer(object):
 
-    def __init__(self, parent, owner, id, name, image_id, flavor_ref):
+    def __init__(self, parent, owner, id, name, image_id, flavor_ref,
+                 block_device_mapping):
         self.owner = owner  # This is a context.
         self.id = id
         self.parent = parent
@@ -93,10 +94,12 @@ class FakeServer(object):
         self.flavor_ref = flavor_ref
         self.events = EventSimulator()
         self.schedule_status("BUILD", 0.0)
+        LOG.debug("block_device_mapping = %s" % block_device_mapping)
+        self.block_device_mapping = block_device_mapping
 
     @property
     def addresses(self):
-        return {"private":[{"addr":"123.123.123.123"}]}
+        return {"private": [{"addr":"123.123.123.123"}]}
 
     def delete(self):
         self.schedule_status = []
@@ -153,17 +156,20 @@ class FakeServers(object):
         return self.context.is_admin or \
                server.owner.tenant == self.context.tenant
 
-    def create(self, name, image_id, flavor_ref, files):
+    def create(self, name, image_id, flavor_ref, files, block_device_mapping):
         id = "FAKE_%d" % self.next_id
         self.next_id += 1
-        server = FakeServer(self, self.context, id, name, image_id, flavor_ref)
+        server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
+                            block_device_mapping)
         self.db[id] = server
         server.schedule_status("ACTIVE", 1)
+        LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
         return server
 
     def get(self, id):
         if id not in self.db:
-            LOG.error("Couldn't find id %s, collection=%s" % (id, self.db))
+            LOG.error("Couldn't find server id %s, collection=%s" % (id,
+                                                                     self.db))
             raise nova_exceptions.NotFound(404, "Not found")
         else:
             if self.can_see(id):
@@ -181,6 +187,25 @@ class FakeServers(object):
         self.events.add_event(time_from_now, delete_server)
 
 
+class FakeServerVolumes(object):
+
+    def __init__(self, context):
+        self.context = context
+
+    def get_server_volumes(self, server_id):
+        class ServerVolumes(object):
+            def __init__(self, block_device_mapping):
+                LOG.debug("block_device_mapping = %s" % block_device_mapping)
+                device = block_device_mapping['vdb']
+                (self.volumeId,
+                    self.type,
+                    self.size,
+                    self.delete_on_terminate) = device.split(":")
+        fake_servers = FakeServers(self.context, FLAVORS)
+        server = fake_servers.get(server_id)
+        return [ServerVolumes(server.block_device_mapping)]
+
+
 FLAVORS = FakeFlavors()
 
 
@@ -190,7 +215,87 @@ class FakeClient(object):
         self.context = context
         self.flavors = FLAVORS
         self.servers = FakeServers(context, self.flavors)
+        self.volumes = FakeServerVolumes(context)
 
 
 def fake_create_nova_client(context):
     return FakeClient(context)
+
+
+class FakeVolume(object):
+
+    def __init__(self, parent, owner, id, size, display_name,
+                 display_description):
+        self.parent = parent
+        self.owner = owner  # This is a context.
+        self.id = id
+        self.size = size
+        self.display_name = display_name
+        self.display_description = display_description
+        self.events = EventSimulator()
+        self.schedule_status("BUILD", 0.0)
+
+    def __repr__(self):
+        return ("FakeVolume(id=%s, size=%s, "
+               "display_name=%s, display_description=%s)") % (self.id,
+               self.size, self.display_name, self.display_description)
+
+    def schedule_status(self, new_status, time_from_now):
+        """Makes a new status take effect at the given time."""
+        def set_status():
+            self._current_status = new_status
+        self.events.add_event(time_from_now, set_status)
+
+    @property
+    def status(self):
+        return self._current_status
+
+
+FAKE_VOLUMES_DB = {}
+
+
+class FakeVolumes(object):
+
+    def __init__(self, context):
+        self.context = context
+        self.db = FAKE_VOLUMES_DB
+        self.next_id = 10
+        self.events = EventSimulator()
+
+    def can_see(self, id):
+        """Can this FakeVolumes, with its context, see some resource?"""
+        server = self.db[id]
+        return self.context.is_admin or \
+               server.owner.tenant == self.context.tenant
+
+    def get(self, id):
+        if id not in self.db:
+            LOG.error("Couldn't find volume id %s, collection=%s" % (id,
+                                                                     self.db))
+            raise nova_exceptions.NotFound(404, "Not found")
+        else:
+            if self.can_see(id):
+                return self.db[id]
+            else:
+                raise nova_exceptions.NotFound(404, "Bad permissions")
+
+    def create(self, size, display_name=None, display_description=None):
+        id = "FAKE_VOL_%d" % self.next_id
+        self.next_id += 1
+        volume = FakeVolume(self, self.context, id, size, display_name,
+                            display_description)
+        self.db[id] = volume
+        volume.schedule_status("available", 2)
+        LOG.info("FAKE_VOLUMES_DB : %s" % FAKE_VOLUMES_DB)
+        return volume
+
+
+class FakeVolumeClient(object):
+
+    def __init__(self, context):
+        self.context = context
+        self.volumes = FakeVolumes(context)
+
+
+def fake_create_nova_volume_client(context):
+    return FakeVolumeClient(context)

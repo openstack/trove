@@ -52,5 +52,4 @@ class Mgmt(extensions.ExtensionsDescriptor):
             deserializer=wsgi.RequestDeserializer(),
             serializer=serializer)
         resources.append(resource)
-
         return resources

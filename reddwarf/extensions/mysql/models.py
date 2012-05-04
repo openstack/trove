@@ -15,7 +15,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Model classes that extend the instances functionality for MySQL instances.."""
+"""
+Model classes that extend the instances functionality for MySQL instances.
+"""
 
 import logging
 
@@ -111,7 +113,9 @@ class Root(object):
         root = create_guest_client(context, instance_id).enable_root()
         root_user = guest_models.MySQLUser()
         root_user.deserialize(root)
-        root_history = base_models.RootHistory.create(context, instance_id, user)
+        root_history = base_models.RootHistory.create(context,
+                                                      instance_id,
+                                                      user)
         return root_user
 
 

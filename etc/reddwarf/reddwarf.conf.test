@@ -52,6 +52,16 @@ nova_region_name = RegionOne
 nova_service_type = compute
 nova_service_name = Compute Service
 
+# Config option for showing the IP address that nova doles out
+add_addresses = True
+
+# Config options for enabling volume service
+reddwarf_volume_support = True
+nova_volume_service_type = volume
+nova_volume_service_name = Volume Service
+device_path = /dev/vdb
+mount_point = /var/lib/mysql
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

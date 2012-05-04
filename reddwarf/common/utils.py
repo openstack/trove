@@ -22,6 +22,7 @@ import logging
 import re
 import signal
 import sys
+import urlparse
 import uuid
 
 from eventlet import event
@@ -146,6 +147,7 @@ class LoopingCallDone(Exception):
 
     def __init__(self, retvalue=True):
         """:param retvalue: Value that LoopingCall.wait() should return."""
+        super(LoopingCallDone, self).__init__()
         self.retvalue = retvalue
 
 
@@ -208,10 +210,12 @@ def get_id_from_href(href):
 
 def execute_with_timeout(*args, **kwargs):
     time = kwargs.get('timeout', 30)
+
     def cb_timeout():
-       raise exception.ProcessExecutionError("Time out after waiting "
-           + str(time) + " seconds when running proc: " + str(args)
-           + str(kwargs))
+        msg = _("Time out after waiting"
+                " %(time)s seconds when running proc: %(args)s"
+                " %(kwargs)s") % locals()
+        raise exception.ProcessExecutionError(msg)
 
     timeout = Timeout(time)
     try:
@@ -220,8 +224,9 @@ def execute_with_timeout(*args, **kwargs):
         if t is not timeout:
             raise
         else:
-            raise exception.ProcessExecutionError("Time out after waiting "
-               + str(time) + " seconds when running proc: " + str(args)
-               + str(kwargs))
+            msg = _("Time out after waiting "
+                    "%(time)s seconds when running proc: %(args)s"
+                    " %(kwargs)s") % locals()
+            raise exception.ProcessExecutionError(msg)
     finally:
         timeout.cancel()

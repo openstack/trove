@@ -122,12 +122,14 @@ class API(object):
         LOG.debug(_("Check diagnostics on Instance %s"), self.id)
         return self._call("get_diagnostics")
 
-    def prepare(self, memory_mb, databases, users):
+    def prepare(self, memory_mb, databases, users,
+                device_path='/dev/vdb', mount_point='/mnt/volume'):
         """Make an asynchronous call to prepare the guest
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
         self._cast_with_consumer("prepare", databases=databases,
-            memory_mb=memory_mb, users=users)
+            memory_mb=memory_mb, users=users, device_path=device_path,
+            mount_point=mount_point)
 
     def restart(self):
         """Restart the MySQL server."""
@@ -147,5 +149,5 @@ class API(object):
 
     def upgrade(self):
         """Make an asynchronous call to self upgrade the guest agent"""
-        LOG.debug(_("Sending an upgrade call to nova-guest %s"), topic)
+        LOG.debug(_("Sending an upgrade call to nova-guest"))
         self._cast_with_consumer("upgrade")

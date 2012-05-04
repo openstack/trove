@@ -56,7 +56,10 @@ class BaseController(wsgi.Controller):
         }
 
     def __init__(self):
-        self.add_addresses = config.Config.get('add_addresses', False)
+        self.add_addresses = utils.bool_from_string(
+                        config.Config.get('add_addresses', 'False'))
+        self.add_volumes = utils.bool_from_string(
+                        config.Config.get('reddwarf_volume_support', 'False'))
         pass
 
     def _extract_required_params(self, params, model_name):
@@ -166,7 +169,7 @@ class InstanceController(BaseController):
     def detail(self, req, tenant_id):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Detailing a database instance for tenant '%s'") % tenant_id)
+        LOG.info(_("Detailing database instance for tenant '%s'") % tenant_id)
         #TODO(cp16net) return a detailed list instead of index
         return self.index(req, tenant_id, detailed=True)
 
@@ -180,7 +183,8 @@ class InstanceController(BaseController):
         view_cls = views.InstancesDetailView if detailed \
                                              else views.InstancesView
         return wsgi.Result(view_cls(servers,
-                           add_addresses=self.add_addresses).data(), 200)
+                           add_addresses=self.add_addresses,
+                           add_volumes=self.add_volumes).data(), 200)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
@@ -200,8 +204,10 @@ class InstanceController(BaseController):
         # TODO(cp16net): need to set the return code correctly
         # Adding the root history, if it exists.
         history = models.RootHistory.load(context=context, instance_id=id)
-        return wsgi.Result(views.InstanceDetailView(server, roothistory=history,
-                           add_addresses=self.add_addresses).data(), 200)
+        return wsgi.Result(views.InstanceDetailView(server,
+                           roothistory=history,
+                           add_addresses=self.add_addresses,
+                           add_volumes=self.add_volumes).data(), 200)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -252,10 +258,13 @@ class InstanceController(BaseController):
         databases = body['instance'].get('databases')
         if databases is None:
             databases = []
+        volume_size = body['instance']['volume']['size']
         instance = models.Instance.create(context, name, flavor_ref,
-                                          image_id, databases, service_type)
+                                          image_id, databases,
+                                          service_type, volume_size)
 
-        return wsgi.Result(views.InstanceDetailView(instance).data(), 200)
+        return wsgi.Result(views.InstanceDetailView(instance,
+                                  add_volumes=self.add_volumes).data(), 200)
 
     @staticmethod
     def _validate_body_not_empty(body):
@@ -295,12 +304,12 @@ class InstanceController(BaseController):
             body['instance']
             body['instance']['flavorRef']
             # TODO(cp16net) add in volume to the mix
-#            volume_size = body['instance']['volume']['size']
+            volume_size = body['instance']['volume']['size']
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
-#        Instance._validate_volume_size(volume_size)
+        InstanceController._validate_volume_size(volume_size)
 
     @staticmethod
     def _validate_resize_instance(body):

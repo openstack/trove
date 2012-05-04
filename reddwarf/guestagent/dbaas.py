@@ -28,6 +28,7 @@ handles RPC calls relating to Platform specific operations.
 
 import logging
 import os
+import pexpect
 import re
 import sys
 import time
@@ -40,11 +41,14 @@ from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from reddwarf import db
+from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
+from reddwarf.guestagent.volume import VolumeHelper
 from reddwarf.instance import models as rd_models
+
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -60,6 +64,8 @@ FINAL_MYCNF = "/var/lib/mysql/my.cnf"
 TMP_MYCNF = "/tmp/my.cnf.tmp"
 DBAAS_MYCNF = "/etc/dbaas/my.cnf/my.cnf.%dM"
 MYSQL_BASE_DIR = "/var/lib/mysql"
+
+CONFIG = config.Config
 
 
 def generate_random_password():
@@ -140,7 +146,6 @@ class MySqlAppStatus(object):
         self.status = self._load_status()
         self.restart_mode = False
 
-
     def begin_mysql_install(self):
         """Called right before MySQL is prepared."""
         self.set_status(rd_models.ServiceStatuses.BUILDING)
@@ -176,8 +181,8 @@ class MySqlAppStatus(object):
         except ProcessExecutionError as e:
             LOG.error("Process execution ")
             try:
-                out, err = utils.execute_with_timeout("/bin/ps", "-C", "mysqld",
-                                                      "h")
+                out, err = utils.execute_with_timeout("/bin/ps", "-C",
+                                                      "mysqld", "h")
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
@@ -227,7 +232,6 @@ class MySqlAppStatus(object):
         db_status.set_status(status)
         db_status.save()
         self.status = status
-
 
     def update(self):
         """Find and report status of MySQL on this machine.
@@ -407,7 +411,8 @@ class MySqlAdmin(object):
                 information_schema.schemata
             WHERE
                 schema_name not in
-                ('mysql', 'information_schema', 'lost+found')
+                ('mysql', 'information_schema',
+                 'lost+found', '#mysql50#lost+found')
             ORDER BY
                 schema_name ASC;
             ''')
@@ -488,13 +493,33 @@ class DBaaSAgent(object):
     def is_root_enabled(self):
         return MySqlAdmin().is_root_enabled()
 
-    def prepare(self, databases, memory_mb, users):
+    def prepare(self, databases, memory_mb, users, device_path=None,
+                mount_point=None):
         """Makes ready DBAAS on a Guest container."""
         from reddwarf.guestagent.pkg import PkgAgent
         if not isinstance(self, PkgAgent):
             raise TypeError("This must also be an instance of Pkg agent.")
         pkg = self  # Python cast.
+        self.status.begin_mysql_install()
+        # status end_mysql_install set with install_and_secure()
         app = MySqlApp(self.status)
+        restart_mysql = False
+        if device_path:
+            VolumeHelper.format(device_path)
+            if app.is_installed(pkg):
+                #stop and do not update database
+                app.stop_mysql()
+                restart_mysql = True
+                #rsync exiting data
+                VolumeHelper.migrate_data(device_path, MYSQL_BASE_DIR)
+            #mount the volume
+            VolumeHelper.mount(device_path, mount_point)
+            #TODO(cp16net) need to update the fstab here so that on a
+            # restart the volume will be mounted automatically again
+            LOG.debug(_("Mounted the volume."))
+            #check mysql was installed and stopped
+            if restart_mysql:
+                app.start_mysql()
         app.install_and_secure(pkg, memory_mb)
         LOG.info("Creating initial databases and users following successful "
                  "prepare.")
@@ -536,11 +561,12 @@ class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
+    MYSQL_PACKAGE_VERSION = "mysql-server-5.1"
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """
-        self.state_change_wait_time = config.Config.get(
-            'state_change_wait_time', 2 * 60)
+        self.state_change_wait_time = int(config.Config.get(
+            'state_change_wait_time', 2 * 60))
         self.status = status
 
     def _create_admin_user(self, client, password):
@@ -586,21 +612,21 @@ class MySqlApp(object):
             self._remove_remote_root_access(client)
             self._create_admin_user(client, admin_password)
 
-        self._internal_stop_mysql()
+        self.stop_mysql()
         self._write_mycnf(pkg, memory_mb, admin_password)
-        self._start_mysql()
+        self.start_mysql()
 
         self.status.end_install_or_restart()
-        LOG.info(_("Dbaas preparation complete."))
+        LOG.info(_("Dbaas install_and_secure complete."))
 
     def _install_mysql(self, pkg):
         """Install mysql server. The current version is 5.1"""
         LOG.debug(_("Installing mysql server"))
-        pkg.pkg_install("mysql-server-5.1", self.TIME_OUT)
+        pkg.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
         LOG.debug(_("Finished installing mysql server"))
         #TODO(rnirmal): Add checks to make sure the package got installed
 
-    def _internal_stop_mysql(self, update_db=False):
+    def stop_mysql(self, update_db=False):
         LOG.info(_("Stopping mysql..."))
         utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
         if not self.status.wait_for_real_status_to_change_to(
@@ -623,8 +649,8 @@ class MySqlApp(object):
     def restart(self):
         try:
             self.status.begin_mysql_restart()
-            self._internal_stop_mysql()
-            self._start_mysql()
+            self.stop_mysql()
+            self.start_mysql()
         finally:
             self.status.end_install_or_restart()
 
@@ -702,8 +728,7 @@ class MySqlApp(object):
         utils.execute_with_timeout("sudo", "ln", "-s", FINAL_MYCNF, ORIG_MYCNF)
         self.wipe_ib_logfiles()
 
-
-    def _start_mysql(self, update_db=False):
+    def start_mysql(self, update_db=False):
         LOG.info(_("Starting mysql..."))
         # This is the site of all the trouble in the restart tests.
         # Essentially what happens is thaty mysql start fails, but does not
@@ -736,8 +761,10 @@ class MySqlApp(object):
                         "MySQL state == %s!") % self.status)
             raise RuntimeError("MySQL not stopped.")
         LOG.info(_("Initiating config."))
-        self._write_mycnf(pkg, update_memory_mb, None)
-        self._start_mysql(True)
+        self._write_mycnf(pkg, updated_memory_mb, None)
+        self.start_mysql(True)
 
-    def stop_mysql(self):
-        self._internal_stop_mysql(True)
+    def is_installed(self, pkg):
+        #(cp16net) could raise an exception, does it need to be handled here?
+        version = pkg.pkg_version(self.MYSQL_PACKAGE_VERSION)
+        return not version is None
