@@ -1,0 +1,3 @@
+include reddwarf/db/sqlalchemy/migrate_repo/migrate.cfg
+include reddwarf/db/sqlalchemy/migrate_repo/README
+include reddwarf/db/sqlalchemy/migrate_repo/versions/*.sql
