@@ -46,7 +46,7 @@ from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
-from reddwarf.guestagent.volume import VolumeHelper
+from reddwarf.guestagent.volume import VolumeDevice
 from reddwarf.instance import models as rd_models
 
 
@@ -503,17 +503,16 @@ class DBaaSAgent(object):
         app = MySqlApp(self.status)
         restart_mysql = False
         if device_path:
-            VolumeHelper.format(device_path)
+            device = VolumeDevice(device_path)
+            device.format()
             if app.is_installed(pkg):
                 #stop and do not update database
                 app.stop_mysql()
                 restart_mysql = True
                 #rsync exiting data
-                VolumeHelper.migrate_data(device_path, MYSQL_BASE_DIR)
+                device.migrate_data(MYSQL_BASE_DIR)
             #mount the volume
-            VolumeHelper.mount(device_path, mount_point)
-            #TODO(cp16net) need to update the fstab here so that on a
-            # restart the volume will be mounted automatically again
+            device.mount(mount_point)
             LOG.debug(_("Mounted the volume."))
             #check mysql was installed and stopped
             if restart_mysql:

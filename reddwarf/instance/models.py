@@ -43,7 +43,7 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-def load_server(context, instance_id, server_id):
+def load_server_with_volumes(context, instance_id, server_id):
     """Loads a server or raises an exception."""
     client = create_nova_client(context)
     try:
@@ -168,8 +168,8 @@ class Instance(object):
             db_info = DBInstance.find_by(id=id)
         except rd_exceptions.NotFound:
             raise rd_exceptions.NotFound(uuid=id)
-        server, volumes = load_server(context, db_info.id,
-                                      db_info.compute_instance_id)
+        server, volumes = load_server_with_volumes(context, db_info.id,
+            db_info.compute_instance_id)
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=id)
         LOG.info("service status=%s" % service_status)
@@ -208,6 +208,9 @@ class Instance(object):
                                         volume_size,
                                         display_name="mysql-%s" % db_info.id,
                                         display_description=volume_desc)
+            # Record the volume ID in case something goes wrong.
+            db_info.volume_id = volume_ref.id
+            db_info.save()
             #TODO(cp16net) this is bad to wait here for the volume create
             # before returning but this was a quick way to get it working
             # for now we need this to go into the task manager
@@ -219,8 +222,7 @@ class Instance(object):
                 v_ref = volume_client.volumes.get(volume_ref.id)
 
             if v_ref.status in ['error']:
-                raise rd_exceptions.ReddwarfError(
-                                    _("Could not create volume"))
+                raise rd_exceptions.VolumeCreationFailure()
             LOG.debug(_("Created volume %s") % v_ref)
             # The mapping is in the format:
             # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
@@ -232,10 +234,10 @@ class Instance(object):
             # guest. Also in cases for ovz where this is mounted on
             # the host, that's not going to work for us.
             block_device = {'vdb': mapping}
-            volume = [{'id': v_ref.id,
+            volumes = [{'id': v_ref.id,
                        'size': v_ref.size}]
             LOG.debug("block_device = %s" % block_device)
-            LOG.debug("volume = %s" % volume)
+            LOG.debug("volume = %s" % volumes)
 
             device_path = CONFIG.get('device_path')
             mount_point = CONFIG.get('mount_point')
@@ -246,12 +248,16 @@ class Instance(object):
             block_device = None
             device_path = None
             mount_point = None
-            volume = None
+            volumes = None
             #end volume_support
+        #block_device = ""
+        #device_path = /dev/vdb
+        #mount_point = /var/lib/mysql
         volume_info = {'block_device': block_device,
                        'device_path': device_path,
-                       'mount_point': mount_point}
-        return volume, volume_info
+                       'mount_point': mount_point,
+                       'volumes': volumes}
+        return volume_info
 
     @classmethod
     def create(cls, context, name, flavor_ref, image_id,
@@ -259,15 +265,25 @@ class Instance(object):
         db_info = DBInstance.create(name=name,
             task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
-        volume, volume_info = cls._create_volume(context,
-                                                     db_info,
-                                                     volume_size)
+
+        if volume_size:
+            volume_info = cls._create_volume(context, db_info, volume_size)
+            block_device_mapping = volume_info['block_device']
+            device_path=volume_info['device_path']
+            mount_point=volume_info['mount_point']
+            volumes = volume_info['volumes']
+        else:
+            block_device_mapping = None
+            device_path=None
+            mount_point=None
+            volumes = []
+
         client = create_nova_client(context)
         files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
                  (db_info.id, service_type)}
         server = client.servers.create(name, image_id, flavor_ref,
                      files=files,
-                     block_device_mapping=volume_info['block_device'])
+                     block_device_mapping=block_device_mapping)
         LOG.debug(_("Created new compute instance %s.") % server.id)
 
         db_info.compute_instance_id = server.id
@@ -281,9 +297,9 @@ class Instance(object):
         # populate the databases
         model_schemas = populate_databases(databases)
         guest.prepare(512, model_schemas, users=[],
-                      device_path=volume_info['device_path'],
-                      mount_point=volume_info['mount_point'])
-        return Instance(context, db_info, server, service_status, volume)
+                      device_path=device_path,
+                      mount_point=mount_point)
+        return Instance(context, db_info, server, service_status, volumes)
 
     def get_guest(self):
         return create_guest_client(self.context, self.db_info.id)
@@ -377,9 +393,10 @@ class Instance(object):
 
     def _refresh_compute_server_info(self):
         """Refreshes the compute server field."""
-        server = load_server(self.context, self.db_info.id,
-                             self.db_info.compute_instance_id)
+        server, volumes = load_server_with_volumes(self.context,
+            self.db_info.id, self.db_info.compute_instance_id)
         self.server = server
+        self.volumes = volumes
         return server
 
     def resize_flavor(self, new_flavor_id):
@@ -631,7 +648,8 @@ class DBInstance(DatabaseModelBase):
     #TODO(tim.simpson): Add start time.
 
     _data_fields = ['name', 'created', 'compute_instance_id',
-                    'task_id', 'task_description', 'task_start_time']
+                    'task_id', 'task_description', 'task_start_time',
+                    'volume_id']
 
     def __init__(self, task_status=None, **kwargs):
         kwargs["task_id"] = task_status.code

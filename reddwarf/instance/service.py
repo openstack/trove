@@ -262,7 +262,10 @@ class InstanceController(BaseController):
         databases = body['instance'].get('databases')
         if databases is None:
             databases = []
-        volume_size = body['instance']['volume']['size']
+        if body['instance'].get('volume', None) is not None:
+            volume_size = body['instance']['volume']['size']
+        else:
+            volume_size = None
         instance = models.Instance.create(context, name, flavor_ref,
                                           image_id, databases,
                                           service_type, volume_size)
@@ -284,8 +287,8 @@ class InstanceController(BaseController):
             volume_size = float(size)
         except (ValueError, TypeError) as err:
             LOG.error(err)
-            msg = ("Required element/key - instance volume"
-                   "'size' was not specified as a number")
+            msg = ("Required element/key - instance volume 'size' was not "
+                   "specified as a number (value was %s)." % size)
             raise rd_exceptions.ReddwarfError(msg)
         if int(volume_size) != volume_size or int(volume_size) < 1:
             msg = ("Volume 'size' needs to be a positive "
@@ -308,12 +311,13 @@ class InstanceController(BaseController):
             body['instance']
             body['instance']['flavorRef']
             # TODO(cp16net) add in volume to the mix
-            volume_size = body['instance']['volume']['size']
+            if 'volume' in body['instance'] and \
+                body['instance']['volume'] is not None:
+                volume_size = body['instance']['volume']['size']
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise rd_exceptions.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
-        InstanceController._validate_volume_size(volume_size)
 
     @staticmethod
     def _validate_resize_instance(body):

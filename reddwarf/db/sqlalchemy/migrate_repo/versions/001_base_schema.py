@@ -40,7 +40,8 @@ instances = Table('instances', meta,
         Column('compute_instance_id', String(36)),
         Column('task_id', Integer()),
         Column('task_description', String(32)),
-        Column('task_start_time', DateTime()))
+        Column('task_start_time', DateTime()),
+        Column('volume_id', String(36)))
 
 
 def upgrade(migrate_engine):

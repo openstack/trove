@@ -108,3 +108,8 @@ class VolumeAttachmentsNotFound(NotFound):
 
     message = _("Cannot find the volumes attached to compute "
                 "instance %(server_id)")
+
+
+class VolumeCreationFailure(ReddwarfError):
+
+    message = _("Failed to create a volume in Nova.")
