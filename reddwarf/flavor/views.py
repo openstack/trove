@@ -40,7 +40,7 @@ class FlavorView(object):
             detailed = '/detail'
             splitpath.pop(-1)
         flavorid = self.flavor.id
-        if splitpath[-1] == flavorid:
+        if str(splitpath[-1]) == str(flavorid):
             splitpath.pop(-1)
         href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
         for link in self.flavor.links:

@@ -30,26 +30,24 @@ LOG = logging.getLogger(__name__)
 CONFIG = config.Config
 
 
-class VolumeHelper(object):
+class VolumeDevice(object):
 
-    @staticmethod
-    def _has_volume_device(device_path):
-        return not device_path is None
+    def __init__(self, device_path):
+        self.device_path = device_path
 
-    @staticmethod
-    def migrate_data(device_path, mysql_base):
+    def migrate_data(self, mysql_base):
         """ Synchronize the data from the mysql directory to the new volume """
+        # Use sudo to have access to this spot.
         utils.execute("sudo", "mkdir", "-p", TMP_MOUNT_POINT)
-        VolumeHelper.mount(device_path, TMP_MOUNT_POINT)
+        self._tmp_mount(TMP_MOUNT_POINT)
         if not mysql_base[-1] == '/':
             mysql_base = "%s/" % mysql_base
         utils.execute("sudo", "rsync", "--safe-links", "--perms",
                       "--recursive", "--owner", "--group", "--xattrs",
                       "--sparse", mysql_base, TMP_MOUNT_POINT)
-        VolumeHelper.unmount(device_path)
+        self.unmount()
 
-    @staticmethod
-    def _check_device_exists(device_path):
+    def _check_device_exists(self):
         """Check that the device path exists.
 
         Verify that the device path has actually been created and can report
@@ -58,72 +56,100 @@ class VolumeHelper(object):
         """
         try:
             num_tries = CONFIG.get('num_tries', 3)
-            utils.execute('sudo', 'blockdev', '--getsize64', device_path,
+            utils.execute('sudo', 'blockdev', '--getsize64', self.device_path,
                           attempts=num_tries)
         except ProcessExecutionError:
-            raise GuestError("InvalidDevicePath(path=%s)" % device_path)
+            raise GuestError("InvalidDevicePath(path=%s)" % self.device_path)
 
-    @staticmethod
-    def _check_format(device_path):
+    def _check_format(self):
         """Checks that an unmounted volume is formatted."""
-        child = pexpect.spawn("sudo dumpe2fs %s" % device_path)
+        child = pexpect.spawn("sudo dumpe2fs %s" % self.device_path)
         try:
             i = child.expect(['has_journal', 'Wrong magic number'])
             if i == 0:
                 return
             volume_fstype = CONFIG.get('volume_fstype', 'ext3')
             raise IOError('Device path at %s did not seem to be %s.' %
-                          (device_path, volume_fstype))
+                          (self.device_path, volume_fstype))
         except pexpect.EOF:
             raise IOError("Volume was not formatted.")
         child.expect(pexpect.EOF)
 
-    @staticmethod
-    def _format(device_path):
+    def _format(self):
         """Calls mkfs to format the device at device_path."""
         volume_fstype = CONFIG.get('volume_fstype', 'ext3')
         format_options = CONFIG.get('format_options', '-m 5')
         cmd = "sudo mkfs -t %s %s %s" % (volume_fstype,
-                                         format_options, device_path)
+                                         format_options, self.device_path)
         volume_format_timeout = CONFIG.get('volume_format_timeout', 120)
         child = pexpect.spawn(cmd, timeout=volume_format_timeout)
         # child.expect("(y,n)")
         # child.sendline('y')
         child.expect(pexpect.EOF)
 
-    @staticmethod
-    def format(device_path):
+    def format(self):
         """Formats the device at device_path and checks the filesystem."""
-        VolumeHelper._check_device_exists(device_path)
-        VolumeHelper._format(device_path)
-        VolumeHelper._check_format(device_path)
+        self._check_device_exists()
+        self._format()
+        self._check_format()
 
-    @staticmethod
-    def mount(device_path, mount_point):
-        if not os.path.exists(mount_point):
-            os.makedirs(mount_point)
-        volume_fstype = CONFIG.get('volume_fstype', 'ext3')
-        mount_options = CONFIG.get('mount_options', 'noatime')
-        cmd = "sudo mount -t %s -o %s %s %s" % (volume_fstype,
-                                                mount_options,
-                                                device_path, mount_point)
-        child = pexpect.spawn(cmd)
-        child.expect(pexpect.EOF)
+    def mount(self, mount_point):
+        """Mounts, and writes to fstab."""
+        mount_point = VolumeMountPoint(self.device_path, mount_point)
+        mount_point.mount()
+        mount_point.write_to_fstab()
 
-    @staticmethod
-    def unmount(mount_point):
-        if os.path.exists(mount_point):
-            cmd = "sudo umount %s" % mount_point
-            child = pexpect.spawn(cmd)
-            child.expect(pexpect.EOF)
-
-    @staticmethod
-    def resize_fs(device_path):
+    #TODO(tim.simpson): Are we using this?
+    def resize_fs(self):
         """Resize the filesystem on the specified device"""
-        VolumeHelper._check_device_exists(device_path)
+        self._check_device_exists()
         try:
-            utils.execute("sudo", "resize2fs", device_path)
+            utils.execute("sudo", "resize2fs", self.device_path)
         except ProcessExecutionError as err:
             LOG.error(err)
             raise GuestError("Error resizing the filesystem: %s"
-                                       % device_path)
+                                       % self.device_path)
+
+    def _tmp_mount(self, mount_point):
+        """Mounts, but doesn't save to fstab."""
+        mount_point = VolumeMountPoint(self.device_path, mount_point)
+        mount_point.mount()  # Don't save to fstab.
+
+    def unmount(self):
+        if os.path.exists(self.device_path):
+            cmd = "sudo umount %s" % self.device_path
+            child = pexpect.spawn(cmd)
+            child.expect(pexpect.EOF)
+
+
+class VolumeMountPoint(object):
+
+    def __init__(self, device_path, mount_point):
+        self.device_path = device_path
+        self.mount_point = mount_point
+        self.volume_fstype = CONFIG.get('volume_fstype', 'ext3')
+        self.mount_options = CONFIG.get('mount_options', 'defaults,noatime')
+
+    def mount(self):
+        if not os.path.exists(self.mount_point):
+            os.makedirs(self.mount_point)
+        LOG.debug("Adding volume. Device path:%s, mount_point:%s, "
+                  "volume_type:%s, mount options:%s" %
+                  (self.device_path, self.mount_point, self.volume_fstype,
+                   self.mount_options))
+        cmd = "sudo mount -t %s -o %s %s %s" % (self.volume_fstype,
+            self.mount_options, self.device_path, self.mount_point)
+        child = pexpect.spawn(cmd)
+        child.expect(pexpect.EOF)
+
+    def write_to_fstab(self):
+        fstab_line = "%s\t%s\t%s\t%s\t0\t0" % (self.device_path,
+            self.mount_point, self.volume_fstype, self.mount_options)
+        LOG.debug("Writing new line to fstab:%s" % fstab_line)
+        utils.execute("sudo", "cp", "/etc/fstab", "/etc/fstab.orig")
+        utils.execute("sudo", "cp", "/etc/fstab", "/tmp/newfstab")
+        utils.execute("sudo", "chmod", "666", "/tmp/newfstab")
+        with open("/tmp/newfstab", 'a') as new_fstab:
+            new_fstab.write("\n" + fstab_line)
+        utils.execute("sudo", "chmod", "640", "/tmp/newfstab")
+        utils.execute("sudo", "mv", "/tmp/newfstab", "/etc/fstab")

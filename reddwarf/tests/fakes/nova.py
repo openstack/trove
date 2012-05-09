@@ -59,12 +59,14 @@ class FakeFlavors(object):
         self._add(3, 10, "m1.medium", 4096)
         self._add(4, 10, "m1.large", 8192)
         self._add(5, 10, "m1.xlarge", 16384)
+        self._add(6, 0, "tinier", 506)
 
     def _add(self, *args, **kwargs):
         new_flavor = FakeFlavor(*args, **kwargs)
         self.db[new_flavor.id] = new_flavor
 
     def get(self, id):
+        id = int(id)
         if id not in self.db:
             raise nova_exceptions.NotFound(404, "Flavor id not found %s" % id)
         return self.db[id]
@@ -85,7 +87,7 @@ class FakeFlavors(object):
 class FakeServer(object):
 
     def __init__(self, parent, owner, id, name, image_id, flavor_ref,
-                 block_device_mapping):
+                 block_device_mapping, volumes):
         self.owner = owner  # This is a context.
         self.id = id
         self.parent = parent
@@ -94,12 +96,17 @@ class FakeServer(object):
         self.flavor_ref = flavor_ref
         self.events = EventSimulator()
         self.schedule_status("BUILD", 0.0)
-        LOG.debug("block_device_mapping = %s" % block_device_mapping)
-        self.block_device_mapping = block_device_mapping
+        self.volumes = volumes
 
     @property
     def addresses(self):
         return {"private": [{"addr":"123.123.123.123"}]}
+
+    def confirm_resize(self):
+        if self.status != "VERIFY_RESIZE":
+            raise RuntimeError("Not in resize confirm mode.")
+        self._current_status = "ACTIVE"
+
 
     def delete(self):
         self.schedule_status = []
@@ -116,6 +123,16 @@ class FakeServer(object):
             "href": "https://localhost:9999/v1.0/1234/instances/%s" % self.id,
             "rel": link_type
             } for link_type in ['self', 'bookmark']]
+
+    def resize(self, new_flavor_id):
+        self._current_status = "RESIZE"
+        def set_to_confirm_mode():
+            self._current_status = "VERIFY_RESIZE"
+        def set_flavor():
+            flavor = self.parent.flavors.get(new_flavor_id)
+            self.flavor_ref = flavor.links[0]['href']
+            self.events.add_event(1, set_to_confirm_mode)
+        self.events.add_event(1, set_flavor)
 
     def schedule_status(self, new_status, time_from_now):
         """Makes a new status take effect at the given time."""
@@ -159,12 +176,31 @@ class FakeServers(object):
     def create(self, name, image_id, flavor_ref, files, block_device_mapping):
         id = "FAKE_%d" % self.next_id
         self.next_id += 1
+        volumes = self._get_volumes_from_bdm(block_device_mapping)
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
-                            block_device_mapping)
+                            block_device_mapping, volumes)
         self.db[id] = server
         server.schedule_status("ACTIVE", 1)
         LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
         return server
+
+    def _get_volumes_from_bdm(self, block_device_mapping):
+        volumes = []
+        if block_device_mapping is not None:
+            # block_device_mapping is a dictionary, where the key is the
+            # device name on the compute instance and the mapping info is a
+            # set of fields in a string, seperated by colons.
+            # For each device, find the volume, and record the mapping info
+            # to another fake object and attach it to the volume
+            # so that the fake API can later retrieve this.
+            for device in block_device_mapping:
+                mapping = block_device_mapping[device]
+                (id, _type, size, delete_on_terminate) = mapping.split(":")
+                volume = self.volumes.get(id)
+                volume.mapping = FakeBlockDeviceMappingInfo(id, device,
+                    _type, size, delete_on_terminate)
+                volumes.append(volume)
+        return volumes
 
     def get(self, id):
         if id not in self.db:
@@ -176,6 +212,11 @@ class FakeServers(object):
                 return self.db[id]
             else:
                 raise nova_exceptions.NotFound(404, "Bad permissions")
+
+    def get_server_volumes(self, server_id):
+        return [volume.mapping
+                for volume in self.get(server_id).volumes
+                if volume.mapping is not None]
 
     def list(self):
         return [v for (k, v) in self.db.items() if self.can_see(v.id)]
@@ -206,20 +247,8 @@ class FakeServerVolumes(object):
         return [ServerVolumes(server.block_device_mapping)]
 
 
-FLAVORS = FakeFlavors()
 
 
-class FakeClient(object):
-
-    def __init__(self, context):
-        self.context = context
-        self.flavors = FLAVORS
-        self.servers = FakeServers(context, self.flavors)
-        self.volumes = FakeServerVolumes(context)
-
-
-def fake_create_nova_client(context):
-    return FakeClient(context)
 
 
 class FakeVolume(object):
@@ -249,6 +278,16 @@ class FakeVolume(object):
     @property
     def status(self):
         return self._current_status
+
+
+class FakeBlockDeviceMappingInfo(object):
+
+    def __init__(self, id, device, _type, size, delete_on_terminate):
+        self.volumeId = id
+        self.device = device
+        self.type = _type
+        self.size = size
+        self.delete_on_terminate = delete_on_terminate
 
 
 FAKE_VOLUMES_DB = {}
@@ -290,12 +329,40 @@ class FakeVolumes(object):
         return volume
 
 
-class FakeVolumeClient(object):
+FLAVORS = FakeFlavors()
+
+class FakeClient(object):
 
     def __init__(self, context):
         self.context = context
+        self.flavors = FLAVORS
+        self.servers = FakeServers(context, self.flavors)
         self.volumes = FakeVolumes(context)
+        self.servers.volumes = self.volumes
+
+    def get_server_volumes(self, server_id):
+        return self.servers.get_server_volumes(server_id)
+
+
+CLIENT_DATA = {}
+
+
+def get_client_data(context):
+    if context not in CLIENT_DATA:
+        nova_client = FakeClient(context)
+        volume_client = FakeClient(context)
+        nova_client.volumes = volume_client
+        volume_client.servers = nova_client
+        CLIENT_DATA[context] = {
+            'nova': nova_client,
+            'volume': volume_client
+        }
+    return CLIENT_DATA[context]
+
+
+def fake_create_nova_client(context):
+    return get_client_data(context)['nova']
 
 
 def fake_create_nova_volume_client(context):
-    return FakeVolumeClient(context)
+    return get_client_data(context)['volume']

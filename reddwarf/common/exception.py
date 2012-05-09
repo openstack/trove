@@ -58,6 +58,11 @@ class NotFound(ReddwarfError):
     message = _("Resource %(uuid)s cannot be found")
 
 
+class FlavorNotFound(ReddwarfError):
+
+    message = _("Resource %(uuid)s cannot be found")
+
+
 class ComputeInstanceNotFound(NotFound):
 
     internal_message = _("Cannot find compute instance %(server_id)s for "
@@ -66,10 +71,16 @@ class ComputeInstanceNotFound(NotFound):
     message = _("Resource %(instance_id)s can not be retrieved.")
 
 
+class OverLimit(ReddwarfError):
+
+    internal_message = _("The server rejected the request due to its size or "
+                         "rate.")
+
+
 class GuestError(ReddwarfError):
 
     message = _("An error occurred communicating with the guest: "
-                "%(original_message).")
+                "%(original_message)s.")
 
 
 class BadRequest(ReddwarfError):
@@ -88,7 +99,17 @@ class UnprocessableEntity(ReddwarfError):
     message = _("Unable to process the contained request")
 
 
+class CannotResizeToSameSize(ReddwarfError):
+
+    message = _("When resizing, instances must change size!")
+
+
 class VolumeAttachmentsNotFound(NotFound):
 
     message = _("Cannot find the volumes attached to compute "
                 "instance %(server_id)")
+
+
+class VolumeCreationFailure(ReddwarfError):
+
+    message = _("Failed to create a volume in Nova.")
