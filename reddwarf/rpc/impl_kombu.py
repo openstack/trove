@@ -260,7 +260,7 @@ class TopicPublisher(Publisher):
         options = {'durable': config.Config.get('rabbit_durable_queues',
                                                  False),
                    'auto_delete': False,
-                   'exclusive': False }
+                   'exclusive': False}
         options.update(kwargs)
         super(TopicPublisher, self).__init__(channel,
                 config.Config.get('control_exchange', 'reddwarf'),

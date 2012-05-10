@@ -42,7 +42,7 @@ class ContextTest(unittest.TestCase):
     def test_creating_context(self):
         tmp_ctx_dict = {'user': USER, 'tenant': TENANT, 'is_admin': True,
                     'show_deleted': True, 'read_only': True,
-                    'auth_tok': AUTH_TOK }
+                    'auth_tok': AUTH_TOK}
         tmp_ctx = context.ReddwarfContext.from_dict(tmp_ctx_dict)
         self.assertEqual(tmp_ctx.user, USER)
         self.assertEqual(tmp_ctx.tenant, TENANT)

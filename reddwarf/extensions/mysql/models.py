@@ -25,12 +25,19 @@ from reddwarf import db
 
 from reddwarf.common import config
 from reddwarf.common import exception
+from reddwarf.common import utils
 from reddwarf.instance import models as base_models
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.common.remote import create_guest_client
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
+
+
+def persisted_models():
+    return {
+        'root_enabled_history': RootHistory,
+        }
 
 
 def load_and_verify(context, instance_id):
@@ -113,10 +120,39 @@ class Root(object):
         root = create_guest_client(context, instance_id).enable_root()
         root_user = guest_models.MySQLUser()
         root_user.deserialize(root)
-        root_history = base_models.RootHistory.create(context,
-                                                      instance_id,
-                                                      user)
+        root_history = RootHistory.create(context, instance_id, user)
         return root_user
+
+
+class RootHistory(object):
+
+    _auto_generated_attrs = ['id']
+    _data_fields = ['instance_id', 'user', 'created']
+    _table_name = 'root_enabled_history'
+
+    def __init__(self, instance_id, user):
+        self.id = instance_id
+        self.user = user
+        self.created = utils.utcnow()
+
+    def save(self):
+        LOG.debug(_("Saving %s: %s") % (self.__class__.__name__,
+                                        self.__dict__))
+        return db.db_api.save(self)
+
+    @classmethod
+    def load(cls, context, instance_id):
+        history = db.db_api.find_by(cls, id=instance_id)
+        return history
+
+    @classmethod
+    def create(cls, context, instance_id, user):
+        history = cls.load(context, instance_id)
+        if history is not None:
+            return history
+        history = RootHistory(instance_id, user)
+        history.save()
+        return history
 
 
 class Users(object):

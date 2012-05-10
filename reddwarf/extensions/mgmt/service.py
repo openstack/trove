@@ -22,6 +22,7 @@ from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mgmt import views
+from reddwarf.extensions.mysql import models as mysql_models
 from reddwarf.instance.service import InstanceController
 
 LOG = logging.getLogger(__name__)
@@ -56,3 +57,19 @@ class MgmtInstanceController(InstanceController):
             return wsgi.Result(str(e), 404)
         return wsgi.Result(views.InstanceView(server,
             add_addresses=self.add_addresses).data(), 200)
+
+    def root(self, req, tenant_id, id):
+        """Return the date and time root was enabled on an instance,
+        if ever."""
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Showing root history for tenant '%s'") % tenant_id)
+        LOG.info(_("id : '%s'\n\n") % id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        try:
+            server = instance_models.Instance.load(context=context, id=id)
+        except exception.ReddwarfError, e:
+            LOG.error(e)
+            return wsgi.Result(str(e), 404)
+        reh = mysql_models.RootHistory.load(context=context, instance_id=id)
+        return wsgi.Result(views.RootHistoryView(reh.id, enabled=reh.created,
+                           user_id=reh.user).data(), 200)

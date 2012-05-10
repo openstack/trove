@@ -93,7 +93,7 @@ class StringifyExcludeTest(unittest.TestCase):
 
     def test_exclude_keys(self):
         exclude_keys = ['one']
-        key_values = {'one': 1, 'two': 2 }
+        key_values = {'one': 1, 'two': 2}
         new_keys = utils.exclude(key_values, *exclude_keys)
         self.assertEqual(len(new_keys), 1)
-        self.assertEqual(new_keys, {'two': 2 })
+        self.assertEqual(new_keys, {'two': 2})

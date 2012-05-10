@@ -15,6 +15,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import defaultdict
+
+
+def tree():
+    return defaultdict(tree)
+
 
 def get_ip_address(addresses):
     if addresses is not None and \
@@ -62,3 +68,18 @@ class InstancesView(InstanceView):
     def data_for_instance(self, instance):
         return InstanceView(instance,
                             self.add_addresses).data()['instance']
+
+
+class RootHistoryView(object):
+
+    def __init__(self, instance_id, enabled='Never', user_id='Nobody'):
+        self.instance_id = instance_id
+        self.enabled = enabled
+        self.user = user_id
+
+    def data(self):
+        res = tree()
+        res['root_history']['id'] = self.instance_id
+        res['root_history']['enabled'] = self.enabled
+        res['root_history']['user'] = self.user
+        return res
