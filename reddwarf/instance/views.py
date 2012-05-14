@@ -58,21 +58,17 @@ class InstanceView(object):
 
 class InstanceDetailView(InstanceView):
 
-    def __init__(self, instance, roothistory=None, add_addresses=False,
+    def __init__(self, instance, add_addresses=False,
                  add_volumes=False):
         super(InstanceDetailView, self).__init__(instance,
                                                  add_addresses=add_addresses,
                                                  add_volumes=add_volumes)
-        self.roothistory = roothistory
 
     def data(self):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
         result['instance']['flavor'] = self.instance.flavor
         result['instance']['updated'] = self.instance.updated
-        if self.roothistory:
-            result['instance']['root_enabled_at'] = self.roothistory.created
-            result['instance']['root_enabled_by'] = self.roothistory.user
         return result
 
 

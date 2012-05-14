@@ -50,6 +50,9 @@ class Mgmt(extensions.ExtensionsDescriptor):
         resource = extensions.ResourceExtension('{tenant_id}/mgmt/instances',
             service.MgmtInstanceController(),
             deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer)
+            serializer=serializer,
+            member_actions={'root': 'GET'},
+            )
         resources.append(resource)
+
         return resources

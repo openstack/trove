@@ -31,6 +31,6 @@ class ExceptionTest(unittest.TestCase):
 
     def test_exception_with_message_args(self):
         test_message = "test message %(one)s %(two)s"
-        test_args = {'one': 1, 'two': 2 }
+        test_args = {'one': 1, 'two': 2}
         exc = exception.ReddwarfError(test_message, one=1, two=2)
         self.assertEqual(str(exc), test_message % test_args)

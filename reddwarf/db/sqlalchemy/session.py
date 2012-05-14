@@ -32,7 +32,6 @@ LOG = logging.getLogger('reddwarf.db.sqlalchemy.session')
 
 
 def configure_db(options, models_mapper=None):
-    from reddwarf.instance import models
     configure_sqlalchemy_log(options)
     global _ENGINE
     if not _ENGINE:
@@ -40,7 +39,18 @@ def configure_db(options, models_mapper=None):
     if models_mapper:
         models_mapper.map(_ENGINE)
     else:
-        mappers.map(_ENGINE, models.persisted_models())
+        from reddwarf.instance import models as base_models
+        from reddwarf.extensions.mysql import models as mysql_models
+
+        model_modules = [
+            base_models,
+            mysql_models,
+        ]
+
+        models = {}
+        for module in model_modules:
+            models.update(module.persisted_models())
+        mappers.map(_ENGINE, models)
 
 
 def configure_sqlalchemy_log(options):

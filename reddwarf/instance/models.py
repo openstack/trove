@@ -710,7 +710,6 @@ def persisted_models():
         'instance': DBInstance,
         'service_image': ServiceImage,
         'service_statuses': InstanceServiceStatus,
-        'root_enabled_history': RootHistory,
         }
 
 
@@ -786,37 +785,6 @@ class ServiceStatus(object):
 
     def __str__(self):
         return self._description
-
-
-class RootHistory(ModelBase):
-
-    _auto_generated_attrs = ['id']
-    _data_fields = ['instance_id', 'user', 'created']
-    _table_name = 'root_enabled_history'
-
-    def __init__(self, instance_id, user):
-        self.id = instance_id
-        self.user = user
-        self.created = utils.utcnow()
-
-    def save(self):
-        LOG.debug(_("Saving %s: %s") % (self.__class__.__name__,
-                                        self.__dict__))
-        return db.db_api.save(self)
-
-    @classmethod
-    def load(cls, context, instance_id):
-        history = db.db_api.find_by(cls, id=instance_id)
-        return history
-
-    @classmethod
-    def create(cls, context, instance_id, user):
-        history = cls.load(context, instance_id)
-        if history is not None:
-            return history
-        history = RootHistory(instance_id, user)
-        history.save()
-        return history
 
 
 class ServiceStatuses(object):
