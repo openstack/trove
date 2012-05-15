@@ -71,5 +71,10 @@ class MgmtInstanceController(InstanceController):
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         reh = mysql_models.RootHistory.load(context=context, instance_id=id)
-        return wsgi.Result(views.RootHistoryView(reh.id, enabled=reh.created,
-                           user_id=reh.user).data(), 200)
+        rhv = None
+        if reh:
+            rhv = views.RootHistoryView(reh.id, enabled=reh.created,
+                                        user_id=reh.user)
+        else:
+            rhv = views.RootHistoryView(id)
+        return wsgi.Result(rhv.data(), 200)
