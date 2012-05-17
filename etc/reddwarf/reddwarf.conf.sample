@@ -37,25 +37,15 @@ db_api_implementation = "reddwarf.db.sqlalchemy.api"
 api_extensions_path = reddwarf/extensions
 
 # Configuration options for talking to nova via the novaclient.
-# These options are for an admin user in your keystone config.
-# It proxy's the token received from the user to send to nova via this admin users creds,
-# basically acting like the client via that proxy token.
-reddwarf_proxy_admin_user = admin
-reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
-reddwarf_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
-
-nova_region_name = RegionOne
-nova_service_type = compute
-nova_service_name = Compute Service
+nova_compute_url = http://localhost:8774/v2
+nova_volume_url = http://localhost:8776/v2
 
 # Config option for showing the IP address that nova doles out
 add_addresses = True
 
 # Config options for enabling volume service
 reddwarf_volume_support = True
-nova_volume_service_type = volume
-nova_volume_service_name = Volume Service
 device_path = /dev/vdb
 mount_point = /var/lib/mysql
 

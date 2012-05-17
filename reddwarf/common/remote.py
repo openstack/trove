@@ -28,57 +28,28 @@ def create_guest_client(context, id):
 
 
 def create_nova_client(context):
-    # Quite annoying but due to a paste config loading bug.
-    # TODO(hub-cap): talk to the openstack-common people about this
-    PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
-    PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
-                                  '3de4922d8b6ac5a1aad9')
-    PROXY_ADMIN_TENANT_NAME = CONFIG.get(
-                                    'reddwarf_proxy_admin_tenant_name',
-                                    'admin')
+    COMPUTE_URL = CONFIG.get('nova_compute_url', 'http://localhost:8774/v2')
     PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
                                 'http://0.0.0.0:5000/v2.0')
-    REGION_NAME = CONFIG.get('nova_region_name', 'RegionOne')
+    client = Client(context.user, context.auth_tok,
+        project_id=context.tenant, auth_url=PROXY_AUTH_URL)
+    client.client.auth_token=context.auth_tok
+    client.client.management_url = "%s/%s/" % (COMPUTE_URL, context.tenant)
 
-    SERVICE_TYPE = CONFIG.get('nova_service_type', 'compute')
-    SERVICE_NAME = CONFIG.get('nova_service_name', 'Compute Service')
-
-    #TODO(cp16net) need to fix this proxy_tenant_id
-    client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
-        PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
-        proxy_tenant_id=context.tenant,
-        proxy_token=context.auth_tok,
-        region_name=REGION_NAME,
-        service_type=SERVICE_TYPE,
-        service_name=SERVICE_NAME)
-    client.authenticate()
     return client
 
 
 def create_nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
-    PROXY_ADMIN_USER = CONFIG.get('reddwarf_proxy_admin_user', 'admin')
-    PROXY_ADMIN_PASS = CONFIG.get('reddwarf_proxy_admin_pass',
-                                  '3de4922d8b6ac5a1aad9')
-    PROXY_ADMIN_TENANT_NAME = CONFIG.get('reddwarf_proxy_admin_tenant_name',
-                                         'admin')
+    VOLUME_URL = CONFIG.get('nova_volume_url', 'http://localhost:8776/v2')
     PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
                                 'http://0.0.0.0:5000/v2.0')
-    REGION_NAME = CONFIG.get('nova_region_name', 'RegionOne')
+    client = Client(context.user, context.auth_tok,
+        project_id=context.tenant, auth_url=PROXY_AUTH_URL)
+    client.client.auth_token=context.auth_tok
+    client.client.management_url="%s/%s/" % (VOLUME_URL, context.tenant)
 
-    SERVICE_TYPE = CONFIG.get('nova_volume_service_type', 'volume')
-    SERVICE_NAME = CONFIG.get('nova_volume_service_name', 'Volume Service')
-
-    #TODO(cp16net) need to fix this proxy_tenant_id
-    client = Client(PROXY_ADMIN_USER, PROXY_ADMIN_PASS,
-        PROXY_ADMIN_TENANT_NAME, PROXY_AUTH_URL,
-        proxy_tenant_id=context.tenant,
-        proxy_token=context.auth_tok,
-        region_name=REGION_NAME,
-        service_type=SERVICE_TYPE,
-        service_name=SERVICE_NAME)
-    client.authenticate()
     return client
 
 
