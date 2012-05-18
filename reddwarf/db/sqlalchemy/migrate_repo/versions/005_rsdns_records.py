@@ -20,36 +20,25 @@ from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 from sqlalchemy.schema import UniqueConstraint
 
-from reddwarf.db.sqlalchemy.migrate_repo.schema import Boolean
-from reddwarf.db.sqlalchemy.migrate_repo.schema import create_tables
-from reddwarf.db.sqlalchemy.migrate_repo.schema import DateTime
-from reddwarf.db.sqlalchemy.migrate_repo.schema import drop_tables
-from reddwarf.db.sqlalchemy.migrate_repo.schema import Integer
-from reddwarf.db.sqlalchemy.migrate_repo.schema import BigInteger
-from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
+from reddwarf.db.sqlalchemy.migrate_repo.schema import create_tables
+from reddwarf.db.sqlalchemy.migrate_repo.schema import drop_tables
+from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 
 
 meta = MetaData()
 
-instances = Table('instances', meta,
-        Column('id', String(36), primary_key=True, nullable=False),
-        Column('created', DateTime()),
-        Column('updated', DateTime()),
-        Column('name', String(255)),
-        Column('hostname', String(255)),
-        Column('compute_instance_id', String(36)),
-        Column('task_id', Integer()),
-        Column('task_description', String(32)),
-        Column('task_start_time', DateTime()),
-        Column('volume_id', String(36)))
+
+rsdns_records = Table('rsdns_records', meta,
+               Column('name', String(length=255), primary_key=True),
+               Column('record_id', String(length=64)))
 
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([instances])
+    create_tables([rsdns_records])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([instances])
+    drop_tables([rsdns_records])

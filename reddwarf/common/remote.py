@@ -22,6 +22,11 @@ from novaclient.v1_1.client import Client
 CONFIG = config.Config
 
 
+def create_dns_client(context):
+    from reddwarf.dns.manager import DnsManager
+    return DnsManager()
+
+
 def create_guest_client(context, id):
     from reddwarf.guestagent.api import API
     return API(context, id)

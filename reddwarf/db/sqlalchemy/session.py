@@ -40,10 +40,12 @@ def configure_db(options, models_mapper=None):
         models_mapper.map(_ENGINE)
     else:
         from reddwarf.instance import models as base_models
+        from reddwarf.dns.rsdns import models as dns_models
         from reddwarf.extensions.mysql import models as mysql_models
 
         model_modules = [
             base_models,
+            dns_models,
             mysql_models,
         ]
 

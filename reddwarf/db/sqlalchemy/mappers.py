@@ -34,6 +34,8 @@ def map(engine, models):
                Table('service_images', meta, autoload=True))
     orm.mapper(models['service_statuses'],
                Table('service_statuses', meta, autoload=True))
+    orm.mapper(models['rsdns_records'],
+               Table('rsdns_records', meta, autoload=True))
 
 
 def mapping_exists(model):

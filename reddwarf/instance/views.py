@@ -45,6 +45,7 @@ class InstanceView(object):
         instance_dict = {
             "id": self.instance.id,
             "name": self.instance.name,
+            "hostname": self.instance.db_info.hostname,
             "status": self.instance.status,
             "links": self.instance.links
         }

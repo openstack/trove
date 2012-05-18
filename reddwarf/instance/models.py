@@ -31,12 +31,14 @@ from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
+from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.common.remote import create_guest_client
 
 
 from eventlet import greenthread
+from reddwarf.instance.views import get_ip_address
 
 
 CONFIG = config.Config
@@ -188,6 +190,12 @@ class Instance(object):
         #TODO(tim.simpson): Put this in the task manager somehow to shepard
         #                   deletion?
 
+        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        LOG.debug(_("reddwarf dns support = %s") % dns_support)
+        if utils.bool_from_string(dns_support):
+            dns_client = create_dns_client(self.context)
+            dns_client.delete_instance_entry(instance_id=self.db_info['id'])
+
     def _delete_server(self):
         try:
             self.server.delete()
@@ -299,6 +307,21 @@ class Instance(object):
         guest.prepare(512, model_schemas, users=[],
                       device_path=device_path,
                       mount_point=mount_point)
+
+        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        LOG.debug(_("reddwarf dns support = %s") % dns_support)
+        if utils.bool_from_string(dns_support):
+            #TODO: Bring back our good friend poll_until.
+            while(server.addresses == {}):
+                import time
+                time.sleep(1)
+                server = client.servers.get(server.id)
+                LOG.debug("Waiting for address %s" % server.addresses)
+
+            dns_client = create_dns_client(context)
+            dns_client.update_hostname(db_info)
+            dns_client.create_instance_entry(db_info['id'],
+                          get_ip_address(server.addresses))
         return Instance(context, db_info, server, service_status, volumes)
 
     def get_guest(self):

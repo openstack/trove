@@ -49,6 +49,9 @@ reddwarf_volume_support = True
 device_path = /dev/vdb
 mount_point = /var/lib/mysql
 
+# Reddwarf DNS
+reddwarf_dns_support = False
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost
