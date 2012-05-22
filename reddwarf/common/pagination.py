@@ -20,21 +20,6 @@ import urlparse
 from xml.dom import minidom
 
 
-class AtomLink(object):
-
-    def __init__(self, rel, href):
-        self.rel = rel
-        self.href = href
-
-    def to_xml(self):
-        ATOM_NAMESPACE = "http://www.w3.org/2005/Atom"
-        doc = minidom.Document()
-        atom_elem = doc.createElementNS(ATOM_NAMESPACE, "link")
-        atom_elem.setAttribute("rel", self.rel)
-        atom_elem.setAttribute("href", self.href)
-        return atom_elem
-
-
 class PaginatedDataView(object):
 
     def __init__(self, collection_type, collection, current_page_url,
@@ -44,28 +29,44 @@ class PaginatedDataView(object):
         self.current_page_url = current_page_url
         self.next_page_marker = next_page_marker
 
-    def data_for_json(self):
-        json_dict = {self.collection_type: self.collection}
-        if self._links():
-            links_key = self.collection_type + "_links"
-            json_dict[links_key] = self._links()
-        return json_dict
-
-    def data_for_xml(self):
-        atom_links = [AtomLink(link['rel'], link['href'])
-                           for link in self._links()]
-        return {self.collection_type: self.collection + atom_links}
-
-    def _create_link(self, marker):
-        app_url = AppUrl(self.current_page_url)
-        return str(app_url.change_query_params(marker=marker))
+    def data(self):
+        return {self.collection_type: self.collection,
+                'links': self._links,
+                }
 
     def _links(self):
         if not self.next_page_marker:
             return []
-        next_link = dict(rel='next',
-                         href=self._create_link(self.next_page_marker))
+        app_url = AppUrl(self.current_page_url)
+        next_url = app_url.change_query_params(marker=self.next_page_marker)
+        next_link = {'rel': 'next',
+                     'href': str(next_url),
+                    }
         return [next_link]
+
+
+class SimplePaginatedDataView(object):
+    # In some cases, we can't create a PaginatedDataView because
+    # we don't have a collection query object to create a view on.
+    # In that case, we have to supply the URL and collection manually.
+
+    def __init__(self, url, name, view, marker):
+        self.url = url
+        self.name = name
+        self.view = view
+        self.marker = marker
+
+    def data(self):
+        if not self.marker:
+            return self.view.data()
+
+        app_url = AppUrl(self.url)
+        next_url = str(app_url.change_query_params(marker=self.marker))
+        next_link = {'rel': 'next',
+                     'href': next_url}
+        view_data = {self.name: self.view.data()[self.name],
+                     'links': [next_link]}
+        return view_data
 
 
 class AppUrl(object):
@@ -77,10 +78,17 @@ class AppUrl(object):
         return self.url
 
     def change_query_params(self, **kwargs):
+        # Seeks out the query params in a URL and changes/appends to them
+        # from the kwargs given. So change_query_params(foo='bar')
+        # would remove from the URL any old instance of foo=something and
+        # then add &foo=bar to the URL.
         parsed_url = urlparse.urlparse(self.url)
+        # Build a dictionary out of the query parameters in the URL
         query_params = dict(urlparse.parse_qsl(parsed_url.query))
+        # Use kwargs to change or update any values in the query dict.
         query_params.update(kwargs)
 
+        # Build a new query based on the updated query dict.
         new_query_params = urllib.urlencode(query_params)
         return self.__class__(
             urlparse.ParseResult(parsed_url.scheme,

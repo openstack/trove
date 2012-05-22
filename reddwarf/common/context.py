@@ -39,7 +39,6 @@ class ReddwarfContext(context.RequestContext):
         del kwargs['limit']
         del kwargs['marker']
         super(ReddwarfContext, self).__init__(**kwargs)
-        
 
     def to_dict(self):
         return {'user': self.user,

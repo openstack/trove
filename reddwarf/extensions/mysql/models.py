@@ -157,10 +157,16 @@ class RootHistory(object):
 
 class Users(object):
 
+    DEFAULT_LIMIT = int(config.Config.get('users_page_size', '20'))
+
     @classmethod
     def load(cls, context, instance_id):
         load_and_verify(context, instance_id)
-        user_list = create_guest_client(context, instance_id).list_users()
+        limit = int(context.limit or Users.DEFAULT_LIMIT)
+        limit = Users.DEFAULT_LIMIT if limit > Users.DEFAULT_LIMIT else limit
+        client = create_guest_client(context, instance_id)
+        user_list, next_marker = client.list_users(limit=limit,
+            marker=context.marker)
         model_users = []
         for user in user_list:
             mysql_user = guest_models.MySQLUser()
@@ -173,7 +179,7 @@ class Users(object):
             model_users.append(User(mysql_user.name,
                                     mysql_user.password,
                                     dbs))
-        return model_users
+        return model_users, next_marker
 
 
 class Schema(object):
@@ -198,10 +204,17 @@ class Schema(object):
 
 class Schemas(object):
 
+    DEFAULT_LIMIT = int(config.Config.get('databases_page_size', '20'))
+
     @classmethod
     def load(cls, context, instance_id):
         load_and_verify(context, instance_id)
-        schemas = create_guest_client(context, instance_id).list_databases()
+        limit = int(context.limit or Schemas.DEFAULT_LIMIT)
+        if limit > Schemas.DEFAULT_LIMIT:
+            limit = Schemas.DEFAULT_LIMIT
+        client = create_guest_client(context, instance_id)
+        schemas, next_marker = client.list_databases(limit=limit,
+                                                     marker=context.marker)
         model_schemas = []
         for schema in schemas:
             mysql_schema = guest_models.MySQLDatabase()
@@ -209,4 +222,4 @@ class Schemas(object):
             model_schemas.append(Schema(mysql_schema.name,
                                         mysql_schema.collate,
                                         mysql_schema.character_set))
-        return model_schemas
+        return model_schemas, next_marker

@@ -19,6 +19,7 @@ import logging
 import webob.exc
 
 from reddwarf.common import exception
+from reddwarf.common import pagination
 from reddwarf.common import wsgi
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.instance import models as instance_models
@@ -55,6 +56,10 @@ class BaseController(wsgi.Controller):
         model_params = params.get(model_name, {})
         return utils.stringify_keys(utils.exclude(model_params,
                                                   *self.exclude_attr))
+
+    def _extract_limits(self, params):
+        return dict([(key, params[key]) for key in params.keys()
+                     if key in ["limit", "marker"]])
 
 
 class RootController(BaseController):
@@ -101,8 +106,11 @@ class UserController(BaseController):
         LOG.info(_("Listing users for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        users = models.Users.load(context, instance_id)
-        return wsgi.Result(views.UsersView(users).data(), 200)
+        users, next_marker = models.Users.load(context, instance_id)
+        view = views.UsersView(users)
+        paged = pagination.SimplePaginatedDataView(req.url, 'users', view,
+                                                   next_marker)
+        return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users"""
@@ -145,9 +153,11 @@ class SchemaController(BaseController):
         LOG.info(_("Listing schemas for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        schemas = models.Schemas.load(context, instance_id)
-        # Not exactly sure why we cant return a wsgi.Result() here
-        return wsgi.Result(views.SchemasView(schemas).data(), 200)
+        schemas, next_marker = models.Schemas.load(context, instance_id)
+        view = views.SchemasView(schemas)
+        paged = pagination.SimplePaginatedDataView(req.url, 'databases', view,
+                                                   next_marker)
+        return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas"""

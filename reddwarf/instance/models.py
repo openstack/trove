@@ -276,13 +276,13 @@ class Instance(object):
         if volume_size:
             volume_info = cls._create_volume(context, db_info, volume_size)
             block_device_mapping = volume_info['block_device']
-            device_path=volume_info['device_path']
-            mount_point=volume_info['mount_point']
+            device_path = volume_info['device_path']
+            mount_point = volume_info['mount_point']
             volumes = volume_info['volumes']
         else:
             block_device_mapping = None
-            device_path=None
-            mount_point=None
+            device_path = None
+            mount_point = None
             volumes = []
 
         client = create_nova_client(context)
@@ -387,9 +387,7 @@ class Instance(object):
 
     @property
     def links(self):
-        #TODO(tim.simpson): Review whether we should be returning the server
-        # links.
-        return self._build_links(self.server.links)
+        return self.server.links
 
     @property
     def addresses(self):
@@ -564,14 +562,24 @@ def create_server_list_matcher(server_list):
 
 class Instances(object):
 
+    DEFAULT_LIMIT = int(config.Config.get('instances_page_size', '20'))
+
     @staticmethod
     def load(context):
         if context is None:
             raise TypeError("Argument context not defined.")
         client = create_nova_client(context)
         servers = client.servers.list()
+
         db_infos = DBInstance.find_all()
-        data_view = DBInstance.find_by_pagination('instances', db_infos, "foo", limit=context.limit, marker=context.marker)
+        limit = int(context.limit or Instances.DEFAULT_LIMIT)
+        if limit > Instances.DEFAULT_LIMIT:
+            limit = Instances.DEFAULT_LIMIT
+        data_view = DBInstance.find_by_pagination('instances', db_infos, "foo",
+                                                  limit=limit,
+                                                  marker=context.marker)
+        next_marker = data_view.next_page_marker
+
         ret = []
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
@@ -609,7 +617,7 @@ class Instances(object):
                            "or instance was deleted"))
                 continue
             ret.append(Instance(context, db, server, status, volumes))
-        return ret
+        return ret, next_marker
 
 
 class DatabaseModelBase(ModelBase):
@@ -669,7 +677,7 @@ class DatabaseModelBase(ModelBase):
         return raw_conditions
 
     @classmethod
-    def find_by_pagination(cls, collection_type, collection_query, 
+    def find_by_pagination(cls, collection_type, collection_query,
                             paginated_url, **kwargs):
         elements, next_marker = collection_query.paginated_collection(**kwargs)
 

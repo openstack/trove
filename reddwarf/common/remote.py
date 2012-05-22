@@ -38,7 +38,7 @@ def create_nova_client(context):
                                 'http://0.0.0.0:5000/v2.0')
     client = Client(context.user, context.auth_tok,
         project_id=context.tenant, auth_url=PROXY_AUTH_URL)
-    client.client.auth_token=context.auth_tok
+    client.client.auth_token = context.auth_tok
     client.client.management_url = "%s/%s/" % (COMPUTE_URL, context.tenant)
 
     return client
@@ -52,8 +52,8 @@ def create_nova_volume_client(context):
                                 'http://0.0.0.0:5000/v2.0')
     client = Client(context.user, context.auth_tok,
         project_id=context.tenant, auth_url=PROXY_AUTH_URL)
-    client.client.auth_token=context.auth_tok
-    client.client.management_url="%s/%s/" % (VOLUME_URL, context.tenant)
+    client.client.auth_token = context.auth_tok
+    client.client.management_url = "%s/%s/" % (VOLUME_URL, context.tenant)
 
     return client
 

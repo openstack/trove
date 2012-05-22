@@ -62,8 +62,7 @@ class Query(object):
             marker=marker,
             marker_column=marker_column)
 
-    def paginated_collection(self, limit=200, marker=None,
-                             marker_column=None):
+    def paginated_collection(self, limit=200, marker=None, marker_column=None):
         collection = self.limit(int(limit) + 1, marker, marker_column)
         if len(collection) > int(limit):
             return (collection[0:-1], collection[-2]['id'])
