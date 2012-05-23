@@ -39,7 +39,7 @@ api_extensions_path = reddwarf/extensions
 # Configuration options for talking to nova via the novaclient.
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
 nova_compute_url = http://localhost:8774/v2
-nova_volume_url = http://localhost:8776/v2
+nova_volume_url = http://localhost:8776/v1
 
 # Config option for showing the IP address that nova doles out
 add_addresses = True
