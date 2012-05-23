@@ -32,19 +32,17 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
 meta = MetaData()
 
-service_statuses = Table('service_statuses', meta,
+agent_heartbeats = Table('agent_heartbeats', meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('instance_id', String(36), nullable=False),
-    Column('status_id', Integer(), nullable=False),
-    Column('status_description', String(64), nullable=False),
     Column('updated_at', DateTime()))
 
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([service_statuses])
+    create_tables([agent_heartbeats])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([service_statuses])
+    drop_tables([agent_heartbeats])
