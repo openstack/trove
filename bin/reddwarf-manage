@@ -84,7 +84,19 @@ class Commands(object):
         image.image_id = image_id
         db_api.save(image)
 
-    _commands = ['db_sync', 'db_upgrade', 'db_downgrade', 'image_update']
+    def db_wipe(self, repo_path, service_name, image_id):
+        """Drops the database and recreates it."""
+        from reddwarf.instance import models
+        from reddwarf.db.sqlalchemy import session
+        db_api.drop_db(self.conf)
+        self.db_sync(repo_path)
+        # Sets up database engine, so the next line will work...
+        session.configure_db(self.conf)
+        models.ServiceImage.create(service_name=service_name,
+                                   image_id=image_id)
+
+    _commands = ['db_sync', 'db_upgrade', 'db_downgrade', 'db_wipe',
+                 'image_update']
 
     @classmethod
     def has(cls, command_name):
