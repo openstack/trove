@@ -47,7 +47,7 @@ def create_options(parser):
 
     """
     parser.add_option('-p', '--port', dest="port", metavar="PORT",
-        type=int, default=8779,
+        type=int,
         help="Port the Reddwarf API host listens on. "
              "Default: %default")
     config.add_common_options(parser)
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         conf, app = config.Config.load_paste_app('reddwarf', options, args)
         db_api.configure_db(conf)
         server = wsgi.Server()
-        server.start(app, options.get('port', conf['bind_port']),
+        server.start(app, int(options.get('port') or conf['bind_port']),
             conf['bind_host'])
         server.wait()
     except RuntimeError as error:
