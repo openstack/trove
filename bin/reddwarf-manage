@@ -37,6 +37,7 @@ from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.db import db_api
+from reddwarf.instance import models as instance_models
 
 
 def create_options(parser):
@@ -71,7 +72,18 @@ class Commands(object):
         if self.has(command_name):
             return getattr(self, command_name)(*args)
 
-    _commands = ['db_sync', 'db_upgrade', 'db_downgrade']
+    def image_update(self, service_name, image_id):
+        db_api.configure_db(self.conf)
+        image = db_api.find_by(instance_models.ServiceImage, service_name=service_name)
+        if image is None:
+            # Create a new one
+            image = instance_models.ServiceImage()
+            image.id = utils.generate_uuid()
+            image.service_name = service_name
+        image.image_id = image_id
+        db_api.save(image)
+
+    _commands = ['db_sync', 'db_upgrade', 'db_downgrade', 'image_update']
 
     @classmethod
     def has(cls, command_name):
