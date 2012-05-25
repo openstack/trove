@@ -29,16 +29,16 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 meta = MetaData()
 
 
-rsdns_records = Table('rsdns_records', meta,
+dns_records = Table('dns_records', meta,
                Column('name', String(length=255), primary_key=True),
                Column('record_id', String(length=64)))
 
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([rsdns_records])
+    create_tables([dns_records])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([rsdns_records])
+    drop_tables([dns_records])

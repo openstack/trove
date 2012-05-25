@@ -51,6 +51,16 @@ mount_point = /var/lib/mysql
 
 # Reddwarf DNS
 reddwarf_dns_support = False
+#dns_driver=reddwarf.dns.rsdns.driver.RsDnsDriver
+#dns_instance_entry_factory=reddwarf.dns.rsdns.driver.RsDnsInstanceEntryFactory
+#dns_account_id=0
+#dns_domain_id=0
+#dns_username=username
+#dns_passkey=passkey
+#dns_domain_name=test.domain-test.com
+#dns_management_base_url=
+#dns_auth_url=
+#dns_ttl=300
 
 # ============ notifer queue kombu connection options ========================
 

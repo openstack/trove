@@ -31,14 +31,14 @@ LOG = logging.getLogger(__name__)
 
 def persisted_models():
     return {
-        'rsdns_records': RsDnsRecord,
+        'dns_records': DnsRecord,
         }
 
 
-class RsDnsRecord(ModelBase):
+class DnsRecord(ModelBase):
 
     _data_fields = ['name', 'record_id']
-    _table_name = 'rsdns_records'
+    _table_name = 'dns_records'
 
     def __init__(self, name, record_id):
         self.name = name

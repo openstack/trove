@@ -19,13 +19,15 @@
 Dns Driver that uses Rackspace DNSaaS.
 """
 
+__version__ = '2.4'
+
 import hashlib
 
 import logging
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common.exception import NotFound
-from reddwarf.dns.rsdns.models import RsDnsRecord
+from reddwarf.dns.models import DnsRecord
 from rsdns.client import DNSaas
 from rsdns.client.future import RsDnsError
 
@@ -127,16 +129,17 @@ class RsDnsDriver(object):
             try:
                 #poll_until(lambda : future.ready, sleep_time=2,
                 #    time_out=60*2)
-                while(future.ready is None):
+                while(future.ready is False):
                     import time
                     time.sleep(2)
+                    LOG.info("Waiting for the dns record_id.. ")
 
                 if len(future.resource) < 1:
                     raise RsDnsError("No DNS records were created.")
                 elif len(future.resource) > 1:
                     LOG.error("More than one DNS record created. Ignoring.")
                 actual_record = future.resource[0]
-                RsDnsRecord.create(name=name, record_id=actual_record.id)
+                DnsRecord.create(name=name, record_id=actual_record.id)
                 LOG.debug("Added RS DNS entry.")
             except RsDnsError as rde:
                 LOG.error("An error occurred creating DNS entry!")
@@ -148,9 +151,9 @@ class RsDnsDriver(object):
     def delete_entry(self, name, type, dns_zone=None):
         dns_zone = dns_zone or self.default_dns_zone
         long_name = name
-        db_record = RsDnsRecord.find_by(name=name)
+        db_record = DnsRecord.find_by(name=name)
         record = self.dns_client.records.get(domain_id=dns_zone.id,
-            record_id=db_record.id)
+            record_id=db_record.record_id)
         if record.name != name or record.type != 'A':
             LOG.error("Tried to delete DNS record with name=%s, id=%s, but the"
                       " database returned a DNS record with the name %s and "

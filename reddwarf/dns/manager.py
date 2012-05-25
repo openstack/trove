@@ -22,7 +22,6 @@ import logging
 
 from reddwarf.common import utils
 from reddwarf.common import config
-from reddwarf.dns.rsdns.driver import RsDnsInstanceEntryFactory
 
 LOG = logging.getLogger(__name__)
 
