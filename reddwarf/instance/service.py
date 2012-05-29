@@ -56,6 +56,9 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPRequestEntityTooLarge: [
             exception.OverLimit,
+            ],
+        webob.exc.HTTPServerError: [
+            exceptions.VolumeCreationFailure
             ]
         }
 
