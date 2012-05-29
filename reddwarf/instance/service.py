@@ -58,7 +58,7 @@ class BaseController(wsgi.Controller):
             exception.OverLimit,
             ],
         webob.exc.HTTPServerError: [
-            exceptions.VolumeCreationFailure
+            exception.VolumeCreationFailure
             ]
         }
 
