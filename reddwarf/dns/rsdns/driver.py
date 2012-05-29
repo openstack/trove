@@ -127,8 +127,7 @@ class RsDnsDriver(object):
                 record_type=entry.type,
                 record_ttl=entry.ttl)
             try:
-                #poll_until(lambda : future.ready, sleep_time=2,
-                #    time_out=60*2)
+                #TODO: Bring back our good friend poll_until.
                 while(future.ready is False):
                     import time
                     time.sleep(2)

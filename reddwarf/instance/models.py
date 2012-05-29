@@ -310,6 +310,9 @@ class Instance(object):
 
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         LOG.debug(_("reddwarf dns support = %s") % dns_support)
+        dns_client = create_dns_client(context)
+        # Default the hostname to instance name if no dns support
+        dns_client.update_hostname(db_info)
         if utils.bool_from_string(dns_support):
             #TODO: Bring back our good friend poll_until.
             while(server.addresses == {}):
@@ -318,10 +321,9 @@ class Instance(object):
                 server = client.servers.get(server.id)
                 LOG.debug("Waiting for address %s" % server.addresses)
 
-            dns_client = create_dns_client(context)
-            dns_client.update_hostname(db_info)
             dns_client.create_instance_entry(db_info['id'],
                           get_ip_address(server.addresses))
+
         return Instance(context, db_info, server, service_status, volumes)
 
     def get_guest(self):
