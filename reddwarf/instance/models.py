@@ -425,6 +425,10 @@ class Instance(object):
 
     def resize_flavor_async(self, new_flavor_id, old_memory_size,
                             updated_memory_size):
+        def resize_status_msg():
+            return "instance_id=%s, status=%s, flavor_id=%s, " \
+                   "dest. flavor id=%s)" % (self.id, self.server.status, \
+                    str(self.flavor['id']), str(new_flavor_id))
         try:
             LOG.debug("Instance %s calling stop_mysql..." % self.id)
             guest = create_guest_client(self.context, self.db_info.id)
@@ -437,12 +441,27 @@ class Instance(object):
                 # nova_exceptions.NotFound (for the flavor)
                 # nova_exceptions.OverLimit
 
+                self._refresh_compute_server_info()
+                # Do initial check and confirm the status is appropriate.
+                if self.server.status != "RESIZE" and \
+                    self.server.status != "VERIFY_RESIZE":
+                    raise ReddwarfError("Unexpected status after call to "
+                        "resize! : %s" % resize_status_msg())
+
                 # Wait for the flavor to change.
                 #TODO(tim.simpson): Bring back our good friend poll_until.
-                while(self.server.status == "RESIZE" or
-                      str(self.flavor['id']) != str(new_flavor_id)):
+                while(self.server.status == "RESIZE"):
+                    LOG.debug("Resizing... currently, %s" % resize_status_msg())
                     time.sleep(1)
-                    info = self._refresh_compute_server_info()
+                    self._refresh_compute_server_info()
+
+                # Do check to make sure the status and flavor id are correct.
+                if (str(self.flavor['id']) != str(new_flavor_id) or
+                    self.server.status != "VERIFY_RESIZE"):
+                    raise ReddwarfError("Assertion failed! flavor_id=%s "
+                        "and not %s"
+                        % (self.server.status, str(self.flavor['id'])))
+
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
                           % self.id)
