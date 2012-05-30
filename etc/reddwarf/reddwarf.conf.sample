@@ -46,6 +46,7 @@ add_addresses = True
 
 # Config options for enabling volume service
 reddwarf_volume_support = True
+block_device_mapping = vdb
 device_path = /dev/vdb
 mount_point = /var/lib/mysql
 
