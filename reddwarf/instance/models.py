@@ -236,19 +236,15 @@ class Instance(object):
             # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
             # setting the delete_on_terminate instance to true=1
             mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
-            # TODO(rnirmal) This mapping device needs to be configurable.
-            # and we may have to do a little more trickery here.
-            # We don't know what's the next device available on the
-            # guest. Also in cases for ovz where this is mounted on
-            # the host, that's not going to work for us.
-            block_device = {'vdb': mapping}
+            bdm = CONFIG.get('block_device_mapping', 'vdb')
+            block_device = {bdm: mapping}
             volumes = [{'id': v_ref.id,
                        'size': v_ref.size}]
             LOG.debug("block_device = %s" % block_device)
             LOG.debug("volume = %s" % volumes)
 
-            device_path = CONFIG.get('device_path')
-            mount_point = CONFIG.get('mount_point')
+            device_path = CONFIG.get('device_path', '/dev/vdb')
+            mount_point = CONFIG.get('mount_point', '/var/lib/mysql')
             LOG.debug(_("device_path = %s") % device_path)
             LOG.debug(_("mount_point = %s") % mount_point)
         else:
