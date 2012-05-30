@@ -16,6 +16,9 @@
 #    under the License.
 
 import logging
+from reddwarf.common import config
+from reddwarf.common import utils
+
 LOG = logging.getLogger(__name__)
 
 
@@ -24,6 +27,10 @@ def get_ip_address(addresses):
        addresses.get('private') is not None and \
        len(addresses['private']) > 0:
         return [addr.get('addr') for addr in addresses['private']]
+    if addresses is not None and\
+       addresses.get('usernet') is not None and\
+       len(addresses['usernet']) > 0:
+        return [addr.get('addr') for addr in addresses['usernet']]
 
 
 def get_volumes(volumes):
@@ -45,10 +52,12 @@ class InstanceView(object):
         instance_dict = {
             "id": self.instance.id,
             "name": self.instance.name,
-            "hostname": self.instance.db_info.hostname,
             "status": self.instance.status,
             "links": self.instance.links
         }
+        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        if utils.bool_from_string(dns_support):
+            instance_dict['hostname'] = self.instance.db_info.hostname
         if self.add_addresses and ip is not None and len(ip) > 0:
             instance_dict['ip'] = ip
         if self.add_volumes and volumes is not None:
