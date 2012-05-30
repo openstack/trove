@@ -27,6 +27,10 @@ def get_ip_address(addresses):
        addresses.get('private') is not None and \
        len(addresses['private']) > 0:
         return [addr.get('addr') for addr in addresses['private']]
+    if addresses is not None and\
+       addresses.get('usernet') is not None and\
+       len(addresses['usernet']) > 0:
+        return [addr.get('addr') for addr in addresses['usernet']]
 
 
 def get_volumes(volumes):
