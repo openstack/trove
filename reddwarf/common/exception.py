@@ -70,6 +70,11 @@ class ComputeInstanceNotFound(NotFound):
 
     message = _("Resource %(instance_id)s can not be retrieved.")
 
+    
+class DnsRecordNotFound(NotFound):
+
+    message = _("DnsRecord with name= %(name)s not found.")
+
 
 class OverLimit(ReddwarfError):
 
