@@ -232,7 +232,7 @@ class InstanceController(BaseController):
         instance.delete()
 
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(202)
+        return wsgi.Result(None, 202)
 
     @api_validation(action="create")
     def create(self, req, body, tenant_id):
