@@ -114,7 +114,7 @@ class UserController(BaseController):
         users = body['users']
         model_users = models.populate_users(users)
         models.User.create(context, instance_id, model_users)
-        return wsgi.Result(202)
+        return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
         LOG.info(_("Deleting user for instance '%s'") % instance_id)
@@ -123,7 +123,7 @@ class UserController(BaseController):
         user = guest_models.MySQLUser()
         user.name = id
         models.User.delete(context, instance_id, user.serialize())
-        return wsgi.Result(202)
+        return wsgi.Result(None, 202)
 
 
 class SchemaController(BaseController):
@@ -159,7 +159,7 @@ class SchemaController(BaseController):
         schemas = body['databases']
         model_schemas = models.populate_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)
-        return wsgi.Result(202)
+        return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
         LOG.info(_("Deleting schema for instance '%s'") % instance_id)
@@ -168,4 +168,4 @@ class SchemaController(BaseController):
         schema = guest_models.MySQLDatabase()
         schema.name = id
         models.Schema.delete(context, instance_id, schema.serialize())
-        return wsgi.Result(202)
+        return wsgi.Result(None, 202)
