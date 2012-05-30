@@ -24,7 +24,9 @@ import optparse
 import os
 import sys
 
+
 gettext.install('reddwarf', unicode=1)
+
 
 # If ../reddwarf/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
@@ -37,6 +39,7 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import service
+
 
 if __name__ == '__main__':
     parser = optparse.OptionParser(version="%%prog %s"

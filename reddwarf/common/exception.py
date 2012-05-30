@@ -70,7 +70,7 @@ class ComputeInstanceNotFound(NotFound):
 
     message = _("Resource %(instance_id)s can not be retrieved.")
 
-    
+
 class DnsRecordNotFound(NotFound):
 
     message = _("DnsRecord with name= %(name)s not found.")
@@ -118,3 +118,9 @@ class VolumeAttachmentsNotFound(NotFound):
 class VolumeCreationFailure(ReddwarfError):
 
     message = _("Failed to create a volume in Nova.")
+
+
+class TaskManagerError(ReddwarfError):
+
+    message = _("An error occurred communicating with the task manager: "
+                "%(original_message)s.")

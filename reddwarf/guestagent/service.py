@@ -22,7 +22,7 @@ import webob.exc
 from reddwarf.common import wsgi
 from reddwarf import rpc
 
-LOG = logging.getLogger('reddwarf.taskmanager.service')
+LOG = logging.getLogger(__name__)
 
 
 class Controller(wsgi.Controller):

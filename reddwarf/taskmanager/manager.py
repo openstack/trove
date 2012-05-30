@@ -16,18 +16,37 @@
 #    under the License.
 
 import logging
+import weakref
+
+from eventlet import greenthread
+
+from reddwarf.common import excutils
+from reddwarf.common import service
+
 
 LOG = logging.getLogger(__name__)
 
 
-class TaskManager(object):
+class TaskManager(service.Manager):
     """Task manager impl"""
 
     def __init__(self, *args, **kwargs):
+        self.tasks = weakref.WeakKeyDictionary()
+        super(TaskManager, self).__init__(*args, **kwargs)
         LOG.info(_("TaskManager init %s %s") % (args, kwargs))
 
     def periodic_tasks(self, raise_on_error=False):
-        LOG.info(_("Launching a periodic task"))
+        LOG.debug("No. of running tasks: %r" % len(self.tasks))
 
-    def test_method(self, context):
-        LOG.info(_("test_method called with context %s") % context)
+    def _wrapper(self, method, context, *args, **kwargs):
+        """Maps the respective manager method with a task counter."""
+        # TODO(rnirmal): Just adding a basic counter. Will revist and
+        # re-implement when we have actual tasks.
+        self.tasks[greenthread.getcurrent()] = context
+        try:
+            func = getattr(self, method)
+            func(context, *args, **kwargs)
+        except Exception as e:
+            excutils.save_and_reraise_exception()
+        finally:
+            del self.tasks[greenthread.getcurrent()]

@@ -5,12 +5,6 @@ verbose = True
 # Show debugging output in logs (sets DEBUG log level output)
 debug = True
 
-# Address to bind the API server
-bind_host = 0.0.0.0
-
-# Port the bind the API server to
-bind_port = 8778
-
 # AMQP Connection info
 rabbit_password=f7999d1955c5014aa32c
 
@@ -19,7 +13,6 @@ rabbit_password=f7999d1955c5014aa32c
 # See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine
 sql_connection = sqlite:///reddwarf_test.sqlite
 # sql_connection = mysql://root:root@localhost/reddwarf
-#sql_connection = postgresql://reddwarf:reddwarf@localhost/reddwarf
 
 # Period in seconds after which SQLAlchemy should reestablish its connection
 # to the database.
@@ -33,8 +26,6 @@ sql_idle_timeout = 3600
 #DB Api Implementation
 db_api_implementation = "reddwarf.db.sqlalchemy.api"
 
-# Path to the extensions
-api_extensions_path = reddwarf/extensions
 
 # Configuration options for talking to nova via the novaclient.
 # These options are for an admin user in your keystone config.
@@ -58,38 +49,6 @@ notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
 
-[composite:reddwarf-taskmanager]
-use = call:reddwarf.common.wsgi:versioned_urlmap
-/: versions
-/v0.1: reddwarf-taskmanagerapi
 
-[app:versions]
-paste.app_factory = reddwarf.versions:app_factory
-
-[pipeline:reddwarf-taskmanagerapi]
-pipeline = taskmanagerapp
-#pipeline = debug extensions reddwarfapp
-
-[filter:extensions]
-paste.filter_factory = reddwarf.common.extensions:factory
-
-[filter:tokenauth]
-paste.filter_factory = keystone.middleware.auth_token:filter_factory
-service_protocol = http
-service_host = 127.0.0.1
-service_port = 5000
-auth_host = 127.0.0.1
-auth_port = 35357
-auth_protocol = http
-auth_uri = http://127.0.0.1:5000/
-admin_token = be19c524ddc92109a224
-
-[filter:authorization]
-paste.filter_factory = reddwarf.common.auth:AuthorizationMiddleware.factory
-
-[app:taskmanagerapp]
+[app:reddwarf-taskmanager]
 paste.app_factory = reddwarf.taskmanager.service:app_factory
-
-#Add this filter to log request and response for debugging
-[filter:debug]
-paste.filter_factory = reddwarf.common.wsgi:Debug
