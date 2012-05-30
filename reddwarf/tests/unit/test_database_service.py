@@ -149,7 +149,7 @@ class TestInstanceController(ControllerTestBase):
                         "name": "nextround"
                     }
                 ],
-                "flavorRef": "http://localhost/v0.1/tenant/flavors/1",
+                "flavorRef": "http://localhost/v1.0/tenant/flavors/1",
                 "name": "json_rack_instance",
             }
         }
