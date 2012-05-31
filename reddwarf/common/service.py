@@ -17,9 +17,11 @@
 
 """STOLEN FROM NOVA."""
 
+import functools
 import inspect
 import os
 import logging
+import socket
 
 import eventlet
 import greenlet
@@ -71,6 +73,8 @@ class Service(object):
 
     def __init__(self, host, binary, topic, manager, report_interval=None,
                  periodic_interval=None, *args, **kwargs):
+        if not host:
+            host = socket.gethostname()
         self.host = host
         self.binary = binary
         self.topic = topic
@@ -93,7 +97,7 @@ class Service(object):
     def __getattr__(self, key):
         """This method proxy's the calls to the manager implementation"""
         manager = self.__dict__.get('manager', None)
-        return getattr(manager, key)
+        return functools.partial(manager._wrapper, key)
 
     def start(self):
         vcs_string = version.version_string_with_vcs()
@@ -164,9 +168,6 @@ class Service(object):
 
 class Manager(object):
     def __init__(self, host=None):
-        if not host:
-            #TODO(hub-cap): We need to fix this
-            host = "ubuntu"
         self.host = host
         super(Manager, self).__init__()
 
@@ -182,6 +183,10 @@ class Manager(object):
         """
         pass
 
+    def _wrapper(self, method, context, *args, **kwargs):
+        """Wraps the called functions with additional information."""
+        func = getattr(self, method)
+        return func(context, *args, **kwargs)
 
 _launcher = None
 
