@@ -124,3 +124,9 @@ class TaskManagerError(ReddwarfError):
 
     message = _("An error occurred communicating with the task manager: "
                 "%(original_message)s.")
+
+
+class BadValue(ReddwarfError):
+
+    message = _("Value could not be converted: %(msg)s")
+

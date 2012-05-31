@@ -47,6 +47,7 @@ class BaseController(wsgi.Controller):
             models.InvalidModelError,
             exception.BadRequest,
             exception.CannotResizeToSameSize,
+            exception.BadValue
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
@@ -263,7 +264,10 @@ class InstanceController(BaseController):
         if databases is None:
             databases = []
         if body['instance'].get('volume', None) is not None:
-            volume_size = body['instance']['volume']['size']
+            try:
+                volume_size = int(body['instance']['volume']['size'])
+            except ValueError as e:
+               raise exception.BadValue(msg=e)
         else:
             volume_size = None
         instance = models.Instance.create(context, name, flavor_ref,
