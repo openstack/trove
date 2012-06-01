@@ -26,7 +26,7 @@ class VersionsController(wsgi.Controller):
 
     def index(self, request):
         """Respond to a request for all OpenStack API versions."""
-        versions = [Version("v0.1", "CURRENT", request.application_url)]
+        versions = [Version("v1.0", "CURRENT", request.application_url)]
         return wsgi.Result(VersionsDataView(versions))
 
 
