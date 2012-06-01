@@ -47,6 +47,7 @@ from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
 from reddwarf.guestagent.volume import VolumeDevice
+from reddwarf.guestagent.query import Query
 from reddwarf.instance import models as rd_models
 
 
@@ -390,7 +391,7 @@ class MySqlAdmin(object):
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
 
-    def list_databases(self):
+    def list_databases(self, limit=None, marker=None):
         """List databases the user created on this mysql instance"""
         LOG.debug(_("---Listing Databases---"))
         databases = []
@@ -400,51 +401,74 @@ class MySqlAdmin(object):
             # the lost+found directory will show up in mysql as a database
             # which will create errors if you try to do any database ops
             # on it.  So we remove it here if it exists.
-            t = text('''
-            SELECT
-                schema_name as name,
-                default_character_set_name as charset,
-                default_collation_name as collation
-            FROM
-                information_schema.schemata
-            WHERE
-                schema_name not in
-                ('mysql', 'information_schema',
-                 'lost+found', '#mysql50#lost+found')
-            ORDER BY
-                schema_name ASC;
-            ''')
+            q = Query()
+            q.columns = [
+                'schema_name as name',
+                'default_character_set_name as charset',
+                'default_collation_name as collation',
+            ]
+            q.tables = ['information_schema.schemata']
+            q.where = ['''schema_name not in (
+                            'mysql', 'information_schema',
+                            'lost+found', '#mysql50#lost+found'
+                        )''']
+            q.order = ['schema_name ASC']
+            if limit:
+                q.limit = limit + 1
+            if marker:
+                q.where.append("schema_name > '%s'" % marker)
+            t = text(str(q))
             database_names = client.execute(t)
+            next_marker = None
             LOG.debug(_("database_names = %r") % database_names)
-            for database in database_names:
+            for count, database in enumerate(database_names):
+                if count >= limit:
+                    break
                 LOG.debug(_("database = %s ") % str(database))
                 mysql_db = models.MySQLDatabase()
                 mysql_db.name = database[0]
+                next_marker = mysql_db.name
                 mysql_db.character_set = database[1]
                 mysql_db.collate = database[2]
                 databases.append(mysql_db.serialize())
         LOG.debug(_("databases = ") + str(databases))
-        return databases
+        if database_names.rowcount <= limit:
+            next_marker = None
+        return databases, next_marker
 
-    def list_users(self):
+    def list_users(self, limit=None, marker=None):
         """List users that have access to the database"""
         LOG.debug(_("---Listing Users---"))
         users = []
         client = LocalSqlClient(get_engine())
         with client:
             mysql_user = models.MySQLUser()
-            t = text("""select User from mysql.user where host !=
-                     'localhost';""")
+            q = Query()
+            q.columns = ['User']
+            q.tables = ['mysql.user']
+            q.where = ["host != 'localhost'"]
+            q.order = ['User']
+            if marker:
+                q.where.append("User > '%s'" % marker)
+            if limit:
+                q.limit = limit + 1
+            t = text(str(q))
             result = client.execute(t)
+            next_marker = None
             LOG.debug("result = " + str(result))
-            for row in result:
+            for count, row in enumerate(result):
+                if count >= limit:
+                    break
                 LOG.debug("user = " + str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
+                next_marker = row['User']
                 # Now get the databases
-                t = text("""SELECT grantee, table_schema
-                            from information_schema.SCHEMA_PRIVILEGES
-                            group by grantee, table_schema;""")
+                q = Query()
+                q.columns = ['grantee', 'table_schema']
+                q.tables = ['information_schema.SCHEMA_PRIVILEGES']
+                q.group = ['grantee', 'table_schema']
+                t = text(str(q))
                 db_result = client.execute(t)
                 for db in db_result:
                     matches = re.match("^'(.+)'@", db['grantee'])
@@ -454,8 +478,10 @@ class MySqlAdmin(object):
                         mysql_db.name = db['table_schema']
                         mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
+        if result.rowcount <= limit:
+            next_marker = None
         LOG.debug("users = " + str(users))
-        return users
+        return users, next_marker
 
 
 class DBaaSAgent(object):
@@ -479,11 +505,11 @@ class DBaaSAgent(object):
     def delete_user(self, user):
         MySqlAdmin().delete_user(user)
 
-    def list_databases(self):
-        return MySqlAdmin().list_databases()
+    def list_databases(self, limit=None, marker=None):
+        return MySqlAdmin().list_databases(limit, marker)
 
-    def list_users(self):
-        return MySqlAdmin().list_users()
+    def list_users(self, limit=None, marker=None):
+        return MySqlAdmin().list_users(limit, marker)
 
     def enable_root(self):
         return MySqlAdmin().enable_root()

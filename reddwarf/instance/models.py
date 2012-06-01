@@ -24,17 +24,20 @@ import time
 
 from reddwarf import db
 
+from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import exception as rd_exceptions
+from reddwarf.common import pagination
 from reddwarf.common import utils
-from reddwarf.instance.tasks import InstanceTask
-from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.common.models import ModelBase
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common.remote import create_dns_client
+from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
-from reddwarf.common.remote import create_guest_client
+from reddwarf.guestagent import api as guest_api
+from reddwarf.instance.tasks import InstanceTask
+from reddwarf.instance.tasks import InstanceTasks
 
 
 from eventlet import greenthread
@@ -273,13 +276,13 @@ class Instance(object):
         if volume_size:
             volume_info = cls._create_volume(context, db_info, volume_size)
             block_device_mapping = volume_info['block_device']
-            device_path=volume_info['device_path']
-            mount_point=volume_info['mount_point']
+            device_path = volume_info['device_path']
+            mount_point = volume_info['mount_point']
             volumes = volume_info['volumes']
         else:
             block_device_mapping = None
-            device_path=None
-            mount_point=None
+            device_path = None
+            mount_point = None
             volumes = []
 
         client = create_nova_client(context)
@@ -384,9 +387,7 @@ class Instance(object):
 
     @property
     def links(self):
-        #TODO(tim.simpson): Review whether we should be returning the server
-        # links.
-        return self._build_links(self.server.links)
+        return self.server.links
 
     @property
     def addresses(self):
@@ -580,18 +581,31 @@ def create_server_list_matcher(server_list):
 
 class Instances(object):
 
+    DEFAULT_LIMIT = int(config.Config.get('instances_page_size', '20'))
+
     @staticmethod
     def load(context):
         if context is None:
             raise TypeError("Argument context not defined.")
         client = create_nova_client(context)
         servers = client.servers.list()
+
         db_infos = DBInstance.find_all()
+        limit = int(context.limit or Instances.DEFAULT_LIMIT)
+        if limit > Instances.DEFAULT_LIMIT:
+            limit = Instances.DEFAULT_LIMIT
+        data_view = DBInstance.find_by_pagination('instances', db_infos, "foo",
+                                                  limit=limit,
+                                                  marker=context.marker)
+        next_marker = data_view.next_page_marker
+
         ret = []
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
             LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
                       (db.id, db.compute_instance_id))
+        for db in data_view.collection:
+            status = InstanceServiceStatus.find_by(instance_id=db.id)
             try:
                 # TODO(hub-cap): Figure out if this is actually correct.
                 # We are not sure if we should be doing some validation.
@@ -622,7 +636,7 @@ class Instances(object):
                            "or instance was deleted"))
                 continue
             ret.append(Instance(context, db, server, status, volumes))
-        return ret
+        return ret, next_marker
 
 
 class DatabaseModelBase(ModelBase):
@@ -680,6 +694,16 @@ class DatabaseModelBase(ModelBase):
     def _process_conditions(cls, raw_conditions):
         """Override in inheritors to format/modify any conditions."""
         return raw_conditions
+
+    @classmethod
+    def find_by_pagination(cls, collection_type, collection_query,
+                            paginated_url, **kwargs):
+        elements, next_marker = collection_query.paginated_collection(**kwargs)
+
+        return pagination.PaginatedDataView(collection_type,
+                                            elements,
+                                            paginated_url,
+                                            next_marker)
 
 
 class DBInstance(DatabaseModelBase):

@@ -108,7 +108,6 @@ class FakeServer(object):
             raise RuntimeError("Not in resize confirm mode.")
         self._current_status = "ACTIVE"
 
-
     def delete(self):
         self.schedule_status = []
         self._current_status = "SHUTDOWN"
@@ -127,12 +126,15 @@ class FakeServer(object):
 
     def resize(self, new_flavor_id):
         self._current_status = "RESIZE"
+
         def set_to_confirm_mode():
             self._current_status = "VERIFY_RESIZE"
+
         def set_flavor():
             flavor = self.parent.flavors.get(new_flavor_id)
             self.flavor_ref = flavor.links[0]['href']
             self.events.add_event(1, set_to_confirm_mode)
+
         self.events.add_event(1, set_flavor)
 
     def schedule_status(self, new_status, time_from_now):
@@ -248,10 +250,6 @@ class FakeServerVolumes(object):
         return [ServerVolumes(server.block_device_mapping)]
 
 
-
-
-
-
 class FakeVolume(object):
 
     def __init__(self, parent, owner, id, size, display_name,
@@ -331,6 +329,7 @@ class FakeVolumes(object):
 
 
 FLAVORS = FakeFlavors()
+
 
 class FakeClient(object):
 

@@ -34,6 +34,10 @@ class ReddwarfContext(context.RequestContext):
     """
 
     def __init__(self, **kwargs):
+        self.limit = kwargs['limit']
+        self.marker = kwargs['marker']
+        del kwargs['limit']
+        del kwargs['marker']
         super(ReddwarfContext, self).__init__(**kwargs)
 
     def to_dict(self):
@@ -43,6 +47,8 @@ class ReddwarfContext(context.RequestContext):
                 'show_deleted': self.show_deleted,
                 'read_only': self.read_only,
                 'auth_tok': self.auth_tok,
+                'limit': self.limit,
+                'marker': self.marker
                 }
 
     @classmethod

@@ -21,10 +21,10 @@ import webob.exc
 
 from reddwarf.common import config
 from reddwarf.common import exception
+from reddwarf.common import pagination
 from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.instance import models, views
-from reddwarf.common import exception as rd_exceptions
 
 #TODO(ed-): Import these properly after this is restructured
 from reddwarf.flavor import models as flavormodels
@@ -70,6 +70,10 @@ class BaseController(wsgi.Controller):
                         config.Config.get('reddwarf_volume_support', 'False'))
         pass
 
+    def _extract_limits(self, params):
+        return dict([(key, params[key]) for key in params.keys()
+                     if key in ["limit", "marker"]])
+
     def _extract_required_params(self, params, model_name):
         params = params or {}
         model_params = params.get(model_name, {})
@@ -112,16 +116,16 @@ class InstanceController(BaseController):
             if key in _actions:
                 if selected_action is not None:
                     msg = _("Only one action can be specified per request.")
-                    raise rd_exceptions.BadRequest(msg)
+                    raise exception.BadRequest(msg)
                 selected_action = _actions[key]
             else:
                 msg = _("Invalid instance action: %s") % key
-                raise rd_exceptions.BadRequest(msg)
+                raise exception.BadRequest(msg)
 
         if selected_action:
             return selected_action(instance, body)
         else:
-            raise rd_exceptions.BadRequest(_("Invalid request body."))
+            raise exception.BadRequest(_("Invalid request body."))
 
     def _action_restart(self, instance, body):
         instance.validate_can_perform_restart_or_reboot()
@@ -150,20 +154,20 @@ class InstanceController(BaseController):
                 if selected_option is not None:
                     msg = _("Not allowed to resize volume and flavor at the "
                             "same time.")
-                    raise rd_exceptions.BadRequest(msg)
+                    raise exception.BadRequest(msg)
                 selected_option = options[key]
                 args = body['resize'][key]
             else:
-                raise rd_exceptions.BadRequest("Invalid resize argument %s"
+                raise exception.BadRequest("Invalid resize argument %s"
                                                % key)
         if selected_option:
             return selected_option(instance, args)
         else:
-            raise rd_exceptions.BadRequest(_("Missing resize arguments."))
+            raise exception.BadRequest(_("Missing resize arguments."))
 
     def _action_resize_volume(self, instance, volume):
         if 'size' not in volume:
-            raise rd_exceptions.BadRequest(
+            raise exception.BadRequest(
                     "Missing 'size' property of 'volume' in request body.")
         new_size = volume['size']
         instance.resize_volume(new_size)
@@ -186,13 +190,17 @@ class InstanceController(BaseController):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
-        servers = models.Instances.load(context)
+        servers, marker = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
-        view_cls = views.InstancesDetailView if detailed \
-                                             else views.InstancesView
-        return wsgi.Result(view_cls(servers,
-                           add_addresses=self.add_addresses,
-                           add_volumes=self.add_volumes).data(), 200)
+        view_cls = (views.InstancesDetailView if detailed
+                    else views.InstancesView)
+
+        view = view_cls(servers, req=req, add_addresses=self.add_addresses,
+                        add_volumes=self.add_volumes)
+
+        paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
+                                                   marker)
+        return wsgi.Result(paged.data(), 200)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
@@ -210,7 +218,7 @@ class InstanceController(BaseController):
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         # TODO(cp16net): need to set the return code correctly
-        return wsgi.Result(views.InstanceDetailView(server,
+        return wsgi.Result(views.InstanceDetailView(server, req=req,
                            add_addresses=self.add_addresses,
                            add_volumes=self.add_volumes).data(), 200)
 
@@ -274,7 +282,7 @@ class InstanceController(BaseController):
                                           image_id, databases,
                                           service_type, volume_size)
 
-        return wsgi.Result(views.InstanceDetailView(instance,
+        return wsgi.Result(views.InstanceDetailView(instance, req=req,
                                   add_volumes=self.add_volumes).data(), 200)
 
     @staticmethod
@@ -282,7 +290,7 @@ class InstanceController(BaseController):
         """Check that the body is not empty"""
         if not body:
             msg = "The request contains an empty body"
-            raise rd_exceptions.ReddwarfError(msg)
+            raise exception.ReddwarfError(msg)
 
     @staticmethod
     def _validate_volume_size(size):
@@ -293,19 +301,19 @@ class InstanceController(BaseController):
             LOG.error(err)
             msg = ("Required element/key - instance volume 'size' was not "
                    "specified as a number (value was %s)." % size)
-            raise rd_exceptions.ReddwarfError(msg)
+            raise exception.ReddwarfError(msg)
         if int(volume_size) != volume_size or int(volume_size) < 1:
             msg = ("Volume 'size' needs to be a positive "
                    "integer value, %s cannot be accepted."
                    % volume_size)
-            raise rd_exceptions.ReddwarfError(msg)
+            raise exception.ReddwarfError(msg)
         #TODO(cp16net) add in the volume validation when volumes are supported
 #        max_size = FLAGS.reddwarf_max_accepted_volume_size
 #        if int(volume_size) > max_size:
 #            msg = ("Volume 'size' cannot exceed maximum "
 #                   "of %d Gb, %s cannot be accepted."
 #                   % (max_size, volume_size))
-#            raise rd_exceptions.ReddwarfError(msg)
+#            raise exception.ReddwarfError(msg)
 
     @staticmethod
     def _validate(body):
@@ -320,7 +328,7 @@ class InstanceController(BaseController):
                 volume_size = body['instance']['volume']['size']
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
-            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+            raise exception.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 
     @staticmethod
@@ -331,7 +339,7 @@ class InstanceController(BaseController):
             body['resize']['flavorRef']
         except KeyError as e:
             LOG.error(_("Resize Instance Required field(s) - %s") % e)
-            raise rd_exceptions.ReddwarfError("Required element/key - %s "
+            raise exception.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 
 

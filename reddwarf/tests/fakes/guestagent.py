@@ -63,11 +63,30 @@ class FakeGuest(object):
     def is_root_enabled(self):
         return self.root_was_enabled
 
-    def list_databases(self):
-        return [self.dbs[name] for name in self.dbs]
+    def list_databases(self, limit=None, marker=None):
+        dbs = [self.dbs[name] for name in self.dbs]
+        names = [db['_name'] for db in dbs]
+        if marker in names:
+            # Cut off everything left of and including the marker item.
+            dbs = dbs[names.index(marker) + 1:]
+        next_marker = None
+        if limit:
+            if len(dbs) > limit:
+                next_marker = dbs[limit - 1]['_name']
+            dbs = dbs[:limit]
+        return dbs, next_marker
 
-    def list_users(self):
-        return [self.users[name] for name in self.users]
+    def list_users(self, limit=None, marker=None):
+        users = [self.users[name] for name in self.users]
+        names = [user['_name'] for user in users]
+        if marker in names:
+            users = users[names.index(marker) + 1:]
+        next_marker = None
+        if limit:
+            if len(users) > limit:
+                next_marker = users[limit - 1]['_name']
+            users = users[:limit]
+        return users, next_marker
 
     def prepare(self, databases, memory_mb, users, device_path=None,
                 mount_point=None):
@@ -99,6 +118,7 @@ class FakeGuest(object):
         status = InstanceServiceStatus.find_by(instance_id=self.id)
         status.status = ServiceStatuses.SHUTDOWN
         status.save()
+
 
 def get_or_create(id):
     if id not in DB:

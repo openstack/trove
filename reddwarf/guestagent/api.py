@@ -39,9 +39,12 @@ class API(object):
         self.id = id
 
     def _call(self, method_name, **kwargs):
+        LOG.debug("Calling %s" % method_name)
         try:
-            return rpc.call(self.context, self._get_routing_key(),
+            result = rpc.call(self.context, self._get_routing_key(),
                             {"method": method_name, "args": kwargs})
+            LOG.debug("Result is %s" % result)
+            return result
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
@@ -72,10 +75,10 @@ class API(object):
         LOG.debug(_("Creating Users for Instance %s"), self.id)
         self._cast("create_user", users=users)
 
-    def list_users(self):
+    def list_users(self, limit=None, marker=None):
         """Make an asynchronous call to list database users"""
         LOG.debug(_("Listing Users for Instance %s"), self.id)
-        return self._call("list_users")
+        return self._call("list_users", limit=limit, marker=marker)
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
@@ -88,10 +91,10 @@ class API(object):
         LOG.debug(_("Creating databases for Instance %s"), self.id)
         self._cast("create_database", databases=databases)
 
-    def list_databases(self):
+    def list_databases(self, limit=None, marker=None):
         """Make an asynchronous call to list databases"""
         LOG.debug(_("Listing databases for Instance %s"), self.id)
-        return self._call("list_databases")
+        return self._call("list_databases", limit=limit, marker=marker)
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database

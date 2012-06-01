@@ -41,10 +41,12 @@ def get_volumes(volumes):
 
 class InstanceView(object):
 
-    def __init__(self, instance, add_addresses=False, add_volumes=False):
+    def __init__(self, instance, req=None, add_addresses=False,
+                 add_volumes=False):
         self.instance = instance
         self.add_addresses = add_addresses
         self.add_volumes = add_volumes
+        self.req = req
 
     def data(self):
         ip = get_ip_address(self.instance.addresses)
@@ -53,7 +55,7 @@ class InstanceView(object):
             "id": self.instance.id,
             "name": self.instance.name,
             "status": self.instance.status,
-            "links": self.instance.links
+            "links": self._build_links()
         }
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         if utils.bool_from_string(dns_support):
@@ -65,12 +67,51 @@ class InstanceView(object):
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
+    def _build_links(self):
+        # TODO(ed-): Make generic, move to common?
+        result = []
+        scheme = 'https'  # Forcing https
+        links = [link for link in self.instance.links]
+        links = [link['href'] for link in links if link['rel'] == 'self']
+        href_link = links[0]
+        splitpath = href_link.split('/')
+        endpoint = ''
+        if self.req:
+            endpoint = self.req.host
+            splitpath = self.req.path.split('/')
+
+        detailed = ''
+        if splitpath[-1] == 'detail':
+            detailed = '/detail'
+            splitpath.pop(-1)
+
+        instance_id = self.instance.id
+        if str(splitpath[-1]) == str(instance_id):
+            splitpath.pop(-1)
+        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(instance_id)s"
+        for link in self.instance.links:
+            rlink = link
+            href = rlink['href']
+            if rlink['rel'] == 'self':
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+            elif rlink['rel'] == 'bookmark':
+                splitpath.pop(2)  # Remove the version.
+                splitpath.pop(1)  # Remove the tenant id.
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+
+            rlink['href'] = href
+            result.append(rlink)
+        return result
+
 
 class InstanceDetailView(InstanceView):
 
-    def __init__(self, instance, add_addresses=False,
+    def __init__(self, instance, req=None, add_addresses=False,
                  add_volumes=False):
         super(InstanceDetailView, self).__init__(instance,
+                                                 req=req,
                                                  add_addresses=add_addresses,
                                                  add_volumes=add_volumes)
 
@@ -84,10 +125,12 @@ class InstanceDetailView(InstanceView):
 
 class InstancesView(object):
 
-    def __init__(self, instances, add_addresses=False, add_volumes=False):
+    def __init__(self, instances, req=None, add_addresses=False,
+                 add_volumes=False):
         self.instances = instances
         self.add_addresses = add_addresses
         self.add_volumes = add_volumes
+        self.req = req
 
     def data(self):
         data = []
@@ -97,13 +140,14 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        return InstanceView(instance,
-                            self.add_addresses).data()['instance']
+        view = InstanceView(instance, req=self.req,
+                            add_addresses=self.add_addresses)
+        return view.data()['instance']
 
 
 class InstancesDetailView(InstancesView):
 
     def data_for_instance(self, instance):
-        return InstanceDetailView(instance,
+        return InstanceDetailView(instance, req=self.req,
                                add_addresses=self.add_addresses,
                                add_volumes=self.add_volumes).data()['instance']
