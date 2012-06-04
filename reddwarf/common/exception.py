@@ -130,3 +130,6 @@ class BadValue(ReddwarfError):
 
     message = _("Value could not be converted: %(msg)s")
 
+
+class PollTimeOut(ReddwarfError):
+    message = _("Polling request timed out.")
