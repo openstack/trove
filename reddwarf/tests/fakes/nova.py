@@ -61,6 +61,7 @@ class FakeFlavors(object):
         self._add(5, 10, "m1.xlarge", 16384)
         self._add(6, 0, "tinier", 506)
         self._add(7, 0, "m1.rd-tiny", 512)
+        self._add(8, 0, "m1.rd-smaller", 768)
 
     def _add(self, *args, **kwargs):
         new_flavor = FakeFlavor(*args, **kwargs)
