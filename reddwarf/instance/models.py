@@ -314,21 +314,23 @@ class Instance(object):
         # Default the hostname to instance name if no dns support
         dns_client.update_hostname(db_info)
         if utils.bool_from_string(dns_support):
-            def ip_is_available(id):
-                server = client.servers.get(id)
+
+            def get_server():
+                return client.servers.get(server.id)
+
+            def ip_is_available(server):
                 if server.addresses != {}:
                     return True
                 elif server.addresses == {} and\
-                    server.status != InstanceStatus.ERROR:
+                     server.status != InstanceStatus.ERROR:
                     return False
                 elif server.addresses == {} and\
-                    server.status == InstanceStatus.ERROR:
+                     server.status == InstanceStatus.ERROR:
                     LOG.error(_("Instance IP not available, instance (%s): server had "
                                 " status (%s).") % (db_info['id'], server.status))
                     raise rd_exceptions.ReddwarfError(
                         status=server.status)
-            poll_until(lambda: ip_is_available(server.id),
-                            sleep_time=1, time_out=60*2)
+            poll_until(get_server, ip_is_available, sleep_time=1, time_out=60*2)
 
             dns_client.create_instance_entry(db_info['id'],
                           get_ip_address(server.addresses))
