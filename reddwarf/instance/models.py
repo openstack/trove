@@ -35,6 +35,7 @@ from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
+from reddwarf.common.utils import poll_until
 from reddwarf.guestagent import api as guest_api
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
@@ -313,12 +314,21 @@ class Instance(object):
         # Default the hostname to instance name if no dns support
         dns_client.update_hostname(db_info)
         if utils.bool_from_string(dns_support):
-            #TODO: Bring back our good friend poll_until.
-            while(server.addresses == {}):
-                import time
-                time.sleep(1)
-                server = client.servers.get(server.id)
-                LOG.debug("Waiting for address %s" % server.addresses)
+            def ip_is_available(id):
+                server = client.servers.get(id)
+                if server.addresses != {}:
+                    return True
+                elif server.addresses == {} and\
+                    server.status != InstanceStatus.ERROR:
+                    return False
+                elif server.addresses == {} and\
+                    server.status == InstanceStatus.ERROR:
+                    LOG.error(_("Instance IP not available, instance (%s): server had "
+                                " status (%s).") % (db_info['id'], server.status))
+                    raise rd_exceptions.ReddwarfError(
+                        status=server.status)
+            poll_until(lambda: ip_is_available(server.id),
+                            sleep_time=1, time_out=60*2)
 
             dns_client.create_instance_entry(db_info['id'],
                           get_ip_address(server.addresses))
