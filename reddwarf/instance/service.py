@@ -167,11 +167,8 @@ class InstanceController(BaseController):
             raise exception.BadRequest(_("Missing resize arguments."))
 
     def _action_resize_volume(self, instance, volume):
-        if 'size' not in volume:
-            raise exception.BadRequest(
-                    "Missing 'size' property of 'volume' in request body.")
-        new_size = volume['size']
-        instance.resize_volume(new_size)
+        InstanceController._validate_resize_volume(volume)
+        instance.resize_volume(volume['size'])
         return webob.exc.HTTPAccepted()
 
     def _action_resize_flavor(self, instance, flavorRef):
@@ -278,6 +275,16 @@ class InstanceController(BaseController):
             raise exception.ReddwarfError(msg)
 
     @staticmethod
+    def _validate_resize_volume(volume):
+        """
+        We are going to check that volume resizing data is present.
+        """
+        if 'size' not in volume:
+            raise rd_exceptions.BadRequest(
+                "Missing 'size' property of 'volume' in request body.")
+        InstanceController._validate_volume_size(volume['size'])
+
+    @staticmethod
     def _validate_volume_size(size):
         """Validate the various possible errors for volume size"""
         try:
@@ -292,13 +299,13 @@ class InstanceController(BaseController):
                    "integer value, %s cannot be accepted."
                    % volume_size)
             raise exception.ReddwarfError(msg)
-        #TODO(cp16net) add in the volume validation when volumes are supported
-#        max_size = FLAGS.reddwarf_max_accepted_volume_size
-#        if int(volume_size) > max_size:
-#            msg = ("Volume 'size' cannot exceed maximum "
-#                   "of %d Gb, %s cannot be accepted."
-#                   % (max_size, volume_size))
-#            raise exception.ReddwarfError(msg)
+        max_size = int(config.Config.get('max_accepted_volume_size',
+                                         1))
+        if int(volume_size) > max_size:
+            msg = ("Volume 'size' cannot exceed maximum "
+                   "of %d Gb, %s cannot be accepted."
+                   % (max_size, volume_size))
+            raise exception.ReddwarfError(msg)
 
     @staticmethod
     def _validate(body):
@@ -307,23 +314,14 @@ class InstanceController(BaseController):
         try:
             body['instance']
             body['instance']['flavorRef']
-            # TODO(cp16net) add in volume to the mix
-            if 'volume' in body['instance'] and \
-                body['instance']['volume'] is not None:
+            vol_enabled = utils.bool_from_string(
+                                config.Config.get('reddwarf_volume_support',
+                                                  'True'))
+            if vol_enabled:
                 volume_size = body['instance']['volume']['size']
+                InstanceController._validate_volume_size(volume_size)
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
-            raise exception.ReddwarfError("Required element/key - %s "
-                                       "was not specified" % e)
-
-    @staticmethod
-    def _validate_resize_instance(body):
-        """ Validate that the resize body has the attributes for flavorRef """
-        try:
-            body['resize']
-            body['resize']['flavorRef']
-        except KeyError as e:
-            LOG.error(_("Resize Instance Required field(s) - %s") % e)
             raise exception.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
 

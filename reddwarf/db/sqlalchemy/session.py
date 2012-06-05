@@ -28,7 +28,7 @@ _ENGINE = None
 _MAKER = None
 
 
-LOG = logging.getLogger('reddwarf.db.sqlalchemy.session')
+LOG = logging.getLogger(__name__)
 
 
 def configure_db(options, models_mapper=None):
@@ -82,10 +82,12 @@ def _create_engine(options):
 
 def get_session(autocommit=True, expire_on_commit=False):
     """Helper method to grab session."""
-
     global _MAKER, _ENGINE
     if not _MAKER:
-        assert _ENGINE
+        if not _ENGINE:
+            msg = "***The Database has not been setup!!!***"
+            LOG.exception(msg)
+            raise RuntimeError(msg)
         _MAKER = sessionmaker(bind=_ENGINE,
                               autocommit=autocommit,
                               expire_on_commit=expire_on_commit)

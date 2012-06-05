@@ -22,6 +22,7 @@ from eventlet import greenthread
 
 from reddwarf.common import excutils
 from reddwarf.common import service
+from reddwarf.taskmanager import models
 
 
 LOG = logging.getLogger(__name__)
@@ -50,3 +51,7 @@ class TaskManager(service.Manager):
             excutils.save_and_reraise_exception()
         finally:
             del self.tasks[greenthread.getcurrent()]
+
+    def resize_volume(self, context, instance_id, new_size):
+        instance_tasks = models.InstanceTasks.load(context, instance_id)
+        instance_tasks.resize_volume(new_size)
