@@ -75,7 +75,7 @@ notifier_queue_transport = memory
 [composite:reddwarf]
 use = call:reddwarf.common.wsgi:versioned_urlmap
 /: versions
-/v0.1: reddwarfapi
+/v1.0: reddwarfapi
 
 [app:versions]
 paste.app_factory = reddwarf.versions:app_factory

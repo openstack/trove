@@ -112,12 +112,26 @@ class Request(openstack_wsgi.Request):
 
 
 class Result(object):
+    """A result whose serialization is compatable with JSON and XML.
+
+    This class is used by ReddwarfResponseSerializer, which calls the
+    data method to grab a JSON or XML specific dictionary which it then
+    passes on to be serialized.
+
+    """
 
     def __init__(self, data, status=200):
         self._data = data
         self.status = status
 
     def data(self, serialization_type):
+        """Return an appropriate serialized type for the body.
+
+        In both cases a dictionary is returned. With JSON it maps directly,
+        while with XML the dictionary is expected to have a single key value
+        which becomes the root element.
+
+        """
         if (serialization_type == "application/xml" and
             hasattr(self._data, "data_for_xml")):
             return self._data.data_for_xml()
@@ -179,6 +193,23 @@ class Resource(openstack_wsgi.Resource):
                 inverted_dict[value] = key
         return inverted_dict
 
+    def serialize_response(self, action, action_result, accept):
+        # If an exception is raised here in the base class, it is swallowed,
+        # and the action_result is returned as-is. For us, that's bad news -
+        # we never want that to happen except in the case of webob types.
+        # So we override the behavior here so we can at least log it (raising
+        # an exception in the base class creates a circular reference issue).
+        try:
+            return super(Resource, self).serialize_response(
+                action, action_result, accept)
+        except Exception as ex:
+            # The super class code seems designed to either serialize things
+            # or pass them back if they're webobs.
+            if not isinstance(action_result, webob.Response):
+                LOG.error("unserializable result detected! "
+                          "Exception type: %s Message:%s" % (type(ex), ex))
+                raise
+
 
 class Controller(object):
     """Base controller that creates a Resource with default serializers."""
@@ -208,6 +239,13 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
 class ReddwarfResponseSerializer(openstack_wsgi.ResponseSerializer):
 
     def serialize_body(self, response, data, content_type, action):
+        """Overrides body serialization in openstack_wsgi.ResponseSerializer.
+
+        If the "data" argument is the Result class, its data
+        method is called and *that* is passed to the superclass implementation
+        instead of the actual data.
+
+        """
         if isinstance(data, Result):
             data = data.data(content_type)
         super(ReddwarfResponseSerializer, self).serialize_body(response,

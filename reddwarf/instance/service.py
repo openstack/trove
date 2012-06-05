@@ -51,6 +51,7 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
+            exception.ComputeInstanceNotFound,
             models.ModelNotFoundError,
             ],
         webob.exc.HTTPConflict: [
@@ -209,14 +210,7 @@ class InstanceController(BaseController):
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            # TODO(hub-cap): start testing the failure cases here
-            server = models.Instance.load(context=context, id=id)
-        except exception.ReddwarfError, e:
-            # TODO(hub-cap): come up with a better way than
-            #    this to get the message
-            LOG.error(e)
-            return wsgi.Result(str(e), 404)
+        server = models.Instance.load(context=context, id=id)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceDetailView(server, req=req,
                            add_addresses=self.add_addresses,
@@ -229,17 +223,8 @@ class InstanceController(BaseController):
         LOG.info(_("id : '%s'\n\n") % id)
         # TODO(hub-cap): turn this into middleware
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            # TODO(hub-cap): start testing the failure cases here
-            instance = models.Instance.load(context=context, id=id)
-        except exception.ReddwarfError, e:
-            # TODO(hub-cap): come up with a better way than
-            #    this to get the message
-            LOG.error(e)
-            return wsgi.Result(str(e), 404)
-
+        instance = models.Instance.load(context=context, id=id)
         instance.delete()
-
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(None, 202)
 
