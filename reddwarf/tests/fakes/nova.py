@@ -99,6 +99,8 @@ class FakeServer(object):
         self.events = EventSimulator()
         self.schedule_status("BUILD", 0.0)
         self.volumes = volumes
+        for volume in self.volumes:
+            volume.set_attachment(id)
 
     @property
     def addresses(self):
@@ -218,6 +220,7 @@ class FakeServers(object):
                 raise nova_exceptions.NotFound(404, "Bad permissions")
 
     def get_server_volumes(self, server_id):
+        """Fake method we've added to grab servers from the volume."""
         return [volume.mapping
                 for volume in self.get(server_id).volumes
                 if volume.mapping is not None]
@@ -255,6 +258,7 @@ class FakeVolume(object):
 
     def __init__(self, parent, owner, id, size, display_name,
                  display_description):
+        self.attachments = []
         self.parent = parent
         self.owner = owner  # This is a context.
         self.id = id
@@ -269,11 +273,21 @@ class FakeVolume(object):
                "display_name=%s, display_description=%s)") % (self.id,
                self.size, self.display_name, self.display_description)
 
+    def get(self, key):
+        return getattr(self, key)
+
     def schedule_status(self, new_status, time_from_now):
         """Makes a new status take effect at the given time."""
         def set_status():
             self._current_status = new_status
         self.events.add_event(time_from_now, set_status)
+
+    def set_attachment(self, server_id):
+        """Fake method we've added to set attachments. Idempotent."""
+        for attachment in self.attachments:
+            if attachment['server_id'] == server_id:
+                return  # Do nothing
+        self.attachments.append({'server_id':server_id})
 
     @property
     def status(self):
@@ -327,6 +341,9 @@ class FakeVolumes(object):
         volume.schedule_status("available", 2)
         LOG.info("FAKE_VOLUMES_DB : %s" % FAKE_VOLUMES_DB)
         return volume
+
+    def list(self, detailed=True):
+        return [self.db[key] for key in self.db]
 
 
 FLAVORS = FakeFlavors()

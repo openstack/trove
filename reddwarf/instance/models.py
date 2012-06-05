@@ -579,6 +579,14 @@ def create_server_list_matcher(server_list):
     return find_server
 
 
+def create_volumes_list_matcher(volume_list):
+    # Returns a method which finds a volume from the given list.
+    def find_volumes(server_id):
+        return [volume for volume in volume_list if server_id in
+                [attachment["server_id"] for attachment in volume.attachments]]
+    return find_volumes
+
+
 class Instances(object):
 
     DEFAULT_LIMIT = int(config.Config.get('instances_page_size', '20'))
@@ -589,6 +597,11 @@ class Instances(object):
             raise TypeError("Argument context not defined.")
         client = create_nova_client(context)
         servers = client.servers.list()
+        volume_client = create_nova_volume_client(context)
+        try:
+            volumes = volume_client.volumes.list(detailed=False)
+        except nova_exceptions.NotFound:
+            volumes = []
 
         db_infos = DBInstance.find_all()
         limit = int(context.limit or Instances.DEFAULT_LIMIT)
@@ -601,11 +614,11 @@ class Instances(object):
 
         ret = []
         find_server = create_server_list_matcher(servers)
+        find_volumes = create_volumes_list_matcher(volumes)
         for db in db_infos:
             LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
                       (db.id, db.compute_instance_id))
         for db in data_view.collection:
-            status = InstanceServiceStatus.find_by(instance_id=db.id)
             try:
                 # TODO(hub-cap): Figure out if this is actually correct.
                 # We are not sure if we should be doing some validation.
@@ -614,7 +627,7 @@ class Instances(object):
                 # nova db has compared to what we have. We should have
                 # a way to handle this.
                 server = find_server(db.id, db.compute_instance_id)
-                volumes = load_volumes(context, db.compute_instance_id)
+                volumes = find_volumes(server.id)
                 status = InstanceServiceStatus.find_by(instance_id=db.id)
                 LOG.info(_("Server api_status(%s)") %
                            (status.status.api_status))
