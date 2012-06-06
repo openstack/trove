@@ -55,3 +55,8 @@ class API(object):
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
         return "taskmanager"
+
+    def resize_volume(self, new_size, instance_id):
+        LOG.debug("Making async call to resize volume for instance: %s"
+                 % instance_id)
+        self._cast("resize_volume", new_size=new_size, instance_id=instance_id)

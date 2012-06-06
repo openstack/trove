@@ -39,6 +39,7 @@ from reddwarf.common.utils import poll_until
 from reddwarf.guestagent import api as guest_api
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
+from reddwarf.taskmanager import api as task_api
 
 
 from eventlet import greenthread
@@ -79,6 +80,8 @@ def load_volumes(context, server_id, client=None):
                 volume_info = volume_client.volumes.get(volume_id)
                 volume = {'id': volume_info.id,
                           'size': volume_info.size}
+                if volume_info.attachments:
+                    volume['mountpoint'] = volume_info.attachments[0]['device']
                 volumes.append(volume)
         except nova_exceptions.NotFound, e:
             LOG.debug("Could not find nova server_id(%s)" % server_id)
@@ -518,10 +521,18 @@ class Instance(object):
 
     def resize_volume(self, new_size):
         LOG.info("Resizing volume of instance %s..." % self.id)
-        # TODO(tim.simpson): Validate old_size < new_size, or raise
-        #                    rd_exceptions.BadRequest.
-        # TODO(tim.simpson): resize volume.
-        raise RuntimeError("Not implemented (yet).")
+        if len(self.volumes) != 1:
+            raise rd_exceptions.BadRequest("The instance has %r attached "
+                                           "volumes" % len(self.volumes))
+        old_size = self.volumes[0]['size']
+        if int(new_size) <= old_size:
+            raise rd_exceptions.BadRequest("The new volume 'size' cannot be "
+                        "less than the current volume size of '%s'" % old_size)
+        # Set the task to Resizing before sending off to the taskmanager
+        self.db_info.task_status = InstanceTasks.RESIZING
+        self.db_info.save()
+        task_api.API(self.context).resize_volume(new_size, self.id)
+
 
     def restart(self):
         if self.server.status in SERVER_INVALID_ACTION_STATUSES:
