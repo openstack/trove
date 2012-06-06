@@ -594,8 +594,10 @@ def create_server_list_matcher(server_list):
 def create_volumes_list_matcher(volume_list):
     # Returns a method which finds a volume from the given list.
     def find_volumes(server_id):
-        return [volume for volume in volume_list if server_id in
-                [attachment["server_id"] for attachment in volume.attachments]]
+        return [{'id': volume.id, 'size': volume.size}
+                    for volume in volume_list
+                        if server_id in [attachment["server_id"]
+                            for attachment in volume.attachments]]
     return find_volumes
 
 
