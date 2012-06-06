@@ -39,6 +39,8 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPBadRequest: [
             exception.BadRequest,
+            exception.DatabaseAlreadyExists,
+            exception.UserAlreadyExists
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,

@@ -75,10 +75,11 @@ class API(object):
         LOG.debug(_("Creating Users for Instance %s"), self.id)
         self._cast("create_user", users=users)
 
-    def list_users(self, limit=None, marker=None):
+    def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users"""
         LOG.debug(_("Listing Users for Instance %s"), self.id)
-        return self._call("list_users", limit=limit, marker=marker)
+        return self._call("list_users", limit=limit, marker=marker,
+                                        include_marker=include_marker)
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
@@ -91,10 +92,11 @@ class API(object):
         LOG.debug(_("Creating databases for Instance %s"), self.id)
         self._cast("create_database", databases=databases)
 
-    def list_databases(self, limit=None, marker=None):
+    def list_databases(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list databases"""
         LOG.debug(_("Listing databases for Instance %s"), self.id)
-        return self._call("list_databases", limit=limit, marker=marker)
+        return self._call("list_databases", limit=limit, marker=marker,
+                                            include_marker=include_marker)
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database

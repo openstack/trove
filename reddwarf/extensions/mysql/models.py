@@ -99,7 +99,15 @@ class User(object):
     def create(cls, context, instance_id, users):
         # Load InstanceServiceStatus to verify if it's running
         load_and_verify(context, instance_id)
-        create_guest_client(context, instance_id).create_user(users)
+        client = create_guest_client(context, instance_id)
+        for user in users:
+            user_name = user['_name']
+            existing_users, _nadda = Users.load_with_client(client, limit=1,
+                marker=user_name, include_marker=True)
+            if len(existing_users) > 0 and \
+               str(existing_users[0].name) == str(user_name):
+                raise exception.UserAlreadyExists(name=user_name)
+        return client.create_user(users)
 
     @classmethod
     def delete(cls, context, instance_id, username):
@@ -155,18 +163,29 @@ class RootHistory(object):
         return history
 
 
+def load_via_context(cls, context, instance_id):
+    """Creates guest and fetches pagination arguments from the context."""
+    load_and_verify(context, instance_id)
+    limit = int(context.limit or cls.DEFAULT_LIMIT)
+    limit = cls.DEFAULT_LIMIT if limit > cls.DEFAULT_LIMIT else limit
+    client = create_guest_client(context, instance_id)
+    # The REST API standard dictates that we *NEVER* include the marker.
+    return cls.load_with_client(client=client, limit=limit,
+                                marker=context.marker, include_marker=False)
+
+
 class Users(object):
 
     DEFAULT_LIMIT = int(config.Config.get('users_page_size', '20'))
 
     @classmethod
     def load(cls, context, instance_id):
-        load_and_verify(context, instance_id)
-        limit = int(context.limit or Users.DEFAULT_LIMIT)
-        limit = Users.DEFAULT_LIMIT if limit > Users.DEFAULT_LIMIT else limit
-        client = create_guest_client(context, instance_id)
+        return load_via_context(cls, context, instance_id)
+
+    @classmethod
+    def load_with_client(cls, client, limit, marker, include_marker):
         user_list, next_marker = client.list_users(limit=limit,
-            marker=context.marker)
+            marker=marker, include_marker=include_marker)
         model_users = []
         for user in user_list:
             mysql_user = guest_models.MySQLUser()
@@ -194,7 +213,15 @@ class Schema(object):
     @classmethod
     def create(cls, context, instance_id, schemas):
         load_and_verify(context, instance_id)
-        create_guest_client(context, instance_id).create_database(schemas)
+        client = create_guest_client(context, instance_id)
+        for schema in schemas:
+            schema_name = schema['_name']
+            existing_schema, _nadda = Schemas.load_with_client(client, limit=1,
+                marker=schema_name, include_marker=True)
+            if len(existing_schema) > 0 and \
+               str(existing_schema[0].name) == str(schema_name):
+                raise exception.DatabaseAlreadyExists(name=schema_name)
+        return client.create_database(schemas)
 
     @classmethod
     def delete(cls, context, instance_id, schema):
@@ -208,13 +235,12 @@ class Schemas(object):
 
     @classmethod
     def load(cls, context, instance_id):
-        load_and_verify(context, instance_id)
-        limit = int(context.limit or Schemas.DEFAULT_LIMIT)
-        if limit > Schemas.DEFAULT_LIMIT:
-            limit = Schemas.DEFAULT_LIMIT
-        client = create_guest_client(context, instance_id)
+        return load_via_context(cls, context, instance_id)
+
+    @classmethod
+    def load_with_client(cls, client, limit, marker, include_marker):
         schemas, next_marker = client.list_databases(limit=limit,
-                                                     marker=context.marker)
+            marker=marker, include_marker=include_marker)
         model_schemas = []
         for schema in schemas:
             mysql_schema = guest_models.MySQLDatabase()
