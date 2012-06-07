@@ -67,7 +67,10 @@ DBAAS_MYCNF = "/etc/dbaas/my.cnf/my.cnf.%dM"
 MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONFIG = config.Config
-
+INCLUDE_MARKER_OPERATORS = {
+    True: ">=",
+    False: ">"
+}
 
 def generate_random_password():
     return str(uuid.uuid4())
@@ -391,7 +394,7 @@ class MySqlAdmin(object):
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
 
-    def list_databases(self, limit=None, marker=None):
+    def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance"""
         LOG.debug(_("---Listing Databases---"))
         databases = []
@@ -416,7 +419,8 @@ class MySqlAdmin(object):
             if limit:
                 q.limit = limit + 1
             if marker:
-                q.where.append("schema_name > '%s'" % marker)
+                q.where.append("schema_name %s '%s'"
+                    % (INCLUDE_MARKER_OPERATORS[include_marker], marker))
             t = text(str(q))
             database_names = client.execute(t)
             next_marker = None
@@ -436,7 +440,7 @@ class MySqlAdmin(object):
             next_marker = None
         return databases, next_marker
 
-    def list_users(self, limit=None, marker=None):
+    def list_users(self, limit=None, marker=None, include_marker=False):
         """List users that have access to the database"""
         LOG.debug(_("---Listing Users---"))
         users = []
@@ -449,7 +453,8 @@ class MySqlAdmin(object):
             q.where = ["host != 'localhost'"]
             q.order = ['User']
             if marker:
-                q.where.append("User > '%s'" % marker)
+                q.where.append("User %s '%s'"
+                    % (INCLUDE_MARKER_OPERATORS[include_marker], marker))
             if limit:
                 q.limit = limit + 1
             t = text(str(q))
@@ -481,6 +486,7 @@ class MySqlAdmin(object):
         if result.rowcount <= limit:
             next_marker = None
         LOG.debug("users = " + str(users))
+
         return users, next_marker
 
 
@@ -505,11 +511,11 @@ class DBaaSAgent(object):
     def delete_user(self, user):
         MySqlAdmin().delete_user(user)
 
-    def list_databases(self, limit=None, marker=None):
-        return MySqlAdmin().list_databases(limit, marker)
+    def list_databases(self, limit=None, marker=None, include_marker=False):
+        return MySqlAdmin().list_databases(limit, marker, include_marker)
 
-    def list_users(self, limit=None, marker=None):
-        return MySqlAdmin().list_users(limit, marker)
+    def list_users(self, limit=None, marker=None, include_marker=False):
+        return MySqlAdmin().list_users(limit, marker, include_marker)
 
     def enable_root(self):
         return MySqlAdmin().enable_root()

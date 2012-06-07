@@ -99,6 +99,16 @@ class MissingKey(BadRequest):
     message = _("Required element/key - %(key)s was not specified")
 
 
+class DatabaseAlreadyExists(BadRequest):
+
+    message = _('A database with the name "%(name)s" already exists.')
+
+
+class UserAlreadyExists(BadRequest):
+
+    message = _('A user with the name "%(name)s" already exists.')
+
+
 class UnprocessableEntity(ReddwarfError):
 
     message = _("Unable to process the contained request")
@@ -133,3 +143,4 @@ class BadValue(ReddwarfError):
 
 class PollTimeOut(ReddwarfError):
     message = _("Polling request timed out.")
+
