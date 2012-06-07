@@ -47,6 +47,9 @@ reddwarf_auth_url = http://0.0.0.0:5000/v2.0
 # Manager impl for the taskmanager
 taskmanager_manager=reddwarf.taskmanager.manager.TaskManager
 
+# Reddwarf DNS
+reddwarf_dns_support = False
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

@@ -20,7 +20,6 @@
 import eventlet
 import logging
 import netaddr
-import time
 
 from reddwarf import db
 
@@ -36,7 +35,6 @@ from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.common.utils import poll_until
-from reddwarf.guestagent import api as guest_api
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.taskmanager import api as task_api
@@ -133,16 +131,6 @@ SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 VALID_ACTION_STATUSES = ["ACTIVE"]
 
 
-def ExecuteInstanceMethod(context, id, method_name, *args, **kwargs):
-    """Loads an instance and executes a method."""
-    arg_str = utils.create_method_args_string(*args, **kwargs)
-    LOG.debug("Loading instance %s to make the following call: %s(%s)."
-              % (id, method_name, arg_str))
-    instance = Instance.load(context, id)
-    func = getattr(instance, method_name)
-    func(*args, **kwargs)
-
-
 class Instance(object):
     """Represents an instance.
 
@@ -156,16 +144,6 @@ class Instance(object):
         self.server = server
         self.service_status = service_status
         self.volumes = volumes
-
-    def call_async(self, method, *args, **kwargs):
-        """Calls a method on this instance in the background and returns.
-
-        This will be a call to some module similar to the guest API, but for
-        now we just call the real method in eventlet.
-
-        """
-        eventlet.spawn(ExecuteInstanceMethod, self.context, self.db_info.id,
-                       method.__name__, *args, **kwargs)
 
     @staticmethod
     def load(context, id):
@@ -190,26 +168,10 @@ class Instance(object):
                                                     % self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
                   self.server.id)
-        self._delete_server()
         LOG.debug(_(" ... setting status to DELETING."))
         self.db_info.task_status = InstanceTasks.DELETING
         self.db_info.save()
-        #TODO(tim.simpson): Put this in the task manager somehow to shepard
-        #                   deletion?
-
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
-        LOG.debug(_("reddwarf dns support = %s") % dns_support)
-        if utils.bool_from_string(dns_support):
-            dns_client = create_dns_client(self.context)
-            dns_client.delete_instance_entry(instance_id=self.db_info['id'])
-
-    def _delete_server(self):
-        try:
-            self.server.delete()
-        except nova_exceptions.NotFound, e:
-            raise rd_exceptions.NotFound(uuid=self.id)
-        except nova_exceptions.ClientException, e:
-            raise rd_exceptions.ReddwarfError()
+        task_api.API(self.context).delete_instance(self.id)
 
     @classmethod
     def _create_volume(cls, context, db_info, volume_size):
@@ -428,14 +390,6 @@ class Instance(object):
             LOG.debug(_(msg) % self.status)
             raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
 
-    def _refresh_compute_server_info(self):
-        """Refreshes the compute server field."""
-        server, volumes = load_server_with_volumes(self.context,
-            self.db_info.id, self.db_info.compute_instance_id)
-        self.server = server
-        self.volumes = volumes
-        return server
-
     def resize_flavor(self, new_flavor_id):
         self.validate_can_perform_resize()
         LOG.debug("resizing instance %s flavor to %s"
@@ -457,67 +411,8 @@ class Instance(object):
         self.db_info.task_status = InstanceTasks.RESIZING
         self.db_info.save()
         LOG.debug("Instance %s set to RESIZING." % self.id)
-        self.call_async(self.resize_flavor_async, new_flavor_id,
-                        old_flavor_size, new_flavor_size)
-
-    def resize_flavor_async(self, new_flavor_id, old_memory_size,
-                            updated_memory_size):
-        def resize_status_msg():
-            return "instance_id=%s, status=%s, flavor_id=%s, " \
-                   "dest. flavor id=%s)" % (self.id, self.server.status, \
-                    str(self.flavor['id']), str(new_flavor_id))
-        try:
-            LOG.debug("Instance %s calling stop_mysql..." % self.id)
-            guest = create_guest_client(self.context, self.db_info.id)
-            guest.stop_mysql()
-            try:
-                LOG.debug("Instance %s calling Compute resize..." % self.id)
-                self.server.resize(new_flavor_id)
-                #TODO(tim.simpson): Figure out some way to message the
-                #                   following exceptions:
-                # nova_exceptions.NotFound (for the flavor)
-                # nova_exceptions.OverLimit
-
-                self._refresh_compute_server_info()
-                # Do initial check and confirm the status is appropriate.
-                if self.server.status != "RESIZE" and \
-                    self.server.status != "VERIFY_RESIZE":
-                    raise ReddwarfError("Unexpected status after call to "
-                        "resize! : %s" % resize_status_msg())
-
-                # Wait for the flavor to change.
-                #TODO(tim.simpson): Bring back our good friend poll_until.
-                while(self.server.status == "RESIZE"):
-                    LOG.debug("Resizing... currently, %s" % resize_status_msg())
-                    time.sleep(1)
-                    self._refresh_compute_server_info()
-
-                # Do check to make sure the status and flavor id are correct.
-                if (str(self.flavor['id']) != str(new_flavor_id) or
-                    self.server.status != "VERIFY_RESIZE"):
-                    raise ReddwarfError("Assertion failed! flavor_id=%s "
-                        "and not %s"
-                        % (self.server.status, str(self.flavor['id'])))
-
-                # Confirm the resize with Nova.
-                LOG.debug("Instance %s calling Compute confirm resize..."
-                          % self.id)
-                self.server.confirm_resize()
-            except Exception as ex:
-                updated_memory_size = old_memory_size
-                LOG.error("Error during resize compute! Aborting action.")
-                LOG.error(ex)
-                raise
-            finally:
-                # Tell the guest to restart MySQL with the new RAM size.
-                # This is in the finally because we have to call this, or
-                # else MySQL could stay turned off on an otherwise usable
-                # instance.
-                LOG.debug("Instance %s starting mysql..." % self.id)
-                guest.start_mysql_with_conf_changes(updated_memory_size)
-        finally:
-            self.db_info.task_status = InstanceTasks.NONE
-            self.db_info.save()
+        task_api.API(self.context).resize_flavor(self.id, new_flavor_id,
+                    old_flavor_size, new_flavor_size)
 
     def resize_volume(self, new_size):
         LOG.info("Resizing volume of instance %s..." % self.id)
