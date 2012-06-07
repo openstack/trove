@@ -317,9 +317,18 @@ class InstanceController(BaseController):
             vol_enabled = utils.bool_from_string(
                                 config.Config.get('reddwarf_volume_support',
                                                   'True'))
+            must_have_vol = utils.bool_from_string(
+                                config.Config.get('reddwarf_must_use_volume',
+                                                  'False'))
             if vol_enabled:
-                volume_size = body['instance']['volume']['size']
-                InstanceController._validate_volume_size(volume_size)
+                if body['instance'].get('volume', None):
+                    if body['instance']['volume'].get('size', None):
+                        volume_size = body['instance']['volume']['size']
+                        InstanceController._validate_volume_size(volume_size)
+                    elif must_have_vol:
+                        raise exception.MissingKey(key="size")
+                elif must_have_vol:
+                    raise exception.MissingKey(key="volume")
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise exception.ReddwarfError("Required element/key - %s "
