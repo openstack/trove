@@ -131,7 +131,7 @@ class InstanceController(BaseController):
     def _action_restart(self, instance, body):
         instance.validate_can_perform_restart_or_reboot()
         instance.restart()
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(None, 202)
 
     def _action_resize(self, instance, body):
         """
@@ -169,12 +169,12 @@ class InstanceController(BaseController):
     def _action_resize_volume(self, instance, volume):
         InstanceController._validate_resize_volume(volume)
         instance.resize_volume(volume['size'])
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(None, 202)
 
     def _action_resize_flavor(self, instance, flavorRef):
         new_flavor_id = utils.get_id_from_href(flavorRef)
         instance.resize_flavor(new_flavor_id)
-        return webob.exc.HTTPAccepted()
+        return wsgi.Result(None, 202)
 
     def detail(self, req, tenant_id):
         """Return all instances."""
