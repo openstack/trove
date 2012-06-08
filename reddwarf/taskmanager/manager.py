@@ -64,6 +64,10 @@ class TaskManager(service.Manager):
         instance_tasks.resize_flavor(new_flavor_id, old_flavor_size,
                                      new_flavor_size)
 
+    def restart(self, context, instance_id):
+        instance_tasks = models.InstanceTasks.load(context, instance_id)
+        instance_tasks.restart()
+
     def delete_instance(self, context, instance_id):
         instance_tasks = models.InstanceTasks.load(context, instance_id)
         instance_tasks.delete_instance()
