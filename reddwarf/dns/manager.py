@@ -77,10 +77,12 @@ class DnsManager(object):
         Use instance by default
         """
         dns_support = config.Config.get('reddwarf_dns_support', 'False')
+        LOG.debug(_("reddwarf dns support = %s") % dns_support)
         if utils.bool_from_string(dns_support):
             entry = self.entry_factory.create_entry(instance.id)
             instance.hostname = entry.name
             instance.save()
+            LOG.debug("Saved the hostname as %s " % instance.hostname)
         else:
             instance.hostname = instance.name
             instance.save()

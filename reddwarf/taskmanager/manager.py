@@ -23,6 +23,7 @@ from eventlet import greenthread
 
 from reddwarf.common import service
 from reddwarf.taskmanager import models
+from reddwarf.taskmanager.models import InstanceTasks
 
 
 LOG = logging.getLogger(__name__)
@@ -66,5 +67,12 @@ class TaskManager(service.Manager):
     def delete_instance(self, context, instance_id):
         instance_tasks = models.InstanceTasks.load(context, instance_id)
         instance_tasks.delete_instance()
+
+    def create_instance(self, context, instance_id, name, flavor_ref,
+                        image_id, databases, service_type, volume_size):
+        instance_tasks = InstanceTasks(context)
+        instance_tasks.create_instance(instance_id, name, flavor_ref,
+                                       image_id, databases,
+                                       service_type, volume_size)
 
 
