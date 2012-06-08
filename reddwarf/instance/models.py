@@ -131,7 +131,119 @@ SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 VALID_ACTION_STATUSES = ["ACTIVE"]
 
 
-class Instance(object):
+class SimpleInstance(object):
+    """
+
+    Simple model is a quick hack for when server/volumes is not available, and
+    all we have is database info. Example is create instance response, when the
+    async call to server/volume may not have completed yet.
+
+    """
+
+    def __init__(self, context, db_info, service_status):
+        self.context = context
+        self.db_info = db_info
+        self.service_status = service_status
+        self.volumes = [{'size': self.db_info.volume_size }]
+
+    @staticmethod
+    def load(context, id):
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        elif id is None:
+            raise TypeError("Argument id not defined.")
+        try:
+            db_info = DBInstance.find_by(id=id)
+        except rd_exceptions.NotFound:
+            raise rd_exceptions.NotFound(uuid=id)
+        task_status = db_info.task_status
+        service_status = InstanceServiceStatus.find_by(instance_id=id)
+        LOG.info("service status=%s" % service_status)
+        return SimpleInstance(context, db_info, service_status)
+
+    @property
+    def name(self):
+        return self.db_info.name
+
+    @property
+    def id(self):
+        return self.db_info.id
+
+    @property
+    def hostname(self):
+        return self.db_info.hostname
+
+    @property
+    def status(self):
+        # If the service status is NEW, then we are building.
+        if ServiceStatuses.NEW == self.service_status.status:
+            return InstanceStatus.BUILD
+
+    @property
+    def created(self):
+        return self.db_info.created
+
+    @property
+    def updated(self):
+        return self.db_info.updated
+
+    @property
+    def addresses(self):
+        return None
+
+    @property
+    def is_building(self):
+        return self.status in [InstanceStatus.BUILD]
+
+    @property
+    def is_sql_running(self):
+        """True if the service status indicates MySQL is up and running."""
+        return self.service_status.status in MYSQL_RESPONSIVE_STATUSES
+
+    @property
+    def links(self):
+        """
+        The links here are just used for structural format. The actual link is
+        created in the views by replacing the matching pieces from the request
+        """
+        links = [
+            {
+                "href": "https://localhost/v1.0/tenant_id/instances/instance_id",
+                "rel": "self"
+            },
+            {
+                "href": "https://localhost/instances/instance_id",
+                "rel": "bookmark"
+            }
+        ]
+        return links
+
+    @property
+    def flavor_links(self):
+        links = [
+            {
+                "href": "https://localhost/v1.0/tenant_id/flavors/flavor_id",
+                "rel": "self"
+            },
+            {
+                "href": "https://localhost/flavors/flavor_id",
+                "rel": "bookmark"
+            }
+        ]
+        return links
+
+    def restart(self):
+        # Just so it doesnt blow if restart is accidentally called
+        raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
+                                    % self.id)
+
+    def delete(self):
+        # Just so it doesnt blow if delete is accidentally called
+        raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
+                                    % self.id)
+
+
+class Instance(SimpleInstance):
     """Represents an instance.
 
     The life span of this object should be limited. Do not store them or
@@ -139,10 +251,8 @@ class Instance(object):
     """
 
     def __init__(self, context, db_info, server, service_status, volumes):
-        self.context = context
-        self.db_info = db_info
+        super(Instance, self).__init__(context, db_info, service_status)
         self.server = server
-        self.service_status = service_status
         self.volumes = volumes
 
     @staticmethod
@@ -155,11 +265,19 @@ class Instance(object):
             db_info = DBInstance.find_by(id=id)
         except rd_exceptions.NotFound:
             raise rd_exceptions.NotFound(uuid=id)
-        server, volumes = load_server_with_volumes(context, db_info.id,
-            db_info.compute_instance_id)
+
         task_status = db_info.task_status
         service_status = InstanceServiceStatus.find_by(instance_id=id)
         LOG.info("service status=%s" % service_status)
+        if db_info.compute_instance_id is None:
+            LOG.debug("Missing server_id for instance %s " % db_info.id)
+            # TODO: Should it raise exception or return SimpleInstance?
+            # If I return SimpleInstance, somebody will invoke delete on it and
+            # it will be method not found.
+            return SimpleInstance(context, db_info, service_status)
+
+        server, volumes = load_server_with_volumes(context, db_info.id,
+            db_info.compute_instance_id)
         return Instance(context, db_info, server, service_status, volumes)
 
     def delete(self, force=False):
@@ -174,140 +292,31 @@ class Instance(object):
         task_api.API(self.context).delete_instance(self.id)
 
     @classmethod
-    def _create_volume(cls, context, db_info, volume_size):
-        volume_support = config.Config.get("reddwarf_volume_support", 'False')
-        LOG.debug(_("reddwarf volume support = %s") % volume_support)
-        if utils.bool_from_string(volume_support):
-            LOG.debug(_("Starting to create the volume for the instance"))
-            volume_client = create_nova_volume_client(context)
-            volume_desc = ("mysql volume for %s" % db_info.id)
-            volume_ref = volume_client.volumes.create(
-                                        volume_size,
-                                        display_name="mysql-%s" % db_info.id,
-                                        display_description=volume_desc)
-            # Record the volume ID in case something goes wrong.
-            db_info.volume_id = volume_ref.id
-            db_info.save()
-            #TODO(cp16net) this is bad to wait here for the volume create
-            # before returning but this was a quick way to get it working
-            # for now we need this to go into the task manager
-            v_ref = volume_client.volumes.get(volume_ref.id)
-            while not v_ref.status in ['available', 'error']:
-                LOG.debug(_("waiting for volume [volume.status=%s]") %
-                            v_ref.status)
-                greenthread.sleep(1)
-                v_ref = volume_client.volumes.get(volume_ref.id)
-
-            if v_ref.status in ['error']:
-                raise rd_exceptions.VolumeCreationFailure()
-            LOG.debug(_("Created volume %s") % v_ref)
-            # The mapping is in the format:
-            # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
-            # setting the delete_on_terminate instance to true=1
-            mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
-            bdm = CONFIG.get('block_device_mapping', 'vdb')
-            block_device = {bdm: mapping}
-            volumes = [{'id': v_ref.id,
-                       'size': v_ref.size}]
-            LOG.debug("block_device = %s" % block_device)
-            LOG.debug("volume = %s" % volumes)
-
-            device_path = CONFIG.get('device_path', '/dev/vdb')
-            mount_point = CONFIG.get('mount_point', '/var/lib/mysql')
-            LOG.debug(_("device_path = %s") % device_path)
-            LOG.debug(_("mount_point = %s") % mount_point)
-        else:
-            LOG.debug(_("Skipping setting up the volume"))
-            block_device = None
-            device_path = None
-            mount_point = None
-            volumes = None
-            #end volume_support
-        #block_device = ""
-        #device_path = /dev/vdb
-        #mount_point = /var/lib/mysql
-        volume_info = {'block_device': block_device,
-                       'device_path': device_path,
-                       'mount_point': mount_point,
-                       'volumes': volumes}
-        return volume_info
-
-    @classmethod
     def create(cls, context, name, flavor_ref, image_id,
                databases, service_type, volume_size):
-        db_info = DBInstance.create(name=name,
-            task_status=InstanceTasks.NONE)
+        flavor_id = utils.get_id_from_href(flavor_ref)
+        db_info = DBInstance.create(name=name, volume_size=volume_size,
+            flavor_id =flavor_id, task_status=InstanceTasks.NONE)
         LOG.debug(_("Created new Reddwarf instance %s...") % db_info.id)
 
-        if volume_size:
-            volume_info = cls._create_volume(context, db_info, volume_size)
-            block_device_mapping = volume_info['block_device']
-            device_path = volume_info['device_path']
-            mount_point = volume_info['mount_point']
-            volumes = volume_info['volumes']
-        else:
-            block_device_mapping = None
-            device_path = None
-            mount_point = None
-            volumes = []
-
-        client = create_nova_client(context)
-        files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
-                 (db_info.id, service_type)}
-        server = client.servers.create(name, image_id, flavor_ref,
-                     files=files,
-                     block_device_mapping=block_device_mapping)
-        LOG.debug(_("Created new compute instance %s.") % server.id)
-
-        db_info.compute_instance_id = server.id
-        db_info.save()
-        service_status = InstanceServiceStatus.create(instance_id=db_info.id,
-            status=ServiceStatuses.NEW)
-        # Now wait for the response from the create to do additional work
-
-        guest = create_guest_client(context, db_info.id)
-
-        # populate the databases
-        model_schemas = populate_databases(databases)
-        guest.prepare(512, model_schemas, users=[],
-                      device_path=device_path,
-                      mount_point=mount_point)
-
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
-        LOG.debug(_("reddwarf dns support = %s") % dns_support)
+        task_api.API(context).create_instance(db_info.id, name,
+                                flavor_ref, image_id, databases, service_type,
+                                volume_size)
+        # Defaults the hostname to instance name of dns is disabled.
         dns_client = create_dns_client(context)
-        # Default the hostname to instance name if no dns support
         dns_client.update_hostname(db_info)
-        if utils.bool_from_string(dns_support):
 
-            def get_server():
-                return client.servers.get(server.id)
+        #Check to see if a New status has already been created
+        service_status = InstanceServiceStatus.get_by(instance_id=db_info.id)
+        if service_status is None:
+            service_status = InstanceServiceStatus.create(
+                                    instance_id=db_info.id,
+                                    status=ServiceStatuses.NEW)
 
-            def ip_is_available(server):
-                if server.addresses != {}:
-                    return True
-                elif server.addresses == {} and\
-                     server.status != InstanceStatus.ERROR:
-                    return False
-                elif server.addresses == {} and\
-                     server.status == InstanceStatus.ERROR:
-                    LOG.error(_("Instance IP not available, instance (%s): server had "
-                                " status (%s).") % (db_info['id'], server.status))
-                    raise rd_exceptions.ReddwarfError(
-                        status=server.status)
-            poll_until(get_server, ip_is_available, sleep_time=1, time_out=60*2)
-
-            dns_client.create_instance_entry(db_info['id'],
-                          get_ip_address(server.addresses))
-
-        return Instance(context, db_info, server, service_status, volumes)
+        return SimpleInstance(context, db_info, service_status)
 
     def get_guest(self):
         return create_guest_client(self.context, self.db_info.id)
-
-    @property
-    def id(self):
-        return self.db_info.id
 
     @property
     def is_building(self):
@@ -349,14 +358,6 @@ class Instance(object):
                 return InstanceStatus.ERROR
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
-
-    @property
-    def created(self):
-        return self.db_info.created
-
-    @property
-    def updated(self):
-        return self.db_info.updated
 
     @property
     def flavor(self):

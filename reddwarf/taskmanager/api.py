@@ -73,3 +73,11 @@ class API(object):
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
         self._cast("delete_instance", instance_id=instance_id)
+
+    def create_instance(self, instance_id, name, flavor_ref, image_id,
+                        databases, service_type, volume_size):
+        LOG.debug("Making async call to create instance %s " % instance_id)
+        self._cast("create_instance", instance_id=instance_id, name=name,
+                   flavor_ref=flavor_ref, image_id=image_id,
+                   databases=databases, service_type=service_type,
+                   volume_size=volume_size)

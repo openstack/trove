@@ -59,7 +59,7 @@ class InstanceView(object):
         }
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         if utils.bool_from_string(dns_support):
-            instance_dict['hostname'] = self.instance.db_info.hostname
+            instance_dict['hostname'] = self.instance.hostname
         if self.add_addresses and ip is not None and len(ip) > 0:
             instance_dict['ip'] = ip
         if self.add_volumes and volumes is not None:
@@ -118,8 +118,49 @@ class InstanceDetailView(InstanceView):
     def data(self):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
-        result['instance']['flavor'] = self.instance.flavor
+        result['instance']['flavor'] = self._build_flavor()
         result['instance']['updated'] = self.instance.updated
+        return result
+
+    def _build_flavor(self):
+        try:
+            return self.instance.flavor
+        except:
+            return {
+                'id': self.instance.db_info.flavor_id,
+                'links': self._build_flavor_links(),
+                }
+
+    def _build_flavor_links(self):
+        result = []
+        #scheme = self.req.scheme
+        scheme = 'https'  # Forcing https
+        endpoint = self.req.host
+        splitpath = self.req.path.split('/')
+        detailed = ''
+        if splitpath[-1] == 'detail':
+            detailed = '/detail'
+            splitpath.pop(-1)
+        flavorid = self.instance.db_info.flavor_id
+        if str(splitpath[-1]) == str(flavorid):
+            splitpath.pop(-1)
+        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
+        for link in self.instance.flavor_links:
+            rlink = link
+            href = rlink['href']
+            if rlink['rel'] == 'self':
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+            elif rlink['rel'] == 'bookmark':
+                splitpath.pop(2)  # Remove the version.
+                splitpath.pop(1)  # Remove the tenant id.
+                path = '/'.join(splitpath)
+                href = href_template % locals()
+
+            rlink['href'] = href
+            result.append(rlink)
+        for link in result:
+            link['href'] = link['href'].replace('instances', 'flavors')
         return result
 
 
