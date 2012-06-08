@@ -447,13 +447,8 @@ class Instance(SimpleInstance):
         #                   status is no longer in effect.
         self.db_info.task_status = InstanceTasks.REBOOTING
         self.db_info.save()
-        try:
-            self.get_guest().restart()
-        except rd_exceptions.GuestError:
-            LOG.error("Failure to restart MySQL.")
-        finally:
-            self.db_info.task_status = InstanceTasks.NONE
-            self.db_info.save()
+        LOG.debug("Instance %s set to RESTARTING." % self.id)
+        task_api.API(self.context).restart(self.id)
 
     def validate_can_perform_restart_or_reboot(self):
         """

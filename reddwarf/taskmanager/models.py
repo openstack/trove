@@ -20,6 +20,7 @@ from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import remote
 from reddwarf.common import utils
+from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import PollTimeOut
 from reddwarf.common.exception import VolumeCreationFailure
 from reddwarf.common.exception import NotFound
@@ -209,6 +210,16 @@ class InstanceTasks:
         except Exception, e:
             LOG.error(e)
             self._log_service_status(instance_id, ServiceStatuses.UNKNOWN)
+
+    def restart(self):
+        LOG.debug("Restarting instance %s " % self.db_info.id)
+        try:
+            self.guest.restart()
+        except GuestError:
+            LOG.error("Failure to restart instance %s " % self.db_info.id)
+        finally:
+            self.db_info.task_status = inst_models.InstanceTasks.NONE
+            self.db_info.save()
 
     def _create_volume(self, instance_id, volume_size):
         LOG.info("Entering create_volume")

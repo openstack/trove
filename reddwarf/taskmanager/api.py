@@ -70,6 +70,10 @@ class API(object):
                    old_flavor_size=old_flavor_size,
                    new_flavor_size=new_flavor_size)
 
+    def restart(self, instance_id):
+        LOG.debug("Making async call to restart instance: %s" % instance_id)
+        self._cast("restart", instance_id=instance_id)
+
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
         self._cast("delete_instance", instance_id=instance_id)
