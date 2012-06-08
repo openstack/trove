@@ -20,6 +20,7 @@ from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
 import time
 import uuid
+from reddwarf.tests.fakes.common import authorize
 from reddwarf.tests.fakes.common import EventSimulator
 
 
@@ -167,6 +168,14 @@ class FakeServer(object):
     @property
     def updated(self):
         return "2012-01-25T21:55:51Z"
+
+    @property
+    def host(self):
+        return "fakehost"
+
+    @property
+    def tenant(self):
+        return self.owner.tenant
 
 
 # The global var contains the servers dictionary in use for the life of these
@@ -369,6 +378,45 @@ class FakeVolumes(object):
         self.events.add_event(1.0, finish_resize)
 
 
+class FakeAccount(object):
+
+    def __init__(self, id, servers):
+        self.id = id
+        self.servers = self._servers_to_dict(servers)
+
+    def _servers_to_dict(self, servers):
+        ret = []
+        for server in servers:
+            server_dict = {}
+            server_dict['id'] = server.id
+            server_dict['name'] = server.name
+            server_dict['status'] = server.status
+            server_dict['host'] = server.host
+            ret.append(server_dict)
+        return ret
+
+
+class FakeAccounts(object):
+
+    def __init__(self, context, servers):
+
+        self.context = context
+        self.db = FAKE_SERVERS_DB
+        self.servers = servers
+        self.events = EventSimulator()
+
+    def _belongs_to_tenant(self, tenant, id):
+        server = self.db[id]
+        return server.tenant == tenant
+
+    def get_instances(self, id):
+        authorize(self.context)
+
+        servers =  [v for (k, v) in self.db.items()
+                                 if self._belongs_to_tenant(id, v.id)]
+        return FakeAccount(id, servers)
+
+
 FLAVORS = FakeFlavors()
 
 
@@ -380,6 +428,7 @@ class FakeClient(object):
         self.servers = FakeServers(context, self.flavors)
         self.volumes = FakeVolumes(context)
         self.servers.volumes = self.volumes
+        self.accounts = FakeAccounts(context, self.servers)
 
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)

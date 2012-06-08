@@ -20,6 +20,13 @@
 import time
 import stubout
 
+from novaclient import exceptions as nova_exceptions
+
+
+def authorize(context):
+    if not context.user in ['radmin', 'Boss']:
+        raise nova_exceptions.Forbidden(403, "Forbidden")
+
 
 class EventSimulator(object):
     """Simulates a resource that changes over time.
