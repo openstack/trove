@@ -13,8 +13,10 @@
 #    under the License.
 
 from sqlalchemy.schema import Column
+from sqlalchemy.schema import ColumnDefault
 from sqlalchemy.schema import MetaData
 
+from reddwarf.db.sqlalchemy.migrate_repo.schema import Integer
 from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
@@ -25,11 +27,10 @@ def upgrade(migrate_engine):
 
     # add column:
     instances = Table('instances', meta, autoload=True)
-    volume_size = Column('volume_size', String(36))
-    flavor_id = Column('flavor_id', String(36))
-
-    instances.create_column(flavor_id)
-    instances.create_column(volume_size)
+    instances.create_column(Column('flavor_id', String(36), nullable=True))
+    instances.create_column(Column('volume_size', Integer(), nullable=True))
+    instances.create_column(Column('tenant_id', String(36), nullable=True))
+    instances.create_column(Column('server_status', String(64)))
 
 
 def downgrade(migrate_engine):
@@ -41,3 +42,5 @@ def downgrade(migrate_engine):
 
     instances.drop_column('flavor_id')
     instances.drop_column('volume_size')
+    instances.drop_column('tenant_id')
+    instances.drop_column('server_status')

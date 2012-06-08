@@ -267,6 +267,9 @@ class FakeVolume(object):
         self.display_description = display_description
         self.events = EventSimulator()
         self.schedule_status("BUILD", 0.0)
+        # For some reason we grab this thing from device then call it mount
+        # point.
+        self.device = "/var/lib/mysql"
 
     def __repr__(self):
         return ("FakeVolume(id=%s, size=%s, "
@@ -344,6 +347,13 @@ class FakeVolumes(object):
 
     def list(self, detailed=True):
         return [self.db[key] for key in self.db]
+
+    def resize(self, volume_id, new_size):
+        volume = self.get(volume_id)
+        def finish_resize():
+            volume._current_status = "in-use"
+            volume.size = new_size
+        self.events.add_event(1.0, finish_resize)
 
 
 FLAVORS = FakeFlavors()
