@@ -19,6 +19,7 @@ import logging
 from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
 import time
+import uuid
 from reddwarf.tests.fakes.common import EventSimulator
 
 
@@ -170,7 +171,6 @@ class FakeServers(object):
         self.context = context
         self.db = FAKE_SERVERS_DB
         self.flavors = flavors
-        self.next_id = 10
         self.events = EventSimulator()
 
     def can_see(self, id):
@@ -180,8 +180,7 @@ class FakeServers(object):
                server.owner.tenant == self.context.tenant
 
     def create(self, name, image_id, flavor_ref, files, block_device_mapping):
-        id = "FAKE_%d" % self.next_id
-        self.next_id += 1
+        id = "FAKE_%s" % uuid.uuid4()
         volumes = self._get_volumes_from_bdm(block_device_mapping)
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
                             block_device_mapping, volumes)
@@ -290,7 +289,8 @@ class FakeVolume(object):
         for attachment in self.attachments:
             if attachment['server_id'] == server_id:
                 return  # Do nothing
-        self.attachments.append({'server_id':server_id})
+        self.attachments.append({'server_id':server_id,
+                                 'device':self.device})
 
     @property
     def status(self):
@@ -315,7 +315,6 @@ class FakeVolumes(object):
     def __init__(self, context):
         self.context = context
         self.db = FAKE_VOLUMES_DB
-        self.next_id = 10
         self.events = EventSimulator()
 
     def can_see(self, id):
@@ -336,8 +335,7 @@ class FakeVolumes(object):
                 raise nova_exceptions.NotFound(404, "Bad permissions")
 
     def create(self, size, display_name=None, display_description=None):
-        id = "FAKE_VOL_%d" % self.next_id
-        self.next_id += 1
+        id = "FAKE_VOL_%s" % uuid.uuid4()
         volume = FakeVolume(self, self.context, id, size, display_name,
                             display_description)
         self.db[id] = volume
