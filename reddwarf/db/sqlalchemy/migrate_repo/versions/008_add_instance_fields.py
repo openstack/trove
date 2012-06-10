@@ -27,8 +27,6 @@ def upgrade(migrate_engine):
 
     # add column:
     instances = Table('instances', meta, autoload=True)
-    instances.create_column(Column('flavor_id', String(36), nullable=True))
-    instances.create_column(Column('volume_size', Integer(), nullable=True))
     instances.create_column(Column('tenant_id', String(36), nullable=True))
     instances.create_column(Column('server_status', String(64)))
 
@@ -40,7 +38,5 @@ def downgrade(migrate_engine):
     # drop column:
     instances = Table('instances', meta, autoload=True)
 
-    instances.drop_column('flavor_id')
-    instances.drop_column('volume_size')
     instances.drop_column('tenant_id')
     instances.drop_column('server_status')
