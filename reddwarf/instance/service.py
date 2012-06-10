@@ -190,12 +190,11 @@ class InstanceController(BaseController):
         context = req.environ[wsgi.CONTEXT_KEY]
         servers, marker = models.Instances.load(context)
         # TODO(cp16net): need to set the return code correctly
-        view_cls = (views.InstancesDetailView if detailed
-                    else views.InstancesView)
-
-        view = view_cls(servers, req=req, add_addresses=self.add_addresses,
-                        add_volumes=self.add_volumes)
-
+        if detailed:
+            view = views.InstancesDetailView(servers, req=req,
+                                             add_volumes=self.add_volumes)
+        else:
+            view = views.InstancesView(servers, req=req)
         paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
                                                    marker)
         return wsgi.Result(paged.data(), 200)
@@ -207,7 +206,7 @@ class InstanceController(BaseController):
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        server = models.Instance.load(context=context, id=id)
+        server = models.SimpleInstance.load(context=context, id=id)
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(views.InstanceDetailView(server, req=req,
                            add_addresses=self.add_addresses,
@@ -250,6 +249,7 @@ class InstanceController(BaseController):
         image_id = service['image_id']
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
+        flavor_id = utils.get_id_from_href(flavor_ref)
         databases = body['instance'].get('databases')
         if databases is None:
             databases = []
@@ -260,7 +260,7 @@ class InstanceController(BaseController):
                raise exception.BadValue(msg=e)
         else:
             volume_size = None
-        instance = models.Instance.create(context, name, flavor_ref,
+        instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases,
                                           service_type, volume_size)
 

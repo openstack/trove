@@ -23,7 +23,8 @@ from eventlet import greenthread
 
 from reddwarf.common import service
 from reddwarf.taskmanager import models
-from reddwarf.taskmanager.models import InstanceTasks
+from reddwarf.taskmanager.models import BuiltInstanceTasks
+from reddwarf.taskmanager.models import FreshInstanceTasks
 
 
 LOG = logging.getLogger(__name__)
@@ -55,28 +56,28 @@ class TaskManager(service.Manager):
             del self.tasks[greenthread.getcurrent()]
 
     def resize_volume(self, context, instance_id, new_size):
-        instance_tasks = models.InstanceTasks.load(context, instance_id)
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.resize_volume(new_size)
 
     def resize_flavor(self, context, instance_id, new_flavor_id,
-                      old_flavor_size, new_flavor_size):
-        instance_tasks = models.InstanceTasks.load(context, instance_id)
-        instance_tasks.resize_flavor(new_flavor_id, old_flavor_size,
-                                     new_flavor_size)
+                      old_memory_size, new_memory_size):
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+        instance_tasks.resize_flavor(new_flavor_id, old_memory_size,
+                                     new_memory_size)
 
     def restart(self, context, instance_id):
-        instance_tasks = models.InstanceTasks.load(context, instance_id)
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.restart()
 
     def delete_instance(self, context, instance_id):
-        instance_tasks = models.InstanceTasks.load(context, instance_id)
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.delete_instance()
 
-    def create_instance(self, context, instance_id, name, flavor_ref,
-                        image_id, databases, service_type, volume_size):
-        instance_tasks = InstanceTasks(context)
-        instance_tasks.create_instance(instance_id, name, flavor_ref,
-                                       image_id, databases,
-                                       service_type, volume_size)
+    def create_instance(self, context, instance_id, name, flavor_id,
+                        flavor_ram, image_id, databases, service_type,
+                        volume_size):
+        instance_tasks = FreshInstanceTasks.load(context, instance_id)
+        instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
+                                       databases, service_type, volume_size)
 
 

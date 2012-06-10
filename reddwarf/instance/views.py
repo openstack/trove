@@ -18,6 +18,7 @@
 import logging
 from reddwarf.common import config
 from reddwarf.common import utils
+from reddwarf.common import wsgi
 
 LOG = logging.getLogger(__name__)
 
@@ -33,13 +34,8 @@ def get_ip_address(addresses):
         return [addr.get('addr') for addr in addresses['usernet']]
 
 
-def get_volumes(volumes):
-    LOG.debug("volumes - %s" % volumes)
-    if volumes is not None and len(volumes) > 0:
-        return {'size': volumes[0].get('size')}
-
-
 class InstanceView(object):
+    """Uses a SimpleInstance."""
 
     def __init__(self, instance, req=None, add_addresses=False,
                  add_volumes=False):
@@ -49,8 +45,6 @@ class InstanceView(object):
         self.req = req
 
     def data(self):
-        ip = get_ip_address(self.instance.addresses)
-        volumes = get_volumes(self.instance.volumes)
         instance_dict = {
             "id": self.instance.id,
             "name": self.instance.name,
@@ -60,66 +54,75 @@ class InstanceView(object):
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         if utils.bool_from_string(dns_support):
             instance_dict['hostname'] = self.instance.hostname
-        if self.add_addresses and ip is not None and len(ip) > 0:
-            instance_dict['ip'] = ip
-        if self.add_volumes and volumes is not None:
-            instance_dict['volume'] = volumes
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
     def _build_links(self):
-        # TODO(ed-): Make generic, move to common?
-        result = []
-        scheme = 'https'  # Forcing https
-        links = [link for link in self.instance.links]
-        links = [link['href'] for link in links if link['rel'] == 'self']
-        href_link = links[0]
-        splitpath = href_link.split('/')
-        endpoint = ''
-        if self.req:
-            endpoint = self.req.host
-            splitpath = self.req.path.split('/')
-
-        detailed = ''
-        if splitpath[-1] == 'detail':
-            detailed = '/detail'
-            splitpath.pop(-1)
-
-        instance_id = self.instance.id
-        if str(splitpath[-1]) == str(instance_id):
-            splitpath.pop(-1)
-        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(instance_id)s"
-        for link in self.instance.links:
-            rlink = link
-            href = rlink['href']
-            if rlink['rel'] == 'self':
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-            elif rlink['rel'] == 'bookmark':
-                splitpath.pop(2)  # Remove the version.
-                splitpath.pop(1)  # Remove the tenant id.
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-
-            rlink['href'] = href
-            result.append(rlink)
-        return result
+        context = self.req.environ[wsgi.CONTEXT_KEY]
+        link_info = {
+            'host':self.req.host,
+            'version':self.req.url_version,
+            'tenant_id':context.tenant,
+            'id':self.instance.id,
+        }
+        return [
+            {
+                "href": "https://%(host)s/v%(version)s/%(tenant_id)s"
+                        "/instances/%(id)s" % link_info,
+                "rel": "self"
+            },
+            {
+                "href": "https://%(host)s/instances/%(id)s" % link_info,
+                "rel": "bookmark"
+            }
+        ]
 
 
 class InstanceDetailView(InstanceView):
+    """Works with a full-blown instance."""
 
-    def __init__(self, instance, req=None, add_addresses=False,
+    def __init__(self, instance, req, add_addresses=False,
                  add_volumes=False):
         super(InstanceDetailView, self).__init__(instance,
                                                  req=req,
-                                                 add_addresses=add_addresses,
                                                  add_volumes=add_volumes)
+        self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
+
+    def _build_flavor_info(self):
+        context = self.req.environ[wsgi.CONTEXT_KEY]
+        link_info = {
+            'host':self.req.host,
+            'version':self.req.url_version,
+            'tenant_id':context.tenant,
+            'flavor_id':self.instance.flavor_id,
+        }
+        return {
+            "id": self.instance.flavor_id,
+            "links": [{
+                "href": "https://%(host)s/v%(version)s/%(tenant_id)s"
+                        "/flavors/%(flavor_id)s" % link_info,
+                "rel": "self"
+                },
+                {
+                "href": "https://%(host)s/flavors/%(flavor_id)s" % link_info,
+                "rel": "bookmark"
+                }]
+            }
 
     def data(self):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
-        result['instance']['flavor'] = self._build_flavor()
+        result['instance']['flavor'] = self._build_flavor_info()
         result['instance']['updated'] = self.instance.updated
+        if self.add_volumes:
+            result['instance']['volume'] = {
+                'size':self.instance.volume_size
+            }
+        if self.add_addresses:
+            ip = get_ip_address(self.instance.addresses)
+            if ip is not None and len(ip) > 0:
+                result['instance']['ip'] = ip
         return result
 
     def _build_flavor(self):
@@ -165,12 +168,10 @@ class InstanceDetailView(InstanceView):
 
 
 class InstancesView(object):
+    """Shows a list of SimpleInstance objects."""
 
-    def __init__(self, instances, req=None, add_addresses=False,
-                 add_volumes=False):
+    def __init__(self, instances, req=None):
         self.instances = instances
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
         self.req = req
 
     def data(self):
@@ -181,12 +182,17 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        view = InstanceView(instance, req=self.req,
-                            add_addresses=self.add_addresses)
+        view = InstanceView(instance, req=self.req)
         return view.data()['instance']
 
 
 class InstancesDetailView(InstancesView):
+
+    def __init__(self, instances, req=None, add_addresses=False,
+                 add_volumes=True):
+        super(InstancesDetailView, self).__init__(instances, req)
+        self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
 
     def data_for_instance(self, instance):
         return InstanceDetailView(instance, req=self.req,
