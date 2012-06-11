@@ -277,13 +277,17 @@ class Fault(webob.exc.HTTPException):
         fault_name = self.wrapped_exc.__class__.__name__
         if fault_name.startswith("HTTP"):
             fault_name = fault_name[4:]
+        lower = lambda s: s[:1].lower() + s[1:]
+        fault_name = lower(fault_name)
         fault_data = {
             fault_name: {
                 'code': self.wrapped_exc.status_int,
-                'message': self.wrapped_exc.explanation,
-                'detail': self.wrapped_exc.detail,
                 }
         }
+        if self.wrapped_exc.detail:
+            fault_data[fault_name]['message'] = self.wrapped_exc.detail
+        else:
+            fault_data[fault_name]['message'] = self.wrapped_exc.explanation
 
         # 'code' is an attribute on the fault tag itself
         metadata = {'attributes': {fault_name: 'code'}}
