@@ -16,6 +16,9 @@
 #    under the License.
 
 
+from reddwarf.common.views import create_links
+
+
 class FlavorView(object):
 
     def __init__(self, flavor, req=None):
@@ -30,34 +33,7 @@ class FlavorView(object):
             }}
 
     def _build_links(self):
-        result = []
-        #scheme = self.req.scheme
-        scheme = 'https'  # Forcing https
-        endpoint = self.req.host
-        splitpath = self.req.path.split('/')
-        detailed = ''
-        if splitpath[-1] == 'detail':
-            detailed = '/detail'
-            splitpath.pop(-1)
-        flavorid = self.flavor.id
-        if str(splitpath[-1]) == str(flavorid):
-            splitpath.pop(-1)
-        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
-        for link in self.flavor.links:
-            rlink = link
-            href = rlink['href']
-            if rlink['rel'] == 'self':
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-            elif rlink['rel'] == 'bookmark':
-                splitpath.pop(2)  # Remove the version.
-                splitpath.pop(1)  # Remove the tenant id.
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-
-            rlink['href'] = href
-            result.append(rlink)
-        return result
+        return create_links("flavors", self.req, self.flavor.id)
 
 
 class FlavorDetailView(FlavorView):

@@ -19,6 +19,8 @@ import logging
 from reddwarf.common import config
 from reddwarf.common import utils
 from reddwarf.common import wsgi
+from reddwarf.common.views import create_links
+
 
 LOG = logging.getLogger(__name__)
 
@@ -58,24 +60,7 @@ class InstanceView(object):
         return {"instance": instance_dict}
 
     def _build_links(self):
-        context = self.req.environ[wsgi.CONTEXT_KEY]
-        link_info = {
-            'host':self.req.host,
-            'version':self.req.url_version,
-            'tenant_id':context.tenant,
-            'id':self.instance.id,
-        }
-        return [
-            {
-                "href": "https://%(host)s/v%(version)s/%(tenant_id)s"
-                        "/instances/%(id)s" % link_info,
-                "rel": "self"
-            },
-            {
-                "href": "https://%(host)s/instances/%(id)s" % link_info,
-                "rel": "bookmark"
-            }
-        ]
+        return create_links("instances", self.req, self.instance.id)
 
 
 class InstanceDetailView(InstanceView):
@@ -90,25 +75,10 @@ class InstanceDetailView(InstanceView):
         self.add_volumes = add_volumes
 
     def _build_flavor_info(self):
-        context = self.req.environ[wsgi.CONTEXT_KEY]
-        link_info = {
-            'host':self.req.host,
-            'version':self.req.url_version,
-            'tenant_id':context.tenant,
-            'flavor_id':self.instance.flavor_id,
-        }
         return {
             "id": self.instance.flavor_id,
-            "links": [{
-                "href": "https://%(host)s/v%(version)s/%(tenant_id)s"
-                        "/flavors/%(flavor_id)s" % link_info,
-                "rel": "self"
-                },
-                {
-                "href": "https://%(host)s/flavors/%(flavor_id)s" % link_info,
-                "rel": "bookmark"
-                }]
-            }
+            "links": self._build_flavor_links()
+        }
 
     def data(self):
         result = super(InstanceDetailView, self).data()
@@ -125,46 +95,9 @@ class InstanceDetailView(InstanceView):
                 result['instance']['ip'] = ip
         return result
 
-    def _build_flavor(self):
-        try:
-            return self.instance.flavor
-        except:
-            return {
-                'id': self.instance.db_info.flavor_id,
-                'links': self._build_flavor_links(),
-                }
-
     def _build_flavor_links(self):
-        result = []
-        #scheme = self.req.scheme
-        scheme = 'https'  # Forcing https
-        endpoint = self.req.host
-        splitpath = self.req.path.split('/')
-        detailed = ''
-        if splitpath[-1] == 'detail':
-            detailed = '/detail'
-            splitpath.pop(-1)
-        flavorid = self.instance.db_info.flavor_id
-        if str(splitpath[-1]) == str(flavorid):
-            splitpath.pop(-1)
-        href_template = "%(scheme)s://%(endpoint)s%(path)s/%(flavorid)s"
-        for link in self.instance.flavor_links:
-            rlink = link
-            href = rlink['href']
-            if rlink['rel'] == 'self':
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-            elif rlink['rel'] == 'bookmark':
-                splitpath.pop(2)  # Remove the version.
-                splitpath.pop(1)  # Remove the tenant id.
-                path = '/'.join(splitpath)
-                href = href_template % locals()
-
-            rlink['href'] = href
-            result.append(rlink)
-        for link in result:
-            link['href'] = link['href'].replace('instances', 'flavors')
-        return result
+        return create_links("flavors", self.req,
+                            self.instance.flavor_id)
 
 
 class InstancesView(object):
