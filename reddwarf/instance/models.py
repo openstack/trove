@@ -297,10 +297,10 @@ class BaseInstance(SimpleInstance):
         return self._nova_client
 
     def update_db(self, **values):
-        row = DBInstance.find_by(id=self.id)
+        self.db_info = DBInstance.find_by(id=self.id)
         for key in values:
-            setattr(row, key, values[key])
-        row.save()
+            setattr(self.db_info, key, values[key])
+        self.db_info.save()
 
     @property
     def volume_client(self):
