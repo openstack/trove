@@ -15,6 +15,7 @@
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
+from reddwarf.db.sqlalchemy.migrate_repo.schema import Integer
 from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
@@ -25,7 +26,7 @@ def upgrade(migrate_engine):
 
     # add column:
     instances = Table('instances', meta, autoload=True)
-    volume_size = Column('volume_size', String(36))
+    volume_size = Column('volume_size', Integer())
     flavor_id = Column('flavor_id', String(36))
 
     instances.create_column(flavor_id)
