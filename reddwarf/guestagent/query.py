@@ -24,11 +24,12 @@ Intermediary class for building SQL queries for use by the guest agent.
 
 class Query(object):
 
-    def __init__(self, columns=[], tables=[], where=[], order=[], limit=0):
+    def __init__(self, columns=[], tables=[], where=[], order=[], group=[], limit=0):
         self.columns = columns
         self.tables = tables
         self.where = where
         self.order = order
+        self.group = group
         self.limit = limit
 
     @property
@@ -52,6 +53,12 @@ class Query(object):
         return "ORDER BY %s" % (', '.join(self.order))
 
     @property
+    def _group_by(self):
+        if not self.group:
+            return ''
+        return "GROUP BY %s" % (', '.join(self.group))
+
+    @property
     def _limit(self):
         if not self.limit:
             return ''
@@ -63,7 +70,8 @@ class Query(object):
             "FROM %s" % self._tables,
             self._where,
             self._order,
-            self._limit
+            self._group_by,
+            self._limit,
             ]
         return '\n'.join(query)
 
