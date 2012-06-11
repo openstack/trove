@@ -252,9 +252,12 @@ class BuiltInstanceTasks(BuiltInstance):
                             "call to resize! : %s" % resize_status_msg())
 
                 # Wait for the flavor to change.
+                def update_server_info():
+                    self._refresh_compute_server_info()
+                    return self.server.status != 'RESIZE'
+
                 utils.poll_until(
-                    lambda: self.nova_client.servers.get(self.server.id),
-                    lambda server: server.status != 'RESIZE',
+                    update_server_info,
                     sleep_time=2,
                     time_out=60 * 2)
 
@@ -263,7 +266,7 @@ class BuiltInstanceTasks(BuiltInstance):
                     self.server.status != "VERIFY_RESIZE"):
                     raise ReddwarfError("Assertion failed! flavor_id=%s "
                                         "and not %s"
-                    % (self.server.status, str(self.server.flavor['id'])))
+                        % (str(self.server.flavor['id']), str(new_flavor_id)))
 
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
