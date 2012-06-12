@@ -55,6 +55,9 @@ volume_time_out=30
 # Reddwarf DNS
 reddwarf_dns_support = False
 
+# Auth
+admin_roles = [admin]
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

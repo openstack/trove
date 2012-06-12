@@ -26,6 +26,7 @@ import webob.dec
 import webob.exc
 
 from reddwarf.common import context as rd_context
+from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.openstack.common import wsgi as openstack_wsgi
@@ -305,6 +306,7 @@ class Fault(webob.exc.HTTPException):
 class ContextMiddleware(openstack_wsgi.Middleware):
 
     def __init__(self, application):
+        self.admin_roles = config.Config.get('admin_roles', [])
         super(ContextMiddleware, self).__init__(application)
 
     def _extract_limits(self, params):
@@ -315,10 +317,17 @@ class ContextMiddleware(openstack_wsgi.Middleware):
         tenant_id = request.headers.get('X-Tenant-Id', None)
         auth_tok = request.headers["X-Auth-Token"]
         user = request.headers.get('X-User', None)
+        roles = request.headers.get('X-Role', '').split(',')
+        is_admin = False
+        for role in roles:
+            if role.lower() in self.admin_roles:
+                is_admin = True
+                break
         limits = self._extract_limits(request.params)
         context = rd_context.ReddwarfContext(auth_tok=auth_tok,
                                              tenant=tenant_id,
                                              user=user,
+                                             is_admin=is_admin,
                                              limit=limits.get('limit'),
                                              marker=limits.get('marker'))
         request.environ[CONTEXT_KEY] = context
