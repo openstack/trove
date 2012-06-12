@@ -37,11 +37,22 @@ Debug = openstack_wsgi.Debug
 Middleware = openstack_wsgi.Middleware
 JSONDictSerializer = openstack_wsgi.JSONDictSerializer
 XMLDictSerializer = openstack_wsgi.XMLDictSerializer
+XMLDeserializer = openstack_wsgi.XMLDeserializer
 RequestDeserializer = openstack_wsgi.RequestDeserializer
 
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
 LOG = logging.getLogger('reddwarf.common.wsgi')
+
+XMLNS = 'http://docs.openstack.org/database/api/v1.0'
+CUSTOM_PLURALS_METADATA = {'databases':'', 'users':''}
+CUSTOM_SERIALIZER_METADATA = {'instance': {'status':'', 'hostname':'',
+                              'id':'', 'name':'','created':'', 'updated':''},
+                   'volume': {'size':'', 'used':''},
+                   'flavor': {'id':'', 'ram': '', 'name': ''},
+                   'link': {'href':'', 'rel': ''},
+                   'database': {'name':''},
+                   'user': {'name':'', 'password':''}}
 
 
 def versioned_urlmap(*args, **kwargs):
@@ -220,14 +231,43 @@ class Controller(object):
         serializer = ReddwarfResponseSerializer(
             body_serializers={'application/xml': ReddwarfXMLDictSerializer()})
         return Resource(self,
-            openstack_wsgi.RequestDeserializer(),
+            ReddwarfRequestDeserializer(),
             serializer,
             self.exception_map)
 
 
+class ReddwarfRequestDeserializer(RequestDeserializer):
+    """Break up a Request object into more useful pieces."""
+
+    def __init__(self, body_deserializers=None, headers_deserializer=None,
+                 supported_content_types=None):
+        super(ReddwarfRequestDeserializer, self).__init__(body_deserializers,
+                                                  headers_deserializer,
+                                                  supported_content_types)
+
+        self.body_deserializers['application/xml'] = ReddwarfXMLDeserializer()
+
+
+class ReddwarfXMLDeserializer(XMLDeserializer):
+
+    def __init__(self, metadata=None):
+        """
+        :param metadata: information needed to deserialize xml into
+                         a dictionary.
+        """
+        if metadata is None:
+            metadata = {}
+        metadata['plurals'] = CUSTOM_PLURALS_METADATA
+        super(ReddwarfXMLDeserializer, self).__init__(metadata)
+
+
 class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
 
+    def __init__(self, metadata=None, xmlns=None):
+        super(ReddwarfXMLDictSerializer, self).__init__(metadata, XMLNS)
+
     def _to_xml_node(self, doc, metadata, nodename, data):
+        metadata['attributes'] = CUSTOM_SERIALIZER_METADATA
         if hasattr(data, "to_xml"):
             return data.to_xml()
         return super(ReddwarfXMLDictSerializer, self)._to_xml_node(doc,

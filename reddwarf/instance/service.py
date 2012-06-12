@@ -150,17 +150,15 @@ class InstanceController(BaseController):
         }
         selected_option = None
         args = None
-        for key in body['resize']:
-            if key in options:
+        for key in options:
+            if key in body['resize']:
                 if selected_option is not None:
                     msg = _("Not allowed to resize volume and flavor at the "
                             "same time.")
                     raise exception.BadRequest(msg)
                 selected_option = options[key]
                 args = body['resize'][key]
-            else:
-                raise exception.BadRequest("Invalid resize argument %s"
-                                               % key)
+
         if selected_option:
             return selected_option(instance, args)
         else:

@@ -49,7 +49,7 @@ class Mgmt(extensions.ExtensionsDescriptor):
                               wsgi.ReddwarfXMLDictSerializer()})
         resource = extensions.ResourceExtension('{tenant_id}/mgmt/instances',
             service.MgmtInstanceController(),
-            deserializer=wsgi.RequestDeserializer(),
+            deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer,
             member_actions={'root': 'GET'},
             )
