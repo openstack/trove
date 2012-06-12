@@ -21,6 +21,7 @@ import re
 import webob.exc
 import wsgi
 
+from reddwarf.common import exception
 
 LOG = logging.getLogger(__name__)
 
@@ -69,3 +70,21 @@ class TenantBasedAuth(object):
             return True
         raise webob.exc.HTTPForbidden(_("User with tenant id %s cannot "
                                         "access this resource") % tenant_id)
+
+
+def admin_context(f):
+    """
+    Verify that the current context has administrative access,
+    or throw an exception. Reddwarf API functions typically take the form
+    function(self, req), or function(self, req, id).
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            req = args[1]
+            context = req.environ.get('reddwarf.context')
+        except:
+            raise exception.ReddwarfError("Cannot load request context.")
+        if not context.is_admin:
+            raise exception.Forbidden("User does not have admin privileges.")
+        return f(*args, **kwargs)
+    return wrapper

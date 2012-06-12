@@ -144,3 +144,6 @@ class BadValue(ReddwarfError):
 class PollTimeOut(ReddwarfError):
     message = _("Polling request timed out.")
 
+
+class Forbidden(ReddwarfError):
+    message = _("User does not have admin privileges.")
