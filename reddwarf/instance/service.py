@@ -278,7 +278,7 @@ class InstanceController(BaseController):
         We are going to check that volume resizing data is present.
         """
         if 'size' not in volume:
-            raise rd_exceptions.BadRequest(
+            raise exception.BadRequest(
                 "Missing 'size' property of 'volume' in request body.")
         InstanceController._validate_volume_size(volume['size'])
 

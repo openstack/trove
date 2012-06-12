@@ -172,7 +172,7 @@ class SimpleInstance(object):
     def load(context, id):
         try:
             db_info = DBInstance.find_by(id=id)
-        except rd_exceptions.NotFound:
+        except ModelNotFoundError:
             raise rd_exceptions.NotFound(uuid=id)
         service_status = InstanceServiceStatus.find_by(instance_id=id)
         LOG.info("service status=%s" % service_status)
