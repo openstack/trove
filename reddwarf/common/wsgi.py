@@ -261,6 +261,13 @@ class ReddwarfXMLDeserializer(XMLDeserializer):
         metadata['plurals'] = CUSTOM_PLURALS_METADATA
         super(ReddwarfXMLDeserializer, self).__init__(metadata)
 
+    def default(self, datastring):
+        # Sanitize the newlines
+        # hub-cap: This feels wrong but minidom keeps the newlines
+        # and spaces as childNodes which is expected behavior.
+        return {'body': self._from_xml(re.sub(r'((?<=>)\s)*\n(\s(?=<))*', '',
+                                       datastring))}
+
 
 class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
 
