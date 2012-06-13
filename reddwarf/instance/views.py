@@ -51,8 +51,11 @@ class InstanceView(object):
             "id": self.instance.id,
             "name": self.instance.name,
             "status": self.instance.status,
-            "links": self._build_links()
+            "links": self._build_links(),
+            "flavor": self._build_flavor_info(),
         }
+        if self.add_volumes:
+            instance_dict['volume'] = {'size': self.instance.volume_size}
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         if utils.bool_from_string(dns_support):
             instance_dict['hostname'] = self.instance.hostname
@@ -61,6 +64,16 @@ class InstanceView(object):
 
     def _build_links(self):
         return create_links("instances", self.req, self.instance.id)
+
+    def _build_flavor_info(self):
+        return {
+            "id": self.instance.flavor_id,
+            "links": self._build_flavor_links()
+        }
+
+    def _build_flavor_links(self):
+        return create_links("flavors", self.req,
+                            self.instance.flavor_id)
 
 
 class InstanceDetailView(InstanceView):
@@ -74,38 +87,28 @@ class InstanceDetailView(InstanceView):
         self.add_addresses = add_addresses
         self.add_volumes = add_volumes
 
-    def _build_flavor_info(self):
-        return {
-            "id": self.instance.flavor_id,
-            "links": self._build_flavor_links()
-        }
 
     def data(self):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
-        result['instance']['flavor'] = self._build_flavor_info()
         result['instance']['updated'] = self.instance.updated
-        if self.add_volumes:
-            result['instance']['volume'] = {
-                'size':self.instance.volume_size
-            }
+
         if self.add_addresses:
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
         return result
 
-    def _build_flavor_links(self):
-        return create_links("flavors", self.req,
-                            self.instance.flavor_id)
-
 
 class InstancesView(object):
     """Shows a list of SimpleInstance objects."""
 
-    def __init__(self, instances, req=None):
+    def __init__(self, instances, req=None, add_addresses=False,
+                 add_volumes=True):
         self.instances = instances
         self.req = req
+        self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
 
     def data(self):
         data = []
@@ -115,19 +118,6 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        view = InstanceView(instance, req=self.req)
+        view = InstanceView(instance, req=self.req,
+                            add_volumes=self.add_volumes)
         return view.data()['instance']
-
-
-class InstancesDetailView(InstancesView):
-
-    def __init__(self, instances, req=None, add_addresses=False,
-                 add_volumes=True):
-        super(InstancesDetailView, self).__init__(instances, req)
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
-
-    def data_for_instance(self, instance):
-        return InstanceDetailView(instance, req=self.req,
-                               add_addresses=self.add_addresses,
-                               add_volumes=self.add_volumes).data()['instance']

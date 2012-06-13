@@ -174,25 +174,14 @@ class InstanceController(BaseController):
         instance.resize_flavor(new_flavor_id)
         return wsgi.Result(None, 202)
 
-    def detail(self, req, tenant_id):
-        """Return all instances."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Detailing database instance for tenant '%s'") % tenant_id)
-        #TODO(cp16net) return a detailed list instead of index
-        return self.index(req, tenant_id, detailed=True)
-
-    def index(self, req, tenant_id, detailed=False):
+    def index(self, req, tenant_id):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         servers, marker = models.Instances.load(context)
-        # TODO(cp16net): need to set the return code correctly
-        if detailed:
-            view = views.InstancesDetailView(servers, req=req,
-                                             add_volumes=self.add_volumes)
-        else:
-            view = views.InstancesView(servers, req=req)
+        view = views.InstancesView(servers, req=req,
+                                   add_volumes=self.add_volumes)
         paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
                                                    marker)
         return wsgi.Result(paged.data(), 200)
@@ -346,7 +335,6 @@ class API(wsgi.Router):
         instance_resource = InstanceController().create_resource()
         path = "/{tenant_id}/instances"
         mapper.resource("instance", path, controller=instance_resource,
-                        collection={'detail': 'GET'},
                         member={'action': 'POST'})
 
     # TODO(ed-): remove this when all mention of flavorservice
