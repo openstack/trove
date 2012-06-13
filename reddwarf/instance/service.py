@@ -106,6 +106,8 @@ class InstanceController(BaseController):
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Comitting an ACTION again instance %s for tenant '%s'"
                  % (id, tenant_id))
+        if not body:
+            raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         _actions = {
