@@ -265,7 +265,7 @@ class ReddwarfXMLDeserializer(XMLDeserializer):
         # Sanitize the newlines
         # hub-cap: This feels wrong but minidom keeps the newlines
         # and spaces as childNodes which is expected behavior.
-        return {'body': self._from_xml(re.sub(r'((?<=>)\s+)*\n(\s+(?=<))*',
+        return {'body': self._from_xml(re.sub(r'((?<=>)\s+)*\n*(\s+(?=<))*',
                                        '', datastring))}
 
 
