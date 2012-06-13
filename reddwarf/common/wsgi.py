@@ -317,16 +317,36 @@ class Fault(webob.exc.HTTPException):
 
         self.wrapped_exc = exception
 
+    @staticmethod
+    def _get_error_name(exc):
+        # Displays a Red Dwarf specific error name instead of a webob exc name.
+        named_exceptions = {
+            'HTTPBadRequest': 'badRequest',
+            'HTTPUnauthorized': 'unauthorized',
+            'HTTPForbidden': 'forbidden',
+            'HTTPNotFound': 'itemNotFound',
+            'HTTPMethodNotAllowed': 'badMethod',
+            'HTTPRequestEntityTooLarge': 'overLimit',
+            'HTTPUnsupportedMediaType': 'badMediaType',
+            'HTTPInternalServerError': 'instanceFault',
+            'HTTPNotImplemented': 'notImplemented',
+            'HTTPServiceUnavailable': 'serviceUnavailable',
+        }
+        name = exc.__class__.__name__
+        if name in named_exceptions:
+            return named_exceptions[name]
+        # If the exception isn't in our list, at least strip off the
+        # HTTP from the name, and then drop the case on the first letter.
+        name = name.split("HTTP").pop()
+        name = name[:1].lower() + name[1:]
+        return name
+
     @webob.dec.wsgify(RequestClass=Request)
     def __call__(self, req):
         """Generate a WSGI response based on the exception passed to ctor."""
 
         # Replace the body with fault details.
-        fault_name = self.wrapped_exc.__class__.__name__
-        if fault_name.startswith("HTTP"):
-            fault_name = fault_name[4:]
-        lower = lambda s: s[:1].lower() + s[1:]
-        fault_name = lower(fault_name)
+        fault_name = Fault._get_error_name(self.wrapped_exc)
         fault_data = {
             fault_name: {
                 'code': self.wrapped_exc.status_int,
