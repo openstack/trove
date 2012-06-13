@@ -58,15 +58,10 @@ class FlavorController(BaseController):
     def show(self, req, tenant_id, id):
         """Return a single flavor."""
         context = req.environ[wsgi.CONTEXT_KEY]
-        flavor = models.Flavor(context=context, flavor_id=id)
+        self._validate_flavor_id(id)
+        flavor = models.Flavor(context=context, flavor_id=int(id))
         # Pass in the request to build accurate links.
-        return wsgi.Result(views.FlavorDetailView(flavor, req).data(), 200)
-
-    def detail(self, req, tenant_id):
-        """Return a list of flavors, with additional data about each flavor."""
-        context = req.environ[wsgi.CONTEXT_KEY]
-        flavors = models.Flavors(context=context)
-        return wsgi.Result(views.FlavorsDetailView(flavors, req).data(), 200)
+        return wsgi.Result(views.FlavorView(flavor, req).data(), 200)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
@@ -74,20 +69,9 @@ class FlavorController(BaseController):
         flavors = models.Flavors(context=context)
         return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 
-
-class API(wsgi.Router):
-    """API"""
-    def __init__(self):
-        mapper = routes.Mapper()
-        super(API, self).__init__(mapper)
-        self._flavor_router(mapper)
-
-    def _flavor_router(self, mapper):
-        flavor_resource = FlavorController().create_resource()
-        path = "/{tenant_id}/flavors"
-        mapper.resource("flavor", path, controller=flavor_resource,
-                        collection={'detail': 'GET', '': 'GET'})
-
-
-def app_factory(global_conf, **local_conf):
-    return API()
+    def _validate_flavor_id(self, id):
+        try:
+            if int(id) != float(id):
+                raise exception.NotFound(uuid=id)
+        except ValueError:
+            raise exception.NotFound(uuid=id)

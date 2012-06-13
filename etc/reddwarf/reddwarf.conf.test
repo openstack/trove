@@ -107,7 +107,7 @@ paste.filter_factory = reddwarf.common.auth:AuthorizationMiddleware.factory
 paste.filter_factory = reddwarf.common.wsgi:ContextMiddleware.factory
 
 [app:reddwarfapp]
-paste.app_factory = reddwarf.instance.service:app_factory
+paste.app_factory = reddwarf.common.api:app_factory
 
 #Add this filter to log request and response for debugging
 [filter:debug]

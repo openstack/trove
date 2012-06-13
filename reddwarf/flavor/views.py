@@ -27,24 +27,14 @@ class FlavorView(object):
 
     def data(self):
         return {"flavor": {
-            'id': self.flavor.id,
+            'id': int(self.flavor.id),
             'links': self._build_links(),
             'name': self.flavor.name,
+            'ram': self.flavor.ram,
             }}
 
     def _build_links(self):
         return create_links("flavors", self.req, self.flavor.id)
-
-
-class FlavorDetailView(FlavorView):
-
-    def data(self):
-        result = super(FlavorDetailView, self).data()
-        details = {
-            'ram': self.flavor.ram
-            }
-        result["flavor"].update(details)
-        return result
 
 
 class FlavorsView(object):
@@ -54,12 +44,8 @@ class FlavorsView(object):
         self.flavors = flavors
         self.req = req
 
-    def data(self, detailed=False):
+    def data(self):
         data = []
         for flavor in self.flavors:
             data.append(self.view(flavor, req=self.req).data()['flavor'])
         return {"flavors": data}
-
-
-class FlavorsDetailView(FlavorsView):
-    view = FlavorDetailView
