@@ -26,10 +26,6 @@ from reddwarf.common import utils
 from reddwarf.common import wsgi
 from reddwarf.instance import models, views
 
-#TODO(ed-): Import these properly after this is restructured
-from reddwarf.flavor import models as flavormodels
-from reddwarf.flavor import views as flavorviews
-from reddwarf.flavor import service as flavorservice
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
@@ -322,31 +318,3 @@ class InstanceController(BaseController):
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise exception.ReddwarfError("Required element/key - %s "
                                        "was not specified" % e)
-
-
-class API(wsgi.Router):
-    """API"""
-    def __init__(self):
-        mapper = routes.Mapper()
-        super(API, self).__init__(mapper)
-        self._instance_router(mapper)
-        # TODO(ed-): Remove after restructure
-        self._flavor_router(mapper)
-
-    def _instance_router(self, mapper):
-        instance_resource = InstanceController().create_resource()
-        path = "/{tenant_id}/instances"
-        mapper.resource("instance", path, controller=instance_resource,
-                        member={'action': 'POST'})
-
-    # TODO(ed-): remove this when all mention of flavorservice
-    # et cetera are moved away
-    def _flavor_router(self, mapper):
-        flavor_resource = flavorservice.FlavorController().create_resource()
-        path = "/{tenant_id}/flavors"
-        mapper.resource("flavor", path, controller=flavor_resource,
-                        collection={'detail': 'GET'})
-
-
-def app_factory(global_conf, **local_conf):
-    return API()
