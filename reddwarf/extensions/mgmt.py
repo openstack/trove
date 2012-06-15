@@ -20,6 +20,7 @@ import logging
 from reddwarf.common import extensions
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt import service
+from reddwarf.extensions.mgmt.host.service import HostController
 
 
 LOG = logging.getLogger(__name__)
@@ -47,12 +48,19 @@ class Mgmt(extensions.ExtensionsDescriptor):
         serializer = wsgi.ReddwarfResponseSerializer(
             body_serializers={'application/xml':
                               wsgi.ReddwarfXMLDictSerializer()})
-        resource = extensions.ResourceExtension('{tenant_id}/mgmt/instances',
+        instances = extensions.ResourceExtension('{tenant_id}/mgmt/instances',
             service.MgmtInstanceController(),
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer,
             member_actions={'root': 'GET'},
             )
-        resources.append(resource)
+        resources.append(instances)
+        hosts = extensions.ResourceExtension('{tenant_id}/mgmt/hosts',
+            HostController(),
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer,
+            member_actions={},
+            )
+        resources.append(hosts)
 
         return resources

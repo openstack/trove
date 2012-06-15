@@ -420,6 +420,65 @@ class FakeAccounts(object):
 FLAVORS = FakeFlavors()
 
 
+class FakeHost(object):
+
+    def __init__(self, name, servers):
+        self.name = name
+        self.servers = servers
+        self.instances = []
+        self.percentUsed = 0
+        self.totalRAM = 0
+        self.usedRAM = 0
+
+    @property
+    def instanceCount(self):
+        return len(self.instances)
+
+    def recalc(self):
+        """
+        This fake-mode exclusive method recalculates the fake data this
+        object passes back.
+        """
+        self.instances = []
+        self.percentUsed = 0
+        self.totalRAM = 2004 #16384
+        self.usedRAM = 0
+        for server in self.servers.list():
+            self.instances.append({
+                'uuid': server.id,
+                'name': server.name,
+                'status': server.status
+                })
+            flavor = FLAVORS.get(server.flavor_ref)
+            ram = flavor.ram
+            self.usedRAM += ram
+        decimal = float(self.usedRAM) / float(self.totalRAM)
+        self.percentUsed = int(decimal * 100)
+
+
+class FakeHosts(object):
+
+    def __init__(self, servers):
+        self.hosts = {}
+        self.add_host(FakeHost('fake_host', servers))
+
+    def add_host(self, host):
+        self.hosts[host.name] = host
+        return host
+
+    def get(self, name):
+        try:
+            self.hosts[name].recalc()
+            return self.hosts[name]
+        except KeyError:
+            raise nova_exceptions.NotFound(404, "Host not found %s" % name)
+
+    def list(self):
+        for name in self.hosts:
+            self.hosts[name].recalc()
+        return [self.hosts[name] for name in self.hosts]
+
+
 class FakeClient(object):
 
     def __init__(self, context):
@@ -429,6 +488,7 @@ class FakeClient(object):
         self.volumes = FakeVolumes(context)
         self.servers.volumes = self.volumes
         self.accounts = FakeAccounts(context, self.servers)
+        self.rdhosts = FakeHosts(self.servers)
 
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)
