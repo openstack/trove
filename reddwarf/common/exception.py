@@ -82,6 +82,16 @@ class OverLimit(ReddwarfError):
                          "rate.")
 
 
+class QuotaExceeded(ReddwarfError):
+
+    message = _("User instance quota exceeded.")
+
+
+class VolumeQuotaExceeded(QuotaExceeded):
+
+    message = _("Instance volume quota exceeded.")
+
+
 class GuestError(ReddwarfError):
 
     message = _("An error occurred communicating with the guest: "

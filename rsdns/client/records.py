@@ -53,7 +53,8 @@ class RecordsManager(base.ManagerWithFind):
     """
     resource_class = Record
 
-    def create(self, domain, record_name, record_data, record_type, record_ttl):
+    def create(self, domain, record_name, record_data, record_type,
+               record_ttl):
         """
         Create a new Record on the given domain
 
@@ -61,14 +62,14 @@ class RecordsManager(base.ManagerWithFind):
         :param record: The ID of the :class:`Record` to get.
         :rtype: :class:`Record`
         """
-        data = {"records":[{"type": record_type, "name": record_name,
-                            "data": record_data, "ttl": record_ttl }]}
+        data = {"records": [{"type": record_type, "name": record_name,
+                            "data": record_data, "ttl": record_ttl}]}
         resp, body = self.api.client.post("/domains/%s/records" % \
                                           base.getid(domain), body=data)
         if resp.status == 202:
             return FutureRecord(self, **body)
-        raise RuntimeError("Did not expect response when creating a DNS record "
-                            "%s" % str(resp.status))
+        raise RuntimeError("Did not expect response when creating a DNS "
+                            "record %s" % str(resp.status))
 
     def create_from_list(self, list):
         return [self.resource_class(self, res) for res in list]
@@ -143,4 +144,3 @@ class RecordsManager(base.ManagerWithFind):
                 else:
                     raise RuntimeError("Next href had multiple offset params!")
         return (list, next_offset)
-

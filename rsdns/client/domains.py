@@ -31,6 +31,7 @@ class Domain(base.Resource):
     def response_list_name(self):
         return "domains"
 
+
 class FutureDomain(FutureResource):
 
     def convert_callback(self, resp, body):

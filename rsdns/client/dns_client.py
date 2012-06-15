@@ -38,7 +38,7 @@ LOG = logging.getLogger('rsdns.client.dns_client')
 class DNSaasClient(HTTPClient):
 
     def __init__(self, accountId, user, apikey, auth_url, management_base_url):
-        tenant = "dbaas"    
+        tenant = "dbaas"
         super(DNSaasClient, self).__init__(user, apikey, tenant, auth_url)
         self.accountId = accountId
         self.management_base_url = management_base_url
@@ -48,7 +48,8 @@ class DNSaasClient(HTTPClient):
 
     def authenticate(self):
         """Set the management url and auth token"""
-        req_body = {'credentials':{'username':self.user, 'key':self.api_key}}
+        req_body = {'credentials': {'username': self.user,
+                                    'key': self.api_key}}
         resp, body = self.request(self.auth_url, "POST", body=req_body)
         if 'access' in body:
             if not self.management_url:
@@ -103,6 +104,7 @@ class DNSaasClient(HTTPClient):
 
         return resp, body
 
+
 class DNSaas(Client):
     """
     Top-level object to access the DNSaas service
@@ -115,7 +117,8 @@ class DNSaas(Client):
         from rsdns.client.domains import DomainsManager
         from rsdns.client.records import RecordsManager
 
-        super(DNSaas, self).__init__(self, accountId, username, apikey, auth_url, management_base_url)
+        super(DNSaas, self).__init__(self, accountId, username, apikey,
+                                     auth_url, management_base_url)
         self.client = DNSaasClient(accountId, username, apikey, auth_url,
                                     management_base_url)
         self.domains = DomainsManager(self)

@@ -148,7 +148,8 @@ class FreshInstanceTasks(FreshInstance):
         if utils.bool_from_string(dns_support):
 
             def get_server():
-                return nova_client.servers.get(self.db_info.compute_instance_id)
+                c_id = self.db_info.compute_instance_id
+                return nova_client.servers.get(c_id)
 
             def ip_is_available(server):
                 LOG.info("Polling for ip addresses: $%s " % server.addresses)
@@ -200,7 +201,7 @@ class BuiltInstanceTasks(BuiltInstance):
                 dns_api.delete_instance_entry(instance_id=self.db_info.id)
         except Exception as ex:
             LOG.error("Error during dns entry for instance %s "
-                      % self.db_info.id )
+                      % self.db_info.id)
             LOG.error(ex)
 
     def resize_volume(self, new_size):

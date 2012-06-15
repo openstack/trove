@@ -80,4 +80,3 @@ class TaskManager(service.Manager):
         instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
                                        databases, users, service_type,
                                        volume_size)
-
