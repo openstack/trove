@@ -24,6 +24,8 @@ from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import utils
 from reddwarf.common import wsgi
+from reddwarf.extensions.mysql.common import populate_databases
+from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models, views
 
 
@@ -235,9 +237,8 @@ class InstanceController(BaseController):
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
         flavor_id = utils.get_id_from_href(flavor_ref)
-        databases = body['instance'].get('databases')
-        if databases is None:
-            databases = []
+        databases = populate_databases(body['instance'].get('databases'))
+        users = populate_users(body['instance'].get('users'))
         if body['instance'].get('volume', None) is not None:
             try:
                 volume_size = int(body['instance']['volume']['size'])
@@ -246,7 +247,7 @@ class InstanceController(BaseController):
         else:
             volume_size = None
         instance = models.Instance.create(context, name, flavor_id,
-                                          image_id, databases,
+                                          image_id, databases, users,
                                           service_type, volume_size)
 
         return wsgi.Result(views.InstanceDetailView(instance, req=req,

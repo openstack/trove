@@ -56,27 +56,6 @@ def load_server(context, instance_id, server_id):
     return server
 
 
-# This probably should not happen here. Seems like it should
-# be in an extension instead
-def populate_databases(dbs):
-    """
-    Create a serializable request with user provided data
-    for creating new databases.
-    """
-    from reddwarf.guestagent.db import models as guest_models
-    try:
-        databases = []
-        for database in dbs:
-            mydb = guest_models.MySQLDatabase()
-            mydb.name = database.get('name', '')
-            mydb.character_set = database.get('character_set', '')
-            mydb.collate = database.get('collate', '')
-            databases.append(mydb.serialize())
-        return databases
-    except ValueError as ve:
-        raise exception.BadRequest(ve.message)
-
-
 class InstanceStatus(object):
 
     ACTIVE = "ACTIVE"
@@ -371,7 +350,7 @@ class Instance(BuiltInstance):
 
     @classmethod
     def create(cls, context, name, flavor_id, image_id,
-               databases, service_type, volume_size):
+               databases, users, service_type, volume_size):
         client = create_nova_client(context)
         try:
             flavor = client.flavors.get(flavor_id)
@@ -390,7 +369,7 @@ class Instance(BuiltInstance):
         dns_client = create_dns_client(context)
         dns_client.update_hostname(db_info)
         task_api.API(context).create_instance(db_info.id, name, flavor_id,
-            flavor.ram, image_id, databases, service_type, volume_size)
+            flavor.ram, image_id, databases, users, service_type, volume_size)
 
         return SimpleInstance(context, db_info, service_status)
 

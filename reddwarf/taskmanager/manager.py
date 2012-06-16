@@ -74,8 +74,10 @@ class TaskManager(service.Manager):
         instance_tasks.delete_instance()
 
     def create_instance(self, context, instance_id, name, flavor_id,
-                        flavor_ram, image_id, databases, service_type,
+                        flavor_ram, image_id, databases, users, service_type,
                         volume_size):
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
         instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
-                                       databases, service_type, volume_size)
+                                       databases, users, service_type,
+                                       volume_size)
+
