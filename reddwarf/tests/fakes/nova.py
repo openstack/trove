@@ -289,8 +289,8 @@ class FakeVolume(object):
         for attachment in self.attachments:
             if attachment['server_id'] == server_id:
                 return  # Do nothing
-        self.attachments.append({'server_id':server_id,
-                                 'device':self.device})
+        self.attachments.append({'server_id': server_id,
+                                 'device': self.device})
 
     @property
     def status(self):
@@ -348,6 +348,7 @@ class FakeVolumes(object):
 
     def resize(self, volume_id, new_size):
         volume = self.get(volume_id)
+
         def finish_resize():
             volume._current_status = "in-use"
             volume.size = new_size

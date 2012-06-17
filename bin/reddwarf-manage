@@ -74,7 +74,8 @@ class Commands(object):
 
     def image_update(self, service_name, image_id):
         db_api.configure_db(self.conf)
-        image = db_api.find_by(instance_models.ServiceImage, service_name=service_name)
+        image = db_api.find_by(instance_models.ServiceImage,
+                               service_name=service_name)
         if image is None:
             # Create a new one
             image = instance_models.ServiceImage()

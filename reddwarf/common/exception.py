@@ -88,6 +88,11 @@ class GuestError(ReddwarfError):
                 "%(original_message)s.")
 
 
+class GuestTimeout(ReddwarfError):
+
+    message = _("Timeout trying to connect to the Guest Agent.")
+
+
 class BadRequest(ReddwarfError):
 
     message = _("The server could not comply with the request since it is "
@@ -147,3 +152,13 @@ class PollTimeOut(ReddwarfError):
 
 class Forbidden(ReddwarfError):
     message = _("User does not have admin privileges.")
+
+
+class InvalidModelError(ReddwarfError):
+
+    message = _("The following values are invalid: %(errors)s")
+
+
+class ModelNotFoundError(NotFound):
+
+    message = _("Not Found")

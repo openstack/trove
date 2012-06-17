@@ -72,6 +72,7 @@ INCLUDE_MARKER_OPERATORS = {
     False: ">"
 }
 
+
 def generate_random_password():
     return str(uuid.uuid4())
 

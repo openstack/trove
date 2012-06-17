@@ -106,7 +106,6 @@ class FreshInstanceTasks(FreshInstance):
         LOG.debug("block_device = %s" % block_device)
         LOG.debug("volume = %s" % volumes)
 
-
         device_path = config.Config.get('device_path', '/dev/vdb')
         mount_point = config.Config.get('mount_point', '/var/lib/mysql')
         LOG.debug(_("device_path = %s") % device_path)
@@ -146,6 +145,7 @@ class FreshInstanceTasks(FreshInstance):
 
         nova_client = create_nova_client(self.context)
         if utils.bool_from_string(dns_support):
+
             def get_server():
                 return nova_client.servers.get(self.db_info.compute_instance_id)
 

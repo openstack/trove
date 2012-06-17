@@ -24,7 +24,8 @@ Intermediary class for building SQL queries for use by the guest agent.
 
 class Query(object):
 
-    def __init__(self, columns=None, tables=None, where=None, order=None, group=None, limit=None):
+    def __init__(self, columns=None, tables=None, where=None, order=None,
+                 group=None, limit=None):
         self.columns = columns or []
         self.tables = tables or []
         self.where = where or []
