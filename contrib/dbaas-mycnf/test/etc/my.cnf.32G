@@ -132,7 +132,8 @@ table_definition_cache = 16384
 open_files_limit = 32768
 
 # Connections limit
-max_connections = 6400
+max_user_connections = 6400
+max_connections = 6410
 
 # Default Storage Engine
 default_storage_engine = innodb
@@ -157,6 +158,8 @@ default_storage_engine = innodb
 # ssl-cert=/etc/mysql/server-cert.pem
 # ssl-key=/etc/mysql/server-key.pem
 
+# Disable LOAD DATA LOCAL INFILE
+local-infile = 0
 
 [mysqldump]
 quick

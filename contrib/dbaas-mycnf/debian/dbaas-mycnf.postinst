@@ -25,7 +25,11 @@ if [ -e "$MYSQL_CONF_DIR/my.cnf.base" ]; then
     cat $MYSQL_CONF_DIR/my.cnf.base | while read line; do
         if [[ `expr "$line" : ".*{.*}"` != "0" ]]; then
             oldval=`echo $line | sed -e 's/.*{\(.*\)}.*/\1/'`
-            newval=`echo "$oldval * $multiplier" | bc`
+            if [[ $prop == "max_connections" ]]; then
+                newval=`echo "($oldval * $multiplier) + 10" | bc`
+            else
+                newval=`echo "$oldval * $multiplier" | bc`
+            fi
             line=`echo $line | sed -e "s/{$oldval}/$newval/"`
         fi
         echo $line >> $MYSQL_CONF_DIR/my.cnf.default.tmp
