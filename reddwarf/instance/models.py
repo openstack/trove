@@ -360,10 +360,10 @@ class Instance(BuiltInstance):
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
 
-        task_api.API(context).create_instance(db_info.id, name, flavor_id,
-            flavor.ram, image_id, databases, service_type, volume_size)
         dns_client = create_dns_client(context)
         dns_client.update_hostname(db_info)
+        task_api.API(context).create_instance(db_info.id, name, flavor_id,
+            flavor.ram, image_id, databases, service_type, volume_size)
 
         return SimpleInstance(context, db_info, service_status)
 
