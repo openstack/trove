@@ -56,9 +56,6 @@ class InstanceView(object):
         }
         if self.add_volumes:
             instance_dict['volume'] = {'size': self.instance.volume_size}
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
-        if utils.bool_from_string(dns_support):
-            instance_dict['hostname'] = self.instance.hostname
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
@@ -92,6 +89,10 @@ class InstanceDetailView(InstanceView):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
         result['instance']['updated'] = self.instance.updated
+
+        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        if utils.bool_from_string(dns_support):
+            result['hostname'] = self.instance.hostname
 
         if self.add_addresses:
             ip = get_ip_address(self.instance.addresses)
