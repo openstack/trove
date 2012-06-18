@@ -55,6 +55,9 @@ volume_time_out=30
 # Reddwarf DNS
 reddwarf_dns_support = False
 
+# Taskmanager queue name
+taskmanager_queue = taskmanager
+
 # Auth
 admin_roles = [admin]
 
