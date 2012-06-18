@@ -62,7 +62,7 @@ class API(object):
 
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
-        return "taskmanager"
+        return CONFIG.get('taskmanager_queue', 'taskmanager')
 
     def _real_cast(self, method_name, **kwargs):
         try:
