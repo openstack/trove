@@ -16,47 +16,66 @@
 #    under the License.
 
 from collections import defaultdict
+from reddwarf.instance.views import InstanceDetailView
 
 
 def tree():
     return defaultdict(tree)
 
 
-def get_ip_address(addresses):
-    if addresses is not None and \
-       addresses.get('private') is not None and \
-       len(addresses['private']) > 0:
-        return [addr.get('addr') for addr in addresses['private']]
+class MgmtInstanceView(InstanceDetailView):
 
-
-class InstanceView(object):
-
-    def __init__(self, instance, add_addresses=False):
-        self.instance = instance
-        self.add_addresses = add_addresses
+    def __init__(self, instance, req=None, add_addresses=False,
+                 add_volumes=False):
+        super(MgmtInstanceView, self).__init__(instance, req,
+                                               add_addresses,
+                                               add_volumes)
 
     def data(self):
-        ip = get_ip_address(self.instance.addresses)
-        instance_dict = {
-            "tenant_id": self.instance.server.tenant_id,
-            "id": self.instance.id,
-            "name": self.instance.name,
-            "status": self.instance.status,
-            "links": self.instance.links,
-            "created": self.instance.created,
-            "flavor": self.instance.flavor,
-            "updated": self.instance.updated
+        result = super(MgmtInstanceView, self).data()
+        result['instance']['server_id'] = self.instance.server_id
+        result['instance']['host'] = self.instance.host
+        result['instance']['tenant_id'] = self.instance.tenant_id
+        result['instance']['deleted'] = self.instance.deleted
+        result['instance']['deleted_at'] = self.instance.deleted_at
+        return result
+
+
+class MgmtInstanceDetailView(InstanceDetailView):
+    """Works with a full-blown instance."""
+
+    def __init__(self, instance, req, add_addresses=False,
+                 add_volumes=False, root_history=None):
+        super(MgmtInstanceDetailView, self).__init__(instance,
+                                                     req=req,
+                                                     add_addresses=add_addresses,
+                                                     add_volumes=add_volumes)
+        self.root_history = root_history
+
+    def data(self):
+        result = super(MgmtInstanceDetailView, self).data()
+        result['instance']['server_id'] = self.instance.server_id
+        result['instance']['tenant_id'] = self.instance.tenant_id
+        if self.root_history:
+            result['instance']['root_enabled'] = self.root_history.created
+            result['instance']['root_enabled_by'] = self.root_history.user
+        result['instance']['volume'] = {
+            "id": self.instance.volume_id,
+            "size": self.instance.volume_size
         }
-        if self.add_addresses and ip is not None and len(ip) > 0:
-            instance_dict['ip'] = ip
-        return {"instance": instance_dict}
+        result['instance']['guest_status'] = {
+            "state_description": self.instance.service_status.status.description
+        }
+        return result
 
+class MgmtInstancesView(object):
+    """Shows a list of MgmtInstance objects."""
 
-class InstancesView(InstanceView):
-
-    def __init__(self, instances, add_addresses=False):
+    def __init__(self, instances, req=None, add_addresses= False, add_volumes=False):
         self.instances = instances
+        self.req = req
         self.add_addresses = add_addresses
+        self.add_volumes = add_volumes
 
     def data(self):
         data = []
@@ -66,8 +85,10 @@ class InstancesView(InstanceView):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        return InstanceView(instance,
-                            self.add_addresses).data()['instance']
+        view = MgmtInstanceView(instance, req=self.req,
+                                add_addresses=self.add_addresses,
+                                add_volumes=self.add_volumes)
+        return view.data()['instance']
 
 
 class RootHistoryView(object):
@@ -82,4 +103,21 @@ class RootHistoryView(object):
         res['root_history']['id'] = self.instance_id
         res['root_history']['enabled'] = self.enabled
         res['root_history']['user'] = self.user
+        return res
+
+class DiagnosticsView(object):
+
+    def __init__(self, instance_id, diagnostics):
+        self.instance_id = instance_id
+        self.diagnostics = diagnostics
+
+    def data(self):
+        res = tree()
+        res['diagnostics']['version'] = self.diagnostics.version
+        res['diagnostics']['threads'] = self.diagnostics.threads
+        res['diagnostics']['fdSize'] = self.diagnostics.fd_size
+        res['diagnostics']['vmSize'] = self.diagnostics.vm_size
+        res['diagnostics']['vmPeak'] = self.diagnostics.vm_peak
+        res['diagnostics']['vmRss'] = self.diagnostics.vm_rss
+        res['diagnostics']['vmHwm'] = self.diagnostics.vm_hwm
         return res

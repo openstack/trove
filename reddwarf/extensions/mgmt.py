@@ -52,7 +52,8 @@ class Mgmt(extensions.ExtensionsDescriptor):
             service.MgmtInstanceController(),
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer,
-            member_actions={'root': 'GET'},
+            member_actions={'root': 'GET',
+                            'diagnostics': 'GET'},
             )
         resources.append(instances)
         hosts = extensions.ResourceExtension('{tenant_id}/mgmt/hosts',

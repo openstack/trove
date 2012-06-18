@@ -114,7 +114,8 @@ class SimpleInstance(object):
     @property
     def addresses(self):
         #TODO(tim.simpson): Review whether we should keep this... its a mess.
-        return self.db_info.addresses
+        if hasattr(self.db_info, 'addresses'):
+            return self.db_info.addresses
 
     @property
     def created(self):

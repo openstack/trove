@@ -15,35 +15,58 @@
 import logging
 
 from reddwarf.common import config
-from reddwarf.common import exception
+from reddwarf.common.remote import create_nova_client
 from reddwarf.instance import models as imodels
+from reddwarf.instance.models import load_instance
+from reddwarf.instance import models as instance_models
 
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-class MgmtInstance(imodels.SimpleInstance):
+def load_mgmt_instance(cls, context, id):
+    instance = load_instance(cls, context, id, needs_server=True)
+    return instance
 
-    def __init__(self, *args, **kwargs):
-        super(MgmtInstance, self).__init__(*args)
-        self.server = kwargs['server']
+
+def load_mgmt_instances(context):
+    client = create_nova_client(context)
+    mgmt = client.mgmt.get_servers()
+    db_infos = instance_models.DBInstance.find_all()
+    instances = MgmtInstances.load_status_from_existing(context,
+                                        db_infos, mgmt.servers)
+    return instances
+
+
+class SimpleMgmtInstance(imodels.BaseInstance):
 
     @property
     def host(self):
         return self.server.host if self.server else ""
 
+    @property
+    def deleted(self):
+        return self.server.deleted if self.server else ""
+
+    @property
+    def deleted_at(self):
+        return self.server.deleted_at if self.server else ""
+
+
+class MgmtInstance(imodels.Instance):
+
+    def get_diagnostics(self):
+        return self.get_guest().get_diagnostics()
+
 
 class MgmtInstances(imodels.Instances):
-
-    def __init__(self, *args, **kwargs):
-        super(MgmtInstances, self).__init__(*args, **kwargs)
 
     @staticmethod
     def load_status_from_existing(context, db_infos, servers):
 
         def load_instance(context, db, status, server=None):
-            return MgmtInstance(context, db, status, server=server)
+            return SimpleMgmtInstance(context, db, server, status)
 
         if context is None:
             raise TypeError("Argument context not defined.")
@@ -69,3 +92,7 @@ class Server(object):
         self.status = server['status']
         self.name = server['name']
         self.host = server['host']
+        if 'deleted' in server:
+            self.deleted = server['deleted']
+        if 'deleted_at' in server:
+            self.deleted_at = server['deleted_at']
