@@ -98,11 +98,13 @@ class FakeGuest(object):
                 mount_point=None):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+        from reddwarf.guestagent.models import AgentHeartBeat
 
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             status.status = ServiceStatuses.RUNNING
             status.save()
+            AgentHeartBeat.create(instance_id=self.id)
         EventSimulator.add_event(2.0, update_db)
 
     def restart(self):
@@ -124,6 +126,10 @@ class FakeGuest(object):
         status = InstanceServiceStatus.find_by(instance_id=self.id)
         status.status = ServiceStatuses.SHUTDOWN
         status.save()
+
+    def get_volume_info(self):
+        """Return used volume information in bytes."""
+        return {'used': 175756487}
 
 
 def get_or_create(id):

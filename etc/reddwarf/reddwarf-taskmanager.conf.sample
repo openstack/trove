@@ -33,6 +33,9 @@ nova_volume_url = http://localhost:8776/v1
 
 # Config options for enabling volume service
 reddwarf_volume_support = True
+block_device_mapping = /var/lib/mysql
+device_path = /var/lib/mysql
+mount_point = /var/lib/mysql
 volume_time_out=30
 
 # Configuration options for talking to nova via the novaclient.
@@ -49,6 +52,11 @@ taskmanager_manager=reddwarf.taskmanager.manager.TaskManager
 
 # Reddwarf DNS
 reddwarf_dns_support = False
+
+# Guest related conf
+agent_heartbeat_time = 10
+agent_call_low_timeout = 5
+agent_call_high_timeout = 100
 
 # ============ notifer queue kombu connection options ========================
 

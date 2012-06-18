@@ -1,13 +1,10 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
-# Copyright 2010-2011 OpenStack LLC.
-# All Rights Reserved.
+#    Copyright 2011 OpenStack LLC
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
 #
-#         http: //www.apache.org/licenses/LICENSE-2.0
+#         http://www.apache.org/licenses/LICENSE-2.0
 #
 #    Unless required by applicable law or agreed to in writing, software
 #    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -15,52 +12,53 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-Model classes that map instance Ip to dns record.
-"""
-
 import logging
 
 from reddwarf import db
 from reddwarf.common import exception
-from reddwarf.common.models import ModelBase
+from reddwarf.common import models
+from reddwarf.common import pagination
+from reddwarf.common import utils
+
 
 LOG = logging.getLogger(__name__)
 
 
-def persisted_models():
-    return {
-        'dns_records': DnsRecord,
-        }
-
-
-class DnsRecord(ModelBase):
-
-    _data_fields = ['name', 'record_id']
-    _table_name = 'dns_records'
-
-    def __init__(self, name, record_id):
-        self.name = name
-        self.record_id = record_id
+class DatabaseModelBase(models.ModelBase):
+    _auto_generated_attrs = ['id']
 
     @classmethod
     def create(cls, **values):
-        record = cls(**values).save()
-        if not record.is_valid():
-            raise exception.InvalidModelError(errors=record.errors)
-        return record
+        values['id'] = utils.generate_uuid()
+        values['created'] = utils.utcnow()
+        instance = cls(**values).save()
+        if not instance.is_valid():
+            raise exception.InvalidModelError(errors=instance.errors)
+        return instance
 
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
+        self['updated'] = utils.utcnow()
         LOG.debug(_("Saving %s: %s") %
                   (self.__class__.__name__, self.__dict__))
         return db.db_api.save(self)
 
     def delete(self):
+        self['updated'] = utils.utcnow()
         LOG.debug(_("Deleting %s: %s") %
                   (self.__class__.__name__, self.__dict__))
         return db.db_api.delete(self)
+
+    def __init__(self, **kwargs):
+        self.merge_attributes(kwargs)
+        if not self.is_valid():
+            raise exception.InvalidModelError(errors=self.errors)
+
+    def merge_attributes(self, values):
+        """dict.update() behaviour."""
+        for k, v in values.iteritems():
+            self[k] = v
 
     @classmethod
     def find_by(cls, **conditions):
@@ -75,6 +73,20 @@ class DnsRecord(ModelBase):
         return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
 
     @classmethod
+    def find_all(cls, **kwargs):
+        return db.db_query.find_all(cls, **cls._process_conditions(kwargs))
+
+    @classmethod
     def _process_conditions(cls, raw_conditions):
         """Override in inheritors to format/modify any conditions."""
         return raw_conditions
+
+    @classmethod
+    def find_by_pagination(cls, collection_type, collection_query,
+                           paginated_url, **kwargs):
+        elements, next_marker = collection_query.paginated_collection(**kwargs)
+
+        return pagination.PaginatedDataView(collection_type,
+                                            elements,
+                                            paginated_url,
+                                            next_marker)

@@ -79,5 +79,3 @@ class TaskManager(service.Manager):
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
         instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
                                        databases, service_type, volume_size)
-
-

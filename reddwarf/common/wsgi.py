@@ -46,14 +46,15 @@ eventlet.patcher.monkey_patch(all=False, socket=True)
 LOG = logging.getLogger('reddwarf.common.wsgi')
 
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
-CUSTOM_PLURALS_METADATA = {'databases':'', 'users':''}
-CUSTOM_SERIALIZER_METADATA = {'instance': {'status':'', 'hostname':'',
-                              'id':'', 'name':'','created':'', 'updated':''},
-                   'volume': {'size':'', 'used':''},
-                   'flavor': {'id':'', 'ram': '', 'name': ''},
-                   'link': {'href':'', 'rel': ''},
-                   'database': {'name':''},
-                   'user': {'name':'', 'password':''}}
+CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
+CUSTOM_SERIALIZER_METADATA = {'instance': {'status': '', 'hostname': '',
+                              'id': '', 'name': '', 'created': '',
+                              'updated': ''},
+                   'volume': {'size': '', 'used': ''},
+                   'flavor': {'id': '', 'ram': '', 'name': ''},
+                   'link': {'href': '', 'rel': ''},
+                   'database': {'name': ''},
+                   'user': {'name': '', 'password': ''}}
 
 
 def versioned_urlmap(*args, **kwargs):

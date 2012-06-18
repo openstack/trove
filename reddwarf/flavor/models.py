@@ -20,7 +20,7 @@
 from reddwarf import db
 
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common import exception as rd_exceptions
+from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common.models import NovaRemoteModelBase
 from reddwarf.common.remote import create_nova_client
@@ -39,13 +39,13 @@ class Flavor(object):
                 client = create_nova_client(context)
                 self.flavor = client.flavors.get(flavor_id)
             except nova_exceptions.NotFound, e:
-                raise rd_exceptions.NotFound(uuid=flavor_id)
+                raise exception.NotFound(uuid=flavor_id)
             except nova_exceptions.ClientException, e:
-                raise rd_exceptions.ReddwarfError(str(e))
+                raise exception.ReddwarfError(str(e))
             return
         msg = ("Flavor is not defined, and"
                " context and flavor_id were not specified.")
-        raise InvalidModelError(msg)
+        raise exception.InvalidModelError(errors=msg)
 
     @property
     def id(self):

@@ -47,7 +47,7 @@ add_addresses = True
 # Config options for enabling volume service
 reddwarf_volume_support = True
 block_device_mapping = /var/lib/mysql
-device_path = /dev/vdb
+device_path = /var/lib/mysql
 mount_point = /var/lib/mysql
 max_accepted_volume_size = 10
 volume_time_out=30
@@ -60,6 +60,11 @@ taskmanager_queue = taskmanager
 
 # Auth
 admin_roles = [admin]
+
+# Guest related conf
+agent_heartbeat_time = 10
+agent_call_low_timeout = 5
+agent_call_high_timeout = 100
 
 # ============ notifer queue kombu connection options ========================
 

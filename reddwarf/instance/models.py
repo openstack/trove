@@ -21,27 +21,21 @@ import eventlet
 import logging
 import netaddr
 
-from reddwarf import db
-
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
-from reddwarf.common import exception as rd_exceptions
-from reddwarf.common import pagination
-from reddwarf.common import utils
-from reddwarf.common.models import ModelBase
-from novaclient import exceptions as nova_exceptions
+from reddwarf.common import exception
 from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
-from reddwarf.common.utils import poll_until
+from reddwarf.db import models as dbmodels
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
+from reddwarf.guestagent import models as agent_models
 from reddwarf.taskmanager import api as task_api
 
 
 from eventlet import greenthread
-from reddwarf.instance.views import get_ip_address
 
 
 CONFIG = config.Config
@@ -55,10 +49,10 @@ def load_server(context, instance_id, server_id):
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound, e:
         LOG.debug("Could not find nova server_id(%s)" % server_id)
-        raise rd_exceptions.ComputeInstanceNotFound(instance_id=instance_id,
-                                                    server_id=server_id)
+        raise exception.ComputeInstanceNotFound(instance_id=instance_id,
+                                                server_id=server_id)
     except nova_exceptions.ClientException, e:
-        raise rd_exceptions.ReddwarfError(str(e))
+        raise exception.ReddwarfError(str(e))
     return server
 
 
@@ -80,7 +74,7 @@ def populate_databases(dbs):
             databases.append(mydb.serialize())
         return databases
     except ValueError as ve:
-        raise rd_exceptions.BadRequest(ve.message)
+        raise exception.BadRequest(ve.message)
 
 
 class InstanceStatus(object):
@@ -114,7 +108,7 @@ def load_simple_instance_server_status(context, db_info):
             # then assume the delete operation is done and raise an
             # exception.
             if InstanceTasks.DELETING == db_info.task_status:
-                raise rd_exceptions.NotFound(uuid=db_info.id)
+                raise exception.NotFound(uuid=db_info.id)
 
 
 # If the compute server is in any of these states we can't perform any
@@ -123,6 +117,9 @@ SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
 
 # Statuses in which an instance can have an action performed.
 VALID_ACTION_STATUSES = ["ACTIVE"]
+
+# Invalid states to contact the agent
+AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE"]
 
 
 class SimpleInstance(object):
@@ -167,24 +164,6 @@ class SimpleInstance(object):
     def is_sql_running(self):
         """True if the service status indicates MySQL is up and running."""
         return self.service_status.status in MYSQL_RESPONSIVE_STATUSES
-
-    @staticmethod
-    def load(context, id):
-        try:
-            db_info = DBInstance.find_by(id=id)
-        except ModelNotFoundError:
-            raise rd_exceptions.NotFound(uuid=id)
-        service_status = InstanceServiceStatus.find_by(instance_id=id)
-        LOG.info("service status=%s" % service_status)
-        # TODO(tim.simpson): In the future, we'll listen to notifications and
-        # update the RDL database when the server status changes, and add
-        # server_status as a property to db_info, but for now we have to resort
-        # to this.
-        db_info = DBInstance.find_by(id=id)
-        if not context.is_admin and db_info.tenant_id != context.tenant:
-            raise rd_exceptions.NotFound(uuid=id)
-        load_simple_instance_server_status(context, db_info)
-        return SimpleInstance(context, db_info, service_status)
 
     @property
     def name(self):
@@ -234,19 +213,46 @@ class SimpleInstance(object):
         return self.db_info.volume_size
 
 
-def load_instance(cls, context, id, needs_server=False):
+class DetailInstance(SimpleInstance):
+    """A detailed view of an Instnace.
+
+    This loads a SimpleInstance and then adds additional data for the
+    instance from the guest.
+    """
+
+    def __init__(self, context, db_info, service_status):
+        super(DetailInstance, self).__init__(context, db_info, service_status)
+        self._volume_used = None
+
+    @property
+    def volume_used(self):
+        return self._volume_used
+
+    @volume_used.setter
+    def volume_used(self, value):
+        self._volume_used = value
+
+
+def get_db_info(context, id):
     if context is None:
         raise TypeError("Argument context not defined.")
     elif id is None:
         raise TypeError("Argument id not defined.")
     try:
         db_info = DBInstance.find_by(id=id)
-    except rd_exceptions.NotFound:
-        raise rd_exceptions.NotFound(uuid=id)
+    except exception.NotFound:
+        raise exception.NotFound(uuid=id)
+    except exception.ModelNotFoundError:
+        raise exception.NotFound(uuid=id)
     if not context.is_admin and db_info.tenant_id != context.tenant:
         LOG.error("Tenant %s tried to access instance %s, owned by %s."
                   % (context.tenant, id, db_info.tenant_id))
-        raise rd_exceptions.NotFound(uuid=id)
+        raise exception.NotFound(uuid=id)
+    return db_info
+
+
+def load_instance(cls, context, id, needs_server=False):
+    db_info = get_db_info(context, id)
     if not needs_server:
         # TODO(tim.simpson): When we have notifications this won't be
         # necessary and instead we'll just use the server_status field from
@@ -260,15 +266,36 @@ def load_instance(cls, context, id, needs_server=False):
             #TODO(tim.simpson): Remove this hack when we have notifications!
             db_info.server_status = server.status
             db_info.addresses = server.addresses
-        except rd_exceptions.ComputeInstanceNotFound:
+        except exception.ComputeInstanceNotFound:
             LOG.error("COMPUTE ID = %s" % db_info.compute_instance_id)
-            raise rd_exceptions.UnprocessableEntity(
-                "Instance %s is not ready." % id)
+            raise exception.UnprocessableEntity("Instance %s is not ready." %
+                                                id)
 
-    task_status = db_info.task_status
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.info("service status=%s" % service_status)
     return cls(context, db_info, server, service_status)
+
+
+def load_instance_with_guest(cls, context, id):
+    db_info = get_db_info(context, id)
+    load_simple_instance_server_status(context, db_info)
+    service_status = InstanceServiceStatus.find_by(instance_id=id)
+    LOG.info("service status=%s" % service_status)
+    instance = cls(context, db_info, service_status)
+    try:
+        agent = agent_models.AgentHeartBeat.find_by(instance_id=id)
+    except exception.ModelNotFoundError as mnfe:
+        LOG.warn(mnfe)
+        return instance
+
+    if instance.status not in AGENT_INVALID_STATUSES and \
+       agent_models.AgentHeartBeat.is_active(agent):
+        guest = create_guest_client(context, id)
+        try:
+            instance.volume_used = guest.get_volume_info()['used']
+        except Exception as e:
+            LOG.error(e)
+    return instance
 
 
 class BaseInstance(SimpleInstance):
@@ -334,7 +361,7 @@ class Instance(BuiltInstance):
     def delete(self, force=False):
         if not force and \
             self.db_info.server_status in SERVER_INVALID_ACTION_STATUSES:
-            raise rd_exceptions.UnprocessableEntity("Instance %s is not ready."
+            raise exception.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
                   self.db_info.compute_instance_id)
@@ -349,7 +376,7 @@ class Instance(BuiltInstance):
         try:
             flavor = client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:
-            raise rd_exceptions.FlavorNotFound(uuid=flavor_id)
+            raise exception.FlavorNotFound(uuid=flavor_id)
 
         db_info = DBInstance.create(name=name,
             flavor_id=flavor_id, tenant_id=context.tenant,
@@ -375,7 +402,7 @@ class Instance(BuiltInstance):
             msg = "Instance is not currently available for an action to be " \
                   "performed. Status [%s]"
             LOG.debug(_(msg) % self.status)
-            raise rd_exceptions.UnprocessableEntity(_(msg) % self.status)
+            raise exception.UnprocessableEntity(_(msg) % self.status)
 
     def resize_flavor(self, new_flavor_id):
         self.validate_can_perform_resize()
@@ -387,12 +414,12 @@ class Instance(BuiltInstance):
         try:
             new_flavor = client.flavors.get(new_flavor_id)
         except nova_exceptions.NotFound:
-            raise rd_exceptions.FlavorNotFound(uuid=new_flavor_id)
+            raise exception.FlavorNotFound(uuid=new_flavor_id)
         old_flavor = client.flavors.get(self.flavor_id)
         new_flavor_size = new_flavor.ram
         old_flavor_size = old_flavor.ram
         if new_flavor_size == old_flavor_size:
-            raise rd_exceptions.CannotResizeToSameSize()
+            raise exception.CannotResizeToSameSize()
 
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)
@@ -403,16 +430,14 @@ class Instance(BuiltInstance):
     def resize_volume(self, new_size):
         LOG.info("Resizing volume of instance %s..." % self.id)
         if not self.volume_size:
-            raise rd_exceptions.BadRequest("Instance %s has no volume."
-                                           % self.id)
+            raise exception.BadRequest("Instance %s has no volume." % self.id)
         old_size = self.volume_size
         if int(new_size) <= old_size:
-            raise rd_exceptions.BadRequest("The new volume 'size' cannot be "
+            raise exception.BadRequest("The new volume 'size' cannot be "
                         "less than the current volume size of '%s'" % old_size)
         # Set the task to Resizing before sending off to the taskmanager
         self.update_db(task_status=InstanceTasks.RESIZING)
         task_api.API(self.context).resize_volume(new_size, self.id)
-
 
     def restart(self):
         if self.db_info.server_status in SERVER_INVALID_ACTION_STATUSES:
@@ -420,7 +445,7 @@ class Instance(BuiltInstance):
                     "status.") % (self.id, instance_state)
             LOG.debug(msg)
             # If the state is building then we throw an exception back
-            raise rd_exceptions.UnprocessableEntity(msg)
+            raise exception.UnprocessableEntity(msg)
         else:
             LOG.info("Restarting instance %s..." % self.id)
         # Set our local status since Nova might not change it quick enough.
@@ -442,7 +467,7 @@ class Instance(BuiltInstance):
                   "performed (task status was %s, service status was %s)." \
                   % (self.db_info.task_status, self.service_status.status)
             LOG.error(msg)
-            raise rd_exceptions.UnprocessableEntity(msg)
+            raise exception.UnprocessableEntity(msg)
 
     def validate_can_perform_resize(self):
         """
@@ -452,7 +477,7 @@ class Instance(BuiltInstance):
             msg = "Instance is not currently available for an action to be " \
                   "performed (status was %s)." % self.status
             LOG.error(msg)
-            raise rd_exceptions.UnprocessableEntity(msg)
+            raise exception.UnprocessableEntity(msg)
 
 
 def create_server_list_matcher(server_list):
@@ -465,13 +490,13 @@ def create_server_list_matcher(server_list):
             # The instance was not found in the list and
             # this can happen if the instance is deleted from
             # nova but still in reddwarf database
-            raise rd_exceptions.ComputeInstanceNotFound(
+            raise exception.ComputeInstanceNotFound(
                 instance_id=instance_id, server_id=server_id)
         else:
             # Should never happen, but never say never.
             LOG.error(_("Server %s for instance %s was found twice!")
                   % (server_id, instance_id))
-            raise rd_exceptions.ReddwarfError(uuid=instance_id)
+            raise exception.ReddwarfError(uuid=instance_id)
     return find_server
 
 
@@ -481,6 +506,10 @@ class Instances(object):
 
     @staticmethod
     def load(context):
+
+        def load_simple_instance(context, db, status):
+            return SimpleInstance(context, db, status)
+
         if context is None:
             raise TypeError("Argument context not defined.")
         client = create_nova_client(context)
@@ -495,12 +524,20 @@ class Instances(object):
                                                   marker=context.marker)
         next_marker = data_view.next_page_marker
 
-        ret = []
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
             LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
                       (db.id, db.compute_instance_id))
-        for db in data_view.collection:
+        ret = Instances._load_servers_status(load_simple_instance, context,
+                                             data_view.collection,
+                                             find_server)
+        return ret, next_marker
+
+    @staticmethod
+    def _load_servers_status(load_instance, context, db_items, find_server):
+        ret = []
+        for db in db_items:
+            server = None
             try:
                 #TODO(tim.simpson): Delete when we get notifications working!
                 if InstanceTasks.BUILDING == db.task_status:
@@ -509,99 +546,32 @@ class Instances(object):
                     try:
                         server = find_server(db.id, db.compute_instance_id)
                         db.server_status = server.status
-                    except rd_exceptions.ComputeInstanceNotFound:
+                    except exception.ComputeInstanceNotFound:
                         if InstanceTasks.DELETING == db.task_status:
                             #TODO(tim.simpson): This instance is actually
                             # deleted, but without notifications we never
                             # update our DB.
                             continue
-                        db.server_status = "SHUTDOWN" # Fake it...
+                        db.server_status = "SHUTDOWN"  # Fake it...
                 #TODO(tim.simpson): End of hack.
 
                 #volumes = find_volumes(server.id)
                 status = InstanceServiceStatus.find_by(instance_id=db.id)
                 LOG.info(_("Server api_status(%s)") %
                            (status.status.api_status))
-                if not status.status: # This should never happen.
+                if not status.status:  # This should never happen.
                     LOG.error(_("Server status could not be read for "
                                 "instance id(%s)") % (db.id))
                     continue
-            except ModelNotFoundError:
+            except exception.ModelNotFoundError:
                 LOG.error(_("Server status could not be read for "
                                 "instance id(%s)") % (db.id))
                 continue
-            ret.append(SimpleInstance(context, db, status))
-        return ret, next_marker
+            ret.append(load_instance(context, db, status))
+        return ret
 
 
-class DatabaseModelBase(ModelBase):
-    _auto_generated_attrs = ['id']
-
-    @classmethod
-    def create(cls, **values):
-        values['id'] = utils.generate_uuid()
-        values['created'] = utils.utcnow()
-        instance = cls(**values).save()
-        if not instance.is_valid():
-            raise InvalidModelError(instance.errors)
-        return instance
-
-    def save(self):
-        if not self.is_valid():
-            raise InvalidModelError(self.errors)
-        self['updated'] = utils.utcnow()
-        LOG.debug(_("Saving %s: %s") %
-            (self.__class__.__name__, self.__dict__))
-        return db.db_api.save(self)
-
-    def delete(self):
-        self['updated'] = utils.utcnow()
-        LOG.debug(_("Deleting %s: %s") %
-            (self.__class__.__name__, self.__dict__))
-        return db.db_api.delete(self)
-
-    def __init__(self, **kwargs):
-        self.merge_attributes(kwargs)
-        if not self.is_valid():
-            raise InvalidModelError(self.errors)
-
-    def merge_attributes(self, values):
-        """dict.update() behaviour."""
-        for k, v in values.iteritems():
-            self[k] = v
-
-    @classmethod
-    def find_by(cls, **conditions):
-        model = cls.get_by(**conditions)
-        if model is None:
-            raise ModelNotFoundError(_("%s Not Found") % cls.__name__)
-        return model
-
-    @classmethod
-    def get_by(cls, **kwargs):
-        return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
-
-    @classmethod
-    def find_all(cls, **kwargs):
-        return db.db_query.find_all(cls, **cls._process_conditions(kwargs))
-
-    @classmethod
-    def _process_conditions(cls, raw_conditions):
-        """Override in inheritors to format/modify any conditions."""
-        return raw_conditions
-
-    @classmethod
-    def find_by_pagination(cls, collection_type, collection_query,
-                            paginated_url, **kwargs):
-        elements, next_marker = collection_query.paginated_collection(**kwargs)
-
-        return pagination.PaginatedDataView(collection_type,
-                                            elements,
-                                            paginated_url,
-                                            next_marker)
-
-
-class DBInstance(DatabaseModelBase):
+class DBInstance(dbmodels.DatabaseModelBase):
     """Defines the task being executed plus the start time."""
 
     #TODO(tim.simpson): Add start time.
@@ -632,13 +602,13 @@ class DBInstance(DatabaseModelBase):
     task_status = property(get_task_status, set_task_status)
 
 
-class ServiceImage(DatabaseModelBase):
+class ServiceImage(dbmodels.DatabaseModelBase):
     """Defines the status of the service being run."""
 
     _data_fields = ['service_name', 'image_id']
 
 
-class InstanceServiceStatus(DatabaseModelBase):
+class InstanceServiceStatus(dbmodels.DatabaseModelBase):
 
     _data_fields = ['instance_id', 'status_id', 'status_description']
 
@@ -670,19 +640,6 @@ def persisted_models():
         'service_image': ServiceImage,
         'service_statuses': InstanceServiceStatus,
         }
-
-
-class InvalidModelError(rd_exceptions.ReddwarfError):
-
-    message = _("The following values are invalid: %(errors)s")
-
-    def __init__(self, errors, message=None):
-        super(InvalidModelError, self).__init__(message, errors=errors)
-
-
-class ModelNotFoundError(rd_exceptions.ReddwarfError):
-
-    message = _("Not Found")
 
 
 class ServiceStatus(object):

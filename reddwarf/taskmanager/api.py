@@ -50,6 +50,7 @@ class API(object):
         from reddwarf.taskmanager.manager import TaskManager
         instance = TaskManager()
         method = getattr(instance, method_name)
+
         def func():
             try:
                 method(self.context, **kwargs)

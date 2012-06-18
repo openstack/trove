@@ -18,9 +18,8 @@
 import logging
 from reddwarf.common import config
 from reddwarf.common import utils
-from reddwarf.common import wsgi
 from reddwarf.common.views import create_links
-
+from reddwarf.instance import models
 
 LOG = logging.getLogger(__name__)
 
@@ -84,6 +83,8 @@ class InstanceDetailView(InstanceView):
         self.add_addresses = add_addresses
         self.add_volumes = add_volumes
 
+    def _to_gb(self, bytes):
+        return bytes / 1024.0 ** 3
 
     def data(self):
         result = super(InstanceDetailView, self).data()
@@ -98,6 +99,11 @@ class InstanceDetailView(InstanceView):
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
+        if self.add_volumes:
+            if isinstance(self.instance, models.DetailInstance) and \
+                                                     self.instance.volume_used:
+                used = self._to_gb(self.instance.volume_used)
+                result['instance']['volume']['used'] = used
         return result
 
 

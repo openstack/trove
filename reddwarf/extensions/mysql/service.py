@@ -22,7 +22,6 @@ from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import wsgi
 from reddwarf.guestagent.db import models as guest_models
-from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mysql import models
 from reddwarf.extensions.mysql import views
 
@@ -44,7 +43,7 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
-            instance_models.ModelNotFoundError,
+            exception.ModelNotFoundError,
             ],
         webob.exc.HTTPConflict: [
             ],
