@@ -22,6 +22,8 @@ from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import wsgi
 from reddwarf.guestagent.db import models as guest_models
+from reddwarf.extensions.mysql.common import populate_databases
+from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.extensions.mysql import models
 from reddwarf.extensions.mysql import views
 
@@ -121,7 +123,7 @@ class UserController(BaseController):
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         users = body['users']
-        model_users = models.populate_users(users)
+        model_users = populate_users(users)
         models.User.create(context, instance_id, model_users)
         return wsgi.Result(None, 202)
 
@@ -168,7 +170,7 @@ class SchemaController(BaseController):
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         schemas = body['databases']
-        model_schemas = models.populate_databases(schemas)
+        model_schemas = populate_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)
         return wsgi.Result(None, 202)
 

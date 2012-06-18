@@ -30,13 +30,14 @@ from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.utils import poll_until
+from reddwarf.extensions.mysql.common import populate_databases
+from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models as inst_models
 from reddwarf.instance.models import DBInstance
 from reddwarf.instance.models import BuiltInstance
 from reddwarf.instance.models import FreshInstance
 from reddwarf.instance.models import InstanceStatus
 from reddwarf.instance.models import InstanceServiceStatus
-from reddwarf.instance.models import populate_databases
 from reddwarf.instance.models import ServiceStatuses
 from reddwarf.instance.views import get_ip_address
 
@@ -46,8 +47,8 @@ LOG = logging.getLogger(__name__)
 
 class FreshInstanceTasks(FreshInstance):
 
-    def create_instance(self, flavor_id, flavor_ram,
-                        image_id, databases, service_type, volume_size):
+    def create_instance(self, flavor_id, flavor_ram, image_id,
+                        databases, users, service_type, volume_size):
         try:
             volume_info = self._create_volume(volume_size)
             block_device_mapping = volume_info['block_device']
@@ -57,7 +58,8 @@ class FreshInstanceTasks(FreshInstance):
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
             self._create_dns_entry()
-            self._guest_prepare(server, flavor_ram, volume_info, databases)
+            self._guest_prepare(server, flavor_ram, volume_info,
+                                databases, users)
         finally:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
@@ -127,12 +129,11 @@ class FreshInstanceTasks(FreshInstance):
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server
 
-    def _guest_prepare(self, server, flavor_ram, volume_info, databases):
+    def _guest_prepare(self, server, flavor_ram, volume_info,
+                       databases, users):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
-        # populate the databases
-        model_schemas = populate_databases(databases)
-        self.guest.prepare(flavor_ram, model_schemas, users=[],
+        self.guest.prepare(flavor_ram, databases, users,
                       device_path=volume_info['device_path'],
                       mount_point=volume_info['mount_point'])
 
