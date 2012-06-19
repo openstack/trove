@@ -71,18 +71,15 @@ class DnsManager(object):
         if entry:
             self.driver.delete_entry(entry.name, entry.type)
 
-    def update_hostname(self, instance):
+    def determine_hostname(self, instance_id):
         """
         Create the hostname field based on the instance id.
-        Use instance by default
+        Use instance by default.
         """
-        dns_support = config.Config.get('reddwarf_dns_support', 'False')
-        LOG.debug(_("reddwarf dns support = %s") % dns_support)
-        if utils.bool_from_string(dns_support):
-            entry = self.entry_factory.create_entry(instance.id)
-            instance.hostname = entry.name
-            instance.save()
-            LOG.debug("Saved the hostname as %s " % instance.hostname)
+        entry = self.entry_factory.create_entry(instance_id)
+        if entry:
+            return entry.name
         else:
-            instance.hostname = instance.name
-            instance.save()
+            return None
+
+
