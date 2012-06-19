@@ -237,8 +237,8 @@ class InstanceController(BaseController):
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
         flavor_id = utils.get_id_from_href(flavor_ref)
-        databases = populate_databases(body['instance'].get('databases'))
-        users = populate_users(body['instance'].get('users'))
+        databases = populate_databases(body['instance'].get('databases', []))
+        users = populate_users(body['instance'].get('users', []))
         if body['instance'].get('volume', None) is not None:
             try:
                 volume_size = int(body['instance']['volume']['size'])
