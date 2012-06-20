@@ -56,6 +56,9 @@ class MgmtInstanceDetailView(InstanceDetailView):
         result = super(MgmtInstanceDetailView, self).data()
         result['instance']['server_id'] = self.instance.server_id
         result['instance']['tenant_id'] = self.instance.tenant_id
+        result['instance']['host'] = self.instance.host
+        result['instance']['deleted'] = self.instance.deleted
+        result['instance']['deleted_at'] = self.instance.deleted_at
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user

@@ -60,7 +60,7 @@ class MgmtInstanceController(InstanceController):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
-            server = models.load_mgmt_instance(models.SimpleMgmtInstance, context, id)
+            server = models.SimpleMgmtInstance.load(context, id)
             root_history = mysql_models.RootHistory.load(context=context,
                                                          instance_id=id)
         except exception.ReddwarfError, e:

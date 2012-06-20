@@ -25,17 +25,12 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-def load_mgmt_instance(cls, context, id):
-    instance = load_instance(cls, context, id, needs_server=True)
-    return instance
-
-
 def load_mgmt_instances(context):
     client = create_nova_client(context)
-    mgmt = client.mgmt.get_servers()
+    mgmt_servers = client.rdservers.list()
     db_infos = instance_models.DBInstance.find_all()
     instances = MgmtInstances.load_status_from_existing(context,
-                                        db_infos, mgmt.servers)
+                                        db_infos, mgmt_servers)
     return instances
 
 
@@ -52,6 +47,20 @@ class SimpleMgmtInstance(imodels.BaseInstance):
     @property
     def deleted_at(self):
         return self.server.deleted_at if self.server else ""
+
+    @classmethod
+    def load(cls, context, id):
+        try:
+            instance = load_instance(cls, context, id, needs_server=True)
+            client = create_nova_client(context)
+            server = client.rdservers.get(instance.server_id)
+            instance.server.host = server.host
+            instance.server.deleted = server.deleted
+            instance.server.deleted_at = server.deleted_at
+        except Exception, e:
+            LOG.error(e)
+            instance = load_instance(cls, context, id, needs_server=False)
+        return instance
 
 
 class MgmtInstance(imodels.Instance):
@@ -70,29 +79,18 @@ class MgmtInstances(imodels.Instances):
 
         if context is None:
             raise TypeError("Argument context not defined.")
-
-        find_server = imodels.create_server_list_matcher(
-                                        _convert_server_objects(servers))
-        ret = imodels.Instances._load_servers_status(load_instance, context,
+        find_server = imodels.create_server_list_matcher(servers)
+        instances = imodels.Instances._load_servers_status(load_instance, context,
                                                      db_infos, find_server)
-        return ret
+        _load_servers(instances, find_server)
+        return instances
 
 
-def _convert_server_objects(servers):
-    server_objs = []
-    for server in servers:
-        server_objs.append(Server(server))
-    return server_objs
+def _load_servers(instances, find_server):
+    for instance in instances:
+        db = instance.db_info
+        server = find_server(db.id, db.compute_instance_id)
+        instance.server = server
+    return instances
 
 
-class Server(object):
-
-    def __init__(self, server):
-        self.id = server['id']
-        self.status = server['status']
-        self.name = server['name']
-        self.host = server['host']
-        if 'deleted' in server:
-            self.deleted = server['deleted']
-        if 'deleted_at' in server:
-            self.deleted_at = server['deleted_at']

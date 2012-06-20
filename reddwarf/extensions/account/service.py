@@ -43,9 +43,25 @@ class AccountController(wsgi.Controller):
             client = create_nova_client(context)
             account = client.accounts.get_instances(id)
             db_infos = imodels.DBInstance.find_all(tenant_id=id)
+            servers = _convert_server_objects(account.servers)
             instances = models.MgmtInstances.load_status_from_existing(context,
-                                                    db_infos, account.servers)
+                                                    db_infos, servers)
         except nova_exceptions.ClientException, e:
             LOG.error(e)
             return wsgi.Result(str(e), 403)
         return wsgi.Result(views.AccountView(account, instances).data(), 200)
+
+def _convert_server_objects(servers):
+    server_objs = []
+    for server in servers:
+        server_objs.append(Server(server))
+    return server_objs
+
+
+class Server(object):
+
+    def __init__(self, server):
+        self.id = server['id']
+        self.status = server['status']
+        self.name = server['name']
+        self.host = server['host']
