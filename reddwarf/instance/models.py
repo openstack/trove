@@ -28,7 +28,6 @@ from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
-from reddwarf import db as db_api
 from reddwarf.db import models as dbmodels
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
@@ -48,7 +47,7 @@ def load_server(context, instance_id, server_id):
     client = create_nova_client(context)
     try:
         server = client.servers.get(server_id)
-    except nova_exceptions.NotFound, e:
+    except nova_exceptions.NotFound as e:
         LOG.debug("Could not find nova server_id(%s)" % server_id)
         raise exception.ComputeInstanceNotFound(instance_id=instance_id,
                                                 server_id=server_id)
