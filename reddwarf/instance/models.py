@@ -24,6 +24,7 @@ import netaddr
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import exception
+from reddwarf.common import utils
 from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
@@ -366,10 +367,16 @@ class Instance(BuiltInstance):
         service_status = InstanceServiceStatus.create(instance_id=db_info.id,
             status=ServiceStatuses.NEW)
 
-        dns_client = create_dns_client(context)
-        dns_client.update_hostname(db_info)
+        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        if utils.bool_from_string(dns_support):
+            dns_client = create_dns_client(context)
+            hostname = dns_client.determine_hostname(db_info.id)
+            db_info.hostname=hostname
+            db_info.save()
+
         task_api.API(context).create_instance(db_info.id, name, flavor_id,
             flavor.ram, image_id, databases, users, service_type, volume_size)
+
 
         return SimpleInstance(context, db_info, service_status)
 

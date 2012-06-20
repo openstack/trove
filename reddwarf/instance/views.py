@@ -93,7 +93,7 @@ class InstanceDetailView(InstanceView):
 
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         if utils.bool_from_string(dns_support):
-            result['hostname'] = self.instance.hostname
+            result['instance']['hostname'] = self.instance.hostname
 
         if self.add_addresses:
             ip = get_ip_address(self.instance.addresses)
