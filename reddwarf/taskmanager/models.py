@@ -15,7 +15,7 @@
 import logging
 
 from eventlet import greenthread
-
+from datetime import datetime
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import remote
@@ -39,6 +39,7 @@ from reddwarf.instance.models import FreshInstance
 from reddwarf.instance.models import InstanceStatus
 from reddwarf.instance.models import InstanceServiceStatus
 from reddwarf.instance.models import ServiceStatuses
+from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.instance.views import get_ip_address
 
 
@@ -191,7 +192,6 @@ class BuiltInstanceTasks(BuiltInstance):
             LOG.error("Error during delete compute server %s "
                       % self.server.id)
             LOG.error(ex)
-
         try:
             dns_support = config.Config.get("reddwarf_dns_support", 'False')
             LOG.debug(_("reddwarf dns support = %s") % dns_support)
@@ -202,6 +202,26 @@ class BuiltInstanceTasks(BuiltInstance):
             LOG.error("Error during dns entry for instance %s "
                       % self.db_info.id )
             LOG.error(ex)
+        # Poll until the server is gone.
+        def server_is_finished():
+            try:
+                server_id = self.db_info.compute_instance_id
+                server = self.nova_client.servers.get(server_id)
+                if server.status != "SHUTDOWN":
+                    msg = "Server %s got into ERROR status during delete " \
+                          "of instance %s!" % (server.id, self.id)
+                    LOG.error(msg)
+                    raise ReddwarfError(msg)
+                return False
+            except nova_exceptions.NotFound:
+                return True
+
+        poll_until(server_is_finished, sleep_time=2,
+                   time_out=int(config.Config.get('server_delete_time_out')))
+        # If time out occurs, the instance task is stuck in DELETING.
+        LOG.debug("Setting instance %s to deleted..." % self.id)
+        self.update_db(task_status=InstanceTasks.NONE)
+        self.update_db(deleted=True, deleted_at=datetime.now())
 
     def resize_volume(self, new_size):
         LOG.debug("%s: Resizing volume for instance: %s to %r GB"

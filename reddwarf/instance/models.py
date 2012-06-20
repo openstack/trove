@@ -48,7 +48,7 @@ def load_server(context, instance_id, server_id):
     client = create_nova_client(context)
     try:
         server = client.servers.get(server_id)
-    except nova_exceptions.NotFound, e:
+    except nova_exceptions.NotFound as e:
         LOG.debug("Could not find nova server_id(%s)" % server_id)
         raise exception.ComputeInstanceNotFound(instance_id=instance_id,
                                                 server_id=server_id)
@@ -160,16 +160,12 @@ class SimpleInstance(object):
             return InstanceStatus.REBOOT
         if InstanceTasks.RESIZING == self.db_info.task_status:
             return InstanceStatus.RESIZE
+
         # If the server is in any of these states they take precedence.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
                                           "RESIZE"]:
             return self.db_info.server_status
-        # The service is only paused during a reboot.
-        if ServiceStatuses.PAUSED == self.service_status.status:
-            return InstanceStatus.REBOOT
-        # If the service status is NEW, then we are building.
-        if ServiceStatuses.NEW == self.service_status.status:
-            return InstanceStatus.BUILD
+
         if InstanceTasks.DELETING == self.db_info.task_status:
             if self.db_info.server_status in ["ACTIVE", "SHUTDOWN"]:
                 return InstanceStatus.SHUTDOWN
@@ -177,6 +173,13 @@ class SimpleInstance(object):
                 LOG.error(_("While shutting down instance (%s): server had "
                     " status (%s).") % (self.id, self.db_info.server_status))
                 return InstanceStatus.ERROR
+
+        # The service is only paused during a reboot.
+        if ServiceStatuses.PAUSED == self.service_status.status:
+            return InstanceStatus.REBOOT
+        # If the service status is NEW, then we are building.
+        if ServiceStatuses.NEW == self.service_status.status:
+            return InstanceStatus.BUILD
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
 
@@ -219,7 +222,7 @@ def get_db_info(context, id):
     elif id is None:
         raise TypeError("Argument id not defined.")
     try:
-        db_info = DBInstance.find_by(id=id)
+        db_info = DBInstance.find_by(id=id, deleted=False)
     except exception.NotFound:
         raise exception.NotFound(uuid=id)
     except exception.ModelNotFoundError:
@@ -304,7 +307,7 @@ class BaseInstance(SimpleInstance):
         return self._nova_client
 
     def update_db(self, **values):
-        self.db_info = DBInstance.find_by(id=self.id)
+        self.db_info = DBInstance.find_by(id=self.id, deleted=False)
         for key in values:
             setattr(self.db_info, key, values[key])
         self.db_info.save()
@@ -501,7 +504,7 @@ class Instances(object):
         client = create_nova_client(context)
         servers = client.servers.list()
 
-        db_infos = DBInstance.find_all(tenant_id=context.tenant)
+        db_infos = DBInstance.find_all(tenant_id=context.tenant, deleted=False)
         limit = int(context.limit or Instances.DEFAULT_LIMIT)
         if limit > Instances.DEFAULT_LIMIT:
             limit = Instances.DEFAULT_LIMIT
@@ -533,12 +536,7 @@ class Instances(object):
                         server = find_server(db.id, db.compute_instance_id)
                         db.server_status = server.status
                     except exception.ComputeInstanceNotFound:
-                        if InstanceTasks.DELETING == db.task_status:
-                            #TODO(tim.simpson): This instance is actually
-                            # deleted, but without notifications we never
-                            # update our DB.
-                            continue
-                        db.server_status = "SHUTDOWN"  # Fake it...
+                        db.server_status = "SHUTDOWN" # Fake it...
                 #TODO(tim.simpson): End of hack.
 
                 #volumes = find_volumes(server.id)
@@ -564,11 +562,12 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
-                    'volume_id']
+                    'volume_id', 'deleted']
 
     def __init__(self, task_status=None, **kwargs):
         kwargs["task_id"] = task_status.code
         kwargs["task_description"] = task_status.db_text
+        kwargs["deleted"] = False
         super(DBInstance, self).__init__(**kwargs)
         self.set_task_status(task_status)
 
