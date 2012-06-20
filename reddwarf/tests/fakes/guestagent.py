@@ -94,11 +94,15 @@ class FakeGuest(object):
             users = users[:limit]
         return users, next_marker
 
-    def prepare(self, databases, memory_mb, users, device_path=None,
+    def prepare(self, memory_mb, databases, users, device_path=None,
                 mount_point=None):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
         from reddwarf.guestagent.models import AgentHeartBeat
+        LOG.debug("users... %s" % users)
+        LOG.debug("databases... %s" % databases)
+        self.create_user(users)
+        self.create_database(databases)
 
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
