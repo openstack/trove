@@ -91,7 +91,8 @@ class AppUrl(object):
         # Build a new query based on the updated query dict.
         new_query_params = urllib.urlencode(query_params)
         return self.__class__(
-            urlparse.ParseResult(parsed_url.scheme,
+            # Force HTTPS.
+            urlparse.ParseResult('https',
                                  parsed_url.netloc, parsed_url.path,
                                  parsed_url.params, new_query_params,
                                  parsed_url.fragment).geturl())
