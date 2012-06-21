@@ -56,6 +56,8 @@ class BaseController(wsgi.Controller):
             ],
         webob.exc.HTTPRequestEntityTooLarge: [
             exception.OverLimit,
+            exception.QuotaExceeded,
+            exception.VolumeQuotaExceeded,
             ],
         webob.exc.HTTPServerError: [
             exception.VolumeCreationFailure
@@ -246,6 +248,17 @@ class InstanceController(BaseController):
                 raise exception.BadValue(msg=e)
         else:
             volume_size = None
+
+        instance_max = int(config.Config.get('max_instances_per_user', 5))
+        number_instances = models.DBInstance.find_all(tenant_id=tenant_id,
+                                                      deleted=False).count()
+
+        if number_instances >= instance_max:
+            # That's too many, pal. Got to cut you off.
+            LOG.error(_("New instance would exceed user instance quota."))
+            msg = "User instance quota of %d would be exceeded."
+            raise exception.QuotaExceeded(msg % instance_max)
+
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           service_type, volume_size)
@@ -285,18 +298,18 @@ class InstanceController(BaseController):
                    "integer value, %s cannot be accepted."
                    % volume_size)
             raise exception.ReddwarfError(msg)
-        max_size = int(config.Config.get('max_accepted_volume_size',
-                                         1))
+        max_size = int(config.Config.get('max_accepted_volume_size', 1))
         if int(volume_size) > max_size:
             msg = ("Volume 'size' cannot exceed maximum "
                    "of %d Gb, %s cannot be accepted."
                    % (max_size, volume_size))
-            raise exception.ReddwarfError(msg)
+            raise exception.VolumeQuotaExceeded(msg)
 
     @staticmethod
     def _validate(body):
         """Validate that the request has all the required parameters"""
         InstanceController._validate_body_not_empty(body)
+
         try:
             body['instance']
             body['instance']['flavorRef']
@@ -315,6 +328,7 @@ class InstanceController(BaseController):
                         raise exception.MissingKey(key="size")
                 elif must_have_vol:
                     raise exception.MissingKey(key="volume")
+
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise exception.ReddwarfError("Required element/key - %s "

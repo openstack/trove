@@ -59,6 +59,7 @@ class API(object):
                 logging.error("Error running async task:")
                 logging.error((traceback.format_exception(type_, value, tb)))
                 raise type_, value, tb
+
         eventlet.spawn_after(0, func)
 
     def _get_routing_key(self):

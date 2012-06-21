@@ -1,4 +1,5 @@
 
+
 class RsDnsError(RuntimeError):
 
     def __init__(self, error):
@@ -13,9 +14,10 @@ class RsDnsError(RuntimeError):
     def __str__(self):
         return self.message
 
+
 class FutureResource(object):
     """Polls a callback url to return a resource."""
-    
+
     def __init__(self, manager, jobId, callbackUrl, status, **kwargs):
         self.manager = manager
         self.jobId = jobId
@@ -41,8 +43,6 @@ class FutureResource(object):
                     return None
                 resp_list = body['response'][self.response_list_name()]
                 self.result = self.manager.create_from_list(resp_list)
-                #self.resource_class(self, res) for res in list]
-                #self.result = Domain(self.manager, body['self.convert_callback(resp, body)
         return self.result
 
     @property

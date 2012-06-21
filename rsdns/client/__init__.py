@@ -21,4 +21,3 @@ from rsdns.client.dns_client import DNSaas
 from rsdns.client.dns_client import DNSaasClient
 from rsdns.client.domains import DomainsManager
 from rsdns.client.records import RecordsManager
-
