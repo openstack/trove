@@ -81,14 +81,9 @@ def load_simple_instance_server_status(context, db_info):
             db_info.server_status = server.status
             db_info.addresses = server.addresses
         except nova_exceptions.NotFound, e:
-            db_info.server_status = "ERROR"
+            db_info.server_status = "SHUTDOWN"
             db_info.addresses = {}
-            #TODO(tim.simpson): This is another notifications hack. If the
-            # task is delelting, and the compute instance isn't found,
-            # then assume the delete operation is done and raise an
-            # exception.
-            if InstanceTasks.DELETING == db_info.task_status:
-                raise exception.NotFound(uuid=db_info.id)
+
 
 
 # If the compute server is in any of these states we can't perform any
