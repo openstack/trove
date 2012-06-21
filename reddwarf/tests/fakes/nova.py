@@ -479,6 +479,41 @@ class FakeHosts(object):
         return [self.hosts[name] for name in self.hosts]
 
 
+class FakeRdStorage(object):
+
+    def __init__(self, name):
+        self.name = name
+        self.type = ""
+        self.used = 0
+        self.capacity = {}
+        self.provision = {}
+
+    def recalc(self):
+        self.type = "test_type"
+        self.used = 10
+        self.capacity['total'] = 100
+        self.capacity['available'] = 90
+        self.provision['total'] = 50
+        self.provision['available'] = 40
+        self.provision['percent'] = 10
+
+
+class FakeRdStorages(object):
+
+    def __init__(self):
+        self.storages = {}
+        self.add_storage(FakeRdStorage("fake_storage"))
+
+    def add_storage(self, storage):
+        self.storages[storage.name] = storage
+        return storage
+
+    def list(self):
+        for name in self.storages:
+            self.storages[name].recalc()
+        return [self.storages[name] for name in self.storages]
+
+
 class FakeClient(object):
 
     def __init__(self, context):
@@ -489,6 +524,7 @@ class FakeClient(object):
         self.servers.volumes = self.volumes
         self.accounts = FakeAccounts(context, self.servers)
         self.rdhosts = FakeHosts(self.servers)
+        self.rdstorage = FakeRdStorages()
 
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)
