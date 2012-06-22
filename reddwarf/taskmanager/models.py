@@ -208,7 +208,7 @@ class BuiltInstanceTasks(BuiltInstance):
             try:
                 server_id = self.db_info.compute_instance_id
                 server = self.nova_client.servers.get(server_id)
-                if server.status != "SHUTDOWN":
+                if server.status not in ['SHUTDOWN', 'ACTIVE']:
                     msg = "Server %s got into ERROR status during delete " \
                           "of instance %s!" % (server.id, self.id)
                     LOG.error(msg)
