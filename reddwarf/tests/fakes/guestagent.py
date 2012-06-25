@@ -31,6 +31,18 @@ class FakeGuest(object):
         self.users = {}
         self.dbs = {}
         self.root_was_enabled = False
+        self.version = 1
+
+    def get_diagnostics(self):
+        return {
+            'version': str(self.version),
+            'fd_size': 64,
+            'vm_size': 29096,
+            'vm_peak': 29160,
+            'vm_rss': 2872,
+            'vm_hwm': 2872,
+            'threads': 2
+        }
 
     def create_database(self, databases):
         for db in databases:

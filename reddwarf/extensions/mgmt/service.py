@@ -102,7 +102,8 @@ class MgmtInstanceController(InstanceController):
         try:
             instance = models.MgmtInstance.load(context=context, id=id)
             diagnostics = instance.get_diagnostics()
+            LOG.debug("Got diagnostics: %s" % str(diagnostics))
         except exception.ReddwarfError, e:
             LOG.error(e)
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(DiagnosticsView(id, diagnostics), 200)
+        return wsgi.Result(DiagnosticsView(id, diagnostics).data(), 200)

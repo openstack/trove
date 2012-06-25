@@ -116,11 +116,11 @@ class DiagnosticsView(object):
 
     def data(self):
         res = tree()
-        res['diagnostics']['version'] = self.diagnostics.version
-        res['diagnostics']['threads'] = self.diagnostics.threads
-        res['diagnostics']['fdSize'] = self.diagnostics.fd_size
-        res['diagnostics']['vmSize'] = self.diagnostics.vm_size
-        res['diagnostics']['vmPeak'] = self.diagnostics.vm_peak
-        res['diagnostics']['vmRss'] = self.diagnostics.vm_rss
-        res['diagnostics']['vmHwm'] = self.diagnostics.vm_hwm
+        res['diagnostics']['version'] = self.diagnostics['version']
+        res['diagnostics']['threads'] = self.diagnostics['threads']
+        res['diagnostics']['fdSize'] = self.diagnostics['fd_size']
+        res['diagnostics']['vmSize'] = self.diagnostics['vm_size']
+        res['diagnostics']['vmPeak'] = self.diagnostics['vm_peak']
+        res['diagnostics']['vmRss'] = self.diagnostics['vm_rss']
+        res['diagnostics']['vmHwm'] = self.diagnostics['vm_hwm']
         return res
