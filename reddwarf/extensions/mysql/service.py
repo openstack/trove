@@ -131,10 +131,16 @@ class UserController(BaseController):
         LOG.info(_("Deleting user for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        user = guest_models.MySQLUser()
-        user.name = id
-        models.User.delete(context, instance_id, user.serialize())
+        try:
+            user = guest_models.MySQLUser()
+            user.name = id
+            models.User.delete(context, instance_id, user.serialize())
+        except ValueError as ve:
+            raise exception.BadRequest(ve.message)
         return wsgi.Result(None, 202)
+
+    def show(self, req, tenant_id, instance_id, id):
+        raise webob.exc.HTTPNotImplemented()
 
 
 class SchemaController(BaseController):
@@ -178,7 +184,13 @@ class SchemaController(BaseController):
         LOG.info(_("Deleting schema for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        schema = guest_models.MySQLDatabase()
-        schema.name = id
-        models.Schema.delete(context, instance_id, schema.serialize())
+        try:
+            schema = guest_models.MySQLDatabase()
+            schema.name = id
+            models.Schema.delete(context, instance_id, schema.serialize())
+        except ValueError as ve:
+            raise exception.BadRequest(ve.message)
         return wsgi.Result(None, 202)
+
+    def show(self, req, tenant_id, instance_id, id):
+        raise webob.exc.HTTPNotImplemented()

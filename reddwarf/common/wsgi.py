@@ -313,6 +313,15 @@ class ReddwarfResponseSerializer(openstack_wsgi.ResponseSerializer):
 class Fault(webob.exc.HTTPException):
     """Error codes for API faults."""
 
+    code_wrapper = {
+        400: webob.exc.HTTPBadRequest,
+        401: webob.exc.HTTPUnauthorized,
+        403: webob.exc.HTTPUnauthorized,
+        404: webob.exc.HTTPNotFound,
+    }
+
+    resp_codes = [int(code) for code in code_wrapper.keys()]
+
     def __init__(self, exception):
         """Create a Fault for the given webob.exc.exception."""
 
@@ -405,5 +414,31 @@ class ContextMiddleware(openstack_wsgi.Middleware):
         def _factory(app):
             LOG.debug(_("Created context middleware with config: %s") %
                        local_config)
+            return cls(app)
+        return _factory
+
+
+class FaultWrapper(openstack_wsgi.Middleware):
+    """Calls down the middleware stack, making exceptions into faults."""
+
+    @webob.dec.wsgify(RequestClass=openstack_wsgi.Request)
+    def __call__(self, req):
+        try:
+            resp = req.get_response(self.application)
+            if resp.status_int in Fault.resp_codes:
+                for (header, value) in resp._headerlist:
+                    if header == "Content-Type" and \
+                            value == "text/plain; charset=UTF-8":
+                        return Fault(Fault.code_wrapper[resp.status_int]())
+                return resp
+            return resp
+        except Exception as ex:
+            LOG.exception(_("Caught error: %s"), unicode(ex))
+            exc = webob.exc.HTTPInternalServerError()
+            return Fault(exc)
+
+    @classmethod
+    def factory(cls, global_config, **local_config):
+        def _factory(app):
             return cls(app)
         return _factory
