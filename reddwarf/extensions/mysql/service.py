@@ -30,42 +30,7 @@ from reddwarf.extensions.mysql import views
 LOG = logging.getLogger(__name__)
 
 
-class BaseController(wsgi.Controller):
-    """Base controller class."""
-
-    exclude_attr = []
-    exception_map = {
-        webob.exc.HTTPUnprocessableEntity: [
-            exception.UnprocessableEntity,
-            ],
-        webob.exc.HTTPBadRequest: [
-            exception.BadRequest,
-            exception.DatabaseAlreadyExists,
-            exception.UserAlreadyExists
-            ],
-        webob.exc.HTTPNotFound: [
-            exception.NotFound,
-            exception.ModelNotFoundError,
-            ],
-        webob.exc.HTTPConflict: [
-            ],
-        }
-
-    def __init__(self):
-        pass
-
-    def _extract_required_params(self, params, model_name):
-        params = params or {}
-        model_params = params.get(model_name, {})
-        return utils.stringify_keys(utils.exclude(model_params,
-                                                  *self.exclude_attr))
-
-    def _extract_limits(self, params):
-        return dict([(key, params[key]) for key in params.keys()
-                     if key in ["limit", "marker"]])
-
-
-class RootController(BaseController):
+class RootController(wsgi.Controller):
     """Controller for instance functionality"""
 
     def index(self, req, tenant_id, instance_id):
@@ -87,7 +52,7 @@ class RootController(BaseController):
         return wsgi.Result(views.RootCreatedView(root).data(), 200)
 
 
-class UserController(BaseController):
+class UserController(wsgi.Controller):
     """Controller for instance functionality"""
 
     @classmethod
@@ -142,8 +107,7 @@ class UserController(BaseController):
     def show(self, req, tenant_id, instance_id, id):
         raise webob.exc.HTTPNotImplemented()
 
-
-class SchemaController(BaseController):
+class SchemaController(wsgi.Controller):
     """Controller for instance functionality"""
 
     @classmethod
