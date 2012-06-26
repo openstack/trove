@@ -33,55 +33,6 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-class BaseController(wsgi.Controller):
-    """Base controller class."""
-
-    exclude_attr = []
-    exception_map = {
-        webob.exc.HTTPUnprocessableEntity: [
-            exception.UnprocessableEntity,
-            ],
-        webob.exc.HTTPBadRequest: [
-            exception.InvalidModelError,
-            exception.BadRequest,
-            exception.CannotResizeToSameSize,
-            exception.BadValue
-            ],
-        webob.exc.HTTPNotFound: [
-            exception.NotFound,
-            exception.ComputeInstanceNotFound,
-            exception.ModelNotFoundError,
-            ],
-        webob.exc.HTTPConflict: [
-            ],
-        webob.exc.HTTPRequestEntityTooLarge: [
-            exception.OverLimit,
-            exception.QuotaExceeded,
-            exception.VolumeQuotaExceeded,
-            ],
-        webob.exc.HTTPServerError: [
-            exception.VolumeCreationFailure
-            ]
-        }
-
-    def __init__(self):
-        self.add_addresses = utils.bool_from_string(
-                        config.Config.get('add_addresses', 'False'))
-        self.add_volumes = utils.bool_from_string(
-                        config.Config.get('reddwarf_volume_support', 'False'))
-        pass
-
-    def _extract_limits(self, params):
-        return dict([(key, params[key]) for key in params.keys()
-                     if key in ["limit", "marker"]])
-
-    def _extract_required_params(self, params, model_name):
-        params = params or {}
-        model_params = params.get(model_name, {})
-        return utils.stringify_keys(utils.exclude(model_params,
-                                                  *self.exclude_attr))
-
-
 class api_validation:
     """ api validation wrapper """
     def __init__(self, action=None):
@@ -99,7 +50,7 @@ class api_validation:
         return wrapper
 
 
-class InstanceController(BaseController):
+class InstanceController(wsgi.Controller):
     """Controller for instance functionality"""
 
     def action(self, req, body, tenant_id, id):

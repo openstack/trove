@@ -25,34 +25,7 @@ from reddwarf.flavor import models
 from reddwarf.flavor import views
 
 
-class BaseController(wsgi.Controller):
-    """Base controller class."""
-
-    exclude_attr = []
-    exception_map = {
-        webob.exc.HTTPUnprocessableEntity: [
-            ],
-        webob.exc.HTTPBadRequest: [
-            exception.BadRequest,
-            ],
-        webob.exc.HTTPNotFound: [
-            exception.NotFound,
-            ],
-        webob.exc.HTTPConflict: [
-            ],
-        }
-
-    def __init__(self):
-        pass
-
-    def _extract_required_params(self, params, model_name):
-        params = params or {}
-        model_params = params.get(model_name, {})
-        return utils.stringify_keys(utils.exclude(model_params,
-                                                  *self.exclude_attr))
-
-
-class FlavorController(BaseController):
+class FlavorController(wsgi.Controller):
     """Controller for flavor functionality"""
 
     def show(self, req, tenant_id, id):

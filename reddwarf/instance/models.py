@@ -557,7 +557,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
-                    'volume_id', 'deleted']
+                    'volume_id', 'deleted', 'tenant_id']
 
     def __init__(self, task_status=None, **kwargs):
         kwargs["task_id"] = task_status.code
