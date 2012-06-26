@@ -125,7 +125,8 @@ class FreshInstanceTasks(FreshInstance):
         nova_client = create_nova_client(self.context)
         files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
                                     (self.id, service_type)}
-        server = nova_client.servers.create(self.name, image_id, flavor_id,
+        name = self.hostname or self.name
+        server = nova_client.servers.create(name, image_id, flavor_id,
                         files=files, block_device_mapping=block_device_mapping)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server

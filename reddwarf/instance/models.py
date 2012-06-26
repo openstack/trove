@@ -369,7 +369,7 @@ class Instance(BuiltInstance):
         if utils.bool_from_string(dns_support):
             dns_client = create_dns_client(context)
             hostname = dns_client.determine_hostname(db_info.id)
-            db_info.hostname=hostname
+            db_info.hostname = hostname
             db_info.save()
 
         task_api.API(context).create_instance(db_info.id, name, flavor_id,
