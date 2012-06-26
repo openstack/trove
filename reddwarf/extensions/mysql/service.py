@@ -107,6 +107,7 @@ class UserController(wsgi.Controller):
     def show(self, req, tenant_id, instance_id, id):
         raise webob.exc.HTTPNotImplemented()
 
+
 class SchemaController(wsgi.Controller):
     """Controller for instance functionality"""
 

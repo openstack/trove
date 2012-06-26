@@ -36,12 +36,12 @@ class MgmtInstanceView(InstanceDetailView):
         result['instance']['server_id'] = self.instance.server_id
         result['instance']['host'] = self.instance.host
         result['instance']['tenant_id'] = self.instance.tenant_id
-        result['instance']['deleted'] = self.instance.deleted
+        result['instance']['deleted'] = bool(self.instance.deleted)
         result['instance']['deleted_at'] = self.instance.deleted_at
         return result
 
 
-class MgmtInstanceDetailView(InstanceDetailView):
+class MgmtInstanceDetailView(MgmtInstanceView):
     """Works with a full-blown instance."""
 
     def __init__(self, instance, req, add_addresses=False,
@@ -54,11 +54,6 @@ class MgmtInstanceDetailView(InstanceDetailView):
 
     def data(self):
         result = super(MgmtInstanceDetailView, self).data()
-        result['instance']['server_id'] = self.instance.server_id
-        result['instance']['tenant_id'] = self.instance.tenant_id
-        result['instance']['host'] = self.instance.host
-        result['instance']['deleted'] = self.instance.deleted
-        result['instance']['deleted_at'] = self.instance.deleted_at
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user

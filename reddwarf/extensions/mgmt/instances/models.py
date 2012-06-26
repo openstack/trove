@@ -36,6 +36,10 @@ def load_mgmt_instances(context):
 
 class SimpleMgmtInstance(imodels.BaseInstance):
 
+    def __init__(self, context, db_info, server, service_status):
+        super(SimpleMgmtInstance, self).__init__(context, db_info, server,
+                                                 service_status)
+
     @property
     def host(self):
         return self.server.host if self.server else ""
@@ -57,6 +61,7 @@ class SimpleMgmtInstance(imodels.BaseInstance):
             instance.server.host = server.host
             instance.server.deleted = server.deleted
             instance.server.deleted_at = server.deleted_at
+
         except Exception, e:
             LOG.error(e)
             instance = load_instance(cls, context, id, needs_server=False)

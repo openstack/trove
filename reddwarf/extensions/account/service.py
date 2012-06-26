@@ -22,8 +22,8 @@ from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.common.remote import create_nova_client
 from reddwarf.extensions.account import views
-from reddwarf.extensions.mgmt import models
-from reddwarf.instance import models as imodels
+from reddwarf.extensions.mgmt.instances.models import MgmtInstances
+from reddwarf.instance.models import DBInstance
 
 
 LOG = logging.getLogger(__name__)
@@ -42,10 +42,10 @@ class AccountController(wsgi.Controller):
         try:
             client = create_nova_client(context)
             account = client.accounts.get_instances(id)
-            db_infos = imodels.DBInstance.find_all(tenant_id=id, deleted=False)
+            db_infos = DBInstance.find_all(tenant_id=id, deleted=False)
             servers = _convert_server_objects(account.servers)
-            instances = models.MgmtInstances.load_status_from_existing(context,
-                                                    db_infos, servers)
+            instances = MgmtInstances.load_status_from_existing(context,
+                                                             db_infos, servers)
         except nova_exceptions.ClientException, e:
             LOG.error(e)
             return wsgi.Result(str(e), 403)

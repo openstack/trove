@@ -19,7 +19,7 @@ import logging
 
 from reddwarf.common import extensions
 from reddwarf.common import wsgi
-from reddwarf.extensions.mgmt.service import MgmtInstanceController
+from reddwarf.extensions.mgmt.instances.service import MgmtInstanceController
 from reddwarf.extensions.mgmt.host.service import HostController
 from reddwarf.extensions.mgmt.volume.service import StorageController
 

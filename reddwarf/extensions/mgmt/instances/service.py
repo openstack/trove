@@ -22,13 +22,15 @@ from novaclient import exceptions as nova_exceptions
 
 from reddwarf.common import exception
 from reddwarf.common import wsgi
-from reddwarf.extensions.mgmt import models
-from reddwarf.extensions.mgmt.views import DiagnosticsView
+from reddwarf.extensions.mgmt.instances import models
+from reddwarf.extensions.mgmt.instances.views import DiagnosticsView
 from reddwarf.instance import models as instance_models
-from reddwarf.extensions.mgmt import views
+from reddwarf.extensions.mgmt.instances import views
 from reddwarf.extensions.mysql import models as mysql_models
 from reddwarf.instance.service import InstanceController
+from reddwarf.common.auth import admin_context
 from reddwarf.common.remote import create_nova_client
+
 
 LOG = logging.getLogger(__name__)
 
@@ -36,6 +38,7 @@ LOG = logging.getLogger(__name__)
 class MgmtInstanceController(InstanceController):
     """Controller for instance functionality"""
 
+    @admin_context
     def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -52,6 +55,7 @@ class MgmtInstanceController(InstanceController):
                                     add_addresses=self.add_addresses,
                                     add_volumes=self.add_volumes).data(), 200)
 
+    @admin_context
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -71,6 +75,7 @@ class MgmtInstanceController(InstanceController):
                                         add_volumes=self.add_volumes,
                                         root_history=root_history).data(), 200)
 
+    @admin_context
     def root(self, req, tenant_id, id):
         """Return the date and time root was enabled on an instance,
         if ever."""
@@ -92,6 +97,7 @@ class MgmtInstanceController(InstanceController):
             rhv = views.RootHistoryView(id)
         return wsgi.Result(rhv.data(), 200)
 
+    @admin_context
     def diagnostics(self, req, tenant_id, id):
         """Return a single instance diagnostics."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -102,8 +108,7 @@ class MgmtInstanceController(InstanceController):
         try:
             instance = models.MgmtInstance.load(context=context, id=id)
             diagnostics = instance.get_diagnostics()
-            LOG.debug("Got diagnostics: %s" % str(diagnostics))
         except exception.ReddwarfError, e:
             LOG.error(e)
             return wsgi.Result(str(e), 404)
-        return wsgi.Result(DiagnosticsView(id, diagnostics).data(), 200)
+        return wsgi.Result(DiagnosticsView(id, diagnostics), 200)
