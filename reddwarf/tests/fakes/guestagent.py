@@ -109,13 +109,18 @@ class FakeGuest(object):
             status.status = ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
-        EventSimulator.add_event(2.0, update_db)
+        EventSimulator.add_event(1.0, update_db)
 
     def restart(self):
+        from reddwarf.instance.models import InstanceServiceStatus
+        from reddwarf.instance.models import ServiceStatuses
         # All this does is restart, and shut off the status updates while it
         # does so. So there's actually nothing to do to fake this out except
         # take a nap.
         time.sleep(1)
+        status = InstanceServiceStatus.find_by(instance_id=self.id)
+        status.status = ServiceStatuses.RUNNING
+        status.save()
 
     def start_mysql_with_conf_changes(self, updated_memory_size):
         from reddwarf.instance.models import InstanceServiceStatus

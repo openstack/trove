@@ -88,7 +88,7 @@ def load_simple_instance_server_status(context, db_info):
 
 # If the compute server is in any of these states we can't perform any
 # actions (delete, resize, etc).
-SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD"]
+SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD", "RESIZE"]
 
 # Statuses in which an instance can have an action performed.
 VALID_ACTION_STATUSES = ["ACTIVE"]
@@ -132,6 +132,10 @@ class SimpleInstance(object):
         return self.db_info.id
 
     @property
+    def tenant_id(self):
+        return self.db_info.tenant_id
+
+    @property
     def is_building(self):
         return self.status in [InstanceStatus.BUILD]
 
@@ -143,6 +147,10 @@ class SimpleInstance(object):
     @property
     def name(self):
         return self.db_info.name
+
+    @property
+    def server_id(self):
+        return self.db_info.compute_instance_id
 
     @property
     def status(self):
@@ -378,18 +386,8 @@ class Instance(BuiltInstance):
 
         return SimpleInstance(context, db_info, service_status)
 
-    def _validate_can_perform_action(self):
-        """
-        Raises an exception if the instance can't perform an action.
-        """
-        if self.status not in VALID_ACTION_STATUSES:
-            msg = "Instance is not currently available for an action to be " \
-                  "performed. Status [%s]"
-            LOG.debug(_(msg) % self.status)
-            raise exception.UnprocessableEntity(_(msg) % self.status)
-
     def resize_flavor(self, new_flavor_id):
-        self.validate_can_perform_resize()
+        self._validate_can_perform_action()
         LOG.debug("resizing instance %s flavor to %s"
                   % (self.id, new_flavor_id))
         # Validate that the flavor can be found and that it isn't the same size
@@ -412,6 +410,7 @@ class Instance(BuiltInstance):
                     old_flavor_size, new_flavor_size)
 
     def resize_volume(self, new_size):
+        self._validate_can_perform_action()
         LOG.info("Resizing volume of instance %s..." % self.id)
         if not self.volume_size:
             raise exception.BadRequest("Instance %s has no volume." % self.id)
@@ -424,14 +423,8 @@ class Instance(BuiltInstance):
         task_api.API(self.context).resize_volume(new_size, self.id)
 
     def restart(self):
-        if self.db_info.server_status in SERVER_INVALID_ACTION_STATUSES:
-            msg = _("Restart instance not allowed while instance %s is in %s "
-                    "status.") % (self.id, instance_state)
-            LOG.debug(msg)
-            # If the state is building then we throw an exception back
-            raise exception.UnprocessableEntity(msg)
-        else:
-            LOG.info("Restarting instance %s..." % self.id)
+        self._validate_can_perform_action()
+        LOG.info("Restarting instance %s..." % self.id)
         # Set our local status since Nova might not change it quick enough.
         #TODO(tim.simpson): Possible bad stuff can happen if this service
         #                   shuts down before it can set status to NONE.
@@ -441,23 +434,13 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).restart(self.id)
 
-    def validate_can_perform_restart_or_reboot(self):
+    def _validate_can_perform_action(self):
         """
         Raises exception if an instance action cannot currently be performed.
         """
-        if self.db_info.task_status != InstanceTasks.NONE or \
-           not self.service_status.status.restart_is_allowed:
-            msg = "Instance is not currently available for an action to be " \
-                  "performed (task status was %s, service status was %s)." \
-                  % (self.db_info.task_status, self.service_status.status)
-            LOG.error(msg)
-            raise exception.UnprocessableEntity(msg)
-
-    def validate_can_perform_resize(self):
-        """
-        Raises exception if an instance action cannot currently be performed.
-        """
-        if self.status != InstanceStatus.ACTIVE:
+        if self.db_info.server_status != "ACTIVE" or \
+            self.db_info.task_status != InstanceTasks.NONE or \
+            not self.service_status.status.action_is_allowed:
             msg = "Instance is not currently available for an action to be " \
                   "performed (status was %s)." % self.status
             LOG.error(msg)
@@ -637,6 +620,12 @@ class ServiceStatus(object):
         ServiceStatus._lookup[code] = self
 
     @property
+    def action_is_allowed(self):
+        return self._code in [ServiceStatuses.RUNNING._code,
+            ServiceStatuses.SHUTDOWN._code, ServiceStatuses.CRASHED._code,
+            ServiceStatuses.BLOCKED._code]
+
+    @property
     def api_status(self):
         return self._api_status
 
@@ -672,12 +661,6 @@ class ServiceStatus(object):
     @staticmethod
     def is_valid_code(code):
         return code in ServiceStatus._lookup
-
-    @property
-    def restart_is_allowed(self):
-        return self._code in [ServiceStatuses.RUNNING._code,
-            ServiceStatuses.SHUTDOWN._code, ServiceStatuses.CRASHED._code,
-            ServiceStatuses.BLOCKED._code]
 
     def __str__(self):
         return self._description
