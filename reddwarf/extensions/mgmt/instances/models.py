@@ -61,6 +61,7 @@ class SimpleMgmtInstance(imodels.BaseInstance):
             instance.server.host = server.host
             instance.server.deleted = server.deleted
             instance.server.deleted_at = server.deleted_at
+            instance.server.local_id = server.local_id
 
         except Exception, e:
             LOG.error(e)
@@ -72,6 +73,9 @@ class MgmtInstance(imodels.Instance):
 
     def get_diagnostics(self):
         return self.get_guest().get_diagnostics()
+
+    def stop_mysql(self):
+        return self.get_guest().stop_mysql()
 
 
 class MgmtInstances(imodels.Instances):

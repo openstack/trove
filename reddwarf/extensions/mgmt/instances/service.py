@@ -63,17 +63,22 @@ class MgmtInstanceController(InstanceController):
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            server = models.SimpleMgmtInstance.load(context, id)
-            root_history = mysql_models.RootHistory.load(context=context,
-                                                         instance_id=id)
-        except exception.ReddwarfError, e:
-            LOG.error(e)
-            return wsgi.Result(str(e), 404)
+        server = models.SimpleMgmtInstance.load(context, id)
+        root_history = mysql_models.RootHistory.load(context=context,
+                                                     instance_id=id)
         return wsgi.Result(views.MgmtInstanceDetailView(server, req=req,
                                         add_addresses=self.add_addresses,
                                         add_volumes=self.add_volumes,
                                         root_history=root_history).data(), 200)
+
+    @admin_context
+    def action(self, req, body, tenant_id, id):
+        LOG.info("Request made by tenant %s to stop instance %s."
+                 % (tenant_id, id))
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.MgmtInstance.load(context=context, id=id)
+        if 'stop' in body:
+            instance.stop_mysql()
 
     @admin_context
     def root(self, req, tenant_id, id):
@@ -105,10 +110,7 @@ class MgmtInstanceController(InstanceController):
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            instance = models.MgmtInstance.load(context=context, id=id)
-            diagnostics = instance.get_diagnostics()
-        except exception.ReddwarfError, e:
-            LOG.error(e)
-            return wsgi.Result(str(e), 404)
-        return wsgi.Result(DiagnosticsView(id, diagnostics), 200)
+        instance = models.MgmtInstance.load(context=context, id=id)
+
+        diagnostics = instance.get_diagnostics()
+        return wsgi.Result(DiagnosticsView(id, diagnostics).data(), 200)
