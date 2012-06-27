@@ -82,7 +82,6 @@ class InstanceController(wsgi.Controller):
             raise exception.BadRequest(_("Invalid request body."))
 
     def _action_restart(self, instance, body):
-        instance.validate_can_perform_restart_or_reboot()
         instance.restart()
         return wsgi.Result(None, 202)
 
@@ -96,7 +95,6 @@ class InstanceController(wsgi.Controller):
 
         If the body has both we will throw back an error.
         """
-        instance.validate_can_perform_resize()
         options = {
             'volume': self._action_resize_volume,
             'flavorRef': self._action_resize_flavor
