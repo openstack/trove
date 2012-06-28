@@ -177,3 +177,7 @@ class API(object):
         LOG.debug(_("Check Volume Info on Instance %s"), self.id)
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path="/var/lib/mysql")
+
+    def update_guest(self):
+        """Make a synchronous call to update the guest agent."""
+        self._call("update_guest", AGENT_HIGH_TIMEOUT)

@@ -19,6 +19,7 @@ from reddwarf.common import wsgi
 from reddwarf.versions import VersionsController
 from reddwarf.flavor.service import FlavorController
 from reddwarf.instance.service import InstanceController
+from reddwarf.extensions.mgmt.host.instance.service import HostInstanceController
 
 
 class API(wsgi.Router):
@@ -44,6 +45,13 @@ class API(wsgi.Router):
         flavor_resource = FlavorController().create_resource()
         path = "/{tenant_id}/flavors"
         mapper.resource("flavor", path, controller=flavor_resource)
+
+    def _host_instance_router(self, mapper):
+        host_instance_resource = HostInstanceController().create_resource()
+        path = "/{tenant_id}/mgmt/hosts/{host_id}/instances"
+        mapper.resource("hostinstance", path,
+                        controller=host_instance_resource,
+                        member={'action': 'POST'})
 
 
 def app_factory(global_conf, **local_conf):

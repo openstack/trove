@@ -44,6 +44,10 @@ class FakeGuest(object):
             'threads': 2
         }
 
+    def update_guest(self):
+        LOG.debug("Updating guest %s" % self.id)
+        self.version += 1
+
     def create_database(self, databases):
         for db in databases:
             self.dbs[db['_name']] = db

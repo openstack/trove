@@ -77,6 +77,12 @@ class DetailedHost(object):
                     "instance: %s" % instance['server_id'])
                 instance['id'] = None
 
+    def update_all(self, context):
+        num_i = len(self.instances)
+        LOG.debug("Host %s has %s instances to update" % (self.name, num_i))
+        for instance in self.instances:
+            client = create_guest_client(context, instance['id'])
+            client.update_guest()
 
     @staticmethod
     def load(context, name):

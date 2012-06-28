@@ -21,6 +21,7 @@ from reddwarf.common import extensions
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.instances.service import MgmtInstanceController
 from reddwarf.extensions.mgmt.host.service import HostController
+from reddwarf.extensions.mgmt.host.instance.service import HostInstanceController
 from reddwarf.extensions.mgmt.volume.service import StorageController
 
 
@@ -73,5 +74,15 @@ class Mgmt(extensions.ExtensionsDescriptor):
              member_actions={},
              )
         resources.append(storage)
+
+        host_instances = extensions.ResourceExtension('instances',
+            HostInstanceController(),
+            parent={'member_name': 'host',
+                    'collection_name': '{tenant_id}/mgmt/hosts'},
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer,
+            collection_actions={'action': 'POST'},
+            )
+        resources.append(host_instances)
 
         return resources
