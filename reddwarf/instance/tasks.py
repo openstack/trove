@@ -25,14 +25,16 @@ class InstanceTask(object):
     #                   once that revs up.
     _lookup = {}
 
-    def __init__(self, code, db_text):
+    def __init__(self, code, action, db_text, is_error=False):
         self._code = int(code)
+        self._action = action
         self._db_text = db_text
+        self._is_error = is_error
         InstanceTask._lookup[self._code] = self
 
     @property
-    def api_status(self):
-        return self._api_status
+    def action(self):
+        return self._action
 
     @property
     def code(self):
@@ -41,6 +43,10 @@ class InstanceTask(object):
     @property
     def db_text(self):
         return self._db_text
+
+    @property
+    def is_error(self):
+        return self._is_error
 
     def __eq__(self, other):
         if not isinstance(other, InstanceTask):
@@ -55,11 +61,18 @@ class InstanceTask(object):
 
 
 class InstanceTasks(object):
-    NONE = InstanceTask(0x01, 'NONE')
-    DELETING = InstanceTask(0x02, 'DELETING')
-    REBOOTING = InstanceTask(0x03, 'REBOOTING')
-    RESIZING = InstanceTask(0x04, 'RESIZING')
-    BUILDING = InstanceTask(0x05, 'BUILDING')
+    NONE = InstanceTask(0x01, 'NONE', 'No tasks for the instance.')
+    DELETING = InstanceTask(0x02, 'DELETING', 'Deleting the instance.')
+    REBOOTING = InstanceTask(0x03, 'REBOOTING', 'Rebooting the instance.')
+    RESIZING = InstanceTask(0x04, 'RESIZING', 'Resizing the instance.')
+    BUILDING = InstanceTask(0x05, 'BUILDING', 'The instance is building.')
+
+    BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING',
+        'Build error: DNS.', is_error=True)
+    BUILDING_ERROR_SERVER = InstanceTask(0x51, 'BUILDING',
+        'Build error: Server.', is_error=True)
+    BUILDING_ERROR_VOLUME = InstanceTask(0x52, 'BUILDING',
+        'Build error: Volume.', is_error=True)
 
 
 # Dissuade further additions at run-time.

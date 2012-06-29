@@ -71,7 +71,7 @@ class InstanceStatus(object):
 
 def load_simple_instance_server_status(context, db_info):
     """Loads a server or raises an exception."""
-    if InstanceTasks.BUILDING == db_info.task_status:
+    if 'BUILDING' == db_info.task_status.action:
         db_info.server_status = "BUILD"
         db_info.addresses = {}
     else:
@@ -154,22 +154,28 @@ class SimpleInstance(object):
 
     @property
     def status(self):
-        #TODO(tim.simpson): As we enter more advanced cases dealing with
-        # timeouts determine if the task_status should be integrated here
-        # or removed entirely.
-        if InstanceTasks.BUILDING == self.db_info.task_status:
+        ### Check for taskmanager errors.
+        if self.db_info.task_status.is_error:
+            return InstanceStatus.ERROR
+
+        ### Check for taskmanager status.
+        ACTION = self.db_info.task_status.action
+        if 'BUILDING' == ACTION:
+            if 'ERROR' == self.db_info.server_status:
+                return InstanceStatus.ERROR
             return InstanceStatus.BUILD
-        if InstanceTasks.REBOOTING == self.db_info.task_status:
+        if 'REBOOTING' == ACTION:
             return InstanceStatus.REBOOT
-        if InstanceTasks.RESIZING == self.db_info.task_status:
+        if 'RESIZING' == ACTION:
             return InstanceStatus.RESIZE
 
-        # If the server is in any of these states they take precedence.
+        ### Check for server status.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
                                           "RESIZE"]:
             return self.db_info.server_status
 
-        if InstanceTasks.DELETING == self.db_info.task_status:
+        ### Report as Shutdown while deleting, unless there's an error.
+        if 'DELETING' == ACTION:
             if self.db_info.server_status in ["ACTIVE", "SHUTDOWN"]:
                 return InstanceStatus.SHUTDOWN
             else:
@@ -177,12 +183,14 @@ class SimpleInstance(object):
                     " status (%s).") % (self.id, self.db_info.server_status))
                 return InstanceStatus.ERROR
 
+        ### Check against the service status.
         # The service is only paused during a reboot.
         if ServiceStatuses.PAUSED == self.service_status.status:
             return InstanceStatus.REBOOT
         # If the service status is NEW, then we are building.
         if ServiceStatuses.NEW == self.service_status.status:
             return InstanceStatus.BUILD
+
         # For everything else we can look at the service status mapping.
         return self.service_status.status.api_status
 
