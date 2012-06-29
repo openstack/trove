@@ -114,7 +114,12 @@ class FakeServer(object):
 
     def delete(self):
         self.schedule_status = []
-        self._current_status = "SHUTDOWN"
+        # TODO(pdmars): This is less than ideal, but a quick way to force it 
+        # into the error state before scheduling the delete. 
+        if self.name.endswith("_ERROR_ON_DELETE"):
+            self._current_status = "ERROR"
+        else:
+            self._current_status = "SHUTDOWN"
         self.parent.schedule_delete(self.id, 1.5)
 
     @property

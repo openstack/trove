@@ -213,7 +213,6 @@ class BuiltInstanceTasks(BuiltInstance):
                     msg = "Server %s got into ERROR status during delete " \
                           "of instance %s!" % (server.id, self.id)
                     LOG.error(msg)
-                    raise ReddwarfError(msg)
                 return False
             except nova_exceptions.NotFound:
                 return True
