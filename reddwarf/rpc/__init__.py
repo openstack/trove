@@ -99,6 +99,11 @@ def cast_with_consumer(context, topic, msg):
     return _get_impl().cast_with_consumer(context, topic, msg)
 
 
+def delete_queue(context, topic):
+    """Deletes the queue."""
+    return _get_impl().delete_queue(context, topic)
+
+
 def fanout_cast(context, topic, msg):
     """Broadcast a remote method invocation with no return.
 
