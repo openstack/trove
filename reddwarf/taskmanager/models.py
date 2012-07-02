@@ -222,6 +222,9 @@ class BuiltInstanceTasks(BuiltInstance):
                    time_out=int(config.Config.get('server_delete_time_out')))
         # If time out occurs, the instance task is stuck in DELETING.
         LOG.debug("Setting instance %s to deleted..." % self.id)
+        # Delete guest queue.
+        guest = self.get_guest()
+        guest.delete_queue()
         self.update_db(task_status=InstanceTasks.NONE)
         self.update_db(deleted=True, deleted_at=datetime.now())
 

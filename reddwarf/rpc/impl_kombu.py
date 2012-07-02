@@ -673,6 +673,17 @@ def cast_with_consumer(context, topic, msg):
     return rpc_amqp.cast_with_consumer(context, topic, msg, Connection.pool)
 
 
+def delete_queue(context, topic):
+    LOG.debug("Deleting queue with name %s." % topic)
+    with rpc_amqp.ConnectionContext(Connection.pool) as conn:
+        channel = conn.channel
+        durable = config.Config.get('rabbit_durable_queues', False)
+        queue = kombu.entity.Queue(name=topic, channel=channel,
+                                   auto_delete=False, exclusive=False,
+                                   durable=durable)
+        queue.delete()
+
+
 def fanout_cast(context, topic, msg):
     """Sends a message on a fanout exchange without waiting for a response."""
     return rpc_amqp.fanout_cast(context, topic, msg, Connection.pool)

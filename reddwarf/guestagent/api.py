@@ -77,6 +77,10 @@ class API(object):
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
 
+    def delete_queue(self):
+        """Deletes the queue."""
+        rpc.delete_queue(self.context, self._get_routing_key())
+
     def _get_routing_key(self):
         """Create the routing key based on the container id"""
         return "guestagent.%s" % self.id
