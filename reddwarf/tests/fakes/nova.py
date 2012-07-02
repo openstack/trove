@@ -190,6 +190,8 @@ class FakeServers(object):
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
                             block_device_mapping, volumes)
         self.db[id] = server
+        if name.endswith('server_fail'):
+            raise nova_exceptions.ClientException("Fake server create error.")
         server.schedule_status("ACTIVE", 1)
         LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
         return server
@@ -344,7 +346,10 @@ class FakeVolumes(object):
         volume = FakeVolume(self, self.context, id, size, display_name,
                             display_description)
         self.db[id] = volume
-        volume.schedule_status("available", 2)
+        if size == 9:
+            volume.schedule_status("error", 2)
+        else:
+            volume.schedule_status("available", 2)
         LOG.info("FAKE_VOLUMES_DB : %s" % FAKE_VOLUMES_DB)
         return volume
 

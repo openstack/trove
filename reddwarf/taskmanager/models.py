@@ -50,19 +50,47 @@ class FreshInstanceTasks(FreshInstance):
 
     def create_instance(self, flavor_id, flavor_ram, image_id,
                         databases, users, service_type, volume_size):
+        volume_info = None
+        block_device_mapping = None
+        server = None
         try:
             volume_info = self._create_volume(volume_size)
             block_device_mapping = volume_info['block_device']
+        except Exception as e:
+            msg = "Error provisioning volume for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
+            self._log_and_raise(e, msg, err)
+
+        try:
             server = self._create_server(flavor_id, image_id, service_type,
-                                         block_device_mapping)
+                                     block_device_mapping)
             server_id = server.id
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
+        except Exception as e:
+            msg = "Error creating server for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
+            self._log_and_raise(e, msg, err)
+
+        try:
             self._create_dns_entry()
+        except Exception as e:
+            msg = "Error creating DNS entry for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
+            self._log_and_raise(e, msg, err)
+
+        if server:
             self._guest_prepare(server, flavor_ram, volume_info,
                                 databases, users)
-        finally:
+
+        if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
+
+    def _log_and_raise(self, exc, message, task_status):
+        LOG.error(message)
+        LOG.error(exc)
+        self.update_db(task_status=task_status)
+        raise ReddwarfError(message=message)
 
     def _create_volume(self, volume_size):
         LOG.info("Entering create_volume")
