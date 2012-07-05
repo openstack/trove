@@ -13,11 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collections import defaultdict
-
-
-def tree():
-    return defaultdict(tree)
 
 
 class AccountView(object):
@@ -43,9 +38,8 @@ class InstanceView(object):
         self.instance = instance
 
     def data(self):
-        res = tree()
-        res['id'] = self.instance.id
-        res['status'] = self.instance.status
-        res['name'] = self.instance.name
-        res['host'] = self.instance.host
-        return res
+        return {'id': self.instance.id,
+                'status': self.instance.status,
+                'name': self.instance.name,
+                'host': self.instance.host,
+                }

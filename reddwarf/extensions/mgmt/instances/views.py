@@ -15,12 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collections import defaultdict
+
 from reddwarf.instance.views import InstanceDetailView
-
-
-def tree():
-    return defaultdict(tree)
 
 
 class MgmtInstanceView(InstanceDetailView):
@@ -98,11 +94,13 @@ class RootHistoryView(object):
         self.user = user_id
 
     def data(self):
-        res = tree()
-        res['root_history']['id'] = self.instance_id
-        res['root_history']['enabled'] = self.enabled
-        res['root_history']['user'] = self.user
-        return res
+        return {'root_history': {
+                    'id': self.instance_id,
+                    'enabled': self.enabled,
+                    'user': self.user,
+                    }
+                }
+
 
 class DiagnosticsView(object):
 
@@ -111,12 +109,13 @@ class DiagnosticsView(object):
         self.diagnostics = diagnostics
 
     def data(self):
-        res = tree()
-        res['diagnostics']['version'] = self.diagnostics['version']
-        res['diagnostics']['threads'] = self.diagnostics['threads']
-        res['diagnostics']['fdSize'] = self.diagnostics['fd_size']
-        res['diagnostics']['vmSize'] = self.diagnostics['vm_size']
-        res['diagnostics']['vmPeak'] = self.diagnostics['vm_peak']
-        res['diagnostics']['vmRss'] = self.diagnostics['vm_rss']
-        res['diagnostics']['vmHwm'] = self.diagnostics['vm_hwm']
-        return res
+        return {'diagnostics': {
+                    'version': self.diagnostics['version'],
+                    'threads': self.diagnostics['threads'],
+                    'fdSize': self.diagnostics['fd_size'],
+                    'vmSize': self.diagnostics['vm_size'],
+                    'vmPeak': self.diagnostics['vm_peak'],
+                    'vmRss': self.diagnostics['vm_rss'],
+                    'vmHwm': self.diagnostics['vm_hwm'],
+                    }
+            }
