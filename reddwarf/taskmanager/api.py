@@ -69,6 +69,10 @@ class API(ManagerAPI):
                    old_memory_size=old_memory_size,
                    new_memory_size=new_memory_size)
 
+    def reboot(self, instance_id):
+        LOG.debug("Making async call to reboot instance: %s" % instance_id)
+        self._cast("reboot", instance_id=instance_id)
+
     def restart(self, instance_id):
         LOG.debug("Making async call to restart instance: %s" % instance_id)
         self._cast("restart", instance_id=instance_id)

@@ -49,6 +49,10 @@ class TaskManager(service.Manager):
         instance_tasks.resize_flavor(new_flavor_id, old_memory_size,
                                      new_memory_size)
 
+    def reboot(self, context, instance_id):
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+        instance_tasks.reboot()
+
     def restart(self, context, instance_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.restart()

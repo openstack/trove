@@ -113,6 +113,13 @@ class FakeServer(object):
             raise RuntimeError("Not in resize confirm mode.")
         self._current_status = "ACTIVE"
 
+    def reboot(self):
+        LOG.debug("Rebooting server %s" % (self.id))
+        self._current_status = "REBOOT"
+        time.sleep(1)
+        self._current_status = "ACTIVE"
+        self.parent.schedule_simulate_running_server(self.id, 1.5)
+
     def delete(self):
         self.schedule_status = []
         # TODO(pdmars): This is less than ideal, but a quick way to force it 
@@ -252,6 +259,18 @@ class FakeServers(object):
             LOG.info("Simulated event ended, deleting server %s." % id)
             del self.db[id]
         self.events.add_event(time_from_now, delete_server)
+
+    def schedule_simulate_running_server(self, id, time_from_now):
+        def set_server_running():
+            from reddwarf.instance.models import DBInstance
+            from reddwarf.instance.models import InstanceServiceStatus
+            from reddwarf.instance.models import ServiceStatuses
+            instance = DBInstance.find_by(compute_instance_id=id)
+            LOG.debug("Setting server %s to running" % instance.id)
+            status = InstanceServiceStatus.find_by(instance_id=instance.id)
+            status.status = ServiceStatuses.RUNNING
+            status.save()
+        self.events.add_event(time_from_now, set_server_running)
 
 
 class FakeServerVolumes(object):

@@ -73,12 +73,42 @@ class MgmtInstanceController(InstanceController):
 
     @admin_context
     def action(self, req, body, tenant_id, id):
-        LOG.info("Request made by tenant %s to stop instance %s."
-                 % (tenant_id, id))
+        LOG.info("req : '%s'\n\n" % req)
+        LOG.info("Committing an ACTION against instance %s for tenant '%s'"
+                 % (id, tenant_id))
+        if not body:
+            raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.MgmtInstance.load(context=context, id=id)
-        if 'stop' in body:
-            instance.stop_mysql()
+        _actions = {
+            'stop': self._action_stop,
+            'reboot': self._action_reboot
+            }
+        selected_action = None
+        for key in body:
+            if key in _actions:
+                if selected_action is not None:
+                    msg = _("Only one action can be specified per request.")
+                    raise exception.BadRequest(msg)
+                selected_action = _actions[key]
+            else:
+                msg = _("Invalid instance action: %s") % key
+                raise exception.BadRequest(msg)
+
+        if selected_action:
+            return selected_action(context, instance, body)
+        else:
+            raise exception.BadRequest(_("Invalid request body."))
+
+    def _action_stop(self, context, instance, body):
+        LOG.debug("Stopping MySQL on instance %s." % instance.id)
+        instance.stop_mysql()
+        return wsgi.Result(None, 202)
+
+    def _action_reboot(self, context, instance, body):
+        LOG.debug("Rebooting instance %s." % instance.id)
+        instance.reboot()
+        return wsgi.Result(None, 202)
 
     @admin_context
     def root(self, req, tenant_id, id):

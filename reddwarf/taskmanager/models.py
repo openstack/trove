@@ -400,11 +400,40 @@ class BuiltInstanceTasks(BuiltInstance):
         finally:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
+    def reboot(self):
+        try:
+            LOG.debug("Instance %s calling stop_mysql..." % self.id)
+            self.guest.stop_mysql()
+            LOG.debug("Rebooting instance %s" % self.id)
+            self.server.reboot()
+
+            # Poll nova until instance is active
+            reboot_time_out = int(config.Config.get("reboot_time_out", 60 * 2))
+            def update_server_info():
+                self._refresh_compute_server_info()
+                return self.server.status == 'ACTIVE'
+            utils.poll_until(
+                update_server_info,
+                sleep_time=2,
+                time_out=reboot_time_out)
+
+            # Set the status to PAUSED. The guest agent will reset the status
+            # when the reboot completes and MySQL is running.
+            status = InstanceServiceStatus.find_by(instance_id=self.id)
+            status.set_status(inst_models.ServiceStatuses.PAUSED)
+            status.save()
+            LOG.debug("Successfully rebooted instance %s" % self.id)
+        except Exception, e:
+            LOG.error("Failed to reboot instance %s: %s" % (self.id, str(e)))
+        finally:
+            LOG.debug("Rebooting FINALLY  %s" % self.id)
+            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+
     def restart(self):
-        LOG.debug("Restarting instance %s " % self.id)
+        LOG.debug("Restarting MySQL on instance %s " % self.id)
         try:
             self.guest.restart()
-            LOG.debug("Restarting successful  %s " % self.id)
+            LOG.debug("Restarting MySQL successful  %s " % self.id)
         except GuestError:
             LOG.error("Failure to restart MySQL for instance %s." % self.id)
         finally:

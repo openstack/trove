@@ -461,9 +461,15 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.RESIZING)
         task_api.API(self.context).resize_volume(new_size, self.id)
 
+    def reboot(self):
+        self._validate_can_perform_action()
+        LOG.info("Rebooting instance %s..." % self.id)
+        self.update_db(task_status=InstanceTasks.REBOOTING)
+        task_api.API(self.context).reboot(self.id)
+
     def restart(self):
         self._validate_can_perform_action()
-        LOG.info("Restarting instance %s..." % self.id)
+        LOG.info("Restarting MySQL on instance %s..." % self.id)
         # Set our local status since Nova might not change it quick enough.
         #TODO(tim.simpson): Possible bad stuff can happen if this service
         #                   shuts down before it can set status to NONE.
