@@ -18,6 +18,8 @@
 import re
 import string
 
+from reddwarf.common import config
+
 
 class Base(object):
     def serialize(self):
@@ -334,6 +336,7 @@ class MySQLUser(Base):
     """Represents a MySQL User and its associated properties"""
 
     not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
+    _ignore_users = config.Config.get("ignore_users", [])
 
     def __init__(self):
         self._name = None
@@ -341,8 +344,12 @@ class MySQLUser(Base):
         self._databases = []
 
     def _check_valid(self, value):
-        if not value or self.not_supported_chars.search(value) or \
-                                string.find("%r" % value, "\\") != -1:
+        # User names are not valid if they contain unsupported characters, or
+        # are in the ignore_users list.
+        if (not value or
+            self.not_supported_chars.search(value) or
+            string.find("%r" % value, "\\") != -1 or
+            value.lower() in self._ignore_users):
             return False
         else:
             return True
@@ -381,3 +388,9 @@ class MySQLUser(Base):
         mydb = MySQLDatabase()
         mydb.name = value
         self._databases.append(mydb.serialize())
+
+
+class RootUser(MySQLUser):
+    """Overrides _ignore_users from the MySQLUser class."""
+
+    _ignore_users = []
