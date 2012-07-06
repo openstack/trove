@@ -26,10 +26,12 @@ class AccountView(object):
         # These are model instances
         for instance in self.instances:
             data.append(InstanceView(instance).data())
-        res = tree()
-        res['account']['id'] = self.account.id
-        res['account']['instances'] = data
-        return res
+        return {'account': {
+                    'id': self.account.id,
+                    'instances': data,
+                    }
+                }
+                
 
 
 class InstanceView(object):
