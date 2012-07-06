@@ -41,16 +41,32 @@ class SimpleMgmtInstance(imodels.BaseInstance):
                                                  service_status)
 
     @property
+    def local_id(self):
+        if self.server:
+            return self.server.local_id
+        else:
+            return None
+
+    @property
     def host(self):
-        return self.server.host if self.server else ""
+        if self.server:
+            return self.server.host
+        else:
+            return ""
 
     @property
     def deleted(self):
-        return self.server.deleted if self.server else ""
+        if self.server:
+            return self.server.deleted
+        else:
+            return ""
 
     @property
     def deleted_at(self):
-        return self.server.deleted_at if self.server else ""
+        if self.server:
+            return self.server.deleted_at
+        else:
+            return ""
 
     @classmethod
     def load(cls, context, id):
@@ -62,8 +78,9 @@ class SimpleMgmtInstance(imodels.BaseInstance):
             instance.server.deleted = server.deleted
             instance.server.deleted_at = server.deleted_at
             instance.server.local_id = server.local_id
+            assert instance.server is not None
 
-        except Exception, e:
+        except Exception as e:
             LOG.error(e)
             instance = load_instance(cls, context, id, needs_server=False)
         return instance

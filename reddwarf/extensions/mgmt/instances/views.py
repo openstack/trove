@@ -30,7 +30,7 @@ class MgmtInstanceView(InstanceDetailView):
     def data(self):
         result = super(MgmtInstanceView, self).data()
         result['instance']['server_id'] = self.instance.server_id
-        result['instance']['local_id'] = self.instance.server.local_id
+        result['instance']['local_id'] = self.instance.local_id
         result['instance']['host'] = self.instance.host
         result['instance']['tenant_id'] = self.instance.tenant_id
         result['instance']['deleted'] = bool(self.instance.deleted)

@@ -90,6 +90,8 @@ class FakeFlavors(object):
 
 class FakeServer(object):
 
+    next_local_id = 0
+
     def __init__(self, parent, owner, id, name, image_id, flavor_ref,
                  block_device_mapping, volumes):
         self.owner = owner  # This is a context.
@@ -101,8 +103,13 @@ class FakeServer(object):
         self.events = EventSimulator()
         self.schedule_status("BUILD", 0.0)
         self.volumes = volumes
+        # This is used by "RdServers". Its easier to compute the
+        # fake value in this class's initializer.
+        self._local_id = self.next_local_id
+        self.next_local_id += 1
         for volume in self.volumes:
             volume.set_attachment(id)
+        self.host = "fake_host"
 
     @property
     def addresses(self):
@@ -175,10 +182,6 @@ class FakeServer(object):
     @property
     def updated(self):
         return "2012-01-25T21:55:51Z"
-
-    @property
-    def host(self):
-        return "fakehost"
 
     @property
     def tenant(self):
@@ -271,6 +274,31 @@ class FakeServers(object):
             status.status = ServiceStatuses.RUNNING
             status.save()
         self.events.add_event(time_from_now, set_server_running)
+
+
+class FakeRdServer(object):
+
+    def __init__(self, server):
+        self.server = server
+        self.deleted = False
+        self.deleted_at = None # Not sure how to simulate "True" for this.
+        self.local_id = server._local_id
+
+    def __getattr__(self, name):
+        return getattr(self.server, name)
+
+
+class FakeRdServers(object):
+
+    def __init__(self, servers):
+        self.servers = servers
+
+    def get(self, id):
+        return FakeRdServer(self.servers.get(id))
+
+    def list(self):
+        # Attach the extra Rd Server stuff to the normal server.
+        return [FakeRdServer(server) for server in self.servers.list()]
 
 
 class FakeServerVolumes(object):
@@ -544,6 +572,7 @@ class FakeClient(object):
         self.accounts = FakeAccounts(context, self.servers)
         self.rdhosts = FakeHosts(self.servers)
         self.rdstorage = FakeRdStorages()
+        self.rdservers = FakeRdServers(self.servers)
 
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)
