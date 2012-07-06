@@ -48,9 +48,8 @@ class FakeGuest(object):
         if database['_name'] in self.dbs:
             del self.dbs[database['_name']]
 
-    def delete_user(self, user):
-        if user['_name'] in self.users:
-            del self.users[user['_name']]
+    def delete_queue(self):
+        pass
 
     def enable_root(self):
         self.root_was_enabled = True
@@ -59,6 +58,10 @@ class FakeGuest(object):
             "_password": "12345",
             "_databases": [],
         })
+
+    def delete_user(self, user):
+        if user['_name'] in self.users:
+            del self.users[user['_name']]
 
     def is_root_enabled(self):
         return self.root_was_enabled
