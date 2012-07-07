@@ -50,12 +50,13 @@ XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
 CUSTOM_SERIALIZER_METADATA = {'instance': {'status': '', 'hostname': '',
                               'id': '', 'name': '', 'created': '',
-                              'updated': ''},
+                              'updated': '', 'host': ''},
                    'volume': {'size': '', 'used': ''},
                    'flavor': {'id': '', 'ram': '', 'name': ''},
                    'link': {'href': '', 'rel': ''},
                    'database': {'name': ''},
-                   'user': {'name': '', 'password': ''}}
+                   'user': {'name': '', 'password': ''},
+                   'account': {'id': ''}}
 
 
 def versioned_urlmap(*args, **kwargs):
