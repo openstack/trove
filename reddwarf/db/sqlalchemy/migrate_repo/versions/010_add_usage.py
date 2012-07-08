@@ -31,7 +31,7 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 meta = MetaData()
 
 
-usage = Table('usage', meta,
+usage_events = Table('usage_events', meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('instance_name', String(36)),
     Column('tenant_id', String(36)),
@@ -45,9 +45,9 @@ usage = Table('usage', meta,
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([usage])
+    create_tables([usage_events])
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([usage])
+    drop_tables([usage_events])
