@@ -62,7 +62,7 @@ nova_volume_service_name = Volume Service
 device_path = /dev/vdb
 mount_point = /var/lib/mysql
 max_accepted_volume_size = 25
-max_instances_per_user = 5
+max_instances_per_user = 55
 volume_time_out=30
 
 # Auth
