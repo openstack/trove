@@ -84,13 +84,23 @@ class Root(object):
     @classmethod
     def load(cls, context, instance_id):
         load_and_verify(context, instance_id)
-        return create_guest_client(context, instance_id).is_root_enabled()
+        # TODO(pdmars): remove the is_root_enabled call from the guest agent,
+        # just check the database for this information.
+        # If the root history returns null or raises an exception, the root
+        # user hasn't been enabled.
+        try:
+            root_history = RootHistory.load(context, instance_id)
+        except exception.NotFound:
+            return False
+        if not root_history:
+            return False
+        return True
 
     @classmethod
     def create(cls, context, instance_id, user):
         load_and_verify(context, instance_id)
         root = create_guest_client(context, instance_id).enable_root()
-        root_user = guest_models.MySQLUser()
+        root_user = guest_models.RootUser()
         root_user.deserialize(root)
         root_history = RootHistory.create(context, instance_id, user)
         return root_user
