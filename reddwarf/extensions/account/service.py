@@ -21,6 +21,7 @@ from reddwarf.common import exception
 
 from reddwarf.common import wsgi
 from reddwarf.common.remote import create_nova_client
+from reddwarf.extensions.account import models
 from reddwarf.extensions.account import views
 from reddwarf.extensions.mgmt.instances.models import MgmtInstances
 from reddwarf.instance.models import DBInstance
@@ -50,6 +51,14 @@ class AccountController(wsgi.Controller):
             LOG.error(e)
             return wsgi.Result(str(e), 403)
         return wsgi.Result(views.AccountView(account, instances).data(), 200)
+
+    def index(self, req, tenant_id):
+        """Return a list of all accounts with non-deleted instances."""
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Showing all accounts with instances for '%s'") % tenant_id)
+        accounts_summary = models.AccountsSummary.load()
+        return wsgi.Result(views.AccountsView(accounts_summary).data(), 200)
+
 
 def _convert_server_objects(servers):
     server_objs = []

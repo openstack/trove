@@ -14,6 +14,14 @@
 #    under the License.
 
 
+class AccountsView(object):
+
+    def __init__(self, accounts_summary):
+        self.accounts_summary = accounts_summary
+
+    def data(self):
+        return {'accounts': self.accounts_summary.accounts}
+
 
 class AccountView(object):
 
@@ -31,7 +39,6 @@ class AccountView(object):
                     'instances': data,
                     }
                 }
-                
 
 
 class InstanceView(object):
