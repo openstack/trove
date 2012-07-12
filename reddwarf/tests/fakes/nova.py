@@ -116,10 +116,14 @@ class FakeServer(object):
         self.schedule_status = []
         # TODO(pdmars): This is less than ideal, but a quick way to force it 
         # into the error state before scheduling the delete. 
-        if self.name.endswith("_ERROR_ON_DELETE"):
-            self._current_status = "ERROR"
-        else:
+        if (self.name.endswith("_DELETE_ERROR") and
+            self._current_status != "SHUTDOWN"):
+            # Fail to delete properly the first time, just set the status
+            # to SHUTDOWN and break. It's important that we only fail to delete
+            # once in fake mode.
             self._current_status = "SHUTDOWN"
+            return
+        self._current_status = "SHUTDOWN"
         self.parent.schedule_delete(self.id, 1.5)
 
     @property
@@ -190,7 +194,7 @@ class FakeServers(object):
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
                             block_device_mapping, volumes)
         self.db[id] = server
-        if name.endswith('server_fail'):
+        if name.endswith('SERVER_ERROR'):
             raise nova_exceptions.ClientException("Fake server create error.")
         server.schedule_status("ACTIVE", 1)
         LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))

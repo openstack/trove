@@ -21,6 +21,7 @@ import weakref
 
 from eventlet import greenthread
 
+from reddwarf.common import exception
 from reddwarf.common import service
 from reddwarf.taskmanager import models
 from reddwarf.taskmanager.models import BuiltInstanceTasks
@@ -70,8 +71,12 @@ class TaskManager(service.Manager):
         instance_tasks.restart()
 
     def delete_instance(self, context, instance_id):
-        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.delete_instance()
+        try:
+            instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+            instance_tasks.delete_async()
+        except exception.UnprocessableEntity as upe:
+            instance_tasks = models.FreshInstanceTasks.load(context, instance_id)
+            instance_tasks.delete_async()
 
     def create_instance(self, context, instance_id, name, flavor_id,
                         flavor_ram, image_id, databases, users, service_type,

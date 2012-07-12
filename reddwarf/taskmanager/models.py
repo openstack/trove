@@ -215,7 +215,7 @@ class BuiltInstanceTasks(BuiltInstance):
         else:
             return mountpoint
 
-    def delete_instance(self):
+    def _delete_resources(self):
         try:
             self.server.delete()
         except Exception as ex:
@@ -247,13 +247,6 @@ class BuiltInstanceTasks(BuiltInstance):
 
         poll_until(server_is_finished, sleep_time=2,
                    time_out=int(config.Config.get('server_delete_time_out')))
-        # If time out occurs, the instance task is stuck in DELETING.
-        LOG.debug("Setting instance %s to deleted..." % self.id)
-        # Delete guest queue.
-        guest = self.get_guest()
-        guest.delete_queue()
-        self.update_db(task_status=InstanceTasks.NONE)
-        self.update_db(deleted=True, deleted_at=datetime.now())
 
     def resize_volume(self, new_size):
         LOG.debug("%s: Resizing volume for instance: %s to %r GB"
