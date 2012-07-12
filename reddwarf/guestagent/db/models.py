@@ -343,16 +343,19 @@ class MySQLUser(Base):
         self._password = None
         self._databases = []
 
-    def _check_valid(self, value):
-        # User names are not valid if they contain unsupported characters, or
-        # are in the ignore_users list.
+    def _is_valid(self, value):
         if (not value or
             self.not_supported_chars.search(value) or
-            string.find("%r" % value, "\\") != -1 or
-            value.lower() in self._ignore_users):
+            string.find("%r" % value, "\\") != -1):
             return False
         else:
             return True
+
+    def _is_valid_user_name(self, value):
+        if (self._is_valid(value) and
+            value.lower() not in self._ignore_users):
+            return True
+        return False
 
     @property
     def name(self):
@@ -360,7 +363,7 @@ class MySQLUser(Base):
 
     @name.setter
     def name(self, value):
-        if not self._check_valid(value):
+        if not self._is_valid_user_name(value):
             raise ValueError("'%s' is not a valid user name" % value)
         elif len(value) > 16:
             raise ValueError("User name '%s' is too long. Max length = 16"
@@ -374,7 +377,7 @@ class MySQLUser(Base):
 
     @password.setter
     def password(self, value):
-        if not self._check_valid(value):
+        if not self._is_valid(value):
             raise ValueError("'%s' is not a valid password" % value)
         else:
             self._password = value
