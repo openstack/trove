@@ -21,6 +21,7 @@ import eventlet
 import logging
 import netaddr
 
+from datetime import datetime
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import exception
@@ -245,6 +246,16 @@ def get_db_info(context, id):
     return db_info
 
 
+def load_any_instance(context, id):
+    # Try to load an instance with a server.
+    # If that fails, try to load it without the server.
+    try:
+        return load_instance(BuiltInstance, context, id, needs_server=True)
+    except exception.UnprocessableEntity as upe:
+        LOG.warn("Could not load instance %s." % id)
+        return load_instance(FreshInstance, context, id, needs_server=False)
+
+
 def load_instance(cls, context, id, needs_server=False):
     db_info = get_db_info(context, id)
     if not needs_server:
@@ -305,6 +316,33 @@ class BaseInstance(SimpleInstance):
     def get_guest(self):
         return create_guest_client(self.context, self.db_info.id)
 
+    def delete(self):
+        if (self.db_info.server_status in ["BUILD"] and
+                not self.db_info.task_status.is_error):
+            raise exception.UnprocessableEntity("Instance %s is not ready."
+                                                    % self.id)
+        LOG.debug(_("  ... deleting compute id = %s") %
+                  self.db_info.compute_instance_id)
+        LOG.debug(_(" ... setting status to DELETING."))
+        self.update_db(task_status=InstanceTasks.DELETING)
+        task_api.API(self.context).delete_instance(self.id)
+
+    def _delete_resources(self):
+        pass
+
+    def delete_async(self):
+        self._delete_resources()
+        LOG.debug("Setting instance %s to deleted..." % self.id)
+        # Delete guest queue.
+        try:
+            guest = self.get_guest()
+            guest.delete_queue()
+        except Exception as ex:
+            LOG.warn(ex)
+        time_now = datetime.now()
+        self.update_db(deleted=True, deleted_at=time_now,
+                       task_status=InstanceTasks.NONE)
+
     @property
     def guest(self):
         if not self._guest:
@@ -352,16 +390,8 @@ class Instance(BuiltInstance):
 
     """
 
-    def delete(self, force=False):
-        if not force and \
-            self.db_info.server_status in SERVER_INVALID_ACTION_STATUSES:
-            raise exception.UnprocessableEntity("Instance %s is not ready."
-                                                    % self.id)
-        LOG.debug(_("  ... deleting compute id = %s") %
-                  self.db_info.compute_instance_id)
-        LOG.debug(_(" ... setting status to DELETING."))
-        self.update_db(task_status=InstanceTasks.DELETING)
-        task_api.API(self.context).delete_instance(self.id)
+    def _delete_resources(self):
+        pass
 
     @classmethod
     def create(cls, context, name, flavor_id, image_id,

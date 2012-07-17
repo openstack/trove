@@ -157,7 +157,7 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("id : '%s'\n\n") % id)
         # TODO(hub-cap): turn this into middleware
         context = req.environ[wsgi.CONTEXT_KEY]
-        instance = models.Instance.load(context=context, id=id)
+        instance = models.load_any_instance(context, id)
         instance.delete()
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(None, 202)
