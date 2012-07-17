@@ -66,10 +66,10 @@ max_instances_per_user = 55
 volume_time_out=30
 
 # Auth
-admin_roles = [admin]
+admin_roles = admin
 
 # Users to ignore for user create/list/delete operations
-ignore_users = [os_admin]
+ignore_users = os_admin
 
 # Guest related conf
 agent_heartbeat_time = 10

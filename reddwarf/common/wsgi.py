@@ -431,7 +431,7 @@ class Fault(webob.exc.HTTPException):
 class ContextMiddleware(openstack_wsgi.Middleware):
 
     def __init__(self, application):
-        self.admin_roles = config.Config.get('admin_roles', [])
+        self.admin_roles = config.Config.get_list('admin_roles', [])
         super(ContextMiddleware, self).__init__(application)
 
     def _extract_limits(self, params):

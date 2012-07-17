@@ -336,7 +336,7 @@ class MySQLUser(Base):
     """Represents a MySQL User and its associated properties"""
 
     not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
-    _ignore_users = config.Config.get("ignore_users", [])
+    _ignore_users = config.Config.get_list("ignore_users", [])
 
     def __init__(self):
         self._name = None

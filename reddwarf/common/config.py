@@ -25,7 +25,19 @@ parse_options = openstack_config.parse_options
 add_log_options = openstack_config.add_log_options
 add_common_options = openstack_config.add_common_options
 setup_logging = openstack_config.setup_logging
-get_option = openstack_config.get_option
+
+
+def _to_list(value):
+    items = value.split(',')
+    return items
+
+
+def get_option(options, option, **kwargs):
+    if option in options and kwargs.get('type', 'str') == 'list':
+        value = options[option]
+        return _to_list(value)
+    else:
+        return openstack_config.get_option(options, option, **kwargs)
 
 
 class Config(object):
@@ -72,5 +84,23 @@ class Config(object):
         cls.append_to_config_values(*args)
 
     @classmethod
-    def get(cls, key, default=None):
-        return cls.instance.get(key, default)
+    def get(cls, key, default=None, **kwargs):
+        if default is not None:
+            kwargs['default'] = default
+        return get_option(cls.instance, key, **kwargs)
+
+
+
+def create_type_func(type):
+    @classmethod
+    def get(cls, key, default=None, **kwargs):
+        kwargs['type'] = type
+        return cls.get(key, default, **kwargs)
+    return get
+
+
+Config.get_bool = create_type_func('bool')
+Config.get_float = create_type_func('float')
+Config.get_int = create_type_func('int')
+Config.get_list = create_type_func('list')
+Config.get_str = create_type_func('str')
