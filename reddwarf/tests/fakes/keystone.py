@@ -17,11 +17,6 @@
 import re
 
 
-TOKENS = {
-    "abcde"
-}
-
-
 class AuthProtocol(object):
 
     def __init__(self, app, conf):
