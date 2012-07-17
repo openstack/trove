@@ -80,6 +80,10 @@ notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
 
+# ============ Logging information =============================
+#log_dir = /integration/report
+#log_file = reddwarf-api.log
+
 [composite:reddwarf]
 use = call:reddwarf.common.wsgi:versioned_urlmap
 /: versions
