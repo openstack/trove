@@ -85,8 +85,8 @@ class Config(object):
 
     @classmethod
     def get(cls, key, default=None, **kwargs):
-        if default is not None:
-            kwargs['default'] = default
+        # We always use a default, even if its None.
+        kwargs['default'] = default
         return get_option(cls.instance, key, **kwargs)
 
 
