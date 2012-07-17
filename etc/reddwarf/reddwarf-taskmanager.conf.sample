@@ -69,6 +69,9 @@ notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
 
+# ============ Logging information =============================
+#log_dir = /integration/report
+#log_file = reddwarf-taskmanager.log
 
 [app:reddwarf-taskmanager]
 paste.app_factory = reddwarf.taskmanager.service:app_factory
