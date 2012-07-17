@@ -60,10 +60,10 @@ reddwarf_dns_support = False
 taskmanager_queue = taskmanager
 
 # Auth
-admin_roles = [admin]
+admin_roles = admin
 
 # Users to ignore for user create/list/delete operations
-ignore_users = [os_admin]
+ignore_users = os_admin
 
 # Guest related conf
 agent_heartbeat_time = 10
