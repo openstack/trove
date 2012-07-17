@@ -13,3 +13,4 @@ covhtml/
 .DS_Store
 host-syslog.log
 tags
+.tox

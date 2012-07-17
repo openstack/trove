@@ -104,7 +104,7 @@ pipeline = faultwrapper tokenauth authorization contextwrapper extensions reddwa
 paste.filter_factory = reddwarf.common.extensions:factory
 
 [filter:tokenauth]
-paste.filter_factory = keystone.middleware.auth_token:filter_factory
+paste.filter_factory = reddwarf.tests.fakes.keystone:filter_factory
 service_protocol = http
 service_host = 127.0.0.1
 service_port = 5000

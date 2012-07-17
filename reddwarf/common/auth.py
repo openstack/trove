@@ -68,8 +68,10 @@ class TenantBasedAuth(object):
             LOG.debug(_("Authorized tenant '%(tenant_id)s' request: "
                       "%(request)s") % locals())
             return True
-        raise webob.exc.HTTPForbidden(_("User with tenant id %s cannot "
-                                        "access this resource") % tenant_id)
+        msg = _("User with tenant id %s cannot access this resource") \
+              % tenant_id
+        LOG.debug(msg)
+        raise webob.exc.HTTPForbidden(msg)
 
 
 def admin_context(f):
