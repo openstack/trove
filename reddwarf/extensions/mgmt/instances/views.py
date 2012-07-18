@@ -35,6 +35,7 @@ class MgmtInstanceView(InstanceDetailView):
         result['instance']['tenant_id'] = self.instance.tenant_id
         result['instance']['deleted'] = bool(self.instance.deleted)
         result['instance']['deleted_at'] = self.instance.deleted_at
+        result['instance']['task_description'] = self.instance.task_description
         return result
 
 
