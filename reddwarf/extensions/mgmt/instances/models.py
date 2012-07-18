@@ -70,9 +70,7 @@ class SimpleMgmtInstance(imodels.BaseInstance):
 
     @property
     def task_description(self):
-        if self.server:
-            return self.server.task_description
-        return ""
+        return self.db_info.task_description
 
     @classmethod
     def load(cls, context, id):
@@ -122,8 +120,12 @@ class MgmtInstances(imodels.Instances):
 def _load_servers(instances, find_server):
     for instance in instances:
         db = instance.db_info
-        server = find_server(db.id, db.compute_instance_id)
-        instance.server = server
+        instance.server = None
+        try:
+            server = find_server(db.id, db.compute_instance_id)
+            instance.server = server
+        except Exception as ex:
+            LOG.error(ex)
     return instances
 
 
