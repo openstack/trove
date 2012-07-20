@@ -71,6 +71,7 @@ class DetailedHost(object):
                 db_info = DBInstance.find_by(
                     compute_instance_id=instance['server_id'])
                 instance['id'] = db_info.id
+                instance['tenant_id'] = db_info.tenant_id
             except exception.ReddwarfError as re:
                 LOG.error(re)
                 LOG.error("Compute Instance ID found with no associated RD "
