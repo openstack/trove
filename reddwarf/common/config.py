@@ -29,7 +29,8 @@ setup_logging = openstack_config.setup_logging
 
 def _to_list(value):
     items = value.split(',')
-    return items
+    trimmed_list = [item.strip() for item in items]
+    return trimmed_list
 
 
 def get_option(options, option, **kwargs):
