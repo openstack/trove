@@ -24,7 +24,7 @@ from novaclient import exceptions as nova_exceptions
 
 
 def authorize(context):
-    if not context.user in ['radmin', 'Boss']:
+    if not context.is_admin:
         raise nova_exceptions.Forbidden(403, "Forbidden")
 
 

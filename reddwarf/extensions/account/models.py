@@ -17,25 +17,45 @@
 
 import logging
 
+from reddwarf.common.remote import create_nova_client
 from reddwarf.instance.models import DBInstance
-
+from reddwarf.extensions.mgmt.instances.models import MgmtInstances
+from reddwarf.common.exception import Forbidden
 
 LOG = logging.getLogger(__name__)
 
 
-def load_accounts_summary(cls):
-    # TODO(pdmars): This should probably be changed to a more generic
-    # database filter query if one is added, however, this should suffice
-    # for now.
-    db_infos = DBInstance.find_all(deleted=False)
-    tenant_ids_for_instances = [db_info.tenant_id for db_info in db_infos]
-    tenant_ids = set(tenant_ids_for_instances)
-    LOG.debug("All tenants with instances: %s" % tenant_ids)
-    accounts = []
-    for tenant_id in tenant_ids:
-        num_instances = tenant_ids_for_instances.count(tenant_id)
-        accounts.append({'id': tenant_id, 'num_instances': num_instances})
-    return cls(accounts)
+class Server(object):
+    """Disguises the Nova account instance dict as a server object."""
+
+    def __init__(self, server):
+        self.id = server['id']
+        self.status = server['status']
+        self.name = server['name']
+        self.host = server['host']
+
+    @staticmethod
+    def list_from_account_server_list(servers):
+        """Converts a list of server account dicts to this object."""
+        return [Server(server) for server in servers]
+
+
+class Account(object):
+    """Contains all instances owned by an account."""
+
+    def __init__(self, id, instances):
+        self.id = id
+        self.instances = instances
+
+    @staticmethod
+    def load(context, id):
+        client = create_nova_client(context)
+        account = client.accounts.get_instances(id)
+        db_infos = DBInstance.find_all(tenant_id=id, deleted=False)
+        servers = [Server(server) for server in account.servers]
+        instances = MgmtInstances.load_status_from_existing(context, db_infos,
+                                                            servers)
+        return Account(id, instances)
 
 
 class AccountsSummary(object):
@@ -45,4 +65,15 @@ class AccountsSummary(object):
 
     @classmethod
     def load(cls):
-        return load_accounts_summary(cls)
+        # TODO(pdmars): This should probably be changed to a more generic
+        # database filter query if one is added, however, this should suffice
+        # for now.
+        db_infos = DBInstance.find_all(deleted=False)
+        tenant_ids_for_instances = [db_info.tenant_id for db_info in db_infos]
+        tenant_ids = set(tenant_ids_for_instances)
+        LOG.debug("All tenants with instances: %s" % tenant_ids)
+        accounts = []
+        for tenant_id in tenant_ids:
+            num_instances = tenant_ids_for_instances.count(tenant_id)
+            accounts.append({'id': tenant_id, 'num_instances': num_instances})
+        return cls(accounts)

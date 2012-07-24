@@ -25,18 +25,15 @@ class AccountsView(object):
 
 class AccountView(object):
 
-    def __init__(self, account, instances):
+    def __init__(self, account):
         self.account = account
-        self.instances = instances
 
     def data(self):
-        data = []
-        # These are model instances
-        for instance in self.instances:
-            data.append(InstanceView(instance).data())
+        instance_list = [InstanceView(instance).data()
+                         for instance in self.account.instances]
         return {'account': {
                     'id': self.account.id,
-                    'instances': data,
+                    'instances': instance_list,
                     }
                 }
 

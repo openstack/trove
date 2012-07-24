@@ -53,7 +53,7 @@ nova_service_type = compute
 nova_service_name = Compute Service
 
 # Config option for showing the IP address that nova doles out
-add_addresses = True
+add_addresses = False
 
 # Config options for enabling volume service
 reddwarf_volume_support = True

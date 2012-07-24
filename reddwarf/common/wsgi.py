@@ -48,15 +48,45 @@ LOG = logging.getLogger('reddwarf.common.wsgi')
 
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
-CUSTOM_SERIALIZER_METADATA = {'instance': {'status': '', 'hostname': '',
-                              'id': '', 'name': '', 'created': '',
-                              'updated': '', 'host': ''},
-                   'volume': {'size': '', 'used': ''},
-                   'flavor': {'id': '', 'ram': '', 'name': ''},
-                   'link': {'href': '', 'rel': ''},
-                   'database': {'name': ''},
-                   'user': {'name': '', 'password': ''},
-                   'account': {'id': ''}}
+CUSTOM_SERIALIZER_METADATA =  \
+{   'instance': {'status': '', 'hostname': '',
+                 'id': '', 'name': '', 'created': '',
+                 'updated': '', 'host': '',
+                 'server_id':'',
+                 #mgmt/instance
+                 'local_id':'',
+                 'task_description':'',
+                 'deleted':'',
+                 'deleted_at':'',
+                 'tenant_id':'',
+                 },
+    'volume': {'size': '', 'used': '',
+              #mgmt/instance
+               'id':'',
+              },
+    'flavor': {'id': '', 'ram': '', 'name': ''},
+    'link': {'href': '', 'rel': ''},
+    'database': {'name': ''},
+    'user': {'name': '', 'password': ''},
+    'account': {'id': ''},
+    # mgmt/host
+    'host':{'instanceCount':'', 'name':'', 'usedRAM':'', 'totalRAM':'',
+            'percentUsed':''},
+    # mgmt/storage
+    'capacity': {'available':'', 'total':''},
+    'provision': {'available':'', 'total':'', 'percent':''},
+    'device': {'used':'', 'name':'', 'type':''},
+    # mgmt/account
+    'account': {'id':'', 'num_instances':''},
+    #mgmt/instance
+    'guest_status': {'state_description':''},
+    #mgmt/instance/diagnostics
+    'diagnostics':{'vmHwm':'', 'vmPeak':'', 'vmSize':'', 'threads':'',
+                   'version':'', 'vmRss':'', 'fdSize':''},
+    #mgmt/instance/root
+    'root_history':{'enabled':'', 'id':'', 'user':''},
+}
+
 
 
 def versioned_urlmap(*args, **kwargs):
