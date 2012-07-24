@@ -82,7 +82,6 @@ class SimpleMgmtInstance(imodels.BaseInstance):
             instance.server.deleted = server.deleted
             instance.server.deleted_at = server.deleted_at
             instance.server.local_id = server.local_id
-            instance.server.task_description = server.task_description
             assert instance.server is not None
 
         except Exception as e:
