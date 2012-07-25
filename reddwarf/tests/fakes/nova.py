@@ -129,8 +129,8 @@ class FakeServer(object):
 
     def delete(self):
         self.schedule_status = []
-        # TODO(pdmars): This is less than ideal, but a quick way to force it 
-        # into the error state before scheduling the delete. 
+        # TODO(pdmars): This is less than ideal, but a quick way to force it
+        # into the error state before scheduling the delete.
         if (self.name.endswith("_DELETE_ERROR") and
             self._current_status != "SHUTDOWN"):
             # Fail to delete properly the first time, just set the status
@@ -496,7 +496,11 @@ class FakeHost(object):
                 'name': server.name,
                 'status': server.status
                 })
-            flavor = FLAVORS.get(server.flavor_ref)
+            try:
+                flavor = FLAVORS.get(server.flavor_ref)
+            except ValueError:
+                # Maybe flavor_ref isn't an int?
+                flavor = FLAVORS.get_by_href(server.flavor_ref)
             ram = flavor.ram
             self.usedRAM += ram
         decimal = float(self.usedRAM) / float(self.totalRAM)
