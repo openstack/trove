@@ -66,36 +66,27 @@ class FakeGuest(object):
     def is_root_enabled(self):
         return self.root_was_enabled
 
-    def list_databases(self, limit=None, marker=None, include_marker=False):
-        dbs = [self.dbs[name] for name in self.dbs]
-        names = [db['_name'] for db in dbs]
+    def _list_resource(self, resource, limit=None, marker=None,
+                      include_marker=False):
+        names = sorted([name for name in resource])
         if marker in names:
             if not include_marker:
                 # Cut off everything left of and including the marker item.
-                dbs = dbs[names.index(marker) + 1:]
+                names = names[names.index(marker) + 1:]
             else:
-                dbs = dbs[names.index(marker):]
+                names = names[names.index(marker):]
         next_marker = None
         if limit:
-            if len(dbs) > limit:
-                next_marker = dbs[limit - 1]['_name']
-            dbs = dbs[:limit]
-        return dbs, next_marker
+            if len(names) > limit:
+                next_marker = names[limit - 1]
+            names = names[:limit]
+        return [resource[name] for name in names], next_marker
+
+    def list_databases(self, limit=None, marker=None, include_marker=False):
+        return self._list_resource(self.dbs, limit, marker, include_marker)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
-        users = [self.users[name] for name in self.users]
-        names = [user['_name'] for user in users]
-        if marker in names:
-            if not include_marker:
-                users = users[names.index(marker) + 1:]
-            else:
-                users = users[names.index(marker):]
-        next_marker = None
-        if limit:
-            if len(users) > limit:
-                next_marker = users[limit - 1]['_name']
-            users = users[:limit]
-        return users, next_marker
+        return self._list_resource(self.users, limit, marker, include_marker)
 
     def prepare(self, memory_mb, databases, users, device_path=None,
                 mount_point=None):
