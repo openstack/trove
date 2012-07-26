@@ -150,7 +150,7 @@ def load_via_context(cls, context, instance_id):
 
 class Users(object):
 
-    DEFAULT_LIMIT = int(config.Config.get('users_page_size', '20'))
+    DEFAULT_LIMIT = int(CONFIG.get('users_page_size', '20'))
 
     @classmethod
     def load(cls, context, instance_id):
@@ -161,9 +161,12 @@ class Users(object):
         user_list, next_marker = client.list_users(limit=limit,
             marker=marker, include_marker=include_marker)
         model_users = []
+        ignore_users = CONFIG.get_list('ignore_users', [])
         for user in user_list:
             mysql_user = guest_models.MySQLUser()
             mysql_user.deserialize(user)
+            if mysql_user.name in ignore_users:
+                continue
             # TODO(hub-cap): databases are not being returned in the
             # reference agent
             dbs = []
@@ -205,7 +208,7 @@ class Schema(object):
 
 class Schemas(object):
 
-    DEFAULT_LIMIT = int(config.Config.get('databases_page_size', '20'))
+    DEFAULT_LIMIT = int(CONFIG.get('databases_page_size', '20'))
 
     @classmethod
     def load(cls, context, instance_id):

@@ -69,7 +69,7 @@ volume_time_out=30
 admin_roles = admin
 
 # Users to ignore for user create/list/delete operations
-ignore_users = os_admin
+ignore_users = os_admin, root
 
 # Guest related conf
 agent_heartbeat_time = 10
