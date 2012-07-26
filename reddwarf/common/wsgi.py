@@ -24,6 +24,7 @@ import traceback
 import webob
 import webob.dec
 import webob.exc
+from xml.dom import minidom
 
 from reddwarf.common import context as rd_context
 from reddwarf.common import config
@@ -323,6 +324,34 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
     def __init__(self, metadata=None, xmlns=None):
         super(ReddwarfXMLDictSerializer, self).__init__(metadata, XMLNS)
 
+    def default(self, data):
+        # We expect data to be a dictionary containing a single key as the XML
+        # root, or two keys, the later being "links."
+        # We expect data to contain a single key which is the XML root,
+        has_links = False
+        root_key = None
+        for key in data:
+            if key == "links":
+                has_links = True
+            elif root_key is None:
+                root_key = key
+            else:
+                msg = "Xml issue: multiple root keys found in dict!:%s" % data
+                LOG.error(msg)
+                raise RuntimeError(msg)
+        if root_key is None:
+            msg = "Missing root key in dict:%s" % data
+            LOG.error(msg)
+            raise RuntimeError(msg)
+        doc = minidom.Document()
+        node = self._to_xml_node(doc, self.metadata, root_key, data[root_key])
+        if has_links:
+            # Create a links element, and mix it into the node element.
+            links_node = self._to_xml_node(doc, self.metadata,
+                                           'links', data['links'])
+            node.appendChild(links_node)
+        return self.to_xml_string(node)
+
     def _to_xml_node(self, doc, metadata, nodename, data):
         metadata['attributes'] = CUSTOM_SERIALIZER_METADATA
         if hasattr(data, "to_xml"):
@@ -331,6 +360,8 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
             metadata,
             nodename,
             data)
+
+
 
 
 class ReddwarfResponseSerializer(openstack_wsgi.ResponseSerializer):
