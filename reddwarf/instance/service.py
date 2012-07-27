@@ -63,7 +63,8 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
         _actions = {
             'restart': self._action_restart,
-            'resize': self._action_resize
+            'resize': self._action_resize,
+            'reset_password': self._action_reset_password
             }
         selected_action = None
         for key in body:
@@ -125,6 +126,9 @@ class InstanceController(wsgi.Controller):
         instance.resize_flavor(new_flavor_id)
         return wsgi.Result(None, 202)
 
+    def _action_reset_password(self, instance, body):
+        raise webob.exc.HTTPNotImplemented()
+    
     def index(self, req, tenant_id):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)
