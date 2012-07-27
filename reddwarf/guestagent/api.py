@@ -23,7 +23,7 @@ import logging
 
 from eventlet import Timeout
 
-from reddwarf import rpc
+from reddwarf.openstack.common import rpc
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils

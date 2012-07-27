@@ -16,6 +16,7 @@ import logging
 
 from eventlet import greenthread
 from datetime import datetime
+import traceback
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import config
 from reddwarf.common import remote
@@ -139,6 +140,7 @@ class FreshInstanceTasks(FreshInstance):
     def _log_and_raise(self, exc, message, task_status):
         LOG.error(message)
         LOG.error(exc)
+        LOG.error(traceback.format_exc())
         self.update_db(task_status=task_status)
         raise ReddwarfError(message=message)
 

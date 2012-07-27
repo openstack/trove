@@ -14,6 +14,7 @@
 
 import routes
 
+from reddwarf.openstack.common import rpc
 from reddwarf.common import wsgi
 from reddwarf.versions import VersionsController
 from reddwarf.flavor.service import FlavorController

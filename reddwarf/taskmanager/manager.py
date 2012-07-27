@@ -17,7 +17,6 @@
 
 import logging
 import traceback
-import weakref
 
 from eventlet import greenthread
 
@@ -26,7 +25,7 @@ from reddwarf.common import service
 from reddwarf.taskmanager import models
 from reddwarf.taskmanager.models import BuiltInstanceTasks
 from reddwarf.taskmanager.models import FreshInstanceTasks
-
+from reddwarf.openstack.common.rpc.common import UnsupportedRpcVersion
 
 LOG = logging.getLogger(__name__)
 
@@ -34,27 +33,11 @@ LOG = logging.getLogger(__name__)
 class TaskManager(service.Manager):
     """Task manager impl"""
 
+    RPC_API_VERSION = "1.0"
+
     def __init__(self, *args, **kwargs):
-        self.tasks = weakref.WeakKeyDictionary()
         super(TaskManager, self).__init__(*args, **kwargs)
         LOG.info(_("TaskManager init %s %s") % (args, kwargs))
-
-    def periodic_tasks(self, raise_on_error=False):
-        LOG.debug("No. of running tasks: %r" % len(self.tasks))
-
-    def _wrapper(self, method, context, *args, **kwargs):
-        """Maps the respective manager method with a task counter."""
-        # TODO(rnirmal): Just adding a basic counter. Will revist and
-        # re-implement when we have actual tasks.
-        self.tasks[greenthread.getcurrent()] = context
-        try:
-            func = getattr(self, method)
-            func(context, *args, **kwargs)
-        except Exception as e:
-            LOG.error("Got an error running %s!" % method)
-            LOG.error(traceback.format_exc())
-        finally:
-            del self.tasks[greenthread.getcurrent()]
 
     def resize_volume(self, context, instance_id, new_size):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
