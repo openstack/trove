@@ -59,6 +59,9 @@ agent_heartbeat_time = 10
 agent_call_low_timeout = 5
 agent_call_high_timeout = 100
 
+# Whether to use nova's contrib api for create server with volume
+use_nova_server_volume = False
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

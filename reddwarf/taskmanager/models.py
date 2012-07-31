@@ -45,33 +45,22 @@ from reddwarf.instance.views import get_ip_address
 
 LOG = logging.getLogger(__name__)
 
+use_nova_server_volume = config.Config.get_bool('use_nova_server_volume',
+                                                default='False')
+
 
 class FreshInstanceTasks(FreshInstance):
 
     def create_instance(self, flavor_id, flavor_ram, image_id,
                         databases, users, service_type, volume_size):
-        volume_info = None
-        block_device_mapping = None
-        server = None
-        try:
-            volume_info = self._create_volume(volume_size)
-            block_device_mapping = volume_info['block_device']
-        except Exception as e:
-            msg = "Error provisioning volume for instance."
-            err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
-            self._log_and_raise(e, msg, err)
-
-        try:
-            server = self._create_server(flavor_id, image_id, service_type,
-                                     block_device_mapping)
-            server_id = server.id
-            # Save server ID.
-            self.update_db(compute_instance_id=server_id)
-        except Exception as e:
-            msg = "Error creating server for instance."
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
-            self._log_and_raise(e, msg, err)
-
+        if use_nova_server_volume:
+            server, volume_info = self._create_server_volume(flavor_id,
+                                                        image_id, service_type,
+                                                        volume_size)
+        else:
+            server, volume_info = self._create_server_volume_individually(
+                                                    flavor_id, image_id,
+                                                    service_type, volume_size)
         try:
             self._create_dns_entry()
         except Exception as e:
@@ -85,6 +74,67 @@ class FreshInstanceTasks(FreshInstance):
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
+
+    def _create_server_volume(self, flavor_id, image_id, service_type,
+                              volume_size):
+        server = None
+        try:
+            nova_client = create_nova_client(self.context)
+            files = {"/etc/guest_info": "--guest_id=%s\n--service_type=%s\n" %
+                                        (self.id, service_type)}
+            name = self.hostname or self.name
+            volume_desc = ("mysql volume for %s" % self.id)
+            volume_name = ("mysql-%s" % self.id)
+            volume_ref = {'size': volume_size, 'name': volume_name,
+                          'description': volume_desc}
+
+            server = nova_client.servers.create(name, image_id, flavor_id,
+                                                files=files, volume=volume_ref)
+            LOG.debug(_("Created new compute instance %s.") % server.id)
+
+            server_dict = server._info
+            LOG.debug("Server response: %s" % server_dict)
+            volume_id = None
+            for volume in server_dict.get('os:volumes', []):
+                volume_id = volume.get('id')
+
+            # Record the server ID and volume ID in case something goes wrong.
+            self.update_db(compute_instance_id=server.id, volume_id=volume_id)
+        except Exception as e:
+            msg = "Error creating server for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
+            self._log_and_raise(e, msg, err)
+
+        device_path = config.Config.get('device_path', '/dev/vdb')
+        mount_point = config.Config.get('mount_point', '/var/lib/mysql')
+        volume_info = {'device_path': device_path, 'mount_point': mount_point}
+
+        return server, volume_info
+
+    def _create_server_volume_individually(self, flavor_id, image_id,
+                                           service_type, volume_size):
+        volume_info = None
+        block_device_mapping = None
+        server = None
+        try:
+            volume_info = self._create_volume(volume_size)
+            block_device_mapping = volume_info['block_device']
+        except Exception as e:
+            msg = "Error provisioning volume for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
+            self._log_and_raise(e, msg, err)
+
+        try:
+            server = self._create_server(flavor_id, image_id, service_type,
+                                         block_device_mapping)
+            server_id = server.id
+            # Save server ID.
+            self.update_db(compute_instance_id=server_id)
+        except Exception as e:
+            msg = "Error creating server for instance."
+            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
+            self._log_and_raise(e, msg, err)
+        return server, volume_info
 
     def _log_and_raise(self, exc, message, task_status):
         LOG.error(message)
