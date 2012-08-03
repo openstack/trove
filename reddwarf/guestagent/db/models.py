@@ -32,6 +32,8 @@ class Base(object):
 class MySQLDatabase(Base):
     """Represents a Database and its properties"""
 
+    _ignore_dbs = config.Config.get_list("ignore_dbs", [])
+
     # Defaults
     __charset__ = "utf8"
     __collation__ = "utf8_general_ci"
@@ -276,10 +278,16 @@ class MySQLDatabase(Base):
     def name(self):
         return self._name
 
+    def _is_valid(self, value):
+        return value.lower() not in self._ignore_dbs
+
     @name.setter
     def name(self, value):
-        if not value or not self.dbname.match(value) or \
-                        string.find("%r" % value, "\\") != -1:
+        if any([not value,
+                not self._is_valid(value),
+                not self.dbname.match(value),
+                string.find("%r" % value, "\\") != -1,
+               ]):
             raise ValueError("'%s' is not a valid database name" % value)
         elif len(value) > 64:
             raise ValueError("Database name '%s' is too long. Max length = 64"

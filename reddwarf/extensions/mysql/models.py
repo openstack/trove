@@ -219,9 +219,12 @@ class Schemas(object):
         schemas, next_marker = client.list_databases(limit=limit,
             marker=marker, include_marker=include_marker)
         model_schemas = []
+        ignore_dbs = CONFIG.get_list('ignore_dbs', [])
         for schema in schemas:
             mysql_schema = guest_models.MySQLDatabase()
             mysql_schema.deserialize(schema)
+            if mysql_schema.name in ignore_dbs:
+                continue
             model_schemas.append(Schema(mysql_schema.name,
                                         mysql_schema.collate,
                                         mysql_schema.character_set))
