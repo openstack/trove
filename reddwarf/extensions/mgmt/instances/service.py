@@ -44,8 +44,14 @@ class MgmtInstanceController(InstanceController):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
+        deleted = None
+        deleted_q = req.GET.get('deleted', '').lower()
+        if deleted_q in ['true']:
+            deleted = True
+        elif deleted_q in ['false']:
+            deleted=False
         try:
-            instances = models.load_mgmt_instances(context)
+            instances = models.load_mgmt_instances(context, deleted=deleted)
         except nova_exceptions.ClientException, e:
             LOG.error(e)
             return wsgi.Result(str(e), 403)

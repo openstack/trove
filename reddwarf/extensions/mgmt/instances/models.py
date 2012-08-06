@@ -25,10 +25,14 @@ CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-def load_mgmt_instances(context):
+def load_mgmt_instances(context, deleted=None):
     client = create_nova_client(context)
     mgmt_servers = client.rdservers.list()
-    db_infos = instance_models.DBInstance.find_all()
+    db_infos = None
+    if deleted is not None:
+        db_infos = instance_models.DBInstance.find_all(deleted=deleted)
+    else:
+        db_infos = instance_models.DBInstance.find_all()
     instances = MgmtInstances.load_status_from_existing(context,
                                         db_infos, mgmt_servers)
     return instances
@@ -62,17 +66,11 @@ class SimpleMgmtInstance(imodels.BaseInstance):
 
     @property
     def deleted(self):
-        if self.server:
-            return self.server.deleted
-        else:
-            return ""
+        return self.db_info.deleted
 
     @property
     def deleted_at(self):
-        if self.server:
-            return self.server.deleted_at
-        else:
-            return ""
+        return self.db_info.deleted_at
 
     @property
     def task_description(self):
