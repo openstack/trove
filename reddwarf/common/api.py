@@ -15,6 +15,7 @@
 import routes
 
 from reddwarf.common import wsgi
+from reddwarf.versions import VersionsController
 from reddwarf.flavor.service import FlavorController
 from reddwarf.instance.service import InstanceController
 
@@ -26,6 +27,11 @@ class API(wsgi.Router):
         super(API, self).__init__(mapper)
         self._instance_router(mapper)
         self._flavor_router(mapper)
+        self._versions_router(mapper)
+
+    def _versions_router(self, mapper):
+        versions_resource = VersionsController().create_resource()
+        mapper.connect("/", controller=versions_resource, action="show")
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()
