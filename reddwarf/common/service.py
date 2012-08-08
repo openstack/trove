@@ -22,12 +22,15 @@ import inspect
 import os
 import logging
 import socket
+import traceback
+import weakref
 
 import eventlet
 import greenlet
+from eventlet import greenthread
 
 from reddwarf.common import config
-from reddwarf import rpc
+from reddwarf.openstack.common import rpc
 from reddwarf.common import utils
 from reddwarf import version
 
@@ -87,17 +90,25 @@ class Service(object):
         self.saved_args, self.saved_kwargs = args, kwargs
         self.timers = []
 
+    def dispatch(self, ctxt, version, method, **kwargs):
+        """Handles incoming RPC messages."""
+        #TODO(tim.simpson): Maybe in the future actually account for the
+        #                   version somehow with multiple managers or by
+        #                   sending the manager in or something.
+        if not version:
+            version = '1.0'
+
+        if version != self.manager.RPC_API_VERSION:
+            raise UnsupportedRpcVersion(version=version)
+
+        return self.manager.wrapper(method, ctxt, **kwargs)
+
     def periodic_tasks(self, raise_on_error=False):
         """Tasks to be run at a periodic interval."""
         self.manager.periodic_tasks(raise_on_error=raise_on_error)
 
     def report_state(self):
         pass
-
-    def __getattr__(self, key):
-        """This method proxy's the calls to the manager implementation"""
-        manager = self.__dict__.get('manager', None)
-        return functools.partial(manager._wrapper, key)
 
     def start(self):
         vcs_string = version.version_string_with_vcs()
@@ -169,11 +180,12 @@ class Service(object):
 class Manager(object):
     def __init__(self, host=None):
         self.host = host
+        self.tasks = weakref.WeakKeyDictionary()
         super(Manager, self).__init__()
 
     def periodic_tasks(self, raise_on_error=False):
         """Tasks to be run at a periodic interval."""
-        pass
+        LOG.debug("No. of running tasks: %d" % len(self.tasks))
 
     def init_host(self):
         """Handle initialization if this is a standalone service.
@@ -183,10 +195,29 @@ class Manager(object):
         """
         pass
 
-    def _wrapper(self, method, context, *args, **kwargs):
-        """Wraps the called functions with additional information."""
-        func = getattr(self, method)
-        return func(context, *args, **kwargs)
+    #TODO(tim.simpson): Rename this to "execute" or something clearer.
+    def wrapper(self, method, context, *args, **kwargs):
+        """Maps the respective manager method with a task counter."""
+        # TODO(rnirmal): Just adding a basic counter. Will revist and
+        # re-implement when we have actual tasks.
+        self.tasks[greenthread.getcurrent()] = context
+        try:
+            if not hasattr(self, method):
+                raise AttributeError("No such RPC function '%s'" % method)
+            func = getattr(self, method)
+            LOG.info(str('*' * 80))
+            LOG.info("Running method %s..." % method)
+            LOG.info(str('*' * 80))
+            result = func(context, *args, **kwargs)
+            LOG.info("Finished method %s." % method)
+            return result
+        except Exception as e:
+            LOG.error("Got an error running %s!" % method)
+            LOG.error(traceback.format_exc())
+        finally:
+            LOG.info(str('-' * 80))
+            del self.tasks[greenthread.getcurrent()]
+
 
 _launcher = None
 

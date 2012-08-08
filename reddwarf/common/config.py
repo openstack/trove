@@ -91,7 +91,6 @@ class Config(object):
         return get_option(cls.instance, key, **kwargs)
 
 
-
 def create_type_func(type):
     @classmethod
     def get(cls, key, default=None, **kwargs):
@@ -105,3 +104,51 @@ Config.get_float = create_type_func('float')
 Config.get_int = create_type_func('int')
 Config.get_list = create_type_func('list')
 Config.get_str = create_type_func('str')
+del create_type_func
+
+
+class ConfigFacade(object):
+    """This class presents an interface usable by OpenStack Common modules.
+
+    OpenStack common uses a new config interface where the values are
+    accessed as attributes directly. This presents the same interface
+    so we can interface with OS common modules while we change our config
+    stuff.
+
+    """
+
+    value_info = {}
+
+    def __init__(self, conf):
+        self.conf = conf
+
+    def __getattr__(self, name):
+        if name == "register_opts":
+            def f(*args, **kwargs):
+                pass
+            return f
+        if name in self.value_info:
+            v = self.value_info[name]
+            return self.conf.get(name, **v)
+        return self.conf.get(name)
+
+
+class OsCommonModule(object):
+    """Emulates the OpenStack Common cfg module."""
+
+    @property
+    def CONF(self):
+        return ConfigFacade(Config())
+
+
+def create_type_func(type):
+    @classmethod
+    def func(cls, name, default, help):
+        ConfigFacade.value_info[name] = {'default': default, 'type': type}
+    return func
+
+OsCommonModule.BoolOpt = create_type_func('bool')
+OsCommonModule.IntOpt = create_type_func('int')
+OsCommonModule.ListOpt = create_type_func('list')
+OsCommonModule.StrOpt = create_type_func('str')
+del create_type_func
