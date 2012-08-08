@@ -172,3 +172,7 @@ class InvalidModelError(ReddwarfError):
 class ModelNotFoundError(NotFound):
 
     message = _("Not Found")
+
+class UpdateGuestError(ReddwarfError):
+
+    message = _("Failed to update instances")

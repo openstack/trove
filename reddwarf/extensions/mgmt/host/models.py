@@ -81,9 +81,18 @@ class DetailedHost(object):
     def update_all(self, context):
         num_i = len(self.instances)
         LOG.debug("Host %s has %s instances to update" % (self.name, num_i))
+        failed_instances = []
         for instance in self.instances:
             client = create_guest_client(context, instance['id'])
-            client.update_guest()
+            try:
+                client.update_guest()
+            except exception.ReddwarfError as re:
+                LOG.error(re)
+                LOG.error("Unable to update instance: %s" % instance['id'])
+                failed_instances.append(instance['id'])
+        if len(failed_instances) > 0:
+            msg = "Failed to update instances: %s" % failed_instances
+            raise exception.UpdateGuestError(msg)
 
     @staticmethod
     def load(context, name):
