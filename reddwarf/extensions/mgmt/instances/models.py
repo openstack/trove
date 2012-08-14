@@ -41,6 +41,12 @@ class SimpleMgmtInstance(imodels.BaseInstance):
                                                  service_status)
 
     @property
+    def status(self):
+        if self.deleted:
+            return imodels.InstanceStatus.SHUTDOWN
+        return super(SimpleMgmtInstance, self).status
+
+    @property
     def local_id(self):
         if self.server:
             return self.server.local_id
