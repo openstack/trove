@@ -33,6 +33,9 @@ class FakeGuest(object):
         self.root_was_enabled = False
         self.version = 1
 
+    def get_hwinfo(self):
+        return {'mem_total': 524288, 'num_cpus': 1}
+
     def get_diagnostics(self):
         return {
             'version': str(self.version),

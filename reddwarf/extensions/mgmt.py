@@ -56,6 +56,7 @@ class Mgmt(extensions.ExtensionsDescriptor):
             serializer=serializer,
             member_actions={'root': 'GET',
                             'diagnostics': 'GET',
+                            'hwinfo': 'GET',
                             'action': 'POST'},
             )
         resources.append(instances)

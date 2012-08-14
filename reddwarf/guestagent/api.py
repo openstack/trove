@@ -137,6 +137,11 @@ class API(object):
         LOG.debug(_("Check root access for Instance %s"), self.id)
         return self._call("is_root_enabled", AGENT_LOW_TIMEOUT)
 
+    def get_hwinfo(self):
+        """Make a synchronous call to get hardware info for the container"""
+        LOG.debug(_("Check hwinfo on Instance %s"), self.id)
+        return self._call("get_hwinfo", AGENT_LOW_TIMEOUT)
+
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
         LOG.debug(_("Check diagnostics on Instance %s"), self.id)

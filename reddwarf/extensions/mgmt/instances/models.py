@@ -102,6 +102,9 @@ class MgmtInstance(imodels.Instance):
     def stop_mysql(self):
         return self.get_guest().stop_mysql()
 
+    def get_hwinfo(self):
+        return self.get_guest().get_hwinfo()
+
 
 class MgmtInstances(imodels.Instances):
 

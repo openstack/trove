@@ -103,6 +103,20 @@ class RootHistoryView(object):
                 }
 
 
+class HwInfoView(object):
+
+    def __init__(self, instance_id, hwinfo):
+        self.instance_id = instance_id
+        self.hwinfo = hwinfo
+
+    def data(self):
+        return {'hwinfo': {
+                    'mem_total': self.hwinfo['mem_total'],
+                    'num_cpus': self.hwinfo['num_cpus'],
+                    }
+            }
+
+
 class DiagnosticsView(object):
 
     def __init__(self, instance_id, diagnostics):

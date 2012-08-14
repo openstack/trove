@@ -24,6 +24,7 @@ from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.instances import models
 from reddwarf.extensions.mgmt.instances.views import DiagnosticsView
+from reddwarf.extensions.mgmt.instances.views import HwInfoView
 from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mgmt.instances import views
 from reddwarf.extensions.mysql import models as mysql_models
@@ -137,6 +138,18 @@ class MgmtInstanceController(InstanceController):
         else:
             rhv = views.RootHistoryView(id)
         return wsgi.Result(rhv.data(), 200)
+
+    @admin_context
+    def hwinfo(self, req, tenant_id, id):
+        """Return a single instance hardware info."""
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Showing hardware info for instance '%s'") % id)
+
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.MgmtInstance.load(context=context, id=id)
+
+        hwinfo = instance.get_hwinfo()
+        return wsgi.Result(HwInfoView(id, hwinfo).data(), 200)
 
     @admin_context
     def diagnostics(self, req, tenant_id, id):
