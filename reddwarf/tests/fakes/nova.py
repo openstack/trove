@@ -214,8 +214,11 @@ class FakeServers(object):
     def create(self, name, image_id, flavor_ref, files=None, block_device_mapping=None, volume=None):
         id = "FAKE_%s" % uuid.uuid4()
         if volume:
-            client = FakeClient(self.context)
-            volume = client.volumes.create(volume['size'], volume['name'], volume['description'])
+            volume = self.volumes.create(volume['size'], volume['name'], volume['description'])
+            while volume.status == "BUILD":
+                time.sleep(0.1)
+            if volume.status != "available":
+                raise nova_exceptions.ClientException("Volume was bad!")
             mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
             block_device_mapping = { 'vdb': mapping }
             volumes = [volume]

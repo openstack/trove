@@ -98,7 +98,6 @@ def create_type_func(type):
         return cls.get(key, default, **kwargs)
     return get
 
-
 Config.get_bool = create_type_func('bool')
 Config.get_float = create_type_func('float')
 Config.get_int = create_type_func('int')
