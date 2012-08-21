@@ -23,27 +23,16 @@ import logging
 import traceback
 import sys
 
-from reddwarf import rpc
 from reddwarf.common import config
-from reddwarf.common import exception
-from reddwarf.common import utils
+from reddwarf.common.manager import ManagerAPI
 
 
 CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 
-class API(object):
+class API(ManagerAPI):
     """API for interacting with the task manager."""
-
-    def __init__(self, context):
-        self.context = context
-
-    def _cast(self, method_name, **kwargs):
-        if CONFIG.get("remote_implementation", "real") == "fake":
-            self._fake_cast(method_name, **kwargs)
-        else:
-            self._real_cast(method_name, **kwargs)
 
     def _fake_cast(self, method_name, **kwargs):
         import eventlet
@@ -65,14 +54,6 @@ class API(object):
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
         return CONFIG.get('taskmanager_queue', 'taskmanager')
-
-    def _real_cast(self, method_name, **kwargs):
-        try:
-            rpc.cast(self.context, self._get_routing_key(),
-                    {"method": method_name, "args": kwargs})
-        except Exception as e:
-            LOG.error(e)
-            raise exception.TaskManagerError(original_message=str(e))
 
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"

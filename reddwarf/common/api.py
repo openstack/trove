@@ -12,9 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import routes
 
 from reddwarf.openstack.common import rpc
+from reddwarf.common import config
+from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.versions import VersionsController
 from reddwarf.flavor.service import FlavorController
