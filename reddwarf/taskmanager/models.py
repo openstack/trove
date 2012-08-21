@@ -47,7 +47,7 @@ from reddwarf.instance.views import get_ip_address
 LOG = logging.getLogger(__name__)
 
 use_nova_server_volume = config.Config.get_bool('use_nova_server_volume',
-                                                default='False')
+                                                default=False)
 
 
 class FreshInstanceTasks(FreshInstance):
@@ -102,7 +102,7 @@ class FreshInstanceTasks(FreshInstance):
             # Record the server ID and volume ID in case something goes wrong.
             self.update_db(compute_instance_id=server.id, volume_id=volume_id)
         except Exception as e:
-            msg = "Error creating server for instance."
+            msg = "Error creating server and volume for instance."
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, msg, err)
 

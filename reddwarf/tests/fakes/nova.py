@@ -107,9 +107,13 @@ class FakeServer(object):
         # fake value in this class's initializer.
         self._local_id = self.next_local_id
         self.next_local_id += 1
+        info_vols = []
         for volume in self.volumes:
+            info_vols.append({'id':volume.id})
             volume.set_attachment(id)
         self.host = "fake_host"
+
+        self._info = {'os:volumes':info_vols}
 
     @property
     def addresses(self):
@@ -207,9 +211,16 @@ class FakeServers(object):
         return self.context.is_admin or \
                server.owner.tenant == self.context.tenant
 
-    def create(self, name, image_id, flavor_ref, files, block_device_mapping):
+    def create(self, name, image_id, flavor_ref, files=None, block_device_mapping=None, volume=None):
         id = "FAKE_%s" % uuid.uuid4()
-        volumes = self._get_volumes_from_bdm(block_device_mapping)
+        if volume:
+            client = FakeClient(self.context)
+            volume = client.volumes.create(volume['size'], volume['name'], volume['description'])
+            mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
+            block_device_mapping = { 'vdb': mapping }
+            volumes = [volume]
+        else:
+            volumes = self._get_volumes_from_bdm(block_device_mapping)
         server = FakeServer(self, self.context, id, name, image_id, flavor_ref,
                             block_device_mapping, volumes)
         self.db[id] = server
@@ -417,6 +428,7 @@ class FakeVolumes(object):
         return [self.db[key] for key in self.db]
 
     def resize(self, volume_id, new_size):
+        LOG.debug("Resize volume id (%s) to size (%s)" % (volume_id, new_size))
         volume = self.get(volume_id)
 
         def finish_resize():
