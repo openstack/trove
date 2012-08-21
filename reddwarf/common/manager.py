@@ -14,7 +14,7 @@
 
 import logging
 
-from reddwarf import rpc
+from reddwarf.openstack.common import rpc
 from reddwarf.common import config
 from reddwarf.common import exception
 
