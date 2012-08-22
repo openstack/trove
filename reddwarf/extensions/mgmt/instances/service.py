@@ -70,7 +70,7 @@ class MgmtInstanceController(InstanceController):
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        server = models.SimpleMgmtInstance.load(context, id)
+        server = models.DetailedMgmtInstance.load(context, id)
         root_history = mysql_models.RootHistory.load(context=context,
                                                      instance_id=id)
         return wsgi.Result(views.MgmtInstanceDetailView(server, req=req,

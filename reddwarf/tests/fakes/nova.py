@@ -18,11 +18,11 @@
 import logging
 from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
-import time
+import eventlet
 import uuid
 from reddwarf.tests.fakes.common import authorize
 from reddwarf.tests.fakes.common import EventSimulator
-
+from reddwarf.common.utils import poll_until
 
 LOG = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ class FakeServer(object):
     def reboot(self):
         LOG.debug("Rebooting server %s" % (self.id))
         self._current_status = "REBOOT"
-        time.sleep(1)
+        eventlet.sleep(1)
         self._current_status = "ACTIVE"
         self.parent.schedule_simulate_running_server(self.id, 1.5)
 
@@ -188,7 +188,11 @@ class FakeServer(object):
         return "2012-01-25T21:55:51Z"
 
     @property
-    def tenant(self):
+    def tenant(self):   # This is on the RdServer extension type.
+        return self.owner.tenant
+
+    @property
+    def tenant_id(self):
         return self.owner.tenant
 
 
@@ -216,8 +220,9 @@ class FakeServers(object):
         if volume:
             volume = self.volumes.create(volume['size'], volume['name'], volume['description'])
             while volume.status == "BUILD":
-                time.sleep(0.1)
+                eventlet.sleep(0.1)
             if volume.status != "available":
+                LOG.info("volume status = %s" % volume.status)
                 raise nova_exceptions.ClientException("Volume was bad!")
             mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
             block_device_mapping = { 'vdb': mapping }
@@ -346,15 +351,24 @@ class FakeVolume(object):
         self.display_name = display_name
         self.display_description = display_description
         self.events = EventSimulator()
-        self.schedule_status("BUILD", 0.0)
+        self._current_status = "BUILD"
         # For some reason we grab this thing from device then call it mount
         # point.
         self.device = "/var/lib/mysql"
 
     def __repr__(self):
         return ("FakeVolume(id=%s, size=%s, "
-               "display_name=%s, display_description=%s)") % (self.id,
-               self.size, self.display_name, self.display_description)
+               "display_name=%s, display_description=%s, _current_status=%s)"
+               % (self.id, self.size, self.display_name,
+                  self.display_description, self._current_status))
+
+    @property
+    def availability_zone(self):
+        return "fake-availability-zone"
+
+    @property
+    def created_at(self):
+        return "2001-01-01-12:30:30"
 
     def get(self, key):
         return getattr(self, key)
