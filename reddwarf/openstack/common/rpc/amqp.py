@@ -365,6 +365,8 @@ def multicall(conf, context, topic, msg, timeout, connection_pool):
 
 def call(conf, context, topic, msg, timeout, connection_pool):
     """Sends a message on a topic and wait for a response."""
+    with ConnectionContext(conf, connection_pool) as conn:
+        consumer = conn.declare_topic_consumer(topic=topic)
     rv = multicall(conf, context, topic, msg, timeout, connection_pool)
     # NOTE(vish): return the last result from the multicall
     rv = list(rv)
@@ -375,6 +377,8 @@ def call(conf, context, topic, msg, timeout, connection_pool):
 
 def cast(conf, context, topic, msg, connection_pool):
     """Sends a message on a topic without waiting for a response."""
+    with ConnectionContext(conf, connection_pool) as conn:
+        consumer = conn.declare_topic_consumer(topic=topic)
     LOG.debug(_('Making asynchronous cast on %s...'), topic)
     pack_context(msg, context)
     with ConnectionContext(conf, connection_pool) as conn:
