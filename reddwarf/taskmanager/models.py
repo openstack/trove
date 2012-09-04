@@ -140,6 +140,9 @@ class FreshInstanceTasks(FreshInstance):
     def _log_and_raise(self, exc, message, task_status):
         LOG.error(message)
         LOG.error(exc)
+        tb = traceback.format_exc()
+        for line in tb:
+            LOG.error(line)
         LOG.error(traceback.format_exc())
         self.update_db(task_status=task_status)
         raise ReddwarfError(message=message)

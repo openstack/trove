@@ -16,9 +16,11 @@ import logging
 
 from reddwarf.common import config
 from reddwarf.common.remote import create_nova_client
+from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.instance import models as imodels
 from reddwarf.instance.models import load_instance
 from reddwarf.instance import models as instance_models
+from reddwarf.extensions.mysql import models as mysql_models
 
 
 CONFIG = config.Config
@@ -38,6 +40,22 @@ def load_mgmt_instances(context, deleted=None):
     return instances
 
 
+def load_mgmt_instance(cls, context, id):
+    try:
+        instance = load_instance(cls, context, id, needs_server=True)
+        client = create_nova_client(context)
+        server = client.rdservers.get(instance.server_id)
+        instance.server.host = server.host
+        instance.server.deleted = server.deleted
+        instance.server.deleted_at = server.deleted_at
+        instance.server.local_id = server.local_id
+        assert instance.server is not None
+    except Exception as e:
+        LOG.error(e)
+        instance = load_instance(cls, context, id, needs_server=False)
+    return instance
+
+
 class SimpleMgmtInstance(imodels.BaseInstance):
 
     def __init__(self, context, db_info, server, service_status):
@@ -51,20 +69,6 @@ class SimpleMgmtInstance(imodels.BaseInstance):
         return super(SimpleMgmtInstance, self).status
 
     @property
-    def local_id(self):
-        if self.server:
-            return self.server.local_id
-        else:
-            return None
-
-    @property
-    def host(self):
-        if self.server:
-            return self.server.host
-        else:
-            return ""
-
-    @property
     def deleted(self):
         return self.db_info.deleted
 
@@ -72,25 +76,32 @@ class SimpleMgmtInstance(imodels.BaseInstance):
     def deleted_at(self):
         return self.db_info.deleted_at
 
+    @classmethod
+    def load(cls, context, id):
+        return load_mgmt_instance(cls, context, id)
+
     @property
     def task_description(self):
         return self.db_info.task_description
 
+
+class DetailedMgmtInstance(SimpleMgmtInstance):
+
+    def __init__(self, *args, **kwargs):
+        super(DetailedMgmtInstance, self).__init__(*args, **kwargs)
+        self.volume = None
+        self.root_history = None
+
     @classmethod
     def load(cls, context, id):
+        instance = load_mgmt_instance(cls, context, id)
+        client = create_nova_volume_client(context)
         try:
-            instance = load_instance(cls, context, id, needs_server=True)
-            client = create_nova_client(context)
-            server = client.rdservers.get(instance.server_id)
-            instance.server.host = server.host
-            instance.server.deleted = server.deleted
-            instance.server.deleted_at = server.deleted_at
-            instance.server.local_id = server.local_id
-            assert instance.server is not None
-
-        except Exception as e:
-            LOG.error(e)
-            instance = load_instance(cls, context, id, needs_server=False)
+            instance.volume = client.volumes.get(instance.volume_id)
+        except Exception as ex:
+            instance.volume = None
+        instance.root_history = mysql_models.RootHistory.load(context=context,
+                                                              instance_id=id)
         return instance
 
 

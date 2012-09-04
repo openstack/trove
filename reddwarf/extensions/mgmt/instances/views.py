@@ -29,9 +29,26 @@ class MgmtInstanceView(InstanceDetailView):
 
     def data(self):
         result = super(MgmtInstanceView, self).data()
-        result['instance']['server_id'] = self.instance.server_id
-        result['instance']['local_id'] = self.instance.local_id
-        result['instance']['host'] = self.instance.host
+        if self.instance.server is None:
+            result['instance']['server'] = None
+        else:
+            server = self.instance.server
+            result['instance']['server'] = {
+                'deleted': server.deleted,
+                'deleted_at': server.deleted_at,
+                'host': server.host,
+                'id': server.id,
+                'local_id': server.local_id,
+                'name': server.name,
+                'status': server.status,
+                'tenant_id': server.tenant_id,
+            }
+
+        try:
+            service_status = self.instance.service_status.status.api_status
+        except AttributeError:
+            service_status = None
+        result['instance']['service_status'] = service_status
         result['instance']['tenant_id'] = self.instance.tenant_id
         result['instance']['deleted'] = bool(self.instance.deleted)
         result['instance']['deleted_at'] = self.instance.deleted_at
@@ -52,13 +69,26 @@ class MgmtInstanceDetailView(MgmtInstanceView):
 
     def data(self):
         result = super(MgmtInstanceDetailView, self).data()
+        if self.instance.server is not None:
+            server = self.instance.server
+            result['instance']['server'].update({
+                'addresses':server.addresses
+                })
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user
-        result['instance']['volume'] = {
-            "id": self.instance.volume_id,
-            "size": self.instance.volume_size
-        }
+        if self.instance.volume:
+            volume = self.instance.volume
+            result['instance']['volume'] = {
+                "attachments": volume.attachments,
+                "availability_zone": volume.availability_zone,
+                "created_at": volume.created_at,
+                "id": volume.id,
+                "size": volume.size,
+                "status": volume.status,
+            }
+        else:
+            result['instance']['volume'] = None
         result['instance']['guest_status'] = {
             "state_description": self.instance.service_status.status.description
         }
