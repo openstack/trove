@@ -50,19 +50,14 @@ def create_options(parser):
         type=int,
         help="Port the Reddwarf API host listens on. "
              "Default: %default")
+    parser.add_option("-f", '--fork', action="store_true", dest="fork")
+    parser.add_option('--pid_file', dest="pid_file", default=".pid")
     config.add_common_options(parser)
     config.add_log_options(parser)
 
 
-if __name__ == '__main__':
-    oparser = optparse.OptionParser(version="%%prog %s"
-    % version.version_string())
-    create_options(oparser)
-    (options, args) = config.parse_options(oparser)
+def run_server(app, port):
     try:
-        config.Config.load_paste_config('reddwarf', options, args)
-        conf, app = config.Config.load_paste_app('reddwarf', options, args)
-        db_api.configure_db(conf)
         server = wsgi.Server()
         server.start(app, int(options.get('port') or conf['bind_port']),
             conf['bind_host'])
@@ -71,3 +66,26 @@ if __name__ == '__main__':
         import traceback
         print traceback.format_exc()
         sys.exit("ERROR: %s" % error)
+
+
+if __name__ == '__main__':
+    oparser = optparse.OptionParser(version="%%prog %s"
+                                    % version.version_string())
+    create_options(oparser)
+    (options, args) = config.parse_options(oparser)
+    config.Config.load_paste_config('reddwarf', options, args)
+    conf, app = config.Config.load_paste_app('reddwarf', options, args)
+    db_api.configure_db(conf)
+    port = int(options.get('port') or conf['bind_port'])
+    if options['fork']:
+        pid = os.fork()
+        if pid == 0:
+            run_server(app, port)
+        else:
+            print("Starting server:%s" % pid)
+            pid_file = options.get('pid_file', '.pid')
+            with open(pid_file, 'w') as f:
+                f.write(str(pid))
+    else:
+        run_server(app, port)
+
