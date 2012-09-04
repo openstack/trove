@@ -90,7 +90,7 @@ class MgmtInstanceDetailView(MgmtInstanceView):
         else:
             result['instance']['volume'] = None
         description = self.instance.service_status.status.description
-        result['instance']['guest_status'] = {state_description": description}
+        result['instance']['guest_status'] = {"state_description": description}
         return result
 
 
