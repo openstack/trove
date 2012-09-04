@@ -74,6 +74,7 @@ class AuthProtocol(object):
         else:
             raise RuntimeError('Unable to find token in headers')
 
+
 def filter_factory(global_conf, **local_conf):
     """Fakes a keystone filter."""
     conf = global_conf.copy()

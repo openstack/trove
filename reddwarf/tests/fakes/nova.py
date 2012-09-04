@@ -109,11 +109,11 @@ class FakeServer(object):
         self.next_local_id += 1
         info_vols = []
         for volume in self.volumes:
-            info_vols.append({'id':volume.id})
+            info_vols.append({'id': volume.id})
             volume.set_attachment(id)
         self.host = "fake_host"
 
-        self._info = {'os:volumes':info_vols}
+        self._info = {'os:volumes': info_vols}
 
     @property
     def addresses(self):
@@ -215,17 +215,19 @@ class FakeServers(object):
         return self.context.is_admin or \
                server.owner.tenant == self.context.tenant
 
-    def create(self, name, image_id, flavor_ref, files=None, block_device_mapping=None, volume=None):
+    def create(self, name, image_id, flavor_ref, files=None,
+               block_device_mapping=None, volume=None):
         id = "FAKE_%s" % uuid.uuid4()
         if volume:
-            volume = self.volumes.create(volume['size'], volume['name'], volume['description'])
+            volume = self.volumes.create(volume['size'], volume['name'],
+                                         volume['description'])
             while volume.status == "BUILD":
                 eventlet.sleep(0.1)
             if volume.status != "available":
                 LOG.info("volume status = %s" % volume.status)
                 raise nova_exceptions.ClientException("Volume was bad!")
             mapping = "%s::%s:%s" % (volume.id, volume.size, 1)
-            block_device_mapping = { 'vdb': mapping }
+            block_device_mapping = {'vdb': mapping}
             volumes = [volume]
         else:
             volumes = self._get_volumes_from_bdm(block_device_mapping)
@@ -300,7 +302,7 @@ class FakeRdServer(object):
     def __init__(self, server):
         self.server = server
         self.deleted = False
-        self.deleted_at = None # Not sure how to simulate "True" for this.
+        self.deleted_at = None  # Not sure how to simulate "True" for this.
         self.local_id = server._local_id
 
     def __getattr__(self, name):
@@ -488,8 +490,8 @@ class FakeAccounts(object):
     def get_instances(self, id):
         authorize(self.context)
 
-        servers =  [v for (k, v) in self.db.items()
-                                 if self._belongs_to_tenant(id, v.id)]
+        servers = [v for (k, v) in self.db.items()
+                   if self._belongs_to_tenant(id, v.id)]
         return FakeAccount(id, servers)
 
 
@@ -517,7 +519,7 @@ class FakeHost(object):
         """
         self.instances = []
         self.percentUsed = 0
-        self.totalRAM = 2004 #16384
+        self.totalRAM = 2004  # 16384
         self.usedRAM = 0
         for server in self.servers.list():
             self.instances.append({

@@ -61,9 +61,10 @@ class MgmtInstanceDetailView(MgmtInstanceView):
 
     def __init__(self, instance, req, add_addresses=False,
                  add_volumes=False, root_history=None):
+        add_a = add_addresses
         super(MgmtInstanceDetailView, self).__init__(instance,
                                                      req=req,
-                                                     add_addresses=add_addresses,
+                                                     add_addresses=add_a,
                                                      add_volumes=add_volumes)
         self.root_history = root_history
 
@@ -71,9 +72,8 @@ class MgmtInstanceDetailView(MgmtInstanceView):
         result = super(MgmtInstanceDetailView, self).data()
         if self.instance.server is not None:
             server = self.instance.server
-            result['instance']['server'].update({
-                'addresses':server.addresses
-                })
+            result['instance']['server'].update(
+                                         {'addresses': server.addresses})
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user
@@ -89,15 +89,16 @@ class MgmtInstanceDetailView(MgmtInstanceView):
             }
         else:
             result['instance']['volume'] = None
-        result['instance']['guest_status'] = {
-            "state_description": self.instance.service_status.status.description
-        }
+        description = self.instance.service_status.status.description
+        result['instance']['guest_status'] = {state_description": description}
         return result
+
 
 class MgmtInstancesView(object):
     """Shows a list of MgmtInstance objects."""
 
-    def __init__(self, instances, req=None, add_addresses= False, add_volumes=False):
+    def __init__(self, instances, req=None, add_addresses=False,
+                 add_volumes=False):
         self.instances = instances
         self.req = req
         self.add_addresses = add_addresses

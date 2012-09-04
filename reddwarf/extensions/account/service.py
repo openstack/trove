@@ -51,4 +51,3 @@ class AccountController(wsgi.Controller):
         LOG.info(_("Showing all accounts with instances for '%s'") % tenant_id)
         accounts_summary = models.AccountsSummary.load()
         return wsgi.Result(views.AccountsView(accounts_summary).data(), 200)
-

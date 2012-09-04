@@ -81,5 +81,3 @@ class DnsManager(object):
             return entry.name
         else:
             return None
-
-

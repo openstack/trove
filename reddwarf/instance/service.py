@@ -128,7 +128,7 @@ class InstanceController(wsgi.Controller):
 
     def _action_reset_password(self, instance, body):
         raise webob.exc.HTTPNotImplemented()
-    
+
     def index(self, req, tenant_id):
         """Return all instances."""
         LOG.info(_("req : '%s'\n\n") % req)

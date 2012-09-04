@@ -23,8 +23,8 @@ class HostView(object):
 
     def data(self):
         return {
-           'instanceCount':self.host.instance_count,
-           'name':self.host.name
+           'instanceCount': self.host.instance_count,
+           'name': self.host.name
         }
 
 
@@ -34,7 +34,7 @@ class HostDetailedView(object):
         self.host = host
 
     def data(self):
-        return {'host':{
+        return {'host': {
             'instances': self.host.instances,
             'name': self.host.name,
             'percentUsed': self.host.percent_used,
@@ -49,5 +49,5 @@ class HostsView(object):
         self.hosts = hosts
 
     def data(self):
-        data = [ HostView(host).data() for host in self.hosts ]
+        data = [HostView(host).data() for host in self.hosts]
         return {'hosts': data}

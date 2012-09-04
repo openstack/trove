@@ -22,7 +22,8 @@ from reddwarf.common import wsgi
 from reddwarf.versions import VersionsController
 from reddwarf.flavor.service import FlavorController
 from reddwarf.instance.service import InstanceController
-from reddwarf.extensions.mgmt.host.instance.service import HostInstanceController
+from reddwarf.extensions.mgmt.host.instance.service import (
+                                                        HostInstanceController)
 
 
 class API(wsgi.Router):

@@ -38,4 +38,3 @@ def downgrade(migrate_engine):
     instances = Table('instances', meta, autoload=True)
     instances.drop_column('deleted')
     instances.drop_column('deleted_at')
-

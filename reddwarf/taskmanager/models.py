@@ -288,6 +288,7 @@ class BuiltInstanceTasks(BuiltInstance):
                       % self.db_info.id)
             LOG.error(ex)
         # Poll until the server is gone.
+
         def server_is_finished():
             try:
                 server_id = self.db_info.compute_instance_id
@@ -302,7 +303,6 @@ class BuiltInstanceTasks(BuiltInstance):
 
         poll_until(server_is_finished, sleep_time=2,
                    time_out=int(config.Config.get('server_delete_time_out')))
-
 
     def resize_volume(self, new_size):
         LOG.debug("%s: Resizing volume for instance: %s to %r GB"
@@ -404,6 +404,7 @@ class BuiltInstanceTasks(BuiltInstance):
 
             # Poll nova until instance is active
             reboot_time_out = int(config.Config.get("reboot_time_out", 60 * 2))
+
             def update_server_info():
                 self._refresh_compute_server_info()
                 return self.server.status == 'ACTIVE'
