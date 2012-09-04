@@ -128,8 +128,9 @@ class MgmtInstances(imodels.Instances):
         if context is None:
             raise TypeError("Argument context not defined.")
         find_server = imodels.create_server_list_matcher(servers)
-        instances = imodels.Instances._load_servers_status(load_instance, context,
-                                                     db_infos, find_server)
+        instances = imodels.Instances._load_servers_status(load_instance,
+                                                           context, db_infos,
+                                                           find_server)
         _load_servers(instances, find_server)
         return instances
 
@@ -144,5 +145,3 @@ def _load_servers(instances, find_server):
         except Exception as ex:
             LOG.error(ex)
     return instances
-
-

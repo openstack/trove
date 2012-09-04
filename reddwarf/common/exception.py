@@ -157,10 +157,12 @@ class BadValue(ReddwarfError):
 
 
 class PollTimeOut(ReddwarfError):
+
     message = _("Polling request timed out.")
 
 
 class Forbidden(ReddwarfError):
+
     message = _("User does not have admin privileges.")
 
 
@@ -172,6 +174,7 @@ class InvalidModelError(ReddwarfError):
 class ModelNotFoundError(NotFound):
 
     message = _("Not Found")
+
 
 class UpdateGuestError(ReddwarfError):
 

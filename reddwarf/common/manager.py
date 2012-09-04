@@ -45,4 +45,3 @@ class ManagerAPI(object):
 
     def _fake_cast(self, method_name, **kwargs):
         pass
-

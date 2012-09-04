@@ -50,7 +50,7 @@ class MgmtInstanceController(InstanceController):
         if deleted_q in ['true']:
             deleted = True
         elif deleted_q in ['false']:
-            deleted=False
+            deleted = False
         try:
             instances = models.load_mgmt_instances(context, deleted=deleted)
         except nova_exceptions.ClientException, e:

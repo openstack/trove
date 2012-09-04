@@ -48,21 +48,26 @@ LOG = logging.getLogger('reddwarf.common.wsgi')
 
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
-CUSTOM_SERIALIZER_METADATA =  \
-{   'instance': {'status': '', 'hostname': '',
-                 'id': '', 'name': '', 'created': '',
-                 'updated': '', 'host': '',
-                 'server_id':'',
+CUSTOM_SERIALIZER_METADATA = {
+    'instance': {'status': '',
+                 'hostname': '',
+                 'id': '',
+                 'name': '',
+                 'created': '',
+                 'updated': '',
+                 'host': '',
+                 'server_id': '',
                  #mgmt/instance
-                 'local_id':'',
-                 'task_description':'',
-                 'deleted':'',
-                 'deleted_at':'',
-                 'tenant_id':'',
+                 'local_id': '',
+                 'task_description': '',
+                 'deleted': '',
+                 'deleted_at': '',
+                 'tenant_id': '',
                  },
-    'volume': {'size': '', 'used': '',
-              #mgmt/instance
-               'id':'',
+    'volume': {'size': '',
+               'used': '',
+               #mgmt/instance
+               'id': '',
               },
     'flavor': {'id': '', 'ram': '', 'name': ''},
     'link': {'href': '', 'rel': ''},
@@ -70,23 +75,22 @@ CUSTOM_SERIALIZER_METADATA =  \
     'user': {'name': '', 'password': ''},
     'account': {'id': ''},
     # mgmt/host
-    'host':{'instanceCount':'', 'name':'', 'usedRAM':'', 'totalRAM':'',
-            'percentUsed':''},
+    'host': {'instanceCount': '', 'name': '', 'usedRAM': '', 'totalRAM': '',
+            'percentUsed': ''},
     # mgmt/storage
-    'capacity': {'available':'', 'total':''},
-    'provision': {'available':'', 'total':'', 'percent':''},
-    'device': {'used':'', 'name':'', 'type':''},
+    'capacity': {'available': '', 'total': ''},
+    'provision': {'available': '', 'total': '', 'percent': ''},
+    'device': {'used': '', 'name': '', 'type': ''},
     # mgmt/account
-    'account': {'id':'', 'num_instances':''},
+    'account': {'id': '', 'num_instances': ''},
     #mgmt/instance
-    'guest_status': {'state_description':''},
+    'guest_status': {'state_description': ''},
     #mgmt/instance/diagnostics
-    'diagnostics':{'vmHwm':'', 'vmPeak':'', 'vmSize':'', 'threads':'',
-                   'version':'', 'vmRss':'', 'fdSize':''},
+    'diagnostics': {'vmHwm': '', 'vmPeak': '', 'vmSize': '', 'threads': '',
+                   'version': '', 'vmRss': '', 'fdSize': ''},
     #mgmt/instance/root
-    'root_history':{'enabled':'', 'id':'', 'user':''},
+    'root_history': {'enabled': '', 'id': '', 'user': ''},
 }
-
 
 
 def versioned_urlmap(*args, **kwargs):
@@ -228,8 +232,8 @@ class Resource(openstack_wsgi.Resource):
         """Flattens values of keys and inverts keys and values.
 
         Example:
-        {'x':[1,2,3],'y':[4,5,6]} converted to
-        {1:'x',2:'x',3:'x',4:'y',5:'y',6:'y'}
+        {'x': [1, 2, 3], 'y': [4, 5, 6]} converted to
+        {1: 'x', 2: 'x', 3: 'x', 4: 'y', 5: 'y', 6: 'y'}
 
         """
         inverted_dict = {}
@@ -252,7 +256,7 @@ class Resource(openstack_wsgi.Resource):
             # or pass them back if they're webobs.
             if not isinstance(action_result, webob.Response):
                 LOG.error("unserializable result detected! "
-                          "Exception type: %s Message:%s" % (type(ex), ex))
+                          "Exception type: %s Message: %s" % (type(ex), ex))
                 raise
 
 
@@ -368,11 +372,11 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
             elif root_key is None:
                 root_key = key
             else:
-                msg = "Xml issue: multiple root keys found in dict!:%s" % data
+                msg = "Xml issue: multiple root keys found in dict!: %s" % data
                 LOG.error(msg)
                 raise RuntimeError(msg)
         if root_key is None:
-            msg = "Missing root key in dict:%s" % data
+            msg = "Missing root key in dict: %s" % data
             LOG.error(msg)
             raise RuntimeError(msg)
         doc = minidom.Document()
@@ -392,8 +396,6 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
             metadata,
             nodename,
             data)
-
-
 
 
 class ReddwarfResponseSerializer(openstack_wsgi.ResponseSerializer):

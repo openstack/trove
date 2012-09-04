@@ -59,10 +59,12 @@ class TaskManager(service.Manager):
 
     def delete_instance(self, context, instance_id):
         try:
-            instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+            instance_tasks = models.BuiltInstanceTasks.load(context,
+                                                            instance_id)
             instance_tasks.delete_async()
         except exception.UnprocessableEntity as upe:
-            instance_tasks = models.FreshInstanceTasks.load(context, instance_id)
+            instance_tasks = models.FreshInstanceTasks.load(context,
+                                                            instance_id)
             instance_tasks.delete_async()
 
     def create_instance(self, context, instance_id, name, flavor_id,

@@ -36,4 +36,3 @@ class StorageController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         storages = models.StorageDevices.load(context)
         return wsgi.Result(views.StoragesView(storages).data(), 200)
-

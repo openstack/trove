@@ -86,7 +86,6 @@ def load_simple_instance_server_status(context, db_info):
             db_info.addresses = {}
 
 
-
 # If the compute server is in any of these states we can't perform any
 # actions (delete, resize, etc).
 SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD", "RESIZE"]
@@ -422,7 +421,6 @@ class Instance(BuiltInstance):
         task_api.API(context).create_instance(db_info.id, name, flavor_id,
             flavor.ram, image_id, databases, users, service_type, volume_size)
 
-
         return SimpleInstance(context, db_info, service_status)
 
     def resize_flavor(self, new_flavor_id):
@@ -559,7 +557,7 @@ class Instances(object):
                         server = find_server(db.id, db.compute_instance_id)
                         db.server_status = server.status
                     except exception.ComputeInstanceNotFound:
-                        db.server_status = "SHUTDOWN" # Fake it...
+                        db.server_status = "SHUTDOWN"  # Fake it...
                 #TODO(tim.simpson): End of hack.
 
                 #volumes = find_volumes(server.id)
