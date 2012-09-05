@@ -27,6 +27,7 @@ from reddwarf.openstack.common import rpc
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
+from reddwarf.guestagent import models as agent_models
 
 
 LOG = logging.getLogger(__name__)
@@ -84,6 +85,16 @@ class API(object):
     def _get_routing_key(self):
         """Create the routing key based on the container id"""
         return "guestagent.%s" % self.id
+
+    def _check_for_hearbeat(self):
+        """Preemptively raise GuestTimeout if heartbeat is old."""
+        try:
+            agent = agent_models.AgentHeartBeat.find_by(instance_id=self.id)
+            if agent_models.AgentHeartBeat.is_active(agent):
+                return True
+        except exception.ModelNotFoundError as mnfe:
+            LOG.warn(mnfe)
+        raise exception.GuestTimeout()
 
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
@@ -181,6 +192,7 @@ class API(object):
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container"""
         LOG.debug(_("Check Volume Info on Instance %s"), self.id)
+        self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path="/var/lib/mysql")
 

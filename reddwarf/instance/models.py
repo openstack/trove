@@ -288,14 +288,7 @@ def load_instance_with_guest(cls, context, id):
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.info("service status=%s" % service_status)
     instance = cls(context, db_info, service_status)
-    try:
-        agent = agent_models.AgentHeartBeat.find_by(instance_id=id)
-    except exception.ModelNotFoundError as mnfe:
-        LOG.warn(mnfe)
-        return instance
-
-    if (instance.status not in AGENT_INVALID_STATUSES and
-            agent_models.AgentHeartBeat.is_active(agent)):
+    if instance.status not in AGENT_INVALID_STATUSES:
         guest = create_guest_client(context, id)
         try:
             instance.volume_used = guest.get_volume_info()['used']
