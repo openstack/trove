@@ -3,7 +3,7 @@
 tox -e fake-mode
 
 function run() {
-    .tox/fake-mode/bin/python $@
+    .tox/py26/bin/python $@
 }
 run bin/reddwarf-manage \
     --config-file=etc/reddwarf/reddwarf.conf.test db_wipe \
