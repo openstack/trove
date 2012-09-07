@@ -32,7 +32,9 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
 meta = MetaData()
 
-service_statuses = Table('service_statuses', meta,
+service_statuses = Table(
+    'service_statuses',
+    meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('instance_id', String(36), nullable=False),
     Column('status_id', Integer(), nullable=False),

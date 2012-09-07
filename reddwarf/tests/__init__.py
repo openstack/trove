@@ -56,8 +56,10 @@ class BaseTest(unittest.TestCase):
         self.maxDiff = None
 
         self.mock = mox.Mox()
-        conf, reddwarf_app = config.Config.load_paste_app('reddwarfapp',
-                        {"config_file": test_config_file()}, None)
+        conf, reddwarf_app = config.Config.load_paste_app(
+            'reddwarfapp',
+            {"config_file": test_config_file()},
+            None)
         db_api.configure_db(conf)
         db_api.clean_db()
         super(BaseTest, self).setUp()
@@ -73,19 +75,18 @@ class BaseTest(unittest.TestCase):
 
         try:
             func(*args, **kwargs)
-            self.fail("Expected {0} to raise {1}".format(func,
-                repr(exception)))
+            self.fail("Expected %r to raise %r" % (func, exception))
         except exception as error:
             self.assertIn(message, str(error))
 
     def assertIn(self, expected, actual):
         """This is similar to assertIn in python 2.7"""
         self.assertTrue(expected in actual,
-            "{0} does not contain {1}".format(repr(actual), repr(expected)))
+                        "%r does not contain %r" % (actual, expected))
 
     def assertNotIn(self, expected, actual):
         self.assertFalse(expected in actual,
-            "{0} does contains {1}".format(repr(actual), repr(expected)))
+                         "%r does not contain %r" % (actual, expected))
 
     def assertIsNone(self, actual):
         """This is similar to assertIsNone in python 2.7"""
@@ -99,14 +100,16 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(sorted(expected), sorted(actual))
 
     def assertModelsEqual(self, expected, actual):
-        self.assertEqual(sorted(expected, key=lambda model: model.id),
+        self.assertEqual(
+            sorted(expected, key=lambda model: model.id),
             sorted(actual, key=lambda model: model.id))
 
     def assertUrlEqual(self, expected, actual):
         self.assertEqual(expected.partition("?")[0], actual.partition("?")[0])
 
         #params ordering might be different in the urls
-        self.assertEqual(urlparse.parse_qs(expected.partition("?")[2]),
+        self.assertEqual(
+            urlparse.parse_qs(expected.partition("?")[2]),
             urlparse.parse_qs(actual.partition("?")[2]))
 
     def assertErrorResponse(self, response, error_type, expected_error):

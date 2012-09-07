@@ -55,13 +55,17 @@ class FreshInstanceTasks(FreshInstance):
     def create_instance(self, flavor_id, flavor_ram, image_id,
                         databases, users, service_type, volume_size):
         if use_nova_server_volume:
-            server, volume_info = self._create_server_volume(flavor_id,
-                                                        image_id, service_type,
-                                                        volume_size)
+            server, volume_info = self._create_server_volume(
+                flavor_id,
+                image_id,
+                service_type,
+                volume_size)
         else:
             server, volume_info = self._create_server_volume_individually(
-                                                    flavor_id, image_id,
-                                                    service_type, volume_size)
+                flavor_id,
+                image_id,
+                service_type,
+                volume_size)
         try:
             self._create_dns_entry()
         except Exception as e:
@@ -153,20 +157,22 @@ class FreshInstanceTasks(FreshInstance):
 
         volume_support = config.Config.get("reddwarf_volume_support", 'False')
         LOG.debug(_("reddwarf volume support = %s") % volume_support)
-        if volume_size is None or \
-           utils.bool_from_string(volume_support) is False:
-            volume_info = {'block_device': None,
-                           'device_path': None,
-                           'mount_point': None,
-                           'volumes': None}
+        if (volume_size is None or
+                utils.bool_from_string(volume_support) is False):
+            volume_info = {
+                'block_device': None,
+                'device_path': None,
+                'mount_point': None,
+                'volumes': None,
+            }
             return volume_info
 
         volume_client = create_nova_volume_client(self.context)
         volume_desc = ("mysql volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
-                        volume_size,
-                        display_name="mysql-%s" % self.id,
-                        display_description=volume_desc)
+            volume_size,
+            display_name="mysql-%s" % self.id,
+            display_description=volume_desc)
 
         # Record the volume ID in case something goes wrong.
         self.update_db(volume_id=volume_ref.id)
@@ -209,8 +215,10 @@ class FreshInstanceTasks(FreshInstance):
         files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
                                     (self.id, service_type)}
         name = self.hostname or self.name
+        bdmap = block_device_mapping
         server = nova_client.servers.create(name, image_id, flavor_id,
-                        files=files, block_device_mapping=block_device_mapping)
+                                            files=files,
+                                            block_device_mapping=bdmap)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server
 
@@ -219,8 +227,8 @@ class FreshInstanceTasks(FreshInstance):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, databases, users,
-                      device_path=volume_info['device_path'],
-                      mount_point=volume_info['mount_point'])
+                           device_path=volume_info['device_path'],
+                           mount_point=volume_info['mount_point'])
 
     def _create_dns_entry(self):
         LOG.debug("%s: Creating dns entry for instance: %s"
@@ -240,14 +248,14 @@ class FreshInstanceTasks(FreshInstance):
                 LOG.info("Polling for ip addresses: $%s " % server.addresses)
                 if server.addresses != {}:
                     return True
-                elif server.addresses == {} and\
-                     server.status != InstanceStatus.ERROR:
+                elif (server.addresses == {} and
+                      server.status != InstanceStatus.ERROR):
                     return False
-                elif server.addresses == {} and\
-                     server.status == InstanceStatus.ERROR:
-                    LOG.error(_("Instance IP not available, instance (%s): "
-                                "server had status (%s).")
-                    % (self.id, server.status))
+                elif (server.addresses == {} and
+                      server.status == InstanceStatus.ERROR):
+                    msg = _("Instance IP not available, instance (%s): "
+                            "server had status (%s).")
+                    LOG.error(msg % (self.id, server.status))
                     raise ReddwarfError(status=server.status)
             poll_until(get_server, ip_is_available,
                        sleep_time=1, time_out=60 * 2)
@@ -310,10 +318,10 @@ class BuiltInstanceTasks(BuiltInstance):
         self.volume_client.volumes.resize(self.volume_id, int(new_size))
         try:
             utils.poll_until(
-                        lambda: self.volume_client.volumes.get(self.volume_id),
-                        lambda volume: volume.status == 'in-use',
-                        sleep_time=2,
-                        time_out=int(config.Config.get('volume_time_out')))
+                lambda: self.volume_client.volumes.get(self.volume_id),
+                lambda volume: volume.status == 'in-use',
+                sleep_time=2,
+                time_out=int(config.Config.get('volume_time_out')))
             volume = self.volume_client.volumes.get(self.volume_id)
             self.update_db(volume_size=volume.size)
             self.nova_client.volumes.rescan_server_volume(self.server,
@@ -348,10 +356,10 @@ class BuiltInstanceTasks(BuiltInstance):
 
                 # Do initial check and confirm the status is appropriate.
                 self._refresh_compute_server_info()
-                if self.server.status != "RESIZE" and\
-                   self.server.status != "VERIFY_RESIZE":
-                    raise ReddwarfError("Unexpected status after " \
-                            "call to resize! : %s" % resize_status_msg())
+                if (self.server.status != "RESIZE" and
+                        self.server.status != "VERIFY_RESIZE"):
+                    msg = "Unexpected status after call to resize! : %s"
+                    raise ReddwarfError(msg % resize_status_msg())
 
                 # Wait for the flavor to change.
                 def update_server_info():
@@ -365,10 +373,11 @@ class BuiltInstanceTasks(BuiltInstance):
 
                 # Do check to make sure the status and flavor id are correct.
                 if (str(self.server.flavor['id']) != str(new_flavor_id) or
-                    self.server.status != "VERIFY_RESIZE"):
-                    raise ReddwarfError("Assertion failed! flavor_id=%s "
-                                        "and not %s"
-                        % (str(self.server.flavor['id']), str(new_flavor_id)))
+                        self.server.status != "VERIFY_RESIZE"):
+                    msg = "Assertion failed! flavor_id=%s and not %s"
+                    actual_flavor = self.server.flavor['id']
+                    expected_flavor = new_flavor_id
+                    raise ReddwarfError(msg % (actual_flavor, expected_flavor))
 
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."

@@ -78,8 +78,11 @@ def generate_random_password():
 
 
 def get_auth_password():
-    pwd, err = utils.execute_with_timeout("sudo", "awk",
-        "/password\\t=/{print $3}", "/etc/mysql/my.cnf")
+    pwd, err = utils.execute_with_timeout(
+        "sudo",
+        "awk",
+        "/password\\t=/{print $3}",
+        "/etc/mysql/my.cnf")
     if err:
         LOG.err(err)
         raise RuntimeError("Problem reading my.cnf! : %s" % err)
@@ -176,7 +179,8 @@ class MySqlAppStatus(object):
     def _get_actual_db_status(self):
         global MYSQLD_ARGS
         try:
-            out, err = utils.execute_with_timeout("/usr/bin/mysqladmin",
+            out, err = utils.execute_with_timeout(
+                "/usr/bin/mysqladmin",
                 "ping", run_as_root=True)
             LOG.info("Service Status is RUNNING.")
             return rd_models.ServiceStatuses.RUNNING
@@ -208,9 +212,9 @@ class MySqlAppStatus(object):
         True if MySQL app should be installed and attempts to ascertain
         its status won't result in nonsense.
         """
-        return self.status is not None and \
-               self.status != rd_models.ServiceStatuses.BUILDING and \
-               self.status != rd_models.ServiceStatuses.FAILED
+        return all([self.status is not None,
+                    self.status != rd_models.ServiceStatuses.BUILDING,
+                    self.status != rd_models.ServiceStatuses.FAILED])
 
     @property
     def _is_mysql_restarting(self):
@@ -219,8 +223,8 @@ class MySqlAppStatus(object):
     @property
     def is_mysql_running(self):
         """True if MySQL is running."""
-        return self.status is not None and \
-               self.status == rd_models.ServiceStatuses.RUNNING
+        return (self.status is not None,
+                self.status == rd_models.ServiceStatuses.RUNNING)
 
     @staticmethod
     def _load_status():
@@ -338,8 +342,8 @@ class MySqlAdmin(object):
                     mydb = models.MySQLDatabase()
                     mydb.deserialize(database)
                     t = text("""
-                            GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;"""
-                            % (mydb.name, user.name))
+                             GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;
+                             """ % (mydb.name, user.name))
                     client.execute(t, host=host)
 
     def delete_database(self, database):
@@ -420,8 +424,9 @@ class MySqlAdmin(object):
             if limit:
                 q.limit = limit + 1
             if marker:
-                q.where.append("schema_name %s '%s'"
-                    % (INCLUDE_MARKER_OPERATORS[include_marker], marker))
+                q.where.append("schema_name %s '%s'" %
+                               (INCLUDE_MARKER_OPERATORS[include_marker],
+                                marker))
             t = text(str(q))
             database_names = client.execute(t)
             next_marker = None
@@ -454,8 +459,9 @@ class MySqlAdmin(object):
             q.where = ["host != 'localhost'"]
             q.order = ['User']
             if marker:
-                q.where.append("User %s '%s'"
-                    % (INCLUDE_MARKER_OPERATORS[include_marker], marker))
+                q.where.append("User %s '%s'" %
+                               (INCLUDE_MARKER_OPERATORS[include_marker],
+                                marker))
             if limit:
                 q.limit = limit + 1
             t = text(str(q))
@@ -478,8 +484,8 @@ class MySqlAdmin(object):
                 db_result = client.execute(t)
                 for db in db_result:
                     matches = re.match("^'(.+)'@", db['grantee'])
-                    if matches is not None and \
-                       matches.group(1) == mysql_user.name:
+                    if (matches is not None and
+                            matches.group(1) == mysql_user.name):
                         mysql_db = models.MySQLDatabase()
                         mysql_db.name = db['table_schema']
                         mysql_user.databases.append(mysql_db.serialize())
@@ -669,8 +675,8 @@ class MySqlApp(object):
         LOG.info(_("Stopping mysql..."))
         utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
         if not self.status.wait_for_real_status_to_change_to(
-            rd_models.ServiceStatuses.SHUTDOWN,
-            self.state_change_wait_time, update_db):
+                rd_models.ServiceStatuses.SHUTDOWN,
+                self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop MySQL!"))
             self.status.end_install_or_restart()
             raise RuntimeError("Could not stop MySQL!")
@@ -703,7 +709,8 @@ class MySqlApp(object):
 
     def _replace_mycnf_with_template(self, template_path, original_path):
         if os.path.isfile(template_path):
-            utils.execute_with_timeout("sudo", "mv", original_path,
+            utils.execute_with_timeout(
+                "sudo", "mv", original_path,
                 "%(name)s.%(date)s" % {'name': original_path,
                                        'date': date.today().isoformat()})
             utils.execute_with_timeout("sudo", "cp", template_path,
@@ -799,8 +806,8 @@ class MySqlApp(object):
             raise RuntimeError("Can't start MySQL!")
 
         if not self.status.wait_for_real_status_to_change_to(
-            rd_models.ServiceStatuses.RUNNING,
-            self.state_change_wait_time, update_db):
+                rd_models.ServiceStatuses.RUNNING,
+                self.state_change_wait_time, update_db):
             LOG.error(_("Start up of MySQL failed!"))
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")

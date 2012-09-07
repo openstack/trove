@@ -29,9 +29,10 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import String
 meta = MetaData()
 
 
-dns_records = Table('dns_records', meta,
-               Column('name', String(length=255), primary_key=True),
-               Column('record_id', String(length=64)))
+dns_records = Table(
+    'dns_records', meta,
+    Column('name', String(length=255), primary_key=True),
+    Column('record_id', String(length=64)))
 
 
 def upgrade(migrate_engine):

@@ -31,8 +31,8 @@ ResourceExtension = extensions.ResourceExtension
 class ReddwarfExtensionMiddleware(extensions.ExtensionMiddleware):
 
     def __init__(self, application, config, ext_mgr=None):
-        ext_mgr = ext_mgr or ExtensionManager(
-                                 config['api_extensions_path'])
+        ext_mgr = (ext_mgr or
+                   ExtensionManager(config['api_extensions_path']))
         mapper = routes.Mapper()
 
         # extended resources
@@ -60,7 +60,7 @@ class ReddwarfExtensionMiddleware(extensions.ExtensionMiddleware):
 
         # extended actions
         action_resources = self._action_ext_resources(application, ext_mgr,
-                                                        mapper)
+                                                      mapper)
         for action in ext_mgr.get_actions():
             LOG.debug(_('Extended action: %s'), action.action_name)
             resource = action_resources[action.collection]

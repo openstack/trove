@@ -33,22 +33,26 @@ class ControllerTestBase(tests.BaseTest):
 
     def setUp(self):
         super(ControllerTestBase, self).setUp()
-        conf, reddwarf_app = config.Config.load_paste_app('reddwarfapp',
-                {"config_file": tests.test_config_file()}, None)
+        conf, reddwarf_app = config.Config.load_paste_app(
+            'reddwarfapp',
+            {"config_file": tests.test_config_file()},
+            None)
         self.app = unit.TestApp(reddwarf_app)
 
 
 class TestInstanceController(ControllerTestBase):
 
     DUMMY_INSTANCE_ID = "123"
-    DUMMY_INSTANCE = {"id": DUMMY_INSTANCE_ID,
-    "name": "DUMMY_NAME",
-    "status": "BUILD",
-    "created": "createtime",
-    "updated": "updatedtime",
-    "flavor": {},
-    "links": [],
-    "addresses": {}}
+    DUMMY_INSTANCE = {
+        "id": DUMMY_INSTANCE_ID,
+        "name": "DUMMY_NAME",
+        "status": "BUILD",
+        "created": "createtime",
+        "updated": "updatedtime",
+        "flavor": {},
+        "links": [],
+        "addresses": {},
+    }
 
     def setUp(self):
         self.instances_path = "/tenant/instances"
@@ -72,7 +76,7 @@ class TestInstanceController(ControllerTestBase):
 
         response = self.app.get("%s/%s" % (self.instances_path,
                                            self.DUMMY_INSTANCE_ID),
-                                           headers={'X-Auth-Token': '123'})
+                                headers={'X-Auth-Token': '123'})
 
         self.assertEqual(response.status_int, 201)
 
@@ -84,7 +88,7 @@ class TestInstanceController(ControllerTestBase):
         models.Instances.__init__(mox.IgnoreArg())
         self.mock.ReplayAll()
         response = self.app.get("%s" % (self.instances_path),
-                                           headers={'X-Auth-Token': '123'})
+                                headers={'X-Auth-Token': '123'})
         self.assertEqual(response.status_int, 201)
 
     def mock_out_client_create(self):
@@ -98,22 +102,24 @@ class TestInstanceController(ControllerTestBase):
         self.FAKE_SERVER.created = utils.utcnow()
         self.FAKE_SERVER.id = utils.generate_uuid()
         self.FAKE_SERVER.flavor = 'http://localhost/1234/flavors/1234'
-        self.FAKE_SERVER.links = [{
-                    "href": "http://localhost/1234/instances/123",
-                    "rel": "self"
-                },
-                {
-                    "href": "http://localhost/1234/instances/123",
-                    "rel": "bookmark"
-                }]
-        self.FAKE_SERVER.addresses = {
-                "private": [
-                    {
-                        "addr": "10.0.0.4",
-                        "version": 4
-                    }
-                ]
+        self.FAKE_SERVER.links = [
+            {
+                "href": "http://localhost/1234/instances/123",
+                "rel": "self",
+            },
+            {
+                "href": "http://localhost/1234/instances/123",
+                "rel": "bookmark",
             }
+        ]
+        self.FAKE_SERVER.addresses = {
+            "private": [
+                {
+                    "addr": "10.0.0.4",
+                    "version": 4,
+                },
+            ],
+        }
 
         client = self.mock.CreateMock(novaclient.v1_1.Client)
         servers = self.mock.CreateMock(novaclient.v1_1.servers.ServerManager)
@@ -131,8 +137,8 @@ class TestInstanceController(ControllerTestBase):
         models.Instance.data().AndReturn(self.DUMMY_INSTANCE)
 
         self.mock.StubOutWithMock(models.ServiceImage, 'find_by')
-        models.ServiceImage.find_by(service_name=mox.IgnoreArg()).AndReturn(
-                {'image_id': 1234})
+        models.ServiceImage.find_by(
+            service_name=mox.IgnoreArg()).AndReturn({'image_id': 1234})
 
         self.mock_out_client_create()
         self.mock.ReplayAll()
@@ -154,7 +160,6 @@ class TestInstanceController(ControllerTestBase):
             }
         }
         response = self.app.post_json("%s" % (self.instances_path), body=body,
-                                           headers={'X-Auth-Token': '123'},
-                                           )
+                                      headers={'X-Auth-Token': '123'})
         print(response)
         self.assertEqual(response.status_int, 201)

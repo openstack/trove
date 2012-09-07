@@ -152,7 +152,8 @@ class API(object):
         """Make an asynchronous call to prepare the guest
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
-        self._cast_with_consumer("prepare", databases=databases,
+        self._cast_with_consumer(
+            "prepare", databases=databases,
             memory_mb=memory_mb, users=users, device_path=device_path,
             mount_point=mount_point)
 

@@ -21,8 +21,9 @@ from reddwarf.common import utils
 from reddwarf.common import config
 
 
-db_api = utils.import_object(config.Config.get("db_api_implementation",
-    "reddwarf.db.sqlalchemy.api"))
+db_api = utils.import_object(
+    config.Config.get("db_api_implementation",
+                      "reddwarf.db.sqlalchemy.api"))
 
 
 class Query(object):
@@ -49,13 +50,14 @@ class Query(object):
 
     def update(self, **values):
         db_api.update_all(self._query_func, self._model, self._conditions,
-            values)
+                          values)
 
     def delete(self):
         db_api.delete_all(self._query_func, self._model, **self._conditions)
 
     def limit(self, limit=200, marker=None, marker_column=None):
-        return db_api.find_all_by_limit(self._query_func,
+        return db_api.find_all_by_limit(
+            self._query_func,
             self._model,
             self._conditions,
             limit=limit,
@@ -88,10 +90,12 @@ def add_options(parser):
     help_text = ("The following configuration options are specific to the "
                  "Reddwarf database.")
 
-    group = optparse.OptionGroup(parser,
+    group = optparse.OptionGroup(
+        parser,
         "Registry Database Options",
         help_text)
-    group.add_option('--sql-connection',
+    group.add_option(
+        '--sql-connection',
         metavar="CONNECTION",
         default=None,
         help="A valid SQLAlchemy connection string for the "

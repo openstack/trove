@@ -107,8 +107,8 @@ class VolumeDevice(object):
             utils.execute("sudo", "resize2fs", self.device_path)
         except ProcessExecutionError as err:
             LOG.error(err)
-            raise GuestError("Error resizing the filesystem: %s"
-                                       % self.device_path)
+            raise GuestError("Error resizing the filesystem: %s" %
+                             self.device_path)
 
     def _tmp_mount(self, mount_point):
         """Mounts, but doesn't save to fstab."""
@@ -137,14 +137,16 @@ class VolumeMountPoint(object):
                   "volume_type:%s, mount options:%s" %
                   (self.device_path, self.mount_point, self.volume_fstype,
                    self.mount_options))
-        cmd = "sudo mount -t %s -o %s %s %s" % (self.volume_fstype,
-            self.mount_options, self.device_path, self.mount_point)
+        cmd = ("sudo mount -t %s -o %s %s %s" %
+               (self.volume_fstype, self.mount_options, self.device_path,
+                self.mount_point))
         child = pexpect.spawn(cmd)
         child.expect(pexpect.EOF)
 
     def write_to_fstab(self):
-        fstab_line = "%s\t%s\t%s\t%s\t0\t0" % (self.device_path,
-            self.mount_point, self.volume_fstype, self.mount_options)
+        fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
+                      (self.device_path, self.mount_point, self.volume_fstype,
+                       self.mount_options))
         LOG.debug("Writing new line to fstab:%s" % fstab_line)
         utils.execute("sudo", "cp", "/etc/fstab", "/etc/fstab.orig")
         utils.execute("sudo", "cp", "/etc/fstab", "/tmp/newfstab")

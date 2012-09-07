@@ -32,15 +32,16 @@ class DnsManager(object):
     def __init__(self, dns_driver=None, dns_instance_entry_factory=None,
                  *args, **kwargs):
         if not dns_driver:
-            dns_driver = config.Config.get("dns_driver",
-                          "reddwarf.dns.driver.DnsDriver")
+            dns_driver = config.Config.get(
+                "dns_driver",
+                "reddwarf.dns.driver.DnsDriver")
         dns_driver = utils.import_object(dns_driver)
         self.driver = dns_driver()
 
         if not dns_instance_entry_factory:
             dns_instance_entry_factory = config.Config.get(
-                          'dns_instance_entry_factory',
-                          'reddwarf.dns.driver.DnsInstanceEntryFactory')
+                'dns_instance_entry_factory',
+                'reddwarf.dns.driver.DnsInstanceEntryFactory')
         entry_factory = utils.import_object(dns_instance_entry_factory)
         self.entry_factory = entry_factory()
 

@@ -32,7 +32,7 @@ class AuthorizationMiddleware(wsgi.Middleware):
         self.auth_providers = auth_providers
         LOG.debug(_("Auth middleware providers: %s") % auth_providers)
         super(AuthorizationMiddleware, self).__init__(application,
-            **local_config)
+                                                      **local_config)
 
     def process_request(self, request):
         roles = request.headers.get('X_ROLE', '').split(',')
@@ -46,9 +46,8 @@ class AuthorizationMiddleware(wsgi.Middleware):
     def factory(cls, global_config, **local_config):
         def _factory(app):
             LOG.debug(_("Created auth middleware with config: %s") %
-                local_config)
-            return cls(app, [TenantBasedAuth()],
-                **local_config)
+                      local_config)
+            return cls(app, [TenantBasedAuth()], **local_config)
         return _factory
 
 
@@ -61,13 +60,12 @@ class TenantBasedAuth(object):
     def authorize(self, request, tenant_id, roles):
         match_for_tenant = self.tenant_scoped_url.match(request.path_info)
         if (match_for_tenant and
-            tenant_id == match_for_tenant.group('tenant_id')):
+                tenant_id == match_for_tenant.group('tenant_id')):
             LOG.debug(_("Authorized tenant '%(tenant_id)s' request: "
                       "%(request)s") % locals())
             return True
-        msg = _("User with tenant id %s cannot access this resource") \
-              % tenant_id
-        LOG.debug(msg)
+        msg = _("User with tenant id %s cannot access this resource")
+        LOG.debug(msg % tenant_id)
         raise webob.exc.HTTPForbidden(msg)
 
 

@@ -45,10 +45,11 @@ class Account(extensions.ExtensionsDescriptor):
         serializer = wsgi.ReddwarfResponseSerializer(
             body_serializers={'application/xml':
                               wsgi.ReddwarfXMLDictSerializer()})
-        resource = extensions.ResourceExtension('{tenant_id}/mgmt/accounts',
-                                    service.AccountController(),
-                                    deserializer=wsgi.RequestDeserializer(),
-                                    serializer=serializer)
+        resource = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/accounts',
+            service.AccountController(),
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer)
         resources.append(resource)
 
         return resources

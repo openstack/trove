@@ -73,10 +73,14 @@ class MgmtInstanceController(InstanceController):
         server = models.DetailedMgmtInstance.load(context, id)
         root_history = mysql_models.RootHistory.load(context=context,
                                                      instance_id=id)
-        return wsgi.Result(views.MgmtInstanceDetailView(server, req=req,
-                                        add_addresses=self.add_addresses,
-                                        add_volumes=self.add_volumes,
-                                        root_history=root_history).data(), 200)
+        return wsgi.Result(
+            views.MgmtInstanceDetailView(
+                server,
+                req=req,
+                add_addresses=self.add_addresses,
+                add_volumes=self.add_volumes,
+                root_history=root_history).data(),
+            200)
 
     @admin_context
     def action(self, req, body, tenant_id, id):
@@ -90,7 +94,7 @@ class MgmtInstanceController(InstanceController):
         _actions = {
             'stop': self._action_stop,
             'reboot': self._action_reboot
-            }
+        }
         selected_action = None
         for key in body:
             if key in _actions:

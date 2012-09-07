@@ -75,7 +75,7 @@ class Query(object):
             self._order,
             self._group_by,
             self._limit,
-            ]
+        ]
         return '\n'.join(query)
 
     def __repr__(self):

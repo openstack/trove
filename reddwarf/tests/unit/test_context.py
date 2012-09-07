@@ -29,8 +29,8 @@ class ContextTest(unittest.TestCase):
 
     def test_get_context_as_dict(self):
         ctx = context.ReddwarfContext(user=USER, tenant=TENANT,
-                                           is_admin=True, show_deleted=True,
-                                           read_only=True, auth_tok=AUTH_TOK)
+                                      is_admin=True, show_deleted=True,
+                                      read_only=True, auth_tok=AUTH_TOK)
         ctx_dict = ctx.to_dict()
         self.assertEqual(ctx_dict['user'], USER)
         self.assertEqual(ctx_dict['tenant'], TENANT)
@@ -40,9 +40,14 @@ class ContextTest(unittest.TestCase):
         self.assertEqual(ctx_dict['auth_tok'], AUTH_TOK)
 
     def test_creating_context(self):
-        tmp_ctx_dict = {'user': USER, 'tenant': TENANT, 'is_admin': True,
-                    'show_deleted': True, 'read_only': True,
-                    'auth_tok': AUTH_TOK}
+        tmp_ctx_dict = {
+            'user': USER,
+            'tenant': TENANT,
+            'is_admin': True,
+            'show_deleted': True,
+            'read_only': True,
+            'auth_tok': AUTH_TOK,
+        }
         tmp_ctx = context.ReddwarfContext.from_dict(tmp_ctx_dict)
         self.assertEqual(tmp_ctx.user, USER)
         self.assertEqual(tmp_ctx.tenant, TENANT)

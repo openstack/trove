@@ -29,11 +29,13 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
 meta = MetaData()
 
-root_enabled_history = Table('root_enabled_history', meta,
+root_enabled_history = Table(
+    'root_enabled_history',
+    meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('user', String(length=255)),
     Column('created', DateTime()),
-    )
+)
 
 
 def upgrade(migrate_engine):

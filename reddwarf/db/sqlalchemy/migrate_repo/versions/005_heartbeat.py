@@ -32,7 +32,9 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
 meta = MetaData()
 
-agent_heartbeats = Table('agent_heartbeats', meta,
+agent_heartbeats = Table(
+    'agent_heartbeats',
+    meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('instance_id', String(36), nullable=False),
     Column('updated_at', DateTime()))

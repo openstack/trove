@@ -35,9 +35,7 @@ LOG = logging.getLogger(__name__)
 
 
 def persisted_models():
-    return {
-        'root_enabled_history': RootHistory,
-        }
+    return {'root_enabled_history': RootHistory}
 
 
 def load_and_verify(context, instance_id):
@@ -45,7 +43,7 @@ def load_and_verify(context, instance_id):
     instance = base_models.Instance.load(context, instance_id)
     if not instance.is_sql_running:
         raise exception.UnprocessableEntity(
-                    "Instance %s is not ready." % instance.id)
+            "Instance %s is not ready." % instance.id)
     else:
         return instance
 
@@ -66,10 +64,13 @@ class User(object):
         client = create_guest_client(context, instance_id)
         for user in users:
             user_name = user['_name']
-            existing_users, _nadda = Users.load_with_client(client, limit=1,
-                marker=user_name, include_marker=True)
-            if len(existing_users) > 0 and \
-               str(existing_users[0].name) == str(user_name):
+            existing_users, _nadda = Users.load_with_client(
+                client,
+                limit=1,
+                marker=user_name,
+                include_marker=True)
+            if (len(existing_users) > 0 and
+                    str(existing_users[0].name) == str(user_name)):
                 raise exception.UserAlreadyExists(name=user_name)
         return client.create_user(users)
 
@@ -158,8 +159,10 @@ class Users(object):
 
     @classmethod
     def load_with_client(cls, client, limit, marker, include_marker):
-        user_list, next_marker = client.list_users(limit=limit,
-            marker=marker, include_marker=include_marker)
+        user_list, next_marker = client.list_users(
+            limit=limit,
+            marker=marker,
+            include_marker=include_marker)
         model_users = []
         ignore_users = CONFIG.get_list('ignore_users', [])
         for user in user_list:
@@ -193,10 +196,13 @@ class Schema(object):
         client = create_guest_client(context, instance_id)
         for schema in schemas:
             schema_name = schema['_name']
-            existing_schema, _nadda = Schemas.load_with_client(client, limit=1,
-                marker=schema_name, include_marker=True)
-            if len(existing_schema) > 0 and \
-               str(existing_schema[0].name) == str(schema_name):
+            existing_schema, _nadda = Schemas.load_with_client(
+                client,
+                limit=1,
+                marker=schema_name,
+                include_marker=True)
+            if (len(existing_schema) > 0 and
+                    str(existing_schema[0].name) == str(schema_name)):
                 raise exception.DatabaseAlreadyExists(name=schema_name)
         return client.create_database(schemas)
 
@@ -216,8 +222,10 @@ class Schemas(object):
 
     @classmethod
     def load_with_client(cls, client, limit, marker, include_marker):
-        schemas, next_marker = client.list_databases(limit=limit,
-            marker=marker, include_marker=include_marker)
+        schemas, next_marker = client.list_databases(
+            limit=limit,
+            marker=marker,
+            include_marker=include_marker)
         model_schemas = []
         ignore_dbs = CONFIG.get_list('ignore_dbs', [])
         for schema in schemas:

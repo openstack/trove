@@ -65,7 +65,7 @@ class InstanceController(wsgi.Controller):
             'restart': self._action_restart,
             'resize': self._action_resize,
             'reset_password': self._action_reset_password
-            }
+        }
         selected_action = None
         for key in body:
             if key in _actions:
@@ -216,8 +216,9 @@ class InstanceController(wsgi.Controller):
                                           image_id, databases, users,
                                           service_type, volume_size)
 
-        return wsgi.Result(views.InstanceDetailView(instance, req=req,
-                                  add_volumes=self.add_volumes).data(), 200)
+        view = views.InstanceDetailView(instance, req=req,
+                                        add_volumes=self.add_volumes)
+        return wsgi.Result(view.data(), 200)
 
     @staticmethod
     def _validate_body_not_empty(body):
@@ -267,11 +268,9 @@ class InstanceController(wsgi.Controller):
             body['instance']
             body['instance']['flavorRef']
             vol_enabled = utils.bool_from_string(
-                                config.Config.get('reddwarf_volume_support',
-                                                  'True'))
+                config.Config.get('reddwarf_volume_support', 'True'))
             must_have_vol = utils.bool_from_string(
-                                config.Config.get('reddwarf_must_use_volume',
-                                                  'False'))
+                config.Config.get('reddwarf_must_use_volume', 'False'))
             if vol_enabled:
                 if body['instance'].get('volume', None):
                     if body['instance']['volume'].get('size', None):
@@ -285,4 +284,4 @@ class InstanceController(wsgi.Controller):
         except KeyError as e:
             LOG.error(_("Create Instance Required field(s) - %s") % e)
             raise exception.ReddwarfError("Required element/key - %s "
-                                       "was not specified" % e)
+                                          "was not specified" % e)

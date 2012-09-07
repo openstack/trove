@@ -23,8 +23,8 @@ class HostView(object):
 
     def data(self):
         return {
-           'instanceCount': self.host.instance_count,
-           'name': self.host.name
+            'instanceCount': self.host.instance_count,
+            'name': self.host.name
         }
 
 

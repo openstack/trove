@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 def persisted_models():
     return {
         'dns_records': DnsRecord,
-        }
+    }
 
 
 class DnsRecord(ModelBase):

@@ -180,8 +180,9 @@ class SimpleInstance(object):
             if self.db_info.server_status in ["ACTIVE", "SHUTDOWN"]:
                 return InstanceStatus.SHUTDOWN
             else:
-                LOG.error(_("While shutting down instance (%s): server had "
-                    " status (%s).") % (self.id, self.db_info.server_status))
+                msg = _("While shutting down instance (%s): server had "
+                        "status (%s).")
+                LOG.error(msg % (self.id, self.db_info.server_status))
                 return InstanceStatus.ERROR
 
         ### Check against the service status.
@@ -293,8 +294,8 @@ def load_instance_with_guest(cls, context, id):
         LOG.warn(mnfe)
         return instance
 
-    if instance.status not in AGENT_INVALID_STATUSES and \
-       agent_models.AgentHeartBeat.is_active(agent):
+    if (instance.status not in AGENT_INVALID_STATUSES and
+            agent_models.AgentHeartBeat.is_active(agent)):
         guest = create_guest_client(context, id)
         try:
             instance.volume_used = guest.get_volume_info()['used']
@@ -319,8 +320,8 @@ class BaseInstance(SimpleInstance):
     def delete(self):
         if (self.db_info.server_status in ["BUILD"] and
                 not self.db_info.task_status.is_error):
-            raise exception.UnprocessableEntity("Instance %s is not ready."
-                                                    % self.id)
+            raise exception.UnprocessableEntity("Instance %s is not ready." %
+                                                self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
                   self.db_info.compute_instance_id)
         LOG.debug(_(" ... setting status to DELETING."))
@@ -402,13 +403,15 @@ class Instance(BuiltInstance):
         except nova_exceptions.NotFound:
             raise exception.FlavorNotFound(uuid=flavor_id)
 
-        db_info = DBInstance.create(name=name,
-            flavor_id=flavor_id, tenant_id=context.tenant,
-            volume_size=volume_size, task_status=InstanceTasks.BUILDING)
+        db_info = DBInstance.create(name=name, flavor_id=flavor_id,
+                                    tenant_id=context.tenant,
+                                    volume_size=volume_size,
+                                    task_status=InstanceTasks.BUILDING)
         LOG.debug(_("Tenant %s created new Reddwarf instance %s...")
                   % (context.tenant, db_info.id))
 
-        service_status = InstanceServiceStatus.create(instance_id=db_info.id,
+        service_status = InstanceServiceStatus.create(
+            instance_id=db_info.id,
             status=ServiceStatuses.NEW)
 
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
@@ -419,7 +422,9 @@ class Instance(BuiltInstance):
             db_info.save()
 
         task_api.API(context).create_instance(db_info.id, name, flavor_id,
-            flavor.ram, image_id, databases, users, service_type, volume_size)
+                                              flavor.ram, image_id, databases,
+                                              users, service_type,
+                                              volume_size)
 
         return SimpleInstance(context, db_info, service_status)
 
@@ -444,7 +449,8 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.RESIZING)
         LOG.debug("Instance %s set to RESIZING." % self.id)
         task_api.API(self.context).resize_flavor(self.id, new_flavor_id,
-                    old_flavor_size, new_flavor_size)
+                                                 old_flavor_size,
+                                                 new_flavor_size)
 
     def resize_volume(self, new_size):
         self._validate_can_perform_action()
@@ -453,8 +459,9 @@ class Instance(BuiltInstance):
             raise exception.BadRequest("Instance %s has no volume." % self.id)
         old_size = self.volume_size
         if int(new_size) <= old_size:
-            raise exception.BadRequest("The new volume 'size' must be larger "
-                        "than the current volume size of '%s'" % old_size)
+            msg = ("The new volume 'size' must be larger than the current "
+                   "volume size of '%s'")
+            raise exception.BadRequest(msg % old_size)
         # Set the task to Resizing before sending off to the taskmanager
         self.update_db(task_status=InstanceTasks.RESIZING)
         task_api.API(self.context).resize_volume(new_size, self.id)
@@ -481,12 +488,12 @@ class Instance(BuiltInstance):
         """
         Raises exception if an instance action cannot currently be performed.
         """
-        if self.db_info.server_status != "ACTIVE" or \
-            self.db_info.task_status != InstanceTasks.NONE or \
-            not self.service_status.status.action_is_allowed:
-            msg = "Instance is not currently available for an action to be " \
-                  "performed (status was %s)." % self.status
-            LOG.error(msg)
+        if any([self.db_info.server_status != "ACTIVE",
+                self.db_info.task_status != InstanceTasks.NONE,
+                not self.service_status.status.action_is_allowed]):
+            msg = ("Instance is not currently available for an action to be "
+                   "performed (status was %s).")
+            LOG.error(msg % self.status)
             raise exception.UnprocessableEntity(msg)
 
 
@@ -504,8 +511,8 @@ def create_server_list_matcher(server_list):
                 instance_id=instance_id, server_id=server_id)
         else:
             # Should never happen, but never say never.
-            LOG.error(_("Server %s for instance %s was found twice!")
-                  % (server_id, instance_id))
+            LOG.error(_("Server %s for instance %s was found twice!") %
+                      (server_id, instance_id))
             raise exception.ReddwarfError(uuid=instance_id)
     return find_server
 
@@ -563,14 +570,14 @@ class Instances(object):
                 #volumes = find_volumes(server.id)
                 status = InstanceServiceStatus.find_by(instance_id=db.id)
                 LOG.info(_("Server api_status(%s)") %
-                           (status.status.api_status))
+                         (status.status.api_status))
                 if not status.status:  # This should never happen.
                     LOG.error(_("Server status could not be read for "
                                 "instance id(%s)") % (db.id))
                     continue
             except exception.ModelNotFoundError:
                 LOG.error(_("Server status could not be read for "
-                                "instance id(%s)") % (db.id))
+                            "instance id(%s)") % (db.id))
                 continue
             ret.append(load_instance(context, db, status))
         return ret
@@ -645,7 +652,7 @@ def persisted_models():
         'instance': DBInstance,
         'service_image': ServiceImage,
         'service_statuses': InstanceServiceStatus,
-        }
+    }
 
 
 class ServiceStatus(object):
@@ -664,9 +671,13 @@ class ServiceStatus(object):
 
     @property
     def action_is_allowed(self):
-        return self._code in [ServiceStatuses.RUNNING._code,
-            ServiceStatuses.SHUTDOWN._code, ServiceStatuses.CRASHED._code,
-            ServiceStatuses.BLOCKED._code]
+        allowed_statuses = [
+            ServiceStatuses.RUNNING._code,
+            ServiceStatuses.SHUTDOWN._code,
+            ServiceStatuses.CRASHED._code,
+            ServiceStatuses.BLOCKED._code,
+        ]
+        return self._code in allowed_statuses
 
     @property
     def api_status(self):

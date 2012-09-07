@@ -75,7 +75,7 @@ class DetailedHost(object):
             except exception.ReddwarfError as re:
                 LOG.error(re)
                 LOG.error("Compute Instance ID found with no associated RD "
-                    "instance: %s" % instance['server_id'])
+                          "instance: %s" % instance['server_id'])
                 instance['id'] = None
 
     def update_all(self, context):

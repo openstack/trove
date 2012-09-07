@@ -29,9 +29,7 @@ AGENT_HEARTBEAT = int(config.Config.get('agent_heartbeat_time', '10'))
 
 
 def persisted_models():
-    return {
-        'agent_heartbeats': AgentHeartBeat,
-        }
+    return {'agent_heartbeats': AgentHeartBeat}
 
 
 class AgentHeartBeat(dbmodels.DatabaseModelBase):
@@ -61,5 +59,5 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
 
     @staticmethod
     def is_active(agent):
-        return (datetime.now() - agent.updated_at) < \
-               timedelta(seconds=AGENT_HEARTBEAT)
+        return (datetime.now() - agent.updated_at <
+                timedelta(seconds=AGENT_HEARTBEAT))

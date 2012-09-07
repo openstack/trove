@@ -35,9 +35,7 @@ class HostInstanceController(wsgi.Controller):
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
         host = models.DetailedHost.load(context, host_id)
-        _actions = {
-            'update': self._action_update
-            }
+        _actions = {'update': self._action_update}
         selected_action = None
         for key in body:
             if key in _actions:

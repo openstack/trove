@@ -38,7 +38,7 @@ class ManagerAPI(object):
     def _real_cast(self, method_name, **kwargs):
         try:
             rpc.cast(self.context, self._get_routing_key(),
-                    {"method": method_name, "args": kwargs})
+                     {"method": method_name, "args": kwargs})
         except Exception as e:
             LOG.error(e)
             raise exception.TaskManagerError(original_message=str(e))

@@ -62,7 +62,7 @@ class Config(object):
         config_file = openstack_config.find_config_file(*args)
         if not config_file:
             raise RuntimeError("Unable to locate any configuration file. "
-                                "Cannot load application %s" % app_name)
+                               "Cannot load application %s" % app_name)
         # Now take the conf file values and append them to the current conf
         with open(config_file, 'r') as conf:
             for line in conf.readlines():
@@ -76,7 +76,7 @@ class Config(object):
         config_file = openstack_config.find_config_file(*args)
         if not config_file:
             raise RuntimeError("Unable to locate any configuration file. "
-                                "Cannot load application %s" % app_name)
+                               "Cannot load application %s" % app_name)
         with open(config_file, 'a') as conf:
             for k, v in kwargs.items():
                 # Start with newline to be sure its on a new line

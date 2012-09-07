@@ -38,8 +38,11 @@ class VersionsController(wsgi.Controller):
         """Respond to a request for API versions."""
         versions = []
         for key, data in VERSIONS.items():
-            v = BaseVersion(data["id"], data["status"],
-                        request.application_url, data["updated"])
+            v = BaseVersion(
+                data["id"],
+                data["status"],
+                request.application_url,
+                data["updated"])
             versions.append(v)
         return wsgi.Result(VersionsDataView(versions))
 
@@ -60,10 +63,12 @@ class BaseVersion(object):
         self.updated = updated
 
     def data(self):
-        return dict(id=self.id,
-            status=self.status,
-            updated=self.updated,
-            links=[dict(rel="self", href=self.url())])
+        return {
+            "id": self.id,
+            "status": self.status,
+            "updated": self.updated,
+            "links": [{"rel": "self", "href": self.url()}],
+        }
 
     def url(self):
         url = os.path.join(self.base_url, self.id)

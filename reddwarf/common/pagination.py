@@ -39,9 +39,10 @@ class PaginatedDataView(object):
             return []
         app_url = AppUrl(self.current_page_url)
         next_url = app_url.change_query_params(marker=self.next_page_marker)
-        next_link = {'rel': 'next',
-                     'href': str(next_url),
-                    }
+        next_link = {
+            'rel': 'next',
+            'href': str(next_url),
+        }
         return [next_link]
 
 

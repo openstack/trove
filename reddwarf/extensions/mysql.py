@@ -51,7 +51,7 @@ class Mysql(extensions.ExtensionsDescriptor):
             'databases',
             service.SchemaController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'},
+                    'collection_name': '{tenant_id}/instances'},
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer)
         resources.append(resource)
@@ -59,7 +59,7 @@ class Mysql(extensions.ExtensionsDescriptor):
             'users',
             service.UserController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'},
+                    'collection_name': '{tenant_id}/instances'},
             # deserializer=extensions.ExtensionsXMLSerializer()
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer)
@@ -68,7 +68,7 @@ class Mysql(extensions.ExtensionsDescriptor):
             'root',
             service.RootController(),
             parent={'member_name': 'instance',
-                     'collection_name': '{tenant_id}/instances'},
+                    'collection_name': '{tenant_id}/instances'},
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer)
 

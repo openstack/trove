@@ -26,12 +26,14 @@ class FlavorView(object):
         self.req = req
 
     def data(self):
-        return {"flavor": {
-            'id': int(self.flavor.id),
-            'links': self._build_links(),
-            'name': self.flavor.name,
-            'ram': self.flavor.ram,
-            }}
+        return {
+            "flavor": {
+                'id': int(self.flavor.id),
+                'links': self._build_links(),
+                'name': self.flavor.name,
+                'ram': self.flavor.ram,
+            }
+        }
 
     def _build_links(self):
         return create_links("flavors", self.req, self.flavor.id)
