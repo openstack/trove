@@ -113,7 +113,7 @@ class Service(object):
     def start(self):
         vcs_string = version.version_string_with_vcs()
         LOG.info(_('Starting %(topic)s node (version %(vcs_string)s)'),
-                {'topic': self.topic, 'vcs_string': vcs_string})
+                 {'topic': self.topic, 'vcs_string': vcs_string})
 
         self.conn = rpc.create_connection(new=True)
         LOG.debug(_("Creating Consumer connection for Service %s") %
@@ -171,8 +171,8 @@ class Service(object):
             report_interval = config.Config.get('report_interval', 10)
         if not periodic_interval:
             periodic_interval = config.Config.get('periodic_interval', 60)
-        service_obj = cls(host, binary, topic, manager,
-            report_interval, periodic_interval)
+        service_obj = cls(host, binary, topic, manager, report_interval,
+                          periodic_interval)
 
         return service_obj
 

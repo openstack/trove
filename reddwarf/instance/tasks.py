@@ -67,12 +67,14 @@ class InstanceTasks(object):
     RESIZING = InstanceTask(0x04, 'RESIZING', 'Resizing the instance.')
     BUILDING = InstanceTask(0x05, 'BUILDING', 'The instance is building.')
 
-    BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING',
-        'Build error: DNS.', is_error=True)
+    BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
+                                      is_error=True)
     BUILDING_ERROR_SERVER = InstanceTask(0x51, 'BUILDING',
-        'Build error: Server.', is_error=True)
+                                         'Build error: Server.',
+                                         is_error=True)
     BUILDING_ERROR_VOLUME = InstanceTask(0x52, 'BUILDING',
-        'Build error: Volume.', is_error=True)
+                                         'Build error: Volume.',
+                                         is_error=True)
 
 
 # Dissuade further additions at run-time.

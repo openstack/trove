@@ -86,7 +86,7 @@ class FakeGuest(object):
         return self.root_was_enabled
 
     def _list_resource(self, resource, limit=None, marker=None,
-                      include_marker=False):
+                       include_marker=False):
         names = sorted([name for name in resource])
         if marker in names:
             if not include_marker:

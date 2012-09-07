@@ -31,7 +31,9 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 meta = MetaData()
 
 
-usage_events = Table('usage_events', meta,
+usage_events = Table(
+    'usage_events',
+    meta,
     Column('id', String(36), primary_key=True, nullable=False),
     Column('instance_name', String(36)),
     Column('tenant_id', String(36)),

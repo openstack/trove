@@ -46,22 +46,24 @@ class TestInstance(tests.BaseTest):
         self.FAKE_SERVER.id = self.expected_id
         self.FAKE_SERVER.flavor = ('http://localhost/1234/flavors/',
                                    '52415800-8b69-11e0-9b19-734f1195ff37')
-        self.FAKE_SERVER.links = [{
-                    "href": "http://localhost/1234/instances/123",
-                    "rel": "self"
-                },
-                {
-                    "href": "http://localhost/1234/instances/123",
-                    "rel": "bookmark"
-                }]
+        self.FAKE_SERVER.links = [
+            {
+                "href": "http://localhost/1234/instances/123",
+                "rel": "self",
+            },
+            {
+                "href": "http://localhost/1234/instances/123",
+                "rel": "bookmark",
+            },
+        ]
         self.FAKE_SERVER.addresses = {
-                "private": [
-                    {
-                        "addr": "10.0.0.4",
-                        "version": 4
-                    }
-                ]
-            }
+            "private": [
+                {
+                    "addr": "10.0.0.4",
+                    "version": 4
+                },
+            ],
+        }
 
         client = self.mock.CreateMock(novaclient.v1_1.Client)
         servers = self.mock.CreateMock(novaclient.v1_1.servers.ServerManager)

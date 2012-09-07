@@ -31,11 +31,12 @@ class AccountView(object):
     def data(self):
         instance_list = [InstanceView(instance).data()
                          for instance in self.account.instances]
-        return {'account': {
-                    'id': self.account.id,
-                    'instances': instance_list,
-                    }
-                }
+        return {
+            'account': {
+                'id': self.account.id,
+                'instances': instance_list,
+            }
+        }
 
 
 class InstanceView(object):

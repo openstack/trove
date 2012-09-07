@@ -65,17 +65,17 @@ class EntryToRecordConverter(object):
 
     def record_to_entry(self, record, dns_zone):
         entry_name = record.name
-        return DnsEntry(name=entry_name, content=record.data, type=record.type,
-            ttl=record.ttl, dns_zone=dns_zone)
+        return DnsEntry(name=entry_name, content=record.data,
+                        type=record.type, ttl=record.ttl, dns_zone=dns_zone)
 
 
 def create_client_with_flag_values():
     """Creates a RS DNSaaS client using the Flag values."""
-    if DNS_MANAGEMENT_BASE_URL == None:
+    if DNS_MANAGEMENT_BASE_URL is None:
         raise RuntimeError("Missing flag value for dns_management_base_url.")
     return DNSaas(DNS_ACCOUNT_ID, DNS_USERNAME, DNS_PASSKEY,
-        auth_url=DNS_AUTH_URL,
-        management_base_url=DNS_MANAGEMENT_BASE_URL)
+                  auth_url=DNS_AUTH_URL,
+                  management_base_url=DNS_MANAGEMENT_BASE_URL)
 
 
 def find_default_zone(dns_client, raise_if_zone_missing=True):
@@ -96,9 +96,10 @@ def find_default_zone(dns_client, raise_if_zone_missing=True):
         pass
     if not raise_if_zone_missing:
         return RsDnsZone(id=None, name=domain_name)
-    raise RuntimeError("The dns_domain_name from the FLAG values (%s) "
-                       "does not exist!  account_id=%s, username=%s, LIST=%s"
-    % (domain_name, DNS_ACCOUNT_ID, DNS_USERNAME, domains))
+    msg = ("The dns_domain_name from the FLAG values (%s) "
+           "does not exist!  account_id=%s, username=%s, LIST=%s")
+    params = (domain_name, DNS_ACCOUNT_ID, DNS_USERNAME, domains)
+    raise RuntimeError(msg % params)
 
 
 class RsDnsDriver(object):
@@ -108,20 +109,21 @@ class RsDnsDriver(object):
         self.dns_client = create_client_with_flag_values()
         self.dns_client.authenticate()
         self.default_dns_zone = RsDnsZone(id=DNS_DOMAIN_ID,
-                            name=DNS_DOMAIN_NAME)
+                                          name=DNS_DOMAIN_NAME)
         self.converter = EntryToRecordConverter(self.default_dns_zone)
         if DNS_TTL < 300:
-            raise Exception("TTL value '--dns_ttl=%s' should be greater than"\
-                            " 300" % DNS_TTL)
+            msg = "TTL value '--dns_ttl=%s' should be greater than 300"
+            raise Exception(msg % DNS_TTL)
 
     def create_entry(self, entry):
         dns_zone = entry.dns_zone or self.default_dns_zone
-        if dns_zone.id == None:
+        if dns_zone.id is None:
             raise TypeError("The entry's dns_zone must have an ID specified.")
         name = entry.name  # + "." + dns_zone.name
         LOG.debug("Going to create RSDNS entry %s." % name)
         try:
-            future = self.dns_client.records.create(domain=dns_zone.id,
+            future = self.dns_client.records.create(
+                domain=dns_zone.id,
                 record_name=name,
                 record_data=entry.content,
                 record_type=entry.type,
@@ -151,7 +153,8 @@ class RsDnsDriver(object):
         dns_zone = dns_zone or self.default_dns_zone
         long_name = name
         db_record = DnsRecord.find_by(name=name)
-        record = self.dns_client.records.get(domain_id=dns_zone.id,
+        record = self.dns_client.records.get(
+            domain_id=dns_zone.id,
             record_id=db_record.record_id)
         if record.name != name or record.type != 'A':
             LOG.error("Tried to delete DNS record with name=%s, id=%s, but the"
@@ -159,14 +162,16 @@ class RsDnsDriver(object):
                       "type %s." % (name, db_record.id, record.name,
                                     record.type))
             raise exception.DnsRecordNotFound(name)
-        self.dns_client.records.delete(domain_id=dns_zone.id,
+        self.dns_client.records.delete(
+            domain_id=dns_zone.id,
             record_id=record.id)
         db_record.delete()
 
     def get_entries(self, name=None, content=None, dns_zone=None):
         dns_zone = dns_zone or self.defaucreate_entrylt_dns_zone
         long_name = name  # self.converter.name_to_long_name(name)
-        records = self.dns_client.records.list(domain_id=dns_zone.id,
+        records = self.dns_client.records.list(
+            domain_id=dns_zone.id,
             record_name=long_name,
             record_address=content)
         return [self.converter.record_to_entry(record, dns_zone)
@@ -196,14 +201,14 @@ class RsDnsInstanceEntryFactory(object):
     def __init__(self, dns_domain_id=None):
         dns_domain_id = dns_domain_id or DNS_DOMAIN_ID
         self.default_dns_zone = RsDnsZone(id=dns_domain_id,
-            name=DNS_DOMAIN_NAME)
+                                          name=DNS_DOMAIN_NAME)
 
     def create_entry(self, instance_id):
         id = instance_id
         hostname = ("%s.%s" % (hashlib.sha1(id).hexdigest(),
                                self.default_dns_zone.name))
-        return DnsEntry(name=hostname, content=None, type="A",
-            ttl=DNS_TTL, dns_zone=self.default_dns_zone)
+        return DnsEntry(name=hostname, content=None, type="A", ttl=DNS_TTL,
+                        dns_zone=self.default_dns_zone)
 
 
 class RsDnsZone(object):
@@ -213,8 +218,9 @@ class RsDnsZone(object):
         self.id = id
 
     def __eq__(self, other):
-        return isinstance(other, RsDnsZone) and\
-               self.name == other.name and self.id == other.id
+        return (isinstance(other, RsDnsZone) and
+                self.name == other.name and
+                self.id == other.id)
 
     def __str__(self):
         return "%s:%s" % (self.id, self.name)

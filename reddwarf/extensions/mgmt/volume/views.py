@@ -29,8 +29,7 @@ class StorageView(object):
                 'provision': {'total': self.storage.prov_total,
                               'available': self.storage.prov_avail,
                               'percent': self.storage.prov_percent},
-                'used': self.storage.used
-        }
+                'used': self.storage.used}
 
 
 class StoragesView(object):

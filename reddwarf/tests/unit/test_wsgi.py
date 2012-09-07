@@ -72,7 +72,7 @@ class VersionedURLMapTest(tests.BaseTest):
         environ = {
             'HTTP_ACCEPT': "application/json;version=1.0",
             'PATH_INFO': "/resource",
-            }
+        }
 
         self.versioned_urlmap(environ=environ, start_response=None)
 
@@ -83,7 +83,7 @@ class VersionedURLMapTest(tests.BaseTest):
             'HTTP_ACCEPT': "application/vnd.openstack.reddwarf+xml;"
             "version=9.0", 'REQUEST_METHOD': "GET",
             'PATH_INFO': "/resource.xml",
-            }
+        }
 
         def assert_status(status, *args):
             self.assertEqual(status, "406 Not Acceptable")
@@ -95,7 +95,7 @@ class VersionedURLMapTest(tests.BaseTest):
             'HTTP_ACCEPT': "application/vnd.openstack.reddwarf+xml;"
             "version=2.0",
             'PATH_INFO': "/v1.0/resource",
-            }
+        }
 
         self.versioned_urlmap(environ=environ, start_response=None)
 

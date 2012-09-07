@@ -49,26 +49,28 @@ LOG = logging.getLogger('reddwarf.common.wsgi')
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
 CUSTOM_SERIALIZER_METADATA = {
-    'instance': {'status': '',
-                 'hostname': '',
-                 'id': '',
-                 'name': '',
-                 'created': '',
-                 'updated': '',
-                 'host': '',
-                 'server_id': '',
-                 #mgmt/instance
-                 'local_id': '',
-                 'task_description': '',
-                 'deleted': '',
-                 'deleted_at': '',
-                 'tenant_id': '',
-                 },
-    'volume': {'size': '',
-               'used': '',
-               #mgmt/instance
-               'id': '',
-              },
+    'instance': {
+        'status': '',
+        'hostname': '',
+        'id': '',
+        'name': '',
+        'created': '',
+        'updated': '',
+        'host': '',
+        'server_id': '',
+        #mgmt/instance
+        'local_id': '',
+        'task_description': '',
+        'deleted': '',
+        'deleted_at': '',
+        'tenant_id': '',
+    },
+    'volume': {
+        'size': '',
+        'used': '',
+        #mgmt/instance
+        'id': '',
+    },
     'flavor': {'id': '', 'ram': '', 'name': ''},
     'link': {'href': '', 'rel': ''},
     'database': {'name': ''},
@@ -76,7 +78,7 @@ CUSTOM_SERIALIZER_METADATA = {
     'account': {'id': ''},
     # mgmt/host
     'host': {'instanceCount': '', 'name': '', 'usedRAM': '', 'totalRAM': '',
-            'percentUsed': ''},
+             'percentUsed': ''},
     # mgmt/storage
     'capacity': {'available': '', 'total': ''},
     'provision': {'available': '', 'total': '', 'percent': ''},
@@ -87,7 +89,7 @@ CUSTOM_SERIALIZER_METADATA = {
     'guest_status': {'state_description': ''},
     #mgmt/instance/diagnostics
     'diagnostics': {'vmHwm': '', 'vmPeak': '', 'vmSize': '', 'threads': '',
-                   'version': '', 'vmRss': '', 'fdSize': ''},
+                    'version': '', 'vmRss': '', 'fdSize': ''},
     #mgmt/instance/root
     'root_history': {'enabled': '', 'id': '', 'user': ''},
 }
@@ -134,11 +136,12 @@ class Request(openstack_wsgi.Request):
             if format in ['json', 'xml']:
                 return 'application/{0}'.format(parts[1])
 
-        ctypes = {'application/vnd.openstack.reddwarf+json':
-                      "application/json",
-                  'application/vnd.openstack.reddwarf+xml': "application/xml",
-                  'application/json': "application/json",
-                  'application/xml': "application/xml"}
+        ctypes = {
+            'application/vnd.openstack.reddwarf+json': "application/json",
+            'application/vnd.openstack.reddwarf+xml': "application/xml",
+            'application/json': "application/json",
+            'application/xml': "application/xml",
+        }
         bm = self.accept.best_match(ctypes.keys())
 
         return ctypes.get(bm, 'application/json')
@@ -182,7 +185,7 @@ class Result(object):
 
         """
         if (serialization_type == "application/xml" and
-            hasattr(self._data, "data_for_xml")):
+                hasattr(self._data, "data_for_xml")):
             return self._data.data_for_xml()
         if hasattr(self._data, "data_for_json"):
             return self._data.data_for_json()
@@ -205,7 +208,8 @@ class Resource(openstack_wsgi.Resource):
         if getattr(self.controller, action, None) is None:
             return Fault(webob.exc.HTTPNotFound())
         try:
-            result = super(Resource, self).execute_action(action,
+            result = super(Resource, self).execute_action(
+                action,
                 request,
                 **action_args)
             if type(result) is dict:
@@ -221,12 +225,13 @@ class Resource(openstack_wsgi.Resource):
             return Fault(http_error)
         except Exception as error:
             LOG.exception(error)
-            return Fault(webob.exc.HTTPInternalServerError(str(error),
+            return Fault(webob.exc.HTTPInternalServerError(
+                str(error),
                 request=request))
 
     def _get_http_error(self, error):
         return self.model_exception_map.get(type(error),
-            webob.exc.HTTPBadRequest)
+                                            webob.exc.HTTPBadRequest)
 
     def _invert_dict_list(self, exception_dict):
         """Flattens values of keys and inverts keys and values.
@@ -268,10 +273,10 @@ class Controller(object):
     exception_map = {
         webob.exc.HTTPUnprocessableEntity: [
             exception.UnprocessableEntity,
-            ],
+        ],
         webob.exc.HTTPUnauthorized: [
             exception.Forbidden,
-            ],
+        ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,
             exception.BadRequest,
@@ -279,35 +284,35 @@ class Controller(object):
             exception.BadValue,
             exception.DatabaseAlreadyExists,
             exception.UserAlreadyExists,
-            ],
+        ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
             exception.ComputeInstanceNotFound,
             exception.ModelNotFoundError,
-            ],
-        webob.exc.HTTPConflict: [
-            ],
+        ],
+        webob.exc.HTTPConflict: [],
         webob.exc.HTTPRequestEntityTooLarge: [
             exception.OverLimit,
             exception.QuotaExceeded,
             exception.VolumeQuotaExceeded,
-            ],
+        ],
         webob.exc.HTTPServerError: [
             exception.VolumeCreationFailure,
             exception.UpdateGuestError,
-            ],
-        }
+        ],
+    }
 
     def __init__(self):
         self.add_addresses = utils.bool_from_string(
-                        config.Config.get('add_addresses', 'False'))
+            config.Config.get('add_addresses', 'False'))
         self.add_volumes = utils.bool_from_string(
-                        config.Config.get('reddwarf_volume_support', 'False'))
+            config.Config.get('reddwarf_volume_support', 'False'))
 
     def create_resource(self):
         serializer = ReddwarfResponseSerializer(
             body_serializers={'application/xml': ReddwarfXMLDictSerializer()})
-        return Resource(self,
+        return Resource(
+            self,
             ReddwarfRequestDeserializer(),
             serializer,
             self.exception_map)
@@ -328,9 +333,10 @@ class ReddwarfRequestDeserializer(RequestDeserializer):
 
     def __init__(self, body_deserializers=None, headers_deserializer=None,
                  supported_content_types=None):
-        super(ReddwarfRequestDeserializer, self).__init__(body_deserializers,
-                                                  headers_deserializer,
-                                                  supported_content_types)
+        super(ReddwarfRequestDeserializer, self).__init__(
+            body_deserializers,
+            headers_deserializer,
+            supported_content_types)
 
         self.body_deserializers['application/xml'] = ReddwarfXMLDeserializer()
 
@@ -392,7 +398,8 @@ class ReddwarfXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
         metadata['attributes'] = CUSTOM_SERIALIZER_METADATA
         if hasattr(data, "to_xml"):
             return data.to_xml()
-        return super(ReddwarfXMLDictSerializer, self)._to_xml_node(doc,
+        return super(ReddwarfXMLDictSerializer, self)._to_xml_node(
+            doc,
             metadata,
             nodename,
             data)
@@ -410,13 +417,15 @@ class ReddwarfResponseSerializer(openstack_wsgi.ResponseSerializer):
         """
         if isinstance(data, Result):
             data = data.data(content_type)
-        super(ReddwarfResponseSerializer, self).serialize_body(response,
+        super(ReddwarfResponseSerializer, self).serialize_body(
+            response,
             data,
             content_type,
             action)
 
     def serialize_headers(self, response, data, action):
-        super(ReddwarfResponseSerializer, self).serialize_headers(response,
+        super(ReddwarfResponseSerializer, self).serialize_headers(
+            response,
             data,
             action)
         if isinstance(data, Result):
@@ -473,7 +482,7 @@ class Fault(webob.exc.HTTPException):
         fault_data = {
             fault_name: {
                 'code': self.wrapped_exc.status_int,
-                }
+            }
         }
         if self.wrapped_exc.detail:
             fault_data[fault_name]['message'] = self.wrapped_exc.detail
@@ -486,7 +495,7 @@ class Fault(webob.exc.HTTPException):
         serializer = {
             'application/xml': openstack_wsgi.XMLDictSerializer(metadata),
             'application/json': openstack_wsgi.JSONDictSerializer(),
-            }[content_type]
+        }[content_type]
 
         self.wrapped_exc.body = serializer.serialize(fault_data, content_type)
         self.wrapped_exc.content_type = content_type
@@ -526,7 +535,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
     def factory(cls, global_config, **local_config):
         def _factory(app):
             LOG.debug(_("Created context middleware with config: %s") %
-                       local_config)
+                      local_config)
             return cls(app)
         return _factory
 

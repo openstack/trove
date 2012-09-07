@@ -91,8 +91,8 @@ class PkgAgent(object):
             i = child.expect(['.*password*',
                               'E: Unable to locate package %s' % package_name,
                               "Couldn't find package % s" % package_name,
-                              "dpkg was interrupted, you must manually run "
-                                "'sudo dpkg --configure -a'",
+                              ("dpkg was interrupted, you must manually run "
+                               "'sudo dpkg --configure -a'"),
                               "Unable to lock the administration directory",
                               "Setting up %s*" % package_name,
                               "is already the newest version"],
@@ -131,10 +131,10 @@ class PkgAgent(object):
             i = child.expect(['.*password*',
                               'E: Unable to locate package %s' % package_name,
                               'Package is in a very bad inconsistent state',
-                              "Sub-process /usr/bin/dpkg returned an "
-                                "error code",
-                              "dpkg was interrupted, you must manually run "
-                                "'sudo dpkg --configure -a'",
+                              ("Sub-process /usr/bin/dpkg returned an error "
+                               "code"),
+                              ("dpkg was interrupted, you must manually run "
+                               "'sudo dpkg --configure -a'"),
                               "Unable to lock the administration directory",
                               #'The following packages will be REMOVED',
                               "Removing %s*" % package_name],

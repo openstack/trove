@@ -32,17 +32,19 @@ from reddwarf.db.sqlalchemy.migrate_repo.schema import Table
 
 meta = MetaData()
 
-instances = Table('instances', meta,
-        Column('id', String(36), primary_key=True, nullable=False),
-        Column('created', DateTime()),
-        Column('updated', DateTime()),
-        Column('name', String(255)),
-        Column('hostname', String(255)),
-        Column('compute_instance_id', String(36)),
-        Column('task_id', Integer()),
-        Column('task_description', String(32)),
-        Column('task_start_time', DateTime()),
-        Column('volume_id', String(36)))
+instances = Table(
+    'instances',
+    meta,
+    Column('id', String(36), primary_key=True, nullable=False),
+    Column('created', DateTime()),
+    Column('updated', DateTime()),
+    Column('name', String(255)),
+    Column('hostname', String(255)),
+    Column('compute_instance_id', String(36)),
+    Column('task_id', Integer()),
+    Column('task_description', String(32)),
+    Column('task_start_time', DateTime()),
+    Column('volume_id', String(36)))
 
 
 def upgrade(migrate_engine):

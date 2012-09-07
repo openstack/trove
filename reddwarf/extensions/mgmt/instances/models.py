@@ -35,8 +35,10 @@ def load_mgmt_instances(context, deleted=None):
         db_infos = instance_models.DBInstance.find_all(deleted=deleted)
     else:
         db_infos = instance_models.DBInstance.find_all()
-    instances = MgmtInstances.load_status_from_existing(context,
-                                        db_infos, mgmt_servers)
+    instances = MgmtInstances.load_status_from_existing(
+        context,
+        db_infos,
+        mgmt_servers)
     return instances
 
 

@@ -38,11 +38,10 @@ class FakeFlavor(object):
 
     @property
     def links(self):
-        return [{
-            "href": "http://localhost:8774/v2/"
-                "5064d71eb09c47e1956cf579822bae9a/flavors/%s" % self.id,
-            "rel": link_type
-            } for link_type in ['self', 'bookmark']]
+        url = ("http://localhost:8774/v2/5064d71eb09c47e1956cf579822bae9a/"
+               "flavors/%s") % self.id
+        return [{"href": url, "rel": link_type}
+                for link_type in ['self', 'bookmark']]
 
     @property
     def href_suffix(self):
@@ -136,7 +135,7 @@ class FakeServer(object):
         # TODO(pdmars): This is less than ideal, but a quick way to force it
         # into the error state before scheduling the delete.
         if (self.name.endswith("_DELETE_ERROR") and
-            self._current_status != "SHUTDOWN"):
+                self._current_status != "SHUTDOWN"):
             # Fail to delete properly the first time, just set the status
             # to SHUTDOWN and break. It's important that we only fail to delete
             # once in fake mode.
@@ -151,10 +150,9 @@ class FakeServer(object):
 
     @property
     def links(self):
-        return [{
-            "href": "https://localhost:9999/v1.0/1234/instances/%s" % self.id,
-            "rel": link_type
-            } for link_type in ['self', 'bookmark']]
+        url = "https://localhost:9999/v1.0/1234/instances/%s" % self.id
+        return [{"href": url, "rel": link_type}
+                for link_type in ['self', 'bookmark']]
 
     def resize(self, new_flavor_id):
         self._current_status = "RESIZE"
@@ -212,8 +210,8 @@ class FakeServers(object):
     def can_see(self, id):
         """Can this FakeServers, with its context, see some resource?"""
         server = self.db[id]
-        return self.context.is_admin or \
-               server.owner.tenant == self.context.tenant
+        return (self.context.is_admin or
+                server.owner.tenant == self.context.tenant)
 
     def create(self, name, image_id, flavor_ref, files=None,
                block_device_mapping=None, volume=None):
@@ -253,8 +251,8 @@ class FakeServers(object):
                 mapping = block_device_mapping[device]
                 (id, _type, size, delete_on_terminate) = mapping.split(":")
                 volume = self.volumes.get(id)
-                volume.mapping = FakeBlockDeviceMappingInfo(id, device,
-                    _type, size, delete_on_terminate)
+                volume.mapping = FakeBlockDeviceMappingInfo(
+                    id, device, _type, size, delete_on_terminate)
                 volumes.append(volume)
         return volumes
 
@@ -359,10 +357,11 @@ class FakeVolume(object):
         self.device = "/var/lib/mysql"
 
     def __repr__(self):
-        return ("FakeVolume(id=%s, size=%s, "
-               "display_name=%s, display_description=%s, _current_status=%s)"
-               % (self.id, self.size, self.display_name,
-                  self.display_description, self._current_status))
+        msg = ("FakeVolume(id=%s, size=%s, display_name=%s, "
+               "display_description=%s, _current_status=%s)")
+        params = (self.id, self.size, self.display_name,
+                  self.display_description, self._current_status)
+        return (msg % params)
 
     @property
     def availability_zone(self):
@@ -417,8 +416,8 @@ class FakeVolumes(object):
     def can_see(self, id):
         """Can this FakeVolumes, with its context, see some resource?"""
         server = self.db[id]
-        return self.context.is_admin or \
-               server.owner.tenant == self.context.tenant
+        return (self.context.is_admin or
+                server.owner.tenant == self.context.tenant)
 
     def get(self, id):
         if id not in self.db:
@@ -526,7 +525,7 @@ class FakeHost(object):
                 'uuid': server.id,
                 'name': server.name,
                 'status': server.status
-                })
+            })
             try:
                 flavor = FLAVORS.get(server.flavor_ref)
             except ValueError:

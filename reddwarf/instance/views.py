@@ -25,13 +25,13 @@ LOG = logging.getLogger(__name__)
 
 
 def get_ip_address(addresses):
-    if addresses is not None and \
-       addresses.get('private') is not None and \
-       len(addresses['private']) > 0:
+    if all([addresses is not None,
+            addresses.get('private') is not None,
+            len(addresses['private']) > 0]):
         return [addr.get('addr') for addr in addresses['private']]
-    if addresses is not None and\
-       addresses.get('usernet') is not None and\
-       len(addresses['usernet']) > 0:
+    if all([addresses is not None,
+            addresses.get('usernet') is not None,
+            len(addresses['usernet']) > 0]):
         return [addr.get('addr') for addr in addresses['usernet']]
 
 
@@ -100,8 +100,8 @@ class InstanceDetailView(InstanceView):
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
         if self.add_volumes:
-            if isinstance(self.instance, models.DetailInstance) and \
-                                                     self.instance.volume_used:
+            if (isinstance(self.instance, models.DetailInstance) and
+                    self.instance.volume_used):
                 used = self._to_gb(self.instance.volume_used)
                 result['instance']['volume']['used'] = used
         return result

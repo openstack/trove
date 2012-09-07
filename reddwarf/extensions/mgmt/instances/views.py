@@ -73,7 +73,7 @@ class MgmtInstanceDetailView(MgmtInstanceView):
         if self.instance.server is not None:
             server = self.instance.server
             result['instance']['server'].update(
-                                         {'addresses': server.addresses})
+                {'addresses': server.addresses})
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user
@@ -126,12 +126,13 @@ class RootHistoryView(object):
         self.user = user_id
 
     def data(self):
-        return {'root_history': {
-                    'id': self.instance_id,
-                    'enabled': self.enabled,
-                    'user': self.user,
-                    }
-                }
+        return {
+            'root_history': {
+                'id': self.instance_id,
+                'enabled': self.enabled,
+                'user': self.user,
+            }
+        }
 
 
 class HwInfoView(object):
@@ -141,11 +142,12 @@ class HwInfoView(object):
         self.hwinfo = hwinfo
 
     def data(self):
-        return {'hwinfo': {
-                    'mem_total': self.hwinfo['mem_total'],
-                    'num_cpus': self.hwinfo['num_cpus'],
-                    }
+        return {
+            'hwinfo': {
+                'mem_total': self.hwinfo['mem_total'],
+                'num_cpus': self.hwinfo['num_cpus'],
             }
+        }
 
 
 class DiagnosticsView(object):
@@ -155,13 +157,14 @@ class DiagnosticsView(object):
         self.diagnostics = diagnostics
 
     def data(self):
-        return {'diagnostics': {
-                    'version': self.diagnostics['version'],
-                    'threads': self.diagnostics['threads'],
-                    'fdSize': self.diagnostics['fd_size'],
-                    'vmSize': self.diagnostics['vm_size'],
-                    'vmPeak': self.diagnostics['vm_peak'],
-                    'vmRss': self.diagnostics['vm_rss'],
-                    'vmHwm': self.diagnostics['vm_hwm'],
-                    }
+        return {
+            'diagnostics': {
+                'version': self.diagnostics['version'],
+                'threads': self.diagnostics['threads'],
+                'fdSize': self.diagnostics['fd_size'],
+                'vmSize': self.diagnostics['vm_size'],
+                'vmPeak': self.diagnostics['vm_peak'],
+                'vmRss': self.diagnostics['vm_rss'],
+                'vmHwm': self.diagnostics['vm_hwm'],
             }
+        }

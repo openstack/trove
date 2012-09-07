@@ -57,7 +57,7 @@ class API(ManagerAPI):
 
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"
-                 % instance_id)
+                  % instance_id)
         self._cast("resize_volume", new_size=new_size, instance_id=instance_id)
 
     def resize_flavor(self, instance_id, new_flavor_id, old_memory_size,
