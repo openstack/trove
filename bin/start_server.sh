@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Arguments: Use --pid_file to specify a pid file location.
-tox -e fake-mode
+tox -e py26
 
 function run() {
     .tox/py26/bin/python $@
