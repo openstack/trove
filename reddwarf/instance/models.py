@@ -481,9 +481,9 @@ class Instance(BuiltInstance):
         """
         Raises exception if an instance action cannot currently be performed.
         """
-        if any([self.db_info.server_status != "ACTIVE",
-                self.db_info.task_status != InstanceTasks.NONE,
-                not self.service_status.status.action_is_allowed]):
+        if (self.db_info.server_status != "ACTIVE" or
+                self.db_info.task_status != InstanceTasks.NONE or
+                not self.service_status.status.action_is_allowed):
             msg = ("Instance is not currently available for an action to be "
                    "performed (status was %s).")
             LOG.error(msg % self.status)

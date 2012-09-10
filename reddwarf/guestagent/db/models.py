@@ -351,9 +351,9 @@ class MySQLUser(Base):
         self._databases = []
 
     def _is_valid(self, value):
-        if any([not value,
-                self.not_supported_chars.search(value),
-                string.find("%r" % value, "\\") != -1]):
+        if (not value or
+                self.not_supported_chars.search(value) or
+                string.find("%r" % value, "\\") != -1):
             return False
         else:
             return True

@@ -25,13 +25,13 @@ LOG = logging.getLogger(__name__)
 
 
 def get_ip_address(addresses):
-    if all([addresses is not None,
-            addresses.get('private') is not None,
-            len(addresses['private']) > 0]):
+    if (addresses is not None and
+            addresses.get('private') is not None and
+            len(addresses['private']) > 0):
         return [addr.get('addr') for addr in addresses['private']]
-    if all([addresses is not None,
-            addresses.get('usernet') is not None,
-            len(addresses['usernet']) > 0]):
+    if (addresses is not None and
+            addresses.get('usernet') is not None and
+            len(addresses['usernet']) > 0):
         return [addr.get('addr') for addr in addresses['usernet']]
 
 
