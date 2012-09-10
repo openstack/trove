@@ -212,9 +212,9 @@ class MySqlAppStatus(object):
         True if MySQL app should be installed and attempts to ascertain
         its status won't result in nonsense.
         """
-        return all([self.status is not None,
-                    self.status != rd_models.ServiceStatuses.BUILDING,
-                    self.status != rd_models.ServiceStatuses.FAILED])
+        return (self.status is not None and
+                self.status != rd_models.ServiceStatuses.BUILDING and
+                self.status != rd_models.ServiceStatuses.FAILED)
 
     @property
     def _is_mysql_restarting(self):
