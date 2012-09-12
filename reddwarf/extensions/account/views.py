@@ -48,5 +48,5 @@ class InstanceView(object):
         return {'id': self.instance.id,
                 'status': self.instance.status,
                 'name': self.instance.name,
-                'host': self.instance.host,
+                'host': self.instance.server.host,
                 }
