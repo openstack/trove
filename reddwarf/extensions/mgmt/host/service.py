@@ -20,6 +20,7 @@ import webob.exc
 
 from reddwarf.common import exception
 from reddwarf.common import wsgi
+from reddwarf.common.auth import admin_context
 from reddwarf.extensions.mgmt.host import models
 from reddwarf.extensions.mgmt.host import views
 from reddwarf.extensions.mysql import models as mysql_models
@@ -31,6 +32,7 @@ LOG = logging.getLogger(__name__)
 class HostController(InstanceController):
     """Controller for instance functionality"""
 
+    @admin_context
     def index(self, req, tenant_id, detailed=False):
         """Return all hosts."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -39,6 +41,7 @@ class HostController(InstanceController):
         hosts = models.SimpleHost.load_all(context)
         return wsgi.Result(views.HostsView(hosts).data(), 200)
 
+    @admin_context
     def show(self, req, tenant_id, id):
         """Return a single host."""
         LOG.info(_("req : '%s'\n\n") % req)

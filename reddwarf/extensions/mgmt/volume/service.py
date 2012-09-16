@@ -18,6 +18,7 @@
 import logging
 import webob.exc
 
+from reddwarf.common.auth import admin_context
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.volume import models
@@ -29,6 +30,7 @@ LOG = logging.getLogger(__name__)
 class StorageController(wsgi.Controller):
     """Controller for storage device functionality"""
 
+    @admin_context
     def index(self, req, tenant_id):
         """Return all storage devices."""
         LOG.info(_("req : '%s'\n\n") % req)
