@@ -477,6 +477,12 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).restart(self.id)
 
+    def migrate(self):
+        self._validate_can_perform_action()
+        LOG.info("Migrating instance %s..." % self.id)
+        self.update_db(task_status=InstanceTasks.MIGRATING)
+        task_api.API(self.context).migrate(self.id)
+
     def _validate_can_perform_action(self):
         """
         Raises exception if an instance action cannot currently be performed.

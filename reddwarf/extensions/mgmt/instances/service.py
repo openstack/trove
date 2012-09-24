@@ -93,7 +93,8 @@ class MgmtInstanceController(InstanceController):
         instance = models.MgmtInstance.load(context=context, id=id)
         _actions = {
             'stop': self._action_stop,
-            'reboot': self._action_reboot
+            'reboot': self._action_reboot,
+            'migrate': self._action_migrate
         }
         selected_action = None
         for key in body:
@@ -119,6 +120,11 @@ class MgmtInstanceController(InstanceController):
     def _action_reboot(self, context, instance, body):
         LOG.debug("Rebooting instance %s." % instance.id)
         instance.reboot()
+        return wsgi.Result(None, 202)
+
+    def _action_migrate(self, context, instance, body):
+        LOG.debug("Migrating instance %s." % instance.id)
+        instance.migrate()
         return wsgi.Result(None, 202)
 
     @admin_context

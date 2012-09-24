@@ -57,6 +57,10 @@ class TaskManager(service.Manager):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.restart()
 
+    def migrate(self, context, instance_id):
+        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
+        instance_tasks.migrate()
+
     def delete_instance(self, context, instance_id):
         try:
             instance_tasks = models.BuiltInstanceTasks.load(context,
