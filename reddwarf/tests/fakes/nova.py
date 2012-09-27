@@ -611,6 +611,9 @@ class FakeClient(object):
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)
 
+    def rescan_server_volume(self, server, volume_id):
+        LOG.info("FAKE rescanning volume.")
+
 
 CLIENT_DATA = {}
 
