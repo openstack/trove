@@ -336,6 +336,14 @@ class BuiltInstanceTasks(BuiltInstance):
 
     def resize_flavor(self, new_flavor_id, old_memory_size,
                       new_memory_size):
+        self._resize_flavor(new_flavor_id, old_memory_size,
+                            new_memory_size)
+        
+    def migrate(self):
+        self._resize_flavor()
+
+    def _resize_flavor(self, new_flavor_id=None, old_memory_size=None,
+                      new_memory_size=None):
         def resize_status_msg():
             return "instance_id=%s, status=%s, flavor_id=%s, "\
                    "dest. flavor id=%s)" % (self.db_info.id,
@@ -349,7 +357,12 @@ class BuiltInstanceTasks(BuiltInstance):
             try:
                 LOG.debug("Instance %s calling Compute resize..."
                           % self.db_info.id)
-                self.server.resize(new_flavor_id)
+                if new_flavor_id:
+                    self.server.resize(new_flavor_id)
+                else:
+                    LOG.debug("Migrating instance %s without flavor change ..."
+                              % self.db_info.id)
+                    self.server.migrate()
 
                 # Do initial check and confirm the status is appropriate.
                 self._refresh_compute_server_info()
@@ -369,12 +382,17 @@ class BuiltInstanceTasks(BuiltInstance):
                     time_out=60 * 2)
 
                 # Do check to make sure the status and flavor id are correct.
-                if (str(self.server.flavor['id']) != str(new_flavor_id) or
-                        self.server.status != "VERIFY_RESIZE"):
-                    msg = "Assertion failed! flavor_id=%s and not %s"
-                    actual_flavor = self.server.flavor['id']
-                    expected_flavor = new_flavor_id
-                    raise ReddwarfError(msg % (actual_flavor, expected_flavor))
+                if new_flavor_id:
+                    if (str(self.server.flavor['id']) != str(new_flavor_id) or
+                            self.server.status != "VERIFY_RESIZE"):
+                        msg = "Assertion failed! flavor_id=%s and not %s"
+                        actual_flavor = self.server.flavor['id']
+                        expected_flavor = new_flavor_id
+                        raise ReddwarfError(msg % (actual_flavor, expected_flavor))
+                else:
+                    if (self.server.status != "VERIFY_RESIZE"):
+                        msg = "Migration failed! status=%s and not %s"
+                        raise ReddwarfError(msg % (self.server.status, 'VERIFY_RESIZE'))
 
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
@@ -397,7 +415,10 @@ class BuiltInstanceTasks(BuiltInstance):
                 # else MySQL could stay turned off on an otherwise usable
                 # instance.
                 LOG.debug("Instance %s starting mysql..." % self.db_info.id)
-                self.guest.start_mysql_with_conf_changes(new_memory_size)
+                if new_flavor_id:
+                    self.guest.start_mysql_with_conf_changes(new_memory_size)
+                else:
+                    self.guest.restart()
         finally:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
