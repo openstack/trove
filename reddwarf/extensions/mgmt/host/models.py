@@ -26,8 +26,9 @@ from reddwarf import db
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
-from reddwarf.instance import models as base_models
 from reddwarf.instance.models import DBInstance
+from reddwarf.instance.models import InstanceServiceStatus
+from reddwarf.instance.models import SimpleInstance
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
@@ -72,6 +73,10 @@ class DetailedHost(object):
                     compute_instance_id=instance['server_id'])
                 instance['id'] = db_info.id
                 instance['tenant_id'] = db_info.tenant_id
+                status = InstanceServiceStatus.find_by(
+                    instance_id=db_info.id)
+                instance_info = SimpleInstance(None, db_info, status)
+                instance['status'] = instance_info.status
             except exception.ReddwarfError as re:
                 LOG.error(re)
                 LOG.error("Compute Instance ID found with no associated RD "

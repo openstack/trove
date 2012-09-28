@@ -228,14 +228,14 @@ class FreshInstanceTasks(FreshInstance):
                            mount_point=volume_info['mount_point'])
 
     def _create_dns_entry(self):
-        LOG.debug("%s: Creating dns entry for instance: %s"
-                  % (greenthread.getcurrent(), self.id))
-        dns_client = create_dns_client(self.context)
+        LOG.debug("%s: Creating dns entry for instance: %s" %
+                  (greenthread.getcurrent(), self.id))
         dns_support = config.Config.get("reddwarf_dns_support", 'False')
         LOG.debug(_("reddwarf dns support = %s") % dns_support)
 
-        nova_client = create_nova_client(self.context)
         if utils.bool_from_string(dns_support):
+            nova_client = create_nova_client(self.context)
+            dns_client = create_dns_client(self.context)
 
             def get_server():
                 c_id = self.db_info.compute_instance_id
@@ -260,6 +260,9 @@ class FreshInstanceTasks(FreshInstance):
             LOG.info("Creating dns entry...")
             dns_client.create_instance_entry(self.id,
                                              get_ip_address(server.addresses))
+        else:
+            LOG.debug("%s: DNS not enabled for instance: %s" %
+                      (greenthread.getcurrent(), self.id))
 
 
 class BuiltInstanceTasks(BuiltInstance):
