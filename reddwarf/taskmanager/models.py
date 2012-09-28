@@ -338,12 +338,12 @@ class BuiltInstanceTasks(BuiltInstance):
                       new_memory_size):
         self._resize_flavor(new_flavor_id, old_memory_size,
                             new_memory_size)
-        
+
     def migrate(self):
         self._resize_flavor()
 
     def _resize_flavor(self, new_flavor_id=None, old_memory_size=None,
-                      new_memory_size=None):
+                       new_memory_size=None):
         def resize_status_msg():
             return "instance_id=%s, status=%s, flavor_id=%s, "\
                    "dest. flavor id=%s)" % (self.db_info.id,
@@ -385,14 +385,14 @@ class BuiltInstanceTasks(BuiltInstance):
                 if new_flavor_id:
                     if (str(self.server.flavor['id']) != str(new_flavor_id) or
                             self.server.status != "VERIFY_RESIZE"):
-                        msg = "Assertion failed! flavor_id=%s and not %s"
-                        actual_flavor = self.server.flavor['id']
-                        expected_flavor = new_flavor_id
-                        raise ReddwarfError(msg % (actual_flavor, expected_flavor))
+                        msg = "Assertion failed! flavor_id=%s and not %s" \
+                              % (self.server.flavor['id'], new_flavor_id)
+                        raise ReddwarfError(msg)
                 else:
                     if (self.server.status != "VERIFY_RESIZE"):
-                        msg = "Migration failed! status=%s and not %s"
-                        raise ReddwarfError(msg % (self.server.status, 'VERIFY_RESIZE'))
+                        msg = "Migration failed! status=%s and not %s" \
+                              % (self.server.status, 'VERIFY_RESIZE')
+                        raise ReddwarfError(msg)
 
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
