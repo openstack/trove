@@ -45,8 +45,11 @@ class InstanceView(object):
         self.instance = instance
 
     def data(self):
+        server_host = None
+        if self.instance.server is not None:
+            server_host = self.instance.server.host
         return {'id': self.instance.id,
                 'status': self.instance.status,
                 'name': self.instance.name,
-                'host': self.instance.server.host,
+                'host': server_host,
                 }
