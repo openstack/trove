@@ -3,13 +3,10 @@ eventlet
 kombu==1.5.1
 routes
 WebOb
-mox
 PasteDeploy
 paste
 sqlalchemy-migrate
 netaddr
-sphinx
-webtest
 factory_boy
 httplib2
 lxml
