@@ -34,10 +34,12 @@ class ReddwarfContext(context.RequestContext):
     """
 
     def __init__(self, **kwargs):
-        self.limit = kwargs['limit']
-        self.marker = kwargs['marker']
-        del kwargs['limit']
-        del kwargs['marker']
+        self.limit = kwargs.get('limit')
+        if 'limit' in kwargs:
+            del kwargs['limit']
+        self.marker = kwargs.get('marker')
+        if 'marker' in kwargs:
+            del kwargs['marker']
         super(ReddwarfContext, self).__init__(**kwargs)
 
     def to_dict(self):
