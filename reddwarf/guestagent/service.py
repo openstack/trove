@@ -20,7 +20,6 @@ import routes
 import webob.exc
 
 from reddwarf.common import wsgi
-from reddwarf import rpc
 
 LOG = logging.getLogger(__name__)
 
