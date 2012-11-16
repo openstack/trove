@@ -35,7 +35,7 @@ class API(ManagerAPI):
     """API for interacting with the task manager."""
 
     def _fake_cast(self, method_name, **kwargs):
-        import eventlet
+        from reddwarf.tests.fakes.common import get_event_spawer
         from reddwarf.taskmanager.manager import TaskManager
         instance = TaskManager()
         method = getattr(instance, method_name)
@@ -49,7 +49,7 @@ class API(ManagerAPI):
                 logging.error((traceback.format_exception(type_, value, tb)))
                 raise type_, value, tb
 
-        eventlet.spawn_after(0, func)
+        get_event_spawer()(0, func)
 
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""

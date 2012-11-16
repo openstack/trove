@@ -15,13 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import eventlet
 import logging
 from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
-import eventlet
 import uuid
 from reddwarf.tests.fakes.common import authorize
-from reddwarf.tests.fakes.common import EventSimulator
+from reddwarf.tests.fakes.common import get_event_spawer
 from reddwarf.common.utils import poll_until
 from reddwarf.common.exception import PollTimeOut
 
@@ -100,7 +100,7 @@ class FakeServer(object):
         self.name = name
         self.image_id = image_id
         self.flavor_ref = flavor_ref
-        self.events = EventSimulator()
+        self.event_spawn = get_event_spawer()
         self.schedule_status("BUILD", 0.0)
         self.volumes = volumes
         # This is used by "RdServers". Its easier to compute the
@@ -127,9 +127,11 @@ class FakeServer(object):
     def reboot(self):
         LOG.debug("Rebooting server %s" % (self.id))
         self._current_status = "REBOOT"
-        eventlet.sleep(1)
-        self._current_status = "ACTIVE"
-        self.parent.schedule_simulate_running_server(self.id, 1.5)
+
+        def set_to_active():
+            self._current_status = "ACTIVE"
+            self.parent.schedule_simulate_running_server(self.id, 1.5)
+        self.event_spawn(1, set_to_active)
 
     def delete(self):
         self.schedule_status = []
@@ -169,15 +171,15 @@ class FakeServer(object):
             else:
                 flavor = self.parent.flavors.get(new_flavor_id)
                 self.flavor_ref = flavor.links[0]['href']
-                self.events.add_event(1, set_to_confirm_mode)
+                self.event_spawn(1, set_to_confirm_mode)
 
-        self.events.add_event(1, set_flavor)
+        self.event_spawn(1, set_flavor)
 
     def schedule_status(self, new_status, time_from_now):
         """Makes a new status take effect at the given time."""
         def set_status():
             self._current_status = new_status
-        self.events.add_event(time_from_now, set_status)
+        self.event_spawn(time_from_now, set_status)
 
     @property
     def status(self):
@@ -211,7 +213,7 @@ class FakeServers(object):
         self.context = context
         self.db = FAKE_SERVERS_DB
         self.flavors = flavors
-        self.events = EventSimulator()
+        self.event_spawn = get_event_spawer()
 
     def can_see(self, id):
         """Can this FakeServers, with its context, see some resource?"""
@@ -286,7 +288,7 @@ class FakeServers(object):
         def delete_server():
             LOG.info("Simulated event ended, deleting server %s." % id)
             del self.db[id]
-        self.events.add_event(time_from_now, delete_server)
+        self.event_spawn(time_from_now, delete_server)
 
     def schedule_simulate_running_server(self, id, time_from_now):
         def set_server_running():
@@ -298,7 +300,7 @@ class FakeServers(object):
             status = InstanceServiceStatus.find_by(instance_id=instance.id)
             status.status = ServiceStatuses.RUNNING
             status.save()
-        self.events.add_event(time_from_now, set_server_running)
+        self.event_spawn(time_from_now, set_server_running)
 
 
 class FakeRdServer(object):
@@ -356,7 +358,7 @@ class FakeVolume(object):
         self.size = size
         self.display_name = display_name
         self.display_description = display_description
-        self.events = EventSimulator()
+        self.event_spawn = get_event_spawer()
         self._current_status = "BUILD"
         # For some reason we grab this thing from device then call it mount
         # point.
@@ -384,7 +386,7 @@ class FakeVolume(object):
         """Makes a new status take effect at the given time."""
         def set_status():
             self._current_status = new_status
-        self.events.add_event(time_from_now, set_status)
+        self.event_spawn(time_from_now, set_status)
 
     def set_attachment(self, server_id):
         """Fake method we've added to set attachments. Idempotent."""
@@ -417,7 +419,7 @@ class FakeVolumes(object):
     def __init__(self, context):
         self.context = context
         self.db = FAKE_VOLUMES_DB
-        self.events = EventSimulator()
+        self.event_spawn = get_event_spawer()
 
     def can_see(self, id):
         """Can this FakeVolumes, with its context, see some resource?"""
@@ -458,7 +460,7 @@ class FakeVolumes(object):
         def finish_resize():
             volume._current_status = "in-use"
             volume.size = new_size
-        self.events.add_event(1.0, finish_resize)
+        self.event_spawn(1.0, finish_resize)
 
 
 class FakeAccount(object):
@@ -486,7 +488,7 @@ class FakeAccounts(object):
         self.context = context
         self.db = FAKE_SERVERS_DB
         self.servers = servers
-        self.events = EventSimulator()
+        self.event_spawn = get_event_spawer()
 
     def _belongs_to_tenant(self, tenant, id):
         server = self.db[id]
@@ -494,7 +496,6 @@ class FakeAccounts(object):
 
     def get_instances(self, id):
         authorize(self.context)
-
         servers = [v for (k, v) in self.db.items()
                    if self._belongs_to_tenant(id, v.id)]
         return FakeAccount(id, servers)

@@ -59,7 +59,7 @@ class Commands(object):
     def __init__(self, conf):
         self.conf = conf
 
-    def db_sync(self, repo_path=None):
+    def db_sync(self):
         db_api.db_sync(self.conf, repo_path=None)
 
     def db_upgrade(self, version=None, repo_path=None):
@@ -89,7 +89,7 @@ class Commands(object):
         from reddwarf.instance import models
         from reddwarf.db.sqlalchemy import session
         db_api.drop_db(self.conf)
-        self.db_sync(repo_path)
+        self.db_sync()
         # Sets up database engine, so the next line will work...
         session.configure_db(self.conf)
         models.ServiceImage.create(service_name=service_name,

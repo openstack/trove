@@ -14,3 +14,4 @@ covhtml/
 host-syslog.log
 tags
 .tox
+rdtest.log
