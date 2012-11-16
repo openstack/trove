@@ -405,12 +405,10 @@ class BuiltInstanceTasks(BuiltInstance):
                 LOG.debug("Updating instance %s to flavor_id %s."
                           % (self.id, new_flavor_id))
                 self.update_db(flavor_id=new_flavor_id)
-            except PollTimeOut as pto:
-                LOG.error("Timeout trying to resize the flavor for instance "
-                          " %s" % self.db_info.id)
             except Exception as ex:
                 new_memory_size = old_memory_size
-                LOG.error("Error during resize compute! Aborting action.")
+                new_flavor_id = None
+                LOG.error("Error resizing instance %s." % self.db_info.id)
                 LOG.error(ex)
             finally:
                 # Tell the guest to restart MySQL with the new RAM size.

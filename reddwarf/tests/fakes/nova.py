@@ -23,6 +23,7 @@ import uuid
 from reddwarf.tests.fakes.common import authorize
 from reddwarf.tests.fakes.common import EventSimulator
 from reddwarf.common.utils import poll_until
+from reddwarf.common.exception import PollTimeOut
 
 LOG = logging.getLogger(__name__)
 
@@ -156,14 +157,19 @@ class FakeServer(object):
 
     def resize(self, new_flavor_id):
         self._current_status = "RESIZE"
+        if self.name.endswith("_RESIZE_TIMEOUT"):
+            raise PollTimeOut()
 
         def set_to_confirm_mode():
             self._current_status = "VERIFY_RESIZE"
 
         def set_flavor():
-            flavor = self.parent.flavors.get(new_flavor_id)
-            self.flavor_ref = flavor.links[0]['href']
-            self.events.add_event(1, set_to_confirm_mode)
+            if self.name.endswith("_RESIZE_ERROR"):
+                self._current_status = "ACTIVE"
+            else:
+                flavor = self.parent.flavors.get(new_flavor_id)
+                self.flavor_ref = flavor.links[0]['href']
+                self.events.add_event(1, set_to_confirm_mode)
 
         self.events.add_event(1, set_flavor)
 
