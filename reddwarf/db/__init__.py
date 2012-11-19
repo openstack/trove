@@ -21,9 +21,12 @@ from reddwarf.common import utils
 from reddwarf.common import config
 
 
-db_api = utils.import_object(
-    config.Config.get("db_api_implementation",
-                      "reddwarf.db.sqlalchemy.api"))
+db_api_opt = config.Config.get("db_api_implementation",
+                               "reddwarf.db.sqlalchemy.api")
+
+
+def get_db_api():
+    return utils.import_object(db_api_opt)
 
 
 class Query(object):
@@ -38,25 +41,29 @@ class Query(object):
         self._query_func = query_func
         self._model = model
         self._conditions = conditions
+        self.db_api = get_db_api()
 
     def all(self):
-        return db_api.list(self._query_func, self._model, **self._conditions)
+        return self.db_api.list(self._query_func, self._model,
+                                **self._conditions)
 
     def count(self):
-        return db_api.count(self._query_func, self._model, **self._conditions)
+        return self.db_api.count(self._query_func, self._model,
+                                 **self._conditions)
 
     def __iter__(self):
         return iter(self.all())
 
     def update(self, **values):
-        db_api.update_all(self._query_func, self._model, self._conditions,
-                          values)
+        self.db_api.update_all(self._query_func, self._model, self._conditions,
+                               values)
 
     def delete(self):
-        db_api.delete_all(self._query_func, self._model, **self._conditions)
+        self.db_api.delete_all(self._query_func, self._model,
+                               **self._conditions)
 
     def limit(self, limit=200, marker=None, marker_column=None):
-        return db_api.find_all_by_limit(
+        return self.db_api.find_all_by_limit(
             self._query_func,
             self._model,
             self._conditions,
@@ -75,7 +82,7 @@ class Queryable(object):
 
     def __getattr__(self, item):
         return lambda model, **conditions: Query(
-            model, query_func=getattr(db_api, item), **conditions)
+            model, query_func=getattr(get_db_api(), item), **conditions)
 
 db_query = Queryable()
 

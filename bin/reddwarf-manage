@@ -36,7 +36,7 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import utils
-from reddwarf.db import db_api
+from reddwarf.db import get_db_api
 from reddwarf.instance import models as instance_models
 
 
@@ -57,24 +57,25 @@ def create_options(parser):
 class Commands(object):
 
     def __init__(self, conf):
+        self.db_api = get_db_api()
         self.conf = conf
 
     def db_sync(self):
-        db_api.db_sync(self.conf, repo_path=None)
+        self.db_api.db_sync(self.conf, repo_path=None)
 
     def db_upgrade(self, version=None, repo_path=None):
-        db_api.db_upgrade(self.conf, version, repo_path=None)
+        self.db_api.db_upgrade(self.conf, version, repo_path=None)
 
     def db_downgrade(self, version, repo_path=None):
-        db_api.db_downgrade(self.conf, version, repo_path=None)
+        self.db_api.db_downgrade(self.conf, version, repo_path=None)
 
     def execute(self, command_name, *args):
         if self.has(command_name):
             return getattr(self, command_name)(*args)
 
     def image_update(self, service_name, image_id):
-        db_api.configure_db(self.conf)
-        image = db_api.find_by(instance_models.ServiceImage,
+        self.db_api.configure_db(self.conf)
+        image = self.db_api.find_by(instance_models.ServiceImage,
                                service_name=service_name)
         if image is None:
             # Create a new one
@@ -82,13 +83,13 @@ class Commands(object):
             image.id = utils.generate_uuid()
             image.service_name = service_name
         image.image_id = image_id
-        db_api.save(image)
+        self.db_api.save(image)
 
     def db_wipe(self, repo_path, service_name, image_id):
         """Drops the database and recreates it."""
         from reddwarf.instance import models
         from reddwarf.db.sqlalchemy import session
-        db_api.drop_db(self.conf)
+        self.db_api.drop_db(self.conf)
         self.db_sync()
         # Sets up database engine, so the next line will work...
         session.configure_db(self.conf)

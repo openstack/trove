@@ -14,7 +14,8 @@
 
 import logging
 
-from reddwarf import db
+from reddwarf.db import get_db_api
+from reddwarf.db import db_query
 from reddwarf.common import exception
 from reddwarf.common import models
 from reddwarf.common import pagination
@@ -36,19 +37,23 @@ class DatabaseModelBase(models.ModelBase):
             raise exception.InvalidModelError(errors=instance.errors)
         return instance
 
+    @property
+    def db_api(self):
+        return get_db_api()
+
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
         self['updated'] = utils.utcnow()
         LOG.debug(_("Saving %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return db.db_api.save(self)
+        return self.db_api.save(self)
 
     def delete(self):
         self['updated'] = utils.utcnow()
         LOG.debug(_("Deleting %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return db.db_api.delete(self)
+        return self.db_api.delete(self)
 
     def __init__(self, **kwargs):
         self.merge_attributes(kwargs)
@@ -70,11 +75,11 @@ class DatabaseModelBase(models.ModelBase):
 
     @classmethod
     def get_by(cls, **kwargs):
-        return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
+        return get_db_api().find_by(cls, **cls._process_conditions(kwargs))
 
     @classmethod
     def find_all(cls, **kwargs):
-        return db.db_query.find_all(cls, **cls._process_conditions(kwargs))
+        return db_query.find_all(cls, **cls._process_conditions(kwargs))
 
     @classmethod
     def _process_conditions(cls, raw_conditions):
