@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Arguments: Use --pid_file to specify a pid file location.
-tox -e py26
+
+
+if [ ! -d ".tox/py26" ]; then
+    tox -epy26
+fi
 
 function run() {
     .tox/py26/bin/python $@

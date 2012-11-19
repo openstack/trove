@@ -1,0 +1,119 @@
+# Copyright 2012 OpenStack LLC.
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+"""
+Extra tests to create an instance, shut down MySQL, and delete it.
+"""
+
+from proboscis.decorators import time_out
+from proboscis import after_class
+from proboscis import before_class
+from proboscis import test
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
+from proboscis.asserts import assert_is
+from proboscis.asserts import assert_is_not
+from proboscis.asserts import assert_is_none
+from proboscis.asserts import assert_not_equal
+from proboscis.asserts import assert_raises
+from proboscis.asserts import assert_true
+from proboscis.asserts import Check
+from proboscis.asserts import fail
+import time
+
+from datetime import datetime
+from reddwarfclient import exceptions
+from reddwarf.tests import util
+from reddwarf.tests.util import create_client
+from reddwarf.tests.util import poll_until
+from reddwarf.tests.util import test_config
+
+
+@test(groups=["dbaas.api.instances.down"])
+class TestBase(object):
+
+    @before_class
+    def set_up(self):
+        self.client = create_client(is_admin=False)
+        self.mgmt_client = create_client(is_admin=True)
+        flavor_name = test_config.values.get('instance_flavor_name', 'm1.tiny')
+        flavors = self.client.find_flavors_by_name(flavor_name)
+        self.flavor_id = flavors[0].id
+        self.name = "TEST_" + str(datetime.now())
+        # Get the resize to flavor.
+        flavor2_name = test_config.values.get('instance_bigger_flavor_name',
+                                              'm1.small')
+        flavors2 = self.client.find_flavors_by_name(flavor2_name)
+        self.new_flavor_id = flavors2[0].id
+        assert_not_equal(self.flavor_id, self.new_flavor_id)
+
+    def _wait_for_active(self):
+        poll_until(lambda: self.client.instances.get(self.id),
+                   lambda instance: instance.status == "ACTIVE",
+                   time_out=(60 * 8))
+
+    def _wait_for_new_volume_size(self, new_size):
+        poll_until(lambda: self.client.instances.get(self.id),
+                   lambda instance: instance.volume['size'] == new_size,
+                   time_out=(60 * 8))
+
+    @test
+    def create_instance(self):
+        initial = self.client.instances.create(self.name, self.flavor_id,
+                                               {'size': 1}, [], [])
+        self.id = initial.id
+        self._wait_for_active()
+
+    @test(depends_on=[create_instance])
+    def put_into_shutdown_state(self):
+        instance = self.client.instances.get(self.id)
+        self.mgmt_client.management.stop(self.id)
+
+    @test(depends_on=[put_into_shutdown_state])
+    @time_out(60 * 5)
+    def resize_instance_in_shutdown_state(self):
+        self.client.instances.resize_instance(self.id, self.new_flavor_id)
+        self._wait_for_active()
+
+    @test(depends_on=[create_instance],
+          runs_after=[resize_instance_in_shutdown_state])
+    def put_into_shutdown_state_2(self):
+        instance = self.client.instances.get(self.id)
+        self.mgmt_client.management.stop(self.id)
+
+    @test(depends_on=[put_into_shutdown_state_2])
+    @time_out(60 * 5)
+    def resize_volume_in_shutdown_state(self):
+        self.client.instances.resize_volume(self.id, 2)
+        self._wait_for_new_volume_size(2)
+
+    @test(depends_on=[create_instance],
+          runs_after=[resize_volume_in_shutdown_state])
+    def put_into_shutdown_state_3(self):
+        instance = self.client.instances.get(self.id)
+        self.mgmt_client.management.stop(self.id)
+
+    @test(depends_on=[create_instance],
+          runs_after=[put_into_shutdown_state_3])
+    @time_out(2 * 60)
+    def delete_instances(self):
+        instance = self.client.instances.get(self.id)
+        instance.delete()
+        while True:
+            try:
+                instance = self.client.instances.get(self.id)
+                assert_equal("SHUTDOWN", instance.status)
+            except exceptions.NotFound:
+                break
+            time.sleep(0.25)

@@ -18,7 +18,7 @@
 import logging
 import time
 
-from reddwarf.tests.fakes.common import EventSimulator
+from reddwarf.tests.fakes.common import get_event_spawer
 
 DB = {}
 LOG = logging.getLogger(__name__)
@@ -32,6 +32,7 @@ class FakeGuest(object):
         self.dbs = {}
         self.root_was_enabled = False
         self.version = 1
+        self.event_spawn = get_event_spawer()
 
     def get_hwinfo(self):
         return {'mem_total': 524288, 'num_cpus': 1}
@@ -122,7 +123,7 @@ class FakeGuest(object):
             status.status = ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
-        EventSimulator.add_event(1.0, update_db)
+        self.event_spawn(1.0, update_db)
 
     def restart(self):
         from reddwarf.instance.models import InstanceServiceStatus

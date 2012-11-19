@@ -2,6 +2,8 @@
 
 remote_implementation = fake
 
+log_file = rdtest.log
+
 # Show more verbose log output (sets INFO log level output)
 verbose = True
 
@@ -34,7 +36,7 @@ sql_connection = sqlite:///reddwarf_test.sqlite
 sql_idle_timeout = 3600
 
 #DB Api Implementation
-db_api_implementation = "reddwarf.db.sqlalchemy.api"
+db_api_implementation = reddwarf.db.sqlalchemy.api
 
 # Path to the extensions
 api_extensions_path = reddwarf/extensions

@@ -18,9 +18,12 @@
 """Common code to help in faking the models."""
 
 import time
-import stubout
 
 from novaclient import exceptions as nova_exceptions
+from reddwarf.common import config
+
+
+CONFIG = config.Config
 
 
 def authorize(context):
@@ -28,19 +31,55 @@ def authorize(context):
         raise nova_exceptions.Forbidden(403, "Forbidden")
 
 
-class EventSimulator(object):
-    """Simulates a resource that changes over time.
+def get_event_spawer():
+    if CONFIG.get('fake_mode_events') == "simulated":
+        return event_simulator
+    else:
+        return eventlet_spawner
 
-    Has a list of events which execute in real time to change state.
-    The implementation is very dumb; if you give it two events at once the
-    last one wins.
 
-    """
+pending_events = []
+sleep_entrance_count = 0
 
-    @staticmethod
-    def add_event(time_from_now_in_seconds, func):
-        if time_from_now_in_seconds <= 0:
-            func()
-        else:
-            import eventlet
-            eventlet.spawn_after(time_from_now_in_seconds, func)
+
+def eventlet_spawner(time_from_now_in_seconds, func):
+    """Uses eventlet to spawn events."""
+    if time_from_now_in_seconds <= 0:
+        func()
+    else:
+        import eventlet
+        eventlet.spawn_after(time_from_now_in_seconds, func)
+
+
+def event_simulator(time_from_now_in_seconds, func):
+    """Fakes events without doing any actual waiting."""
+    pending_events.append({"time": time_from_now_in_seconds, "func": func})
+
+
+def event_simulator_sleep(time_to_sleep):
+    """Simulates waiting for an event."""
+    global sleep_entrance_count
+    sleep_entrance_count += 1
+    time_to_sleep = float(time_to_sleep)
+    global pending_events
+    while time_to_sleep > 0:
+        itr_sleep = 0.5
+        for i in range(len(pending_events)):
+            event = pending_events[i]
+            event["time"] = event["time"] - itr_sleep
+            if event["func"] is not None and event["time"] < 0:
+                # Call event, but first delete it so this function can be
+                # reentrant.
+                func = event["func"]
+                event["func"] = None
+                try:
+                    func()
+                except Exception:
+                    pass  # Ignore exceptions, which can potentially occur.
+
+        time_to_sleep -= itr_sleep
+    sleep_entrance_count -= 1
+    if sleep_entrance_count < 1:
+        # Clear out old events
+        pending_events = [event for event in pending_events
+                          if event["func"] is not None]

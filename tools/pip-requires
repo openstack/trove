@@ -1,11 +1,11 @@
-SQLAlchemy
+SQLAlchemy>=0.7.8,<=0.7.9
 eventlet
 kombu==1.5.1
 routes
 WebOb
 PasteDeploy
 paste
-sqlalchemy-migrate
+sqlalchemy-migrate>=0.7.2
 netaddr
 factory_boy
 httplib2
