@@ -288,6 +288,11 @@ def load_instance_with_guest(cls, context, id):
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.info("service status=%s" % service_status)
     instance = cls(context, db_info, service_status)
+    load_guest_info(instance, context, id)
+    return instance
+
+
+def load_guest_info(instance, context, id):
     if instance.status not in AGENT_INVALID_STATUSES:
         guest = create_guest_client(context, id)
         try:

@@ -79,6 +79,10 @@ class MgmtInstanceDetailView(MgmtInstanceView):
             result['instance']['root_enabled_by'] = self.root_history.user
         if self.instance.volume:
             volume = self.instance.volume
+            if self.instance.volume_used:
+                used = self._to_gb(self.instance.volume_used)
+            else:
+                used = None
             result['instance']['volume'] = {
                 "attachments": volume.attachments,
                 "availability_zone": volume.availability_zone,
@@ -86,6 +90,7 @@ class MgmtInstanceDetailView(MgmtInstanceView):
                 "id": volume.id,
                 "size": volume.size,
                 "status": volume.status,
+                "used": used,
             }
         else:
             result['instance']['volume'] = None

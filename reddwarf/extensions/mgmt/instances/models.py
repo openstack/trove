@@ -92,6 +92,7 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
     def __init__(self, *args, **kwargs):
         super(DetailedMgmtInstance, self).__init__(*args, **kwargs)
         self.volume = None
+        self.volume_used = None
         self.root_history = None
 
     @classmethod
@@ -102,6 +103,8 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
             instance.volume = client.volumes.get(instance.volume_id)
         except Exception as ex:
             instance.volume = None
+        # Populate the volume_used attribute from the guest agent.
+        instance_models.load_guest_info(instance, context, id)
         instance.root_history = mysql_models.RootHistory.load(context=context,
                                                               instance_id=id)
         return instance
