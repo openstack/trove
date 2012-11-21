@@ -61,6 +61,7 @@ def volume_check(volume):
     with CollectionCheck("volume", volume) as check:
         check.has_element("id", basestring)
         check.has_element("size", int)
+        check.has_element("used", float)
 
 
 @test(depends_on_groups=[GROUP_START], groups=[GROUP, GROUP_TEST])
