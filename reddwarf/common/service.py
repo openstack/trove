@@ -99,7 +99,7 @@ class Service(object):
             version = '1.0'
 
         if version != self.manager.RPC_API_VERSION:
-            raise UnsupportedRpcVersion(version=version)
+            raise rpc.common.UnsupportedRpcVersion(version=version)
 
         return self.manager.wrapper(method, ctxt, **kwargs)
 

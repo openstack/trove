@@ -42,6 +42,7 @@ GUEST_SERVICES = {'mysql': 'reddwarf.guestagent.dbaas.DBaaSAgent'}
 class GuestManager(service.Manager):
 
     """Manages the tasks within a Guest VM."""
+    RPC_API_VERSION = "1.0"
 
     def __init__(self, guest_drivers=None, *args, **kwargs):
         service_type = CONFIG.get('service_type')
