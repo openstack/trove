@@ -21,11 +21,10 @@ Model classes that extend the instances functionality for MySQL instances.
 
 import logging
 
-from reddwarf import db
-
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
+from reddwarf.db import get_db_api
 from reddwarf.instance import models as base_models
 from reddwarf.guestagent.db import models as guest_models
 from reddwarf.common.remote import create_guest_client
@@ -121,11 +120,11 @@ class RootHistory(object):
     def save(self):
         LOG.debug(_("Saving %s: %s") % (self.__class__.__name__,
                                         self.__dict__))
-        return db.db_api.save(self)
+        return get_db_api().save(self)
 
     @classmethod
     def load(cls, context, instance_id):
-        history = db.db_api.find_by(cls, id=instance_id)
+        history = get_db_api().find_by(cls, id=instance_id)
         return history
 
     @classmethod

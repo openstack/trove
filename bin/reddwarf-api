@@ -36,7 +36,7 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import wsgi
-from reddwarf.db import db_api
+from reddwarf.db import get_db_api
 
 
 def create_options(parser):
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     try:
         config.Config.load_paste_config('reddwarf', options, args)
         conf, app = config.Config.load_paste_app('reddwarf', options, args)
-        db_api.configure_db(conf)
+        get_db_api().configure_db(conf)
         server = wsgi.Server()
         server.start(app, int(options.get('port') or conf['bind_port']),
             conf['bind_host'])

@@ -151,7 +151,8 @@ def import_class(import_str):
         __import__(mod_str)
         return getattr(sys.modules[mod_str], class_str)
     except (ImportError, ValueError, AttributeError):
-        raise exception.NotFound('Class %s cannot be found' % class_str)
+        raise exception.NotFound('Class from %s import %s cannot be found'
+                                 % (mod_str, class_str))
 
 
 def import_object(import_str):
@@ -159,8 +160,11 @@ def import_object(import_str):
     try:
         __import__(import_str)
         return sys.modules[import_str]
-    except ImportError:
-        return import_class(import_str)
+    except ImportError as ie:
+        try:
+            return import_class(import_str)
+        except exception.NotFound:
+            raise ie
 
 
 def isotime(at=None):

@@ -30,11 +30,12 @@ def add_support_for_localization():
 def initialize_reddwarf(config_file):
     # The test version of poll_until doesn't utilize LoopingCall.
     import optparse
-    from reddwarf.db import db_api
+    from reddwarf.db import get_db_api
     from reddwarf.common import config as rd_config
     from reddwarf.common import wsgi
     from reddwarf import version
 
+    db_api = get_db_api()
 
     def create_options(parser):
         parser.add_option('-p', '--port', dest="port", metavar="PORT",
@@ -62,9 +63,10 @@ def initialize_reddwarf(config_file):
 
 
 def initialize_database(rd_conf):
-    from reddwarf.db import db_api
+    from reddwarf.db import get_db_api
     from reddwarf.instance import models
     from reddwarf.db.sqlalchemy import session
+    db_api = get_db_api()
     db_api.drop_db(rd_conf)  # Destroys the database, if it exists.
     db_api.db_sync(rd_conf)
     session.configure_db(rd_conf)

@@ -40,7 +40,7 @@ from reddwarf import version
 from reddwarf.common import config
 from reddwarf.common import service
 # TODO(hub-cap): find out why the db api isint being imported properly
-from reddwarf.db import db_api
+from reddwarf.db import get_db_api
 
 
 if __name__ == '__main__':
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         # that is injected into the VM
         config.Config.append_to_config_values('reddwarf-guestagent',
             {'config_file': '/etc/guest_info'}, None)
-        db_api.configure_db(conf)
+        get_db_api().configure_db(conf)
         server = service.Service.create(binary='reddwarf-guestagent',
                                         host=config.Config.get('guest_id'))
         service.serve(server)
