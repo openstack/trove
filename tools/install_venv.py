@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
@@ -102,10 +103,10 @@ def install_dependencies(venv=VENV):
     print 'Installing dependencies with pip (this can take a while)...'
     # Install greenlet by hand - just listing it in the requires file does not
     # get it in stalled in the right order
-    run_command(['tools/with_venv.sh', 'pip', 'install', '-E', venv,
+    run_command(['tools/with_venv.sh', '-E', venv, 'pip', 'install',
                  'greenlet'], redirect_output=False)
     for requires in (PIP_REQUIRES, TEST_REQUIRES):
-        run_command(['tools/with_venv.sh', 'pip', 'install', '-E', venv, '-r',
+        run_command(['tools/with_venv.sh', '-E', venv, 'pip', 'install', '-r',
                      requires], redirect_output=False)
 
     # Tell the virtual env how to "import reddwarf"
