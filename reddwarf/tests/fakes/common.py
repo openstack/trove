@@ -44,11 +44,8 @@ sleep_entrance_count = 0
 
 def eventlet_spawner(time_from_now_in_seconds, func):
     """Uses eventlet to spawn events."""
-    if time_from_now_in_seconds <= 0:
-        func()
-    else:
-        import eventlet
-        eventlet.spawn_after(time_from_now_in_seconds, func)
+    import eventlet
+    eventlet.spawn_after(time_from_now_in_seconds, func)
 
 
 def event_simulator(time_from_now_in_seconds, func):
