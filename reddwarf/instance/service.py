@@ -267,6 +267,9 @@ class InstanceController(wsgi.Controller):
         try:
             body['instance']
             body['instance']['flavorRef']
+            name = body['instance'].get('name', '').strip()
+            if not name:
+                raise exception.MissingKey(key='name')
             vol_enabled = utils.bool_from_string(
                 config.Config.get('reddwarf_volume_support', 'True'))
             must_have_vol = utils.bool_from_string(

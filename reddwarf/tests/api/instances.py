@@ -331,6 +331,30 @@ class CreateInstance(unittest.TestCase):
                           volume, databases)
             assert_equal(400, dbaas.last_http_code)
 
+    def test_create_failure_with_no_name(self):
+        if CONFIG.values['reddwarf_main_instance_has_volume']:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = ""
+        databases = []
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases)
+        assert_equal(400, dbaas.last_http_code)
+
+    def test_create_failure_with_spaces_for_name(self):
+        if CONFIG.values['reddwarf_main_instance_has_volume']:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "      "
+        databases = []
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases)
+        assert_equal(400, dbaas.last_http_code)
+
     def test_mgmt_get_instance_on_create(self):
         if CONFIG.test_mgmt:
             result = dbaas_admin.management.show(instance_info.id)
