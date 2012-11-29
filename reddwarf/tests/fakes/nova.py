@@ -101,7 +101,7 @@ class FakeServer(object):
         self.image_id = image_id
         self.flavor_ref = flavor_ref
         self.event_spawn = get_event_spawer()
-        self.schedule_status("BUILD", 0.0)
+        self._current_status = "BUILD"
         self.volumes = volumes
         # This is used by "RdServers". Its easier to compute the
         # fake value in this class's initializer.
