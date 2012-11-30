@@ -606,7 +606,7 @@ class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
-    MYSQL_PACKAGE_VERSION = "mysql-server-5.1"
+    MYSQL_PACKAGE_VERSION = "mysql-server-5.5"
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """
