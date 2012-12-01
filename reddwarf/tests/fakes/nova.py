@@ -445,6 +445,8 @@ class FakeVolumes(object):
         self.db[id] = volume
         if size == 9:
             volume.schedule_status("error", 2)
+        elif size == 13:
+            raise Exception("No volume for you!")
         else:
             volume.schedule_status("available", 2)
         LOG.info("FAKE_VOLUMES_DB : %s" % FAKE_VOLUMES_DB)

@@ -313,6 +313,8 @@ class StopTests(RebootTestBase):
         Confirms the get call behaves appropriately while an instance is
         down.
         """
+        if not CONFIG.reddwarf_main_instance_has_volume:
+            raise SkipTest("Not testing volumes.")
         instance = self.dbaas.instances.get(self.instance_id)
         with TypeCheck("instance", instance) as check:
             check.has_field("volume", dict)
@@ -322,8 +324,7 @@ class StopTests(RebootTestBase):
             check.true(isinstance(instance.volume.get('used', None), float))
 
     @test(depends_on=[test_set_up],
-          runs_after=[test_instance_get_shows_volume_info_while_mysql_is_down],
-          groups=['donut'])
+          runs_after=[test_instance_get_shows_volume_info_while_mysql_is_down])
     def test_successful_restart_when_in_shutdown_state(self):
         """Restart MySQL via the REST API successfully when MySQL is down."""
         self.successful_restart()
@@ -486,7 +487,8 @@ def resize_should_not_delete_users():
 
 
 @test(depends_on_classes=[ResizeInstanceTest], depends_on=[create_user],
-      groups=[GROUP, tests.INSTANCES])
+      groups=[GROUP, tests.INSTANCES],
+      enabled=CONFIG.reddwarf_main_instance_has_volume)
 class ResizeInstanceVolume(object):
     """ Resize the volume of the instance """
 

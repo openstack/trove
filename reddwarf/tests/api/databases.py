@@ -39,6 +39,29 @@ FAKE = test_config.values['fake_mode']
 
 
 @test(depends_on_groups=[GROUP_START],
+      groups=[tests.INSTANCES, "dbaas.guest.mysql"],
+      enabled=not test_config.values['fake_mode'])
+class TestMysqlAccess(object):
+    """
+        Make sure that MySQL server was secured.
+    """
+
+    @time_out(60 * 2)
+    @test
+    def test_mysql_admin(self):
+        """Ensure we aren't allowed access with os_admin and wrong password."""
+        assert_mysql_connection_fails("os_admin", "asdfd-asdf234",
+                                      instance_info.get_address())
+
+    @test
+    def test_mysql_root(self):
+        """Ensure we aren't allowed access with root and wrong password."""
+        assert_mysql_connection_fails("root", "dsfgnear",
+                                      instance_info.get_address())
+
+
+@test(depends_on_groups=[GROUP_START],
+      depends_on_classes=[TestMysqlAccess],
       groups=[tests.DBAAS_API, GROUP, tests.INSTANCES])
 class TestDatabases(object):
     """

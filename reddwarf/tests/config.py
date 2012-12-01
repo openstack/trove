@@ -78,6 +78,7 @@ class TestConfig(object):
             "in_proc_server": True,
             "report_directory": os.environ.get("REPORT_DIRECTORY", None),
             "sleep_mode": "simulated",
+            "simulate_events": False,
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

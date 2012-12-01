@@ -35,13 +35,13 @@ from reddwarf.tests.api.instances import GROUP_START
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests import util
 from reddwarf.tests.util import test_config
-
+from reddwarf.tests.api.databases import TestMysqlAccess
 
 GROUP = "dbaas.api.users"
 FAKE = test_config.values['fake_mode']
 
 
-@test(depends_on_groups=[GROUP_START],
+@test(depends_on_classes=[TestMysqlAccess],
       groups=[tests.DBAAS_API, GROUP, tests.INSTANCES],
       runs_after=[TestDatabases])
 class TestUsers(object):

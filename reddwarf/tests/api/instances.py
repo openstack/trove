@@ -97,10 +97,7 @@ class InstanceTestInfo(object):
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
         addresses = result.server['addresses']
-        if "infranet" in addresses:
-            address = addresses['infranet'][0]
-        else:
-            address = addresses['private'][0]
+        address = addresses[test_config.visible_address_group][0]
         return address['addr']
 
     def get_local_id(self):
@@ -445,7 +442,7 @@ class WaitForGuestInstallationToFinish(object):
         Wait until the Guest is finished installing.  It takes quite a while...
     """
 
-    @test(groups=['lemon'])
+    @test
     @time_out(60 * 16)
     def test_instance_created(self):
         # This version just checks the REST API status.
@@ -715,7 +712,7 @@ class CheckDiagnosticsAfterTests(object):
 class DeleteInstance(object):
     """ Delete the created instance """
 
-    @time_out(3)
+    @time_out(3 * 60)
     @test(runs_after_groups=[GROUP_START, GROUP_TEST, tests.INSTANCES])
     def test_delete(self):
         if do_not_delete_instance():

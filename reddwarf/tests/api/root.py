@@ -34,6 +34,7 @@ from reddwarf.tests.api.instances import GROUP_START
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests import util
 from reddwarf.tests.util import test_config
+from reddwarf.tests.api.databases import TestMysqlAccess
 
 
 GROUP = "dbaas.api.root"
@@ -45,7 +46,7 @@ def log_in_as_root(root_password):
     return con
 
 
-@test(depends_on_groups=[GROUP_START],
+@test(depends_on_classes=[TestMysqlAccess],
       runs_after=[TestUsers],
       groups=[tests.DBAAS_API, GROUP, tests.INSTANCES])
 class TestRoot(object):

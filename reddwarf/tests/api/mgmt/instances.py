@@ -95,7 +95,7 @@ def mgmt_instance_get():
         instance.has_field('tenant_id', basestring)
         instance.has_field('updated', basestring)
         # Can be None if no volume is given on this instance.
-        if CONFIG.values['reddwarf_main_instance_has_volume']:
+        if CONFIG.reddwarf_main_instance_has_volume:
             instance.has_field('volume', dict, volume_check)
         else:
             instance.has_field('volume', None)
@@ -110,13 +110,14 @@ def mgmt_instance_get():
         server.has_element("name", basestring)
         server.has_element("status", basestring)
         server.has_element("tenant_id", basestring)
-    with CollectionCheck("volume", api_instance.volume) as volume:
-        volume.has_element("attachments", list)
-        volume.has_element("availability_zone", basestring)
-        volume.has_element("created_at", (basestring, None))
-        volume.has_element("id", basestring)
-        volume.has_element("size", int)
-        volume.has_element("status", basestring)
+    if CONFIG.reddwarf_main_instance_has_volume:
+        with CollectionCheck("volume", api_instance.volume) as volume:
+            volume.has_element("attachments", list)
+            volume.has_element("availability_zone", basestring)
+            volume.has_element("created_at", (basestring, None))
+            volume.has_element("id", basestring)
+            volume.has_element("size", int)
+            volume.has_element("status", basestring)
 
 
 @test(groups=["fake." + GROUP])
@@ -130,8 +131,11 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
         self.client = create_client(is_admin=True)
         self.mgmt = self.client.management
         # Fake nova will fail a server ending with 'test_SERVER_ERROR'."
+        # Fake volume will fail if the size is 13.
+        # TODO(tim.simpson): This would be a lot nicer looking if we used a
+        #                    traditional mock framework.
         response = self.client.instances.create('test_SERVER_ERROR', 1,
-                                                {'size': 1}, [])
+                                                {'size': 13}, [])
         poll_until(lambda: self.client.instances.get(response.id),
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)

@@ -26,15 +26,13 @@
 .. moduleauthor:: Tim Simpson <tim.simpson@rackspace.com>
 """
 
-# This emulates the old way we did things, which was to load the config
-# as a module.
-# TODO(tim.simpson): Change all references from "test_config" to CONFIG.
-from reddwarf.tests.config import CONFIG as test_config
-
 import re
 import subprocess
 import sys
 import time
+
+from reddwarf.tests.config import CONFIG as test_config
+
 
 try:
     from eventlet import event
@@ -57,9 +55,10 @@ from proboscis.asserts import ASSERTION_ERROR
 from proboscis import SkipTest
 from reddwarfclient import Dbaas
 from reddwarfclient.client import ReddwarfHTTPClient
-from reddwarf.tests.util import test_config
+from reddwarf.tests.util import test_config as CONFIG
 from reddwarf.tests.util.client import TestClient as TestClient
 from reddwarf.tests.util.users import Requirements
+from reddwarf.common.exception import PollTimeOut
 
 
 WHITE_BOX = test_config.white_box
@@ -179,7 +178,7 @@ def create_nova_client(user, service_type=None):
         service_type = test_config.nova_client['nova_service_type']
     openstack = Client(user.auth_user, user.auth_key,
                        user.tenant, test_config.nova_client['auth_url'],
-                       service_type=service_type)
+                       service_type=service_type, no_cache=True)
     openstack.authenticate()
     return TestClient(openstack)
 
@@ -196,31 +195,30 @@ def string_in_list(str, substr_list):
     return any([str.find(x) >= 0 for x in substr_list])
 
 
-class PollTimeOut(RuntimeError):
-    message = _("Polling request timed out.")
+if CONFIG.simulate_events:
+    # Without event let, this just calls time.sleep.
+    def poll_until(retriever, condition=lambda value: value,
+                   sleep_time=1, time_out=None):
+        """Retrieves object until it passes condition, then returns it.
 
+        If time_out_limit is passed in, PollTimeOut will be raised once that
+        amount of time is eclipsed.
 
-# Without event let, this just calls time.sleep.
-def poll_until(retriever, condition=lambda value: value,
-               sleep_time=1, time_out=None):
-    """Retrieves object until it passes condition, then returns it.
+        """
+        start_time = time.time()
 
-    If time_out_limit is passed in, PollTimeOut will be raised once that
-    amount of time is eclipsed.
+        def check_timeout():
+            if time_out is not None and time.time() > start_time + time_out:
+                raise PollTimeOut
 
-    """
-    start_time = time.time()
-
-    def check_timeout():
-        if time_out is not None and time.time() > start_time + time_out:
-            raise PollTimeOut
-
-    while True:
-        obj = retriever()
-        if condition(obj):
-            return
-        check_timeout()
-        time.sleep(sleep_time)
+        while True:
+            obj = retriever()
+            if condition(obj):
+                return
+            check_timeout()
+            time.sleep(sleep_time)
+else:
+    from reddwarf.common.utils import poll_until
 
 
 class LocalSqlClient(object):

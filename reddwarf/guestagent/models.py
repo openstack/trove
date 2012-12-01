@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from datetime import timedelta
 
-from reddwarf import db
+from reddwarf.db import get_db_api
 from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
@@ -55,7 +55,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
         self['updated_at'] = utils.utcnow()
         LOG.debug(_("Saving %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return db.db_api.save(self)
+        return get_db_api().save(self)
 
     @staticmethod
     def is_active(agent):
