@@ -19,7 +19,7 @@ Exception related utilities.
 """
 
 import contextlib
-import logging
+from reddwarf.openstack.common import log as logging
 import sys
 import traceback
 

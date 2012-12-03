@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
+from reddwarf.openstack.common import log as logging
 import time
 
 from reddwarf.tests.fakes.common import get_event_spawer

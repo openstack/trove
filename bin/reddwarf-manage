@@ -17,6 +17,7 @@
 #    under the License.
 
 import gettext
+import inspect
 import optparse
 import os
 import sys
@@ -34,47 +35,41 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
 from reddwarf import version
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.db import get_db_api
+from reddwarf.openstack.common import log as logging
 from reddwarf.instance import models as instance_models
 
 
-def create_options(parser):
-    """Sets up the CLI and config-file options.
-
-    :param parser: The option parser
-    :returns: None
-    """
-    parser.add_option('-p', '--port', dest="port", metavar="PORT",
-        type=int, default=9898,
-        help="Port the Reddwarf API host listens on. "
-             "Default: %default")
-    config.add_common_options(parser)
-    config.add_log_options(parser)
+CONF = cfg.CONF
 
 
 class Commands(object):
 
-    def __init__(self, conf):
+    def __init__(self):
         self.db_api = get_db_api()
-        self.conf = conf
 
-    def db_sync(self):
-        self.db_api.db_sync(self.conf, repo_path=None)
+    def db_sync(self, repo_path=None):
+        self.db_api.db_sync(CONF, repo_path=repo_path)
 
     def db_upgrade(self, version=None, repo_path=None):
-        self.db_api.db_upgrade(self.conf, version, repo_path=None)
+        self.db_api.db_upgrade(CONF, version, repo_path=None)
 
     def db_downgrade(self, version, repo_path=None):
-        self.db_api.db_downgrade(self.conf, version, repo_path=None)
+        self.db_api.db_downgrade(CONF, version, repo_path=None)
 
-    def execute(self, command_name, *args):
-        if self.has(command_name):
-            return getattr(self, command_name)(*args)
+    def execute(self):
+        exec_method = getattr(self, CONF.action.name)
+        args = inspect.getargspec(exec_method)
+        args.args.remove('self')
+        kwargs = {}
+        for arg in args.args:
+            kwargs[arg] = getattr(CONF.action, arg)
+        exec_method(**kwargs)
 
     def image_update(self, service_name, image_id):
-        self.db_api.configure_db(self.conf)
+        self.db_api.configure_db(CONF)
         image = self.db_api.find_by(instance_models.ServiceImage,
                                service_name=service_name)
         if image is None:
@@ -89,63 +84,47 @@ class Commands(object):
         """Drops the database and recreates it."""
         from reddwarf.instance import models
         from reddwarf.db.sqlalchemy import session
-        self.db_api.drop_db(self.conf)
+        self.db_api.drop_db(CONF)
         self.db_sync()
         # Sets up database engine, so the next line will work...
-        session.configure_db(self.conf)
+        session.configure_db(CONF)
         models.ServiceImage.create(service_name=service_name,
                                    image_id=image_id)
-
-    _commands = ['db_sync', 'db_upgrade', 'db_downgrade', 'db_wipe',
-                 'image_update']
-
-    @classmethod
-    def has(cls, command_name):
-        return (command_name in cls._commands)
-
-    @classmethod
-    def all(cls):
-        return cls._commands
 
     def params_of(self, command_name):
         if Commands.has(command_name):
             return utils.MethodInspector(getattr(self, command_name))
 
 
-def usage():
-    usage = """
-%prog action [args] [options]
-
-Available actions:
-
-    """
-    for action in Commands.all():
-        usage = usage + ("\t%s\n" % action)
-    return usage.strip()
-
-
 if __name__ == '__main__':
-    oparser = optparse.OptionParser(version="%%prog %s"
-    % version.version_string(),
-        usage=usage())
-    create_options(oparser)
-    (options, args) = config.parse_options(oparser)
 
-    if len(args) < 1 or not Commands.has(args[0]):
-        oparser.print_usage()
-        sys.exit(2)
+    def actions(subparser):
+        parser = subparser.add_parser('db_sync')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('db_upgrade')
+        parser.add_argument('--version')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('db_downgrade')
+        parser.add_argument('version')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('image_update')
+        parser.add_argument('service_name')
+        parser.add_argument('image_id')
+        parser = subparser.add_parser('db_wipe')
+        parser.add_argument('repo_path')
+        parser.add_argument('service_name')
+        parser.add_argument('image_id')
+
+    cfg.custom_parser('action', actions)
+    cfg.parse_args(sys.argv)
 
     try:
-        conf = config.Config.load_paste_config('reddwarf', options, args)
-        config.setup_logging(options, conf)
-
-        command_name = args.pop(0)
-        Commands(conf).execute(command_name, *args)
+        logging.setup(None)
+        
+        Commands().execute()
         sys.exit(0)
-    except TypeError:
-        print _("Possible wrong number of arguments supplied")
-        command_params = Commands(conf).params_of(command_name)
-        print "Usage: reddwarf-manage %s" % command_params
+    except TypeError as e:
+        print _("Possible wrong number of arguments supplied %s" % e)
         sys.exit(2)
     except Exception:
         print _("Command failed, please check log for more info")

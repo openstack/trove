@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
+from reddwarf.openstack.common import log as logging
 
 from reddwarf.common.remote import create_nova_client
 from reddwarf.instance.models import DBInstance

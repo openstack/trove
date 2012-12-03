@@ -18,21 +18,14 @@
 #    under the License.
 
 import copy
-import logging
 import sys
 import traceback
 
-#from reddwarf.openstack.common import cfg
-#TODO(tim.simpson): Doing this as we aren't yet using the real cfg module.
-from reddwarf.common.config import OsCommonModule
-cfg = OsCommonModule()
-
-
-#TODO(tim.simpson): Import the true version of Mr. Underscore.
-#from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import importutils
 from reddwarf.openstack.common import jsonutils
 from reddwarf.openstack.common import local
+from reddwarf.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)
@@ -48,7 +41,7 @@ class RPCException(Exception):
             try:
                 message = self.message % kwargs
 
-            except Exception as e:
+            except Exception:
                 # kwargs doesn't match a variable in the message
                 # log the issue and the kwargs
                 LOG.exception(_('Exception in string format operation'))
@@ -114,7 +107,7 @@ class Connection(object):
         """
         raise NotImplementedError()
 
-    def create_consumer(self, conf, topic, proxy, fanout=False):
+    def create_consumer(self, topic, proxy, fanout=False):
         """Create a consumer on this connection.
 
         A consumer is associated with a message queue on the backend message
@@ -123,7 +116,6 @@ class Connection(object):
         off of the queue will determine which method gets called on the proxy
         object.
 
-        :param conf:  An openstack.common.cfg configuration object.
         :param topic: This is a name associated with what to consume from.
                       Multiple instances of a service may consume from the same
                       topic. For example, all instances of nova-compute consume
@@ -139,7 +131,7 @@ class Connection(object):
         """
         raise NotImplementedError()
 
-    def create_worker(self, conf, topic, proxy, pool_name):
+    def create_worker(self, topic, proxy, pool_name):
         """Create a worker on this connection.
 
         A worker is like a regular consumer of messages directed to a
@@ -149,7 +141,6 @@ class Connection(object):
         be asked to process it. Load is distributed across the members
         of the pool in round-robin fashion.
 
-        :param conf:  An openstack.common.cfg configuration object.
         :param topic: This is a name associated with what to consume from.
                       Multiple instances of a service may consume from the same
                       topic.
@@ -205,7 +196,7 @@ def _safe_log(log_func, msg, msg_data):
     return log_func(msg, msg_data)
 
 
-def serialize_remote_exception(failure_info):
+def serialize_remote_exception(failure_info, log_failure=True):
     """Prepares exception data to be sent over rpc.
 
     Failure_info should be a sys.exc_info() tuple.
@@ -213,8 +204,9 @@ def serialize_remote_exception(failure_info):
     """
     tb = traceback.format_exception(*failure_info)
     failure = failure_info[1]
-    LOG.error(_("Returning exception %s to caller"), unicode(failure))
-    LOG.error(tb)
+    if log_failure:
+        LOG.error(_("Returning exception %s to caller"), unicode(failure))
+        LOG.error(tb)
 
     kwargs = {}
     if hasattr(failure, 'kwargs'):
@@ -268,7 +260,7 @@ def deserialize_remote_exception(conf, data):
         # we cannot necessarily change an exception message so we must override
         # the __str__ method.
         failure.__class__ = new_ex_type
-    except TypeError as e:
+    except TypeError:
         # NOTE(ameade): If a core exception then just add the traceback to the
         # first exception argument.
         failure.args = (message,) + failure.args[1:]
@@ -319,3 +311,36 @@ class CommonRpcContext(object):
             context.values['read_deleted'] = read_deleted
 
         return context
+
+
+class ClientException(Exception):
+    """This encapsulates some actual exception that is expected to be
+    hit by an RPC proxy object. Merely instantiating it records the
+    current exception information, which will be passed back to the
+    RPC client without exceptional logging."""
+    def __init__(self):
+        self._exc_info = sys.exc_info()
+
+
+def catch_client_exception(exceptions, func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+    except Exception, e:
+        if type(e) in exceptions:
+            raise ClientException()
+        else:
+            raise
+
+
+def client_exceptions(*exceptions):
+    """Decorator for manager methods that raise expected exceptions.
+    Marking a Manager method with this decorator allows the declaration
+    of expected exceptions that the RPC layer should not consider fatal,
+    and not log as if they were generated in a real error scenario. Note
+    that this will cause listed exceptions to be wrapped in a
+    ClientException, which is used internally by the RPC layer."""
+    def outer(func):
+        def inner(*args, **kwargs):
+            return catch_client_exception(exceptions, func, *args, **kwargs)
+        return inner
+    return outer

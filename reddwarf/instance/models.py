@@ -18,12 +18,11 @@
 """Model classes that form the core of instances functionality."""
 
 import eventlet
-import logging
 import netaddr
 
 from datetime import datetime
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.common.remote import create_dns_client
@@ -35,12 +34,14 @@ from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.guestagent import models as agent_models
 from reddwarf.taskmanager import api as task_api
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
 from eventlet import greenthread
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -412,8 +413,8 @@ class Instance(BuiltInstance):
             instance_id=db_info.id,
             status=ServiceStatuses.NEW)
 
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
-        if utils.bool_from_string(dns_support):
+        dns_support = CONF.reddwarf_dns_support
+        if dns_support:
             dns_client = create_dns_client(context)
             hostname = dns_client.determine_hostname(db_info.id)
             db_info.hostname = hostname
@@ -523,7 +524,7 @@ def create_server_list_matcher(server_list):
 
 class Instances(object):
 
-    DEFAULT_LIMIT = int(config.Config.get('instances_page_size', '20'))
+    DEFAULT_LIMIT = CONF.instances_page_size
 
     @staticmethod
     def load(context):

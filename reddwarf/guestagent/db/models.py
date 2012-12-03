@@ -18,7 +18,9 @@
 import re
 import string
 
-from reddwarf.common import config
+from reddwarf.common import cfg
+
+CONF = cfg.CONF
 
 
 class Base(object):
@@ -32,7 +34,7 @@ class Base(object):
 class MySQLDatabase(Base):
     """Represents a Database and its properties"""
 
-    _ignore_dbs = config.Config.get_list("ignore_dbs", [])
+    _ignore_dbs = CONF.ignore_dbs
 
     # Defaults
     __charset__ = "utf8"
@@ -343,7 +345,7 @@ class MySQLUser(Base):
     """Represents a MySQL User and its associated properties"""
 
     not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
-    _ignore_users = config.Config.get_list("ignore_users", [])
+    _ignore_users = CONF.ignore_users
 
     def __init__(self):
         self._name = None

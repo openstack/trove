@@ -12,15 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-
 from reddwarf.db import get_db_api
 from reddwarf.db import db_query
 from reddwarf.common import exception
 from reddwarf.common import models
 from reddwarf.common import pagination
 from reddwarf.common import utils
-
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

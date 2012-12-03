@@ -12,13 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-
 from eventlet import greenthread
 from datetime import datetime
 import traceback
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import remote
 from reddwarf.common import utils
 from reddwarf.common.exception import GuestError
@@ -42,12 +40,13 @@ from reddwarf.instance.models import InstanceServiceStatus
 from reddwarf.instance.models import ServiceStatuses
 from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.instance.views import get_ip_address
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
 LOG = logging.getLogger(__name__)
-
-use_nova_server_volume = config.Config.get_bool('use_nova_server_volume',
-                                                default=False)
+CONF = cfg.CONF
+use_nova_server_volume = CONF.use_nova_server_volume
 
 
 class FreshInstanceTasks(FreshInstance):
@@ -85,8 +84,9 @@ class FreshInstanceTasks(FreshInstance):
         server = None
         try:
             nova_client = create_nova_client(self.context)
-            files = {"/etc/guest_info": "--guest_id=%s\n--service_type=%s\n" %
-                                        (self.id, service_type)}
+            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
+                                         "%s\n--service_type=%s\n" %
+                                         (self.id, service_type))}
             name = self.hostname or self.name
             volume_desc = ("mysql volume for %s" % self.id)
             volume_name = ("mysql-%s" % self.id)
@@ -110,8 +110,8 @@ class FreshInstanceTasks(FreshInstance):
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
             self._log_and_raise(e, msg, err)
 
-        device_path = config.Config.get('device_path', '/dev/vdb')
-        mount_point = config.Config.get('mount_point', '/var/lib/mysql')
+        device_path = CONF.device_path
+        mount_point = CONF.mount_point
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
 
         return server, volume_info
@@ -152,10 +152,10 @@ class FreshInstanceTasks(FreshInstance):
         LOG.info("Entering create_volume")
         LOG.debug(_("Starting to create the volume for the instance"))
 
-        volume_support = config.Config.get("reddwarf_volume_support", 'False')
+        volume_support = CONF.reddwarf_volume_support
         LOG.debug(_("reddwarf volume support = %s") % volume_support)
         if (volume_size is None or
-                utils.bool_from_string(volume_support) is False):
+                volume_support is False):
             volume_info = {
                 'block_device': None,
                 'device_path': None,
@@ -188,15 +188,15 @@ class FreshInstanceTasks(FreshInstance):
         # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
         # setting the delete_on_terminate instance to true=1
         mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
-        bdm = config.Config.get('block_device_mapping', 'vdb')
+        bdm = CONF.block_device_mapping
         block_device = {bdm: mapping}
         volumes = [{'id': v_ref.id,
                     'size': v_ref.size}]
         LOG.debug("block_device = %s" % block_device)
         LOG.debug("volume = %s" % volumes)
 
-        device_path = config.Config.get('device_path', '/dev/vdb')
-        mount_point = config.Config.get('mount_point', '/var/lib/mysql')
+        device_path = CONF.device_path
+        mount_point = CONF.mount_point
         LOG.debug(_("device_path = %s") % device_path)
         LOG.debug(_("mount_point = %s") % mount_point)
 
@@ -209,8 +209,9 @@ class FreshInstanceTasks(FreshInstance):
     def _create_server(self, flavor_id, image_id,
                        service_type, block_device_mapping):
         nova_client = create_nova_client(self.context)
-        files = {"/etc/guest_info": "guest_id=%s\nservice_type=%s\n" %
-                                    (self.id, service_type)}
+        files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
+                                     "service_type=%s\n" %
+                                     (self.id, service_type))}
         name = self.hostname or self.name
         bdmap = block_device_mapping
         server = nova_client.servers.create(name, image_id, flavor_id,
@@ -230,10 +231,10 @@ class FreshInstanceTasks(FreshInstance):
     def _create_dns_entry(self):
         LOG.debug("%s: Creating dns entry for instance: %s" %
                   (greenthread.getcurrent(), self.id))
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
+        dns_support = CONF.reddwarf_dns_support
         LOG.debug(_("reddwarf dns support = %s") % dns_support)
 
-        if utils.bool_from_string(dns_support):
+        if dns_support:
             nova_client = create_nova_client(self.context)
             dns_client = create_dns_client(self.context)
 
@@ -286,9 +287,9 @@ class BuiltInstanceTasks(BuiltInstance):
                       % self.server.id)
             LOG.error(ex)
         try:
-            dns_support = config.Config.get("reddwarf_dns_support", 'False')
+            dns_support = CONF.reddwarf_dns_support
             LOG.debug(_("reddwarf dns support = %s") % dns_support)
-            if utils.bool_from_string(dns_support):
+            if dns_support:
                 dns_api = create_dns_client(self.context)
                 dns_api.delete_instance_entry(instance_id=self.db_info.id)
         except Exception as ex:
@@ -310,7 +311,7 @@ class BuiltInstanceTasks(BuiltInstance):
                 return True
 
         poll_until(server_is_finished, sleep_time=2,
-                   time_out=int(config.Config.get('server_delete_time_out')))
+                   time_out=CONF.server_delete_time_out)
 
     def resize_volume(self, new_size):
         LOG.debug("%s: Resizing volume for instance: %s to %r GB"
@@ -321,7 +322,7 @@ class BuiltInstanceTasks(BuiltInstance):
                 lambda: self.volume_client.volumes.get(self.volume_id),
                 lambda volume: volume.status == 'in-use',
                 sleep_time=2,
-                time_out=int(config.Config.get('volume_time_out')))
+                time_out=CONF.volume_time_out)
             volume = self.volume_client.volumes.get(self.volume_id)
             self.update_db(volume_size=volume.size)
             self.nova_client.volumes.rescan_server_volume(self.server,
@@ -331,6 +332,7 @@ class BuiltInstanceTasks(BuiltInstance):
             LOG.error("Timeout trying to rescan or resize the attached volume "
                       "filesystem for volume: %s" % self.volume_id)
         except Exception as e:
+            LOG.error(e)
             LOG.error("Error encountered trying to rescan or resize the "
                       "attached volume filesystem for volume: %s"
                       % self.volume_id)
@@ -430,7 +432,7 @@ class BuiltInstanceTasks(BuiltInstance):
             self.server.reboot()
 
             # Poll nova until instance is active
-            reboot_time_out = int(config.Config.get("reboot_time_out", 60 * 2))
+            reboot_time_out = CONF.reboot_time_out
 
             def update_server_info():
                 self._refresh_compute_server_info()

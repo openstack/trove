@@ -15,7 +15,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import webob.exc
 
 from reddwarf.common import exception
@@ -25,6 +24,8 @@ from reddwarf.extensions.mgmt.host import models
 from reddwarf.extensions.mgmt.host import views
 from reddwarf.extensions.mysql import models as mysql_models
 from reddwarf.instance.service import InstanceController
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

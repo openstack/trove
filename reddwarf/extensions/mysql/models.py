@@ -19,17 +19,17 @@
 Model classes that extend the instances functionality for MySQL instances.
 """
 
-import logging
-
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import utils
-from reddwarf.db import get_db_api
-from reddwarf.instance import models as base_models
-from reddwarf.guestagent.db import models as guest_models
 from reddwarf.common.remote import create_guest_client
+from reddwarf.db import get_db_api
+from reddwarf.guestagent.db import models as guest_models
+from reddwarf.instance import models as base_models
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
-CONFIG = config.Config
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -150,7 +150,7 @@ def load_via_context(cls, context, instance_id):
 
 class Users(object):
 
-    DEFAULT_LIMIT = int(CONFIG.get('users_page_size', '20'))
+    DEFAULT_LIMIT = CONF.users_page_size
 
     @classmethod
     def load(cls, context, instance_id):
@@ -163,7 +163,7 @@ class Users(object):
             marker=marker,
             include_marker=include_marker)
         model_users = []
-        ignore_users = CONFIG.get_list('ignore_users', [])
+        ignore_users = CONF.ignore_users
         for user in user_list:
             mysql_user = guest_models.MySQLUser()
             mysql_user.deserialize(user)
@@ -213,7 +213,7 @@ class Schema(object):
 
 class Schemas(object):
 
-    DEFAULT_LIMIT = int(CONFIG.get('databases_page_size', '20'))
+    DEFAULT_LIMIT = CONF.databases_page_size
 
     @classmethod
     def load(cls, context, instance_id):
@@ -226,7 +226,7 @@ class Schemas(object):
             marker=marker,
             include_marker=include_marker)
         model_schemas = []
-        ignore_dbs = CONFIG.get_list('ignore_dbs', [])
+        ignore_dbs = CONF.ignore_dbs
         for schema in schemas:
             mysql_schema = guest_models.MySQLDatabase()
             mysql_schema.deserialize(schema)

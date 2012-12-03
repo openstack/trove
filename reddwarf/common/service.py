@@ -20,7 +20,6 @@
 import functools
 import inspect
 import os
-import logging
 import socket
 import traceback
 import weakref
@@ -29,12 +28,16 @@ import eventlet
 import greenlet
 from eventlet import greenthread
 
-from reddwarf.common import config
-from reddwarf.openstack.common import rpc
-from reddwarf.common import utils
 from reddwarf import version
+from reddwarf.common import cfg
+from reddwarf.common import utils
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import rpc
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
+
+CONF = cfg.CONF
 
 
 class Launcher(object):
@@ -160,17 +163,17 @@ class Service(object):
 
         """
         if not host:
-            host = config.Config.get('host')
+            host = CONF.host
         if not binary:
             binary = os.path.basename(inspect.stack()[-1][1])
         if not topic:
             topic = binary.rpartition('reddwarf-')[2]
         if not manager:
-            manager = config.Config.get('%s_manager' % topic, None)
+            manager = CONF._get('%s_manager' % topic)
         if not report_interval:
-            report_interval = config.Config.get('report_interval', 10)
+            report_interval = CONF.report_interval
         if not periodic_interval:
-            periodic_interval = config.Config.get('periodic_interval', 60)
+            periodic_interval = CONF.periodic_interval
         service_obj = cls(host, binary, topic, manager, report_interval,
                           periodic_interval)
 

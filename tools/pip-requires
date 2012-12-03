@@ -1,5 +1,6 @@
 SQLAlchemy>=0.7.8,<=0.7.9
 eventlet
+extras
 kombu==1.5.1
 routes
 WebOb

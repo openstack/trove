@@ -15,14 +15,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import webob.exc
 
-from reddwarf.common.auth import admin_context
 from reddwarf.common import exception
 from reddwarf.common import wsgi
+from reddwarf.common.auth import admin_context
 from reddwarf.extensions.mgmt.volume import models
 from reddwarf.extensions.mgmt.volume import views
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

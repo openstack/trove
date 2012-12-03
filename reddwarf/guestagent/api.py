@@ -19,36 +19,40 @@
 Handles all request to the Platform or Guest VM
 """
 
-import logging
-
 from eventlet import Timeout
 
-from reddwarf.openstack.common import rpc
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.guestagent import models as agent_models
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import rpc
+from reddwarf.openstack.common.rpc import proxy
+from reddwarf.openstack.common.gettextutils import _
 
-
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-AGENT_LOW_TIMEOUT = int(config.Config.get('agent_call_low_timeout', 5))
-AGENT_HIGH_TIMEOUT = int(config.Config.get('agent_call_high_timeout', 60))
+AGENT_LOW_TIMEOUT = CONF.agent_call_low_timeout
+AGENT_HIGH_TIMEOUT = CONF.agent_call_high_timeout
+RPC_API_VERSION = "1.0"
 
 
-class API(object):
+class API(proxy.RpcProxy):
     """API for interacting with the guest manager."""
 
     def __init__(self, context, id):
         self.context = context
         self.id = id
+        super(API, self).__init__(self._get_routing_key(),
+                                  RPC_API_VERSION)
 
     def _call(self, method_name, timeout_sec, **kwargs):
         LOG.debug("Calling %s" % method_name)
-
-        timeout = Timeout(timeout_sec)
         try:
-            result = rpc.call(self.context, self._get_routing_key(),
-                              {'method': method_name, 'args': kwargs})
+            result = self.call(self.context,
+                               self.make_msg(method_name, **kwargs),
+                               timeout=timeout_sec)
+
             LOG.debug("Result is %s" % result)
             return result
         except Exception as e:
@@ -59,24 +63,30 @@ class API(object):
                 raise
             else:
                 raise exception.GuestTimeout()
-        finally:
-            timeout.cancel()
 
     def _cast(self, method_name, **kwargs):
+        LOG.debug("Casting %s" % method_name)
         try:
-            rpc.cast(self.context, self._get_routing_key(),
-                     {'method': method_name, 'args': kwargs})
+            self.cast(self.context, self.make_msg(method_name, **kwargs),
+                      topic=kwargs.get('topic'),
+                      version=kwargs.get('version'))
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
 
     def _cast_with_consumer(self, method_name, **kwargs):
         try:
-            rpc.cast_with_consumer(self.context, self._get_routing_key(),
-                                   {'method': method_name, 'args': kwargs})
+            conn = rpc.create_connection(new=True)
+            conn.create_consumer(self._get_routing_key(), None, fanout=False)
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
+        finally:
+            if conn:
+                conn.close()
+
+        # leave the cast call out of the hackity consumer create
+        self._cast(method_name, **kwargs)
 
     def delete_queue(self):
         """Deletes the queue."""
@@ -164,9 +174,8 @@ class API(object):
            as a database container"""
         LOG.debug(_("Sending the call to prepare the Guest"))
         self._cast_with_consumer(
-            "prepare", databases=databases,
-            memory_mb=memory_mb, users=users, device_path=device_path,
-            mount_point=mount_point)
+            "prepare", databases=databases, memory_mb=memory_mb,
+            users=users, device_path=device_path, mount_point=mount_point)
 
     def restart(self):
         """Restart the MySQL server."""

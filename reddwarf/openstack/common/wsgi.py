@@ -23,31 +23,22 @@ import eventlet.wsgi
 
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
-import json
-import logging
-import sys
 import routes
 import routes.middleware
+import sys
 import webob.dec
 import webob.exc
 from xml.dom import minidom
 from xml.parsers import expat
 
 from reddwarf.openstack.common import exception
+from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common import jsonutils
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import service
 
 
-LOG = logging.getLogger('wsgi')
-
-
-class WritableLogger(object):
-    """A thin wrapper that responds to `write` and logs."""
-
-    def __init__(self, logger, level=logging.DEBUG):
-        self.logger = logger
-        self.level = level
-
-    def write(self, msg):
-        self.logger.log(self.level, msg.strip("\n"))
+LOG = logging.getLogger(__name__)
 
 
 def run_server(application, port):
@@ -56,29 +47,54 @@ def run_server(application, port):
     eventlet.wsgi.server(sock, application)
 
 
-class Server(object):
-    """Server class to manage multiple WSGI sockets and applications."""
+class Service(service.Service):
+    """
+    Provides a Service API for wsgi servers.
 
-    def __init__(self, threads=1000):
-        self.pool = eventlet.GreenPool(threads)
+    This gives us the ability to launch wsgi servers with the
+    Launcher classes in service.py.
+    """
 
-    def start(self, application, port, host='0.0.0.0', backlog=128):
-        """Run a WSGI server with the given application."""
-        socket = eventlet.listen((host, port), backlog=backlog)
-        self.pool.spawn_n(self._run, application, socket)
+    def __init__(self, application, port,
+                 host='0.0.0.0', backlog=128, threads=1000):
+        self.application = application
+        self._port = port
+        self._host = host
+        self.backlog = backlog
+        super(Service, self).__init__(threads)
 
-    def wait(self):
-        """Wait until all servers have completed running."""
-        try:
-            self.pool.waitall()
-        except KeyboardInterrupt:
-            pass
+    def start(self):
+        """Start serving this service using the provided server instance.
+
+        :returns: None
+
+        """
+        super(Service, self).start()
+        self._socket = eventlet.listen((self._host, self._port),
+                                       backlog=self.backlog)
+        self.tg.add_thread(self._run, self.application, self._socket)
+
+    @property
+    def host(self):
+        return self._socket.getsockname()[0] if self._socket else self._host
+
+    @property
+    def port(self):
+        return self._socket.getsockname()[1] if self._socket else self._port
+
+    def stop(self):
+        """Stop serving this API.
+
+        :returns: None
+
+        """
+        super(Service, self).stop()
 
     def _run(self, application, socket):
         """Start a WSGI server in a new green thread."""
-        logger = logging.getLogger('eventlet.wsgi.server')
-        eventlet.wsgi.server(socket, application, custom_pool=self.pool,
-                             log=WritableLogger(logger))
+        logger = logging.getLogger('eventlet.wsgi')
+        eventlet.wsgi.server(socket, application, custom_pool=self.tg.pool,
+                             log=logging.WritableLogger(logger))
 
 
 class Middleware(object):
@@ -372,7 +388,7 @@ class JSONDictSerializer(DictSerializer):
                 _dtime = obj - datetime.timedelta(microseconds=obj.microsecond)
                 return _dtime.isoformat()
             return obj
-        return json.dumps(data, default=sanitizer)
+        return jsonutils.dumps(data, default=sanitizer)
 
 
 class XMLDictSerializer(DictSerializer):
@@ -557,9 +573,9 @@ class RequestDeserializer(object):
         """Extract necessary pieces of the request.
 
         :param request: Request object
-        :returns tuple of expected controller action name, dictionary of
-                 keyword arguments to pass to the controller, the expected
-                 content type of the response
+        :returns: tuple of (expected controller action name, dictionary of
+                  keyword arguments to pass to the controller, the expected
+                  content type of the response)
 
         """
         action_args = self.get_action_args(request.environ)
@@ -578,7 +594,7 @@ class RequestDeserializer(object):
     def deserialize_body(self, request, action):
         if not len(request.body) > 0:
             LOG.debug(_("Empty body provided in request"))
-            return self._return_empty_body(action)
+            return {}
 
         try:
             content_type = request.get_content_type()
@@ -588,7 +604,7 @@ class RequestDeserializer(object):
 
         if content_type is None:
             LOG.debug(_("No Content-Type provided in request"))
-            return self._return_empty_body(action)
+            return {}
 
         try:
             deserializer = self.get_body_deserializer(content_type)
@@ -597,12 +613,6 @@ class RequestDeserializer(object):
             raise
 
         return deserializer.deserialize(request.body, action)
-
-    def _return_empty_body(self, action):
-        if action in ["create", "update", "action"]:
-            return {'body': None}
-        else:
-            return {}
 
     def get_body_deserializer(self, content_type):
         try:
@@ -647,7 +657,7 @@ class JSONDeserializer(TextDeserializer):
 
     def _from_json(self, datastring):
         try:
-            return json.loads(datastring)
+            return jsonutils.loads(datastring)
         except ValueError:
             msg = _("cannot understand JSON")
             raise exception.MalformedRequestBody(reason=msg)

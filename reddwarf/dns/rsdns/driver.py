@@ -23,8 +23,8 @@ __version__ = '2.4'
 
 import hashlib
 
-import logging
-from reddwarf.common import config
+from reddwarf.openstack.common import log as logging
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common.exception import NotFound
 from reddwarf.dns.models import DnsRecord
@@ -33,15 +33,17 @@ from rsdns.client.future import RsDnsError
 
 from reddwarf.dns.driver import DnsEntry
 
-DNS_HOSTNAME = config.Config.get("dns_hostname", "")
-DNS_ACCOUNT_ID = config.Config.get("dns_account_id", 0)
-DNS_AUTH_URL = config.Config.get("dns_auth_url", "")
-DNS_DOMAIN_NAME = config.Config.get("dns_domain_name", "")
-DNS_USERNAME = config.Config.get("dns_username", "")
-DNS_PASSKEY = config.Config.get("dns_passkey", "")
-DNS_MANAGEMENT_BASE_URL = config.Config.get("dns_management_base_url", "")
-DNS_TTL = config.Config.get("dns_ttl", 300)
-DNS_DOMAIN_ID = config.Config.get("dns_domain_id", 1)
+CONF = cfg.CONF
+
+DNS_HOSTNAME = CONF.dns_hostname
+DNS_ACCOUNT_ID = CONF.dns_account_id
+DNS_AUTH_URL = CONF.dns_auth_url
+DNS_DOMAIN_NAME = CONF.dns_domain_name
+DNS_USERNAME = CONF.dns_username
+DNS_PASSKEY = CONF.dns_passkey
+DNS_MANAGEMENT_BASE_URL = CONF.dns_management_base_url
+DNS_TTL = CONF.dns_ttl
+DNS_DOMAIN_ID = CONF.dns_domain_id
 
 
 LOG = logging.getLogger(__name__)

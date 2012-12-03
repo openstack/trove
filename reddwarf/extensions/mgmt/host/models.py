@@ -19,11 +19,10 @@
 Model classes that extend the instances functionality for MySQL instances.
 """
 
-import logging
+from reddwarf.openstack.common import log as logging
 
 from reddwarf import db
 
-from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.instance.models import DBInstance
@@ -35,7 +34,6 @@ from reddwarf.common.remote import create_nova_client
 from novaclient import exceptions as nova_exceptions
 
 
-CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 

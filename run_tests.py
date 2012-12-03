@@ -3,12 +3,15 @@ import os
 import urllib
 import sys
 
+from reddwarf.common import cfg
+from reddwarf.openstack.common import log as logging
 from reddwarf.tests.config import CONFIG
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
 import proboscis
 from eventlet import greenthread
 import wsgi_intercept
 
+CONF = cfg.CONF
 
 
 def add_support_for_localization():
@@ -28,51 +31,30 @@ def add_support_for_localization():
 
 
 def initialize_reddwarf(config_file):
-    # The test version of poll_until doesn't utilize LoopingCall.
-    import optparse
-    from reddwarf.db import get_db_api
-    from reddwarf.common import config as rd_config
-    from reddwarf.common import wsgi
-    from reddwarf import version
+    from reddwarf.openstack.common import pastedeploy
 
-    db_api = get_db_api()
-
-    def create_options(parser):
-        parser.add_option('-p', '--port', dest="port", metavar="PORT",
-                          type=int, default=9898,
-                          help="Port the Reddwarf API host listens on. "
-                         "Default: %default")
-        rd_config.add_common_options(parser)
-        rd_config.add_log_options(parser)
-
-    def usage():
-        usage = ""
-
-    oparser = optparse.OptionParser(version="%%prog %s"
-        % version.version_string(),
-        usage=usage())
-    create_options(oparser)
-    (options, args) = rd_config.parse_options(oparser, cli_args=[config_file])
-    rd_config.Config.load_paste_config('reddwarf', options, args)
-    # Modify these values by hand
-    rd_config.Config.instance['fake_mode_events'] = 'simulated'
-    rd_config.Config.instance['log_file'] = 'rdtest.log'
-    conf, app = rd_config.Config.load_paste_app('reddwarf', options, args)
-    rd_config.setup_logging(options, conf)
-    return conf, app
+    cfg.CONF(args=[],
+             project='reddwarf',
+             default_config_files=[config_file])
+    CONF.use_stderr = False
+    CONF.log_file = 'rdtest.log'
+    logging.setup(None)
+    CONF.bind_port = 8779
+    CONF.fake_mode_events = 'simulated'
+    return pastedeploy.paste_deploy_app(config_file, 'reddwarf', {})
 
 
-def initialize_database(rd_conf):
+def initialize_database():
     from reddwarf.db import get_db_api
     from reddwarf.instance import models
     from reddwarf.db.sqlalchemy import session
     db_api = get_db_api()
-    db_api.drop_db(rd_conf)  # Destroys the database, if it exists.
-    db_api.db_sync(rd_conf)
-    session.configure_db(rd_conf)
+    db_api.drop_db(CONF)  # Destroys the database, if it exists.
+    db_api.db_sync(CONF)
+    session.configure_db(CONF)
     # Adds the image for mysql (needed to make most calls work).
     models.ServiceImage.create(service_name="mysql", image_id="fake")
-    db_api.configure_db(rd_conf)
+    db_api.configure_db(CONF)
 
 
 def initialize_fakes(app):
@@ -89,7 +71,9 @@ def initialize_fakes(app):
 
         return call_back
 
-    wsgi_intercept.add_wsgi_intercept('localhost', 8779, wsgi_interceptor)
+    wsgi_intercept.add_wsgi_intercept('localhost',
+                                      CONF.bind_port,
+                                      wsgi_interceptor)
 
     # Finally, engage in some truly evil monkey business. We want
     # to change anything which spawns threads with eventlet to instead simply
@@ -114,14 +98,17 @@ if __name__=="__main__":
     wsgi_install()
     add_support_for_localization()
     replace_poll_until()
-    # Load Reddwarf config file.
-    conf, app = initialize_reddwarf("etc/reddwarf/reddwarf.conf.test")
+    # Load Reddwarf app
+    # Paste file needs absolute path
+    config_file = os.path.realpath('etc/reddwarf/reddwarf.conf.test')
+    # 'etc/reddwarf/test-api-paste.ini'
+    app = initialize_reddwarf(config_file)
     # Initialize sqlite database.
-    initialize_database(conf)
+    initialize_database()
     # Swap out WSGI, httplib, and several sleep functions with test doubles.
     initialize_fakes(app)
     # Initialize the test configuration.
-    CONFIG.load_from_file("etc/tests/localhost.test.conf")
+    CONFIG.load_from_file('etc/tests/localhost.test.conf')
 
     from reddwarf.tests.api import flavors
     from reddwarf.tests.api import versions

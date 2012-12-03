@@ -18,12 +18,16 @@
 """Common code to help in faking the models."""
 
 import time
+import traceback
+import sys
 
 from novaclient import exceptions as nova_exceptions
-from reddwarf.common import config
+from reddwarf.common import cfg
+from reddwarf.openstack.common import log as logging
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 
 
 def authorize(context):
@@ -32,7 +36,7 @@ def authorize(context):
 
 
 def get_event_spawer():
-    if CONFIG.get('fake_mode_events') == "simulated":
+    if CONF.fake_mode_events == "simulated":
         return event_simulator
     else:
         return eventlet_spawner
@@ -61,6 +65,7 @@ def event_simulator_sleep(time_to_sleep):
     global pending_events
     while time_to_sleep > 0:
         itr_sleep = 0.5
+        print pending_events
         for i in range(len(pending_events)):
             event = pending_events[i]
             event["time"] = event["time"] - itr_sleep
@@ -71,7 +76,10 @@ def event_simulator_sleep(time_to_sleep):
                 event["func"] = None
                 try:
                     func()
-                except Exception:
+                except Exception as e:
+                    type_, value, tb = sys.exc_info()
+                    LOG.info("Simulated event error.")
+                    LOG.info((traceback.format_exception(type_, value, tb)))
                     pass  # Ignore exceptions, which can potentially occur.
 
         time_to_sleep -= itr_sleep

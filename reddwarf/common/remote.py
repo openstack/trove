@@ -15,11 +15,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from reddwarf.common import config
+from reddwarf.common import cfg
 from novaclient.v1_1.client import Client
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
 
 
 def create_dns_client(context):
@@ -33,9 +33,8 @@ def create_guest_client(context, id):
 
 
 def create_nova_client(context):
-    COMPUTE_URL = CONFIG.get('nova_compute_url', 'http://localhost:8774/v2')
-    PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
-                                'http://0.0.0.0:5000/v2.0')
+    COMPUTE_URL = CONF.nova_compute_url
+    PROXY_AUTH_URL = CONF.reddwarf_auth_url
     client = Client(context.user, context.auth_tok, project_id=context.tenant,
                     auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_tok
@@ -47,9 +46,8 @@ def create_nova_client(context):
 def create_nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
-    VOLUME_URL = CONFIG.get('nova_volume_url', 'http://localhost:8776/v2')
-    PROXY_AUTH_URL = CONFIG.get('reddwarf_auth_url',
-                                'http://0.0.0.0:5000/v2.0')
+    VOLUME_URL = CONF.nova_volume_url
+    PROXY_AUTH_URL = CONF.reddwarf_auth_url
     client = Client(context.user, context.auth_tok,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_tok
@@ -58,7 +56,7 @@ def create_nova_volume_client(context):
     return client
 
 
-if CONFIG.get("remote_implementation", "real") == "fake":
+if CONF.remote_implementation == "fake":
     # Override the functions above with fakes.
 
     from reddwarf.tests.fakes.nova import fake_create_nova_client

@@ -14,27 +14,32 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""I totally stole most of this from melange, thx guys!!!"""
+"""Wsgi helper utilities for reddwarf"""
 
 import eventlet.wsgi
-import logging
+import os
 import paste.urlmap
 import re
 import traceback
 import webob
 import webob.dec
 import webob.exc
+from paste import deploy
 from xml.dom import minidom
 
 from reddwarf.common import context as rd_context
-from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import utils
+from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common import pastedeploy
+from reddwarf.openstack.common import service
 from reddwarf.openstack.common import wsgi as openstack_wsgi
+from reddwarf.openstack.common import log as logging
+from reddwarf.common import cfg
+
 
 CONTEXT_KEY = 'reddwarf.context'
 Router = openstack_wsgi.Router
-Server = openstack_wsgi.Server
 Debug = openstack_wsgi.Debug
 Middleware = openstack_wsgi.Middleware
 JSONDictSerializer = openstack_wsgi.JSONDictSerializer
@@ -45,6 +50,8 @@ RequestDeserializer = openstack_wsgi.RequestDeserializer
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
 LOG = logging.getLogger('reddwarf.common.wsgi')
+
+CONF = cfg.CONF
 
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
@@ -98,6 +105,28 @@ CUSTOM_SERIALIZER_METADATA = {
 def versioned_urlmap(*args, **kwargs):
     urlmap = paste.urlmap.urlmap_factory(*args, **kwargs)
     return VersionedURLMap(urlmap)
+
+
+def launch(app_name, port, paste_config_file, data={},
+           host='0.0.0.0', backlog=128, threads=1000):
+    """Launches a wsgi server based on the passed in paste_config_file.
+
+      Launch provides a easy way to create a paste app from the config
+      file and launch it via the service launcher. It takes care of
+      all of the plumbing. The only caveat is that the paste_config_file
+      must be a file that paste.deploy can find and handle. There is
+      a helper method in cfg.py that finds files.
+
+      Example:
+        conf_file = CONF.find_file(CONF.api_paste_config)
+        launcher = wsgi.launch('myapp', CONF.bind_port, conf_file)
+        launcher.wait()
+
+    """
+    app = pastedeploy.paste_deploy_app(paste_config_file, app_name, data)
+    server = openstack_wsgi.Service(app, port, host=host,
+                                    backlog=backlog, threads=threads)
+    return service.launch(server)
 
 
 class VersionedURLMap(object):
@@ -303,10 +332,8 @@ class Controller(object):
     }
 
     def __init__(self):
-        self.add_addresses = utils.bool_from_string(
-            config.Config.get('add_addresses', 'False'))
-        self.add_volumes = utils.bool_from_string(
-            config.Config.get('reddwarf_volume_support', 'False'))
+        self.add_addresses = CONF.add_addresses
+        self.add_volumes = CONF.reddwarf_volume_support
 
     def create_resource(self):
         serializer = ReddwarfResponseSerializer(
@@ -505,7 +532,7 @@ class Fault(webob.exc.HTTPException):
 class ContextMiddleware(openstack_wsgi.Middleware):
 
     def __init__(self, application):
-        self.admin_roles = config.Config.get_list('admin_roles', [])
+        self.admin_roles = CONF.admin_roles
         super(ContextMiddleware, self).__init__(application)
 
     def _extract_limits(self, params):

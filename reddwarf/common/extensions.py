@@ -17,9 +17,11 @@
 
 import routes
 import webob.dec
-import logging
+from reddwarf.openstack.common import log as logging
 
 from reddwarf.openstack.common import extensions
+from reddwarf.openstack.common.gettextutils import _
+from reddwarf.common import cfg
 from reddwarf.common import wsgi
 
 LOG = logging.getLogger(__name__)
@@ -27,12 +29,14 @@ LOG = logging.getLogger(__name__)
 ExtensionsDescriptor = extensions.ExtensionDescriptor
 ResourceExtension = extensions.ResourceExtension
 
+CONF = cfg.CONF
+
 
 class ReddwarfExtensionMiddleware(extensions.ExtensionMiddleware):
 
-    def __init__(self, application, config, ext_mgr=None):
+    def __init__(self, application, ext_mgr=None):
         ext_mgr = (ext_mgr or
-                   ExtensionManager(config['api_extensions_path']))
+                   ExtensionManager(CONF.api_extensions_path))
         mapper = routes.Mapper()
 
         # extended resources
@@ -84,7 +88,6 @@ def factory(global_config, **local_config):
     """Paste factory."""
     def _factory(app):
         extensions.DEFAULT_XMLNS = "http://docs.openstack.org/reddwarf"
-        ext_mgr = extensions.ExtensionManager(
-            global_config.get('api_extensions_path', ''))
-        return ReddwarfExtensionMiddleware(app, global_config, ext_mgr)
+        ext_mgr = extensions.ExtensionManager(CONF.api_extensions_path)
+        return ReddwarfExtensionMiddleware(app, ext_mgr)
     return _factory

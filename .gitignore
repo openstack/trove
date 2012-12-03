@@ -15,3 +15,6 @@ host-syslog.log
 tags
 .tox
 rdtest.log
+reddwarf/versioninfo
+AUTHORS
+Changelog

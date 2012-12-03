@@ -33,35 +33,32 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from reddwarf import version
-from reddwarf.common import config
+from reddwarf.common import cfg
+from reddwarf.openstack.common import cfg as openstack_cfg
+from reddwarf.openstack.common import service
+from reddwarf.openstack.common import log as logging
 from reddwarf.common import wsgi
 from reddwarf.db import get_db_api
 
+extra_opts = [
+    openstack_cfg.BoolOpt('fork',
+               short='f',
+               default=False,
+               dest='fork'),
+    openstack_cfg.StrOpt('pid-file',
+               default='.pid'),
+]
 
-def create_options(parser):
-    """Sets up the CLI and config-file options
-
-    :param parser: The option parser
-    :returns: None
-
-    """
-    parser.add_option('-p', '--port', dest="port", metavar="PORT",
-        type=int,
-        help="Port the Reddwarf API host listens on. "
-             "Default: %default")
-    parser.add_option("-f", '--fork', action="store_true", dest="fork")
-    parser.add_option('--pid_file', dest="pid_file", default=".pid")
-    config.add_common_options(parser)
-    config.add_log_options(parser)
+CONF = cfg.CONF
+CONF.register_cli_opts(extra_opts)
 
 
-def run_server(app, port):
+def run_server():
     try:
-        server = wsgi.Server()
-        server.start(app, int(options.get('port') or conf['bind_port']),
-            conf['bind_host'])
-        server.wait()
+        get_db_api().configure_db(CONF)
+        server = wsgi.WSGIService('reddwarf', CONF.bind_port or 8779)
+        launcher = service.launch(server)
+        launcher.wait()
     except RuntimeError as error:
         import traceback
         print traceback.format_exc()
@@ -69,23 +66,18 @@ def run_server(app, port):
 
 
 if __name__ == '__main__':
-    oparser = optparse.OptionParser(version="%%prog %s"
-                                    % version.version_string())
-    create_options(oparser)
-    (options, args) = config.parse_options(oparser)
-    config.Config.load_paste_config('reddwarf', options, args)
-    conf, app = config.Config.load_paste_app('reddwarf', options, args)
-    get_db_api().configure_db(conf)
-    port = int(options.get('port') or conf['bind_port'])
-    if options['fork']:
+    cfg.parse_args(sys.argv)
+    logging.setup(None)
+
+    if CONF.fork:
         pid = os.fork()
         if pid == 0:
-            run_server(app, port)
+            run_server()
         else:
             print("Starting server:%s" % pid)
-            pid_file = options.get('pid_file', '.pid')
+            pid_file = CONF.pid_file
             with open(pid_file, 'w') as f:
                 f.write(str(pid))
     else:
-        run_server(app, port)
+        run_server()
 

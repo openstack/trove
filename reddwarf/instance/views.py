@@ -15,13 +15,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-from reddwarf.common import config
+from reddwarf.openstack.common import log as logging
+from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.common.views import create_links
 from reddwarf.instance import models
 
 LOG = logging.getLogger(__name__)
+
+CONF = cfg.CONF
 
 
 def get_ip_address(addresses):
@@ -91,8 +93,8 @@ class InstanceDetailView(InstanceView):
         result['instance']['created'] = self.instance.created
         result['instance']['updated'] = self.instance.updated
 
-        dns_support = config.Config.get("reddwarf_dns_support", 'False')
-        if utils.bool_from_string(dns_support):
+        dns_support = CONF.reddwarf_dns_support
+        if dns_support:
             result['instance']['hostname'] = self.instance.hostname
 
         if self.add_addresses:

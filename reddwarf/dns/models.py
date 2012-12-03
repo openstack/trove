@@ -19,11 +19,12 @@
 Model classes that map instance Ip to dns record.
 """
 
-import logging
 
 from reddwarf.db import get_db_api
 from reddwarf.common import exception
 from reddwarf.common.models import ModelBase
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

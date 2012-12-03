@@ -17,7 +17,7 @@
 
 """Various conveniences used for migration scripts."""
 
-import logging
+from reddwarf.openstack.common import log as logging
 import sqlalchemy.types
 
 

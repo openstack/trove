@@ -17,7 +17,7 @@
 
 """Model classes that form the core of instances functionality."""
 
-import logging
+from reddwarf.openstack.common import log as logging
 from reddwarf.common import remote
 
 

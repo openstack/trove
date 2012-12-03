@@ -15,11 +15,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import routes
 import webob.exc
 
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import utils
@@ -27,9 +26,11 @@ from reddwarf.common import wsgi
 from reddwarf.extensions.mysql.common import populate_databases
 from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models, views
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -202,7 +203,7 @@ class InstanceController(wsgi.Controller):
         else:
             volume_size = None
 
-        instance_max = int(config.Config.get('max_instances_per_user', 5))
+        instance_max = CONF.max_instances_per_user
         number_instances = models.DBInstance.find_all(tenant_id=tenant_id,
                                                       deleted=False).count()
 
@@ -252,7 +253,7 @@ class InstanceController(wsgi.Controller):
                    "integer value, %s cannot be accepted."
                    % volume_size)
             raise exception.ReddwarfError(msg)
-        max_size = int(config.Config.get('max_accepted_volume_size', 1))
+        max_size = CONF.max_accepted_volume_size
         if int(volume_size) > max_size:
             msg = ("Volume 'size' cannot exceed maximum "
                    "of %d Gb, %s cannot be accepted."
@@ -270,10 +271,8 @@ class InstanceController(wsgi.Controller):
             name = body['instance'].get('name', '').strip()
             if not name:
                 raise exception.MissingKey(key='name')
-            vol_enabled = utils.bool_from_string(
-                config.Config.get('reddwarf_volume_support', 'True'))
-            must_have_vol = utils.bool_from_string(
-                config.Config.get('reddwarf_must_use_volume', 'False'))
+            vol_enabled = CONF.reddwarf_volume_support
+            must_have_vol = CONF.reddwarf_must_use_volume
             if vol_enabled:
                 if body['instance'].get('volume', None):
                     if body['instance']['volume'].get('size', None):

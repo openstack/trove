@@ -19,7 +19,7 @@
 Model classes that extend the instances functionality for volumes.
 """
 
-import logging
+from reddwarf.openstack.common import log as logging
 
 from reddwarf.common.remote import create_nova_volume_client
 

@@ -25,8 +25,6 @@ handles RPC calls relating to Platform specific operations.
 
 """
 
-
-import logging
 import os
 import pexpect
 import re
@@ -43,12 +41,15 @@ from sqlalchemy.sql.expression import text
 from reddwarf import db
 from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import ProcessExecutionError
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
 from reddwarf.guestagent.volume import VolumeDevice
 from reddwarf.guestagent.query import Query
+from reddwarf.guestagent import pkg
 from reddwarf.instance import models as rd_models
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
 ADMIN_USER_NAME = "os_admin"
@@ -66,7 +67,7 @@ TMP_MYCNF = "/tmp/my.cnf.tmp"
 DBAAS_MYCNF = "/etc/dbaas/my.cnf/my.cnf.%dM"
 MYSQL_BASE_DIR = "/var/lib/mysql"
 
-CONFIG = config.Config
+CONF = cfg.CONF
 INCLUDE_MARKER_OPERATORS = {
     True: ">=",
     False: ">"
@@ -229,7 +230,7 @@ class MySqlAppStatus(object):
     @staticmethod
     def _load_status():
         """Loads the status from the database."""
-        id = config.Config.get('guest_id')
+        id = CONF.guest_id
         return rd_models.InstanceServiceStatus.find_by(instance_id=id)
 
     def set_status(self, status):
@@ -497,90 +498,6 @@ class MySqlAdmin(object):
         return users, next_marker
 
 
-class DBaaSAgent(object):
-    """ Database as a Service Agent Controller """
-
-    def __init__(self):
-        self.status = MySqlAppStatus.get()
-
-    def begin_mysql_restart(self):
-        self.restart_mode = True
-
-    def create_database(self, databases):
-        return MySqlAdmin().create_database(databases)
-
-    def create_user(self, users):
-        MySqlAdmin().create_user(users)
-
-    def delete_database(self, database):
-        return MySqlAdmin().delete_database(database)
-
-    def delete_user(self, user):
-        MySqlAdmin().delete_user(user)
-
-    def list_databases(self, limit=None, marker=None, include_marker=False):
-        return MySqlAdmin().list_databases(limit, marker, include_marker)
-
-    def list_users(self, limit=None, marker=None, include_marker=False):
-        return MySqlAdmin().list_users(limit, marker, include_marker)
-
-    def enable_root(self):
-        return MySqlAdmin().enable_root()
-
-    def is_root_enabled(self):
-        return MySqlAdmin().is_root_enabled()
-
-    def prepare(self, databases, memory_mb, users, device_path=None,
-                mount_point=None):
-        """Makes ready DBAAS on a Guest container."""
-        from reddwarf.guestagent.pkg import PkgAgent
-        if not isinstance(self, PkgAgent):
-            raise TypeError("This must also be an instance of Pkg agent.")
-        pkg = self  # Python cast.
-        self.status.begin_mysql_install()
-        # status end_mysql_install set with install_and_secure()
-        app = MySqlApp(self.status)
-        restart_mysql = False
-        if device_path:
-            device = VolumeDevice(device_path)
-            device.format()
-            if app.is_installed(pkg):
-                #stop and do not update database
-                app.stop_mysql()
-                restart_mysql = True
-                #rsync exiting data
-                device.migrate_data(MYSQL_BASE_DIR)
-            #mount the volume
-            device.mount(mount_point)
-            LOG.debug(_("Mounted the volume."))
-            #check mysql was installed and stopped
-            if restart_mysql:
-                app.start_mysql()
-        app.install_and_secure(pkg, memory_mb)
-        LOG.info("Creating initial databases and users following successful "
-                 "prepare.")
-        self.create_database(databases)
-        self.create_user(users)
-        LOG.info('"prepare" call has finished.')
-
-    def restart(self):
-        app = MySqlApp(self.status)
-        app.restart()
-
-    def start_mysql_with_conf_changes(self, updated_memory_size):
-        app = MySqlApp(self.status)
-        pkg = self  # Python cast.
-        app.start_mysql_with_conf_changes(pkg, updated_memory_size)
-
-    def stop_mysql(self):
-        app = MySqlApp(self.status)
-        app.stop_mysql()
-
-    def update_status(self):
-        """Update the status of the MySQL service"""
-        MySqlAppStatus.get().update()
-
-
 class KeepAliveConnection(interfaces.PoolListener):
     """
     A connection pool listener that ensures live connections are returned
@@ -610,8 +527,7 @@ class MySqlApp(object):
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """
-        self.state_change_wait_time = int(config.Config.get(
-            'state_change_wait_time', 2 * 60))
+        self.state_change_wait_time = CONF.state_change_wait_time
         self.status = status
 
     def _create_admin_user(self, client, password):
@@ -639,13 +555,13 @@ class MySqlApp(object):
                            WHERE User='root';""")
         client.execute(t, pwd=generate_random_password())
 
-    def install_and_secure(self, pkg, memory_mb):
+    def install_and_secure(self, memory_mb):
         """Prepare the guest machine with a secure mysql server installation"""
         LOG.info(_("Preparing Guest as MySQL Server"))
 
         #TODO(tim.simpson): Check that MySQL is not already installed.
         self.status.begin_mysql_install()
-        self._install_mysql(pkg)
+        self._install_mysql()
         LOG.info(_("Generating root password..."))
         admin_password = generate_random_password()
 
@@ -658,13 +574,13 @@ class MySqlApp(object):
             self._create_admin_user(client, admin_password)
 
         self.stop_mysql()
-        self._write_mycnf(pkg, memory_mb, admin_password)
+        self._write_mycnf(memory_mb, admin_password)
         self.start_mysql()
 
         self.status.end_install_or_restart()
         LOG.info(_("Dbaas install_and_secure complete."))
 
-    def _install_mysql(self, pkg):
+    def _install_mysql(self):
         """Install mysql server. The current version is 5.1"""
         LOG.debug(_("Installing mysql server"))
         pkg.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
@@ -749,7 +665,7 @@ class MySqlApp(object):
                 if "No such file or directory" not in str(pe):
                     raise
 
-    def _write_mycnf(self, pkg, update_memory_mb, admin_password):
+    def _write_mycnf(self, update_memory_mb, admin_password):
         """
         Install the set of mysql my.cnf templates from dbaas-mycnf package.
         The package generates a template suited for the current
@@ -812,17 +728,17 @@ class MySqlApp(object):
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 
-    def start_mysql_with_conf_changes(self, pkg, updated_memory_mb):
+    def start_mysql_with_conf_changes(self, updated_memory_mb):
         LOG.info(_("Starting mysql with conf changes..."))
         if self.status.is_mysql_running:
             LOG.error(_("Cannot execute start_mysql_with_conf_changes because "
                         "MySQL state == %s!") % self.status)
             raise RuntimeError("MySQL not stopped.")
         LOG.info(_("Initiating config."))
-        self._write_mycnf(pkg, updated_memory_mb, None)
+        self._write_mycnf(updated_memory_mb, None)
         self.start_mysql(True)
 
-    def is_installed(self, pkg):
+    def is_installed(self):
         #(cp16net) could raise an exception, does it need to be handled here?
         version = pkg.pkg_version(self.MYSQL_PACKAGE_VERSION)
         return not version is None

@@ -17,7 +17,6 @@
 
 import functools
 import itertools
-import logging
 import time
 import uuid
 
@@ -29,6 +28,7 @@ import qpid.messaging.exceptions
 from reddwarf.openstack.common import cfg
 from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import jsonutils
+from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.rpc import amqp as rpc_amqp
 from reddwarf.openstack.common.rpc import common as rpc_common
 
@@ -41,6 +41,9 @@ qpid_opts = [
     cfg.StrOpt('qpid_port',
                default='5672',
                help='Qpid broker port'),
+    cfg.ListOpt('qpid_hosts',
+                default=['$qpid_hostname:$qpid_port'],
+                help='Qpid HA cluster host:port pairs'),
     cfg.StrOpt('qpid_username',
                default='',
                help='Username for qpid connection'),
@@ -50,26 +53,8 @@ qpid_opts = [
     cfg.StrOpt('qpid_sasl_mechanisms',
                default='',
                help='Space separated list of SASL mechanisms to use for auth'),
-    cfg.BoolOpt('qpid_reconnect',
-                default=True,
-                help='Automatically reconnect'),
-    cfg.IntOpt('qpid_reconnect_timeout',
-               default=0,
-               help='Reconnection timeout in seconds'),
-    cfg.IntOpt('qpid_reconnect_limit',
-               default=0,
-               help='Max reconnections before giving up'),
-    cfg.IntOpt('qpid_reconnect_interval_min',
-               default=0,
-               help='Minimum seconds between reconnection attempts'),
-    cfg.IntOpt('qpid_reconnect_interval_max',
-               default=0,
-               help='Maximum seconds between reconnection attempts'),
-    cfg.IntOpt('qpid_reconnect_interval',
-               default=0,
-               help='Equivalent to setting max and min to the same value'),
     cfg.IntOpt('qpid_heartbeat',
-               default=5,
+               default=60,
                help='Seconds between connection keepalive heartbeats'),
     cfg.StrOpt('qpid_protocol',
                default='tcp',
@@ -170,7 +155,8 @@ class DirectConsumer(ConsumerBase):
 class TopicConsumer(ConsumerBase):
     """Consumer class for 'topic'"""
 
-    def __init__(self, conf, session, topic, callback, name=None):
+    def __init__(self, conf, session, topic, callback, name=None,
+                 exchange_name=None):
         """Init a 'topic' queue.
 
         :param session: the amqp session to use
@@ -180,9 +166,9 @@ class TopicConsumer(ConsumerBase):
         :param name: optional queue name, defaults to topic
         """
 
+        exchange_name = exchange_name or rpc_amqp.get_control_exchange(conf)
         super(TopicConsumer, self).__init__(session, callback,
-                                            "%s/%s" % (conf.control_exchange,
-                                                       topic),
+                                            "%s/%s" % (exchange_name, topic),
                                             {}, name or topic, {})
 
 
@@ -256,9 +242,9 @@ class TopicPublisher(Publisher):
     def __init__(self, conf, session, topic):
         """init a 'topic' publisher.
         """
-        super(TopicPublisher, self).__init__(
-            session,
-            "%s/%s" % (conf.control_exchange, topic))
+        exchange_name = rpc_amqp.get_control_exchange(conf)
+        super(TopicPublisher, self).__init__(session,
+                                             "%s/%s" % (exchange_name, topic))
 
 
 class FanoutPublisher(Publisher):
@@ -276,10 +262,10 @@ class NotifyPublisher(Publisher):
     def __init__(self, conf, session, topic):
         """init a 'topic' publisher.
         """
-        super(NotifyPublisher, self).__init__(
-            session,
-            "%s/%s" % (conf.control_exchange, topic),
-            {"durable": True})
+        exchange_name = rpc_amqp.get_control_exchange(conf)
+        super(NotifyPublisher, self).__init__(session,
+                                              "%s/%s" % (exchange_name, topic),
+                                              {"durable": True})
 
 
 class Connection(object):
@@ -293,49 +279,41 @@ class Connection(object):
         self.consumer_thread = None
         self.conf = conf
 
-        if server_params is None:
-            server_params = {}
+        if server_params and 'hostname' in server_params:
+            # NOTE(russellb) This enables support for cast_to_server.
+            server_params['qpid_hosts'] = [
+                '%s:%d' % (server_params['hostname'],
+                           server_params.get('port', 5672))
+            ]
 
-        default_params = dict(hostname=self.conf.qpid_hostname,
-                              port=self.conf.qpid_port,
-                              username=self.conf.qpid_username,
-                              password=self.conf.qpid_password)
+        params = {
+            'qpid_hosts': self.conf.qpid_hosts,
+            'username': self.conf.qpid_username,
+            'password': self.conf.qpid_password,
+        }
+        params.update(server_params or {})
 
-        params = server_params
-        for key in default_params.keys():
-            params.setdefault(key, default_params[key])
+        self.brokers = params['qpid_hosts']
+        self.username = params['username']
+        self.password = params['password']
+        self.connection_create(self.brokers[0])
+        self.reconnect()
 
-        self.broker = params['hostname'] + ":" + str(params['port'])
+    def connection_create(self, broker):
         # Create the connection - this does not open the connection
-        self.connection = qpid.messaging.Connection(self.broker)
+        self.connection = qpid.messaging.Connection(broker)
 
         # Check if flags are set and if so set them for the connection
         # before we call open
-        self.connection.username = params['username']
-        self.connection.password = params['password']
+        self.connection.username = self.username
+        self.connection.password = self.password
+
         self.connection.sasl_mechanisms = self.conf.qpid_sasl_mechanisms
-        self.connection.reconnect = self.conf.qpid_reconnect
-        if self.conf.qpid_reconnect_timeout:
-            self.connection.reconnect_timeout = (
-                self.conf.qpid_reconnect_timeout)
-        if self.conf.qpid_reconnect_limit:
-            self.connection.reconnect_limit = self.conf.qpid_reconnect_limit
-        if self.conf.qpid_reconnect_interval_max:
-            self.connection.reconnect_interval_max = (
-                self.conf.qpid_reconnect_interval_max)
-        if self.conf.qpid_reconnect_interval_min:
-            self.connection.reconnect_interval_min = (
-                self.conf.qpid_reconnect_interval_min)
-        if self.conf.qpid_reconnect_interval:
-            self.connection.reconnect_interval = (
-                self.conf.qpid_reconnect_interval)
-        self.connection.hearbeat = self.conf.qpid_heartbeat
+        # Reconnection is done by self.reconnect()
+        self.connection.reconnect = False
+        self.connection.heartbeat = self.conf.qpid_heartbeat
         self.connection.protocol = self.conf.qpid_protocol
         self.connection.tcp_nodelay = self.conf.qpid_tcp_nodelay
-
-        # Open is part of reconnect -
-        # NOTE(WGH) not sure we need this with the reconnect flags
-        self.reconnect()
 
     def _register_consumer(self, consumer):
         self.consumers[str(consumer.get_receiver())] = consumer
@@ -351,23 +329,36 @@ class Connection(object):
             except qpid.messaging.exceptions.ConnectionError:
                 pass
 
+        attempt = 0
+        delay = 1
         while True:
+            broker = self.brokers[attempt % len(self.brokers)]
+            attempt += 1
+
             try:
+                self.connection_create(broker)
                 self.connection.open()
             except qpid.messaging.exceptions.ConnectionError, e:
-                LOG.error(_('Unable to connect to AMQP server: %s'), e)
-                time.sleep(self.conf.qpid_reconnect_interval or 1)
+                msg_dict = dict(e=e, delay=delay)
+                msg = _("Unable to connect to AMQP server: %(e)s. "
+                        "Sleeping %(delay)s seconds") % msg_dict
+                LOG.error(msg)
+                time.sleep(delay)
+                delay = min(2 * delay, 60)
             else:
+                LOG.info(_('Connected to AMQP server on %s'), broker)
                 break
-
-        LOG.info(_('Connected to AMQP server on %s'), self.broker)
 
         self.session = self.connection.session()
 
-        for consumer in self.consumers.itervalues():
-            consumer.reconnect(self.session)
-
         if self.consumers:
+            consumers = self.consumers
+            self.consumers = {}
+
+            for consumer in consumers.itervalues():
+                consumer.reconnect(self.session)
+                self._register_consumer(consumer)
+
             LOG.debug(_("Re-established AMQP queues"))
 
     def ensure(self, error_callback, method, *args, **kwargs):
@@ -464,10 +455,12 @@ class Connection(object):
         """
         self.declare_consumer(DirectConsumer, topic, callback)
 
-    def declare_topic_consumer(self, topic, callback=None, queue_name=None):
+    def declare_topic_consumer(self, topic, callback=None, queue_name=None,
+                               exchange_name=None):
         """Create a 'topic' consumer."""
         self.declare_consumer(functools.partial(TopicConsumer,
                                                 name=queue_name,
+                                                exchange_name=exchange_name,
                                                 ),
                               topic, callback)
 

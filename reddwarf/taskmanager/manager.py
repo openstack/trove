@@ -15,29 +15,27 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import traceback
 
 from eventlet import greenthread
 
 from reddwarf.common import exception
 from reddwarf.common import service
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import periodic_task
+from reddwarf.openstack.common.rpc.common import UnsupportedRpcVersion
+from reddwarf.openstack.common.gettextutils import _
 from reddwarf.taskmanager import models
 from reddwarf.taskmanager.models import BuiltInstanceTasks
 from reddwarf.taskmanager.models import FreshInstanceTasks
-from reddwarf.openstack.common.rpc.common import UnsupportedRpcVersion
+
 
 LOG = logging.getLogger(__name__)
 
+RPC_API_VERSION = "1.0"
 
-class TaskManager(service.Manager):
-    """Task manager impl"""
 
-    RPC_API_VERSION = "1.0"
-
-    def __init__(self, *args, **kwargs):
-        super(TaskManager, self).__init__(*args, **kwargs)
-        LOG.info(_("TaskManager init %s %s") % (args, kwargs))
+class Manager(periodic_task.PeriodicTasks):
 
     def resize_volume(self, context, instance_id, new_size):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

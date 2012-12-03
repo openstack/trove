@@ -12,17 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
+from reddwarf.openstack.common import log as logging
 
 from reddwarf.openstack.common import rpc
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
+# TODO(hub_cap): upgrade this to use rpc.proxy.RpcProxy
 class ManagerAPI(object):
     """Extend this API for interacting with the common methods of managers"""
 
@@ -30,7 +31,7 @@ class ManagerAPI(object):
         self.context = context
 
     def _cast(self, method_name, **kwargs):
-        if CONFIG.get("remote_implementation", "real") == "fake":
+        if CONF.remote_implementation == "fake":
             self._fake_cast(method_name, **kwargs)
         else:
             self._real_cast(method_name, **kwargs)

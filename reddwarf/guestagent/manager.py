@@ -1,119 +1,83 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
-# Copyright (c) 2011 OpenStack, LLC.
-# All Rights Reserved.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
-
-"""
-Handles all processes within the Guest VM, considering it as a Platform
-
-The :py:class:`GuestManager` class is a :py:class:`nova.manager.Manager` that
-handles RPC calls relating to Platform specific operations.
-
-"""
-
-
-import functools
-import logging
-import traceback
-
-from reddwarf.common import config
-from reddwarf.common import exception
-from reddwarf.common import utils
-from reddwarf.common import service
-
+from reddwarf.guestagent import dbaas
+from reddwarf.guestagent import volume
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
-CONFIG = config.Config
-GUEST_SERVICES = {'mysql': 'reddwarf.guestagent.dbaas.DBaaSAgent'}
 
 
-class GuestManager(service.Manager):
+class Manager(periodic_task.PeriodicTasks):
 
-    """Manages the tasks within a Guest VM."""
-    RPC_API_VERSION = "1.0"
+    @periodic_task.periodic_task(ticks_between_runs=10)
+    def update_status(self, context):
+        """Update the status of the MySQL service"""
+        dbaas.MySqlAppStatus.get().update()
 
-    def __init__(self, guest_drivers=None, *args, **kwargs):
-        service_type = CONFIG.get('service_type')
-        try:
-            service_impl = GUEST_SERVICES[service_type]
-        except KeyError as e:
-            LOG.error(_("Could not create guest, no impl for key - %s") %
-                      service_type)
-            raise e
-        LOG.info("Create guest driver %s" % service_impl)
-        self.create_guest_driver(service_impl)
-        super(GuestManager, self).__init__(*args, **kwargs)
+    def create_database(self, context, databases):
+        return dbaas.MySqlAdmin().create_database(databases)
 
-    def create_guest_driver(self, service_impl):
-        guest_drivers = [service_impl,
-                         'reddwarf.guestagent.pkg.PkgAgent']
-        classes = []
-        for guest_driver in guest_drivers:
-            LOG.info(guest_driver)
-            driver = utils.import_class(guest_driver)
-            classes.append(driver)
-        try:
-            cls = type("GuestDriver", tuple(set(classes)), {})
-            self.driver = cls()
-        except TypeError as te:
-            msg = "An issue occurred instantiating the GuestDriver as the " \
-                  "following classes: " + str(classes) + \
-                  " Exception=" + str(te)
-            raise TypeError(msg)
+    def create_user(self, context, users):
+        dbaas.MySqlAdmin().create_user(users)
 
-    def init_host(self):
-        """Method for any service initialization"""
-        pass
+    def delete_database(self, context, database):
+        return dbaas.MySqlAdmin().delete_database(database)
 
-    def periodic_tasks(self, raise_on_error=False):
-        """Method for running any periodic tasks.
+    def delete_user(self, context, user):
+        dbaas.MySqlAdmin().delete_user(user)
 
-           Right now does the status updates"""
-        status_method = "update_status"
-        try:
-            method = getattr(self.driver, status_method)
-        except AttributeError as ae:
-            LOG.error(_("Method %s not found for driver %s"), status_method,
-                      self.driver)
-            if raise_on_error:
-                raise ae
-        try:
-            method()
-        except Exception as e:
-            LOG.error("Got an error during periodic tasks!")
-            LOG.debug(traceback.format_exc())
+    def list_databases(self, context, limit=None, marker=None,
+                       include_marker=False):
+        return dbaas.MySqlAdmin().list_databases(limit, marker,
+                                                 include_marker)
 
-    def upgrade(self, context):
-        """Upgrade the guest agent and restart the agent"""
-        LOG.debug(_("Self upgrade of guest agent issued"))
+    def list_users(self, context, limit=None, marker=None,
+                   include_marker=False):
+        return dbaas.MySqlAdmin().list_users(limit, marker,
+                                             include_marker)
 
-    def __getattr__(self, key):
-        """Converts all method calls and direct it at the driver"""
-        return functools.partial(self._mapper, key)
+    def enable_root(self, context):
+        return dbaas.MySqlAdmin().enable_root()
 
-    def _mapper(self, method, context, *args, **kwargs):
-        """ Tries to call the respective driver method """
-        try:
-            func = getattr(self.driver, method)
-        except AttributeError:
-            LOG.error(_("Method %s not found for driver %s"), method,
-                      self.driver)
-            raise exception.NotFound("Method %s is not available for the "
-                                     "chosen driver.")
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            LOG.error("Got an error running %s!" % method)
-            LOG.debug(traceback.format_exc())
+    def is_root_enabled(self, ontext):
+        return dbaas.MySqlAdmin().is_root_enabled()
+
+    def prepare(self, context, databases, memory_mb, users, device_path=None,
+                mount_point=None):
+        """Makes ready DBAAS on a Guest container."""
+        dbaas.MySqlAppStatus.get().begin_mysql_install()
+        # status end_mysql_install set with install_and_secure()
+        app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
+        restart_mysql = False
+        if device_path:
+            device = volume.VolumeDevice(device_path)
+            device.format()
+            if app.is_installed():
+                #stop and do not update database
+                app.stop_mysql()
+                restart_mysql = True
+                #rsync exiting data
+                device.migrate_data(MYSQL_BASE_DIR)
+            #mount the volume
+            device.mount(mount_point)
+            LOG.debug(_("Mounted the volume."))
+            #check mysql was installed and stopped
+            if restart_mysql:
+                app.start_mysql()
+        app.install_and_secure(memory_mb)
+        LOG.info("Creating initial databases and users following successful "
+                 "prepare.")
+        self.create_database(context, databases)
+        self.create_user(context, users)
+        LOG.info('"prepare" call has finished.')
+
+    def restart(self, context):
+        app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
+        app.restart()
+
+    def start_mysql_with_conf_changes(self, context, updated_memory_size):
+        app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
+        app.start_mysql_with_conf_changes(updated_memory_size)
+
+    def stop_mysql(self, context):
+        app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
+        app.stop_mysql()

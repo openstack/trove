@@ -15,22 +15,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import webob.exc
 
 from novaclient import exceptions as nova_exceptions
 
 from reddwarf.common import exception
 from reddwarf.common import wsgi
-from reddwarf.extensions.mgmt.instances import models
-from reddwarf.extensions.mgmt.instances.views import DiagnosticsView
-from reddwarf.extensions.mgmt.instances.views import HwInfoView
-from reddwarf.instance import models as instance_models
-from reddwarf.extensions.mgmt.instances import views
-from reddwarf.extensions.mysql import models as mysql_models
-from reddwarf.instance.service import InstanceController
 from reddwarf.common.auth import admin_context
 from reddwarf.common.remote import create_nova_client
+from reddwarf.instance import models as instance_models
+from reddwarf.extensions.mgmt.instances import models
+from reddwarf.extensions.mgmt.instances import views
+from reddwarf.extensions.mgmt.instances.views import DiagnosticsView
+from reddwarf.extensions.mgmt.instances.views import HwInfoView
+from reddwarf.extensions.mysql import models as mysql_models
+from reddwarf.instance.service import InstanceController
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
 LOG = logging.getLogger(__name__)

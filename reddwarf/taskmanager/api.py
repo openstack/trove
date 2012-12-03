@@ -19,15 +19,15 @@ Routes all the requests to the task manager.
 """
 
 
-import logging
 import traceback
 import sys
 
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common.manager import ManagerAPI
+from reddwarf.openstack.common import log as logging
 
 
-CONFIG = config.Config
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -36,24 +36,23 @@ class API(ManagerAPI):
 
     def _fake_cast(self, method_name, **kwargs):
         from reddwarf.tests.fakes.common import get_event_spawer
-        from reddwarf.taskmanager.manager import TaskManager
-        instance = TaskManager()
-        method = getattr(instance, method_name)
+        from reddwarf.taskmanager.manager import Manager
+        method = getattr(Manager(), method_name)
 
         def func():
             try:
                 method(self.context, **kwargs)
             except Exception as ex:
                 type_, value, tb = sys.exc_info()
-                logging.error("Error running async task:")
-                logging.error((traceback.format_exception(type_, value, tb)))
+                LOG.error("Error running async task:")
+                LOG.error((traceback.format_exception(type_, value, tb)))
                 raise type_, value, tb
 
         get_event_spawer()(0, func)
 
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
-        return CONFIG.get('taskmanager_queue', 'taskmanager')
+        return CONF.taskmanager_queue
 
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"

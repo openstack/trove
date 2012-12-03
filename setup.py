@@ -14,72 +14,31 @@
 
 import gettext
 import os
+import setuptools
 import subprocess
-
-from setuptools import find_packages
-from setuptools.command.sdist import sdist
-from setuptools import setup
 
 gettext.install('reddwarf', unicode=1)
 
-from reddwarf.openstack.common.setup import parse_requirements
-from reddwarf.openstack.common.setup import parse_dependency_links
-from reddwarf.openstack.common.setup import write_requirements
-from reddwarf.openstack.common.setup import write_vcsversion
+from reddwarf import version
+from reddwarf.openstack.common import setup
 from reddwarf.openstack.common.setup import write_git_changelog
 
-from reddwarf import version
+requires = setup.parse_requirements()
+depend_links = setup.parse_dependency_links()
 
 
-class local_sdist(sdist):
-    """Customized sdist hook - builds the ChangeLog file from VC first"""
-    def run(self):
-        write_git_changelog()
-        sdist.run(self)
-cmdclass = {'sdist': local_sdist}
-
-
-try:
-    from sphinx.setup_command import BuildDoc
-
-    class local_BuildDoc(BuildDoc):
-        def run(self):
-            for builder in ['html', 'man']:
-                self.builder = builder
-                self.finalize_options()
-                BuildDoc.run(self)
-    cmdclass['build_sphinx'] = local_BuildDoc
-
-except:
-    pass
-
-
-try:
-    from babel.messages import frontend as babel
-    cmdclass['compile_catalog'] = babel.compile_catalog
-    cmdclass['extract_messages'] = babel.extract_messages
-    cmdclass['init_catalog'] = babel.init_catalog
-    cmdclass['update_catalog'] = babel.update_catalog
-except:
-    pass
-
-requires = parse_requirements()
-depend_links = parse_dependency_links()
-
-write_requirements()
-write_vcsversion('reddwarf/vcsversion.py')
-
-setup(name='reddwarf',
-    version=version.canonical_version_string(),
-    description='PaaS services for Openstack',
+setuptools.setup(name='reddwarf',
+    version=setup.get_post_version('reddwarf'),
+    description='DBaaS services for Openstack',
     author='OpenStack',
     author_email='openstack@lists.launchpad.net',
-    url='http://www.openstack.org/',
-    cmdclass=cmdclass,
-    packages=find_packages(exclude=['bin']),
+    url='https://github.com/stackforge/reddwarf',
+    cmdclass=setup.get_cmdclass(),
+    packages=setuptools.find_packages(exclude=['bin']),
     include_package_data=True,
     install_requires=requires,
     dependency_links=depend_links,
+    setup_requires=['setuptools-git>=0.4'],
     test_suite='nose.collector',
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -88,8 +47,8 @@ setup(name='reddwarf',
         'Programming Language :: Python :: 2.6',
         'Environment :: No Input/Output (Daemon)',
         ],
-    scripts=['bin/reddwarf-server',
-             'bin/reddwarf-api',
+    scripts=['bin/reddwarf-api',
+             'bin/reddwarf-server',
              'bin/reddwarf-taskmanager',
              'bin/reddwarf-mgmt-taskmanager',
              'bin/reddwarf-manage',

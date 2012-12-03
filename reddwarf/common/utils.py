@@ -18,7 +18,6 @@
 
 import datetime
 import inspect
-import logging
 import re
 import signal
 import sys
@@ -32,15 +31,21 @@ from eventlet import semaphore
 from eventlet.green import subprocess
 from eventlet.timeout import Timeout
 
-from reddwarf.openstack.common import utils as openstack_utils
 from reddwarf.common import exception
+from reddwarf.openstack.common import importutils
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import processutils
+from reddwarf.openstack.common import timeutils
+from reddwarf.openstack.common import utils as openstack_utils
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
-import_class = openstack_utils.import_class
-import_object = openstack_utils.import_object
+import_class = importutils.import_class
+import_object = importutils.import_object
+import_module = importutils.import_module
 bool_from_string = openstack_utils.bool_from_string
-execute = openstack_utils.execute
-isotime = openstack_utils.isotime
+execute = processutils.execute
+isotime = timeutils.isotime
 
 
 def create_method_args_string(*args, **kwargs):

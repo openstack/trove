@@ -16,13 +16,15 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
-import logging
+from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import exception as openstack_exception
+from reddwarf.openstack.common import processutils
+from reddwarf.openstack.common.gettextutils import _
 from webob import exc
 
 
 ClientConnectionError = openstack_exception.ClientConnectionError
-ProcessExecutionError = openstack_exception.ProcessExecutionError
+ProcessExecutionError = processutils.ProcessExecutionError
 DatabaseMigrationError = openstack_exception.DatabaseMigrationError
 LOG = logging.getLogger(__name__)
 wrap_exception = openstack_exception.wrap_exception
@@ -179,3 +181,13 @@ class ModelNotFoundError(NotFound):
 class UpdateGuestError(ReddwarfError):
 
     message = _("Failed to update instances")
+
+
+class ConfigNotFound(NotFound):
+
+    message = _("Config file not found")
+
+
+class PasteAppNotFound(NotFound):
+
+    message = _("Paste app not found.")

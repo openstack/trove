@@ -15,11 +15,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
+from reddwarf.openstack.common import log as logging
 import os
 import pexpect
 
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import ProcessExecutionError
@@ -27,7 +27,7 @@ from reddwarf.common.exception import ProcessExecutionError
 TMP_MOUNT_POINT = "/mnt/volume"
 
 LOG = logging.getLogger(__name__)
-CONFIG = config.Config
+CONF = cfg.CONF
 
 
 class VolumeDevice(object):
@@ -55,7 +55,7 @@ class VolumeDevice(object):
         num_tries to account for the time lag.
         """
         try:
-            num_tries = CONFIG.get('num_tries', 3)
+            num_tries = CONF.num_tries
             utils.execute('sudo', 'blockdev', '--getsize64', self.device_path,
                           attempts=num_tries)
         except ProcessExecutionError:
@@ -68,7 +68,7 @@ class VolumeDevice(object):
             i = child.expect(['has_journal', 'Wrong magic number'])
             if i == 0:
                 return
-            volume_fstype = CONFIG.get('volume_fstype', 'ext3')
+            volume_fstype = CONF.volume_fstype
             raise IOError('Device path at %s did not seem to be %s.' %
                           (self.device_path, volume_fstype))
         except pexpect.EOF:
@@ -77,11 +77,11 @@ class VolumeDevice(object):
 
     def _format(self):
         """Calls mkfs to format the device at device_path."""
-        volume_fstype = CONFIG.get('volume_fstype', 'ext3')
-        format_options = CONFIG.get('format_options', '-m 5')
+        volume_fstype = CONF.volume_fstype
+        format_options = CONF.format_options
         cmd = "sudo mkfs -t %s %s %s" % (volume_fstype,
                                          format_options, self.device_path)
-        volume_format_timeout = CONFIG.get('volume_format_timeout', 120)
+        volume_format_timeout = CONF.volume_format_timeout
         child = pexpect.spawn(cmd, timeout=volume_format_timeout)
         # child.expect("(y,n)")
         # child.sendline('y')
@@ -127,8 +127,8 @@ class VolumeMountPoint(object):
     def __init__(self, device_path, mount_point):
         self.device_path = device_path
         self.mount_point = mount_point
-        self.volume_fstype = CONFIG.get('volume_fstype', 'ext3')
-        self.mount_options = CONFIG.get('mount_options', 'defaults,noatime')
+        self.volume_fstype = CONF.volume_fstype
+        self.mount_options = CONF.mount_options
 
     def mount(self):
         if not os.path.exists(self.mount_point):

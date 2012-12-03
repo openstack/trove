@@ -15,11 +15,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.host import models
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

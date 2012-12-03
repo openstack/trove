@@ -12,17 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import routes
 
-from reddwarf.openstack.common import rpc
-from reddwarf.common import config
 from reddwarf.common import exception
 from reddwarf.common import wsgi
-from reddwarf.versions import VersionsController
+from reddwarf.extensions.mgmt.host.instance import service as hostservice
 from reddwarf.flavor.service import FlavorController
 from reddwarf.instance.service import InstanceController
-from reddwarf.extensions.mgmt.host.instance import service as hostservice
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import rpc
+from reddwarf.versions import VersionsController
 
 
 class API(wsgi.Router):

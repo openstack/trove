@@ -102,7 +102,7 @@ paste.app_factory = reddwarf.versions:app_factory
 
 [pipeline:reddwarfapi]
 pipeline = faultwrapper tokenauth authorization contextwrapper extensions reddwarfapp
-#pipeline = debug extensions reddwarfapp
+# pipeline = debug reddwarfapp
 
 [filter:extensions]
 paste.filter_factory = reddwarf.common.extensions:factory

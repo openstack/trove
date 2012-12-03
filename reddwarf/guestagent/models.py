@@ -12,20 +12,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 from datetime import datetime
 from datetime import timedelta
 
-from reddwarf.db import get_db_api
-from reddwarf.common import config
+from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import utils
+from reddwarf.db import get_db_api
 from reddwarf.db import models as dbmodels
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 
 LOG = logging.getLogger(__name__)
 
-AGENT_HEARTBEAT = int(config.Config.get('agent_heartbeat_time', '10'))
+CONF = cfg.CONF
+
+AGENT_HEARTBEAT = CONF.agent_heartbeat_time
 
 
 def persisted_models():

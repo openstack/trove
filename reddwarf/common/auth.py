@@ -16,12 +16,13 @@
 #    under the License.
 
 import httplib2
-import logging
 import re
 import webob.exc
 import wsgi
 
 from reddwarf.common import exception
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 

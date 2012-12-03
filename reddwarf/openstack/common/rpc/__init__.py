@@ -25,12 +25,7 @@ For some wrappers that add message versioning to rpc, see:
     rpc.proxy
 """
 
-#TODO(tim.simpson): Doing this as we aren't yet using the real cfg module.
-from reddwarf.common.config import OsCommonModule
-cfg = OsCommonModule()
-
-
-#from openstack.common import cfg
+from reddwarf.openstack.common import cfg
 from reddwarf.openstack.common import importutils
 
 
@@ -52,17 +47,24 @@ rpc_opts = [
                help='Seconds to wait before a cast expires (TTL). '
                     'Only supported by impl_zmq.'),
     cfg.ListOpt('allowed_rpc_exception_modules',
-                default=['openstack.common.exception',
+                default=['reddwarf.openstack.common.exception',
                          'nova.exception',
+                         'cinder.exception',
+                         'exceptions',
                          ],
                 help='Modules of exceptions that are permitted to be recreated'
                      'upon receiving exception data from an rpc call.'),
-    cfg.StrOpt('control_exchange',
-               default='nova',
-               help='AMQP exchange to connect to if using RabbitMQ or Qpid'),
     cfg.BoolOpt('fake_rabbit',
                 default=False,
                 help='If passed, use a fake RabbitMQ provider'),
+    #
+    # The following options are not registered here, but are expected to be
+    # present. The project using this library must register these options with
+    # the configuration so that project-specific defaults may be defined.
+    #
+    #cfg.StrOpt('control_exchange',
+    #           default='nova',
+    #           help='AMQP exchange to connect to if using RabbitMQ or Qpid'),
 ]
 
 cfg.CONF.register_opts(rpc_opts)
@@ -123,28 +125,6 @@ def cast(context, topic, msg):
     :returns: None
     """
     return _get_impl().cast(cfg.CONF, context, topic, msg)
-
-
-def cast_with_consumer(context, topic, msg):
-    """Invoke a remote method that does not return anything.
-
-    :param context: Information that identifies the user that has made this
-                    request.
-    :param topic: The topic to send the rpc message to.  This correlates to the
-                  topic argument of
-                  nova.rpc.common.Connection.create_consumer() and only applies
-                  when the consumer was created with fanout=False.
-    :param msg: This is a dict in the form { "method" : "method_to_invoke",
-                                             "args" : dict_of_kwargs }
-
-    :returns: None
-    """
-    return _get_impl().cast_with_consumer(cfg.CONF, context, topic, msg)
-
-
-def delete_queue(context, topic):
-    """Deletes the queue."""
-    return _get_impl().delete_queue(cfg.CONF, context, topic)
 
 
 def fanout_cast(context, topic, msg):
@@ -271,7 +251,7 @@ def queue_get_for(context, topic, host):
     Messages sent to the 'foo.<host>' topic are sent to the nova-foo service on
     <host>.
     """
-    return '%s.%s' % (topic, host)
+    return '%s.%s' % (topic, host) if host else topic
 
 
 _RPCIMPL = None

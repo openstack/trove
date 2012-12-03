@@ -18,15 +18,15 @@
 import optparse
 
 from reddwarf.common import utils
-from reddwarf.common import config
+from reddwarf.common import cfg
 
+CONF = cfg.CONF
 
-db_api_opt = config.Config.get("db_api_implementation",
-                               "reddwarf.db.sqlalchemy.api")
+db_api_opt = CONF.db_api_implementation
 
 
 def get_db_api():
-    return utils.import_object(db_api_opt)
+    return utils.import_module(db_api_opt)
 
 
 class Query(object):

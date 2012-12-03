@@ -15,6 +15,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import subprocess
-print "This is only a test!"
-subprocess.call(["touch", "FOO.txt"])
+
+import errno
+import os
+
+
+def ensure_tree(path):
+    """Create a directory (and any ancestor directories required)
+
+    :param path: Directory to create
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            if not os.path.isdir(path):
+                raise
+        else:
+            raise

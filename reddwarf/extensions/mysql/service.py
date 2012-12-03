@@ -15,17 +15,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import webob.exc
 
 from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import wsgi
-from reddwarf.guestagent.db import models as guest_models
 from reddwarf.extensions.mysql.common import populate_databases
 from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.extensions.mysql import models
 from reddwarf.extensions.mysql import views
+from reddwarf.guestagent.db import models as guest_models
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class RootController(wsgi.Controller):
         is_root_enabled = models.Root.load(context, instance_id)
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
-    def create(self, req, body, tenant_id, instance_id):
+    def create(self, req, tenant_id, instance_id):
         """ Enable the root user for the db instance """
         LOG.info(_("Enabling root for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)

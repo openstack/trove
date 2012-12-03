@@ -16,12 +16,13 @@
 #    under the License.
 
 import contextlib
-import logging
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
 
-from reddwarf.common import config
+from reddwarf.common import cfg
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common.gettextutils import _
 from reddwarf.db.sqlalchemy import mappers
 
 _ENGINE = None
@@ -30,9 +31,10 @@ _MAKER = None
 
 LOG = logging.getLogger(__name__)
 
+CONF = cfg.CONF
+
 
 def configure_db(options, models_mapper=None):
-    configure_sqlalchemy_log(options)
     global _ENGINE
     if not _ENGINE:
         _ENGINE = _create_engine(options)
@@ -57,26 +59,10 @@ def configure_db(options, models_mapper=None):
         mappers.map(_ENGINE, models)
 
 
-def configure_sqlalchemy_log(options):
-    debug = config.get_option(options, 'debug', type='bool', default=False)
-    verbose = config.get_option(options, 'verbose', type='bool', default=False)
-    logger = logging.getLogger('sqlalchemy.engine')
-    if debug:
-        logger.setLevel(logging.DEBUG)
-    elif verbose:
-        logger.setLevel(logging.INFO)
-
-
 def _create_engine(options):
     engine_args = {
-        "pool_recycle": config.get_option(options,
-                                          'sql_idle_timeout',
-                                          type='int',
-                                          default=3600),
-        "echo": config.get_option(options,
-                                  'sql_query_log',
-                                  type='bool',
-                                  default=False),
+        "pool_recycle": CONF.sql_idle_timeout,
+        "echo": CONF.sql_query_log
     }
     LOG.info(_("Creating SQLAlchemy engine with args: %s") % engine_args)
     return create_engine(options['sql_connection'], **engine_args)

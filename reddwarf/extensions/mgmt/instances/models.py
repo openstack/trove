@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
+from reddwarf.openstack.common import log as logging
 
-from reddwarf.common import config
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.instance import models as imodels
@@ -23,7 +22,6 @@ from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mysql import models as mysql_models
 
 
-CONFIG = config.Config
 LOG = logging.getLogger(__name__)
 
 

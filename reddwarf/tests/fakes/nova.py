@@ -16,7 +16,7 @@
 #    under the License.
 
 import eventlet
-import logging
+from reddwarf.openstack.common import log as logging
 from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
 import uuid

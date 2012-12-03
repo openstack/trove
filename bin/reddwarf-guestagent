@@ -36,36 +36,27 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from reddwarf import version
-from reddwarf.common import config
-from reddwarf.common import service
-# TODO(hub-cap): find out why the db api isint being imported properly
+from reddwarf.common import cfg
+from reddwarf.common import rpc
+from reddwarf.openstack.common import cfg as openstack_cfg
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import service
 from reddwarf.db import get_db_api
 
+CONF = cfg.CONF
+CONF.register_opts([openstack_cfg.StrOpt('guestagent_manager'),
+                    openstack_cfg.StrOpt('guest_id')])
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser(version="%%prog %s"
-    % version.version_string())
-    config.add_common_options(parser)
-    config.add_log_options(parser)
+    cfg.parse_args(sys.argv)
+    logging.setup(None)
 
-    (options, args) = config.parse_options(parser)
     try:
-        conf, app = config.Config.load_paste_app('reddwarf-guestagent',
-                                                 options, args)
-        # Use the config file location for putting the new config values
-        conf_loc = '%s/%s' % (config.Config.get('here'), 'conf.d/guest_info')
-        config.Config.append_to_config_values('reddwarf-guestagent',
-            {'config_file': conf_loc}, None)
-        # Now do the same for the /etc/guest_info file
-        # that is injected into the VM
-        config.Config.append_to_config_values('reddwarf-guestagent',
-            {'config_file': '/etc/guest_info'}, None)
-        get_db_api().configure_db(conf)
-        server = service.Service.create(binary='reddwarf-guestagent',
-                                        host=config.Config.get('guest_id'))
-        service.serve(server)
-        service.wait()
+        get_db_api().configure_db(CONF)
+        server = rpc.RpcService(manager=CONF.guestagent_manager,
+                                host=CONF.guest_id)
+        launcher = service.launch(server)
+        launcher.wait()
     except RuntimeError as error:
         import traceback
         print traceback.format_exc()
