@@ -21,7 +21,7 @@ Model classes that map instance Ip to dns record.
 
 import logging
 
-from reddwarf import db
+from reddwarf.db import get_db_api
 from reddwarf.common import exception
 from reddwarf.common.models import ModelBase
 
@@ -55,12 +55,12 @@ class DnsRecord(ModelBase):
             raise exception.InvalidModelError(errors=self.errors)
         LOG.debug(_("Saving %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return db.db_api.save(self)
+        return get_db_api().save(self)
 
     def delete(self):
         LOG.debug(_("Deleting %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return db.db_api.delete(self)
+        return get_db_api().delete(self)
 
     @classmethod
     def find_by(cls, **conditions):
@@ -72,7 +72,7 @@ class DnsRecord(ModelBase):
 
     @classmethod
     def get_by(cls, **kwargs):
-        return db.db_api.find_by(cls, **cls._process_conditions(kwargs))
+        return get_db_api().find_by(cls, **cls._process_conditions(kwargs))
 
     @classmethod
     def _process_conditions(cls, raw_conditions):
