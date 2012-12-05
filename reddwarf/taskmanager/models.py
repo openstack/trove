@@ -401,10 +401,11 @@ class BuiltInstanceTasks(BuiltInstance):
                 LOG.debug("Instance %s calling Compute confirm resize..."
                           % self.db_info.id)
                 self.server.confirm_resize()
-                # Record the new flavor_id in our database.
-                LOG.debug("Updating instance %s to flavor_id %s."
-                          % (self.id, new_flavor_id))
-                self.update_db(flavor_id=new_flavor_id)
+                if new_flavor_id:
+                    # Record the new flavor_id in our database.
+                    LOG.debug("Updating instance %s to flavor_id %s."
+                              % (self.id, new_flavor_id))
+                    self.update_db(flavor_id=new_flavor_id)
             except Exception as ex:
                 new_memory_size = old_memory_size
                 new_flavor_id = None
