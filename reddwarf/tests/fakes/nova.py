@@ -362,7 +362,7 @@ class FakeVolume(object):
         self._current_status = "BUILD"
         # For some reason we grab this thing from device then call it mount
         # point.
-        self.device = "/var/lib/mysql"
+        self.device = "vdb"
 
     def __repr__(self):
         msg = ("FakeVolume(id=%s, size=%s, display_name=%s, "

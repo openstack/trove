@@ -33,8 +33,8 @@ nova_volume_url = http://localhost:8776/v1
 
 # Config options for enabling volume service
 reddwarf_volume_support = True
-block_device_mapping = /var/lib/mysql
-device_path = /var/lib/mysql
+block_device_mapping = vdb
+device_path = /dev/vdb
 mount_point = /var/lib/mysql
 volume_time_out=30
 server_delete_time_out=480

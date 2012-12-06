@@ -46,8 +46,8 @@ add_addresses = True
 
 # Config options for enabling volume service
 reddwarf_volume_support = True
-block_device_mapping = /var/lib/mysql
-device_path = /var/lib/mysql
+block_device_mapping = vdb
+device_path = /dev/vdb
 mount_point = /var/lib/mysql
 max_accepted_volume_size = 10
 max_instances_per_user = 5
