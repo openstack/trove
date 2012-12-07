@@ -386,16 +386,14 @@ class BuiltInstanceTasks(BuiltInstance):
 
                 # Do check to make sure the status and flavor id are correct.
                 if new_flavor_id:
-                    if (str(self.server.flavor['id']) != str(new_flavor_id) or
-                            self.server.status != "VERIFY_RESIZE"):
+                    if str(self.server.flavor['id']) != str(new_flavor_id):
                         msg = "Assertion failed! flavor_id=%s and not %s" \
                               % (self.server.flavor['id'], new_flavor_id)
                         raise ReddwarfError(msg)
-                else:
-                    if (self.server.status != "VERIFY_RESIZE"):
-                        msg = "Migration failed! status=%s and not %s" \
-                              % (self.server.status, 'VERIFY_RESIZE')
-                        raise ReddwarfError(msg)
+                if (self.server.status != "VERIFY_RESIZE"):
+                    msg = "Assertion failed! status=%s and not %s" \
+                          % (self.server.status, 'VERIFY_RESIZE')
+                    raise ReddwarfError(msg)
 
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
