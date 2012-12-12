@@ -443,7 +443,7 @@ class WaitForGuestInstallationToFinish(object):
     """
 
     @test
-    @time_out(60 * 16)
+    @time_out(60 * 32)
     def test_instance_created(self):
         # This version just checks the REST API status.
         def result_is_active():
@@ -534,20 +534,23 @@ class TestGuestProcess(object):
 
     @test
     def check_hwinfo_before_tests(self):
-        hwinfo = dbaas_admin.hwinfo.get(instance_info.id)
-        print("hwinfo : %r" % hwinfo._info)
-        expected_attrs = ['hwinfo']
-        CheckInstance(None).attrs_exist(hwinfo._info, expected_attrs,
-                                        msg="Hardware information")
-        # TODO(pdmars): instead of just checking that these are int's, get the
-        # instance flavor and verify that the values are correct for the flavor
-        assert_true(isinstance(hwinfo.hwinfo['mem_total'], int))
-        assert_true(isinstance(hwinfo.hwinfo['num_cpus'], int))
+        if CONFIG.test_mgmt:
+            hwinfo = dbaas_admin.hwinfo.get(instance_info.id)
+            print("hwinfo : %r" % hwinfo._info)
+            expected_attrs = ['hwinfo']
+            CheckInstance(None).attrs_exist(hwinfo._info, expected_attrs,
+                                            msg="Hardware information")
+            # TODO(pdmars): instead of just checking that these are int's, get
+            # the instance flavor and verify that the values are correct for
+            # the flavor
+            assert_true(isinstance(hwinfo.hwinfo['mem_total'], int))
+            assert_true(isinstance(hwinfo.hwinfo['num_cpus'], int))
 
     @test
     def grab_diagnostics_before_tests(self):
-        diagnostics = dbaas_admin.diagnostics.get(instance_info.id)
-        diagnostic_tests_helper(diagnostics)
+        if CONFIG.test_mgmt:
+            diagnostics = dbaas_admin.diagnostics.get(instance_info.id)
+            diagnostic_tests_helper(diagnostics)
 
 
 @test(depends_on_classes=[CreateInstance],
