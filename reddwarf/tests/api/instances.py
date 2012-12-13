@@ -25,6 +25,7 @@ import urlparse
 
 GROUP = "dbaas.guest"
 GROUP_START = "dbaas.guest.initialize"
+GROUP_START_SIMPLE = "dbaas.guest.initialize.simple"
 GROUP_TEST = "dbaas.guest.test"
 GROUP_STOP = "dbaas.guest.shutdown"
 GROUP_USERS = "dbaas.api.users"
@@ -126,7 +127,7 @@ def create_new_instance():
     return existing_instance() is None
 
 
-@test(groups=[GROUP, GROUP_START, 'dbaas.setup'],
+@test(groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, 'dbaas.setup'],
       depends_on_groups=["services.initialize"])
 class InstanceSetup(object):
     """Makes sure the client can hit the ReST service.
@@ -226,7 +227,7 @@ def test_delete_instance_not_found():
 
 
 @test(depends_on_classes=[InstanceSetup],
-      groups=[GROUP, GROUP_START, tests.INSTANCES],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
       runs_after_groups=[tests.PRE_INSTANCES])
 class CreateInstance(unittest.TestCase):
     """Test to create a Database Instance
@@ -383,7 +384,10 @@ def assert_unprocessable(func, *args):
 
 
 @test(depends_on_classes=[CreateInstance],
-      groups=[GROUP, GROUP_START, 'dbaas.mgmt.hosts_post_install'],
+      groups=[GROUP,
+              GROUP_START,
+              GROUP_START_SIMPLE,
+              'dbaas.mgmt.hosts_post_install'],
       enabled=create_new_instance())
 class AfterInstanceCreation(unittest.TestCase):
 
@@ -435,7 +439,7 @@ class AfterInstanceCreation(unittest.TestCase):
 
 @test(depends_on_classes=[CreateInstance],
       runs_after=[AfterInstanceCreation],
-      groups=[GROUP, GROUP_START],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
       enabled=create_new_instance())
 class WaitForGuestInstallationToFinish(object):
     """
@@ -470,7 +474,7 @@ class WaitForGuestInstallationToFinish(object):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, GROUP_START],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
       enabled=CONFIG.white_box and create_new_instance())
 class VerifyGuestStarted(unittest.TestCase):
     """
@@ -554,7 +558,8 @@ class TestGuestProcess(object):
 
 
 @test(depends_on_classes=[CreateInstance],
-      groups=[GROUP, GROUP_START, GROUP_TEST, "nova.volumes.instance"],
+      groups=[GROUP, GROUP_START,
+      GROUP_START_SIMPLE, GROUP_TEST, "nova.volumes.instance"],
       enabled=CONFIG.white_box)
 class TestVolume(unittest.TestCase):
     """Make sure the volume is attached to instance correctly."""
@@ -590,7 +595,7 @@ class TestAfterInstanceCreatedGuestData(object):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, GROUP_START, "dbaas.listing"])
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, "dbaas.listing"])
 class TestInstanceListing(object):
     """ Test the listing of the instance information """
 
@@ -716,7 +721,8 @@ class DeleteInstance(object):
     """ Delete the created instance """
 
     @time_out(3 * 60)
-    @test(runs_after_groups=[GROUP_START, GROUP_TEST, tests.INSTANCES])
+    @test(runs_after_groups=[GROUP_START,
+                             GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES])
     def test_delete(self):
         if do_not_delete_instance():
             CONFIG.get_report().log("TESTS_DO_NOT_DELETE_INSTANCE=True was "
@@ -770,7 +776,8 @@ class DeleteInstance(object):
 
 
 @test(depends_on_classes=[CreateInstance, VerifyGuestStarted,
-      WaitForGuestInstallationToFinish], groups=[GROUP, GROUP_START],
+      WaitForGuestInstallationToFinish],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
       enabled=CONFIG.values['test_mgmt'])
 class VerifyInstanceMgmtInfo(object):
 
