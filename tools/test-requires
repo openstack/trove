@@ -12,3 +12,6 @@ webtest
 wsgi_intercept
 proboscis
 python-reddwarfclient
+mock
+testtools
+pexpect
