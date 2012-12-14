@@ -493,13 +493,19 @@ class Instance(BuiltInstance):
         """
         Raises exception if an instance action cannot currently be performed.
         """
-        if (self.db_info.server_status != "ACTIVE" or
-                self.db_info.task_status != InstanceTasks.NONE or
-                not self.service_status.status.action_is_allowed):
-            msg = ("Instance is not currently available for an action to be "
-                   "performed (status was %s).")
-            LOG.error(msg % self.status)
-            raise exception.UnprocessableEntity(msg)
+        status = None
+        if self.db_info.server_status != 'ACTIVE':
+            status = self.db_info.server_status
+        elif self.db_info.task_status != InstanceTasks.NONE:
+            status = self.db_info.task_status
+        elif not self.service_status.status.action_is_allowed:
+            status = self.status
+        else:
+            return
+        msg = ("Instance is not currently available for an action to be "
+               "performed (status was %s)." % status)
+        LOG.error(msg)
+        raise exception.UnprocessableEntity(msg)
 
 
 def create_server_list_matcher(server_list):
