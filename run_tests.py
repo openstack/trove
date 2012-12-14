@@ -136,5 +136,6 @@ if __name__=="__main__":
     from reddwarf.tests.api.mgmt import admin_required
     from reddwarf.tests.api.mgmt import instances
     from reddwarf.tests.api.mgmt import storage
+    from reddwarf.tests.guestagent import test_dbaas
 
     proboscis.TestProgram().run_and_exit()
