@@ -458,7 +458,8 @@ class WaitForGuestInstallationToFinish(object):
                 # If its not ACTIVE, anything but BUILD must be
                 # an error.
                 assert_equal("BUILD", instance.status)
-                assert_equal(instance.volume.get('used', None), None)
+                if instance_info.volume is not None:
+                    assert_equal(instance.volume.get('used', None), None)
                 return False
 
         poll_until(result_is_active)
