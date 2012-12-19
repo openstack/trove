@@ -331,10 +331,6 @@ class Controller(object):
         ],
     }
 
-    def __init__(self):
-        self.add_addresses = CONF.add_addresses
-        self.add_volumes = CONF.reddwarf_volume_support
-
     def create_resource(self):
         serializer = ReddwarfResponseSerializer(
             body_serializers={'application/xml': ReddwarfXMLDictSerializer()})

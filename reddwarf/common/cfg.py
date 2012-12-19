@@ -34,7 +34,7 @@ common_opts = [
                 default=False,
                 help='Whether to add IP addresses to the list operations'),
     cfg.BoolOpt('reddwarf_volume_support',
-                default=False,
+                default=True,
                 help='File name for the paste.deploy config for reddwarf-api'),
     cfg.ListOpt('admin_roles', default=[]),
     cfg.StrOpt('remote_implementation',
@@ -87,6 +87,7 @@ common_opts = [
     cfg.IntOpt('server_delete_time_out', default=2),
     cfg.IntOpt('volume_time_out', default=2),
     cfg.IntOpt('reboot_time_out', default=60 * 2),
+    cfg.StrOpt('service_options', default=['mysql']),
 ]
 
 

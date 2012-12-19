@@ -39,6 +39,7 @@ from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.db import get_db_api
 from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import uuidutils
 from reddwarf.instance import models as instance_models
 
 
@@ -75,7 +76,7 @@ class Commands(object):
         if image is None:
             # Create a new one
             image = instance_models.ServiceImage()
-            image.id = utils.generate_uuid()
+            image.id = uuidutils.generate_uuid()
             image.service_name = service_name
         image.image_id = image_id
         self.db_api.save(image)

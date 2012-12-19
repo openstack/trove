@@ -48,14 +48,6 @@ class API(wsgi.Router):
         path = "/{tenant_id}/flavors"
         mapper.resource("flavor", path, controller=flavor_resource)
 
-    def _host_instance_router(self, mapper):
-        host_controller = hostservice.HostInstanceController()
-        host_instance_resource = host_controller.create_resource()
-        path = "/{tenant_id}/mgmt/hosts/{host_id}/instances"
-        mapper.resource("hostinstance", path,
-                        controller=host_instance_resource,
-                        member={'action': 'POST'})
-
 
 def app_factory(global_conf, **local_conf):
     return API()

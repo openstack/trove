@@ -59,9 +59,7 @@ class MgmtInstanceController(InstanceController):
             return wsgi.Result(str(e), 403)
 
         view_cls = views.MgmtInstancesView
-        return wsgi.Result(view_cls(instances, req=req,
-                                    add_addresses=self.add_addresses,
-                                    add_volumes=self.add_volumes).data(), 200)
+        return wsgi.Result(view_cls(instances, req=req).data(), 200)
 
     @admin_context
     def show(self, req, tenant_id, id):
@@ -78,8 +76,6 @@ class MgmtInstanceController(InstanceController):
             views.MgmtInstanceDetailView(
                 server,
                 req=req,
-                add_addresses=self.add_addresses,
-                add_volumes=self.add_volumes,
                 root_history=root_history).data(),
             200)
 

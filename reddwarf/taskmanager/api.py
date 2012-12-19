@@ -31,6 +31,10 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
+#todo(hub-cap): find a better way to deal w/ the fakes. Im sure we can
+# use a fake impl to deal w/ this and switch it out in the configs.
+# The ManagerAPI is only used here and should eventually be removed when
+# we have a better way to handle fake casts (see rpc fake_impl)
 class API(ManagerAPI):
     """API for interacting with the task manager."""
 

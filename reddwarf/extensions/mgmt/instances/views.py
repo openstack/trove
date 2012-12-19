@@ -21,11 +21,8 @@ from reddwarf.instance.views import InstanceDetailView
 
 class MgmtInstanceView(InstanceDetailView):
 
-    def __init__(self, instance, req=None, add_addresses=False,
-                 add_volumes=False):
-        super(MgmtInstanceView, self).__init__(instance, req,
-                                               add_addresses,
-                                               add_volumes)
+    def __init__(self, instance, req=None):
+        super(MgmtInstanceView, self).__init__(instance, req)
 
     def data(self):
         result = super(MgmtInstanceView, self).data()
@@ -59,13 +56,9 @@ class MgmtInstanceView(InstanceDetailView):
 class MgmtInstanceDetailView(MgmtInstanceView):
     """Works with a full-blown instance."""
 
-    def __init__(self, instance, req, add_addresses=False,
-                 add_volumes=False, root_history=None):
-        add_a = add_addresses
+    def __init__(self, instance, req, root_history=None):
         super(MgmtInstanceDetailView, self).__init__(instance,
-                                                     req=req,
-                                                     add_addresses=add_a,
-                                                     add_volumes=add_volumes)
+                                                     req=req)
         self.root_history = root_history
 
     def data(self):
@@ -102,12 +95,9 @@ class MgmtInstanceDetailView(MgmtInstanceView):
 class MgmtInstancesView(object):
     """Shows a list of MgmtInstance objects."""
 
-    def __init__(self, instances, req=None, add_addresses=False,
-                 add_volumes=False):
+    def __init__(self, instances, req=None):
         self.instances = instances
         self.req = req
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
 
     def data(self):
         data = []
@@ -117,9 +107,7 @@ class MgmtInstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        view = MgmtInstanceView(instance, req=self.req,
-                                add_addresses=self.add_addresses,
-                                add_volumes=self.add_volumes)
+        view = MgmtInstanceView(instance, req=self.req)
         return view.data()['instance']
 
 

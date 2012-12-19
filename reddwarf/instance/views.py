@@ -40,11 +40,8 @@ def get_ip_address(addresses):
 class InstanceView(object):
     """Uses a SimpleInstance."""
 
-    def __init__(self, instance, req=None, add_addresses=False,
-                 add_volumes=False):
+    def __init__(self, instance, req=None):
         self.instance = instance
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
         self.req = req
 
     def data(self):
@@ -55,7 +52,7 @@ class InstanceView(object):
             "links": self._build_links(),
             "flavor": self._build_flavor_info(),
         }
-        if self.add_volumes:
+        if CONF.reddwarf_volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
@@ -77,13 +74,9 @@ class InstanceView(object):
 class InstanceDetailView(InstanceView):
     """Works with a full-blown instance."""
 
-    def __init__(self, instance, req, add_addresses=False,
-                 add_volumes=False):
+    def __init__(self, instance, req):
         super(InstanceDetailView, self).__init__(instance,
-                                                 req=req,
-                                                 add_volumes=add_volumes)
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
+                                                 req=req)
 
     def _to_gb(self, bytes):
         return bytes / 1024.0 ** 3
@@ -97,11 +90,11 @@ class InstanceDetailView(InstanceView):
         if dns_support:
             result['instance']['hostname'] = self.instance.hostname
 
-        if self.add_addresses:
+        if CONF.add_addresses:
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
-        if self.add_volumes:
+        if CONF.reddwarf_volume_support:
             if (isinstance(self.instance, models.DetailInstance) and
                     self.instance.volume_used):
                 used = self._to_gb(self.instance.volume_used)
@@ -112,12 +105,9 @@ class InstanceDetailView(InstanceView):
 class InstancesView(object):
     """Shows a list of SimpleInstance objects."""
 
-    def __init__(self, instances, req=None, add_addresses=False,
-                 add_volumes=True):
+    def __init__(self, instances, req=None):
         self.instances = instances
         self.req = req
-        self.add_addresses = add_addresses
-        self.add_volumes = add_volumes
 
     def data(self):
         data = []
@@ -127,6 +117,5 @@ class InstancesView(object):
         return {'instances': data}
 
     def data_for_instance(self, instance):
-        view = InstanceView(instance, req=self.req,
-                            add_volumes=self.add_volumes)
+        view = InstanceView(instance, req=self.req)
         return view.data()['instance']

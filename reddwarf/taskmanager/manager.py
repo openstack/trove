@@ -20,7 +20,6 @@ import traceback
 from eventlet import greenthread
 
 from reddwarf.common import exception
-from reddwarf.common import service
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import periodic_task
 from reddwarf.openstack.common.rpc.common import UnsupportedRpcVersion

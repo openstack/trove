@@ -20,6 +20,10 @@ from novaclient.v1_1.client import Client
 
 
 CONF = cfg.CONF
+COMPUTE_URL = CONF.nova_compute_url
+PROXY_AUTH_URL = CONF.reddwarf_auth_url
+VOLUME_URL = CONF.nova_volume_url
+PROXY_AUTH_URL = CONF.reddwarf_auth_url
 
 
 def create_dns_client(context):
@@ -33,8 +37,6 @@ def create_guest_client(context, id):
 
 
 def create_nova_client(context):
-    COMPUTE_URL = CONF.nova_compute_url
-    PROXY_AUTH_URL = CONF.reddwarf_auth_url
     client = Client(context.user, context.auth_tok, project_id=context.tenant,
                     auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_tok
@@ -46,8 +48,6 @@ def create_nova_client(context):
 def create_nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
-    VOLUME_URL = CONF.nova_volume_url
-    PROXY_AUTH_URL = CONF.reddwarf_auth_url
     client = Client(context.user, context.auth_tok,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_tok

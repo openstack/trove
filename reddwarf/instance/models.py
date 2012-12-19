@@ -413,8 +413,7 @@ class Instance(BuiltInstance):
             instance_id=db_info.id,
             status=ServiceStatuses.NEW)
 
-        dns_support = CONF.reddwarf_dns_support
-        if dns_support:
+        if CONF.reddwarf_dns_support:
             dns_client = create_dns_client(context)
             hostname = dns_client.determine_hostname(db_info.id)
             db_info.hostname = hostname

@@ -136,8 +136,7 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         servers, marker = models.Instances.load(context)
-        view = views.InstancesView(servers, req=req,
-                                   add_volumes=self.add_volumes)
+        view = views.InstancesView(servers, req=req)
         paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
                                                    marker)
         return wsgi.Result(paged.data(), 200)
@@ -151,9 +150,8 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         server = models.load_instance_with_guest(models.DetailInstance,
                                                  context, id)
-        return wsgi.Result(views.InstanceDetailView(server, req=req,
-                           add_addresses=self.add_addresses,
-                           add_volumes=self.add_volumes).data(), 200)
+        return wsgi.Result(views.InstanceDetailView(server,
+                                                    req=req).data(), 200)
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
@@ -169,25 +167,13 @@ class InstanceController(wsgi.Controller):
 
     @api_validation(action="create")
     def create(self, req, body, tenant_id):
-        # find the service id (cant be done yet at startup due to
-        # inconsistencies w/ the load app paste
-        # TODO(hub-cap): figure out how to get this to work in __init__ time
-        # TODO(hub-cap): The problem with this in __init__ is that the paste
-        #   config is generated w/ the same config file as the db flags that
-        #   are needed for init. These need to be split so the db can be init'd
-        #   w/o the paste stuff. Since the paste stuff inits the
-        #   database.service module, it is a chicken before the egg problem.
-        #   Simple refactor will fix it and we can move this into the __init__
-        #   code. Or maybe we shouldnt due to the nature of changing images.
-        #   This needs discussion.
         # TODO(hub-cap): turn this into middleware
         LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
-        service_type = body['instance'].get('service_type')
-        if service_type is None:
-            service_type = 'mysql'
+        # Set the service type to mysql if its not in the request
+        service_type = body['instance'].get('service_type') or 'mysql'
         service = models.ServiceImage.find_by(service_name=service_type)
         image_id = service['image_id']
         name = body['instance']['name']
@@ -217,8 +203,7 @@ class InstanceController(wsgi.Controller):
                                           image_id, databases, users,
                                           service_type, volume_size)
 
-        view = views.InstanceDetailView(instance, req=req,
-                                        add_volumes=self.add_volumes)
+        view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
 
     @staticmethod
@@ -271,8 +256,7 @@ class InstanceController(wsgi.Controller):
             name = body['instance'].get('name', '').strip()
             if not name:
                 raise exception.MissingKey(key='name')
-            vol_enabled = CONF.reddwarf_volume_support
-            if vol_enabled:
+            if CONF.reddwarf_volume_support:
                 if body['instance'].get('volume', None):
                     if body['instance']['volume'].get('size', None):
                         volume_size = body['instance']['volume']['size']

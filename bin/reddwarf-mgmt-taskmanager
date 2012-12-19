@@ -36,29 +36,26 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from reddwarf import version
-from reddwarf.common import config
-from reddwarf.common import service
+from reddwarf.common import cfg
+from reddwarf.common import rpc
+from reddwarf.openstack.common import cfg as openstack_cfg
+from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import service
 from reddwarf.db import get_db_api
 
+CONF = cfg.CONF
+CONF.register_opts([openstack_cfg.StrOpt('taskmanager_manager')])
 
 if __name__ == '__main__':
-    parser = optparse.OptionParser(version="%%prog %s"
-    % version.version_string())
-    config.add_common_options(parser)
-    config.add_log_options(parser)
+    cfg.parse_args(sys.argv)
+    logging.setup(None)
 
-    (options, args) = config.parse_options(parser)
     try:
-        conf, app = config.Config.load_paste_app('reddwarf-taskmanager',
-                                                 options, args)
-        get_db_api().configure_db(conf)
-
-        server = service.Service.create(binary='reddwarf-taskmanager',
-                                        manager='reddwarf.taskmanager.manager.TaskManager',
-                                        topic="mgmt-taskmanager")
-        service.serve(server)
-        service.wait()
+        get_db_api().configure_db(CONF)
+        server = rpc.RpcService(manager=CONF.taskmanager_manager,
+                                topic="mgmt-taskmanager")
+        launcher = service.launch(server)
+        launcher.wait()
     except RuntimeError as error:
         import traceback
         print traceback.format_exc()
