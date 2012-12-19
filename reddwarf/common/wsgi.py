@@ -154,7 +154,7 @@ class Request(openstack_wsgi.Request):
                                        "version=(?P<version_no>\d+\.?\d*)")
 
         match = accept_version_re.search(accept_header)
-        return  match.group("version_no") if match else None
+        return match.group("version_no") if match else None
 
     @utils.cached_property
     def url_version(self):

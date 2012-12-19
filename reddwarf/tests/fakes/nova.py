@@ -117,7 +117,7 @@ class FakeServer(object):
 
     @property
     def addresses(self):
-        return {"private": [{"addr":"123.123.123.123"}]}
+        return {"private": [{"addr": "123.123.123.123"}]}
 
     def confirm_resize(self):
         if self.status != "VERIFY_RESIZE":
