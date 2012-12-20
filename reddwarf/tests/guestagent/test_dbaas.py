@@ -12,14 +12,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
-from mock import Mock
+from mock import Mock, MagicMock
 from proboscis import test
+import testtools
 import reddwarf.guestagent.dbaas as dbaas
+from reddwarf.guestagent.db import models
+from reddwarf.guestagent.dbaas import MySqlAdmin
 
 """
 Unit tests for the classes and functions in dbaas.py.
 """
+
+FAKE_DB = {"_name": "testDB", "_character_set": "latin2",
+           "_collate": "latin2_general_ci"}
+FAKE_DB_2 = {"_name": "testDB2", "_character_set": "latin2",
+             "_collate": "latin2_general_ci"}
+FAKE_USER = [{"_name": "random", "_password": "guesswhat",
+              "_databases": [FAKE_DB]}]
 
 
 @test(groups=["dbaas.guestagent.dbaas"])
@@ -28,16 +37,18 @@ class MySqlAdminTest(testtools.TestCase):
     def setUp(self):
 
         super(MySqlAdminTest, self).setUp()
+
         self.orig_get_engine = dbaas.get_engine
         self.orig_LocalSqlClient = dbaas.LocalSqlClient
         self.orig_LocalSqlClient_enter = dbaas.LocalSqlClient.__enter__
         self.orig_LocalSqlClient_exit = dbaas.LocalSqlClient.__exit__
         self.orig_LocalSqlClient_execute = dbaas.LocalSqlClient.execute
-        dbaas.get_engine = Mock(return_value=None)
+        dbaas.get_engine = MagicMock(name='get_engine')
         dbaas.LocalSqlClient = Mock
         dbaas.LocalSqlClient.__enter__ = Mock()
         dbaas.LocalSqlClient.__exit__ = Mock()
         dbaas.LocalSqlClient.execute = Mock()
+        self.mySqlAdmin = MySqlAdmin()
 
     def tearDown(self):
 
@@ -52,11 +63,10 @@ class MySqlAdminTest(testtools.TestCase):
 
         # setup test
         databases = []
-        databases.append({"_name": "testDB", "_character_set": "latin2",
-                          "_collate": "latin2_general_ci"})
+        databases.append(FAKE_DB)
 
         # execute test
-        dbaas.MySqlAdmin().create_database(databases)
+        self.mySqlAdmin.create_database(databases)
 
         # verify arg passed correctly
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
@@ -74,13 +84,11 @@ class MySqlAdminTest(testtools.TestCase):
 
         # setup test
         databases = []
-        databases.append({"_name": "testDB", "_character_set": "latin2",
-                          "_collate": "latin2_general_ci"})
-        databases.append({"_name": "testDB2", "_character_set": "latin2",
-                          "_collate": "latin2_general_ci"})
+        databases.append(FAKE_DB)
+        databases.append(FAKE_DB_2)
 
         # execute test
-        dbaas.MySqlAdmin().create_database(databases)
+        self.mySqlAdmin.create_database(databases)
 
         # verify arg passed correctly
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
@@ -107,7 +115,7 @@ class MySqlAdminTest(testtools.TestCase):
         databases = []
 
         # execute test
-        dbaas.MySqlAdmin().create_database(databases)
+        self.mySqlAdmin.create_database(databases)
 
         # verify client object was not called
         self.assertFalse(dbaas.LocalSqlClient.execute.called,
@@ -120,7 +128,7 @@ class MySqlAdminTest(testtools.TestCase):
         database = {"_name": "testDB"}
 
         # execute test
-        dbaas.MySqlAdmin().delete_database(database)
+        self.mySqlAdmin.delete_database(database)
 
         # verify arg passed correctly
         args, _ = dbaas.LocalSqlClient.execute.call_args
@@ -138,7 +146,7 @@ class MySqlAdminTest(testtools.TestCase):
         user = {"_name": "testUser"}
 
         # execute test
-        dbaas.MySqlAdmin().delete_user(user)
+        self.mySqlAdmin.delete_user(user)
 
         # verify arg passed correctly
         args, _ = dbaas.LocalSqlClient.execute.call_args
@@ -149,3 +157,18 @@ class MySqlAdminTest(testtools.TestCase):
         # verify client object is called
         self.assertTrue(dbaas.LocalSqlClient.execute.called,
                         "The client object was not called")
+
+    def test_create_user(self):
+        self.mySqlAdmin.create_user(FAKE_USER)
+        self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
+
+    def test_enable_root(self):
+        models.MySQLUser._is_valid_user_name = \
+            MagicMock(return_value=True)
+        self.mySqlAdmin.enable_root()
+        self.assertEqual(3, dbaas.LocalSqlClient.execute.call_count)
+
+    def test_enable_root_failed(self):
+        models.MySQLUser._is_valid_user_name = \
+            MagicMock(return_value=False)
+        self.assertRaises(ValueError, self.mySqlAdmin.enable_root)
