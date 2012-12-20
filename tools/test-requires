@@ -2,7 +2,6 @@
 distribute>=0.6.28
 
 coverage
-mox
 nose
 nosexcover
 openstack.nose_plugin
@@ -13,5 +12,7 @@ wsgi_intercept
 proboscis
 python-reddwarfclient
 mock
-testtools
+testtools>=0.9.22
 pexpect
+discover
+testrepository>=0.0.8

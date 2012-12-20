@@ -13,7 +13,6 @@
 #    under the License.
 
 from mock import Mock, MagicMock
-from proboscis import test
 import testtools
 import reddwarf.guestagent.dbaas as dbaas
 from reddwarf.guestagent.db import models
@@ -31,7 +30,6 @@ FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_databases": [FAKE_DB]}]
 
 
-@test(groups=["dbaas.guestagent.dbaas"])
 class MySqlAdminTest(testtools.TestCase):
 
     def setUp(self):
