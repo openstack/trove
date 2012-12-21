@@ -237,7 +237,8 @@ class CreateInstance(unittest.TestCase):
     """
 
     def test_instance_size_too_big(self):
-        if 'reddwarf_max_accepted_volume_size' in CONFIG.values:
+        vol_ok = CONFIG.get('reddwarf_can_have_volume', False)
+        if 'reddwarf_max_accepted_volume_size' in CONFIG.values and vol_ok:
             too_big = CONFIG.values['reddwarf_max_accepted_volume_size']
             assert_raises(exceptions.OverLimit, dbaas.instances.create,
                           "way_too_large", instance_info.dbaas_flavor_href,
