@@ -40,7 +40,7 @@ class Manager(periodic_task.PeriodicTasks):
     def enable_root(self, context):
         return dbaas.MySqlAdmin().enable_root()
 
-    def is_root_enabled(self, ontext):
+    def is_root_enabled(self, context):
         return dbaas.MySqlAdmin().is_root_enabled()
 
     def prepare(self, context, databases, memory_mb, users, device_path=None,
