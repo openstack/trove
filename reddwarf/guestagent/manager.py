@@ -5,6 +5,8 @@ from reddwarf.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 
+MYSQL_BASE_DIR = "/var/lib/mysql"
+
 
 class Manager(periodic_task.PeriodicTasks):
 
