@@ -18,8 +18,6 @@
 """Common code to help in faking the models."""
 
 import time
-import traceback
-import sys
 
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import cfg
@@ -65,7 +63,6 @@ def event_simulator_sleep(time_to_sleep):
     global pending_events
     while time_to_sleep > 0:
         itr_sleep = 0.5
-        print pending_events
         for i in range(len(pending_events)):
             event = pending_events[i]
             event["time"] = event["time"] - itr_sleep
@@ -77,10 +74,7 @@ def event_simulator_sleep(time_to_sleep):
                 try:
                     func()
                 except Exception as e:
-                    type_, value, tb = sys.exc_info()
-                    LOG.info("Simulated event error.")
-                    LOG.info((traceback.format_exception(type_, value, tb)))
-                    pass  # Ignore exceptions, which can potentially occur.
+                    LOG.exception("Simulated event error.")
 
         time_to_sleep -= itr_sleep
     sleep_entrance_count -= 1

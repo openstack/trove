@@ -241,7 +241,7 @@ class CreateInstance(unittest.TestCase):
     def test_instance_size_too_big(self):
         vol_ok = CONFIG.get('reddwarf_volume_support', False)
         if 'reddwarf_max_accepted_volume_size' in CONFIG.values and vol_ok:
-            too_big = CONFIG.values['reddwarf_max_accepted_volume_size']
+            too_big = CONFIG.reddwarf_max_accepted_volume_size
             assert_raises(exceptions.OverLimit, dbaas.instances.create,
                           "way_too_large", instance_info.dbaas_flavor_href,
                           {'size': too_big + 1}, [])
@@ -296,7 +296,7 @@ class CreateInstance(unittest.TestCase):
                           'name', 'status', 'updated']
         if CONFIG.values['reddwarf_volume_support']:
             expected_attrs.append('volume')
-        if CONFIG.values['reddwarf_dns_support']:
+        if CONFIG.reddwarf_dns_support:
             expected_attrs.append('hostname')
 
         with CheckInstance(result._info) as check:
@@ -510,7 +510,7 @@ class TestGuestProcess(object):
         Test that the guest process is started with all the right parameters
     """
 
-    @test(enabled=CONFIG.values['use_local_ovz'])
+    @test(enabled=CONFIG.use_local_ovz)
     @time_out(60 * 10)
     def check_process_alive_via_local_ovz(self):
         init_re = ("[\w\W\|\-\s\d,]*nova-guest "
@@ -559,8 +559,8 @@ class TestGuestProcess(object):
 
 
 @test(depends_on_classes=[CreateInstance],
-      groups=[GROUP, GROUP_START,
-      GROUP_START_SIMPLE, GROUP_TEST, "nova.volumes.instance"],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, GROUP_TEST,
+              "nova.volumes.instance"],
       enabled=CONFIG.white_box)
 class TestVolume(unittest.TestCase):
     """Make sure the volume is attached to instance correctly."""
@@ -638,6 +638,14 @@ class TestInstanceListing(object):
             check.links(instance_dict['links'])
             check.used_volume()
 
+    @test(enabled=CONFIG.reddwarf_dns_support)
+    def test_instance_hostname(self):
+        instance = dbaas.instances.get(instance_info.id)
+        assert_equal(200, dbaas.last_http_code)
+        hostname_prefix = ("%s" % (hashlib.sha1(instance.id).hexdigest()))
+        instance_hostname_prefix = instance.hostname.split('.')[0]
+        assert_equal(hostname_prefix, instance_hostname_prefix)
+
     @test
     def test_get_instance_status(self):
         result = dbaas.instances.get(instance_info.id)
@@ -685,7 +693,7 @@ class TestInstanceListing(object):
         assert_raises(exceptions.NotFound,
                       self.other_client.instances.delete, instance_info.id)
 
-    @test(enabled=CONFIG.values['test_mgmt'])
+    @test(enabled=CONFIG.test_mgmt)
     def test_mgmt_get_instance_after_started(self):
         result = dbaas_admin.management.show(instance_info.id)
         expected_attrs = ['account_id', 'addresses', 'created', 'databases',
@@ -756,8 +764,8 @@ class DeleteInstance(object):
         except exceptions.NotFound:
             pass
         except Exception as ex:
-            fail("A failure occured when trying to GET instance %s for the %d "
-                 "time: %s" % (str(instance_info.id), attempts, str(ex)))
+            fail("A failure occured when trying to GET instance %s for the %d"
+                 " time: %s" % (str(instance_info.id), attempts, str(ex)))
 
     @time_out(30)
     @test(enabled=CONFIG.values["reddwarf_volume_support"],
@@ -779,7 +787,7 @@ class DeleteInstance(object):
 @test(depends_on_classes=[CreateInstance, VerifyGuestStarted,
       WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
-      enabled=CONFIG.values['test_mgmt'])
+      enabled=CONFIG.test_mgmt)
 class VerifyInstanceMgmtInfo(object):
 
     @before_class

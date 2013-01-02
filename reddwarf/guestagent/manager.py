@@ -80,9 +80,9 @@ class Manager(periodic_task.PeriodicTasks):
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
         app.start_mysql_with_conf_changes(updated_memory_size)
 
-    def stop_mysql(self, context):
+    def stop_mysql(self, context, do_not_start_on_reboot=False):
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
-        app.stop_mysql()
+        app.stop_mysql(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
         """ Gets the filesystem stats for the path given """

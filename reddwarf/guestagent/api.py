@@ -188,10 +188,11 @@ class API(proxy.RpcProxy):
         self._call("start_mysql_with_conf_changes", AGENT_HIGH_TIMEOUT,
                    updated_memory_size=updated_memory_size)
 
-    def stop_mysql(self):
+    def stop_mysql(self, do_not_start_on_reboot=False):
         """Stop the MySQL server."""
         LOG.debug(_("Sending the call to stop MySQL on the Guest."))
-        self._call("stop_mysql", AGENT_HIGH_TIMEOUT)
+        self._call("stop_mysql", AGENT_HIGH_TIMEOUT,
+                   do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self):
         """Make an asynchronous call to self upgrade the guest agent"""

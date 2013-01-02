@@ -110,45 +110,51 @@ class FakeGuest(object):
 
     def prepare(self, memory_mb, databases, users, device_path=None,
                 mount_point=None):
+        from reddwarf.instance.models import DBInstance
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
         from reddwarf.guestagent.models import AgentHeartBeat
         LOG.debug("users... %s" % users)
         LOG.debug("databases... %s" % databases)
+        instance_name = DBInstance.find_by(id=self.id).name
         self.create_user(users)
         self.create_database(databases)
 
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
-            status.status = ServiceStatuses.RUNNING
+            if instance_name.endswith('GUEST_ERROR'):
+                status.status = ServiceStatuses.FAILED
+            else:
+                status.status = ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
         self.event_spawn(1.0, update_db)
 
-    def restart(self):
+    def _set_status(self, new_status='RUNNING'):
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses
+        print("Setting status to %s" % new_status)
+        states = {'RUNNING': ServiceStatuses.RUNNING,
+                  'SHUTDOWN': ServiceStatuses.SHUTDOWN,
+                  }
+        status = InstanceServiceStatus.find_by(instance_id=self.id)
+        status.status = states[new_status]
+        status.save()
+
+    def restart(self):
         # All this does is restart, and shut off the status updates while it
         # does so. So there's actually nothing to do to fake this out except
         # take a nap.
+        print("Sleeping for a second.")
         time.sleep(1)
-        status = InstanceServiceStatus.find_by(instance_id=self.id)
-        status.status = ServiceStatuses.RUNNING
-        status.save()
+        self._set_status('RUNNING')
 
     def start_mysql_with_conf_changes(self, updated_memory_size):
-        from reddwarf.instance.models import InstanceServiceStatus
-        from reddwarf.instance.models import ServiceStatuses
-        status = InstanceServiceStatus.find_by(instance_id=self.id)
-        status.status = ServiceStatuses.RUNNING
-        status.save()
+        time.sleep(2)
+        self._set_status('RUNNING')
 
-    def stop_mysql(self):
-        from reddwarf.instance.models import InstanceServiceStatus
-        from reddwarf.instance.models import ServiceStatuses
-        status = InstanceServiceStatus.find_by(instance_id=self.id)
-        status.status = ServiceStatuses.SHUTDOWN
-        status.save()
+    def stop_mysql(self, do_not_start_on_reboot=False):
+        self._set_status('SHUTDOWN')
 
     def get_volume_info(self):
         """Return used volume information in bytes."""

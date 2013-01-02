@@ -17,7 +17,6 @@
 """Wsgi helper utilities for reddwarf"""
 
 import eventlet.wsgi
-import os
 import paste.urlmap
 import re
 import traceback

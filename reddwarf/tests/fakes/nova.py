@@ -15,17 +15,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
-from reddwarf.openstack.common import log as logging
-from novaclient.v1_1.client import Client
 from novaclient import exceptions as nova_exceptions
-import uuid
+from novaclient.v1_1.client import Client
+from reddwarf.common.exception import PollTimeOut
+from reddwarf.common.utils import poll_until
+from reddwarf.openstack.common import log as logging
 from reddwarf.tests.fakes.common import authorize
 from reddwarf.tests.fakes.common import get_event_spawer
-from reddwarf.common.utils import poll_until
-from reddwarf.common.exception import PollTimeOut
+
+import eventlet
+import uuid
 
 LOG = logging.getLogger(__name__)
+FAKE_HOSTS = ["fake_host_1", "fake_host_2"]
 
 
 class FakeFlavor(object):
@@ -100,6 +102,7 @@ class FakeServer(object):
         self.name = name
         self.image_id = image_id
         self.flavor_ref = flavor_ref
+        self.old_flavor_ref = None
         self.event_spawn = get_event_spawer()
         self._current_status = "BUILD"
         self.volumes = volumes
@@ -111,7 +114,8 @@ class FakeServer(object):
         for volume in self.volumes:
             info_vols.append({'id': volume.id})
             volume.set_attachment(id)
-        self.host = "fake_host"
+        self.host = FAKE_HOSTS[0]
+        self.old_host = None
 
         self._info = {'os:volumes': info_vols}
 
@@ -124,13 +128,23 @@ class FakeServer(object):
             raise RuntimeError("Not in resize confirm mode.")
         self._current_status = "ACTIVE"
 
+    def revert_resize(self):
+        if self.status != "VERIFY_RESIZE":
+            raise RuntimeError("Not in resize confirm mode.")
+        self.host = self.old_host
+        self.old_host = None
+        self.flavor_ref = self.old_flavor_ref
+        self.old_flavor_ref = None
+        self._current_status = "ACTIVE"
+
     def reboot(self):
         LOG.debug("Rebooting server %s" % (self.id))
-        self._current_status = "REBOOT"
 
         def set_to_active():
             self._current_status = "ACTIVE"
             self.parent.schedule_simulate_running_server(self.id, 1.5)
+
+        self._current_status = "REBOOT"
         self.event_spawn(1, set_to_active)
 
     def delete(self):
@@ -157,7 +171,10 @@ class FakeServer(object):
         return [{"href": url, "rel": link_type}
                 for link_type in ['self', 'bookmark']]
 
-    def resize(self, new_flavor_id):
+    def migrate(self):
+        self.resize(None)
+
+    def resize(self, new_flavor_id=None):
         self._current_status = "RESIZE"
         if self.name.endswith("_RESIZE_TIMEOUT"):
             raise PollTimeOut()
@@ -165,15 +182,32 @@ class FakeServer(object):
         def set_to_confirm_mode():
             self._current_status = "VERIFY_RESIZE"
 
+            def set_to_active():
+                self.parent.schedule_simulate_running_server(self.id, 1.5)
+            self.event_spawn(1, set_to_active)
+
+        def change_host():
+            self.old_host = self.host
+            self.host = [host for host in FAKE_HOSTS if host != self.host][0]
+
         def set_flavor():
             if self.name.endswith("_RESIZE_ERROR"):
                 self._current_status = "ACTIVE"
+                return
+            if new_flavor_id is None:
+                # Migrations are flavorless flavor resizes.
+                # A resize MIGHT change the host, but a migrate
+                # deliberately does.
+                LOG.debug("Migrating fake instance.")
+                self.event_spawn(0.75, change_host)
             else:
+                LOG.debug("Resizing fake instance.")
+                self.old_flavor_ref = self.flavor_ref
                 flavor = self.parent.flavors.get(new_flavor_id)
                 self.flavor_ref = flavor.links[0]['href']
-                self.event_spawn(1, set_to_confirm_mode)
+            self.event_spawn(1, set_to_confirm_mode)
 
-        self.event_spawn(1, set_flavor)
+        self.event_spawn(0.8, set_flavor)
 
     def schedule_status(self, new_status, time_from_now):
         """Makes a new status take effect at the given time."""
@@ -291,10 +325,11 @@ class FakeServers(object):
         self.event_spawn(time_from_now, delete_server)
 
     def schedule_simulate_running_server(self, id, time_from_now):
+        from reddwarf.instance.models import DBInstance
+        from reddwarf.instance.models import InstanceServiceStatus
+        from reddwarf.instance.models import ServiceStatuses
+
         def set_server_running():
-            from reddwarf.instance.models import DBInstance
-            from reddwarf.instance.models import InstanceServiceStatus
-            from reddwarf.instance.models import ServiceStatuses
             instance = DBInstance.find_by(compute_instance_id=id)
             LOG.debug("Setting server %s to running" % instance.id)
             status = InstanceServiceStatus.find_by(instance_id=instance.id)
@@ -530,6 +565,10 @@ class FakeHost(object):
         self.totalRAM = 2004  # 16384
         self.usedRAM = 0
         for server in self.servers.list():
+            print server
+            if server.host != self.name:
+                print "\t...not on this host."
+                continue
             self.instances.append({
                 'uuid': server.id,
                 'name': server.name,
@@ -550,7 +589,8 @@ class FakeHosts(object):
 
     def __init__(self, servers):
         self.hosts = {}
-        self.add_host(FakeHost('fake_host', servers))
+        for host in FAKE_HOSTS:
+            self.add_host(FakeHost(host, servers))
 
     def add_host(self, host):
         self.hosts[host.name] = host

@@ -18,12 +18,7 @@ import time
 from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
-from proboscis.asserts import fail
+from proboscis.asserts import *
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 
@@ -50,11 +45,11 @@ GROUP_RESTART = "dbaas.api.instances.actions.restart"
 GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
-FAKE_MODE = CONFIG.values['fake_mode']
+FAKE_MODE = CONFIG.fake_mode
 # If true, then we will actually log into the database.
-USE_IP = not CONFIG.values['fake_mode']
+USE_IP = not FAKE_MODE
 # If true, then we will actually search for the process
-USE_LOCAL_OVZ = CONFIG.values['use_local_ovz']
+USE_LOCAL_OVZ = CONFIG.use_local_ovz
 
 
 class MySqlConnection(object):
@@ -99,10 +94,10 @@ class ActionTestBase(object):
 
     def set_up(self):
         """If you're using this as a base class, call this method first."""
+        self.dbaas = instance_info.dbaas
         if USE_IP:
             address = instance_info.get_address()
             self.connection = MySqlConnection(address)
-        self.dbaas = instance_info.dbaas
 
     @property
     def instance(self):
@@ -181,6 +176,8 @@ class RebootTestBase(ActionTestBase):
         """Wait until our connection breaks."""
         if not USE_IP:
             return
+        if not hasattr(self, "connection"):
+            return
         poll_until(self.connection.is_connected,
                    lambda connected: not connected,
                    time_out=TIME_OUT_TIME)
@@ -189,8 +186,6 @@ class RebootTestBase(ActionTestBase):
         """Wait until status becomes running."""
         def is_finished_rebooting():
             instance = self.instance
-            instance.get()
-            print(instance.status)
             if instance.status == "REBOOT":
                 return False
             assert_equal("ACTIVE", instance.status)
@@ -277,6 +272,8 @@ class RestartTests(RebootTestBase):
     @test(depends_on=[test_ensure_mysql_is_running], enabled=not FAKE_MODE)
     def test_unsuccessful_restart(self):
         """Restart MySQL via the REST when it should fail, assert it does."""
+        if FAKE_MODE:
+            raise SkipTest("Cannot run this in fake mode.")
         self.unsuccessful_restart()
 
     @test(depends_on=[test_set_up],
@@ -344,18 +341,22 @@ class RebootTests(RebootTestBase):
     @before_class
     def test_set_up(self):
         self.set_up()
+        assert_true(hasattr(self, 'dbaas'))
+        assert_true(self.dbaas is not None)
 
     @test
     def test_ensure_mysql_is_running(self):
         """Make sure MySQL is accessible before restarting."""
         self.ensure_mysql_is_running()
 
-    @test(depends_on=[test_ensure_mysql_is_running], enabled=not FAKE_MODE)
+    @test(depends_on=[test_ensure_mysql_is_running])
     def test_unsuccessful_restart(self):
         """Restart MySQL via the REST when it should fail, assert it does."""
+        if FAKE_MODE:
+            raise SkipTest("Cannot run this in fake mode.")
         self.unsuccessful_restart()
 
-    @after_class(always_run=True)
+    @after_class(depends_on=[test_set_up])
     def test_successful_restart(self):
         """Restart MySQL via the REST API successfully."""
         self.successful_restart()
@@ -414,6 +415,8 @@ class ResizeInstanceTest(ActionTestBase):
         assert_equal(len(flavors), 1, "Number of flavors with name '%s' "
                      "found was '%d'." % (flavor_name, len(flavors)))
         flavor = flavors[0]
+        self.old_dbaas_flavor = instance_info.dbaas_flavor
+        instance_info.dbaas_flavor = flavor
         assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
         flavor_href = self.dbaas.find_flavor_self_href(flavor)
         assert_true(flavor_href is not None,
@@ -424,6 +427,8 @@ class ResizeInstanceTest(ActionTestBase):
     def test_status_changed_to_resize(self):
         self.log_current_users()
         self.obtain_flavor_ids()
+        if CONFIG.simulate_events:
+            raise SkipTest("Cannot simulate this test.")
         self.dbaas.instances.resize_instance(
             self.instance_id,
             self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
@@ -460,6 +465,8 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_instance_returns_to_active_after_resize],
           runs_after=[resize_should_not_delete_users])
     def test_make_sure_mysql_is_running_after_resize(self):
+        if CONFIG.simulate_events:
+            raise SkipTest("Cannot simulate this test.")
         self.ensure_mysql_is_running()
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
@@ -468,6 +475,8 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_make_sure_mysql_is_running_after_resize])
     @time_out(TIME_OUT_TIME)
     def test_resize_down(self):
+        if CONFIG.simulate_events:
+            raise SkipTest("Cannot simulate this test.")
         expected_dbaas_flavor = self.expected_dbaas_flavor
         self.dbaas.instances.resize_instance(
             self.instance_id,
@@ -489,7 +498,7 @@ def resize_should_not_delete_users():
         fail("Somehow, the resize made the test user disappear.")
 
 
-@test(depends_on_classes=[ResizeInstanceTest], depends_on=[create_user],
+@test(runs_after=[ResizeInstanceTest], depends_on=[create_user],
       groups=[GROUP, tests.INSTANCES],
       enabled=CONFIG.reddwarf_volume_support)
 class ResizeInstanceVolume(object):
@@ -513,7 +522,7 @@ class ResizeInstanceVolume(object):
         instance_info.dbaas.instances.resize_volume(instance_info.id,
                                                     self.new_volume_size)
 
-    @test
+    @test(depends_on=[test_volume_resize])
     @time_out(300)
     def test_volume_resize_success(self):
 

@@ -116,6 +116,7 @@ if __name__=="__main__":
     from reddwarf.tests.api import instances_actions
     from reddwarf.tests.api import instances_delete
     from reddwarf.tests.api import instances_mysql_down
+    from reddwarf.tests.api import instances_resize
     from reddwarf.tests.api import databases
     from reddwarf.tests.api import root
     from reddwarf.tests.api import users

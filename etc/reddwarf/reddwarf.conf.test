@@ -81,6 +81,8 @@ agent_call_high_timeout = 100
 
 server_delete_time_out=10
 use_nova_server_volume = False
+dns_time_out = 120
+resize_time_out = 120
 
 # ============ notifer queue kombu connection options ========================
 

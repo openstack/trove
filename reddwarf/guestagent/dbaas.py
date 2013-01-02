@@ -587,8 +587,32 @@ class MySqlApp(object):
         LOG.debug(_("Finished installing mysql server"))
         #TODO(rnirmal): Add checks to make sure the package got installed
 
-    def stop_mysql(self, update_db=False):
+    def _enable_mysql_on_boot(self):
+        '''
+        # This works in Debian Squeeze, but Ubuntu Precise has other plans.
+        # Use update-rc.d to enable or disable mysql at boot.
+        # update-rc.d is idempotent; any substitute method should be, too.
+        flag = "enable" if enabled else "disable"
+        LOG.info("Setting mysql to '%s' in rc.d" % flag)
+        utils.execute_with_timeout("sudo", "update-rc.d", "mysql", flag)
+        '''
+        LOG.info("Enabling mysql on boot.")
+        conf = "/etc/init/mysql.conf"
+        command = "sudo sed -i '/^manual$/d' %(conf)s"
+        command = command % locals()
+        utils.execute_with_timeout(command, with_shell=True)
+
+    def _disable_mysql_on_boot(self):
+        LOG.info("Disabling mysql on boot.")
+        conf = "/etc/init/mysql.conf"
+        command = '''sudo sh -c "echo manual >> %(conf)s"'''
+        command = command % locals()
+        utils.execute_with_timeout(command, with_shell=True)
+
+    def stop_mysql(self, update_db=False, do_not_start_on_reboot=False):
         LOG.info(_("Stopping mysql..."))
+        if do_not_start_on_reboot:
+            self._disable_mysql_on_boot()
         utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
         if not self.status.wait_for_real_status_to_change_to(
                 rd_models.ServiceStatuses.SHUTDOWN,
@@ -711,6 +735,8 @@ class MySqlApp(object):
         # This is the site of all the trouble in the restart tests.
         # Essentially what happens is thaty mysql start fails, but does not
         # die. It is then impossible to kill the original, so
+
+        self._enable_mysql_on_boot()
 
         try:
             utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "start")

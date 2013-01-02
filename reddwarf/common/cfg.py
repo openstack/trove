@@ -88,6 +88,8 @@ common_opts = [
     cfg.IntOpt('volume_time_out', default=2),
     cfg.IntOpt('reboot_time_out', default=60 * 2),
     cfg.StrOpt('service_options', default=['mysql']),
+    cfg.IntOpt('dns_time_out', default=60 * 2),
+    cfg.IntOpt('resize_time_out', default=60 * 10),
 ]
 
 

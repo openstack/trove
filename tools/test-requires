@@ -12,6 +12,7 @@ wsgi_intercept
 proboscis
 python-reddwarfclient
 mock
+mox
 testtools>=0.9.22
 pexpect
 discover

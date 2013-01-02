@@ -59,6 +59,9 @@ class InstanceTask(object):
             return None
         return cls._lookup[code]
 
+    def __str__(self):
+        return "(%d %s %s)" % (self._code, self._action, self._db_text)
+
 
 class InstanceTasks(object):
     NONE = InstanceTask(0x01, 'NONE', 'No tasks for the instance.')

@@ -47,6 +47,10 @@ from reddwarf.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
+DNS_TIME_OUT = CONF.dns_time_out  # seconds.
+RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
+
 use_nova_server_volume = CONF.use_nova_server_volume
 
 
@@ -179,7 +183,7 @@ class FreshInstanceTasks(FreshInstance):
             lambda: volume_client.volumes.get(volume_ref.id),
             lambda v_ref: v_ref.status in ['available', 'error'],
             sleep_time=2,
-            time_out=2 * 60)
+            time_out=VOLUME_TIME_OUT)
 
         v_ref = volume_client.volumes.get(volume_ref.id)
         if v_ref.status in ['error']:
@@ -257,7 +261,7 @@ class FreshInstanceTasks(FreshInstance):
                     LOG.error(msg % (self.id, server.status))
                     raise ReddwarfError(status=server.status)
             poll_until(get_server, ip_is_available,
-                       sleep_time=1, time_out=60 * 2)
+                       sleep_time=1, time_out=DNS_TIME_OUT)
             server = nova_client.servers.get(self.db_info.compute_instance_id)
             LOG.info("Creating dns entry...")
             dns_client.create_instance_entry(self.id,
@@ -328,7 +332,6 @@ class BuiltInstanceTasks(BuiltInstance):
             self.update_db(volume_size=volume.size)
             self.nova_client.volumes.rescan_server_volume(self.server,
                                                           self.volume_id)
-            self.guest.resize_fs(self.get_volume_mountpoint())
         except PollTimeOut as pto:
             LOG.error("Timeout trying to rescan or resize the attached volume "
                       "filesystem for volume: %s" % self.volume_id)
@@ -342,104 +345,12 @@ class BuiltInstanceTasks(BuiltInstance):
 
     def resize_flavor(self, new_flavor_id, old_memory_size,
                       new_memory_size):
-        self._resize_flavor(new_flavor_id, old_memory_size,
-                            new_memory_size)
+        action = ResizeAction(self, new_flavor_id, new_memory_size)
+        action.execute()
 
     def migrate(self):
-        self._resize_flavor()
-
-    def _resize_flavor(self, new_flavor_id=None, old_memory_size=None,
-                       new_memory_size=None):
-        def resize_status_msg():
-            return "instance_id=%s, status=%s, flavor_id=%s, "\
-                   "dest. flavor id=%s)" % (self.db_info.id,
-                                            self.server.status,
-                                            str(self.server.flavor['id']),
-                                            str(new_flavor_id))
-
-        try:
-            LOG.debug("Instance %s calling stop_mysql..." % self.db_info.id)
-            self.guest.stop_mysql()
-            try:
-                LOG.debug("Instance %s calling Compute resize..."
-                          % self.db_info.id)
-                if new_flavor_id:
-                    LOG.debug("Instance with new flavor id")
-                    self.server.resize(new_flavor_id)
-                else:
-                    LOG.debug("Migrating instance %s without flavor change ..."
-                              % self.db_info.id)
-                    self.server.migrate()
-
-                LOG.debug("refreshing the compute status of the instance")
-                # Do initial check and confirm the status is appropriate.
-                self._refresh_compute_server_info()
-                if (self.server.status != "RESIZE" and
-                        self.server.status != "VERIFY_RESIZE"):
-                    msg = "Unexpected status after call to resize! : %s"
-                    raise ReddwarfError(msg % resize_status_msg())
-
-                LOG.debug("the compute status of the instance : (%s)"
-                          % self.server.status)
-
-                # Wait for the flavor to change.
-                def update_server_info():
-                    self._refresh_compute_server_info()
-                    LOG.debug("refreshed... compute status (%s)"
-                              % self.server.status)
-                    return self.server.status != 'RESIZE'
-
-                LOG.debug("polling the server until its not RESIZE")
-                utils.poll_until(
-                    update_server_info,
-                    sleep_time=2,
-                    time_out=60 * 10)
-
-                LOG.debug("compute status should not be RESIZE now")
-                LOG.debug("instance_id=%s, status=%s, "
-                          "dest. flavor id=%s)" % (self.db_info.id,
-                                                   self.server.status,
-                                                   str(new_flavor_id)))
-
-                # Do check to make sure the status and flavor id are correct.
-                if new_flavor_id:
-                    if str(self.server.flavor['id']) != str(new_flavor_id):
-                        msg = ("Assertion failed! flavor_id=%s and not %s"
-                               % (self.server.flavor['id'], new_flavor_id))
-                        raise ReddwarfError(msg)
-                if (self.server.status != "VERIFY_RESIZE"):
-                    msg = ("Assertion failed! status=%s and not %s"
-                           % (self.server.status, 'VERIFY_RESIZE'))
-                    raise ReddwarfError(msg)
-
-                LOG.debug("wait a sec man!!!")
-                time.sleep(5)
-                # Confirm the resize with Nova.
-                LOG.debug("Instance %s calling Compute confirm resize..."
-                          % self.db_info.id)
-                self.server.confirm_resize()
-                LOG.debug("Compute confirm resize DONE ...")
-                if new_flavor_id:
-                    # Record the new flavor_id in our database.
-                    LOG.debug("Updating instance %s to flavor_id %s."
-                              % (self.id, new_flavor_id))
-                    self.update_db(flavor_id=new_flavor_id)
-            except Exception as ex:
-                new_memory_size = old_memory_size
-                new_flavor_id = None
-                LOG.exception("Error resizing instance %s." % self.db_info.id)
-            finally:
-                # Tell the guest to restart MySQL with the new RAM size.
-                # This is in the finally because we have to call this, or
-                # else MySQL could stay turned off on an otherwise usable
-                # instance.
-                LOG.debug("Instance %s starting mysql..." % self.db_info.id)
-                if new_flavor_id:
-                    self.guest.start_mysql_with_conf_changes(new_memory_size)
-                else:
-                    self.guest.restart()
-        finally:
-            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+        action = MigrateAction(self)
+        action.execute()
 
     def reboot(self):
         try:
@@ -461,9 +372,7 @@ class BuiltInstanceTasks(BuiltInstance):
 
             # Set the status to PAUSED. The guest agent will reset the status
             # when the reboot completes and MySQL is running.
-            status = InstanceServiceStatus.find_by(instance_id=self.id)
-            status.set_status(inst_models.ServiceStatuses.PAUSED)
-            status.save()
+            self._set_service_status_to_paused()
             LOG.debug("Successfully rebooted instance %s" % self.id)
         except Exception, e:
             LOG.error("Failed to reboot instance %s: %s" % (self.id, str(e)))
@@ -486,3 +395,160 @@ class BuiltInstanceTasks(BuiltInstance):
         """Refreshes the compute server field."""
         server = self.nova_client.servers.get(self.server.id)
         self.server = server
+
+    def _refresh_compute_service_status(self):
+        """Refreshes the service status info for an instance."""
+        service = InstanceServiceStatus.find_by(instance_id=self.id)
+        self.service_status = service.get_status()
+
+    def _set_service_status_to_paused(self):
+        status = InstanceServiceStatus.find_by(instance_id=self.id)
+        status.set_status(inst_models.ServiceStatuses.PAUSED)
+        status.save()
+
+
+class ResizeActionBase(object):
+    """Base class for executing a resize action."""
+
+    def __init__(self, instance):
+        self.instance = instance
+
+    def _assert_guest_is_ok(self):
+        # The guest will never set the status to PAUSED.
+        self.instance._set_service_status_to_paused()
+        # Now we wait until it sets it to anything at all,
+        # so we know it's alive.
+        utils.poll_until(
+            self._guest_is_awake,
+            sleep_time=2,
+            time_out=RESIZE_TIME_OUT)
+
+    def _assert_nova_was_successful(self):
+        # Make sure Nova thinks things went well.
+        if self.instance.server.status != "VERIFY_RESIZE":
+            msg = "Migration failed! status=%s and not %s" \
+                  % (self.instance.server.status, 'VERIFY_RESIZE')
+            raise ReddwarfError(msg)
+
+    def _assert_mysql_is_ok(self):
+        # Tell the guest to turn on MySQL, and ensure the status becomes
+        # ACTIVE.
+        self._start_mysql()
+        # The guest should do this for us... but sometimes it walks funny.
+        self.instance._refresh_compute_service_status()
+        if self.instance.service_status != ServiceStatuses.RUNNING:
+            raise Exception("Migration failed! Service status was %s."
+                            % self.instance.service_status)
+
+    def _assert_processes_are_ok(self):
+        """Checks the procs; if anything is wrong, reverts the operation."""
+        # Tell the guest to turn back on, and make sure it can start.
+        self._assert_guest_is_ok()
+        LOG.debug("Nova guest is fine.")
+        self._assert_mysql_is_ok()
+        LOG.debug("Mysql is good, too.")
+
+    def _confirm_nova_action(self):
+        LOG.debug("Instance %s calling Compute confirm resize..."
+                  % self.instance.id)
+        self.instance.server.confirm_resize()
+
+    def _revert_nova_action(self):
+        LOG.debug("Instance %s calling Compute revert resize..."
+                  % self.instance.id)
+        self.instance.server.revert_resize()
+
+    def execute(self):
+        """Initiates the action."""
+        try:
+            LOG.debug("Instance %s calling stop_mysql..."
+                      % self.instance.id)
+            self.instance.guest.stop_mysql(do_not_start_on_reboot=True)
+            self._perform_nova_action()
+        finally:
+            self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
+
+    def _guest_is_awake(self):
+        self.instance._refresh_compute_service_status()
+        return self.instance.service_status != ServiceStatuses.PAUSED
+
+    def _perform_nova_action(self):
+        """Calls Nova to resize or migrate an instance, and confirms."""
+        need_to_revert = False
+        try:
+            LOG.debug("Initiating nova action")
+            self._initiate_nova_action()
+            LOG.debug("Waiting for nova action")
+            self._wait_for_nova_action()
+            LOG.debug("Asserting success")
+            self._assert_nova_was_successful()
+            LOG.debug("Asserting processes are OK")
+            need_to_revert = True
+            LOG.debug("* * * REVERT BARRIER PASSED * * *")
+            self._assert_processes_are_ok()
+            LOG.debug("Confirming nova action")
+            self._confirm_nova_action()
+        except Exception as ex:
+            LOG.exception("Exception during nova action.")
+            if need_to_revert:
+                LOG.error("Reverting action for instance %s" %
+                          self.instance.id)
+                self._revert_nova_action()
+            self.instance.guest.restart()
+            LOG.error("Error resizing instance %s." % self.instance.id)
+            raise ex
+
+        LOG.debug("Recording success")
+        self._record_action_success()
+
+    def _wait_for_nova_action(self):
+        # Wait for the flavor to change.
+        def update_server_info():
+            self.instance._refresh_compute_server_info()
+            return self.instance.server.status != 'RESIZE'
+        utils.poll_until(
+            update_server_info,
+            sleep_time=2,
+            time_out=RESIZE_TIME_OUT)
+
+
+class ResizeAction(ResizeActionBase):
+
+    def __init__(self, instance, new_flavor_id=None, new_memory_size=None):
+        self.instance = instance
+        self.new_flavor_id = new_flavor_id
+        self.new_memory_size = new_memory_size
+
+    def _assert_nova_was_successful(self):
+        # Do check to make sure the status and flavor id are correct.
+        if str(self.instance.server.flavor['id']) != str(self.new_flavor_id):
+            msg = "Assertion failed! flavor_id=%s and not %s" \
+                  % (self.instance.server.flavor['id'], self.new_flavor_id)
+            raise ReddwarfError(msg)
+        super(ResizeAction, self)._assert_nova_was_successful()
+
+    def _initiate_nova_action(self):
+        self.instance.server.resize(self.new_flavor_id)
+
+    def _record_action_success(self):
+        LOG.debug("Updating instance %s to flavor_id %s."
+                  % (self.instance.id, self.new_flavor_id))
+        self.instance.update_db(flavor_id=self.new_flavor_id)
+
+    def _start_mysql(self):
+        self.instance.guest.start_mysql_with_conf_changes(self.new_memory_size)
+
+
+class MigrateAction(ResizeActionBase):
+
+    def _initiate_nova_action(self):
+        LOG.debug("Migrating instance %s without flavor change ..."
+                  % self.instance.id)
+        self.instance.server.migrate()
+
+    def _record_action_success(self):
+        LOG.debug("Successfully finished Migration to %s: %s" %
+                  (self.hostname, self.instance.id))
+
+    def _start_mysql(self):
+        self.instance.guest.restart()

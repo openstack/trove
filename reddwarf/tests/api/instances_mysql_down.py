@@ -20,16 +20,8 @@ from proboscis.decorators import time_out
 from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_is
-from proboscis.asserts import assert_is_not
-from proboscis.asserts import assert_is_none
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
-from proboscis.asserts import Check
-from proboscis.asserts import fail
+from proboscis import SkipTest
+from proboscis.asserts import *
 import time
 
 from datetime import datetime
@@ -42,6 +34,7 @@ from reddwarf.tests.util import test_config
 
 @test(groups=["dbaas.api.instances.down"])
 class TestBase(object):
+    """Base class for instance-down tests."""
 
     @before_class
     def set_up(self):
@@ -63,11 +56,6 @@ class TestBase(object):
                    lambda instance: instance.status == "ACTIVE",
                    time_out=(60 * 8))
 
-    def _wait_for_new_volume_size(self, new_size):
-        poll_until(lambda: self.client.instances.get(self.id),
-                   lambda instance: instance.volume['size'] == new_size,
-                   time_out=(60 * 8))
-
     @test
     def create_instance(self):
         initial = self.client.instances.create(self.name, self.flavor_id,
@@ -75,10 +63,13 @@ class TestBase(object):
         self.id = initial.id
         self._wait_for_active()
 
-    @test(depends_on=[create_instance])
-    def put_into_shutdown_state(self):
+    def _shutdown_instance(self):
         instance = self.client.instances.get(self.id)
         self.mgmt_client.management.stop(self.id)
+
+    @test(depends_on=[create_instance])
+    def put_into_shutdown_state(self):
+        self._shutdown_instance()
 
     @test(depends_on=[put_into_shutdown_state])
     @time_out(60 * 5)
@@ -89,20 +80,20 @@ class TestBase(object):
     @test(depends_on=[create_instance],
           runs_after=[resize_instance_in_shutdown_state])
     def put_into_shutdown_state_2(self):
-        instance = self.client.instances.get(self.id)
-        self.mgmt_client.management.stop(self.id)
+        self._shutdown_instance()
 
     @test(depends_on=[put_into_shutdown_state_2])
     @time_out(60 * 5)
     def resize_volume_in_shutdown_state(self):
         self.client.instances.resize_volume(self.id, 2)
-        self._wait_for_new_volume_size(2)
+        poll_until(lambda: self.client.instances.get(self.id),
+                   lambda instance: instance.volume['size'] == 2,
+                   time_out=(60 * 8))
 
     @test(depends_on=[create_instance],
           runs_after=[resize_volume_in_shutdown_state])
     def put_into_shutdown_state_3(self):
-        instance = self.client.instances.get(self.id)
-        self.mgmt_client.management.stop(self.id)
+        self._shutdown_instance()
 
     @test(depends_on=[create_instance],
           runs_after=[put_into_shutdown_state_3])

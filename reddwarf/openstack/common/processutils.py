@@ -86,6 +86,7 @@ def execute(*cmd, **kwargs):
     attempts = kwargs.pop('attempts', 1)
     run_as_root = kwargs.pop('run_as_root', False)
     root_helper = kwargs.pop('root_helper', '')
+    with_shell = kwargs.pop('with_shell', False)
     if len(kwargs):
         raise UnknownArgumentError(_('Got unknown keyword args '
                                      'to utils.execute: %r') % kwargs)
@@ -102,7 +103,8 @@ def execute(*cmd, **kwargs):
                                    stdin=_PIPE,
                                    stdout=_PIPE,
                                    stderr=_PIPE,
-                                   close_fds=True)
+                                   close_fds=True,
+                                   shell=with_shell)
             result = None
             if process_input is not None:
                 result = obj.communicate(process_input)
