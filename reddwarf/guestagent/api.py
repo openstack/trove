@@ -201,7 +201,7 @@ class API(proxy.RpcProxy):
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container"""
         LOG.debug(_("Check Volume Info on Instance %s"), self.id)
-        self._check_for_hearbeat()
+        # self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path="/var/lib/mysql")
 

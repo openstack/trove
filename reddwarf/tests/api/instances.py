@@ -97,9 +97,7 @@ class InstanceTestInfo(object):
 
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
-        addresses = result.server['addresses']
-        address = addresses[test_config.visible_address_group][0]
-        return address['addr']
+        return result.ip[0]
 
     def get_local_id(self):
         mgmt_instance = self.dbaas_admin.management.show(self.id)
@@ -244,8 +242,6 @@ class CreateInstance(unittest.TestCase):
                           "way_too_large", instance_info.dbaas_flavor_href,
                           {'size': too_big + 1}, [])
             assert_equal(413, dbaas.last_http_code)
-        #else:
-        #    raise SkipTest("N/A: No max accepted volume size defined.")
 
     def test_create(self):
         databases = []
@@ -290,7 +286,6 @@ class CreateInstance(unittest.TestCase):
         else:
             report.log("Test was invoked with TESTS_USE_INSTANCE_ID=%s, so no "
                        "instance was actually created." % id)
-            report.log("Local id = %d" % instance_info.get_local_id())
 
         # Check these attrs only are returned in create response
         expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
@@ -665,7 +660,7 @@ class TestInstanceListing(object):
         if create_new_instance():
             assert_true(0.12 < instance.volume['used'] < 0.25)
 
-    @test
+    @test(enabled=do_not_delete_instance())
     def test_instance_not_shown_to_other_user(self):
         daffy_ids = [instance.id for instance in
                      self.other_client.instances.list()]
@@ -679,7 +674,7 @@ class TestInstanceListing(object):
         for id in admin_ids:
             assert_equal(daffy_ids.count(id), 0)
 
-    @test
+    @test(enabled=do_not_delete_instance())
     def test_instance_not_deleted_by_other_user(self):
         assert_raises(exceptions.NotFound,
                       self.other_client.instances.get, instance_info.id)

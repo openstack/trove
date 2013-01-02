@@ -178,7 +178,7 @@ class SimpleInstance(object):
 
         ### Report as Shutdown while deleting, unless there's an error.
         if 'DELETING' == ACTION:
-            if self.db_info.server_status in ["ACTIVE", "SHUTDOWN"]:
+            if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED"]:
                 return InstanceStatus.SHUTDOWN
             else:
                 msg = _("While shutting down instance (%s): server had "

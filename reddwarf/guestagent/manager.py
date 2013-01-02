@@ -83,3 +83,7 @@ class Manager(periodic_task.PeriodicTasks):
     def stop_mysql(self, context):
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
         app.stop_mysql()
+
+    def get_filesystem_stats(self, context, fs_path):
+        """ Gets the filesystem stats for the path given """
+        return dbaas.Interrogator().get_filesystem_volume_stats(fs_path)

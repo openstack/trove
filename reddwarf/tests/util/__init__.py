@@ -59,6 +59,7 @@ from reddwarf.tests.util import test_config as CONFIG
 from reddwarf.tests.util.client import TestClient as TestClient
 from reddwarf.tests.util.users import Requirements
 from reddwarf.common.exception import PollTimeOut
+from reddwarf.common.utils import import_object
 
 
 WHITE_BOX = test_config.white_box
@@ -221,6 +222,45 @@ else:
     from reddwarf.common.utils import poll_until
 
 
+def mysql_connection():
+    cls = CONFIG.get('mysql_connection',
+                     "local.MySqlConnection")
+    if cls == "local.MySqlConnection":
+        return MySqlConnection()
+    return import_object(cls)()
+
+
+def find_mysql_procid_on_instance(ip_address):
+    """Returns the process id of MySql on an instance if running, or None."""
+    cmd = "ssh %s ps aux | grep /usr/sbin/mysqld " \
+          "| awk '{print $2}'" % ip_address
+    stdout, stderr = process(cmd)
+    try:
+        return int(stdout)
+    except ValueError:
+        return None
+
+
+class MySqlConnection(object):
+
+    def assert_fails(self, user_name, password, ip):
+        from reddwarf.tests.util import mysql
+        try:
+            with mysql.create_mysql_connection(ip, user_name, password) as db:
+                pass
+            fail("Should have failed to connect: mysql --host %s -u %s -p%s"
+                 % (ip, user_name, password))
+        except mysql.MySqlPermissionsFailure:
+            return  # Good, this is what we wanted.
+        except mysql.MySqlConnectionFailure as mcf:
+            fail("Expected to see permissions failure. Instead got message:"
+                 "%s" % mcf.message)
+
+    def create(self, ip, user_name, password):
+        from reddwarf.tests.util import mysql
+        return mysql.create_mysql_connection(ip, user_name, password)
+
+
 class LocalSqlClient(object):
     """A sqlalchemy wrapper to manage transactions"""
 
@@ -250,3 +290,11 @@ class LocalSqlClient(object):
             self.trans.rollback()
             self.trans = None
             raise
+
+    @staticmethod
+    def init_engine(user, password, host):
+        return create_engine("mysql://%s:%s@%s:3306" %
+                             (user, password, host),
+                             pool_recycle=1800, echo=True)
+        self.engine = engine
+        self.use_flush = use_flush
