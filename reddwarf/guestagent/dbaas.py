@@ -198,7 +198,7 @@ class MySqlAppStatus(object):
             except ProcessExecutionError as e:
                 if not MYSQLD_ARGS:
                     MYSQLD_ARGS = load_mysqld_options()
-                pid_file = MYSQLD_ARGS.get('pid-file',
+                pid_file = MYSQLD_ARGS.get('pid_file',
                                            '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
                     LOG.info("Service Status is CRASHED.")
