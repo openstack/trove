@@ -127,5 +127,6 @@ if __name__=="__main__":
     from reddwarf.tests.guestagent import test_manager
     from reddwarf.tests.guestagent import test_service
     from reddwarf.tests.guestagent import test_query
+    from reddwarf.tests.guestagent import test_models
 
     proboscis.TestProgram().run_and_exit()
