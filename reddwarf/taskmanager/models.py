@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import time
 from eventlet import greenthread
 from datetime import datetime
 import traceback
@@ -353,7 +354,7 @@ class BuiltInstanceTasks(BuiltInstance):
             return "instance_id=%s, status=%s, flavor_id=%s, "\
                    "dest. flavor id=%s)" % (self.db_info.id,
                                             self.server.status,
-                                            str(self.flavor['id']),
+                                            str(self.server.flavor['id']),
                                             str(new_flavor_id))
 
         try:
@@ -363,12 +364,14 @@ class BuiltInstanceTasks(BuiltInstance):
                 LOG.debug("Instance %s calling Compute resize..."
                           % self.db_info.id)
                 if new_flavor_id:
+                    LOG.debug("Instance with new flavor id")
                     self.server.resize(new_flavor_id)
                 else:
                     LOG.debug("Migrating instance %s without flavor change ..."
                               % self.db_info.id)
                     self.server.migrate()
 
+                LOG.debug("refreshing the compute status of the instance")
                 # Do initial check and confirm the status is appropriate.
                 self._refresh_compute_server_info()
                 if (self.server.status != "RESIZE" and
@@ -376,31 +379,46 @@ class BuiltInstanceTasks(BuiltInstance):
                     msg = "Unexpected status after call to resize! : %s"
                     raise ReddwarfError(msg % resize_status_msg())
 
+                LOG.debug("the compute status of the instance : (%s)"
+                          % self.server.status)
+
                 # Wait for the flavor to change.
                 def update_server_info():
                     self._refresh_compute_server_info()
+                    LOG.debug("refreshed... compute status (%s)"
+                              % self.server.status)
                     return self.server.status != 'RESIZE'
 
+                LOG.debug("polling the server until its not RESIZE")
                 utils.poll_until(
                     update_server_info,
                     sleep_time=2,
-                    time_out=60 * 2)
+                    time_out=60 * 10)
+
+                LOG.debug("compute status should not be RESIZE now")
+                LOG.debug("instance_id=%s, status=%s, "
+                          "dest. flavor id=%s)" % (self.db_info.id,
+                                                   self.server.status,
+                                                   str(new_flavor_id)))
 
                 # Do check to make sure the status and flavor id are correct.
                 if new_flavor_id:
                     if str(self.server.flavor['id']) != str(new_flavor_id):
-                        msg = "Assertion failed! flavor_id=%s and not %s" \
-                              % (self.server.flavor['id'], new_flavor_id)
+                        msg = ("Assertion failed! flavor_id=%s and not %s"
+                               % (self.server.flavor['id'], new_flavor_id))
                         raise ReddwarfError(msg)
                 if (self.server.status != "VERIFY_RESIZE"):
-                    msg = "Assertion failed! status=%s and not %s" \
-                          % (self.server.status, 'VERIFY_RESIZE')
+                    msg = ("Assertion failed! status=%s and not %s"
+                           % (self.server.status, 'VERIFY_RESIZE'))
                     raise ReddwarfError(msg)
 
+                LOG.debug("wait a sec man!!!")
+                time.sleep(5)
                 # Confirm the resize with Nova.
                 LOG.debug("Instance %s calling Compute confirm resize..."
                           % self.db_info.id)
                 self.server.confirm_resize()
+                LOG.debug("Compute confirm resize DONE ...")
                 if new_flavor_id:
                     # Record the new flavor_id in our database.
                     LOG.debug("Updating instance %s to flavor_id %s."
@@ -409,8 +427,7 @@ class BuiltInstanceTasks(BuiltInstance):
             except Exception as ex:
                 new_memory_size = old_memory_size
                 new_flavor_id = None
-                LOG.error("Error resizing instance %s." % self.db_info.id)
-                LOG.error(ex)
+                LOG.exception("Error resizing instance %s." % self.db_info.id)
             finally:
                 # Tell the guest to restart MySQL with the new RAM size.
                 # This is in the finally because we have to call this, or

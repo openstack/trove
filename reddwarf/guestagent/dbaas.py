@@ -82,7 +82,7 @@ def get_auth_password():
     pwd, err = utils.execute_with_timeout(
         "sudo",
         "awk",
-        "/password\\t=/{print $3}",
+        "/password\\t=/{print $3; exit}",
         "/etc/mysql/my.cnf")
     if err:
         LOG.err(err)
@@ -224,7 +224,7 @@ class MySqlAppStatus(object):
     @property
     def is_mysql_running(self):
         """True if MySQL is running."""
-        return (self.status is not None,
+        return (self.status is not None and
                 self.status == rd_models.ServiceStatuses.RUNNING)
 
     @staticmethod
@@ -624,6 +624,9 @@ class MySqlApp(object):
             self.status.end_install_or_restart()
 
     def _replace_mycnf_with_template(self, template_path, original_path):
+        LOG.debug("replacing the mycnf with template")
+        LOG.debug("template_path(%s) original_path(%s)"
+                  % (template_path, original_path))
         if os.path.isfile(template_path):
             utils.execute_with_timeout(
                 "sudo", "mv", original_path,
@@ -634,6 +637,7 @@ class MySqlApp(object):
 
     def _write_temp_mycnf_with_admin_account(self, original_file_path,
                                              temp_file_path, password):
+        utils.execute_with_timeout("sudo", "chmod", "0711", MYSQL_BASE_DIR)
         mycnf_file = open(original_file_path, 'r')
         tmp_file = open(temp_file_path, 'w')
         for line in mycnf_file:
@@ -729,7 +733,10 @@ class MySqlApp(object):
             raise RuntimeError("Could not start MySQL!")
 
     def start_mysql_with_conf_changes(self, updated_memory_mb):
-        LOG.info(_("Starting mysql with conf changes..."))
+        LOG.info(_("Starting mysql with conf changes to memory(%s)...")
+                 % updated_memory_mb)
+        LOG.info(_("inside the guest - self.status.is_mysql_running(%s)...")
+                 % self.status.is_mysql_running)
         if self.status.is_mysql_running:
             LOG.error(_("Cannot execute start_mysql_with_conf_changes because "
                         "MySQL state == %s!") % self.status)
@@ -742,3 +749,25 @@ class MySqlApp(object):
         #(cp16net) could raise an exception, does it need to be handled here?
         version = pkg.pkg_version(self.MYSQL_PACKAGE_VERSION)
         return not version is None
+
+
+class Interrogator(object):
+    def get_filesystem_volume_stats(self, fs_path):
+        out, err = utils.execute_with_timeout(
+            "stat",
+            "-f",
+            "-t",
+            fs_path)
+        if err:
+            LOG.err(err)
+            raise RuntimeError("Filesystem not found (%s) : %s"
+                               % (fs_path, err))
+        stats = out.split()
+        output = {}
+        output['block_size'] = int(stats[4])
+        output['total_blocks'] = int(stats[6])
+        output['free_blocks'] = int(stats[7])
+        output['total'] = int(stats[6]) * int(stats[4])
+        output['free'] = int(stats[7]) * int(stats[4])
+        output['used'] = int(output['total']) - int(output['free'])
+        return output

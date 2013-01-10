@@ -158,8 +158,8 @@ class TestUsers(object):
     def show_databases(self, user, password):
         print("Going to connect to %s, %s, %s"
               % (instance_info.get_address(), user, password))
-        with create_mysql_connection(instance_info.get_address(),
-                                     user, password) as db:
+        with util.mysql_connection().create(instance_info.get_address(),
+                                            user, password) as db:
             print(db)
             dbs = db.execute("show databases")
             return [row['Database'] for row in dbs]
@@ -264,8 +264,8 @@ class TestUsers(object):
 
     def _check_connection(self, username, password):
         if not FAKE:
-            util.assert_mysql_connection_fails(username, password,
-                                               instance_info.get_address())
+            util.mysql_connection().assert_fails(username, password,
+                                                 instance_info.get_address())
         # Also determine the db is gone via API.
         result = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)

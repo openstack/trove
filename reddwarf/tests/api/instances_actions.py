@@ -66,8 +66,9 @@ class MySqlConnection(object):
         """Connect to MySQL database."""
         print("Connecting to MySQL, mysql --host %s -u %s -p%s"
               % (self.host, MYSQL_USERNAME, MYSQL_PASSWORD))
-        self.client = LocalSqlClient(util.init_engine(
-            MYSQL_USERNAME, MYSQL_PASSWORD, self.host), use_flush=False)
+        sql_engine = LocalSqlClient.init_engine(MYSQL_USERNAME, MYSQL_PASSWORD,
+                                                self.host)
+        self.client = LocalSqlClient(sql_engine, use_flush=False)
 
     def is_connected(self):
         try:
@@ -108,8 +109,8 @@ class ActionTestBase(object):
         return self.dbaas.instances.get(self.instance_id)
 
     @property
-    def instance_local_id(self):
-        return instance_info.get_local_id()
+    def instance_address(self):
+        return instance_info.get_address()
 
     @property
     def instance_id(self):
@@ -146,7 +147,7 @@ class ActionTestBase(object):
             check.equal(instance.status, "ACTIVE")
 
     def find_mysql_proc_on_instance(self):
-        return util.find_mysql_procid_on_instance(self.instance_local_id)
+        return util.find_mysql_procid_on_instance(self.instance_address)
 
     def log_current_users(self):
         users = self.dbaas.users.list(self.instance_id)
@@ -217,7 +218,7 @@ class RebootTestBase(ActionTestBase):
         self.fix_mysql()  # kill files
         cmd = """ssh %s 'sudo cp /dev/null /var/lib/mysql/ib_logfile%d'"""
         for index in range(2):
-            full_cmd = cmd % (self.instance_local_id, index)
+            full_cmd = cmd % (self.instance_address, index)
             print("RUNNING COMMAND: %s" % full_cmd)
             util.process(full_cmd)
 
@@ -226,13 +227,13 @@ class RebootTestBase(ActionTestBase):
         if not FAKE_MODE:
             cmd = "ssh %s 'sudo rm /var/lib/mysql/ib_logfile%d'"
             for index in range(2):
-                util.process(cmd % (self.instance_local_id, index))
+                util.process(cmd % (self.instance_address, index))
 
     def wait_for_failure_status(self):
         """Wait until status becomes running."""
         def is_finished_rebooting():
             instance = self.instance
-            if instance.status == "REBOOT":
+            if instance.status == "REBOOT" or instance.status == "ACTIVE":
                 return False
             assert_equal("SHUTDOWN", instance.status)
             return True
