@@ -95,7 +95,7 @@ def mgmt_instance_get():
         instance.has_field('tenant_id', basestring)
         instance.has_field('updated', basestring)
         # Can be None if no volume is given on this instance.
-        if CONFIG.reddwarf_main_instance_has_volume:
+        if CONFIG.reddwarf_volume_support:
             instance.has_field('volume', dict, volume_check)
         else:
             instance.has_field('volume', None)

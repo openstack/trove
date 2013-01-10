@@ -235,7 +235,7 @@ class CreateInstance(unittest.TestCase):
     """
 
     def test_instance_size_too_big(self):
-        vol_ok = CONFIG.get('reddwarf_can_have_volume', False)
+        vol_ok = CONFIG.get('reddwarf_volume_support', False)
         if 'reddwarf_max_accepted_volume_size' in CONFIG.values and vol_ok:
             too_big = CONFIG.values['reddwarf_max_accepted_volume_size']
             assert_raises(exceptions.OverLimit, dbaas.instances.create,
@@ -253,7 +253,7 @@ class CreateInstance(unittest.TestCase):
         users.append({"name": "lite", "password": "litepass",
                       "databases": [{"name": "firstdb"}]})
         instance_info.users = users
-        if CONFIG.values['reddwarf_main_instance_has_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             instance_info.volume = {'size': 1}
         else:
             instance_info.volume = None
@@ -290,7 +290,7 @@ class CreateInstance(unittest.TestCase):
         # Check these attrs only are returned in create response
         expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
                           'name', 'status', 'updated']
-        if CONFIG.values['reddwarf_can_have_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             expected_attrs.append('volume')
         if CONFIG.values['reddwarf_dns_support']:
             expected_attrs.append('hostname')
@@ -302,11 +302,11 @@ class CreateInstance(unittest.TestCase):
             # Don't CheckInstance if the instance already exists.
             check.flavor()
             check.links(result._info['links'])
-            if CONFIG.values['reddwarf_can_have_volume']:
+            if CONFIG.values['reddwarf_volume_support']:
                 check.volume()
 
     def test_create_failure_with_empty_volume(self):
-        if CONFIG.values['reddwarf_must_have_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             instance_name = "instance-failure-with-no-volume-size"
             databases = []
             volume = {}
@@ -316,7 +316,7 @@ class CreateInstance(unittest.TestCase):
             assert_equal(400, dbaas.last_http_code)
 
     def test_create_failure_with_no_volume_size(self):
-        if CONFIG.values['reddwarf_must_have_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             instance_name = "instance-failure-with-no-volume-size"
             databases = []
             volume = {'size': None}
@@ -326,7 +326,7 @@ class CreateInstance(unittest.TestCase):
             assert_equal(400, dbaas.last_http_code)
 
     def test_create_failure_with_no_name(self):
-        if CONFIG.values['reddwarf_main_instance_has_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             volume = {'size': 1}
         else:
             volume = None
@@ -338,7 +338,7 @@ class CreateInstance(unittest.TestCase):
         assert_equal(400, dbaas.last_http_code)
 
     def test_create_failure_with_spaces_for_name(self):
-        if CONFIG.values['reddwarf_main_instance_has_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             volume = {'size': 1}
         else:
             volume = None
@@ -650,7 +650,7 @@ class TestInstanceListing(object):
     def test_get_legacy_status_notfound(self):
         assert_raises(exceptions.NotFound, dbaas.instances.get, -2)
 
-    @test(enabled=CONFIG.values["reddwarf_main_instance_has_volume"])
+    @test(enabled=CONFIG.values["reddwarf_volume_support"])
     def test_volume_found(self):
         instance = dbaas.instances.get(instance_info.id)
         if create_new_instance():
@@ -756,7 +756,7 @@ class DeleteInstance(object):
                  "time: %s" % (str(instance_info.id), attempts, str(ex)))
 
     @time_out(30)
-    @test(enabled=CONFIG.values["reddwarf_can_have_volume"],
+    @test(enabled=CONFIG.values["reddwarf_volume_support"],
           depends_on=[test_delete])
     def test_volume_is_deleted(self):
         raise SkipTest("Cannot test volume is deleted from db.")
@@ -881,14 +881,14 @@ class CheckInstance(AttrCheck):
             self.links(self.instance['flavor']['links'])
 
     def volume_key_exists(self):
-        if CONFIG.values['reddwarf_main_instance_has_volume']:
+        if CONFIG.values['reddwarf_volume_support']:
             if 'volume' not in self.instance:
                 self.fail("'volume' not found in instance.")
                 return False
             return True
 
     def volume(self):
-        if not CONFIG.values["reddwarf_can_have_volume"]:
+        if not CONFIG.values["reddwarf_volume_support"]:
             return
         if self.volume_key_exists():
             expected_attrs = ['size']
@@ -898,7 +898,7 @@ class CheckInstance(AttrCheck):
                              msg="Volumes")
 
     def used_volume(self):
-        if not CONFIG.values["reddwarf_can_have_volume"]:
+        if not CONFIG.values["reddwarf_volume_support"]:
             return
         if self.volume_key_exists():
             expected_attrs = ['size', 'used']
