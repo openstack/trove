@@ -36,10 +36,14 @@ from datetime import datetime
 from nose.plugins.skip import SkipTest
 from nose.tools import assert_true
 
+from time import sleep
+
+from reddwarf.common import exception as rd_exceptions
 from reddwarfclient import exceptions
 
 from proboscis.decorators import time_out
 from proboscis import before_class
+from proboscis import after_class
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
@@ -931,6 +935,81 @@ class CheckInstance(AttrCheck):
         expected_attrs = ['description', 'id', 'name', 'size']
         self.attrs_exist(self.instance['volume'], expected_attrs,
                          msg="Volume")
+
+
+@test(groups=[GROUP])
+class BadInstanceStatusBug():
+    @before_class()
+    def setUp(self):
+        self.instances = []
+        reqs = Requirements(is_admin=True)
+        self.user = CONFIG.users.find_user(
+            reqs, black_list=[])
+        self.client = create_dbaas_client(self.user)
+        self.mgmt = self.client.management
+
+    @test
+    def test_instance_status_after_double_migrate(self):
+        """
+        This test is to verify that instance status returned is more
+        informative than 'Status is {}'.  There are several ways to
+        replicate this error.  A double migration is just one of them but
+        since this is a known way to recreate that error we will use it
+        here to be sure that the error is fixed.  The actual code lives
+        in reddwarf/instance/models.py in _validate_can_perform_action()
+        """
+        # TODO(imsplitbit): test other instances where this issue could be
+        # replicated.  Resizing a resized instance awaiting confirmation
+        # can be used as another case.  This all boils back to the same
+        # piece of code so I'm not sure if it's relevant or not but could
+        # be done.
+        result = self.client.instances.create('testbox', 1, {'size': 5})
+        id = result.id
+        self.instances.append(id)
+
+        def verify_instance_is_active():
+            result = self.client.instances.get(id)
+            print result.status
+            return result.status == 'ACTIVE'
+
+        def attempt_migrate():
+            print 'attempting migration'
+            try:
+                self.mgmt.migrate(id)
+            except exceptions.UnprocessableEntity:
+                return False
+            return True
+
+        # Timing necessary to make the error occur
+        poll_until(verify_instance_is_active, time_out=120, sleep_time=1)
+
+        try:
+            poll_until(attempt_migrate, time_out=10, sleep_time=1)
+        except rd_exceptions.PollTimeOut:
+            fail('Initial migration timed out')
+
+        try:
+            self.mgmt.migrate(id)
+        except exceptions.UnprocessableEntity as err:
+            assert('status was {}' not in err.message)
+        else:
+            # If we are trying to test what status is returned when an
+            # instance is in a confirm_resize state and another
+            # migration is attempted then we also need to
+            # assert that an exception is raised when running migrate.
+            # If one is not then we aren't able to test what the
+            # returned status is in the exception message.
+            fail('UnprocessableEntity was not thrown')
+
+    @after_class(always_run=True)
+    def tearDown(self):
+        while len(self.instances) > 0:
+            for id in self.instances:
+                try:
+                    self.client.instances.delete(id)
+                    self.instances.remove(id)
+                except exceptions.UnprocessableEntity:
+                    sleep(1.0)
 
 
 def diagnostic_tests_helper(diagnostics):
