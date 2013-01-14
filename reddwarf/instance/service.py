@@ -272,15 +272,14 @@ class InstanceController(wsgi.Controller):
             if not name:
                 raise exception.MissingKey(key='name')
             vol_enabled = CONF.reddwarf_volume_support
-            must_have_vol = CONF.reddwarf_must_use_volume
             if vol_enabled:
                 if body['instance'].get('volume', None):
                     if body['instance']['volume'].get('size', None):
                         volume_size = body['instance']['volume']['size']
                         InstanceController._validate_volume_size(volume_size)
-                    elif must_have_vol:
+                    else:
                         raise exception.MissingKey(key="size")
-                elif must_have_vol:
+                else:
                     raise exception.MissingKey(key="volume")
 
         except KeyError as e:

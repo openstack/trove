@@ -314,7 +314,7 @@ class StopTests(RebootTestBase):
         Confirms the get call behaves appropriately while an instance is
         down.
         """
-        if not CONFIG.reddwarf_main_instance_has_volume:
+        if not CONFIG.reddwarf_volume_support:
             raise SkipTest("Not testing volumes.")
         instance = self.dbaas.instances.get(self.instance_id)
         with TypeCheck("instance", instance) as check:
@@ -489,7 +489,7 @@ def resize_should_not_delete_users():
 
 @test(depends_on_classes=[ResizeInstanceTest], depends_on=[create_user],
       groups=[GROUP, tests.INSTANCES],
-      enabled=CONFIG.reddwarf_main_instance_has_volume)
+      enabled=CONFIG.reddwarf_volume_support)
 class ResizeInstanceVolume(object):
     """ Resize the volume of the instance """
 

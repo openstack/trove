@@ -79,6 +79,7 @@ class TestConfig(object):
             "report_directory": os.environ.get("REPORT_DIRECTORY", None),
             "sleep_mode": "simulated",
             "simulate_events": False,
+            "reddwarf_volume_support": True,
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

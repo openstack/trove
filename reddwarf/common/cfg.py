@@ -36,7 +36,6 @@ common_opts = [
     cfg.BoolOpt('reddwarf_volume_support',
                 default=False,
                 help='File name for the paste.deploy config for reddwarf-api'),
-    cfg.BoolOpt('reddwarf_must_use_volume', default=False),
     cfg.ListOpt('admin_roles', default=[]),
     cfg.StrOpt('remote_implementation',
                default="real",
