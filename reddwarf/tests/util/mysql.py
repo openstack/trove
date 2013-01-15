@@ -1,6 +1,7 @@
 import pexpect
 import re
 from sqlalchemy import create_engine
+from reddwarf import tests
 from reddwarf.tests.config import CONFIG
 from sqlalchemy.exc import OperationalError
 try:
@@ -105,7 +106,7 @@ class PexpectMySqlConnection(object):
         self.host = host
         self.user = user
         self.password = password
-        cmd = 'ssh %s' % ssh_args
+        cmd = '%s %s' % (tests.SSH_CMD, ssh_args)
         self.proc = pexpect.spawn(cmd)
         print(cmd)
         self.proc.expect(":~\$", timeout=self.TIME_OUT)
