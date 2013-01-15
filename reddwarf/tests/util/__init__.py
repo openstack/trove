@@ -55,6 +55,7 @@ from proboscis.asserts import ASSERTION_ERROR
 from proboscis import SkipTest
 from reddwarfclient import Dbaas
 from reddwarfclient.client import ReddwarfHTTPClient
+from reddwarf import tests
 from reddwarf.tests.util import test_config as CONFIG
 from reddwarf.tests.util.client import TestClient as TestClient
 from reddwarf.tests.util.users import Requirements
@@ -232,8 +233,8 @@ def mysql_connection():
 
 def find_mysql_procid_on_instance(ip_address):
     """Returns the process id of MySql on an instance if running, or None."""
-    cmd = "ssh %s ps aux | grep /usr/sbin/mysqld " \
-          "| awk '{print $2}'" % ip_address
+    cmd = "%s %s ps aux | grep /usr/sbin/mysqld " \
+          "| awk '{print $2}'" % (tests.SSH_CMD, ip_address)
     stdout, stderr = process(cmd)
     try:
         return int(stdout)

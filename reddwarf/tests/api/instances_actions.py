@@ -216,18 +216,20 @@ class RebootTestBase(ActionTestBase):
     def mess_up_mysql(self):
         """Ruin MySQL's ability to restart."""
         self.fix_mysql()  # kill files
-        cmd = """ssh %s 'sudo cp /dev/null /var/lib/mysql/ib_logfile%d'"""
+        cmd = """%s %s 'sudo cp /dev/null /var/lib/mysql/ib_logfile%d'"""
         for index in range(2):
-            full_cmd = cmd % (self.instance_address, index)
+            full_cmd = cmd % (tests.SSH_CMD, self.instance_address, index)
             print("RUNNING COMMAND: %s" % full_cmd)
             util.process(full_cmd)
 
     def fix_mysql(self):
         """Fix MySQL's ability to restart."""
         if not FAKE_MODE:
-            cmd = "ssh %s 'sudo rm /var/lib/mysql/ib_logfile%d'"
+            cmd = "%s %s 'sudo rm /var/lib/mysql/ib_logfile%d'"
             for index in range(2):
-                util.process(cmd % (self.instance_address, index))
+                util.process(cmd % (tests.SSH_CMD,
+                                    self.instance_address,
+                                    index))
 
     def wait_for_failure_status(self):
         """Wait until status becomes running."""
