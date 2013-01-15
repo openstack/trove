@@ -14,10 +14,8 @@
 
 import testtools
 from reddwarf.guestagent import query
-from proboscis import test
 
 
-@test(groups=["dbaas.guestagent.dbaas"])
 class QueryTest(testtools.TestCase):
     def setUp(self):
         super(QueryTest, self).setUp()

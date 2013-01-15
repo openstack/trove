@@ -15,10 +15,8 @@
 import testtools
 from mock import Mock, MagicMock
 from reddwarf.guestagent import service
-from proboscis import test
 
 
-@test(groups=["dbaas.guestagent.dbaas"])
 class ServiceTest(testtools.TestCase):
     def setUp(self):
         super(ServiceTest, self).setUp()
