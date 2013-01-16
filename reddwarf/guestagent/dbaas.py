@@ -26,9 +26,7 @@ handles RPC calls relating to Platform specific operations.
 """
 
 import os
-import pexpect
 import re
-import sys
 import time
 import uuid
 
@@ -39,12 +37,10 @@ from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from reddwarf import db
-from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import cfg
 from reddwarf.common import utils
 from reddwarf.guestagent.db import models
-from reddwarf.guestagent.volume import VolumeDevice
 from reddwarf.guestagent.query import Query
 from reddwarf.guestagent import pkg
 from reddwarf.instance import models as rd_models
@@ -85,7 +81,7 @@ def get_auth_password():
         "/password\\t=/{print $3; exit}",
         "/etc/mysql/my.cnf")
     if err:
-        LOG.err(err)
+        LOG.error(err)
         raise RuntimeError("Problem reading my.cnf! : %s" % err)
     return pwd.strip()
 
@@ -630,14 +626,6 @@ class MySqlApp(object):
                            WHERE User='root'
                            AND Host!='localhost';""")
         client.execute(t)
-
-    def restart_with_sync(self, migration_function):
-        """Restarts MySQL, doing some action in-between.
-
-        Does not update the database."""
-        self._internal_stop_mysql()
-        migration_function()
-        self.start_mysql()
 
     def restart(self):
         try:
