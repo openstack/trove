@@ -16,14 +16,11 @@ import testtools
 from mock import Mock, MagicMock
 from reddwarf.guestagent import models
 from reddwarf.common import utils
-from reddwarf.db import sqlalchemy
+from reddwarf.db.sqlalchemy import api as dbapi
 from reddwarf.db import models as dbmodels
-from proboscis import test
-
 from datetime import datetime
 
 
-@test(groups=["dbaas.guestagent.dbaas"])
 class AgentHeartBeatTest(testtools.TestCase):
     def setUp(self):
         super(AgentHeartBeatTest, self).setUp()
@@ -33,7 +30,7 @@ class AgentHeartBeatTest(testtools.TestCase):
 
     def test_create(self):
         utils.generate_uuid = Mock()
-        sqlalchemy.api.save = MagicMock(
+        dbapi.save = MagicMock(
             return_value=dbmodels.DatabaseModelBase)
         dbmodels.DatabaseModelBase.is_valid = Mock(return_value=True)
         models.AgentHeartBeat.create()
@@ -46,7 +43,7 @@ class AgentHeartBeatTest(testtools.TestCase):
         dbmodels.DatabaseModelBase = Mock
         dbmodels.get_db_api = MagicMock(
             return_value=dbmodels.DatabaseModelBase)
-        sqlalchemy.api.save = Mock()
+        dbapi.save = Mock()
         dbmodels.DatabaseModelBase.is_valid = Mock(return_value=True)
         self.heartBeat = models.AgentHeartBeat()
         self.heartBeat.save()

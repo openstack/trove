@@ -2,7 +2,7 @@ from reddwarf.guestagent import dbaas
 from reddwarf.guestagent import volume
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import periodic_task
-
+from reddwarf.openstack.common.gettextutils import _
 LOG = logging.getLogger(__name__)
 
 MYSQL_BASE_DIR = "/var/lib/mysql"

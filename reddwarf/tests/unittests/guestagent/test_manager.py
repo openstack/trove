@@ -18,10 +18,7 @@ from reddwarf.guestagent import volume
 import testtools
 from mock import Mock, MagicMock
 
-from proboscis import test
 
-
-@test(groups=["dbaas.guestagent.dbaas"])
 class GuestAgentManagerTest(testtools.TestCase):
 
     def setUp(self):
@@ -93,9 +90,6 @@ class GuestAgentManagerTest(testtools.TestCase):
     def test_prepare_device_path_false(self):
         self._prepare_dynamic(has_device_path=False)
 
-    def test_prepare_mysql_installed(self):
-        self._prepare_dynamic(has_device_path=False)
-
     def test_prepare_mysql_not_installed(self):
         self._prepare_dynamic(is_mysql_installed=False)
 
@@ -113,13 +107,13 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         self._setUp_MySqlAppStatus_get()
         dbaas.MySqlAppStatus.begin_mysql_install = MagicMock()
+        origin_format = volume.VolumeDevice.format
         volume.VolumeDevice.format = MagicMock()
 
-        if is_mysql_installed:
-            self._prepare_mysql_is_installed()
-        else:
-            self._prepare_mysql_is_not_installed()
+        origin_is_installed, origin_stop_mysql, origin_migrate_data =\
+            self._prepare_mysql_is_installed(is_mysql_installed)
 
+        origin_mount = volume.VolumeDevice.mount
         volume.VolumeDevice.mount = MagicMock()
 
         dbaas.MySqlApp.start_mysql = MagicMock()
@@ -148,13 +142,20 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.assertEqual(1, Manager.create_database.call_count)
         self.assertEqual(1, Manager.create_user.call_count)
 
-    def _prepare_mysql_is_installed(self):
-        dbaas.MySqlApp.is_installed = MagicMock(return_value=True)
+        volume.VolumeDevice.format = origin_format
+        volume.VolumeDevice.migrate_data = origin_migrate_data
+        dbaas.MySqlApp.is_installed = origin_is_installed
+        dbaas.MySqlApp.stop_mysql = origin_stop_mysql
+        volume.VolumeDevice.mount = origin_mount
+
+    def _prepare_mysql_is_installed(self, is_installed=True):
+        origin_is_installed = dbaas.MySqlApp.is_installed
+        origin_stop_mysql = dbaas.MySqlApp.stop_mysql
+        origin_migrate_data = volume.VolumeDevice.migrate_data
+        dbaas.MySqlApp.is_installed = MagicMock(return_value=is_installed)
         dbaas.MySqlApp.stop_mysql = MagicMock()
         volume.VolumeDevice.migrate_data = MagicMock()
-
-    def _prepare_mysql_is_not_installed(self):
-        dbaas.MySqlApp.is_installed = MagicMock(return_value=False)
+        return origin_is_installed, origin_stop_mysql, origin_migrate_data
 
     def test_restart(self):
         self._setUp_MySqlAppStatus_get()
