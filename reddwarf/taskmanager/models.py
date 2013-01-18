@@ -50,6 +50,7 @@ CONF = cfg.CONF
 VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
 DNS_TIME_OUT = CONF.dns_time_out  # seconds.
 RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
+REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
 
 use_nova_server_volume = CONF.use_nova_server_volume
 
@@ -423,7 +424,7 @@ class ResizeActionBase(object):
             sleep_time=2,
             time_out=RESIZE_TIME_OUT)
 
-    def _assert_nova_was_successful(self):
+    def _assert_nova_status_is_ok(self):
         # Make sure Nova thinks things went well.
         if self.instance.server.status != "VERIFY_RESIZE":
             msg = "Migration failed! status=%s and not %s" \
@@ -480,11 +481,13 @@ class ResizeActionBase(object):
             self._initiate_nova_action()
             LOG.debug("Waiting for nova action")
             self._wait_for_nova_action()
-            LOG.debug("Asserting success")
-            self._assert_nova_was_successful()
-            LOG.debug("Asserting processes are OK")
+            LOG.debug("Asserting nova status is ok")
+            self._assert_nova_status_is_ok()
             need_to_revert = True
             LOG.debug("* * * REVERT BARRIER PASSED * * *")
+            LOG.debug("Asserting nova action success")
+            self._assert_nova_action_was_successful()
+            LOG.debug("Asserting processes are OK")
             self._assert_processes_are_ok()
             LOG.debug("Confirming nova action")
             self._confirm_nova_action()
@@ -494,7 +497,15 @@ class ResizeActionBase(object):
                 LOG.error("Reverting action for instance %s" %
                           self.instance.id)
                 self._revert_nova_action()
-            self.instance.guest.restart()
+                self._wait_for_revert_nova_action()
+
+            if self.instance.server.status == 'ACTIVE':
+                LOG.error("Restarting MySQL.")
+                self.instance.guest.restart()
+            else:
+                LOG.error("Can not restart MySQL because "
+                          "Nova server status is not ACTIVE")
+
             LOG.error("Error resizing instance %s." % self.instance.id)
             raise ex
 
@@ -511,6 +522,16 @@ class ResizeActionBase(object):
             sleep_time=2,
             time_out=RESIZE_TIME_OUT)
 
+    def _wait_for_revert_nova_action(self):
+        # Wait for the server to return to ACTIVE after revert.
+        def update_server_info():
+            self.instance._refresh_compute_server_info()
+            return self.instance.server.status == 'ACTIVE'
+        utils.poll_until(
+            update_server_info,
+            sleep_time=2,
+            time_out=REVERT_TIME_OUT)
+
 
 class ResizeAction(ResizeActionBase):
 
@@ -519,13 +540,12 @@ class ResizeAction(ResizeActionBase):
         self.new_flavor_id = new_flavor_id
         self.new_memory_size = new_memory_size
 
-    def _assert_nova_was_successful(self):
+    def _assert_nova_action_was_successful(self):
         # Do check to make sure the status and flavor id are correct.
         if str(self.instance.server.flavor['id']) != str(self.new_flavor_id):
             msg = "Assertion failed! flavor_id=%s and not %s" \
                   % (self.instance.server.flavor['id'], self.new_flavor_id)
             raise ReddwarfError(msg)
-        super(ResizeAction, self)._assert_nova_was_successful()
 
     def _initiate_nova_action(self):
         self.instance.server.resize(self.new_flavor_id)
@@ -540,6 +560,9 @@ class ResizeAction(ResizeActionBase):
 
 
 class MigrateAction(ResizeActionBase):
+
+    def _assert_nova_action_was_successful(self):
+        LOG.debug("Currently no assertions for a Migrate Action")
 
     def _initiate_nova_action(self):
         LOG.debug("Migrating instance %s without flavor change ..."
