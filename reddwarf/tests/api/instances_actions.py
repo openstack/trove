@@ -31,6 +31,7 @@ from reddwarf.tests.api.instances import GROUP_START
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests.api.instances import assert_unprocessable
 from reddwarf.tests import util
+from reddwarf.tests.util.server_connection import create_server_connection
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.config import CONFIG
 from reddwarf.tests.util import LocalSqlClient
@@ -142,7 +143,14 @@ class ActionTestBase(object):
             check.equal(instance.status, "ACTIVE")
 
     def find_mysql_proc_on_instance(self):
-        return util.find_mysql_procid_on_instance(self.instance_address)
+        server = create_server_connection(self.instance_id)
+        cmd = "ps aux | grep /usr/sbin/mysqld " \
+              "| awk '{print $2}'"
+        stdout, stderr = server.execute(cmd)
+        try:
+            return int(stdout)
+        except ValueError:
+            return None
 
     def log_current_users(self):
         users = self.dbaas.users.list(self.instance_id)
@@ -211,20 +219,18 @@ class RebootTestBase(ActionTestBase):
     def mess_up_mysql(self):
         """Ruin MySQL's ability to restart."""
         self.fix_mysql()  # kill files
-        cmd = """%s %s 'sudo cp /dev/null /var/lib/mysql/ib_logfile%d'"""
+        server = create_server_connection(self.instance_id)
+        cmd = "sudo cp /dev/null /var/lib/mysql/ib_logfile%d"
         for index in range(2):
-            full_cmd = cmd % (tests.SSH_CMD, self.instance_address, index)
-            print("RUNNING COMMAND: %s" % full_cmd)
-            util.process(full_cmd)
+            server.execute(cmd % index)
 
     def fix_mysql(self):
         """Fix MySQL's ability to restart."""
         if not FAKE_MODE:
-            cmd = "%s %s 'sudo rm /var/lib/mysql/ib_logfile%d'"
+            server = create_server_connection(self.instance_id)
+            cmd = "sudo rm /var/lib/mysql/ib_logfile%d"
             for index in range(2):
-                util.process(cmd % (tests.SSH_CMD,
-                                    self.instance_address,
-                                    index))
+                server.execute(cmd % index)
 
     def wait_for_failure_status(self):
         """Wait until status becomes running."""

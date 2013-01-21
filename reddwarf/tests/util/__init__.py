@@ -231,17 +231,6 @@ def mysql_connection():
     return import_object(cls)()
 
 
-def find_mysql_procid_on_instance(ip_address):
-    """Returns the process id of MySql on an instance if running, or None."""
-    cmd = "%s %s ps aux | grep /usr/sbin/mysqld " \
-          "| awk '{print $2}'" % (tests.SSH_CMD, ip_address)
-    stdout, stderr = process(cmd)
-    try:
-        return int(stdout)
-    except ValueError:
-        return None
-
-
 class MySqlConnection(object):
 
     def assert_fails(self, user_name, password, ip):
