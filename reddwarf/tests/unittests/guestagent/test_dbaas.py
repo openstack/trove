@@ -160,13 +160,24 @@ class MySqlAdminTest(testtools.TestCase):
         self.mySqlAdmin.create_user(FAKE_USER)
         self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
 
+
+class EnableRootTest(MySqlAdminTest):
+    def setUp(self):
+        super(EnableRootTest, self).setUp()
+        self.origin_is_valid_user_name = models.MySQLUser._is_valid_user_name
+        self.mySqlAdmin = MySqlAdmin()
+
+    def tearDown(self):
+        super(EnableRootTest, self).tearDown()
+        models.MySQLUser._is_valid_user_name = self.origin_is_valid_user_name
+
     def test_enable_root(self):
-        models.MySQLUser._is_valid_user_name = \
+        models.MySQLUser._is_valid_user_name =\
             MagicMock(return_value=True)
         self.mySqlAdmin.enable_root()
         self.assertEqual(3, dbaas.LocalSqlClient.execute.call_count)
 
     def test_enable_root_failed(self):
-        models.MySQLUser._is_valid_user_name = \
+        models.MySQLUser._is_valid_user_name =\
             MagicMock(return_value=False)
         self.assertRaises(ValueError, self.mySqlAdmin.enable_root)
