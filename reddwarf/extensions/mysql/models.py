@@ -57,6 +57,19 @@ class User(object):
         self.databases = databases
 
     @classmethod
+    def load(cls, context, instance_id, user):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        found_user = client.get_user(username=user)
+        if not found_user:
+            return None
+        database_names = [{'name': db['_name']}
+                          for db in found_user['_databases']]
+        return cls(found_user['_name'],
+                   found_user['_password'],
+                   database_names)
+
+    @classmethod
     def create(cls, context, instance_id, users):
         # Load InstanceServiceStatus to verify if it's running
         load_and_verify(context, instance_id)
@@ -77,6 +90,49 @@ class User(object):
     def delete(cls, context, instance_id, username):
         load_and_verify(context, instance_id)
         create_guest_client(context, instance_id).delete_user(username)
+
+    @classmethod
+    def access(cls, context, instance_id, username):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        databases = client.list_access(username)
+        dbs = []
+        for db in databases:
+            dbs.append(Schema(name=db['_name'],
+                              collate=db['_collate'],
+                              character_set=db['_character_set']))
+        return UserAccess(dbs)
+
+    @classmethod
+    def grant(cls, context, instance_id, username, databases):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        client.grant_access(username, databases)
+
+    @classmethod
+    def revoke(cls, context, instance_id, username, database):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        client.revoke_access(username, database)
+
+    @classmethod
+    def change_password(cls, context, instance_id, users):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        change_users = []
+        for user in users:
+            change_user = {'name': user.name,
+                           'password': user.password,
+                           }
+            change_users.append(change_user)
+        client.change_passwords(change_users)
+
+
+class UserAccess(object):
+    _data_fields = ['databases']
+
+    def __init__(self, databases):
+        self.databases = databases
 
 
 class Root(object):

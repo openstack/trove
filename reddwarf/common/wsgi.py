@@ -317,6 +317,8 @@ class Controller(object):
             exception.NotFound,
             exception.ComputeInstanceNotFound,
             exception.ModelNotFoundError,
+            exception.UserNotFound,
+            exception.DatabaseNotFound,
         ],
         webob.exc.HTTPConflict: [],
         webob.exc.HTTPRequestEntityTooLarge: [

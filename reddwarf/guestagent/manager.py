@@ -15,6 +15,9 @@ class Manager(periodic_task.PeriodicTasks):
         """Update the status of the MySQL service"""
         dbaas.MySqlAppStatus.get().update()
 
+    def change_passwords(self, context, users):
+        return dbaas.MySqlAdmin().change_passwords(users)
+
     def create_database(self, context, databases):
         return dbaas.MySqlAdmin().create_database(databases)
 
@@ -26,6 +29,18 @@ class Manager(periodic_task.PeriodicTasks):
 
     def delete_user(self, context, user):
         dbaas.MySqlAdmin().delete_user(user)
+
+    def get_user(self, context, username):
+        return dbaas.MySqlAdmin().get_user(username)
+
+    def grant_access(self, context, username, databases):
+        return dbaas.MySqlAdmin().grant_access(username, databases)
+
+    def revoke_access(self, context, username, database):
+        return dbaas.MySqlAdmin().revoke_access(username, database)
+
+    def list_access(self, context, username):
+        return dbaas.MySqlAdmin().list_access(username)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):

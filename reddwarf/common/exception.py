@@ -65,6 +65,16 @@ class FlavorNotFound(ReddwarfError):
     message = _("Resource %(uuid)s cannot be found")
 
 
+class UserNotFound(NotFound):
+
+    message = _("User %(uuid)s cannot be found on the instance.")
+
+
+class DatabaseNotFound(NotFound):
+
+    message = _("Database %(uuid)s cannot be found on the instance.")
+
+
 class ComputeInstanceNotFound(NotFound):
 
     internal_message = _("Cannot find compute instance %(server_id)s for "

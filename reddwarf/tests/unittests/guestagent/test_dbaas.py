@@ -146,9 +146,9 @@ class MySqlAdminTest(testtools.TestCase):
         self.mySqlAdmin.create_database(databases)
 
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
-        expected = "CREATE DATABASE IF NOT EXISTS\n                    " \
-                   "        `testDB` CHARACTER SET = latin2 COLLATE = " \
-                   "latin2_general_ci;"
+        expected = ("CREATE DATABASE IF NOT EXISTS "
+                    "`testDB` CHARACTER SET = 'latin2' "
+                    "COLLATE = 'latin2_general_ci';")
         self.assertEquals(args[0].text, expected,
                           "Create database queries are not the same")
 
@@ -164,16 +164,16 @@ class MySqlAdminTest(testtools.TestCase):
         self.mySqlAdmin.create_database(databases)
 
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
-        expected = "CREATE DATABASE IF NOT EXISTS\n                     " \
-                   "       `testDB` CHARACTER SET = latin2 COLLATE = " \
-                   "latin2_general_ci;"
+        expected = ("CREATE DATABASE IF NOT EXISTS "
+                    "`testDB` CHARACTER SET = 'latin2' "
+                    "COLLATE = 'latin2_general_ci';")
         self.assertEquals(args[0].text, expected,
                           "Create database queries are not the same")
 
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
-        expected = "CREATE DATABASE IF NOT EXISTS\n                      " \
-                   "      `testDB2` CHARACTER SET = latin2 COLLATE = " \
-                   "latin2_general_ci;"
+        expected = ("CREATE DATABASE IF NOT EXISTS "
+                    "`testDB2` CHARACTER SET = 'latin2' "
+                    "COLLATE = 'latin2_general_ci';")
         self.assertEquals(args[0].text, expected,
                           "Create database queries are not the same")
 
@@ -211,7 +211,7 @@ class MySqlAdminTest(testtools.TestCase):
         self.mySqlAdmin.delete_user(user)
 
         args, _ = dbaas.LocalSqlClient.execute.call_args
-        expected = "DROP USER `testUser`"
+        expected = "DROP USER `testUser`;"
         self.assertEquals(args[0].text, expected,
                           "Delete user queries are not the same")
 
@@ -220,7 +220,9 @@ class MySqlAdminTest(testtools.TestCase):
 
     def test_create_user(self):
         self.mySqlAdmin.create_user(FAKE_USER)
-        expected = 'GRANT ALL PRIVILEGES ON `testDB`.* TO `random`@:host;'
+        expected = ("GRANT ALL PRIVILEGES ON `testDB`.* TO `random`@`%` "
+                    "IDENTIFIED BY 'guesswhat' "
+                    "WITH GRANT OPTION;")
         args, _ = dbaas.LocalSqlClient.execute.call_args
         self.assertEquals(args[0].text.strip(), expected,
                           "Create user queries are not the same")
@@ -243,10 +245,12 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.enable_root()
         args_list = dbaas.LocalSqlClient.execute.call_args_list
         args, keyArgs = args_list[0]
+
         self.assertEquals(args[0].text.strip(), "CREATE USER :user@:host;",
                           "Create user queries are not the same")
         self.assertEquals(keyArgs['user'], 'root')
         self.assertEquals(keyArgs['host'], '%')
+
         args, keyArgs = args_list[1]
         self.assertTrue("UPDATE mysql.user" in args[0].text)
         args, keyArgs = args_list[2]
@@ -262,44 +266,44 @@ class EnableRootTest(MySqlAdminTest):
     def test_is_root_enable(self):
         self.mySqlAdmin.is_root_enabled()
         args, _ = dbaas.LocalSqlClient.execute.call_args
-        self.assertTrue("""SELECT User FROM mysql.user where User = 'root'
-                        and host != 'localhost';""" in args[0].text)
+        expected = ("""SELECT User FROM mysql.user WHERE User = 'root' """
+                    """AND host != 'localhost';""")
+        self.assertTrue(expected in args[0].text,
+                        "%s not in query." % expected)
 
     def test_list_databases(self):
         self.mySqlAdmin.list_databases()
         args, _ = dbaas.LocalSqlClient.execute.call_args
-
-        self.assertTrue("SELECT schema_name as name," in args[0].text)
-        self.assertTrue("default_character_set_name as charset,"
-                        in args[0].text)
-        self.assertTrue("default_collation_name as collation" in args[0].text)
-
-        self.assertTrue("FROM information_schema.schemata" in args[0].text)
-
-        self.assertTrue('''schema_name not in (
-                            'mysql', 'information_schema',
-                            'lost+found', '#mysql50#lost+found'
-                        )''' in args[0].text)
-        self.assertTrue("ORDER BY schema_name ASC" in args[0].text)
+        expected = ["SELECT schema_name as name,",
+                    "default_character_set_name as charset,",
+                    "default_collation_name as collation",
+                    "FROM information_schema.schemata",
+                    ("schema_name NOT IN ("
+                     "'mysql', 'information_schema', "
+                     "'lost+found', '#mysql50#lost+found'"
+                     ")"),
+                    "ORDER BY schema_name ASC",
+                    ]
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
         self.assertFalse("LIMIT " in args[0].text)
 
     def test_list_databases_with_limit(self):
         limit = 2
         self.mySqlAdmin.list_databases(limit)
         args, _ = dbaas.LocalSqlClient.execute.call_args
-
-        self.assertTrue("SELECT schema_name as name," in args[0].text)
-        self.assertTrue("default_character_set_name as charset,"
-                        in args[0].text)
-        self.assertTrue("default_collation_name as collation" in args[0].text)
-
-        self.assertTrue("FROM information_schema.schemata" in args[0].text)
-
-        self.assertTrue('''schema_name not in (
-                            'mysql', 'information_schema',
-                            'lost+found', '#mysql50#lost+found'
-                        )''' in args[0].text)
-        self.assertTrue("ORDER BY schema_name ASC" in args[0].text)
+        expected = ["SELECT schema_name as name,",
+                    "default_character_set_name as charset,",
+                    "default_collation_name as collation",
+                    "FROM information_schema.schemata",
+                    ("schema_name NOT IN ("
+                     "'mysql', 'information_schema', "
+                     "'lost+found', '#mysql50#lost+found'"
+                     ")"),
+                    "ORDER BY schema_name ASC",
+                    ]
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertTrue("LIMIT " + str(limit + 1) in args[0].text)
 
@@ -307,19 +311,19 @@ class EnableRootTest(MySqlAdminTest):
         marker = "aMarker"
         self.mySqlAdmin.list_databases(marker=marker)
         args, _ = dbaas.LocalSqlClient.execute.call_args
+        expected = ["SELECT schema_name as name,",
+                    "default_character_set_name as charset,",
+                    "default_collation_name as collation",
+                    "FROM information_schema.schemata",
+                    ("schema_name NOT IN ("
+                     "'mysql', 'information_schema', "
+                     "'lost+found', '#mysql50#lost+found'"
+                     ")"),
+                    "ORDER BY schema_name ASC",
+                    ]
 
-        self.assertTrue("SELECT schema_name as name," in args[0].text)
-        self.assertTrue("default_character_set_name as charset,"
-                        in args[0].text)
-        self.assertTrue("default_collation_name as collation" in args[0].text)
-
-        self.assertTrue("FROM information_schema.schemata" in args[0].text)
-
-        self.assertTrue('''schema_name not in (
-                            'mysql', 'information_schema',
-                            'lost+found', '#mysql50#lost+found'
-                        )''' in args[0].text)
-        self.assertTrue("ORDER BY schema_name ASC" in args[0].text)
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
 
@@ -330,19 +334,18 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.list_databases(marker=marker, include_marker=True)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        self.assertTrue("SELECT schema_name as name," in args[0].text)
-        self.assertTrue("default_character_set_name as charset,"
-                        in args[0].text)
-        self.assertTrue("default_collation_name as collation" in args[0].text)
-
-        self.assertTrue("FROM information_schema.schemata"
-                        in args[0].text)
-
-        self.assertTrue('''schema_name not in (
-                            'mysql', 'information_schema',
-                            'lost+found', '#mysql50#lost+found'
-                        )''' in args[0].text)
-        self.assertTrue("ORDER BY schema_name ASC" in args[0].text)
+        expected = ["SELECT schema_name as name,",
+                    "default_character_set_name as charset,",
+                    "default_collation_name as collation",
+                    "FROM information_schema.schemata",
+                    ("schema_name NOT IN ("
+                     "'mysql', 'information_schema', "
+                     "'lost+found', '#mysql50#lost+found'"
+                     ")"),
+                    "ORDER BY schema_name ASC",
+                    ]
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
 
@@ -352,12 +355,14 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.list_users()
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        self.assertTrue("SELECT User" in args[0].text)
+        expected = ["SELECT User",
+                    "FROM mysql.user",
+                    "WHERE host != 'localhost'",
+                    "ORDER BY User",
+                    ]
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
-        self.assertTrue("FROM mysql.user" in args[0].text)
-
-        self.assertTrue("WHERE host != 'localhost'" in args[0].text)
-        self.assertTrue("ORDER BY User" in args[0].text)
         self.assertFalse("LIMIT " in args[0].text)
         self.assertFalse("AND User > '" in args[0].text)
 
@@ -366,29 +371,30 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.list_users(limit)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        self.assertTrue("SELECT User" in args[0].text)
-
-        self.assertTrue("FROM mysql.user" in args[0].text)
-
-        self.assertTrue("WHERE host != 'localhost'" in args[0].text)
-        self.assertTrue("ORDER BY User" in args[0].text)
-
-        self.assertTrue("LIMIT " + str(limit + 1) in args[0].text)
+        expected = ["SELECT User",
+                    "FROM mysql.user",
+                    "WHERE host != 'localhost'",
+                    "ORDER BY User",
+                    ("LIMIT " + str(limit + 1)),
+                    ]
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
     def test_list_users_with_marker(self):
         marker = "aMarker"
         self.mySqlAdmin.list_users(marker=marker)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        self.assertTrue("SELECT User" in args[0].text)
+        expected = ["SELECT User",
+                    "FROM mysql.user",
+                    "WHERE host != 'localhost'",
+                    "ORDER BY User",
+                    ]
 
-        self.assertTrue("FROM mysql.user" in args[0].text)
-
-        self.assertTrue("WHERE host != 'localhost'" in args[0].text)
-        self.assertTrue("ORDER BY User" in args[0].text)
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
-
         self.assertTrue("AND User > '" + marker + "'" in args[0].text)
 
     def test_list_users_with_include_marker(self):
@@ -396,12 +402,14 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.list_users(marker=marker, include_marker=True)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        self.assertTrue("SELECT User" in args[0].text)
+        expected = ["SELECT User",
+                    "FROM mysql.user",
+                    "WHERE host != 'localhost'",
+                    "ORDER BY User",
+                    ]
 
-        self.assertTrue("FROM mysql.user" in args[0].text)
-
-        self.assertTrue("WHERE host != 'localhost'" in args[0].text)
-        self.assertTrue("ORDER BY User" in args[0].text)
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
 
@@ -429,8 +437,8 @@ class MySqlAppTest(testtools.TestCase):
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
-        service_status = InstanceServiceStatus.find_by(instance_id=
-                                                       self.FAKE_ID)
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
         self.assertEqual(expected_status, service_status.status)
 
     def mysql_starts_successfully(self):
@@ -509,17 +517,16 @@ class MySqlAppTest(testtools.TestCase):
     def test_wipe_ib_logfiles_no_file(self):
 
         from reddwarf.common.exception import ProcessExecutionError
-        dbaas.utils.execute_with_timeout = \
-            Mock(side_effect=
-                 ProcessExecutionError('No such file or directory'))
+        processexecerror = ProcessExecutionError('No such file or directory')
+        dbaas.utils.execute_with_timeout = Mock(side_effect=processexecerror)
 
         self.mySqlApp.wipe_ib_logfiles()
 
     def test_wipe_ib_logfiles_error(self):
 
         from reddwarf.common.exception import ProcessExecutionError
-        dbaas.utils.execute_with_timeout = Mock(side_effect=
-                                                ProcessExecutionError('Error'))
+        mocked = Mock(side_effect=ProcessExecutionError('Error'))
+        dbaas.utils.execute_with_timeout = mocked
 
         self.assertRaises(ProcessExecutionError,
                           self.mySqlApp.wipe_ib_logfiles)
@@ -553,8 +560,8 @@ class MySqlAppTest(testtools.TestCase):
 
         self.mySqlApp._enable_mysql_on_boot = Mock()
         from reddwarf.common.exception import ProcessExecutionError
-        dbaas.utils.execute_with_timeout = Mock(side_effect=
-                                                ProcessExecutionError('Error'))
+        mocked = Mock(side_effect=ProcessExecutionError('Error'))
+        dbaas.utils.execute_with_timeout = mocked
 
         self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
 
@@ -834,8 +841,8 @@ class MySqlAppStatusTest(testtools.TestCase):
     def test_get_actual_db_status_error_shutdown(self):
 
         from reddwarf.common.exception import ProcessExecutionError
-        dbaas.utils.execute_with_timeout = Mock(side_effect=
-                                                ProcessExecutionError())
+        mocked = Mock(side_effect=ProcessExecutionError())
+        dbaas.utils.execute_with_timeout = mocked
         dbaas.load_mysqld_options = Mock()
         dbaas.os.path.exists = Mock(return_value=False)
 

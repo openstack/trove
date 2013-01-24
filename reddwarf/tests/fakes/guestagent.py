@@ -19,6 +19,7 @@ from reddwarf.openstack.common import log as logging
 import time
 
 from reddwarf.tests.fakes.common import get_event_spawer
+from reddwarf.common import exception as rd_exception
 
 DB = {}
 LOG = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class FakeGuest(object):
         self.root_was_enabled = False
         self.version = 1
         self.event_spawn = get_event_spawer()
+        self.grants = {}
 
     def get_hwinfo(self):
         return {'mem_total': 524288, 'num_cpus': 1}
@@ -108,6 +110,9 @@ class FakeGuest(object):
     def list_users(self, limit=None, marker=None, include_marker=False):
         return self._list_resource(self.users, limit, marker, include_marker)
 
+    def get_user(self, username):
+        return self.users.get(username, None)
+
     def prepare(self, memory_mb, databases, users, device_path=None,
                 mount_point=None):
         from reddwarf.instance.models import DBInstance
@@ -159,6 +164,41 @@ class FakeGuest(object):
     def get_volume_info(self):
         """Return used volume information in bytes."""
         return {'used': 175756487}
+
+    def grant_access(self, username, databases):
+        """Add a database to a users's grant list."""
+        if username not in self.users:
+            raise rd_exception.UserNotFound(
+                "User %s cannot be found on the instance." % username)
+        current_grants = self.grants.get((username, '%'), set())
+        for db in databases:
+            current_grants.add(db)
+        self.grants[(username, '%')] = current_grants
+
+    def revoke_access(self, username, database):
+        """Remove a database from a users's grant list."""
+        if username not in self.users:
+            raise rd_exception.UserNotFound(
+                "User %s cannot be found on the instance." % username)
+        g = self.grants.get((username, '%'), set())
+        if database not in self.grants.get((username, '%'), set()):
+            raise rd_exception.DatabaseNotFound(
+                "Database %s cannot be found on the instance." % database)
+        current_grants = self.grants.get((username, '%'), set())
+        if database in current_grants:
+            current_grants.remove(database)
+        self.grants[(username, '%')] = current_grants
+
+    def list_access(self, username):
+        if username not in self.users:
+            raise rd_exception.UserNotFound(
+                "User %s cannot be found on the instance." % username)
+        current_grants = self.grants.get((username, '%'), set())
+        dbs = [{'_name': db,
+                '_collate': '',
+                '_character_set': '',
+                } for db in current_grants]
+        return dbs
 
 
 def get_or_create(id):
