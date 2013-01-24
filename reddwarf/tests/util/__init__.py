@@ -56,6 +56,7 @@ from proboscis import SkipTest
 from reddwarfclient import Dbaas
 from reddwarfclient.client import ReddwarfHTTPClient
 from reddwarf import tests
+from reddwarfclient.xml import ReddwarfXmlClient
 from reddwarf.tests.util import test_config as CONFIG
 from reddwarf.tests.util.client import TestClient as TestClient
 from reddwarf.tests.util.users import Requirements
@@ -155,6 +156,10 @@ def create_dbaas_client(user):
     else:
         auth_url = test_config.values.get('reddwarf_admin_auth_url',
                                           test_config.reddwarf_auth_url)
+
+    if test_config.values.get('reddwarf_client_cls'):
+        cls_name = test_config.reddwarf_client_cls
+        kwargs['client_cls'] = import_class(cls_name)
 
     dbaas = Dbaas(user.auth_user, user.auth_key, tenant=user.tenant,
                   auth_url=auth_url, **kwargs)
