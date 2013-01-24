@@ -317,8 +317,7 @@ class BaseInstance(SimpleInstance):
         return create_guest_client(self.context, self.db_info.id)
 
     def delete(self):
-        if (self.db_info.server_status in ["BUILD"] and
-                not self.db_info.task_status.is_error):
+        if self.is_building:
             raise exception.UnprocessableEntity("Instance %s is not ready." %
                                                 self.id)
         LOG.debug(_("  ... deleting compute id = %s") %
