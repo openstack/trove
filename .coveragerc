@@ -2,8 +2,10 @@
 [run]
 branch = True
 
-timid=True
-include=*reddwarf*
+source=.tox/cover/lib/python2.7/site-packages/reddwarf
+# replace with previous line once the python path issue is resolved and the tox.ini is fixed accordingly
+# source=reddwarf
+omit=*reddwarf/tests*,*reddwarf/openstack/common*
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -24,3 +26,6 @@ exclude_lines =
     if __name__ == .__main__.:
 
 ignore_errors = False
+
+[html]
+directory=cover
