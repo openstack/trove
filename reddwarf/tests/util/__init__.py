@@ -62,6 +62,7 @@ from reddwarf.tests.util.client import TestClient as TestClient
 from reddwarf.tests.util.users import Requirements
 from reddwarf.common.exception import PollTimeOut
 from reddwarf.common.utils import import_object
+from reddwarf.common.utils import import_class
 
 
 WHITE_BOX = test_config.white_box
