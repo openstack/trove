@@ -15,14 +15,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import webob.exc
 
 from novaclient import exceptions as nova_exceptions
 
 from reddwarf.common import exception
 from reddwarf.common import wsgi
 from reddwarf.common.auth import admin_context
-from reddwarf.common.remote import create_nova_client
 from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mgmt.instances import models
 from reddwarf.extensions.mgmt.instances import views
@@ -91,7 +89,8 @@ class MgmtInstanceController(InstanceController):
         _actions = {
             'stop': self._action_stop,
             'reboot': self._action_reboot,
-            'migrate': self._action_migrate
+            'migrate': self._action_migrate,
+            'reset-task-status': self._action_reset_task_status
         }
         selected_action = None
         for key in body:
@@ -122,6 +121,12 @@ class MgmtInstanceController(InstanceController):
     def _action_migrate(self, context, instance, body):
         LOG.debug("Migrating instance %s." % instance.id)
         instance.migrate()
+        return wsgi.Result(None, 202)
+
+    def _action_reset_task_status(self, context, instance, body):
+        LOG.debug("Setting Task-Status to NONE on instance %s." %
+                  instance.id)
+        instance.reset_task_status()
         return wsgi.Result(None, 202)
 
     @admin_context

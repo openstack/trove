@@ -487,6 +487,10 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.MIGRATING)
         task_api.API(self.context).migrate(self.id)
 
+    def reset_task_status(self):
+        LOG.info("Settting task status to NONE on instance %s..." % self.id)
+        self.update_db(task_status=InstanceTasks.NONE)
+
     def _validate_can_perform_action(self):
         """
         Raises exception if an instance action cannot currently be performed.

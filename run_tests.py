@@ -123,6 +123,7 @@ if __name__=="__main__":
     from reddwarf.tests.api.mgmt import accounts
     from reddwarf.tests.api.mgmt import admin_required
     from reddwarf.tests.api.mgmt import instances
+    from reddwarf.tests.api.mgmt import instances_actions
     from reddwarf.tests.api.mgmt import storage
 
     proboscis.TestProgram().run_and_exit()
