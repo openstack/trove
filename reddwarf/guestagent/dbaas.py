@@ -161,7 +161,7 @@ class MySqlAppStatus(object):
 
         Updates the database with the actual MySQL status.
         """
-        LOG.info("Ending install or restart.")
+        LOG.info("Ending install_if_needed or restart.")
         self.restart_mode = False
         real_status = self._get_actual_db_status()
         LOG.info("Updating status to %s" % real_status)
@@ -599,7 +599,7 @@ class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
-    MYSQL_PACKAGE_VERSION = "mysql-server-5.5"
+    MYSQL_PACKAGE_VERSION = CONF.mysql_pkg
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """
@@ -632,13 +632,14 @@ class MySqlApp(object):
         t = text(str(uu))
         client.execute(t)
 
-    def install_and_secure(self, memory_mb):
+    def install_if_needed(self):
         """Prepare the guest machine with a secure mysql server installation"""
         LOG.info(_("Preparing Guest as MySQL Server"))
+        if not self.is_installed():
+            self._install_mysql()
+        LOG.info(_("Dbaas install_if_needed complete"))
 
-        #TODO(tim.simpson): Check that MySQL is not already installed.
-        self.status.begin_mysql_install()
-        self._install_mysql()
+    def secure(self, memory_mb):
         LOG.info(_("Generating root password..."))
         admin_password = generate_random_password()
 
@@ -654,10 +655,10 @@ class MySqlApp(object):
         self.start_mysql()
 
         self.status.end_install_or_restart()
-        LOG.info(_("Dbaas install_and_secure complete."))
+        LOG.info(_("Dbaas secure complete."))
 
     def _install_mysql(self):
-        """Install mysql server. The current version is 5.1"""
+        """Install mysql server. The current version is 5.5"""
         LOG.debug(_("Installing mysql server"))
         pkg.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
         LOG.debug(_("Finished installing mysql server"))
@@ -665,24 +666,38 @@ class MySqlApp(object):
 
     def _enable_mysql_on_boot(self):
         '''
-        # This works in Debian Squeeze, but Ubuntu Precise has other plans.
-        # Use update-rc.d to enable or disable mysql at boot.
-        # update-rc.d is idempotent; any substitute method should be, too.
-        flag = "enable" if enabled else "disable"
-        LOG.info("Setting mysql to '%s' in rc.d" % flag)
-        utils.execute_with_timeout("sudo", "update-rc.d", "mysql", flag)
+        There is a difference between the init.d mechanism and the upstart
+        The stock mysql uses the upstart mechanism, therefore, there is a
+        mysql.conf file responsible for the job. to toggle enable/disable
+        on boot one needs to modify this file. Percona uses the init.d
+        mechanism and there is no mysql.conf file. Instead, the update-rc.d
+        command needs to be used to modify the /etc/rc#.d/[S/K]##mysql links
         '''
         LOG.info("Enabling mysql on boot.")
         conf = "/etc/init/mysql.conf"
-        command = "sudo sed -i '/^manual$/d' %(conf)s"
-        command = command % locals()
+        if os.path.isfile(conf):
+            command = "sudo sed -i '/^manual$/d' %(conf)s"
+            command = command % locals()
+        else:
+            command = "sudo update-rc.d mysql enable"
         utils.execute_with_timeout(command, with_shell=True)
 
     def _disable_mysql_on_boot(self):
+        '''
+        There is a difference between the init.d mechanism and the upstart
+        The stock mysql uses the upstart mechanism, therefore, there is a
+        mysql.conf file responsible for the job. to toggle enable/disable
+        on boot one needs to modify this file. Percona uses the init.d
+        mechanism and there is no mysql.conf file. Instead, the update-rc.d
+        command needs to be used to modify the /etc/rc#.d/[S/K]##mysql links
+        '''
         LOG.info("Disabling mysql on boot.")
         conf = "/etc/init/mysql.conf"
-        command = '''sudo sh -c "echo manual >> %(conf)s"'''
-        command = command % locals()
+        if os.path.isfile(conf):
+            command = '''sudo sh -c "echo manual >> %(conf)s"'''
+            command = command % locals()
+        else:
+            command = "sudo update-rc.d mysql disable"
         utils.execute_with_timeout(command, with_shell=True)
 
     def stop_mysql(self, update_db=False, do_not_start_on_reboot=False):
@@ -718,10 +733,12 @@ class MySqlApp(object):
         LOG.debug("template_path(%s) original_path(%s)"
                   % (template_path, original_path))
         if os.path.isfile(template_path):
-            utils.execute_with_timeout(
-                "sudo", "mv", original_path,
-                "%(name)s.%(date)s" % {'name': original_path,
-                                       'date': date.today().isoformat()})
+            if os.path.isfile(original_path):
+                utils.execute_with_timeout(
+                    "sudo", "mv", original_path,
+                    "%(name)s.%(date)s" %
+                    {'name': original_path, 'date':
+                    date.today().isoformat()})
             utils.execute_with_timeout("sudo", "cp", template_path,
                                        original_path)
 
@@ -807,6 +824,16 @@ class MySqlApp(object):
         try:
             utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "start")
         except ProcessExecutionError:
+            # it seems mysql (percona, at least) might come back with [Fail]
+            # but actually come up ok. we're looking into the timing issue on
+            # parallel, but for now, we'd like to give it one more chance to
+            # come up. so regardless of the execute_with_timeout() respose,
+            # we'll assume mysql comes up and check it's status for a while.
+            pass
+        if not self.status.wait_for_real_status_to_change_to(
+                rd_models.ServiceStatuses.RUNNING,
+                self.state_change_wait_time, update_db):
+            LOG.error(_("Start up of MySQL failed!"))
             # If it won't start, but won't die either, kill it by hand so we
             # don't let a rouge process wander around.
             try:
@@ -815,12 +842,6 @@ class MySqlApp(object):
                 LOG.error("Error killing stalled mysql start command.")
                 LOG.error(p)
             # There's nothing more we can do...
-            raise RuntimeError("Can't start MySQL!")
-
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_models.ServiceStatuses.RUNNING,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of MySQL failed!"))
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 

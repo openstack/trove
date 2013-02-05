@@ -254,6 +254,7 @@ def execute_with_timeout(*args, **kwargs):
         msg = _("Time out after waiting"
                 " %(time)s seconds when running proc: %(args)s"
                 " %(kwargs)s") % locals()
+        LOG.error(msg)
         raise exception.ProcessExecutionError(msg)
 
     timeout = Timeout(time)
@@ -261,11 +262,13 @@ def execute_with_timeout(*args, **kwargs):
         return execute(*args, **kwargs)
     except Timeout as t:
         if t is not timeout:
+            LOG.error("Timeout reached but not from our timeout. This is bad!")
             raise
         else:
             msg = _("Time out after waiting "
                     "%(time)s seconds when running proc: %(args)s"
                     " %(kwargs)s") % locals()
+            LOG.error(msg)
             raise exception.ProcessExecutionError(msg)
     finally:
         timeout.cancel()

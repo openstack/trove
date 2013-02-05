@@ -78,7 +78,7 @@ ignore_dbs = lost+found, mysql, information_schema
 # Guest related conf
 agent_heartbeat_time = 10
 agent_call_low_timeout = 5
-agent_call_high_timeout = 100
+agent_call_high_timeout = 150
 
 server_delete_time_out=10
 use_nova_server_volume = False

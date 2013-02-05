@@ -3,6 +3,8 @@ from reddwarf.guestagent import volume
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import periodic_task
 from reddwarf.openstack.common.gettextutils import _
+from reddwarf.instance import models as rd_models
+import os
 LOG = logging.getLogger(__name__)
 
 MYSQL_BASE_DIR = "/var/lib/mysql"
@@ -62,13 +64,14 @@ class Manager(periodic_task.PeriodicTasks):
                 mount_point=None):
         """Makes ready DBAAS on a Guest container."""
         dbaas.MySqlAppStatus.get().begin_mysql_install()
-        # status end_mysql_install set with install_and_secure()
+        # status end_mysql_install set with secure()
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
         restart_mysql = False
         if device_path:
             device = volume.VolumeDevice(device_path)
             device.format()
-            if app.is_installed():
+            #if a /var/lib/mysql folder exists, back it up.
+            if os.path.exists(MYSQL_BASE_DIR):
                 #stop and do not update database
                 app.stop_mysql()
                 restart_mysql = True
@@ -80,9 +83,9 @@ class Manager(periodic_task.PeriodicTasks):
             #check mysql was installed and stopped
             if restart_mysql:
                 app.start_mysql()
-        app.install_and_secure(memory_mb)
-        LOG.info("Creating initial databases and users following successful "
-                 "prepare.")
+        app.install_if_needed()
+        LOG.info("Securing mysql now.")
+        app.secure(memory_mb)
         self.create_database(context, databases)
         self.create_user(context, users)
         LOG.info('"prepare" call has finished.')

@@ -47,7 +47,7 @@ class API(proxy.RpcProxy):
                                   RPC_API_VERSION)
 
     def _call(self, method_name, timeout_sec, **kwargs):
-        LOG.debug("Calling %s" % method_name)
+        LOG.debug("Calling %s with timeout %s" % (method_name, timeout_sec))
         try:
             result = self.call(self.context,
                                self.make_msg(method_name, **kwargs),
@@ -212,7 +212,8 @@ class API(proxy.RpcProxy):
 
     def start_mysql_with_conf_changes(self, updated_memory_size):
         """Start the MySQL server."""
-        LOG.debug(_("Sending the call to start MySQL on the Guest."))
+        LOG.debug(_("Sending the call to start MySQL on the Guest with "
+                    "a timeout of %s.") % AGENT_HIGH_TIMEOUT)
         self._call("start_mysql_with_conf_changes", AGENT_HIGH_TIMEOUT,
                    updated_memory_size=updated_memory_size)
 
