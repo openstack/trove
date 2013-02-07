@@ -229,6 +229,9 @@ class RebootTestBase(ActionTestBase):
         if not FAKE_MODE:
             server = create_server_connection(self.instance_id)
             cmd = "sudo rm /var/lib/mysql/ib_logfile%d"
+            # We want to stop mysql so that upstart does not keep trying to
+            # respawn it and block the guest agent from accessing the logs.
+            instance_info.dbaas_admin.management.stop(self.instance_id)
             for index in range(2):
                 server.execute(cmd % index)
 
@@ -238,7 +241,10 @@ class RebootTestBase(ActionTestBase):
             instance = self.instance
             if instance.status == "REBOOT" or instance.status == "ACTIVE":
                 return False
-            assert_equal("SHUTDOWN", instance.status)
+            # The reason we check for BLOCKED as well as SHUTDOWN is because
+            # Upstart might try to bring mysql back up after the borked
+            # connection and the guest status can be either
+            assert_true(instance.status in ("SHUTDOWN", "BLOCKED"))
             return True
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
