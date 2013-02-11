@@ -97,6 +97,8 @@ notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
 
+api_paste_config=api-paste.ini.test
+
 [composite:reddwarf]
 use = call:reddwarf.common.wsgi:versioned_urlmap
 /: versions
@@ -141,3 +143,4 @@ paste.app_factory = reddwarf.common.api:app_factory
 #Add this filter to log request and response for debugging
 [filter:debug]
 paste.filter_factory = reddwarf.common.wsgi:Debug
+
