@@ -9,7 +9,7 @@ reddwarf.egg*
 reddwarf/vcsversion.py
 *py*.egg
 .coverage
-covhtml/
+cover/
 .DS_Store
 host-syslog.log
 tags
