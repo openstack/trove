@@ -111,6 +111,7 @@ if __name__ == "__main__":
         # Initialize the test configuration.
         CONFIG.load_from_file('etc/tests/localhost.test.conf')
 
+        from reddwarf.tests.api import limits
         from reddwarf.tests.api import flavors
         from reddwarf.tests.api import versions
         from reddwarf.tests.api import instances

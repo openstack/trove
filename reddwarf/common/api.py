@@ -19,6 +19,7 @@ from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.host.instance import service as hostservice
 from reddwarf.flavor.service import FlavorController
 from reddwarf.instance.service import InstanceController
+from reddwarf.limits.service import LimitsController
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import rpc
 from reddwarf.versions import VersionsController
@@ -32,6 +33,7 @@ class API(wsgi.Router):
         self._instance_router(mapper)
         self._flavor_router(mapper)
         self._versions_router(mapper)
+        self._limits_router(mapper)
 
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
@@ -47,6 +49,11 @@ class API(wsgi.Router):
         flavor_resource = FlavorController().create_resource()
         path = "/{tenant_id}/flavors"
         mapper.resource("flavor", path, controller=flavor_resource)
+
+    def _limits_router(self, mapper):
+        limits_resource = LimitsController().create_resource()
+        path = "/{tenant_id}/limits"
+        mapper.resource("limits", path, controller=limits_resource)
 
 
 def app_factory(global_conf, **local_conf):

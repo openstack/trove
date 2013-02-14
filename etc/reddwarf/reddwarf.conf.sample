@@ -54,6 +54,12 @@ max_instances_per_user = 5
 max_volumes_per_user = 100
 volume_time_out=30
 
+# Config options for rate limits
+http_get_rate = 200
+http_post_rate = 200
+http_put_rate = 200
+http_delete_rate = 200
+
 # Reddwarf DNS
 reddwarf_dns_support = False
 

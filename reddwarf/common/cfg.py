@@ -100,6 +100,10 @@ common_opts = [
     cfg.IntOpt('revert_time_out', default=60 * 10),
     cfg.ListOpt('root_grant', default=['ALL']),
     cfg.BoolOpt('root_grant_option', default=True),
+    cfg.IntOpt('http_get_rate', default=200),
+    cfg.IntOpt('http_post_rate', default=200),
+    cfg.IntOpt('http_delete_rate', default=200),
+    cfg.IntOpt('http_put_rate', default=200),
 ]
 
 

@@ -106,7 +106,7 @@ use = call:reddwarf.common.wsgi:versioned_urlmap
 paste.app_factory = reddwarf.versions:app_factory
 
 [pipeline:reddwarfapi]
-pipeline = faultwrapper tokenauth authorization contextwrapper extensions reddwarfapp
+pipeline = faultwrapper tokenauth authorization contextwrapper ratelimit extensions reddwarfapp
 # pipeline = debug reddwarfapp
 
 [filter:extensions]
@@ -131,6 +131,9 @@ paste.filter_factory = reddwarf.common.wsgi:ContextMiddleware.factory
 
 [filter:faultwrapper]
 paste.filter_factory = reddwarf.common.wsgi:FaultWrapper.factory
+
+[filter:ratelimit]
+paste.filter_factory = reddwarf.common.limits:RateLimitingMiddleware.factory
 
 [app:reddwarfapp]
 paste.app_factory = reddwarf.common.api:app_factory

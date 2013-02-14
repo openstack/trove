@@ -17,12 +17,15 @@
 """Wsgi helper utilities for reddwarf"""
 
 import eventlet.wsgi
+import math
 import paste.urlmap
 import re
+import time
 import traceback
 import webob
 import webob.dec
 import webob.exc
+from lxml import etree
 from paste import deploy
 from xml.dom import minidom
 
@@ -30,12 +33,13 @@ from reddwarf.common import context as rd_context
 from reddwarf.common import exception
 from reddwarf.common import utils
 from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common import jsonutils
+
 from reddwarf.openstack.common import pastedeploy
 from reddwarf.openstack.common import service
 from reddwarf.openstack.common import wsgi as openstack_wsgi
 from reddwarf.openstack.common import log as logging
 from reddwarf.common import cfg
-
 
 CONTEXT_KEY = 'reddwarf.context'
 Router = openstack_wsgi.Router
@@ -128,6 +132,54 @@ def launch(app_name, port, paste_config_file, data={},
     server = openstack_wsgi.Service(app, port, host=host,
                                     backlog=backlog, threads=threads)
     return service.launch(server)
+
+
+# Note: taken from Nova
+def serializers(**serializers):
+    """Attaches serializers to a method.
+
+    This decorator associates a dictionary of serializers with a
+    method.  Note that the function attributes are directly
+    manipulated; the method is not wrapped.
+    """
+
+    def decorator(func):
+        if not hasattr(func, 'wsgi_serializers'):
+            func.wsgi_serializers = {}
+        func.wsgi_serializers.update(serializers)
+        return func
+    return decorator
+
+
+class ReddwarfMiddleware(Middleware):
+
+    # Note: taken from nova
+    @classmethod
+    def factory(cls, global_config, **local_config):
+        """Used for paste app factories in paste.deploy config files.
+
+        Any local configuration (that is, values under the [filter:APPNAME]
+        section of the paste config) will be passed into the `__init__` method
+        as kwargs.
+
+        A hypothetical configuration would look like:
+
+            [filter:analytics]
+            redis_host = 127.0.0.1
+            paste.filter_factory = nova.api.analytics:Analytics.factory
+
+        which would result in a call to the `Analytics` class as
+
+            import nova.api.analytics
+            analytics.Analytics(app_from_paste, redis_host='127.0.0.1')
+
+        You could of course re-implement the `factory` method in subclasses,
+        but using the kwarg passing it shouldn't be necessary.
+
+        """
+        def _factory(app):
+            return cls(app, **local_config)
+        return _factory
 
 
 class VersionedURLMap(object):
@@ -591,3 +643,186 @@ class FaultWrapper(openstack_wsgi.Middleware):
         def _factory(app):
             return cls(app)
         return _factory
+
+
+# ported from Nova
+class OverLimitFault(webob.exc.HTTPException):
+    """
+    Rate-limited request response.
+    """
+
+    def __init__(self, message, details, retry_time):
+        """
+        Initialize new `OverLimitFault` with relevant information.
+        """
+        hdrs = OverLimitFault._retry_after(retry_time)
+        self.wrapped_exc = webob.exc.HTTPRequestEntityTooLarge(headers=hdrs)
+        self.content = {"overLimit": {"code": self.wrapped_exc.status_int,
+                                      "message": message,
+                                      "details": details,
+                                      "retryAfter": hdrs['Retry-After'],
+                                      },
+                        }
+
+    @staticmethod
+    def _retry_after(retry_time):
+        delay = int(math.ceil(retry_time - time.time()))
+        retry_after = delay if delay > 0 else 0
+        headers = {'Retry-After': '%d' % retry_after}
+        return headers
+
+    @webob.dec.wsgify(RequestClass=Request)
+    def __call__(self, request):
+        """
+        Return the wrapped exception with a serialized body conforming to our
+        error format.
+        """
+        content_type = request.best_match_content_type()
+        metadata = {"attributes": {"overLimit": ["code", "retryAfter"]}}
+
+        xml_serializer = XMLDictSerializer(metadata, XMLNS)
+        serializer = {'application/xml': xml_serializer,
+                      'application/json': JSONDictSerializer(),
+                      }[content_type]
+
+        content = serializer.serialize(self.content)
+        self.wrapped_exc.body = content
+        self.wrapped_exc.content_type = content_type
+
+        return self.wrapped_exc
+
+
+class ActionDispatcher(object):
+    """Maps method name to local methods through action name."""
+
+    def dispatch(self, *args, **kwargs):
+        """Find and call local method."""
+        action = kwargs.pop('action', 'default')
+        action_method = getattr(self, str(action), self.default)
+        return action_method(*args, **kwargs)
+
+    def default(self, data):
+        raise NotImplementedError()
+
+
+class DictSerializer(ActionDispatcher):
+    """Default request body serialization."""
+
+    def serialize(self, data, action='default'):
+        return self.dispatch(data, action=action)
+
+    def default(self, data):
+        return ""
+
+
+class JSONDictSerializer(DictSerializer):
+    """Default JSON request body serialization."""
+
+    def default(self, data):
+        return jsonutils.dumps(data)
+
+
+class XMLDictSerializer(DictSerializer):
+
+    def __init__(self, metadata=None, xmlns=None):
+        """
+        :param metadata: information needed to deserialize xml into
+                         a dictionary.
+        :param xmlns: XML namespace to include with serialized xml
+        """
+        super(XMLDictSerializer, self).__init__()
+        self.metadata = metadata or {}
+        self.xmlns = xmlns
+
+    def default(self, data):
+        # We expect data to contain a single key which is the XML root.
+        root_key = data.keys()[0]
+        doc = minidom.Document()
+        node = self._to_xml_node(doc, self.metadata, root_key, data[root_key])
+
+        return self.to_xml_string(node)
+
+    def to_xml_string(self, node, has_atom=False):
+        self._add_xmlns(node, has_atom)
+        return node.toxml('UTF-8')
+
+    #NOTE (ameade): the has_atom should be removed after all of the
+    # xml serializers and view builders have been updated to the current
+    # spec that required all responses include the xmlns:atom, the has_atom
+    # flag is to prevent current tests from breaking
+    def _add_xmlns(self, node, has_atom=False):
+        if self.xmlns is not None:
+            node.setAttribute('xmlns', self.xmlns)
+        if has_atom:
+            node.setAttribute('xmlns:atom', "http://www.w3.org/2005/Atom")
+
+    def _to_xml_node(self, doc, metadata, nodename, data):
+        """Recursive method to convert data members to XML nodes."""
+        result = doc.createElement(nodename)
+
+        # Set the xml namespace if one is specified
+        # TODO(justinsb): We could also use prefixes on the keys
+        xmlns = metadata.get('xmlns', None)
+        if xmlns:
+            result.setAttribute('xmlns', xmlns)
+
+        #TODO(bcwaldon): accomplish this without a type-check
+        if isinstance(data, list):
+            collections = metadata.get('list_collections', {})
+            if nodename in collections:
+                metadata = collections[nodename]
+                for item in data:
+                    node = doc.createElement(metadata['item_name'])
+                    node.setAttribute(metadata['item_key'], str(item))
+                    result.appendChild(node)
+                return result
+            singular = metadata.get('plurals', {}).get(nodename, None)
+            if singular is None:
+                if nodename.endswith('s'):
+                    singular = nodename[:-1]
+                else:
+                    singular = 'item'
+            for item in data:
+                node = self._to_xml_node(doc, metadata, singular, item)
+                result.appendChild(node)
+        #TODO(bcwaldon): accomplish this without a type-check
+        elif isinstance(data, dict):
+            collections = metadata.get('dict_collections', {})
+            if nodename in collections:
+                metadata = collections[nodename]
+                for k, v in data.items():
+                    node = doc.createElement(metadata['item_name'])
+                    node.setAttribute(metadata['item_key'], str(k))
+                    text = doc.createTextNode(str(v))
+                    node.appendChild(text)
+                    result.appendChild(node)
+                return result
+            attrs = metadata.get('attributes', {}).get(nodename, {})
+            for k, v in data.items():
+                if k in attrs:
+                    result.setAttribute(k, str(v))
+                else:
+                    if k == "deleted":
+                        v = str(bool(v))
+                    node = self._to_xml_node(doc, metadata, k, v)
+                    result.appendChild(node)
+        else:
+            # Type is atom
+            node = doc.createTextNode(str(data))
+            result.appendChild(node)
+        return result
+
+    def _create_link_nodes(self, xml_doc, links):
+        link_nodes = []
+        for link in links:
+            link_node = xml_doc.createElement('atom:link')
+            link_node.setAttribute('rel', link['rel'])
+            link_node.setAttribute('href', link['href'])
+            if 'type' in link:
+                link_node.setAttribute('type', link['type'])
+            link_nodes.append(link_node)
+        return link_nodes
+
+    def _to_xml(self, root):
+        """Convert the xml object to an xml string."""
+        return etree.tostring(root, encoding='UTF-8', xml_declaration=True)
