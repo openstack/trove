@@ -72,3 +72,166 @@ class QueryTest(testtools.TestCase):
         limit_count = 20
         myQuery = query.Query(limit=limit_count)
         self.assertEqual('LIMIT 20', myQuery._limit)
+
+    def test_grant_no_arg_constr(self):
+        grant = query.Grant()
+        self.assertIsNotNone(grant)
+        self.assertEqual("GRANT USAGE ON *.* "
+                         "TO ``@`%`  WITH GRANT OPTION;",
+                         str(grant))
+
+    def test_grant_all_with_grant_option(self):
+        permissions = ['ALL']
+        user_name = 'root'
+        user_password = 'password123'
+        host = 'localhost'
+
+        # grant_option defaults to True
+        grant = query.Grant(permissions=permissions,
+                            user=user_name,
+                            host=host,
+                            clear=user_password)
+
+        self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
+                         "`root`@`localhost` "
+                         "IDENTIFIED BY 'password123' "
+                         "WITH GRANT OPTION;",
+                         str(grant))
+
+    def test_grant_all_with_explicit_grant_option(self):
+        permissions = ['ALL', 'GRANT OPTION']
+        user_name = 'root'
+        user_password = 'password123'
+        host = 'localhost'
+        grant = query.Grant(permissions=permissions,
+                            user=user_name,
+                            host=host,
+                            clear=user_password)
+
+        self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
+                         "`root`@`localhost` "
+                         "IDENTIFIED BY 'password123' "
+                         "WITH GRANT OPTION;",
+                         str(grant))
+
+    def test_grant_specify_permissions(self):
+        permissions = ['ALTER ROUTINE',
+                       'CREATE',
+                       'ALTER',
+                       'CREATE ROUTINE',
+                       'CREATE TEMPORARY TABLES',
+                       'CREATE VIEW',
+                       'CREATE USER',
+                       'DELETE',
+                       'DROP',
+                       'EVENT',
+                       'EXECUTE',
+                       'INDEX',
+                       'INSERT',
+                       'LOCK TABLES',
+                       'PROCESS',
+                       'REFERENCES',
+                       'SELECT',
+                       'SHOW DATABASES',
+                       'SHOW VIEW',
+                       'TRIGGER',
+                       'UPDATE',
+                       'USAGE']
+
+        user_name = 'root'
+        user_password = 'password123'
+        host = 'localhost'
+        grant = query.Grant(permissions=permissions,
+                            user=user_name,
+                            host=host,
+                            clear=user_password)
+
+        self.assertEqual("GRANT ALTER, "
+                         "ALTER ROUTINE, "
+                         "CREATE, "
+                         "CREATE ROUTINE, "
+                         "CREATE TEMPORARY TABLES, "
+                         "CREATE USER, "
+                         "CREATE VIEW, "
+                         "DELETE, "
+                         "DROP, "
+                         "EVENT, "
+                         "EXECUTE, "
+                         "INDEX, "
+                         "INSERT, "
+                         "LOCK TABLES, "
+                         "PROCESS, "
+                         "REFERENCES, "
+                         "SELECT, "
+                         "SHOW DATABASES, "
+                         "SHOW VIEW, "
+                         "TRIGGER, "
+                         "UPDATE, "
+                         "USAGE ON *.* TO "
+                         "`root`@`localhost` "
+                         "IDENTIFIED BY "
+                         "'password123' WITH GRANT OPTION;",
+                         str(grant))
+
+    def test_grant_specify_duplicate_permissions(self):
+        permissions = ['ALTER ROUTINE',
+                       'CREATE',
+                       'CREATE',
+                       'DROP',
+                       'DELETE',
+                       'DELETE',
+                       'ALTER',
+                       'CREATE ROUTINE',
+                       'CREATE TEMPORARY TABLES',
+                       'CREATE VIEW',
+                       'CREATE USER',
+                       'DELETE',
+                       'DROP',
+                       'EVENT',
+                       'EXECUTE',
+                       'INDEX',
+                       'INSERT',
+                       'LOCK TABLES',
+                       'PROCESS',
+                       'REFERENCES',
+                       'SELECT',
+                       'SHOW DATABASES',
+                       'SHOW VIEW',
+                       'TRIGGER',
+                       'UPDATE',
+                       'USAGE']
+
+        user_name = 'root'
+        user_password = 'password123'
+        host = 'localhost'
+        grant = query.Grant(permissions=permissions,
+                            user=user_name,
+                            host=host,
+                            clear=user_password)
+
+        self.assertEqual("GRANT ALTER, "
+                         "ALTER ROUTINE, "
+                         "CREATE, "
+                         "CREATE ROUTINE, "
+                         "CREATE TEMPORARY TABLES, "
+                         "CREATE USER, "
+                         "CREATE VIEW, "
+                         "DELETE, "
+                         "DROP, "
+                         "EVENT, "
+                         "EXECUTE, "
+                         "INDEX, "
+                         "INSERT, "
+                         "LOCK TABLES, "
+                         "PROCESS, "
+                         "REFERENCES, "
+                         "SELECT, "
+                         "SHOW DATABASES, "
+                         "SHOW VIEW, "
+                         "TRIGGER, "
+                         "UPDATE, "
+                         "USAGE ON *.* TO "
+                         "`root`@`localhost` "
+                         "IDENTIFIED BY "
+                         "'password123' WITH GRANT OPTION;",
+                         str(grant))

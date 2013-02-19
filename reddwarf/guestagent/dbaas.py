@@ -416,8 +416,16 @@ class MySqlAdmin(object):
                                   clear=user.password)
             t = text(str(uu))
             client.execute(t)
-            g = query.Grant(permissions="ALL", user=user.name, host=host,
-                            grant_option=True, clear=user.password)
+
+            LOG.debug("CONF.root_grant: %s CONF.root_grant_option: %s" %
+                      (CONF.root_grant, CONF.root_grant_option))
+
+            g = query.Grant(permissions=CONF.root_grant,
+                            user=user.name,
+                            host=host,
+                            grant_option=CONF.root_grant_option,
+                            clear=user.password)
+
             t = text(str(g))
             client.execute(t)
             return user.serialize()

@@ -91,6 +91,8 @@ common_opts = [
     cfg.IntOpt('dns_time_out', default=60 * 2),
     cfg.IntOpt('resize_time_out', default=60 * 10),
     cfg.IntOpt('revert_time_out', default=60 * 10),
+    cfg.ListOpt('root_grant', default=['ALL']),
+    cfg.BoolOpt('root_grant_option', default=True),
 ]
 
 
