@@ -100,7 +100,7 @@ def create_dbaas_client(user):
     auth_strategy = None
 
     kwargs = {
-        'service_type': 'reddwarf',
+        'service_type': 'database',
         'insecure': test_config.values['reddwarf_client_insecure'],
     }
 
