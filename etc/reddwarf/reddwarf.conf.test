@@ -1,6 +1,7 @@
 [DEFAULT]
 
 remote_implementation = fake
+fake_mode_events = eventlet
 
 log_file = rdtest.log
 

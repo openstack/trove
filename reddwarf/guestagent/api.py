@@ -106,10 +106,38 @@ class API(proxy.RpcProxy):
             LOG.warn(mnfe)
         raise exception.GuestTimeout()
 
+    def change_passwords(self, users):
+        """Make an asynchronous call to change the passwords of one or more
+           users."""
+        LOG.debug(_("Changing passwords for users on Instance %s"), self.id)
+        self._cast("change_passwords", users=users)
+
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
         LOG.debug(_("Creating Users for Instance %s"), self.id)
         self._cast("create_user", users=users)
+
+    def get_user(self, username):
+        """Make an asynchronous call to get a single database user."""
+        LOG.debug(_("Getting a user on Instance %s"), self.id)
+        LOG.debug("User name is %s" % username)
+        return self._call("get_user", AGENT_LOW_TIMEOUT, username=username)
+
+    def list_access(self, username):
+        """Show all the databases to which a user has more than USAGE."""
+        LOG.debug(_("Showing user grants on Instance %s"), self.id)
+        LOG.debug("User name is %s" % username)
+        return self._call("list_access", AGENT_LOW_TIMEOUT, username=username)
+
+    def grant_access(self, username, databases):
+        """Give a user permission to use a given database."""
+        return self._call("grant_access", AGENT_LOW_TIMEOUT,
+                          username=username, databases=databases)
+
+    def revoke_access(self, username, database):
+        """Remove a user's permission to use a given database."""
+        return self._call("revoke_access", AGENT_LOW_TIMEOUT,
+                          username=username, database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users"""

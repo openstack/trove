@@ -55,8 +55,8 @@ class TestUsers(object):
     username1 = "anous*&^er"
     username1_urlendcoded = "anous%2A%26%5Eer"
     password1 = "anopas*?.sword"
-    db1 = "firstdb"
-    db2 = "seconddb"
+    db1 = "usersfirstdb"
+    db2 = "usersseconddb"
 
     created_users = [username, username1]
     system_users = ['root', 'debian_sys_maint']
@@ -89,6 +89,7 @@ class TestUsers(object):
                      "databases": [{"name": self.db1}, {"name": self.db2}]})
         self.dbaas.users.create(instance_info.id, users)
         assert_equal(202, self.dbaas.last_http_code)
+
         # Do we need this?
         if not FAKE:
             time.sleep(5)
@@ -129,6 +130,16 @@ class TestUsers(object):
                   "databases": [{"name": self.db1}]}]
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
+
+    @test(depends_on=[test_create_users_list])
+    def test_get_one_user(self):
+        user = self.dbaas.users.get(instance_info.id, user=self.username)
+        assert_equal(200, self.dbaas.last_http_code)
+        assert_equal(user.name, self.username)
+        assert_equal(1, len(user.databases))
+        for db in user.databases:
+            assert_equal(db["name"], self.db1)
+        self.check_database_for_user(self.username, self.password, [self.db1])
 
     @test(depends_on=[test_create_users_list])
     def test_create_users_list_system(self):
@@ -172,7 +183,7 @@ class TestUsers(object):
                 assert_true(
                     db in actual_list,
                     "No match for db %s in dblist. %s :(" % (db, actual_list))
-        # Confirm via API.
+        # Confirm via API list.
         result = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
         for item in result:
@@ -180,6 +191,12 @@ class TestUsers(object):
                 break
         else:
             fail("User %s not added to collection." % user)
+
+        # Confirm via API get.
+        result = self.dbaas.users.get(instance_info.id, user)
+        assert_equal(200, self.dbaas.last_http_code)
+        if result.name != user:
+            fail("User %s not found via get." % user)
 
     @test
     def test_username_too_long(self):

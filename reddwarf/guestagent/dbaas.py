@@ -40,8 +40,8 @@ from reddwarf import db
 from reddwarf.common.exception import ProcessExecutionError
 from reddwarf.common import cfg
 from reddwarf.common import utils
+from reddwarf.guestagent import query
 from reddwarf.guestagent.db import models
-from reddwarf.guestagent.query import Query
 from reddwarf.guestagent import pkg
 from reddwarf.instance import models as rd_models
 from reddwarf.openstack.common import log as logging
@@ -50,7 +50,7 @@ from reddwarf.openstack.common.gettextutils import _
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
-FLUSH = text("""FLUSH PRIVILEGES;""")
+FLUSH = text(query.FLUSH)
 
 ENGINE = None
 MYSQLD_ARGS = None
@@ -308,57 +308,92 @@ class LocalSqlClient(object):
 class MySqlAdmin(object):
     """Handles administrative tasks on the MySQL database."""
 
+    def _associate_dbs(self, user):
+        """Internal. Given a MySQLUser, populate its databases attribute."""
+        LOG.debug("Associating dbs to user %s" % user.name)
+        with LocalSqlClient(get_engine()) as client:
+            q = query.Query()
+            q.columns = ["grantee", "table_schema"]
+            q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
+            q.group = ["grantee", "table_schema"]
+            q.where = ["privilege_type != 'USAGE'"]
+            t = text(str(q))
+            db_result = client.execute(t)
+            for db in db_result:
+                LOG.debug("\t db: %s" % db)
+                if db['grantee'] == "'%s'@'%%'" % (user.name):
+                    mysql_db = models.MySQLDatabase()
+                    mysql_db.name = db['table_schema']
+                    user.databases.append(mysql_db.serialize())
+
+    def change_passwords(self, users):
+        """Change the passwords of one or more existing users."""
+        LOG.debug("Changing the password of some users.""")
+        LOG.debug("Users is %s" % users)
+        with LocalSqlClient(get_engine()) as client:
+            for item in users:
+                LOG.debug("\tUser: %s" % item)
+                user_dict = {'_name': item['name'],
+                             '_password': item['password'],
+                             }
+                user = models.MySQLUser()
+                user.deserialize(user_dict)
+                LOG.debug("\tDeserialized: %s" % user.__dict__)
+                uu = query.UpdateUser(user.name, clear=user.password)
+                t = text(str(uu))
+                client.execute(t)
+
     def create_database(self, databases):
         """Create the list of specified databases"""
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             for item in databases:
                 mydb = models.MySQLDatabase()
                 mydb.deserialize(item)
-                t = text("""CREATE DATABASE IF NOT EXISTS
-                            `%s` CHARACTER SET = %s COLLATE = %s;"""
-                         % (mydb.name, mydb.character_set, mydb.collate))
+                cd = query.CreateDatabase(mydb.name,
+                                          mydb.character_set,
+                                          mydb.collate)
+                t = text(str(cd))
                 client.execute(t)
 
     def create_user(self, users):
         """Create users and grant them privileges for the
            specified databases"""
         host = "%"
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             for item in users:
                 user = models.MySQLUser()
                 user.deserialize(item)
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
-                t = text("""GRANT USAGE ON *.* TO '%s'@\"%s\"
-                            IDENTIFIED BY '%s';"""
-                         % (user.name, host, user.password))
+                g = query.Grant(user=user.name, host=host,
+                                clear=user.password)
+                t = text(str(g))
                 client.execute(t)
                 for database in user.databases:
                     mydb = models.MySQLDatabase()
                     mydb.deserialize(database)
-                    t = text("""
-                             GRANT ALL PRIVILEGES ON `%s`.* TO `%s`@:host;
-                             """ % (mydb.name, user.name))
-                    client.execute(t, host=host)
+                    g = query.Grant(permissions='ALL', database=mydb.name,
+                                    user=user.name, host=host,
+                                    clear=user.password)
+                    t = text(str(g))
+                    client.execute(t)
 
     def delete_database(self, database):
         """Delete the specified database"""
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             mydb = models.MySQLDatabase()
             mydb.deserialize(database)
-            t = text("""DROP DATABASE `%s`;""" % mydb.name)
+            dd = query.DropDatabase(mydb.name)
+            t = text(str(dd))
             client.execute(t)
 
     def delete_user(self, user):
         """Delete the specified users"""
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
             mysql_user.deserialize(user)
-            t = text("""DROP USER `%s`""" % mysql_user.name)
+            du = query.DropUser(mysql_user.name)
+            t = text(str(du))
             client.execute(t)
 
     def enable_root(self):
@@ -367,31 +402,68 @@ class MySqlAdmin(object):
         user = models.MySQLUser()
         user.name = "root"
         user.password = generate_random_password()
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             try:
-                t = text("""CREATE USER :user@:host;""")
-                client.execute(t, user=user.name, host=host, pwd=user.password)
+                cu = query.CreateUser(user.name, host=host)
+                t = text(str(cu))
+                client.execute(t, **cu.keyArgs)
             except exc.OperationalError as err:
                 # Ignore, user is already created, just reset the password
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)
-        with client:
-            t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                           WHERE User=:user;""")
-            client.execute(t, user=user.name, pwd=user.password)
-            t = text("""GRANT ALL PRIVILEGES ON *.* TO :user@:host
-                        WITH GRANT OPTION;""")
-            client.execute(t, user=user.name, host=host)
+        with LocalSqlClient(get_engine()) as client:
+            uu = query.UpdateUser(user.name, host=host,
+                                  clear=user.password)
+            t = text(str(uu))
+            client.execute(t)
+            g = query.Grant(permissions="ALL", user=user.name, host=host,
+                            grant_option=True, clear=user.password)
+            t = text(str(g))
+            client.execute(t)
             return user.serialize()
+
+    def get_user(self, username):
+        user = self._get_user(username)
+        if not user:
+            return None
+        return user.serialize()
+
+    def _get_user(self, username):
+        """Return a single user matching the criteria"""
+        user = models.MySQLUser()
+        user.name = username
+        with LocalSqlClient(get_engine()) as client:
+            q = query.Query()
+            q.columns = ['User', 'Password']
+            q.tables = ['mysql.user']
+            q.where = ["Host != 'localhost'",
+                       "User = '%s'" % username,
+                       ]
+            q.order = ['User']
+            t = text(str(q))
+            result = client.execute(t).fetchall()
+            LOG.debug("Result: %s" % result)
+            if len(result) != 1:
+                return None
+            found_user = result[0]
+            user.password = found_user['Password']
+            self._associate_dbs(user)
+            return user
+
+    def grant_access(self, username, databases):
+        """Give a user permission to use a given database."""
+        user = self._get_user(username)
+        with LocalSqlClient(get_engine()) as client:
+            for database in databases:
+                g = query.Grant(permissions='ALL', database=database,
+                                user=user.name, host='%', hashed=user.password)
+                t = text(str(g))
+                client.execute(t)
 
     def is_root_enabled(self):
         """Return True if root access is enabled; False otherwise."""
-        client = LocalSqlClient(get_engine())
-        with client:
-            mysql_user = models.MySQLUser()
-            t = text("""SELECT User FROM mysql.user where User = 'root'
-                        and host != 'localhost';""")
+        with LocalSqlClient(get_engine()) as client:
+            t = text(query.ROOT_ENABLED)
             result = client.execute(t)
             LOG.debug("result = " + str(result))
             return result.rowcount != 0
@@ -400,23 +472,22 @@ class MySqlAdmin(object):
         """List databases the user created on this mysql instance"""
         LOG.debug(_("---Listing Databases---"))
         databases = []
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             # If you have an external volume mounted at /var/lib/mysql
             # the lost+found directory will show up in mysql as a database
             # which will create errors if you try to do any database ops
             # on it.  So we remove it here if it exists.
-            q = Query()
+            q = query.Query()
             q.columns = [
                 'schema_name as name',
                 'default_character_set_name as charset',
                 'default_collation_name as collation',
             ]
             q.tables = ['information_schema.schemata']
-            q.where = ['''schema_name not in (
-                            'mysql', 'information_schema',
-                            'lost+found', '#mysql50#lost+found'
-                        )''']
+            q.where = ["schema_name NOT IN ("
+                       "'mysql', 'information_schema', "
+                       "'lost+found', '#mysql50#lost+found'"
+                       ")"]
             q.order = ['schema_name ASC']
             if limit:
                 q.limit = limit + 1
@@ -447,10 +518,9 @@ class MySqlAdmin(object):
         """List users that have access to the database"""
         LOG.debug(_("---Listing Users---"))
         users = []
-        client = LocalSqlClient(get_engine())
-        with client:
+        with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
-            q = Query()
+            q = query.Query()
             q.columns = ['User']
             q.tables = ['mysql.user']
             q.where = ["host != 'localhost'"]
@@ -471,27 +541,29 @@ class MySqlAdmin(object):
                 LOG.debug("user = " + str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
+                self._associate_dbs(mysql_user)
                 next_marker = row['User']
-                # Now get the databases
-                q = Query()
-                q.columns = ['grantee', 'table_schema']
-                q.tables = ['information_schema.SCHEMA_PRIVILEGES']
-                q.group = ['grantee', 'table_schema']
-                t = text(str(q))
-                db_result = client.execute(t)
-                for db in db_result:
-                    matches = re.match("^'(.+)'@", db['grantee'])
-                    if (matches is not None and
-                            matches.group(1) == mysql_user.name):
-                        mysql_db = models.MySQLDatabase()
-                        mysql_db.name = db['table_schema']
-                        mysql_user.databases.append(mysql_db.serialize())
                 users.append(mysql_user.serialize())
         if result.rowcount <= limit:
             next_marker = None
         LOG.debug("users = " + str(users))
 
         return users, next_marker
+
+    def revoke_access(self, username, database):
+        """Give a user permission to use a given database."""
+        user = self._get_user(username)
+        with LocalSqlClient(get_engine()) as client:
+            r = query.Revoke(database=database, user=user.name, host='%',
+                             hashed=user.password)
+            t = text(str(r))
+            client.execute(t)
+
+    def list_access(self, username):
+        """Show all the databases to which the user has more than
+           USAGE granted."""
+        user = self._get_user(username)
+        return user.databases
 
 
 class KeepAliveConnection(interfaces.PoolListener):
@@ -531,25 +603,26 @@ class MySqlApp(object):
         Create a os_admin user with a random password
         with all privileges similar to the root user
         """
-        t = text("CREATE USER :user@'localhost';")
-        client.execute(t, user=ADMIN_USER_NAME)
-        t = text("""
-                 UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                     WHERE User=:user;
-                 """)
-        client.execute(t, pwd=password, user=ADMIN_USER_NAME)
-        t = text("""
-                 GRANT ALL PRIVILEGES ON *.* TO :user@'localhost'
-                       WITH GRANT OPTION;
-                 """)
-        client.execute(t, user=ADMIN_USER_NAME)
+        localhost = "localhost"
+        cu = query.CreateUser(ADMIN_USER_NAME, host=localhost)
+        t = text(str(cu))
+        client.execute(t, **cu.keyArgs)
+        uu = query.UpdateUser(ADMIN_USER_NAME, host=localhost, clear=password)
+        t = text(str(uu))
+        client.execute(t)
+        g = query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
+                        host=localhost, grant_option=True, clear=password)
+        t = text(str(g))
+        client.execute(t)
 
     @staticmethod
     def _generate_root_password(client):
         """ Generate and set a random root password and forget about it. """
-        t = text("""UPDATE mysql.user SET Password=PASSWORD(:pwd)
-                           WHERE User='root';""")
-        client.execute(t, pwd=generate_random_password())
+        localhost = "localhost"
+        uu = query.UpdateUser("root", host=localhost,
+                              clear=generate_random_password())
+        t = text(str(uu))
+        client.execute(t)
 
     def install_and_secure(self, memory_mb):
         """Prepare the guest machine with a secure mysql server installation"""
@@ -562,8 +635,7 @@ class MySqlApp(object):
         admin_password = generate_random_password()
 
         engine = create_engine("mysql://root:@localhost:3306", echo=True)
-        client = LocalSqlClient(engine)
-        with client:
+        with LocalSqlClient(engine) as client:
             self._generate_root_password(client)
             self._remove_anonymous_user(client)
             self._remove_remote_root_access(client)
@@ -618,13 +690,11 @@ class MySqlApp(object):
             raise RuntimeError("Could not stop MySQL!")
 
     def _remove_anonymous_user(self, client):
-        t = text("""DELETE FROM mysql.user WHERE User='';""")
+        t = text(query.REMOVE_ANON)
         client.execute(t)
 
     def _remove_remote_root_access(self, client):
-        t = text("""DELETE FROM mysql.user
-                           WHERE User='root'
-                           AND Host!='localhost';""")
+        t = text(query.REMOVE_ROOT)
         client.execute(t)
 
     def restart(self):

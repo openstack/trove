@@ -120,6 +120,7 @@ if __name__=="__main__":
     from reddwarf.tests.api import databases
     from reddwarf.tests.api import root
     from reddwarf.tests.api import users
+    from reddwarf.tests.api import user_access
     from reddwarf.tests.api.mgmt import accounts
     from reddwarf.tests.api.mgmt import admin_required
     from reddwarf.tests.api.mgmt import instances

@@ -43,6 +43,15 @@ class UsersView(object):
         return {"users": data}
 
 
+class UserAccessView(object):
+    def __init__(self, databases):
+        self.databases = databases
+
+    def data(self):
+        dbs = [{"name": db.name} for db in self.databases]
+        return {"databases": dbs}
+
+
 class RootCreatedView(UserView):
 
     def data(self):

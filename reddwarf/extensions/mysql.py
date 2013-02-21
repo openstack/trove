@@ -47,6 +47,7 @@ class Mysql(extensions.ExtensionsDescriptor):
         serializer = wsgi.ReddwarfResponseSerializer(
             body_serializers={'application/xml':
                               wsgi.ReddwarfXMLDictSerializer()})
+
         resource = extensions.ResourceExtension(
             'databases',
             service.SchemaController(),
@@ -55,6 +56,7 @@ class Mysql(extensions.ExtensionsDescriptor):
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer)
         resources.append(resource)
+
         resource = extensions.ResourceExtension(
             'users',
             service.UserController(),
@@ -62,8 +64,21 @@ class Mysql(extensions.ExtensionsDescriptor):
                     'collection_name': '{tenant_id}/instances'},
             # deserializer=extensions.ExtensionsXMLSerializer()
             deserializer=wsgi.ReddwarfRequestDeserializer(),
-            serializer=serializer)
+            serializer=serializer,
+            collection_actions={'update': 'PUT'})
         resources.append(resource)
+
+        collection_url = '{tenant_id}/instances/:instance_id/users'
+        resource = extensions.ResourceExtension(
+            'databases',
+            service.UserAccessController(),
+            parent={'member_name': 'user',
+                    'collection_name': collection_url},
+            deserializer=wsgi.ReddwarfRequestDeserializer(),
+            serializer=serializer,
+            collection_actions={'update': 'PUT'})
+        resources.append(resource)
+
         resource = extensions.ResourceExtension(
             'root',
             service.RootController(),
@@ -71,7 +86,6 @@ class Mysql(extensions.ExtensionsDescriptor):
                     'collection_name': '{tenant_id}/instances'},
             deserializer=wsgi.ReddwarfRequestDeserializer(),
             serializer=serializer)
-
         resources.append(resource)
 
         return resources
