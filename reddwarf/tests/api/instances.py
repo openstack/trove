@@ -31,6 +31,7 @@ GROUP_STOP = "dbaas.guest.shutdown"
 GROUP_USERS = "dbaas.api.users"
 GROUP_ROOT = "dbaas.api.root"
 GROUP_DATABASES = "dbaas.api.databases"
+GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 
 from datetime import datetime
 from nose.plugins.skip import SkipTest
@@ -51,6 +52,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_is
 from proboscis.asserts import assert_is_none
+from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_is_not
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
@@ -67,6 +69,7 @@ from reddwarf.tests.util import skip_if_xml
 from reddwarf.tests.util import string_in_list
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.util.check import AttrCheck
+from reddwarf.tests.util.check import TypeCheck
 
 
 class InstanceTestInfo(object):
@@ -449,6 +452,106 @@ def assert_unprocessable(func, *args):
     except exceptions.UnprocessableEntity:
         assert_equal(422, dbaas.last_http_code)
         pass  # Good
+
+
+@test(depends_on_classes=[CreateInstance],
+      groups=[GROUP, GROUP_SECURITY_GROUPS],
+      runs_after_groups=[tests.PRE_INSTANCES])
+class SecurityGroupsTest(object):
+
+    @before_class
+    def setUp(self):
+        self.testSecurityGroup = dbaas.security_groups.get(
+            instance_info.id)
+        self.secGroupName = "SecGroup_%s" % instance_info.id
+        self.secGroupDescription = \
+            "Default Security Group For DBaaS Instance <%s>" % instance_info.id
+
+    @test
+    def test_created_security_group(self):
+        assert_is_not_none(self.testSecurityGroup)
+        with TypeCheck('SecurityGroup', self.testSecurityGroup) as secGrp:
+            secGrp.has_field('id', basestring)
+            secGrp.has_field('name', basestring)
+            secGrp.has_field('description', basestring)
+            secGrp.has_field('created', basestring)
+            secGrp.has_field('updated', basestring)
+        assert_equal(self.testSecurityGroup.name, self.secGroupName)
+        assert_equal(self.testSecurityGroup.description,
+                     self.secGroupDescription)
+
+    @test
+    def test_list_security_group(self):
+        securityGroupList = dbaas.security_groups.list()
+        assert_is_not_none(securityGroupList)
+        securityGroup = [x for x in securityGroupList
+                         if x.name in self.secGroupName]
+        assert_is_not_none(securityGroup)
+
+    @test
+    def test_get_security_group(self):
+        securityGroup = dbaas.security_groups.get(self.testSecurityGroup.id)
+        assert_is_not_none(securityGroup)
+        assert_equal(securityGroup.name, self.secGroupName)
+        assert_equal(securityGroup.description, self.secGroupDescription)
+
+
+@test(depends_on_classes=[SecurityGroupsTest],
+      groups=[GROUP, GROUP_SECURITY_GROUPS],
+      runs_after_groups=[tests.PRE_INSTANCES])
+class SecurityGroupsRulesTest(object):
+
+    @before_class
+    def setUp(self):
+        self.testSecurityGroup = dbaas.security_groups.get(
+            instance_info.id)
+        self.secGroupName = "SecGroup_%s" % instance_info.id
+        self.secGroupDescription = \
+            "Default Security Group For DBaaS Instance <%s>" % instance_info.id
+
+    @test
+    def test_create_security_group_rule(self):
+        self.testSecurityGroupRule = dbaas.security_group_rules.create(
+            group_id=self.testSecurityGroup.id,
+            protocol="tcp",
+            from_port=3306,
+            to_port=3306,
+            cidr="0.0.0.0/0")
+        assert_is_not_none(self.testSecurityGroupRule)
+        with TypeCheck('SecurityGroupRule',
+                       self.testSecurityGroupRule) as secGrpRule:
+            secGrpRule.has_field('id', basestring)
+            secGrpRule.has_field('security_group_id', basestring)
+            secGrpRule.has_field('protocol', basestring)
+            secGrpRule.has_field('cidr', basestring)
+            secGrpRule.has_field('from_port', int)
+            secGrpRule.has_field('to_port', int)
+            secGrpRule.has_field('created', basestring)
+        assert_equal(self.testSecurityGroupRule.security_group_id,
+                     self.testSecurityGroup.id)
+        assert_equal(self.testSecurityGroupRule.protocol, "tcp")
+        assert_equal(int(self.testSecurityGroupRule.from_port), 3306)
+        assert_equal(int(self.testSecurityGroupRule.to_port), 3306)
+        assert_equal(self.testSecurityGroupRule.cidr, "0.0.0.0/0")
+
+    @test
+    def test_deep_list_security_group_with_rules(self):
+        securityGroupList = dbaas.security_groups.list()
+        assert_is_not_none(securityGroupList)
+        securityGroup = [x for x in securityGroupList
+                         if x.name in self.secGroupName]
+        assert_is_not_none(securityGroup[0])
+        assert_equal(len(securityGroup[0].rules), 1)
+
+    @test
+    def test_delete_security_group_rule(self):
+        dbaas.security_group_rules.delete(self.testSecurityGroupRule.id)
+        securityGroupList = dbaas.security_groups.list()
+        assert_is_not_none(securityGroupList)
+        securityGroup = [x for x in securityGroupList
+                         if x.name in self.secGroupName]
+        assert_is_not_none(securityGroup[0])
+        assert_equal(len(securityGroup[0].rules), 0)
 
 
 @test(depends_on_classes=[CreateInstance],

@@ -58,17 +58,20 @@ use_nova_server_volume = CONF.use_nova_server_volume
 class FreshInstanceTasks(FreshInstance):
 
     def create_instance(self, flavor_id, flavor_ram, image_id,
-                        databases, users, service_type, volume_size):
+                        databases, users, service_type, volume_size,
+                        security_groups):
         if use_nova_server_volume:
             server, volume_info = self._create_server_volume(
                 flavor_id,
                 image_id,
+                security_groups,
                 service_type,
                 volume_size)
         else:
             server, volume_info = self._create_server_volume_individually(
                 flavor_id,
                 image_id,
+                security_groups,
                 service_type,
                 volume_size)
         try:
@@ -85,8 +88,8 @@ class FreshInstanceTasks(FreshInstance):
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
-    def _create_server_volume(self, flavor_id, image_id, service_type,
-                              volume_size):
+    def _create_server_volume(self, flavor_id, image_id, security_groups,
+                              service_type, volume_size):
         server = None
         try:
             nova_client = create_nova_client(self.context)
@@ -99,8 +102,10 @@ class FreshInstanceTasks(FreshInstance):
             volume_ref = {'size': volume_size, 'name': volume_name,
                           'description': volume_desc}
 
-            server = nova_client.servers.create(name, image_id, flavor_id,
-                                                files=files, volume=volume_ref)
+            server = nova_client.servers.create(
+                name, image_id, flavor_id,
+                files=files, volume=volume_ref,
+                security_groups=security_groups)
             LOG.debug(_("Created new compute instance %s.") % server.id)
 
             server_dict = server._info
@@ -123,7 +128,8 @@ class FreshInstanceTasks(FreshInstance):
         return server, volume_info
 
     def _create_server_volume_individually(self, flavor_id, image_id,
-                                           service_type, volume_size):
+                                           security_groups, service_type,
+                                           volume_size):
         volume_info = None
         block_device_mapping = None
         server = None
@@ -136,8 +142,8 @@ class FreshInstanceTasks(FreshInstance):
             self._log_and_raise(e, msg, err)
 
         try:
-            server = self._create_server(flavor_id, image_id, service_type,
-                                         block_device_mapping)
+            server = self._create_server(flavor_id, image_id, security_groups,
+                                         service_type, block_device_mapping)
             server_id = server.id
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
@@ -212,7 +218,7 @@ class FreshInstanceTasks(FreshInstance):
                        'volumes': volumes}
         return volume_info
 
-    def _create_server(self, flavor_id, image_id,
+    def _create_server(self, flavor_id, image_id, security_groups,
                        service_type, block_device_mapping):
         nova_client = create_nova_client(self.context)
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
@@ -222,6 +228,7 @@ class FreshInstanceTasks(FreshInstance):
         bdmap = block_device_mapping
         server = nova_client.servers.create(name, image_id, flavor_id,
                                             files=files,
+                                            security_groups=security_groups,
                                             block_device_mapping=bdmap)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server

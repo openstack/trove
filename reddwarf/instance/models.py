@@ -29,6 +29,7 @@ from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
+from reddwarf.extensions.security_group.models import SecurityGroup
 from reddwarf.db import models as dbmodels
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
@@ -372,6 +373,10 @@ class BaseInstance(SimpleInstance):
         time_now = datetime.now()
         self.update_db(deleted=True, deleted_at=time_now,
                        task_status=InstanceTasks.NONE)
+        # Delete associated security group
+        if CONF.reddwarf_security_groups_support:
+            SecurityGroup.delete_for_instance(self.db_info.id,
+                                              self.context)
 
     @property
     def guest(self):
@@ -428,6 +433,7 @@ class Instance(BuiltInstance):
                databases, users, service_type, volume_size):
         def _create_resources():
             client = create_nova_client(context)
+            security_groups = None
             try:
                 flavor = client.flavors.get(flavor_id)
             except nova_exceptions.NotFound:
@@ -450,10 +456,17 @@ class Instance(BuiltInstance):
                 db_info.hostname = hostname
                 db_info.save()
 
+            if CONF.reddwarf_security_groups_support:
+                security_group = SecurityGroup.create_for_instance(
+                    db_info.id,
+                    context)
+                security_groups = [security_group["name"]]
+
             task_api.API(context).create_instance(db_info.id, name, flavor_id,
                                                   flavor.ram, image_id,
                                                   databases, users,
-                                                  service_type, volume_size)
+                                                  service_type, volume_size,
+                                                  security_groups)
 
             return SimpleInstance(context, db_info, service_status)
 

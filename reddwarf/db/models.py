@@ -29,7 +29,10 @@ class DatabaseModelBase(models.ModelBase):
 
     @classmethod
     def create(cls, **values):
-        values['id'] = utils.generate_uuid()
+        if 'id' not in values:
+            values['id'] = utils.generate_uuid()
+        if hasattr(cls, 'deleted') and 'deleted' not in values:
+            values['deleted'] = False
         values['created'] = utils.utcnow()
         instance = cls(**values).save()
         if not instance.is_valid():
@@ -39,6 +42,10 @@ class DatabaseModelBase(models.ModelBase):
     @property
     def db_api(self):
         return get_db_api()
+
+    @property
+    def preserve_on_delete(self):
+        return hasattr(self, 'deleted') and hasattr(self, 'deleted_at')
 
     def save(self):
         if not self.is_valid():
@@ -52,7 +59,13 @@ class DatabaseModelBase(models.ModelBase):
         self['updated'] = utils.utcnow()
         LOG.debug(_("Deleting %s: %s") %
                   (self.__class__.__name__, self.__dict__))
-        return self.db_api.delete(self)
+
+        if self.preserve_on_delete:
+            self['deleted_at'] = utils.utcnow()
+            self['deleted'] = True
+            return self.db_api.save(self)
+        else:
+            return self.db_api.delete(self)
 
     def update(self, **values):
         for key in values:

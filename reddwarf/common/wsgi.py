@@ -86,6 +86,12 @@ CUSTOM_SERIALIZER_METADATA = {
     'database': {'name': ''},
     'user': {'name': '', 'password': ''},
     'account': {'id': ''},
+    'security_group': {'id': '', 'name': '', 'description': '', 'user': '',
+                       'tenant_id': ''},
+    'security_group_rule': {'id': '', 'group_id': '', 'protocol': '',
+                            'from_port': '', 'to_port': '', 'cidr': ''},
+    'security_group_instance_association': {'id': '', 'security_group_id': '',
+                                            'instance_id': ''},
     # mgmt/host
     'host': {'instanceCount': '', 'name': '', 'usedRAM': '', 'totalRAM': '',
              'percentUsed': ''},
@@ -104,6 +110,7 @@ CUSTOM_SERIALIZER_METADATA = {
                     'version': '', 'vmRss': '', 'fdSize': ''},
     #mgmt/instance/root
     'root_history': {'enabled': '', 'id': '', 'user': ''},
+
 }
 
 
@@ -373,7 +380,7 @@ class Controller(object):
             exception.ModelNotFoundError,
             exception.UserNotFound,
             exception.DatabaseNotFound,
-            exception.QuotaResourceUnknown
+            exception.QuotaResourceUnknown,
         ],
         webob.exc.HTTPConflict: [],
         webob.exc.HTTPRequestEntityTooLarge: [

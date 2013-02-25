@@ -256,7 +256,7 @@ class FakeServers(object):
                 server.owner.tenant == self.context.tenant)
 
     def create(self, name, image_id, flavor_ref, files=None,
-               block_device_mapping=None, volume=None):
+               block_device_mapping=None, volume=None, security_groups=None):
         id = "FAKE_%s" % uuid.uuid4()
         if volume:
             volume = self.volumes.create(volume['size'], volume['name'],
@@ -644,6 +644,93 @@ class FakeRdStorages(object):
         return [self.storages[name] for name in self.storages]
 
 
+class FakeSecurityGroup(object):
+
+    def __init__(self, name=None, description=None, context=None):
+        self.name = name
+        self.description = description
+        self.id = "FAKE_SECGRP_%s" % uuid.uuid4()
+        self.rules = {}
+
+    def get_id(self):
+        return self.id
+
+    def add_rule(self, fakeSecGroupRule):
+        self.rules.append(fakeSecGroupRule)
+        return self.rules
+
+    def get_rules(self):
+        result = ""
+        for rule in self.rules:
+            result = result + rule.data()
+        return result
+
+    def data(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description
+        }
+
+
+class FakeSecurityGroups(object):
+
+    def __init__(self, context=None):
+        self.context = context
+        self.securityGroups = {}
+
+    def create(self, name=None, description=None):
+        secGrp = FakeSecurityGroup(name, description)
+        self.securityGroups[secGrp.get_id()] = secGrp
+        return secGrp
+
+    def list(self):
+        pass
+
+
+class FakeSecurityGroupRule(object):
+
+    def __init__(self, ip_protocol=None, from_port=None, to_port=None,
+                 cidr=None, parent_group_id=None, context=None):
+        self.group_id = parent_group_id
+        self.protocol = ip_protocol
+        self.from_port = from_port
+        self.to_port = to_port
+        self.cidr = cidr
+        self.context = context
+        self.id = "FAKE_SECGRP_RULE_%s" % uuid.uuid4()
+
+    def get_id(self):
+        return self.id
+
+    def data(self):
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'protocol': self.protocol,
+            'from_port': self.from_port,
+            'to_port': self.to_port,
+            'cidr': self.cidr
+        }
+
+
+class FakeSecurityGroupRules(object):
+
+    def __init__(self, context=None):
+        self.context = context
+        self.securityGroupRules = {}
+
+    def create(self, parent_group_id, ip_protocol, from_port, to_port, cidr):
+        secGrpRule = FakeSecurityGroupRule(ip_protocol, from_port, to_port,
+                                           cidr, parent_group_id)
+        self.securityGroupRules[secGrpRule.get_id()] = secGrpRule
+        return secGrpRule
+
+    def delete(self, id):
+        if id in self.securityGroupRules:
+            del self.securityGroupRules[id]
+
+
 class FakeClient(object):
 
     def __init__(self, context):
@@ -656,6 +743,8 @@ class FakeClient(object):
         self.rdhosts = FakeHosts(self.servers)
         self.rdstorage = FakeRdStorages()
         self.rdservers = FakeRdServers(self.servers)
+        self.security_groups = FakeSecurityGroups(context)
+        self.security_group_rules = FakeSecurityGroupRules(context)
 
     def get_server_volumes(self, server_id):
         return self.servers.get_server_volumes(server_id)

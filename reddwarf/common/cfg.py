@@ -108,6 +108,9 @@ common_opts = [
     cfg.IntOpt('http_put_rate', default=200),
     cfg.BoolOpt('hostname_require_ipv4', default=True,
                 help="Require user hostnames to be IPv4 addresses."),
+    cfg.BoolOpt('reddwarf_security_groups_support', default=True),
+    cfg.StrOpt('reddwarf_security_group_rule_protocol', default='tcp'),
+    cfg.IntOpt('reddwarf_security_group_rule_port', default=3306),
 ]
 
 

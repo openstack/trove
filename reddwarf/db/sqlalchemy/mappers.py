@@ -46,6 +46,13 @@ def map(engine, models):
                Table('reservations', meta, autoload=True))
     orm.mapper(models['backups'],
                Table('backups', meta, autoload=True))
+    orm.mapper(models['security_group'],
+               Table('security_groups', meta, autoload=True))
+    orm.mapper(models['security_group_rule'],
+               Table('security_group_rules', meta, autoload=True))
+    orm.mapper(models['security_group_instance_association'],
+               Table('security_group_instance_associations', meta,
+                     autoload=True))
 
 
 def mapping_exists(model):

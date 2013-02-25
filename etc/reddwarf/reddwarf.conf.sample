@@ -81,6 +81,12 @@ agent_call_high_timeout = 150
 # Reboot time out for instances
 reboot_time_out = 60
 
+# Reddwarf Security Groups for Instances
+reddwarf_security_groups_support = True
+reddwarf_security_group_rule_protocol = tcp
+reddwarf_security_group_rule_port = 3306
+
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost
