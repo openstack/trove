@@ -21,6 +21,7 @@ from reddwarf.common import extensions
 from reddwarf.common import wsgi
 from reddwarf.extensions.mgmt.instances.service import MgmtInstanceController
 from reddwarf.extensions.mgmt.host.service import HostController
+from reddwarf.extensions.mgmt.quota.service import QuotaController
 from reddwarf.extensions.mgmt.host.instance import service as hostservice
 from reddwarf.extensions.mgmt.volume.service import StorageController
 
@@ -68,6 +69,14 @@ class Mgmt(extensions.ExtensionsDescriptor):
             serializer=serializer,
             member_actions={})
         resources.append(hosts)
+
+        quota = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/quotas',
+            QuotaController(),
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=serializer,
+            member_actions={})
+        resources.append(quota)
 
         storage = extensions.ResourceExtension(
             '{tenant_id}/mgmt/storage',

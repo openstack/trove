@@ -96,7 +96,7 @@ class OverLimit(ReddwarfError):
 
 class QuotaExceeded(ReddwarfError):
 
-    message = _("User instance quota exceeded.")
+    message = _("Quota exceeded for resources: %(overs)s")
 
 
 class VolumeQuotaExceeded(QuotaExceeded):
@@ -201,3 +201,15 @@ class ConfigNotFound(NotFound):
 class PasteAppNotFound(NotFound):
 
     message = _("Paste app not found.")
+
+
+class QuotaNotFound(NotFound):
+    message = _("Quota could not be found")
+
+
+class TenantQuotaNotFound(QuotaNotFound):
+    message = _("Quota for tenant %(tenant_id)s could not be found.")
+
+
+class QuotaResourceUnknown(QuotaNotFound):
+    message = _("Unknown quota resources %(unknown)s.")

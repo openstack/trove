@@ -229,14 +229,14 @@ def test_delete_instance_not_found():
 
 
 @test(depends_on_classes=[InstanceSetup],
-      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, 'dbaas_quotas'],
       runs_after_groups=[tests.PRE_INSTANCES])
-class CreateInstance(unittest.TestCase):
-    """Test to create a Database Instance
+class CreateInstanceQuotaTest(unittest.TestCase):
 
-    If the call returns without raising an exception this test passes.
-
-    """
+    def tearDown(self):
+        dbaas_admin.quota.update(instance_info.user.tenant,
+                                 CONFIG.reddwarf_max_instances_per_user,
+                                 CONFIG.reddwarf_max_volumes_per_user)
 
     def test_instance_size_too_big(self):
         vol_ok = CONFIG.get('reddwarf_volume_support', False)
@@ -246,6 +246,51 @@ class CreateInstance(unittest.TestCase):
                           "way_too_large", instance_info.dbaas_flavor_href,
                           {'size': too_big + 1}, [])
             assert_equal(413, dbaas.last_http_code)
+
+    def test_create_too_many_instances(self):
+        instance_quota = 0
+        new_quotas = dbaas_admin.quota.update(instance_info.user.tenant,
+                                              instance_quota,
+                                              CONFIG
+                                              .reddwarf_max_volumes_per_user)
+
+        verify_quota = dbaas_admin.quota.show(instance_info.user.tenant)
+
+        assert_equal(new_quotas._info, verify_quota._info)
+        assert_equal(0, verify_quota._info['instances'])
+        assert_equal(CONFIG.reddwarf_max_volumes_per_user,
+                     verify_quota._info['volumes'])
+
+        assert_raises(exceptions.OverLimit, dbaas.instances.create,
+                      "too_many_instances", instance_info.dbaas_flavor_href,
+                      {'size': instance_quota + 1}, [])
+        assert_equal(413, dbaas.last_http_code)
+
+    def test_create_instances_total_volume_exceeded(self):
+        volume_quota = 3
+        new_quotas = dbaas_admin.quota.update(instance_info.user.tenant,
+                                              CONFIG
+                                              .reddwarf_max_instances_per_user,
+                                              volume_quota)
+        assert_equal(CONFIG.reddwarf_max_instances_per_user,
+                     new_quotas._info['instances'])
+        assert_equal(volume_quota,
+                     new_quotas._info['volumes'])
+        assert_raises(exceptions.OverLimit, dbaas.instances.create,
+                      "too_many_instances", instance_info.dbaas_flavor_href,
+                      {'size': volume_quota + 1}, [])
+        assert_equal(413, dbaas.last_http_code)
+
+
+@test(depends_on_classes=[InstanceSetup],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
+      runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
+class CreateInstance(unittest.TestCase):
+    """Test to create a Database Instance
+
+    If the call returns without raising an exception this test passes.
+
+    """
 
     def test_create(self):
         databases = []
