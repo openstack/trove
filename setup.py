@@ -54,5 +54,4 @@ setuptools.setup(name='reddwarf',
              'bin/reddwarf-manage',
              ],
     py_modules=[],
-    namespace_packages=['reddwarf'],
 )

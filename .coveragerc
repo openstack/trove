@@ -2,9 +2,7 @@
 [run]
 branch = True
 
-source=.tox/cover/lib/python2.7/site-packages/reddwarf
-# replace with previous line once the python path issue is resolved and the tox.ini is fixed accordingly
-# source=reddwarf
+source=reddwarf
 omit=*reddwarf/tests*,*reddwarf/openstack/common*
 
 [report]
