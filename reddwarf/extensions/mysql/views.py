@@ -26,7 +26,7 @@ class UserView(object):
             "name": self.user.name,
             "databases": self.user.databases
         }
-        return user_dict
+        return {"user": user_dict}
 
 
 class UsersView(object):
@@ -35,12 +35,11 @@ class UsersView(object):
         self.users = users
 
     def data(self):
-        data = []
-        # These are model instances
-        for user in self.users:
-            data.append(UserView(user).data())
+        userlist = [{"name": user.name,
+                     "databases": user.databases}
+                    for user in self.users]
 
-        return {"users": data}
+        return {"users": userlist}
 
 
 class UserAccessView(object):

@@ -64,6 +64,8 @@ class FakeGuest(object):
 
     def _create_user(self, user):
         self.users[user['_name']] = user
+        databases = [db['_name'] for db in user['_databases']]
+        self.grant_access(user['_name'], databases)
         return user
 
     def delete_database(self, database):
@@ -82,8 +84,10 @@ class FakeGuest(object):
         })
 
     def delete_user(self, user):
-        if user['_name'] in self.users:
-            del self.users[user['_name']]
+        username = user['_name']
+        self.grants[(username, '%')] = set()
+        if username in self.users:
+            del self.users[username]
 
     def is_root_enabled(self):
         return self.root_was_enabled
