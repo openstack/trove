@@ -94,37 +94,40 @@ def replace_poll_until():
     from reddwarf.tests import util as test_utils
     rd_utils.poll_until = test_utils.poll_until
 
-if __name__=="__main__":
-    wsgi_install()
-    add_support_for_localization()
-    replace_poll_until()
-    # Load Reddwarf app
-    # Paste file needs absolute path
-    config_file = os.path.realpath('etc/reddwarf/reddwarf.conf.test')
-    # 'etc/reddwarf/test-api-paste.ini'
-    app = initialize_reddwarf(config_file)
-    # Initialize sqlite database.
-    initialize_database()
-    # Swap out WSGI, httplib, and several sleep functions with test doubles.
-    initialize_fakes(app)
-    # Initialize the test configuration.
-    CONFIG.load_from_file('etc/tests/localhost.test.conf')
+if __name__ == "__main__":
+    try:
+        wsgi_install()
+        add_support_for_localization()
+        replace_poll_until()
+        # Load Reddwarf app
+        # Paste file needs absolute path
+        config_file = os.path.realpath('etc/reddwarf/reddwarf.conf.test')
+        # 'etc/reddwarf/test-api-paste.ini'
+        app = initialize_reddwarf(config_file)
+        # Initialize sqlite database.
+        initialize_database()
+        # Swap out WSGI, httplib, and several sleep functions with test doubles.
+        initialize_fakes(app)
+        # Initialize the test configuration.
+        CONFIG.load_from_file('etc/tests/localhost.test.conf')
 
-    from reddwarf.tests.api import flavors
-    from reddwarf.tests.api import versions
-    from reddwarf.tests.api import instances
-    from reddwarf.tests.api import instances_actions
-    from reddwarf.tests.api import instances_delete
-    from reddwarf.tests.api import instances_mysql_down
-    from reddwarf.tests.api import instances_resize
-    from reddwarf.tests.api import databases
-    from reddwarf.tests.api import root
-    from reddwarf.tests.api import users
-    from reddwarf.tests.api import user_access
-    from reddwarf.tests.api.mgmt import accounts
-    from reddwarf.tests.api.mgmt import admin_required
-    from reddwarf.tests.api.mgmt import instances
-    from reddwarf.tests.api.mgmt import instances_actions
-    from reddwarf.tests.api.mgmt import storage
+        from reddwarf.tests.api import flavors
+        from reddwarf.tests.api import versions
+        from reddwarf.tests.api import instances
+        from reddwarf.tests.api import instances_actions
+        from reddwarf.tests.api import instances_delete
+        from reddwarf.tests.api import instances_mysql_down
+        from reddwarf.tests.api import instances_resize
+        from reddwarf.tests.api import databases
+        from reddwarf.tests.api import root
+        from reddwarf.tests.api import users
+        from reddwarf.tests.api import user_access
+        from reddwarf.tests.api.mgmt import accounts
+        from reddwarf.tests.api.mgmt import admin_required
+        from reddwarf.tests.api.mgmt import instances
+        from reddwarf.tests.api.mgmt import instances_actions
+        from reddwarf.tests.api.mgmt import storage
+    except Exception, e:
+        print "Run tests failed %s" % e.msg
 
     proboscis.TestProgram().run_and_exit()
