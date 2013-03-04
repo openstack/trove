@@ -43,15 +43,11 @@ class ReddwarfContext(context.RequestContext):
         super(ReddwarfContext, self).__init__(**kwargs)
 
     def to_dict(self):
-        return {'user': self.user,
-                'tenant': self.tenant,
-                'is_admin': self.is_admin,
-                'show_deleted': self.show_deleted,
-                'read_only': self.read_only,
-                'auth_tok': self.auth_tok,
-                'limit': self.limit,
-                'marker': self.marker
-                }
+        parent_dict = super(ReddwarfContext, self).to_dict()
+        parent_dict.update({'limit': self.limit,
+                            'marker': self.marker,
+                            })
+        return parent_dict
 
     @classmethod
     def from_dict(cls, values):
