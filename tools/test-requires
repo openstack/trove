@@ -10,7 +10,7 @@ pylint
 webtest
 wsgi_intercept
 proboscis
-python-reddwarfclient==0.1.2
+http://tarballs.openstack.org/python-reddwarfclient/python-reddwarfclient-0.1.2.tar.gz#egg=python-reddwarfclient
 mock
 mox
 testtools>=0.9.22
