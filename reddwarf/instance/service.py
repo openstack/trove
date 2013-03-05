@@ -189,16 +189,6 @@ class InstanceController(wsgi.Controller):
         else:
             volume_size = None
 
-        instance_max = CONF.max_instances_per_user
-        number_instances = models.DBInstance.find_all(tenant_id=tenant_id,
-                                                      deleted=False).count()
-
-        if number_instances >= instance_max:
-            # That's too many, pal. Got to cut you off.
-            LOG.error(_("New instance would exceed user instance quota."))
-            msg = "User instance quota of %d would be exceeded."
-            raise exception.QuotaExceeded(msg % instance_max)
-
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           service_type, volume_size)
@@ -238,12 +228,6 @@ class InstanceController(wsgi.Controller):
                    "integer value, %s cannot be accepted."
                    % volume_size)
             raise exception.ReddwarfError(msg)
-        max_size = CONF.max_accepted_volume_size
-        if int(volume_size) > max_size:
-            msg = ("Volume 'size' cannot exceed maximum "
-                   "of %d Gb, %s cannot be accepted."
-                   % (max_size, volume_size))
-            raise exception.VolumeQuotaExceeded(msg)
 
     @staticmethod
     def _validate(body):

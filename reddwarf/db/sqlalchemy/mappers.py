@@ -38,6 +38,12 @@ def map(engine, models):
                Table('dns_records', meta, autoload=True))
     orm.mapper(models['agent_heartbeats'],
                Table('agent_heartbeats', meta, autoload=True))
+    orm.mapper(models['quotas'],
+               Table('quotas', meta, autoload=True))
+    orm.mapper(models['quota_usages'],
+               Table('quota_usages', meta, autoload=True))
+    orm.mapper(models['reservations'],
+               Table('reservations', meta, autoload=True))
 
 
 def mapping_exists(model):

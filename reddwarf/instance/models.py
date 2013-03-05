@@ -71,6 +71,31 @@ class InstanceStatus(object):
     ERROR = "ERROR"
 
 
+def validate_volume_size(size):
+    max_size = CONF.max_accepted_volume_size
+    if long(size) > max_size:
+        msg = ("Volume 'size' cannot exceed maximum "
+               "of %d Gb, %s cannot be accepted."
+               % (max_size, size))
+        raise exception.VolumeQuotaExceeded(msg)
+
+
+def run_with_quotas(tenant_id, deltas, f):
+    """ Quota wrapper """
+
+    from reddwarf.quota.quota import QUOTAS as quota_engine
+    reservations = quota_engine.reserve(tenant_id, **deltas)
+    result = None
+    try:
+        result = f()
+    except:
+        quota_engine.rollback(reservations)
+        raise
+    else:
+        quota_engine.commit(reservations)
+    return result
+
+
 def load_simple_instance_server_status(context, db_info):
     """Loads a server or raises an exception."""
     if 'BUILDING' == db_info.task_status.action:
@@ -317,14 +342,20 @@ class BaseInstance(SimpleInstance):
         return create_guest_client(self.context, self.db_info.id)
 
     def delete(self):
-        if self.is_building:
-            raise exception.UnprocessableEntity("Instance %s is not ready." %
-                                                self.id)
-        LOG.debug(_("  ... deleting compute id = %s") %
-                  self.db_info.compute_instance_id)
-        LOG.debug(_(" ... setting status to DELETING."))
-        self.update_db(task_status=InstanceTasks.DELETING)
-        task_api.API(self.context).delete_instance(self.id)
+        def _delete_resources():
+            if self.is_building:
+                raise exception.UnprocessableEntity("Instance %s is not ready."
+                                                    % self.id)
+            LOG.debug(_("  ... deleting compute id = %s") %
+                      self.db_info.compute_instance_id)
+            LOG.debug(_(" ... setting status to DELETING."))
+            self.update_db(task_status=InstanceTasks.DELETING)
+            task_api.API(self.context).delete_instance(self.id)
+
+        return run_with_quotas(self.tenant_id,
+                               {'instances': -1,
+                                'volumes': -self.volume_size},
+                               _delete_resources)
 
     def _delete_resources(self):
         pass
@@ -395,35 +426,41 @@ class Instance(BuiltInstance):
     @classmethod
     def create(cls, context, name, flavor_id, image_id,
                databases, users, service_type, volume_size):
-        client = create_nova_client(context)
-        try:
-            flavor = client.flavors.get(flavor_id)
-        except nova_exceptions.NotFound:
-            raise exception.FlavorNotFound(uuid=flavor_id)
+        def _create_resources():
+            client = create_nova_client(context)
+            try:
+                flavor = client.flavors.get(flavor_id)
+            except nova_exceptions.NotFound:
+                raise exception.FlavorNotFound(uuid=flavor_id)
 
-        db_info = DBInstance.create(name=name, flavor_id=flavor_id,
-                                    tenant_id=context.tenant,
-                                    volume_size=volume_size,
-                                    task_status=InstanceTasks.BUILDING)
-        LOG.debug(_("Tenant %s created new Reddwarf instance %s...")
-                  % (context.tenant, db_info.id))
+            db_info = DBInstance.create(name=name, flavor_id=flavor_id,
+                                        tenant_id=context.tenant,
+                                        volume_size=volume_size,
+                                        task_status=InstanceTasks.BUILDING)
+            LOG.debug(_("Tenant %s created new Reddwarf instance %s...")
+                      % (context.tenant, db_info.id))
 
-        service_status = InstanceServiceStatus.create(
-            instance_id=db_info.id,
-            status=ServiceStatuses.NEW)
+            service_status = InstanceServiceStatus.create(
+                instance_id=db_info.id,
+                status=ServiceStatuses.NEW)
 
-        if CONF.reddwarf_dns_support:
-            dns_client = create_dns_client(context)
-            hostname = dns_client.determine_hostname(db_info.id)
-            db_info.hostname = hostname
-            db_info.save()
+            if CONF.reddwarf_dns_support:
+                dns_client = create_dns_client(context)
+                hostname = dns_client.determine_hostname(db_info.id)
+                db_info.hostname = hostname
+                db_info.save()
 
-        task_api.API(context).create_instance(db_info.id, name, flavor_id,
-                                              flavor.ram, image_id, databases,
-                                              users, service_type,
-                                              volume_size)
+            task_api.API(context).create_instance(db_info.id, name, flavor_id,
+                                                  flavor.ram, image_id,
+                                                  databases, users,
+                                                  service_type, volume_size)
 
-        return SimpleInstance(context, db_info, service_status)
+            return SimpleInstance(context, db_info, service_status)
+
+        validate_volume_size(volume_size)
+        return run_with_quotas(context.tenant,
+                               {'instances': 1, 'volumes': volume_size},
+                               _create_resources)
 
     def resize_flavor(self, new_flavor_id):
         self._validate_can_perform_action()
@@ -450,18 +487,26 @@ class Instance(BuiltInstance):
                                                  new_flavor_size)
 
     def resize_volume(self, new_size):
-        self._validate_can_perform_action()
-        LOG.info("Resizing volume of instance %s..." % self.id)
-        if not self.volume_size:
-            raise exception.BadRequest("Instance %s has no volume." % self.id)
-        old_size = self.volume_size
-        if int(new_size) <= old_size:
-            msg = ("The new volume 'size' must be larger than the current "
-                   "volume size of '%s'")
-            raise exception.BadRequest(msg % old_size)
-        # Set the task to Resizing before sending off to the taskmanager
-        self.update_db(task_status=InstanceTasks.RESIZING)
-        task_api.API(self.context).resize_volume(new_size, self.id)
+        def _resize_resources():
+            self._validate_can_perform_action()
+            LOG.info("Resizing volume of instance %s..." % self.id)
+            if not self.volume_size:
+                raise exception.BadRequest("Instance %s has no volume."
+                                           % self.id)
+            old_size = self.volume_size
+            if int(new_size) <= old_size:
+                msg = ("The new volume 'size' must be larger than the current "
+                       "volume size of '%s'")
+                raise exception.BadRequest(msg % old_size)
+            # Set the task to Resizing before sending off to the taskmanager
+            self.update_db(task_status=InstanceTasks.RESIZING)
+            task_api.API(self.context).resize_volume(new_size, self.id)
+
+        new_size_l = long(new_size)
+        validate_volume_size(new_size_l)
+        return run_with_quotas(self.tenant_id,
+                               {'volumes': new_size_l - self.volume_size},
+                               _resize_resources)
 
     def reboot(self):
         self._validate_can_perform_action()

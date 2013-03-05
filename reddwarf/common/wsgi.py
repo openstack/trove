@@ -91,6 +91,8 @@ CUSTOM_SERIALIZER_METADATA = {
     'device': {'used': '', 'name': '', 'type': ''},
     # mgmt/account
     'account': {'id': '', 'num_instances': ''},
+    # mgmt/quotas
+    'quotas': {'instances': '', 'volumes': ''},
     #mgmt/instance
     'guest_status': {'state_description': ''},
     #mgmt/instance/diagnostics
@@ -319,6 +321,7 @@ class Controller(object):
             exception.ModelNotFoundError,
             exception.UserNotFound,
             exception.DatabaseNotFound,
+            exception.QuotaResourceUnknown
         ],
         webob.exc.HTTPConflict: [],
         webob.exc.HTTPRequestEntityTooLarge: [
