@@ -23,6 +23,7 @@ context or provide additional information in their specific WSGI pipeline.
 """
 
 from reddwarf.openstack.common import context
+from reddwarf.openstack.common import local
 from reddwarf.common import utils
 
 
@@ -42,12 +43,18 @@ class ReddwarfContext(context.RequestContext):
             del kwargs['marker']
         super(ReddwarfContext, self).__init__(**kwargs)
 
+        if not hasattr(local.store, 'context'):
+            self.update_store()
+
     def to_dict(self):
         parent_dict = super(ReddwarfContext, self).to_dict()
         parent_dict.update({'limit': self.limit,
                             'marker': self.marker,
                             })
         return parent_dict
+
+    def update_store(self):
+        local.store.context = self
 
     @classmethod
     def from_dict(cls, values):
