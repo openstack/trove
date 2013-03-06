@@ -28,7 +28,7 @@ depend_links = setup.parse_dependency_links()
 
 
 setuptools.setup(name='reddwarf',
-    version=setup.get_post_version('reddwarf'),
+    version=setup.get_version('reddwarf'),
     description='DBaaS services for Openstack',
     author='OpenStack',
     author_email='openstack@lists.launchpad.net',
