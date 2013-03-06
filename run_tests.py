@@ -2,6 +2,7 @@ import gettext
 import os
 import urllib
 import sys
+import traceback
 
 from reddwarf.common import cfg
 from reddwarf.openstack.common import log as logging
@@ -111,6 +112,7 @@ if __name__ == "__main__":
         # Initialize the test configuration.
         CONFIG.load_from_file('etc/tests/localhost.test.conf')
 
+        from reddwarf.tests.api import header
         from reddwarf.tests.api import limits
         from reddwarf.tests.api import flavors
         from reddwarf.tests.api import versions
@@ -128,7 +130,9 @@ if __name__ == "__main__":
         from reddwarf.tests.api.mgmt import instances
         from reddwarf.tests.api.mgmt import instances_actions
         from reddwarf.tests.api.mgmt import storage
-    except Exception, e:
-        print "Run tests failed %s" % e.msg
+    except Exception as e:
+        print("Run tests failed: %s" % e)
+        traceback.print_exc()
+        raise
 
     proboscis.TestProgram().run_and_exit()
