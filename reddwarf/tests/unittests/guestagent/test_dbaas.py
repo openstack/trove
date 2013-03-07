@@ -601,43 +601,49 @@ class MySqlAppInstallTest(MySqlAppTest):
         dbaas.create_engine = self.orig_create_engine
         dbaas.pkg.pkg_version = self.orig_pkg_version
 
-    def test_install_and_secure(self):
+    def test_install(self):
+
+        self.mySqlApp._install_mysql = Mock()
+        self.mySqlApp.is_installed = Mock(return_value=False)
+        self.mySqlApp.install_if_needed()
+        self.assertTrue(self.mySqlApp._install_mysql.called)
+        self.assert_reported_status(ServiceStatuses.NEW)
+
+    def test_secure(self):
 
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_mysql = Mock()
-        self.mySqlApp._install_mysql = Mock()
         self.mySqlApp._write_mycnf = Mock()
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
         dbaas.create_engine = Mock()
 
-        self.mySqlApp.install_and_secure(100)
+        self.mySqlApp.secure(100)
 
-        self.assertTrue(self.mySqlApp._install_mysql.called)
         self.assertTrue(self.mySqlApp.stop_mysql.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(ServiceStatuses.RUNNING)
 
-    def test_install_and_secure_install_error(self):
+    def test_install_install_error(self):
 
         from reddwarf.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_mysql = Mock()
+        self.mySqlApp.is_installed = Mock(return_value=False)
         self.mySqlApp._install_mysql = \
             Mock(side_effect=pkg.PkgPackageStateError("Install error"))
 
         self.assertRaises(pkg.PkgPackageStateError,
-                          self.mySqlApp.install_and_secure, 100)
+                          self.mySqlApp.install_if_needed)
 
-        self.assert_reported_status(ServiceStatuses.BUILDING)
+        self.assert_reported_status(ServiceStatuses.NEW)
 
-    def test_install_and_secure_write_conf_error(self):
+    def test_secure_write_conf_error(self):
 
         from reddwarf.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_mysql = Mock()
-        self.mySqlApp._install_mysql = Mock()
         self.mySqlApp._write_mycnf = \
             Mock(side_effect=pkg.PkgPackageStateError("Install error"))
         self.mysql_stops_successfully()
@@ -645,12 +651,11 @@ class MySqlAppInstallTest(MySqlAppTest):
         dbaas.create_engine = Mock()
 
         self.assertRaises(pkg.PkgPackageStateError,
-                          self.mySqlApp.install_and_secure, 100)
+                          self.mySqlApp.secure, 100)
 
-        self.assertTrue(self.mySqlApp._install_mysql.called)
         self.assertTrue(self.mySqlApp.stop_mysql.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
-        self.assert_reported_status(ServiceStatuses.BUILDING)
+        self.assert_reported_status(ServiceStatuses.NEW)
 
     def test_is_installed(self):
 

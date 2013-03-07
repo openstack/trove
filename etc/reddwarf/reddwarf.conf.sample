@@ -76,7 +76,7 @@ ignore_dbs = lost+found, mysql, information_schema
 # Guest related conf
 agent_heartbeat_time = 10
 agent_call_low_timeout = 5
-agent_call_high_timeout = 100
+agent_call_high_timeout = 150
 
 # Reboot time out for instances
 reboot_time_out = 60

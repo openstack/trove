@@ -173,7 +173,8 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
         # Set the service type to mysql if its not in the request
-        service_type = body['instance'].get('service_type') or 'mysql'
+        service_type = (body['instance'].get('service_type') or
+                        CONF.service_type)
         service = models.ServiceImage.find_by(service_name=service_type)
         image_id = service['image_id']
         name = body['instance']['name']

@@ -82,7 +82,7 @@ class MySqlConnection(object):
             raise ex
 
 
-TIME_OUT_TIME = 10 * 60
+TIME_OUT_TIME = 15 * 60
 USER_WAS_DELETED = False
 
 
@@ -480,11 +480,17 @@ class ResizeInstanceTest(ActionTestBase):
         if CONFIG.simulate_events:
             raise SkipTest("Cannot simulate this test.")
         self.ensure_mysql_is_running()
+
+    @test(depends_on=[test_instance_returns_to_active_after_resize],
+          runs_after=[test_make_sure_mysql_is_running_after_resize])
+    def test_instance_has_new_flavor_after_resize(self):
+        if CONFIG.simulate_events:
+            raise SkipTest("Cannot simulate this test.")
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
         assert_equal(actual, expected)
 
-    @test(depends_on=[test_make_sure_mysql_is_running_after_resize])
+    @test(depends_on=[test_instance_has_new_flavor_after_resize])
     @time_out(TIME_OUT_TIME)
     def test_resize_down(self):
         if CONFIG.simulate_events:

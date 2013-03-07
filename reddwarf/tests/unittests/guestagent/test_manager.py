@@ -16,6 +16,8 @@ from reddwarf.guestagent.manager import Manager
 from reddwarf.guestagent import dbaas
 from reddwarf.guestagent import volume
 import testtools
+from reddwarf.instance import models as rd_models
+import os
 from mock import Mock, MagicMock
 
 
@@ -25,9 +27,27 @@ class GuestAgentManagerTest(testtools.TestCase):
         super(GuestAgentManagerTest, self).setUp()
         self.context = Mock()
         self.manager = Manager()
+        self.origin_MySqlAppStatus = dbaas.MySqlAppStatus
+        self.origin_os_path_exists = os.path.exists
+        self.origin_format = volume.VolumeDevice.format
+        self.origin_migrate_data = volume.VolumeDevice.migrate_data
+        self.origin_mount = volume.VolumeDevice.mount
+        self.origin_is_installed = dbaas.MySqlApp.is_installed
+        self.origin_stop_mysql = dbaas.MySqlApp.stop_mysql
+        self.origin_start_mysql = dbaas.MySqlApp.start_mysql
+        self.origin_install_mysql = dbaas.MySqlApp._install_mysql
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
+        dbaas.MySqlAppStatus = self.origin_MySqlAppStatus
+        os.path.exists = self.origin_os_path_exists
+        volume.VolumeDevice.format = self.origin_format
+        volume.VolumeDevice.migrate_data = self.origin_migrate_data
+        volume.VolumeDevice.mount = self.origin_mount
+        dbaas.MySqlApp.is_installed = self.origin_is_installed
+        dbaas.MySqlApp.stop_mysql = self.origin_stop_mysql
+        dbaas.MySqlApp.start_mysql = self.origin_start_mysql
+        dbaas.MySqlApp._install_mysql = self.origin_install_mysql
 
     def test_update_status(self):
         dbaas.MySqlAppStatus.get = MagicMock()
@@ -107,17 +127,14 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         self._setUp_MySqlAppStatus_get()
         dbaas.MySqlAppStatus.begin_mysql_install = MagicMock()
-        origin_format = volume.VolumeDevice.format
         volume.VolumeDevice.format = MagicMock()
-
-        origin_is_installed, origin_stop_mysql, origin_migrate_data =\
-            self._prepare_mysql_is_installed(is_mysql_installed)
-
-        origin_mount = volume.VolumeDevice.mount
+        volume.VolumeDevice.migrate_data = MagicMock()
         volume.VolumeDevice.mount = MagicMock()
-
+        dbaas.MySqlApp.stop_mysql = MagicMock()
         dbaas.MySqlApp.start_mysql = MagicMock()
-        dbaas.MySqlApp.install_and_secure = MagicMock()
+        dbaas.MySqlApp.install_if_needed = MagicMock()
+        dbaas.MySqlApp.secure = MagicMock()
+        self._prepare_mysql_is_installed(is_mysql_installed)
 
         Manager.create_database = MagicMock()
         Manager.create_user = MagicMock()
@@ -127,7 +144,8 @@ class GuestAgentManagerTest(testtools.TestCase):
                          dbaas.MySqlAppStatus.begin_mysql_install.call_count)
 
         self.assertEqual(COUNT, volume.VolumeDevice.format.call_count)
-        self.assertEqual(COUNT, dbaas.MySqlApp.is_installed.call_count)
+        # now called internally in install_if_needed() which is a mock
+        #self.assertEqual(1, dbaas.MySqlApp.is_installed.call_count)
 
         self.assertEqual(COUNT * SEC_COUNT,
                          dbaas.MySqlApp.stop_mysql.call_count)
@@ -138,24 +156,32 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.assertEqual(COUNT * SEC_COUNT,
                          dbaas.MySqlApp.start_mysql.call_count)
 
-        self.assertEqual(1, dbaas.MySqlApp.install_and_secure.call_count)
+        self.assertEqual(1,
+                         dbaas.MySqlApp.install_if_needed.call_count)
+        self.assertEqual(1, dbaas.MySqlApp.secure.call_count)
         self.assertEqual(1, Manager.create_database.call_count)
         self.assertEqual(1, Manager.create_user.call_count)
 
-        volume.VolumeDevice.format = origin_format
-        volume.VolumeDevice.migrate_data = origin_migrate_data
-        dbaas.MySqlApp.is_installed = origin_is_installed
-        dbaas.MySqlApp.stop_mysql = origin_stop_mysql
-        volume.VolumeDevice.mount = origin_mount
-
     def _prepare_mysql_is_installed(self, is_installed=True):
-        origin_is_installed = dbaas.MySqlApp.is_installed
-        origin_stop_mysql = dbaas.MySqlApp.stop_mysql
-        origin_migrate_data = volume.VolumeDevice.migrate_data
         dbaas.MySqlApp.is_installed = MagicMock(return_value=is_installed)
-        dbaas.MySqlApp.stop_mysql = MagicMock()
-        volume.VolumeDevice.migrate_data = MagicMock()
-        return origin_is_installed, origin_stop_mysql, origin_migrate_data
+        os.path.exists = MagicMock()
+        dbaas.MySqlAppStatus._get_actual_db_status = MagicMock()
+
+        def path_exists_true(path):
+            if path == "/var/lib/mysql":
+                return True
+            else:
+                return False
+
+        def path_exists_false(path):
+            if path == "/var/lib/mysql":
+                return False
+            else:
+                return False
+        if is_installed:
+            os.path.exists.side_effect = path_exists_true
+        else:
+            os.path.exists.side_effect = path_exists_false
 
     def test_restart(self):
         self._setUp_MySqlAppStatus_get()
@@ -179,5 +205,5 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.assertEqual(1, dbaas.MySqlApp.stop_mysql.call_count)
 
     def _setUp_MySqlAppStatus_get(self):
-        dbaas.MySqlAppStatus = Mock
+        dbaas.MySqlAppStatus = Mock()
         dbaas.MySqlAppStatus.get = MagicMock(return_value=dbaas.MySqlAppStatus)
