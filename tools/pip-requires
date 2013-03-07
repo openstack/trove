@@ -12,4 +12,5 @@ factory_boy
 httplib2
 lxml
 python-novaclient
+python-keystoneclient
 iso8601
