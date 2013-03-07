@@ -9,7 +9,7 @@ pep8==1.3.3
 pylint
 webtest
 wsgi_intercept
-proboscis
+proboscis==1.2.5.3
 https://github.com/stackforge/python-reddwarfclient/tarball/master
 mock
 mox
