@@ -63,6 +63,7 @@ from reddwarf.tests.util import create_dbaas_client
 from reddwarf.tests.util import create_nova_client
 from reddwarf.tests.util import process
 from reddwarf.tests.util.users import Requirements
+from reddwarf.tests.util import skip_if_xml
 from reddwarf.tests.util import string_in_list
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.util.check import AttrCheck
@@ -232,6 +233,9 @@ def test_delete_instance_not_found():
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, 'dbaas_quotas'],
       runs_after_groups=[tests.PRE_INSTANCES])
 class CreateInstanceQuotaTest(unittest.TestCase):
+
+    def setUp(self):
+        skip_if_xml()
 
     def tearDown(self):
         dbaas_admin.quota.update(instance_info.user.tenant,

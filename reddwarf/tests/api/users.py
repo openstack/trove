@@ -34,6 +34,7 @@ from reddwarf.tests.api.databases import TestDatabases
 from reddwarf.tests.api.instances import GROUP_START
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests import util
+from reddwarf.tests.util import skip_if_xml
 from reddwarf.tests.util import test_config
 from reddwarf.tests.api.databases import TestMysqlAccess
 
