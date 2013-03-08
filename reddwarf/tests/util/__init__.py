@@ -198,6 +198,11 @@ def process(cmd):
     return result
 
 
+def skip_if_xml():
+    if "xml" in CONFIG.values.get('reddwarf_client_cls', ''):
+        raise SkipTest("This feature does not work with XML.")
+
+
 def string_in_list(str, substr_list):
     """Returns True if the string appears in the list."""
     return any([str.find(x) >= 0 for x in substr_list])

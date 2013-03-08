@@ -89,6 +89,16 @@ def initialize_fakes(app):
     time.sleep = event_simulator_sleep
 
 
+def parse_args_for_test_config():
+    for index in range(len(sys.argv)):
+        arg = sys.argv[index]
+        print(arg)
+        if arg[:14] == "--test-config=":
+            del sys.argv[index]
+            return arg[14:]
+    return 'etc/tests/localhost.test.conf'
+
+
 def replace_poll_until():
     from reddwarf.common import utils as rd_utils
     from reddwarf.tests import util as test_utils
@@ -109,7 +119,8 @@ if __name__ == "__main__":
         # Swap out WSGI, httplib, and several sleep functions with test doubles.
         initialize_fakes(app)
         # Initialize the test configuration.
-        CONFIG.load_from_file('etc/tests/localhost.test.conf')
+        test_config_file = parse_args_for_test_config()
+        CONFIG.load_from_file(test_config_file)
 
         from reddwarf.tests.api import limits
         from reddwarf.tests.api import flavors
