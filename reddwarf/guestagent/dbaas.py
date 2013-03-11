@@ -310,7 +310,7 @@ class MySqlAdmin(object):
 
     def _associate_dbs(self, user):
         """Internal. Given a MySQLUser, populate its databases attribute."""
-        LOG.debug("Associating dbs to user %s" % user.name)
+        LOG.debug("Associating dbs to user %s at %s" % (user.name, user.host))
         with LocalSqlClient(get_engine()) as client:
             q = query.Query()
             q.columns = ["grantee", "table_schema"]
@@ -321,7 +321,7 @@ class MySqlAdmin(object):
             db_result = client.execute(t)
             for db in db_result:
                 LOG.debug("\t db: %s" % db)
-                if db['grantee'] == "'%s'@'%%'" % (user.name):
+                if db['grantee'] == "'%s'@'%s'" % (user.name, user.host):
                     mysql_db = models.MySQLDatabase()
                     mysql_db.name = db['table_schema']
                     user.databases.append(mysql_db.serialize())
@@ -334,12 +334,14 @@ class MySqlAdmin(object):
             for item in users:
                 LOG.debug("\tUser: %s" % item)
                 user_dict = {'_name': item['name'],
+                             '_host': item['host'],
                              '_password': item['password'],
                              }
                 user = models.MySQLUser()
                 user.deserialize(user_dict)
                 LOG.debug("\tDeserialized: %s" % user.__dict__)
-                uu = query.UpdateUser(user.name, clear=user.password)
+                uu = query.UpdateUser(user.name, host=user.host,
+                                      clear=user.password)
                 t = text(str(uu))
                 client.execute(t)
 
@@ -358,14 +360,13 @@ class MySqlAdmin(object):
     def create_user(self, users):
         """Create users and grant them privileges for the
            specified databases"""
-        host = "%"
         with LocalSqlClient(get_engine()) as client:
             for item in users:
                 user = models.MySQLUser()
                 user.deserialize(item)
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
-                g = query.Grant(user=user.name, host=host,
+                g = query.Grant(user=user.name, host=user.host,
                                 clear=user.password)
                 t = text(str(g))
                 client.execute(t)
@@ -373,7 +374,7 @@ class MySqlAdmin(object):
                     mydb = models.MySQLDatabase()
                     mydb.deserialize(database)
                     g = query.Grant(permissions='ALL', database=mydb.name,
-                                    user=user.name, host=host,
+                                    user=user.name, host=user.host,
                                     clear=user.password)
                     t = text(str(g))
                     client.execute(t)
@@ -392,19 +393,19 @@ class MySqlAdmin(object):
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
             mysql_user.deserialize(user)
-            du = query.DropUser(mysql_user.name)
+            du = query.DropUser(mysql_user.name, host=mysql_user.host)
             t = text(str(du))
             client.execute(t)
 
     def enable_root(self):
         """Enable the root user global access and/or reset the root password"""
-        host = "%"
         user = models.MySQLUser()
         user.name = "root"
+        user.host = "%"
         user.password = generate_random_password()
         with LocalSqlClient(get_engine()) as client:
             try:
-                cu = query.CreateUser(user.name, host=host)
+                cu = query.CreateUser(user.name, host=user.host)
                 t = text(str(cu))
                 client.execute(t, **cu.keyArgs)
             except exc.OperationalError as err:
@@ -412,7 +413,7 @@ class MySqlAdmin(object):
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)
         with LocalSqlClient(get_engine()) as client:
-            uu = query.UpdateUser(user.name, host=host,
+            uu = query.UpdateUser(user.name, host=user.host,
                                   clear=user.password)
             t = text(str(uu))
             client.execute(t)
@@ -422,7 +423,7 @@ class MySqlAdmin(object):
 
             g = query.Grant(permissions=CONF.root_grant,
                             user=user.name,
-                            host=host,
+                            host=user.host,
                             grant_option=CONF.root_grant_option,
                             clear=user.password)
 
@@ -430,24 +431,29 @@ class MySqlAdmin(object):
             client.execute(t)
             return user.serialize()
 
-    def get_user(self, username):
-        user = self._get_user(username)
+    def get_user(self, username, hostname):
+        user = self._get_user(username, hostname)
         if not user:
             return None
         return user.serialize()
 
-    def _get_user(self, username):
+    def _get_user(self, username, hostname):
         """Return a single user matching the criteria"""
         user = models.MySQLUser()
-        user.name = username
+        try:
+            user.name = username  # Could possibly throw a BadRequest here.
+        except Exception.ValueError as ve:
+            raise exception.BadRequest("Username %s is not valid: %s"
+                                       % (username, ve.message))
         with LocalSqlClient(get_engine()) as client:
             q = query.Query()
-            q.columns = ['User', 'Password']
+            q.columns = ['User', 'Host', 'Password']
             q.tables = ['mysql.user']
             q.where = ["Host != 'localhost'",
                        "User = '%s'" % username,
+                       "Host = '%s'" % hostname,
                        ]
-            q.order = ['User']
+            q.order = ['User', 'Host']
             t = text(str(q))
             result = client.execute(t).fetchall()
             LOG.debug("Result: %s" % result)
@@ -455,16 +461,18 @@ class MySqlAdmin(object):
                 return None
             found_user = result[0]
             user.password = found_user['Password']
+            user.host = found_user['Host']
             self._associate_dbs(user)
             return user
 
-    def grant_access(self, username, databases):
+    def grant_access(self, username, hostname, databases):
         """Give a user permission to use a given database."""
-        user = self._get_user(username)
+        user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
             for database in databases:
                 g = query.Grant(permissions='ALL', database=database,
-                                user=user.name, host='%', hashed=user.password)
+                                user=user.name, host=user.host,
+                                hashed=user.password)
                 t = text(str(g))
                 client.execute(t)
 
@@ -524,22 +532,46 @@ class MySqlAdmin(object):
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """List users that have access to the database"""
+        '''
+        SELECT
+            User,
+            Host,
+            Marker
+        FROM
+            (SELECT
+                User,
+                Host,
+                CONCAT(User, '@', Host) as Marker
+            FROM mysql.user
+            ORDER BY 1, 2) as innerquery
+        WHERE
+            Marker > :marker
+        ORDER BY
+            Marker
+        LIMIT :limit;
+        '''
         LOG.debug(_("---Listing Users---"))
         users = []
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
-            q = query.Query()
-            q.columns = ['User']
-            q.tables = ['mysql.user']
-            q.where = ["host != 'localhost'"]
-            q.order = ['User']
+            iq = query.Query()  # Inner query.
+            iq.columns = ['User', 'Host', "CONCAT(User, '@', Host) as Marker"]
+            iq.tables = ['mysql.user']
+            iq.order = ['User', 'Host']
+            innerquery = str(iq).rstrip(';')
+
+            oq = query.Query()  # Outer query.
+            oq.columns = ['User', 'Host', 'Marker']
+            oq.tables = ['(%s) as innerquery' % innerquery]
+            oq.where = ["Host != 'localhost'"]
+            oq.order = ['Marker']
             if marker:
-                q.where.append("User %s '%s'" %
-                               (INCLUDE_MARKER_OPERATORS[include_marker],
-                                marker))
+                oq.where.append("Marker %s '%s'" %
+                                (INCLUDE_MARKER_OPERATORS[include_marker],
+                                 marker))
             if limit:
-                q.limit = limit + 1
-            t = text(str(q))
+                oq.limit = limit + 1
+            t = text(str(oq))
             result = client.execute(t)
             next_marker = None
             LOG.debug("result = " + str(result))
@@ -549,8 +581,9 @@ class MySqlAdmin(object):
                 LOG.debug("user = " + str(row))
                 mysql_user = models.MySQLUser()
                 mysql_user.name = row['User']
+                mysql_user.host = row['Host']
                 self._associate_dbs(mysql_user)
-                next_marker = row['User']
+                next_marker = row['Marker']
                 users.append(mysql_user.serialize())
         if result.rowcount <= limit:
             next_marker = None
@@ -558,19 +591,19 @@ class MySqlAdmin(object):
 
         return users, next_marker
 
-    def revoke_access(self, username, database):
+    def revoke_access(self, username, hostname, database):
         """Give a user permission to use a given database."""
-        user = self._get_user(username)
+        user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
-            r = query.Revoke(database=database, user=user.name, host='%',
+            r = query.Revoke(database=database, user=user.name, host=user.host,
                              hashed=user.password)
             t = text(str(r))
             client.execute(t)
 
-    def list_access(self, username):
+    def list_access(self, username, hostname):
         """Show all the databases to which the user has more than
            USAGE granted."""
-        user = self._get_user(username)
+        user = self._get_user(username, hostname)
         return user.databases
 
 

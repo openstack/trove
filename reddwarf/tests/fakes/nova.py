@@ -63,8 +63,8 @@ class FakeFlavors(object):
         self._add(3, 10, "m1.medium", 4096)
         self._add(4, 10, "m1.large", 8192)
         self._add(5, 10, "m1.xlarge", 16384)
-        self._add(6, 0, "tinier", 506)
-        self._add(7, 0, "m1.rd-tiny", 512)
+        self._add(6, 0, "m1.nano", 64)
+        self._add(7, 0, "m1.micro", 128)
         self._add(8, 0, "m1.rd-smaller", 768)
 
     def _add(self, *args, **kwargs):
@@ -151,7 +151,7 @@ class FakeServer(object):
         self.schedule_status = []
         # TODO(pdmars): This is less than ideal, but a quick way to force it
         # into the error state before scheduling the delete.
-        if (self.name.endswith("_DELETE_ERROR") and
+        if (self.name.endswith("_ERROR_ON_DELETE") and
                 self._current_status != "SHUTDOWN"):
             # Fail to delete properly the first time, just set the status
             # to SHUTDOWN and break. It's important that we only fail to delete

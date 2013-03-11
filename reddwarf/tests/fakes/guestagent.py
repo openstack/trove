@@ -17,9 +17,11 @@
 
 from reddwarf.openstack.common import log as logging
 import time
+import re
 
 from reddwarf.tests.fakes.common import get_event_spawer
 from reddwarf.common import exception as rd_exception
+from reddwarf.tests.util import unquote_user_host
 
 DB = {}
 LOG = logging.getLogger(__name__)
@@ -35,6 +37,14 @@ class FakeGuest(object):
         self.version = 1
         self.event_spawn = get_event_spawer()
         self.grants = {}
+
+        # Our default admin user.
+        self._create_user({
+            "_name": "os_admin",
+            "_host": "%",
+            "_password": "12345",
+            "_databases": [],
+        })
 
     def get_hwinfo(self):
         return {'mem_total': 524288, 'num_cpus': 1}
@@ -54,6 +64,29 @@ class FakeGuest(object):
         LOG.debug("Updating guest %s" % self.id)
         self.version += 1
 
+    def _check_username(self, username):
+        unsupported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
+        if (not username or
+                unsupported_chars.search(username) or
+                ("%r" % username).find("\\") != -1):
+            raise ValueError("'%s' is not a valid user name." % username)
+        if len(username) > 16:
+            raise ValueError("User name '%s' is too long. Max length = 16" %
+                             username)
+
+    def change_passwords(self, users):
+        for user in users:
+            # Use the model to check validity.
+            username = user['name']
+            self._check_username(username)
+            hostname = user['host']
+            password = user['password']
+            if (username, hostname) not in self.users:
+                raise rd_exception.UserNotFound(
+                    "User %s@%s cannot be found on the instance."
+                    % (username, hostname))
+            self.users[(username, hostname)]['password'] = password
+
     def create_database(self, databases):
         for db in databases:
             self.dbs[db['_name']] = db
@@ -63,9 +96,15 @@ class FakeGuest(object):
             self._create_user(user)
 
     def _create_user(self, user):
-        self.users[user['_name']] = user
+        username = user['_name']
+        self._check_username(username)
+        hostname = user['_host']
+        if hostname is None:
+            hostname = '%'
+        self.users[(username, hostname)] = user
+        print "CREATING %s @ %s" % (username, hostname)
         databases = [db['_name'] for db in user['_databases']]
-        self.grant_access(user['_name'], databases)
+        self.grant_access(username, hostname, databases)
         return user
 
     def delete_database(self, database):
@@ -79,15 +118,18 @@ class FakeGuest(object):
         self.root_was_enabled = True
         return self._create_user({
             "_name": "root",
+            "_host": "%",
             "_password": "12345",
             "_databases": [],
         })
 
     def delete_user(self, user):
         username = user['_name']
-        self.grants[(username, '%')] = set()
-        if username in self.users:
-            del self.users[username]
+        self._check_username(username)
+        hostname = user['_host']
+        self.grants[(username, hostname)] = set()
+        if (username, hostname) in self.users:
+            del self.users[(username, hostname)]
 
     def is_root_enabled(self):
         return self.root_was_enabled
@@ -112,10 +154,31 @@ class FakeGuest(object):
         return self._list_resource(self.dbs, limit, marker, include_marker)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
-        return self._list_resource(self.users, limit, marker, include_marker)
+        # The markers for users are a composite of the username and hostname.
+        names = sorted(["%s@%s" % (name, host) for (name, host) in self.users])
+        if marker in names:
+            if not include_marker:
+                # Cut off everything left of and including the marker item.
+                names = names[names.index(marker) + 1:]
+            else:
+                names = names[names.index(marker):]
+        next_marker = None
+        if limit:
+            if len(names) > limit:
+                next_marker = names[limit - 1]
+            names = names[:limit]
+        return ([self.users[unquote_user_host(userhost)]
+                 for userhost in names], next_marker)
 
-    def get_user(self, username):
-        return self.users.get(username, None)
+    def get_user(self, username, hostname):
+        self._check_username(username)
+        for (u, h) in self.users:
+            print "%r @ %r" % (u, h)
+        if (username, hostname) not in self.users:
+            raise rd_exception.UserNotFound(
+                "User %s@%s cannot be found on the instance."
+                % (username, hostname))
+        return self.users.get((username, hostname), None)
 
     def prepare(self, memory_mb, databases, users, device_path=None,
                 mount_point=None):
@@ -169,35 +232,35 @@ class FakeGuest(object):
         """Return used volume information in bytes."""
         return {'used': 175756487}
 
-    def grant_access(self, username, databases):
+    def grant_access(self, username, hostname, databases):
         """Add a database to a users's grant list."""
-        if username not in self.users:
+        if (username, hostname) not in self.users:
             raise rd_exception.UserNotFound(
                 "User %s cannot be found on the instance." % username)
-        current_grants = self.grants.get((username, '%'), set())
+        current_grants = self.grants.get((username, hostname), set())
         for db in databases:
             current_grants.add(db)
-        self.grants[(username, '%')] = current_grants
+        self.grants[(username, hostname)] = current_grants
 
-    def revoke_access(self, username, database):
+    def revoke_access(self, username, hostname, database):
         """Remove a database from a users's grant list."""
-        if username not in self.users:
+        if (username, hostname) not in self.users:
             raise rd_exception.UserNotFound(
                 "User %s cannot be found on the instance." % username)
-        g = self.grants.get((username, '%'), set())
-        if database not in self.grants.get((username, '%'), set()):
+        g = self.grants.get((username, hostname), set())
+        if database not in self.grants.get((username, hostname), set()):
             raise rd_exception.DatabaseNotFound(
                 "Database %s cannot be found on the instance." % database)
-        current_grants = self.grants.get((username, '%'), set())
+        current_grants = self.grants.get((username, hostname), set())
         if database in current_grants:
             current_grants.remove(database)
-        self.grants[(username, '%')] = current_grants
+        self.grants[(username, hostname)] = current_grants
 
-    def list_access(self, username):
-        if username not in self.users:
+    def list_access(self, username, hostname):
+        if (username, hostname) not in self.users:
             raise rd_exception.UserNotFound(
                 "User %s cannot be found on the instance." % username)
-        current_grants = self.grants.get((username, '%'), set())
+        current_grants = self.grants.get((username, hostname), set())
         dbs = [{'_name': db,
                 '_collate': '',
                 '_character_set': '',

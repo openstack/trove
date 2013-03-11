@@ -14,6 +14,7 @@
 
 import time
 import re
+from random import choice
 
 from reddwarfclient import exceptions
 
@@ -32,11 +33,15 @@ GROUP = "dbaas.api.useraccess"
 GROUP_POSITIVE = GROUP + ".positive"
 GROUP_NEGATIVE = GROUP + ".negative"
 
+FAKE = test_config.values['fake_mode']
+
 
 class UserAccessBase(object):
     """
     Base class for Positive and Negative TestUserAccess classes
     """
+    users = []
+    databases = []
 
     def set_up(self):
         self.dbaas = util.create_dbaas_client(instance_info.user)
@@ -74,6 +79,8 @@ class UserAccessBase(object):
         try:
             self.dbaas.users.revoke(instance_info.id, user, database)
             assert_true(expected_response, self.dbaas.last_http_code)
+        except exceptions.BadRequest as nf:
+            assert_equal(400, self.dbaas.last_http_code)
         except exceptions.NotFound as nf:
             assert_equal(404, self.dbaas.last_http_code)
 
@@ -105,6 +112,95 @@ class UserAccessBase(object):
                     # This is all right here, since we're resetting.
                     pass
         self._test_access(self.users, [])
+
+
+@test(depends_on_classes=[TestUsers],
+      groups=[tests.DBAAS_API, GROUP, tests.INSTANCES],
+      runs_after=[TestUsers])
+class TestUserAccessPasswordChange(UserAccessBase):
+    """
+    Test that change_password works.
+    """
+
+    @before_class
+    def setUp(self):
+        super(TestUserAccessPasswordChange, self).set_up()
+
+    def _check_mysql_connection(self, username, password, success=True):
+        # This can only test connections for users with the host %.
+        # Much more difficult to simulate connection attempts from other hosts.
+        if FAKE:
+            # "Fake mode; cannot test mysql connection."
+            return
+
+        conn = util.mysql_connection()
+        if success:
+            conn.create(username, password, instance_info.get_address())
+        else:
+            conn.assert_fails(username, password, instance_info.get_address())
+
+    def _pick_a_user(self):
+        users = self._user_list_from_names(self.users)
+        return choice(users)  # Pick one, it doesn't matter.
+
+    @test()
+    def test_create_user_and_dbs(self):
+        users = self._user_list_from_names(self.users)
+        # Default password for everyone is 'password'.
+        self.dbaas.users.create(instance_info.id, users)
+        assert_equal(202, self.dbaas.last_http_code)
+
+        databases = [{"name": db}
+                     for db in self.databases]
+        self.dbaas.databases.create(instance_info.id, databases)
+        assert_equal(202, self.dbaas.last_http_code)
+
+    @test(depends_on=[test_create_user_and_dbs])
+    def test_initial_connection(self):
+        user = self._pick_a_user()
+        self._check_mysql_connection(user["name"], "password")
+
+    @test(depends_on=[test_initial_connection])
+    def test_change_password(self):
+        # Doesn't actually change anything, just tests that the call doesn't
+        # have any problems. As an aside, also checks that a user can
+        # change its password to the same thing again.
+        user = self._pick_a_user()
+        password = user["password"]
+        self.dbaas.users.change_passwords(instance_info.id, [user])
+        self._check_mysql_connection(user["name"], password)
+
+    @test(depends_on=[test_change_password])
+    def test_change_password_back(self):
+        user = self._pick_a_user()
+        old_password = user["password"]
+        new_password = "NEWPASSWORD"
+
+        user["password"] = new_password
+        self.dbaas.users.change_passwords(instance_info.id, [user])
+        self._check_mysql_connection(user["name"], new_password)
+
+        user["password"] = old_password
+        self.dbaas.users.change_passwords(instance_info.id, [user])
+        self._check_mysql_connection(user["name"], old_password)
+
+    @test(depends_on=[test_change_password_back])
+    def test_change_password_twice(self):
+        # Changing the password twice isn't a problem.
+        user = self._pick_a_user()
+        password = "NEWPASSWORD"
+        user["password"] = password
+        self.dbaas.users.change_passwords(instance_info.id, [user])
+        self.dbaas.users.change_passwords(instance_info.id, [user])
+        self._check_mysql_connection(user["name"], password)
+
+    @after_class(always_run=True)
+    def tearDown(self):
+        for database in self.databases:
+            self.dbaas.databases.delete(instance_info.id, database)
+            assert_equal(202, self.dbaas.last_http_code)
+        for username in self.users:
+            self.dbaas.users.delete(instance_info.id, username)
 
 
 @test(depends_on_classes=[TestUsers],
@@ -230,11 +326,13 @@ class TestUserAccessPositive(UserAccessBase):
         for database in self.databases:
             self.dbaas.databases.delete(instance_info.id, database)
             assert_equal(202, self.dbaas.last_http_code)
+        for username in self.users:
+            self.dbaas.users.delete(instance_info.id, username)
 
 
 @test(depends_on_classes=[TestUserAccessPositive],
       groups=[tests.DBAAS_API, GROUP, GROUP_NEGATIVE, tests.INSTANCES],
-      runs_after=[TestUserAccessPositive])
+      depends_on=[TestUserAccessPositive])
 class TestUserAccessNegative(UserAccessBase):
     """
     Negative tests for the creation and deletion of user grants.
@@ -316,6 +414,8 @@ class TestUserAccessNegative(UserAccessBase):
         try:
             access = self.dbaas.users.list_access(instance_info.id, username)
             assert_equal(200, self.dbaas.last_http_code)
+        except exceptions.BadRequest as br:
+            assert_equal(400, self.dbaas.last_http_code)
         except exceptions.NotFound as nf:
             assert_equal(404, self.dbaas.last_http_code)
         finally:
@@ -328,20 +428,26 @@ class TestUserAccessNegative(UserAccessBase):
 
     @test
     def test_user_withperiod(self):
+        # This is actually fine; we escape dots in the user-host pairing.
         self._negative_user_test("test.user", self.databases)
 
     @test
     def test_user_empty(self):
-        self._negative_user_test("", self.databases, 400, 500, 404, 404)
+        # This creates a request to .../<instance-id>/users//databases,
+        # which is parsed to mean "show me user 'databases', which in this
+        # case is a valid username, but not one of an extant user.
+        self._negative_user_test("", self.databases, 400, 400, 400, 400)
 
     @test
     def test_user_nametoolong(self):
+        # You cannot create a user with this name.
+        # Grant revoke, and access filter this username as invalid.
         self._negative_user_test("exceed_limit_user", self.databases,
-                                 400, 404, 404, 404)
+                                 400, 400, 400, 400)
 
     @test
     def test_user_allspaces(self):
-        self._negative_user_test("     ", self.databases, 400, 404, 404, 404)
+        self._negative_user_test("     ", self.databases, 400, 400, 400, 400)
 
     @after_class(always_run=True)
     def tearDown(self):
@@ -350,3 +456,5 @@ class TestUserAccessNegative(UserAccessBase):
         for database in self.databases:
             self.dbaas.databases.delete(instance_info.id, database)
             assert_equal(202, self.dbaas.last_http_code)
+        for username in self.users:
+            self.dbaas.users.delete(instance_info.id, username)

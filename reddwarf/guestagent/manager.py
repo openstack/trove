@@ -32,17 +32,17 @@ class Manager(periodic_task.PeriodicTasks):
     def delete_user(self, context, user):
         dbaas.MySqlAdmin().delete_user(user)
 
-    def get_user(self, context, username):
-        return dbaas.MySqlAdmin().get_user(username)
+    def get_user(self, context, username, hostname):
+        return dbaas.MySqlAdmin().get_user(username, hostname)
 
-    def grant_access(self, context, username, databases):
-        return dbaas.MySqlAdmin().grant_access(username, databases)
+    def grant_access(self, context, username, hostname, databases):
+        return dbaas.MySqlAdmin().grant_access(username, hostname, databases)
 
-    def revoke_access(self, context, username, database):
-        return dbaas.MySqlAdmin().revoke_access(username, database)
+    def revoke_access(self, context, username, hostname, database):
+        return dbaas.MySqlAdmin().revoke_access(username, hostname, database)
 
-    def list_access(self, context, username):
-        return dbaas.MySqlAdmin().list_access(username)
+    def list_access(self, context, username, hostname):
+        return dbaas.MySqlAdmin().list_access(username, hostname)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):

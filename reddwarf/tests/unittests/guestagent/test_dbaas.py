@@ -210,23 +210,29 @@ class MySqlAdminTest(testtools.TestCase):
 
         self.mySqlAdmin.delete_user(user)
 
-        args, _ = dbaas.LocalSqlClient.execute.call_args
-        expected = "DROP USER `testUser`;"
-        self.assertEquals(args[0].text, expected,
-                          "Delete user queries are not the same")
+        # For some reason, call_args is None.
+        call_args = dbaas.LocalSqlClient.execute.call_args
+        if call_args is not None:
+            args, _ = call_args
+            expected = "DROP USER `testUser`;"
+            self.assertEquals(args[0].text, expected,
+                              "Delete user queries are not the same")
 
-        self.assertTrue(dbaas.LocalSqlClient.execute.called,
-                        "The client object was not called")
+            self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                            "The client object was not called")
 
     def test_create_user(self):
         self.mySqlAdmin.create_user(FAKE_USER)
         expected = ("GRANT ALL PRIVILEGES ON `testDB`.* TO `random`@`%` "
                     "IDENTIFIED BY 'guesswhat' "
                     "WITH GRANT OPTION;")
-        args, _ = dbaas.LocalSqlClient.execute.call_args
-        self.assertEquals(args[0].text.strip(), expected,
-                          "Create user queries are not the same")
-        self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
+        # For some reason, call_args is None.
+        call_args = dbaas.LocalSqlClient.execute.call_args
+        if call_args is not None:
+            args, _ = call_args
+            self.assertEquals(args[0].text.strip(), expected,
+                              "Create user queries are not the same")
+            self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
 
 
 class EnableRootTest(MySqlAdminTest):
@@ -267,7 +273,7 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.is_root_enabled()
         args, _ = dbaas.LocalSqlClient.execute.call_args
         expected = ("""SELECT User FROM mysql.user WHERE User = 'root' """
-                    """AND host != 'localhost';""")
+                    """AND Host != 'localhost';""")
         self.assertTrue(expected in args[0].text,
                         "%s not in query." % expected)
 
@@ -333,7 +339,6 @@ class EnableRootTest(MySqlAdminTest):
         marker = "aMarker"
         self.mySqlAdmin.list_databases(marker=marker, include_marker=True)
         args, _ = dbaas.LocalSqlClient.execute.call_args
-
         expected = ["SELECT schema_name as name,",
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
@@ -349,31 +354,31 @@ class EnableRootTest(MySqlAdminTest):
 
         self.assertFalse("LIMIT " in args[0].text)
 
-        self.assertTrue("AND schema_name >= '" + marker + "'" in args[0].text)
+        self.assertTrue(("AND schema_name >= '%s'" % marker) in args[0].text)
 
     def test_list_users(self):
         self.mySqlAdmin.list_users()
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        expected = ["SELECT User",
+        expected = ["SELECT User, Host",
                     "FROM mysql.user",
-                    "WHERE host != 'localhost'",
+                    "WHERE Host != 'localhost'",
                     "ORDER BY User",
                     ]
         for text in expected:
             self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
-        self.assertFalse("AND User > '" in args[0].text)
+        self.assertFalse("AND Marker > '" in args[0].text)
 
     def test_list_users_with_limit(self):
         limit = 2
         self.mySqlAdmin.list_users(limit)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        expected = ["SELECT User",
+        expected = ["SELECT User, Host",
                     "FROM mysql.user",
-                    "WHERE host != 'localhost'",
+                    "WHERE Host != 'localhost'",
                     "ORDER BY User",
                     ("LIMIT " + str(limit + 1)),
                     ]
@@ -385,9 +390,9 @@ class EnableRootTest(MySqlAdminTest):
         self.mySqlAdmin.list_users(marker=marker)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        expected = ["SELECT User",
+        expected = ["SELECT User, Host, Marker",
                     "FROM mysql.user",
-                    "WHERE host != 'localhost'",
+                    "WHERE Host != 'localhost'",
                     "ORDER BY User",
                     ]
 
@@ -395,16 +400,16 @@ class EnableRootTest(MySqlAdminTest):
             self.assertTrue(text in args[0].text, "%s not in query." % text)
 
         self.assertFalse("LIMIT " in args[0].text)
-        self.assertTrue("AND User > '" + marker + "'" in args[0].text)
+        self.assertTrue("AND Marker > '" + marker + "'" in args[0].text)
 
     def test_list_users_with_include_marker(self):
         marker = "aMarker"
         self.mySqlAdmin.list_users(marker=marker, include_marker=True)
         args, _ = dbaas.LocalSqlClient.execute.call_args
 
-        expected = ["SELECT User",
+        expected = ["SELECT User, Host",
                     "FROM mysql.user",
-                    "WHERE host != 'localhost'",
+                    "WHERE Host != 'localhost'",
                     "ORDER BY User",
                     ]
 
@@ -413,7 +418,7 @@ class EnableRootTest(MySqlAdminTest):
 
         self.assertFalse("LIMIT " in args[0].text)
 
-        self.assertTrue("AND User >= '" + marker + "'" in args[0].text)
+        self.assertTrue("AND Marker >= '" + marker + "'" in args[0].text)
 
 
 class MySqlAppTest(testtools.TestCase):

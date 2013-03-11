@@ -24,6 +24,7 @@ class UserView(object):
     def data(self):
         user_dict = {
             "name": self.user.name,
+            "host": self.user.host,
             "databases": self.user.databases
         }
         return {"user": user_dict}
@@ -36,6 +37,7 @@ class UsersView(object):
 
     def data(self):
         userlist = [{"name": user.name,
+                     "host": user.host,
                      "databases": user.databases}
                     for user in self.users]
 

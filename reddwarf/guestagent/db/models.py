@@ -349,6 +349,7 @@ class MySQLUser(Base):
 
     def __init__(self):
         self._name = None
+        self._host = None
         self._password = None
         self._databases = []
 
@@ -365,6 +366,32 @@ class MySQLUser(Base):
                 value.lower() not in self._ignore_users):
             return True
         return False
+
+    def _is_valid_host_name(self, value):
+        if value in [None, "%"]:
+            # % is MySQL shorthand for "everywhere". Always permitted.
+            # Null host defaults to % anyway.
+            return True
+        if CONF.hostname_require_ipv4:
+            # Do a little legwork to determine that an address looks legit.
+
+            if value.count('/') > 1:
+                # No subnets.
+                return False
+            octets = value.split('.')
+            if len(octets) not in range(1, 5):
+                # A, A.B, A.B.C, and A.B.C.D are all valid technically.
+                return False
+            try:
+                octets = [int(octet, 10) for octet in octets]
+            except ValueError:
+                # If these weren't decimal, there's a problem.
+                return False
+            return all([(octet >= 0) and (octet <= 255) for octet in octets])
+
+        else:
+            # If it wasn't required, anything else goes.
+            return True
 
     @property
     def name(self):
@@ -400,6 +427,19 @@ class MySQLUser(Base):
         mydb = MySQLDatabase()
         mydb.name = value
         self._databases.append(mydb.serialize())
+
+    @property
+    def host(self):
+        if self._host is None:
+            return '%'
+        return self._host
+
+    @host.setter
+    def host(self, value):
+        if not self._is_valid_host_name(value):
+            raise ValueError("'%s' is not a valid hostname" % value)
+        else:
+            self._host = value
 
 
 class RootUser(MySQLUser):

@@ -14,6 +14,7 @@
 
 from reddwarf.common import exception
 from reddwarf.guestagent.db import models as guest_models
+from urllib import unquote
 
 
 def populate_databases(dbs):
@@ -41,6 +42,7 @@ def populate_users(users):
         for user in users:
             u = guest_models.MySQLUser()
             u.name = user.get('name', '')
+            u.host = user.get('host', '%')
             u.password = user.get('password', '')
             dbs = user.get('databases', '')
             if dbs:
@@ -50,3 +52,15 @@ def populate_users(users):
         return users_data
     except ValueError as ve:
         raise exception.BadRequest(ve.message)
+
+
+def unquote_user_host(user_hostname):
+    unquoted = unquote(user_hostname)
+    if '@' not in unquoted:
+        return unquoted, '%'
+    if unquoted.endswith('@'):
+        return unquoted, '%'
+    splitup = unquoted.split('@')
+    host = splitup[-1]
+    user = '@'.join(splitup[:-1])
+    return user, host

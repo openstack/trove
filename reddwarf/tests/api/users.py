@@ -38,6 +38,8 @@ from reddwarf.tests.util import skip_if_xml
 from reddwarf.tests.util import test_config
 from reddwarf.tests.api.databases import TestMysqlAccess
 
+from urllib import quote
+
 GROUP = "dbaas.api.users"
 FAKE = test_config.values['fake_mode']
 
@@ -134,7 +136,7 @@ class TestUsers(object):
 
     @test(depends_on=[test_create_users_list])
     def test_get_one_user(self):
-        user = self.dbaas.users.get(instance_info.id, user=self.username)
+        user = self.dbaas.users.get(instance_info.id, username=self.username)
         assert_equal(200, self.dbaas.last_http_code)
         assert_equal(user.name, self.username)
         assert_equal(1, len(user.databases))
@@ -166,6 +168,49 @@ class TestUsers(object):
 
         self._check_connection(self.username, self.password)
         self._check_connection(self.username1, self.password1)
+
+    @test(depends_on=[test_create_users_list, test_delete_users])
+    def test_hostnames_default_if_not_present(self):
+        # These tests rely on test_delete_users as they create users only
+        # they use.
+        username = "testuser_nohost"
+        user = {"name": username, "password": "password", "databases": []}
+
+        self.dbaas.users.create(instance_info.id, [user])
+
+        user["host"] = "%"
+        # Can't create the user a second time if it already exists.
+        assert_raises(exceptions.BadRequest, self.dbaas.users.create,
+                      instance_info.id, [user])
+
+        self.dbaas.users.delete(instance_info.id, username)
+
+    @test(depends_on=[test_create_users_list, test_delete_users])
+    def test_hostnames_make_users_unique(self):
+        # These tests rely on test_delete_users as they create users only
+        # they use.
+        username = "testuser_unique"
+        hostnames = ["192.168.0.1", "192.168.0.2"]
+        users = [{"name": username, "password": "password", "databases": [],
+                  "host": hostname}
+                 for hostname in hostnames]
+
+        # Nothing wrong with creating two users with the same name, so long
+        # as their hosts are different.
+        self.dbaas.users.create(instance_info.id, users)
+        hostnames = [h.replace('.', '%2e') for h in hostnames]
+        for hostname in hostnames:
+            self.dbaas.users.delete(instance_info.id, username,
+                                    hostname=hostname)
+
+    @test(depends_on=[test_create_users])
+    def test_hostname_ipv4_restriction(self):
+        # By default, user hostnames are required to be % or IPv4 addresses.
+        user = {"name": "ipv4_nodice", "password": "password",
+                "databases": [], "host": "disallowed_host"}
+
+        assert_raises(exceptions.BadRequest, self.dbaas.users.create,
+                      instance_info.id, [user])
 
     def show_databases(self, user, password):
         print("Going to connect to %s, %s, %s"
@@ -249,9 +294,18 @@ class TestUsers(object):
         users = []
         users.append({"name": "Jetson", "password": "george",
                       "databases": [{"name": "Sprockets"}]})
+        users.append({"name": "Jetson", "password": "george",
+                      "host": "127.0.0.1",
+                      "databases": [{"name": "Sprockets"}]})
         users.append({"name": "Spacely", "password": "cosmo",
                       "databases": [{"name": "Sprockets"}]})
+        users.append({"name": "Spacely", "password": "cosmo",
+                      "host": "127.0.0.1",
+                      "databases": [{"name": "Sprockets"}]})
         users.append({"name": "Uniblab", "password": "fired",
+                      "databases": [{"name": "Sprockets"}]})
+        users.append({"name": "Uniblab", "password": "fired",
+                      "host": "192.168.0.10",
                       "databases": [{"name": "Sprockets"}]})
 
         self.dbaas.users.create(instance_info.id, users)
@@ -266,7 +320,8 @@ class TestUsers(object):
         # Better get only as many as we asked for
         assert_true(len(users) <= limit)
         assert_true(users.next is not None)
-        assert_equal(marker, users[-1].name)
+        expected_marker = "%s@%s" % (users[-1].name, users[-1].host)
+        assert_equal(marker, expected_marker)
         marker = users.next
 
         # I better get new users if I use the marker I was handed.
@@ -289,4 +344,4 @@ class TestUsers(object):
         assert_equal(200, self.dbaas.last_http_code)
         for item in result:
             if item.name == username:
-                fail("User %s was not deleted." % user)
+                fail("User %s was not deleted." % username)

@@ -105,4 +105,4 @@ class Resource(object):
     def default(self):
         """Return the default value of the quota."""
 
-        return CONF[self.flag] if self.flag else -1
+        return CONF[self.flag] if self.flag is not None else -1

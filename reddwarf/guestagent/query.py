@@ -335,7 +335,6 @@ class CreateUser(object):
         return ""
 
     def __str__(self):
-        #query = [("CREATE USER '%s'@'%s'" % (self.user, self._host)),
         query = ["CREATE USER :user@:host"]
         if self._identity:
             query.append(self._identity)
@@ -383,21 +382,22 @@ class UpdateUser(object):
 
 class DropUser(object):
 
-    def __init__(self, user):
+    def __init__(self, user, host='%'):
         self.user = user
+        self.host = host
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
-        return "DROP USER `%s`;" % self.user
+        return "DROP USER `%s`@`%s`;" % (self.user, self.host)
 
 
 ### Miscellaneous queries that need no parameters.
 
 FLUSH = "FLUSH PRIVILEGES;"
 ROOT_ENABLED = ("SELECT User FROM mysql.user "
-                "WHERE User = 'root' AND host != 'localhost';")
+                "WHERE User = 'root' AND Host != 'localhost';")
 REMOVE_ANON = "DELETE FROM mysql.user WHERE User = '';"
 REMOVE_ROOT = ("DELETE FROM mysql.user "
                "WHERE User = 'root' AND Host != 'localhost';")

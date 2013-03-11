@@ -22,6 +22,7 @@ from reddwarf.common import pagination
 from reddwarf.common import wsgi
 from reddwarf.extensions.mysql.common import populate_databases
 from reddwarf.extensions.mysql.common import populate_users
+from reddwarf.extensions.mysql.common import unquote_user_host
 from reddwarf.extensions.mysql import models
 from reddwarf.extensions.mysql import views
 from reddwarf.guestagent.db import models as guest_models
@@ -63,7 +64,7 @@ class UserController(wsgi.Controller):
         """Validate that the request has all the required parameters"""
         if not body:
             raise exception.BadRequest("The request contains an empty body")
-        if not body.get('users', ''):
+        if body.get('users') is None:
             raise exception.MissingKey(key='users')
         for user in body.get('users'):
             if not user.get('name'):
@@ -98,12 +99,20 @@ class UserController(wsgi.Controller):
         LOG.info(_("Deleting user for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        username, host = unquote_user_host(id)
+
+        user = None
         try:
             user = guest_models.MySQLUser()
-            user.name = id
-            models.User.delete(context, instance_id, user.serialize())
+            user.name = username
+            user.host = host
         except ValueError as ve:
             raise exception.BadRequest(ve.message)
+
+        if not user:
+            raise exception.UserNotFound(uuid=id)
+
+        models.User.delete(context, instance_id, user.serialize())
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):
@@ -111,10 +120,10 @@ class UserController(wsgi.Controller):
         LOG.info(_("Showing a user for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        username = unquote(id)
-        user = models.User.load(context, instance_id, username)
+        username, host = unquote_user_host(id)
+        user = models.User.load(context, instance_id, username, host)
         if not user:
-            raise exception.UserNotFound(uuid=username)
+            raise exception.UserNotFound(uuid=id)
         view = views.UserView(user)
         return wsgi.Result(view.data(), 200)
 
@@ -129,6 +138,7 @@ class UserController(wsgi.Controller):
         for user in users:
             mu = guest_models.MySQLUser()
             mu.name = user['name']
+            mu.host = user.get('host')
             mu.password = user['password']
             model_users.append(mu)
         models.User.change_password(context, instance_id, model_users)
@@ -149,17 +159,25 @@ class UserAccessController(wsgi.Controller):
             if not database.get('name', ''):
                 raise exception.MissingKey(key='name')
 
+    def _get_user(self, context, instance_id, user_id):
+        username, hostname = unquote_user_host(user_id)
+        try:
+            user = models.User.load(context, instance_id, username, hostname)
+        except ValueError as ve:
+            raise exception.BadRequest(ve.message)
+        if not user:
+            raise exception.UserNotFound(uuid=user_id)
+        return user
+
     def index(self, req, tenant_id, instance_id, user_id):
         """Show permissions for the given user."""
         LOG.info(_("Showing user access for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         # Make sure this user exists.
-        username = unquote(user_id)
-        user = models.User.load(context, instance_id, username)
-        if not user:
-            raise exception.UserNotFound(uuid=user_id)
-        access = models.User.access(context, instance_id, username)
+        user = self._get_user(context, instance_id, user_id)
+        username, hostname = unquote_user_host(user_id)
+        access = models.User.access(context, instance_id, username, hostname)
         view = views.UserAccessView(access.databases)
         return wsgi.Result(view.data(), 200)
 
@@ -167,26 +185,22 @@ class UserAccessController(wsgi.Controller):
         """Grant access for a user to one or more databases."""
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
-        user = models.User.load(context, instance_id, user_id)
-        if not user:
-            raise exception.UserNotFound(uuid=user_id)
+        user = self._get_user(context, instance_id, user_id)
+        username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
-        models.User.grant(context, instance_id, user_id, databases)
+        models.User.grant(context, instance_id, username, hostname, databases)
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, user_id, id):
         """Revoke access for a user."""
         context = req.environ[wsgi.CONTEXT_KEY]
-        user = models.User.load(context, instance_id, user_id)
-        if not user:
-            raise exception.UserNotFound(uuid=user_id)
-        # Make sure the database exists for the user.
-        username = unquote(user_id)
-        access = models.User.access(context, instance_id, username)
+        user = self._get_user(context, instance_id, user_id)
+        username, hostname = unquote_user_host(user_id)
+        access = models.User.access(context, instance_id, username, hostname)
         databases = [db.name for db in access.databases]
         if not id in databases:
             raise exception.DatabaseNotFound(uuid=id)
-        models.User.revoke(context, instance_id, user_id, id)
+        models.User.revoke(context, instance_id, username, hostname, id)
         return wsgi.Result(None, 202)
 
 

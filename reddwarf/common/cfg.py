@@ -105,6 +105,8 @@ common_opts = [
     cfg.IntOpt('http_post_rate', default=200),
     cfg.IntOpt('http_delete_rate', default=200),
     cfg.IntOpt('http_put_rate', default=200),
+    cfg.BoolOpt('hostname_require_ipv4', default=True,
+                help="Require user hostnames to be IPv4 addresses."),
 ]
 
 

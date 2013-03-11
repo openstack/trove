@@ -49,23 +49,25 @@ def load_and_verify(context, instance_id):
 
 class User(object):
 
-    _data_fields = ['name', 'password', 'databases']
+    _data_fields = ['name', 'host', 'password', 'databases']
 
-    def __init__(self, name, password, databases):
+    def __init__(self, name, host, password, databases):
         self.name = name
+        self.host = host
         self.password = password
         self.databases = databases
 
     @classmethod
-    def load(cls, context, instance_id, user):
+    def load(cls, context, instance_id, username, hostname):
         load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
-        found_user = client.get_user(username=user)
+        found_user = client.get_user(username=username, hostname=hostname)
         if not found_user:
             return None
         database_names = [{'name': db['_name']}
                           for db in found_user['_databases']]
         return cls(found_user['_name'],
+                   found_user['_host'],
                    found_user['_password'],
                    database_names)
 
@@ -76,26 +78,30 @@ class User(object):
         client = create_guest_client(context, instance_id)
         for user in users:
             user_name = user['_name']
+            host_name = user['_host']
+            userhost = "%s@%s" % (user_name, host_name)
             existing_users, _nadda = Users.load_with_client(
                 client,
                 limit=1,
-                marker=user_name,
+                marker=userhost,
                 include_marker=True)
             if (len(existing_users) > 0 and
-                    str(existing_users[0].name) == str(user_name)):
-                raise exception.UserAlreadyExists(name=user_name)
+                    str(existing_users[0].name) == str(user_name) and
+                    str(existing_users[0].host) == str(host_name)):
+                raise exception.UserAlreadyExists(name=user_name,
+                                                  host=host_name)
         return client.create_user(users)
 
     @classmethod
-    def delete(cls, context, instance_id, username):
+    def delete(cls, context, instance_id, user):
         load_and_verify(context, instance_id)
-        create_guest_client(context, instance_id).delete_user(username)
+        create_guest_client(context, instance_id).delete_user(user)
 
     @classmethod
-    def access(cls, context, instance_id, username):
+    def access(cls, context, instance_id, username, hostname):
         load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
-        databases = client.list_access(username)
+        databases = client.list_access(username, hostname)
         dbs = []
         for db in databases:
             dbs.append(Schema(name=db['_name'],
@@ -104,16 +110,16 @@ class User(object):
         return UserAccess(dbs)
 
     @classmethod
-    def grant(cls, context, instance_id, username, databases):
+    def grant(cls, context, instance_id, username, hostname, databases):
         load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
-        client.grant_access(username, databases)
+        client.grant_access(username, hostname, databases)
 
     @classmethod
-    def revoke(cls, context, instance_id, username, database):
+    def revoke(cls, context, instance_id, username, hostname, database):
         load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
-        client.revoke_access(username, database)
+        client.revoke_access(username, hostname, database)
 
     @classmethod
     def change_password(cls, context, instance_id, users):
@@ -122,6 +128,7 @@ class User(object):
         change_users = []
         for user in users:
             change_user = {'name': user.name,
+                           'host': user.host,
                            'password': user.password,
                            }
             change_users.append(change_user)
@@ -231,6 +238,7 @@ class Users(object):
             for db in mysql_user.databases:
                 dbs.append({'name': db['_name']})
             model_users.append(User(mysql_user.name,
+                                    mysql_user.host,
                                     mysql_user.password,
                                     dbs))
         return model_users, next_marker

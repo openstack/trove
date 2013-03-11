@@ -32,6 +32,7 @@ import sys
 import time
 
 from reddwarf.tests.config import CONFIG as test_config
+from urllib import unquote
 
 
 try:
@@ -206,6 +207,18 @@ def skip_if_xml():
 def string_in_list(str, substr_list):
     """Returns True if the string appears in the list."""
     return any([str.find(x) >= 0 for x in substr_list])
+
+
+def unquote_user_host(user_hostname):
+    unquoted = unquote(user_hostname)
+    if '@' not in unquoted:
+        return unquoted, '%'
+    if unquoted.endswith('@'):
+        return unquoted, '%'
+    splitup = unquoted.split('@')
+    host = splitup[-1]
+    user = '@'.join(splitup[:-1])
+    return user, host
 
 
 if CONFIG.simulate_events:

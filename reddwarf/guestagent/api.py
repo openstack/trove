@@ -117,27 +117,31 @@ class API(proxy.RpcProxy):
         LOG.debug(_("Creating Users for Instance %s"), self.id)
         self._cast("create_user", users=users)
 
-    def get_user(self, username):
+    def get_user(self, username, hostname):
         """Make an asynchronous call to get a single database user."""
         LOG.debug(_("Getting a user on Instance %s"), self.id)
         LOG.debug("User name is %s" % username)
-        return self._call("get_user", AGENT_LOW_TIMEOUT, username=username)
+        return self._call("get_user", AGENT_LOW_TIMEOUT,
+                          username=username, hostname=hostname)
 
-    def list_access(self, username):
+    def list_access(self, username, hostname):
         """Show all the databases to which a user has more than USAGE."""
         LOG.debug(_("Showing user grants on Instance %s"), self.id)
         LOG.debug("User name is %s" % username)
-        return self._call("list_access", AGENT_LOW_TIMEOUT, username=username)
+        return self._call("list_access", AGENT_LOW_TIMEOUT,
+                          username=username, hostname=hostname)
 
-    def grant_access(self, username, databases):
+    def grant_access(self, username, hostname, databases):
         """Give a user permission to use a given database."""
         return self._call("grant_access", AGENT_LOW_TIMEOUT,
-                          username=username, databases=databases)
+                          username=username, hostname=hostname,
+                          databases=databases)
 
-    def revoke_access(self, username, database):
+    def revoke_access(self, username, hostname, database):
         """Remove a user's permission to use a given database."""
         return self._call("revoke_access", AGENT_LOW_TIMEOUT,
-                          username=username, database=database)
+                          username=username, hostname=hostname,
+                          database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users"""
