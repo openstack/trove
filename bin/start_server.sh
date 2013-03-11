@@ -14,5 +14,5 @@ run bin/reddwarf-manage \
     reddwarf_test.sqlite mysql fake
 run bin/reddwarf-server \
     --fork --config-file=etc/reddwarf/reddwarf.conf.test \
-    repo_path=reddwarf_test.sqlite $@
+    $@
 

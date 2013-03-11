@@ -47,6 +47,8 @@ extra_opts = [
                dest='fork'),
     openstack_cfg.StrOpt('pid-file',
                default='.pid'),
+    openstack_cfg.StrOpt('override-logfile',
+               default=None),
 ]
 
 CONF = cfg.CONF
@@ -56,8 +58,11 @@ CONF.register_cli_opts(extra_opts)
 def run_server():
     try:
         get_db_api().configure_db(CONF)
-        server = wsgi.WSGIService('reddwarf', CONF.bind_port or 8779)
-        launcher = service.launch(server)
+        conf_file = CONF.find_file(CONF.api_paste_config)
+        launcher = wsgi.launch('reddwarf', CONF.bind_port or 8779, conf_file)
+
+
+
         launcher.wait()
     except RuntimeError as error:
         import traceback
@@ -67,6 +72,10 @@ def run_server():
 
 if __name__ == '__main__':
     cfg.parse_args(sys.argv)
+    if CONF.override_logfile:
+        CONF.use_stderr = False
+        CONF.log_file = CONF.override_logfile
+
     logging.setup(None)
 
     if CONF.fork:
