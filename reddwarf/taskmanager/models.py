@@ -74,7 +74,7 @@ class FreshInstanceTasks(FreshInstance):
         try:
             self._create_dns_entry()
         except Exception as e:
-            msg = "Error creating DNS entry for instance."
+            msg = "Error creating DNS entry for instance: %s" % self.id
             err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
             self._log_and_raise(e, msg, err)
 
