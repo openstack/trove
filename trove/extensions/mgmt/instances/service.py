@@ -128,7 +128,9 @@ class MgmtInstanceController(InstanceController):
 
     def _action_migrate(self, context, instance, body):
         LOG.debug("Migrating instance %s." % instance.id)
-        instance.migrate()
+        LOG.debug("body['migrate']= %s" % body['migrate'])
+        host = body['migrate'].get('host', None)
+        instance.migrate(host)
         return wsgi.Result(None, 202)
 
     def _action_reset_task_status(self, context, instance, body):

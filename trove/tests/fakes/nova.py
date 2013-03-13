@@ -174,10 +174,10 @@ class FakeServer(object):
         return [{"href": url, "rel": link_type}
                 for link_type in ['self', 'bookmark']]
 
-    def migrate(self):
-        self.resize(None)
+    def migrate(self, force_host=None):
+        self.resize(None, force_host)
 
-    def resize(self, new_flavor_id=None):
+    def resize(self, new_flavor_id=None, force_host=None):
         self._current_status = "RESIZE"
         if self.name.endswith("_RESIZE_TIMEOUT"):
             raise PollTimeOut()
@@ -191,7 +191,11 @@ class FakeServer(object):
 
         def change_host():
             self.old_host = self.host
-            self.host = [host for host in FAKE_HOSTS if host != self.host][0]
+            if not force_host:
+                self.host = [host for host in FAKE_HOSTS
+                             if host != self.host][0]
+            else:
+                self.host = force_host
 
         def set_flavor():
             if self.name.endswith("_RESIZE_ERROR"):
