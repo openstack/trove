@@ -20,31 +20,23 @@ Tests dealing with HTTP rate-limiting.
 import httplib
 import StringIO
 from xml.dom import minidom
-from lxml import etree
+from reddwarf.quota.models import Quota
 import testtools
 import webob
 
-from mockito import when
-
+from mockito import when, mock, any
 from reddwarf.common import limits
-from reddwarf.common import xmlutil
 from reddwarf.common.limits import Limit
 from reddwarf.limits import views
+from reddwarf.limits.service import LimitsController
 from reddwarf.openstack.common import jsonutils
-
-from reddwarf.tests.unittests.util.matchers import DictMatches
+from reddwarf.quota.quota import QUOTAS
 
 TEST_LIMITS = [
     Limit("GET", "/delayed", "^/delayed", 1, limits.PER_MINUTE),
     Limit("POST", "*", ".*", 7, limits.PER_MINUTE),
-    Limit("POST", "/servers", "^/servers", 3, limits.PER_MINUTE),
     Limit("PUT", "*", "", 10, limits.PER_MINUTE),
-    Limit("PUT", "/servers", "^/servers", 5, limits.PER_MINUTE),
 ]
-NS = {
-    'atom': 'http://www.w3.org/2005/Atom',
-    'ns': 'http://docs.openstack.org/common/api/v1.0'
-}
 
 
 class BaseLimitTestSuite(testtools.TestCase):
@@ -52,19 +44,134 @@ class BaseLimitTestSuite(testtools.TestCase):
 
     def setUp(self):
         super(BaseLimitTestSuite, self).setUp()
-
-        self.absolute_limits = {}
+        self.absolute_limits = {"maxTotalInstances": 55,
+                                "maxTotalVolumes": 100}
 
 
 class LimitsControllerTest(BaseLimitTestSuite):
-    """
-    Tests for `limits.LimitsController` class.
-    TODO: add test cases once absolute limits are integrated
-    """
-    pass
+    def setUp(self):
+        super(LimitsControllerTest, self).setUp()
+
+    def test_limit_index_empty(self):
+        limit_controller = LimitsController()
+
+        req = mock()
+        req.environ = {}
+        when(QUOTAS).get_all_quotas_by_tenant(any()).thenReturn({})
+
+        view = limit_controller.index(req, "test_tenant_id")
+        expected = {'limits': [{'maxTotalInstances': 0,
+                                'verb': 'ABSOLUTE', 'maxTotalVolumes': 0}]}
+        self.assertEqual(expected, view._data)
+
+    def test_limit_index(self):
+        tenant_id = "test_tenant_id"
+        limit_controller = LimitsController()
+
+        limits = [
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "POST",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "PUT",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "DELETE",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "GET",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            }
+        ]
+
+        abs_limits = {"instances": Quota(tenant_id=tenant_id,
+                                         resource="instances",
+                                         hard_limit=100),
+
+                      "volumes": Quota(tenant_id=tenant_id,
+                                       resource="volumes",
+                                       hard_limit=55)}
+
+        req = mock()
+        req.environ = {"reddwarf.limits": limits}
+
+        when(QUOTAS).get_all_quotas_by_tenant(tenant_id).thenReturn(abs_limits)
+        view = limit_controller.index(req, tenant_id)
+
+        expected = {
+            'limits': [
+                {
+                    'maxTotalInstances': 100,
+                    'verb': 'ABSOLUTE',
+                    'maxTotalVolumes': 55
+                },
+                {
+                    'regex': '.*',
+                    'nextAvailable': '2011-07-21T18:17:06Z',
+                    'uri': '*',
+                    'value': 10,
+                    'verb': 'POST',
+                    'remaining': 2,
+                    'unit': 'MINUTE'
+                },
+                {
+                    'regex': '.*',
+                    'nextAvailable': '2011-07-21T18:17:06Z',
+                    'uri': '*',
+                    'value': 10,
+                    'verb': 'PUT',
+                    'remaining': 2,
+                    'unit': 'MINUTE'
+                },
+                {
+                    'regex': '.*',
+                    'nextAvailable': '2011-07-21T18:17:06Z',
+                    'uri': '*',
+                    'value': 10,
+                    'verb': 'DELETE',
+                    'remaining': 2,
+                    'unit': 'MINUTE'
+                },
+                {
+                    'regex': '.*',
+                    'nextAvailable': '2011-07-21T18:17:06Z',
+                    'uri': '*',
+                    'value': 10,
+                    'verb': 'GET',
+                    'remaining': 2,
+                    'unit': 'MINUTE'
+                }
+            ]
+        }
+
+        self.assertEqual(expected, view._data)
 
 
 class TestLimiter(limits.Limiter):
+    """Note: This was taken from Nova"""
     pass
 
 
@@ -314,22 +421,6 @@ class LimiterTest(BaseLimitTestSuite):
         expected = [None] * 11
         results = list(self._check(11, "GET", "/anything"))
 
-        self.assertEqual(expected, results)
-
-    def test_delay_PUT_servers(self):
-        """
-        Ensure PUT on /servers limits at 5 requests, and PUT elsewhere is still
-        OK after 5 requests...but then after 11 total requests, PUT limiting
-        kicks in.
-        """
-        # First 6 requests on PUT /servers
-        expected = [None] * 5 + [12.0]
-        results = list(self._check(6, "PUT", "/servers"))
-        self.assertEqual(expected, results)
-
-        # Next 5 request on PUT /anything
-        expected = [None] * 4 + [6.0]
-        results = list(self._check(5, "PUT", "/anything"))
         self.assertEqual(expected, results)
 
     def test_delay_PUT_wait(self):
@@ -597,145 +688,149 @@ class WsgiLimiterProxyTest(BaseLimitTestSuite):
         super(WsgiLimiterProxyTest, self).tearDown()
 
 
-class LimitsViewBuilderTest(testtools.TestCase):
+class LimitsViewTest(testtools.TestCase):
     def setUp(self):
-        super(LimitsViewBuilderTest, self).setUp()
-        self.view_builder = views.ViewBuilder()
-        self.rate_limits = [{"URI": "*",
-                             "regex": ".*",
-                             "value": 10,
-                             "verb": "POST",
-                             "remaining": 2,
-                             "unit": "MINUTE",
-                             "resetTime": 1311272226},
-                            {"URI": "*/servers",
-                             "regex": "^/servers",
-                             "value": 50,
-                             "verb": "POST",
-                             "remaining": 10,
-                             "unit": "DAY",
-                             "resetTime": 1311272226}]
-        self.absolute_limits = {"metadata_items": 1,
-                                "injected_files": 5,
-                                "injected_file_content_bytes": 5}
+        super(LimitsViewTest, self).setUp()
 
-    def test_build_limits(self):
-        expected_limits = {"limits": {
-            "rate": [{"uri": "*",
-                      "regex": ".*",
-                      "limit": [{"value": 10,
-                                 "verb": "POST",
-                                 "remaining": 2,
-                                 "unit": "MINUTE",
-                                 "next-available": "2011-07-21T18:17:06Z"}]},
-                     {"uri": "*/servers",
-                      "regex": "^/servers",
-                      "limit": [{"value": 50,
-                                 "verb": "POST",
-                                 "remaining": 10,
-                                 "unit": "DAY",
-                                 "next-available": "2011-07-21T18:17:06Z"}]}],
-            "absolute": {
-                "maxServerMeta": 1,
-                "maxImageMeta": 1,
-                "maxPersonality": 5,
-                "maxPersonalitySize": 5}}}
+    def test_empty_data(self):
+        """
+        Test the default returned results if an empty dictionary is given
+        """
+        rate_limit = {}
+        view = views.LimitView(rate_limit)
+        self.assertIsNotNone(view)
 
-        output = self.view_builder.build(self.rate_limits,
-                                         self.absolute_limits)
-        self.assertThat(output, DictMatches(expected_limits))
+        data = view.data()
+        expected = {'limit': {'regex': '',
+                              'nextAvailable': '1970-01-01T00:00:00Z',
+                              'uri': '',
+                              'value': '',
+                              'verb': '',
+                              'remaining': 0,
+                              'unit': ''}}
 
-    def test_build_limits_empty_limits(self):
-        expected_limits = {"limits": {"rate": [],
-                                      "absolute": {}}}
+        self.assertEqual(expected, data)
 
-        abs_limits = {}
+    def test_data(self):
+        """
+        Test the returned results for a fully populated dictionary
+        """
+        rate_limit = {
+            "URI": "*",
+            "regex": ".*",
+            "value": 10,
+            "verb": "POST",
+            "remaining": 2,
+            "unit": "MINUTE",
+            "resetTime": 1311272226
+        }
+
+        view = views.LimitView(rate_limit)
+        self.assertIsNotNone(view)
+
+        data = view.data()
+        expected = {'limit': {'regex': '.*',
+                              'nextAvailable': '2011-07-21T18:17:06Z',
+                              'uri': '*',
+                              'value': 10,
+                              'verb': 'POST',
+                              'remaining': 2,
+                              'unit': 'MINUTE'}}
+
+        self.assertEqual(expected, data)
+
+
+class LimitsViewsTest(testtools.TestCase):
+    def setUp(self):
+        super(LimitsViewsTest, self).setUp()
+
+    def test_empty_data(self):
         rate_limits = []
-        output = self.view_builder.build(rate_limits, abs_limits)
-        self.assertThat(output, DictMatches(expected_limits))
+        abs_view = dict()
 
+        view_data = views.LimitViews(abs_view, rate_limits)
+        self.assertIsNotNone(view_data)
 
-class LimitsXMLSerializationTest(testtools.TestCase):
-    def test_xml_declaration(self):
-        serializer = limits.LimitsTemplate()
+        data = view_data.data()
+        expected = {'limits': [{'maxTotalInstances': 0,
+                                'verb': 'ABSOLUTE',
+                                'maxTotalVolumes': 0}]}
 
-        fixture = {"limits": {
-            "rate": [],
-            "absolute": {}}}
+        self.assertEqual(expected, data)
 
-        output = serializer.serialize(fixture)
-        has_dec = output.startswith("<?xml version='1.0' encoding='UTF-8'?>")
-        self.assertTrue(has_dec)
+    def test_data(self):
+        rate_limits = [
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "POST",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "PUT",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "DELETE",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            },
+            {
+                "URI": "*",
+                "regex": ".*",
+                "value": 10,
+                "verb": "GET",
+                "remaining": 2,
+                "unit": "MINUTE",
+                "resetTime": 1311272226
+            }
+        ]
+        abs_view = {"instances": 55, "volumes": 100}
 
-    def test_index(self):
-        serializer = limits.LimitsTemplate()
-        fixture = {
-            "limits": {
-                "rate": [{"uri": "*",
-                          "regex": ".*",
-                          "limit": [
-                              {"value": 10,
-                               "verb": "POST",
-                               "remaining": 2,
-                               "unit": "MINUTE",
-                               "next-available": "2011-12-15T22:42:45Z"}]},
-                         {"uri": "*/servers",
-                          "regex": "^/servers",
-                          "limit": [
-                              {"value": 50,
-                               "verb": "POST",
-                               "remaining": 10,
-                               "unit": "DAY",
-                               "next-available": "2011-12-15T22:42:45Z"}]}],
-                "absolute": {
-                    "maxServerMeta": 1,
-                    "maxImageMeta": 1,
-                    "maxPersonality": 5,
-                    "maxPersonalitySize": 10240}}}
+        view_data = views.LimitViews(abs_view, rate_limits)
+        self.assertIsNotNone(view_data)
 
-        output = serializer.serialize(fixture)
-        root = etree.XML(output)
-        xmlutil.validate_schema(root, 'limits')
+        data = view_data.data()
+        expected = {'limits': [{'maxTotalInstances': 55,
+                                'verb': 'ABSOLUTE',
+                                'maxTotalVolumes': 100},
+                               {'regex': '.*',
+                                'nextAvailable': '2011-07-21T18:17:06Z',
+                                'uri': '*',
+                                'value': 10,
+                                'verb': 'POST',
+                                'remaining': 2, 'unit': 'MINUTE'},
+                               {'regex': '.*',
+                                'nextAvailable': '2011-07-21T18:17:06Z',
+                                'uri': '*',
+                                'value': 10,
+                                'verb': 'PUT',
+                                'remaining': 2,
+                                'unit': 'MINUTE'},
+                               {'regex': '.*',
+                                'nextAvailable': '2011-07-21T18:17:06Z',
+                                'uri': '*',
+                                'value': 10,
+                                'verb': 'DELETE',
+                                'remaining': 2,
+                                'unit': 'MINUTE'},
+                               {'regex': '.*',
+                                'nextAvailable': '2011-07-21T18:17:06Z',
+                                'uri': '*',
+                                'value': 10,
+                                'verb': 'GET',
+                                'remaining': 2, 'unit': 'MINUTE'}]}
 
-        #verify absolute limits
-        absolutes = root.xpath('ns:absolute/ns:limit', namespaces=NS)
-        self.assertEqual(len(absolutes), 4)
-        for limit in absolutes:
-            name = limit.get('name')
-            value = limit.get('value')
-            self.assertEqual(value, str(fixture['limits']['absolute'][name]))
-
-        #verify rate limits
-        rates = root.xpath('ns:rates/ns:rate', namespaces=NS)
-        self.assertEqual(len(rates), 2)
-        for i, rate in enumerate(rates):
-            for key in ['uri', 'regex']:
-                self.assertEqual(rate.get(key),
-                                 str(fixture['limits']['rate'][i][key]))
-            rate_limits = rate.xpath('ns:limit', namespaces=NS)
-            self.assertEqual(len(rate_limits), 1)
-            for j, limit in enumerate(rate_limits):
-                for key in ['verb', 'value', 'remaining', 'unit',
-                            'next-available']:
-                    self.assertEqual(limit.get(key),
-                                     str(fixture['limits']['rate'][i]['limit']
-                                     [j][key]))
-
-    def test_index_no_limits(self):
-        serializer = limits.LimitsTemplate()
-
-        fixture = {"limits": {
-            "rate": [],
-            "absolute": {}}}
-
-        output = serializer.serialize(fixture)
-        root = etree.XML(output)
-        xmlutil.validate_schema(root, 'limits')
-
-        #verify absolute limits
-        absolutes = root.xpath('ns:absolute/ns:limit', namespaces=NS)
-        self.assertEqual(len(absolutes), 0)
-
-        #verify rate limits
-        rates = root.xpath('ns:rates/ns:rate', namespaces=NS)
-        self.assertEqual(len(rates), 0)
+        self.assertEqual(expected, data)

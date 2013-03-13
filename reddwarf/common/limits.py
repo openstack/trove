@@ -25,7 +25,6 @@ import re
 import time
 import webob.dec
 import webob.exc
-import xmlutil
 
 from reddwarf.common import cfg
 from reddwarf.common import wsgi as base_wsgi
@@ -33,13 +32,6 @@ from reddwarf.openstack.common import importutils
 from reddwarf.openstack.common import jsonutils
 from reddwarf.openstack.common import wsgi
 from reddwarf.openstack.common.gettextutils import _
-
-#
-# TODO: come back to this later
-# Dan Nguyen
-#
-#from nova import quota
-#QUOTAS = quota.QUOTAS
 
 
 CONF = cfg.CONF
@@ -49,34 +41,6 @@ PER_SECOND = 1
 PER_MINUTE = 60
 PER_HOUR = 60 * 60
 PER_DAY = 60 * 60 * 24
-
-
-limits_nsmap = {None: xmlutil.XMLNS_COMMON_V10, 'atom': xmlutil.XMLNS_ATOM}
-
-
-class LimitsTemplate(xmlutil.TemplateBuilder):
-    def construct(self):
-        root = xmlutil.TemplateElement('limits', selector='limits')
-
-        rates = xmlutil.SubTemplateElement(root, 'rates')
-        rate = xmlutil.SubTemplateElement(rates, 'rate', selector='rate')
-        rate.set('uri', 'uri')
-        rate.set('regex', 'regex')
-        limit = xmlutil.SubTemplateElement(rate, 'limit', selector='limit')
-        limit.set('value', 'value')
-        limit.set('verb', 'verb')
-        limit.set('remaining', 'remaining')
-        limit.set('unit', 'unit')
-        limit.set('next-available', 'next-available')
-
-        absolute = xmlutil.SubTemplateElement(root, 'absolute',
-                                              selector='absolute')
-        limit = xmlutil.SubTemplateElement(absolute, 'limit',
-                                           selector=xmlutil.get_items)
-        limit.set('name', 0)
-        limit.set('value', 1)
-
-        return xmlutil.MasterTemplate(root, 1, nsmap=limits_nsmap)
 
 
 class Limit(object):

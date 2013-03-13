@@ -15,35 +15,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from reddwarf.common import wsgi as base_wsgi
-from reddwarf.common.limits import LimitsTemplate
+from reddwarf.common import wsgi
 from reddwarf.limits import views
-from reddwarf.openstack.common import wsgi
+from reddwarf.quota.quota import QUOTAS
 
 
-class LimitsController(base_wsgi.Controller):
+class LimitsController(wsgi.Controller):
     """
     Controller for accessing limits in the OpenStack API.
-    Note: this is a little different than how other controllers are implemented
     """
 
-    @base_wsgi.serializers(xml=LimitsTemplate)
     def index(self, req, tenant_id):
         """
-        Return all global and rate limit information.
+        Return all absolute and rate limit information.
         """
-        context = req.environ[base_wsgi.CONTEXT_KEY]
-
-        #
-        # TODO: hook this in later
-        #quotas = QUOTAS.get_project_quotas(context, context.project_id,
-        #                                   usages=False)
-        #abs_limits = dict((k, v['limit']) for k, v in quotas.items())
-        abs_limits = {}
+        quotas = QUOTAS.get_all_quotas_by_tenant(tenant_id)
+        abs_limits = dict((k, v['hard_limit']) for k, v in quotas.items())
         rate_limits = req.environ.get("reddwarf.limits", [])
 
-        builder = self._get_view_builder(req)
-        return builder.build(rate_limits, abs_limits)
-
-    def _get_view_builder(self, req):
-        return views.ViewBuilder()
+        return wsgi.Result(views.LimitViews(abs_limits,
+                                            rate_limits).data(), 200)

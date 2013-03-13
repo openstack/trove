@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2010-2011 OpenStack LLC.
+# Copyright 2013 OpenStack LLC.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,83 +16,44 @@
 #    under the License.
 
 import datetime
-
 from reddwarf.openstack.common import timeutils
 
 
-class ViewBuilder(object):
-    """OpenStack API base limits view builder."""
+class LimitView(object):
 
-    def build(self, rate_limits, absolute_limits):
-        rate_limits = self._build_rate_limits(rate_limits)
-        absolute_limits = self._build_absolute_limits(absolute_limits)
+    def __init__(self, rate_limit):
+        self.rate_limit = rate_limit
 
-        output = {
-            "limits": {
-                "rate": rate_limits,
-                "absolute": absolute_limits,
-            },
+    def data(self):
+        get_utc = datetime.datetime.utcfromtimestamp
+        next_avail = get_utc(self.rate_limit.get("resetTime", 0))
+
+        return {"limit": {
+            "nextAvailable": timeutils.isotime(at=next_avail),
+            "remaining": self.rate_limit.get("remaining", 0),
+            "unit": self.rate_limit.get("unit", ""),
+            "value": self.rate_limit.get("value", ""),
+            "verb": self.rate_limit.get("verb", ""),
+            "uri": self.rate_limit.get("URI", ""),
+            "regex": self.rate_limit.get("regex", "")
+        }
         }
 
-        return output
 
-    def _build_absolute_limits(self, absolute_limits):
-        """Builder for absolute limits
+class LimitViews(object):
 
-        absolute_limits should be given as a dict of limits.
-        For example: {"ram": 512, "gigabytes": 1024}.
+    def __init__(self, abs_limits, rate_limits):
+        self.abs_limits = abs_limits
+        self.rate_limits = rate_limits
 
-        """
-        limit_names = {
-            "ram": ["maxTotalRAMSize"],
-            "instances": ["maxTotalInstances"],
-            "cores": ["maxTotalCores"],
-            "metadata_items": ["maxServerMeta", "maxImageMeta"],
-            "injected_files": ["maxPersonality"],
-            "injected_file_content_bytes": ["maxPersonalitySize"],
-            "security_groups": ["maxSecurityGroups"],
-            "security_group_rules": ["maxSecurityGroupRules"],
-        }
-        limits = {}
-        for name, value in absolute_limits.iteritems():
-            if name in limit_names and value is not None:
-                for name in limit_names[name]:
-                    limits[name] = value
-        return limits
+    def data(self):
+        data = []
+        abs_view = dict()
+        abs_view["verb"] = "ABSOLUTE"
+        abs_view["maxTotalInstances"] = self.abs_limits.get("instances", 0)
+        abs_view["maxTotalVolumes"] = self.abs_limits.get("volumes", 0)
 
-    def _build_rate_limits(self, rate_limits):
-        limits = []
-        for rate_limit in rate_limits:
-            _rate_limit_key = None
-            _rate_limit = self._build_rate_limit(rate_limit)
-
-            # check for existing key
-            for limit in limits:
-                if (limit["uri"] == rate_limit["URI"] and
-                    limit["regex"] == rate_limit["regex"]):
-                    _rate_limit_key = limit
-                    break
-
-            # ensure we have a key if we didn't find one
-            if not _rate_limit_key:
-                _rate_limit_key = {
-                    "uri": rate_limit["URI"],
-                    "regex": rate_limit["regex"],
-                    "limit": [],
-                }
-                limits.append(_rate_limit_key)
-
-            _rate_limit_key["limit"].append(_rate_limit)
-
-        return limits
-
-    def _build_rate_limit(self, rate_limit):
-        _get_utc = datetime.datetime.utcfromtimestamp
-        next_avail = _get_utc(rate_limit["resetTime"])
-        return {
-            "verb": rate_limit["verb"],
-            "value": rate_limit["value"],
-            "remaining": int(rate_limit["remaining"]),
-            "unit": rate_limit["unit"],
-            "next-available": timeutils.isotime(at=next_avail),
-        }
+        data.append(abs_view)
+        for l in self.rate_limits:
+            data.append(LimitView(l).data()["limit"])
+        return {"limits": data}

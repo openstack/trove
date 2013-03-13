@@ -7,15 +7,14 @@ from proboscis import test
 
 from reddwarf.openstack.common import timeutils
 from reddwarf.tests.util import create_dbaas_client
-from reddwarf.tests.util import test_config
 from reddwarfclient import exceptions
-
 from datetime import datetime
+from reddwarf.tests.util.users import Users
 
 GROUP = "dbaas.api.limits"
 DEFAULT_RATE = 200
-# Note: This should not be enabled until rd-client merges
-RD_CLIENT_OK = False
+DEFAULT_MAX_VOLUMES = 100
+DEFAULT_MAX_INSTANCES = 55
 
 
 @test(groups=[GROUP])
@@ -23,69 +22,85 @@ class Limits(object):
 
     @before_class
     def setUp(self):
+
+        users = [
+            {
+                "auth_user": "rate_limit",
+                "auth_key": "password",
+                "tenant": "4000",
+                "requirements": {
+                    "is_admin": False,
+                    "services": ["reddwarf"]
+                }
+            },
+            {
+                "auth_user": "rate_limit_exceeded",
+                "auth_key": "password",
+                "tenant": "4050",
+                "requirements": {
+                    "is_admin": False,
+                    "services": ["reddwarf"]
+                }
+            }]
+
+        self._users = Users(users)
+
         rate_user = self._get_user('rate_limit')
         self.rd_client = create_dbaas_client(rate_user)
 
     def _get_user(self, name):
-        return test_config.users.find_user_by_name(name)
-
-    def _get_next_available(self, resource):
-        return resource.__dict__['next-available']
+        return self._users.find_user_by_name(name)
 
     def __is_available(self, next_available):
         dt_next = timeutils.parse_isotime(next_available)
         dt_now = datetime.now()
         return dt_next.time() < dt_now.time()
 
-    @test(enabled=RD_CLIENT_OK)
+    def _get_limits_as_dict(self, limits):
+        d = {}
+        for l in limits:
+            d[l.verb] = l
+        return d
+
+    @test
     def test_limits_index(self):
         """test_limits_index"""
-        r1, r2, r3, r4 = self.rd_client.limits.index()
 
-        assert_equal(r1.verb, "POST")
-        assert_equal(r1.unit, "MINUTE")
-        assert_true(r1.remaining <= DEFAULT_RATE)
+        limits = self.rd_client.limits.list()
+        d = self._get_limits_as_dict(limits)
 
-        next_available = self._get_next_available(r1)
-        assert_true(next_available is not None)
+        # remove the abs_limits from the rate limits
+        abs_limits = d.pop("ABSOLUTE", None)
+        assert_equal(abs_limits.verb, "ABSOLUTE")
+        assert_equal(int(abs_limits.maxTotalInstances), DEFAULT_MAX_INSTANCES)
+        assert_equal(int(abs_limits.maxTotalVolumes), DEFAULT_MAX_VOLUMES)
 
-        assert_equal(r2.verb, "PUT")
-        assert_equal(r2.unit, "MINUTE")
-        assert_true(r2.remaining <= DEFAULT_RATE)
+        for k in d:
+            assert_equal(d[k].verb, k)
+            assert_equal(d[k].unit, "MINUTE")
+            assert_true(int(d[k].remaining) <= DEFAULT_RATE)
+            assert_true(d[k].nextAvailable is not None)
 
-        next_available = self._get_next_available(r2)
-        assert_true(next_available is not None)
-
-        assert_equal(r3.verb, "DELETE")
-        assert_equal(r3.unit, "MINUTE")
-        assert_true(r3.remaining <= DEFAULT_RATE)
-
-        next_available = self._get_next_available(r3)
-        assert_true(next_available is not None)
-
-        assert_equal(r4.verb, "GET")
-        assert_equal(r4.unit, "MINUTE")
-        assert_true(r4.remaining <= DEFAULT_RATE)
-
-        next_available = self._get_next_available(r4)
-        assert_true(next_available is not None)
-
-    @test(enabled=RD_CLIENT_OK)
+    @test
     def test_limits_get_remaining(self):
         """test_limits_get_remaining"""
-        gets = None
+
+        limits = ()
         for i in xrange(5):
-            r1, r2, r3, r4 = self.rd_client.limits.index()
-            gets = r4
+            limits = self.rd_client.limits.list()
 
-        assert_equal(gets.verb, "GET")
-        assert_equal(gets.unit, "MINUTE")
-        assert_true(gets.remaining <= DEFAULT_RATE - 5)
+        d = self._get_limits_as_dict(limits)
+        abs_limits = d["ABSOLUTE"]
+        get = d["GET"]
 
-        next_available = self._get_next_available(gets)
-        assert_true(next_available is not None)
+        assert_equal(int(abs_limits.maxTotalInstances), DEFAULT_MAX_INSTANCES)
+        assert_equal(int(abs_limits.maxTotalVolumes), DEFAULT_MAX_VOLUMES)
+        assert_equal(get.verb, "GET")
+        assert_equal(get.unit, "MINUTE")
+        assert_true(int(get.remaining) <= DEFAULT_RATE - 5)
+        assert_true(get.nextAvailable is not None)
 
-    @test(enabled=RD_CLIENT_OK)
+    @test
     def test_limits_exception(self):
         """test_limits_exception"""
 
@@ -93,17 +108,24 @@ class Limits(object):
         rate_user_exceeded = self._get_user('rate_limit_exceeded')
         rd_client = create_dbaas_client(rate_user_exceeded)
 
-        gets = None
+        get = None
         encountered = False
         for i in xrange(DEFAULT_RATE + 50):
             try:
-                r1, r2, r3, r4 = rd_client.limits.index()
-                gets = r4
-                assert_equal(gets.verb, "GET")
-                assert_equal(gets.unit, "MINUTE")
+                limits = rd_client.limits.list()
+                d = self._get_limits_as_dict(limits)
+                get = d["GET"]
+                abs_limits = d["ABSOLUTE"]
+
+                assert_equal(get.verb, "GET")
+                assert_equal(get.unit, "MINUTE")
+                assert_equal(int(abs_limits.maxTotalInstances),
+                             DEFAULT_MAX_INSTANCES)
+                assert_equal(int(abs_limits.maxTotalVolumes),
+                             DEFAULT_MAX_VOLUMES)
 
             except exceptions.OverLimit:
                 encountered = True
 
         assert_true(encountered)
-        assert_true(gets.remaining <= 50)
+        assert_true(int(get.remaining) <= 50)

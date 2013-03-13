@@ -21,3 +21,6 @@ Changelog
 reddwarf.iml
 atlassian-ide-plugin.xml
 .testrepository
+.pid
+.project
+.pydevproject
