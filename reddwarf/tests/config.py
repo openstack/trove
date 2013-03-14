@@ -80,6 +80,7 @@ class TestConfig(object):
             "sleep_mode": "simulated",
             "simulate_events": False,
             "reddwarf_volume_support": True,
+            "reddwarf_max_volumes_per_user": 100,
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None
