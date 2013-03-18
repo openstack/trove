@@ -54,6 +54,13 @@ class DatabaseModelBase(models.ModelBase):
                   (self.__class__.__name__, self.__dict__))
         return self.db_api.delete(self)
 
+    def update(self, **values):
+        for key in values:
+            if hasattr(self, key):
+                setattr(self, key, values[key])
+        self['updated'] = utils.utcnow()
+        return self.db_api.save(self)
+
     def __init__(self, **kwargs):
         self.merge_attributes(kwargs)
         if not self.is_valid():

@@ -44,6 +44,8 @@ def map(engine, models):
                Table('quota_usages', meta, autoload=True))
     orm.mapper(models['reservations'],
                Table('reservations', meta, autoload=True))
+    orm.mapper(models['backups'],
+               Table('backups', meta, autoload=True))
 
 
 def mapping_exists(model):

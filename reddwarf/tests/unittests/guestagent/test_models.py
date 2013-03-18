@@ -24,9 +24,21 @@ from datetime import datetime
 class AgentHeartBeatTest(testtools.TestCase):
     def setUp(self):
         super(AgentHeartBeatTest, self).setUp()
+        self.origin_get_db_api = dbmodels.get_db_api
+        self.origin_utcnow = utils.utcnow
+        self.origin_DatabaseModelBase = dbmodels.DatabaseModelBase
+        self.origin_db_api_save = dbapi.save
+        self.origin_is_valid = dbmodels.DatabaseModelBase.is_valid
+        self.origin_generate_uuid = utils.generate_uuid
 
     def tearDown(self):
         super(AgentHeartBeatTest, self).tearDown()
+        dbmodels.get_db_api = self.origin_get_db_api
+        utils.utcnow = self.origin_utcnow
+        dbmodels.DatabaseModelBase = self.origin_DatabaseModelBase
+        dbapi.save = self.origin_db_api_save
+        dbmodels.DatabaseModelBase.is_valid = self.origin_is_valid
+        utils.generate_uuid = self.origin_generate_uuid
 
     def test_create(self):
         utils.generate_uuid = Mock()
