@@ -203,3 +203,13 @@ class DBBackup(DatabaseModelBase):
     @property
     def is_done(self):
         return self.state in BackupState.END_STATES
+
+    @property
+    def filename(self):
+        if self.location:
+            last_slash = self.location.rfind("/")
+            if last_slash < 0:
+                raise ValueError("Bad location for backup object.")
+            return self.location[last_slash + 1]
+        else:
+            return None

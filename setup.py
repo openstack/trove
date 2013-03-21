@@ -13,15 +13,11 @@
 # under the License.
 
 import gettext
-import os
 import setuptools
-import subprocess
+from reddwarf.openstack.common import setup
+
 
 gettext.install('reddwarf', unicode=1)
-
-from reddwarf import version
-from reddwarf.openstack.common import setup
-from reddwarf.openstack.common.setup import write_git_changelog
 
 requires = setup.parse_requirements()
 depend_links = setup.parse_dependency_links()

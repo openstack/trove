@@ -181,7 +181,7 @@ class FakeGuest(object):
         return self.users.get((username, hostname), None)
 
     def prepare(self, memory_mb, databases, users, device_path=None,
-                mount_point=None):
+                mount_point=None, backup_id=None):
         from reddwarf.instance.models import DBInstance
         from reddwarf.instance.models import InstanceServiceStatus
         from reddwarf.instance.models import ServiceStatuses

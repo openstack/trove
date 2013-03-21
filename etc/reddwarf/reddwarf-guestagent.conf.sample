@@ -44,6 +44,7 @@ reddwarf_proxy_admin_user = admin
 reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 reddwarf_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
+swift_url = http://10.0.0.1:8080/v1/AUTH_
 
 # Manager impl for the taskmanager
 guestagent_manager=reddwarf.guestagent.manager.Manager
@@ -62,3 +63,15 @@ rabbit_host=10.0.0.1
 # ============ Logging information =============================
 log_dir = /tmp/
 log_file = logfile.txt
+
+# Strategy information for backups
+backup_strategy = InnoBackupEx
+backup_namespace = reddwarf.guestagent.strategies.backup.impl
+restore_namespace = reddwarf.guestagent.strategies.restore.impl
+storage_strategy = SwiftStorage
+storage_namespace = reddwarf.guestagent.strategies.storage.swift
+backup_swift_container = database_backups
+backup_use_gzip_compression = True
+backup_use_snet = False
+backup_chunk_size = 65536
+backup_segment_max_size = 2147483648

@@ -786,6 +786,9 @@ class ServiceStatus(object):
     def __str__(self):
         return self._description
 
+    def __repr__(self):
+        return self._api_status
+
 
 class ServiceStatuses(object):
     RUNNING = ServiceStatus(0x01, 'running', 'ACTIVE')

@@ -60,7 +60,7 @@ class Manager(periodic_task.PeriodicTasks):
             instance_tasks.delete_async()
 
     def delete_backup(self, context, backup_id):
-        models.BackupTasks.delete_backup(backup_id)
+        models.BackupTasks.delete_backup(context, backup_id)
 
     def create_backup(self, context, backup_id, instance_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
@@ -72,4 +72,5 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
         instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
                                        databases, users, service_type,
-                                       volume_size, security_groups)
+                                       volume_size, security_groups,
+                                       backup_id)

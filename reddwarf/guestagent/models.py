@@ -23,7 +23,6 @@ from reddwarf.db import models as dbmodels
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
 
-
 LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF

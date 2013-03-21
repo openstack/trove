@@ -25,31 +25,12 @@ handles RPC calls relating to Platform specific operations.
 
 """
 
-import os
-import re
-import time
-import uuid
 
-from datetime import date
-from sqlalchemy import create_engine
-from sqlalchemy import exc
-from sqlalchemy import interfaces
-from sqlalchemy.sql.expression import text
-
-from reddwarf import db
-from reddwarf.common.exception import ProcessExecutionError
-from reddwarf.common import cfg
 from reddwarf.common import utils
-from reddwarf.guestagent import query
-from reddwarf.guestagent.db import models
-from reddwarf.guestagent import pkg
-from reddwarf.instance import models as rd_models
 from reddwarf.openstack.common import log as logging
-from reddwarf.openstack.common.gettextutils import _
 
 
 LOG = logging.getLogger(__name__)
-
 SERVICE_REGISTRY = {
     'mysql': 'reddwarf.guestagent.manager.mysql.Manager', }
 
@@ -66,11 +47,10 @@ class Interrogator(object):
             raise RuntimeError("Filesystem not found (%s) : %s"
                                % (fs_path, err))
         stats = out.split()
-        output = {}
-        output['block_size'] = int(stats[4])
-        output['total_blocks'] = int(stats[6])
-        output['free_blocks'] = int(stats[7])
-        output['total'] = int(stats[6]) * int(stats[4])
-        output['free'] = int(stats[7]) * int(stats[4])
+        output = {'block_size': int(stats[4]),
+                  'total_blocks': int(stats[6]),
+                  'free_blocks': int(stats[7]),
+                  'total': int(stats[6]) * int(stats[4]),
+                  'free': int(stats[7]) * int(stats[4])}
         output['used'] = int(output['total']) - int(output['free'])
         return output
