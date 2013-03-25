@@ -17,29 +17,23 @@
 
 """Model classes that form the core of instances functionality."""
 
-import eventlet
-import netaddr
-
 from datetime import datetime
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import cfg
 from reddwarf.common import exception
-from reddwarf.common import utils
 from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_guest_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
 from reddwarf.extensions.security_group.models import SecurityGroup
 from reddwarf.db import models as dbmodels
+from reddwarf.backup.models import Backup
+from reddwarf.quota.quota import run_with_quotas
 from reddwarf.instance.tasks import InstanceTask
 from reddwarf.instance.tasks import InstanceTasks
-from reddwarf.guestagent import models as agent_models
 from reddwarf.taskmanager import api as task_api
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
-
-
-from eventlet import greenthread
 
 
 CONF = cfg.CONF
@@ -68,6 +62,7 @@ class InstanceStatus(object):
     FAILED = "FAILED"
     REBOOT = "REBOOT"
     RESIZE = "RESIZE"
+    BACKUP = "BACKUP"
     SHUTDOWN = "SHUTDOWN"
     ERROR = "ERROR"
 
@@ -79,22 +74,6 @@ def validate_volume_size(size):
                "of %d Gb, %s cannot be accepted."
                % (max_size, size))
         raise exception.VolumeQuotaExceeded(msg)
-
-
-def run_with_quotas(tenant_id, deltas, f):
-    """ Quota wrapper """
-
-    from reddwarf.quota.quota import QUOTAS as quota_engine
-    reservations = quota_engine.reserve(tenant_id, **deltas)
-    result = None
-    try:
-        result = f()
-    except:
-        quota_engine.rollback(reservations)
-        raise
-    else:
-        quota_engine.commit(reservations)
-    return result
 
 
 def load_simple_instance_server_status(context, db_info):
@@ -201,6 +180,10 @@ class SimpleInstance(object):
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
                                           "RESIZE"]:
             return self.db_info.server_status
+
+        ### Check if there is a backup running for this instance
+        if Backup.running(self.id):
+            return InstanceStatus.BACKUP
 
         ### Report as Shutdown while deleting, unless there's an error.
         if 'DELETING' == ACTION:
@@ -430,7 +413,8 @@ class Instance(BuiltInstance):
 
     @classmethod
     def create(cls, context, name, flavor_id, image_id,
-               databases, users, service_type, volume_size):
+               databases, users, service_type, volume_size, backup_id):
+
         def _create_resources():
             client = create_nova_client(context)
             security_groups = None
@@ -438,6 +422,16 @@ class Instance(BuiltInstance):
                 flavor = client.flavors.get(flavor_id)
             except nova_exceptions.NotFound:
                 raise exception.FlavorNotFound(uuid=flavor_id)
+
+            if backup_id is not None:
+                backup_info = Backup.get_by_id(backup_id)
+                if backup_info.is_running:
+                    raise exception.BackupNotCompleteError(backup_id=backup_id)
+
+                location = backup_info.location
+                LOG.info(_("Checking if backup exist in '%s'") % location)
+                if not Backup.check_object_exist(context, location):
+                    raise exception.BackupFileNotFound(location=location)
 
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,
@@ -466,7 +460,7 @@ class Instance(BuiltInstance):
                                                   flavor.ram, image_id,
                                                   databases, users,
                                                   service_type, volume_size,
-                                                  security_groups)
+                                                  security_groups, backup_id)
 
             return SimpleInstance(context, db_info, service_status)
 
@@ -476,7 +470,7 @@ class Instance(BuiltInstance):
                                _create_resources)
 
     def resize_flavor(self, new_flavor_id):
-        self._validate_can_perform_action()
+        self.validate_can_perform_action()
         LOG.debug("resizing instance %s flavor to %s"
                   % (self.id, new_flavor_id))
         # Validate that the flavor can be found and that it isn't the same size
@@ -501,7 +495,7 @@ class Instance(BuiltInstance):
 
     def resize_volume(self, new_size):
         def _resize_resources():
-            self._validate_can_perform_action()
+            self.validate_can_perform_action()
             LOG.info("Resizing volume of instance %s..." % self.id)
             if not self.volume_size:
                 raise exception.BadRequest("Instance %s has no volume."
@@ -522,13 +516,13 @@ class Instance(BuiltInstance):
                                _resize_resources)
 
     def reboot(self):
-        self._validate_can_perform_action()
+        self.validate_can_perform_action()
         LOG.info("Rebooting instance %s..." % self.id)
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).reboot(self.id)
 
     def restart(self):
-        self._validate_can_perform_action()
+        self.validate_can_perform_action()
         LOG.info("Restarting MySQL on instance %s..." % self.id)
         # Set our local status since Nova might not change it quick enough.
         #TODO(tim.simpson): Possible bad stuff can happen if this service
@@ -540,7 +534,7 @@ class Instance(BuiltInstance):
         task_api.API(self.context).restart(self.id)
 
     def migrate(self):
-        self._validate_can_perform_action()
+        self.validate_can_perform_action()
         LOG.info("Migrating instance %s..." % self.id)
         self.update_db(task_status=InstanceTasks.MIGRATING)
         task_api.API(self.context).migrate(self.id)
@@ -549,7 +543,7 @@ class Instance(BuiltInstance):
         LOG.info("Settting task status to NONE on instance %s..." % self.id)
         self.update_db(task_status=InstanceTasks.NONE)
 
-    def _validate_can_perform_action(self):
+    def validate_can_perform_action(self):
         """
         Raises exception if an instance action cannot currently be performed.
         """
@@ -560,6 +554,8 @@ class Instance(BuiltInstance):
             status = self.db_info.task_status
         elif not self.service_status.status.action_is_allowed:
             status = self.status
+        elif Backup.running(self.id):
+            status = InstanceStatus.BACKUP
         else:
             return
         msg = ("Instance is not currently available for an action to be "

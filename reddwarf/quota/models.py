@@ -76,6 +76,7 @@ class Resource(object):
 
     INSTANCES = 'instances'
     VOLUMES = 'volumes'
+    BACKUPS = 'backups'
 
     def __init__(self, name, flag=None):
         """

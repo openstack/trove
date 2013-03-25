@@ -249,3 +249,19 @@ class SecurityGroupRuleCreationError(ReddwarfError):
 class SecurityGroupRuleDeletionError(ReddwarfError):
 
     message = _("Failed to delete Security Group Rule.")
+
+
+class BackupNotCompleteError(ReddwarfError):
+
+    message = _("Unable to create instance because backup %(backup_id)s is "
+                "not completed")
+
+
+class BackupFileNotFound(NotFound):
+    message = _("Backup file in %(location)s was not found in the object "
+                "storage.")
+
+
+class SwiftAuthError(ReddwarfError):
+
+    message = _("Swift account not accessible for tenant %(tenant_id)s.")

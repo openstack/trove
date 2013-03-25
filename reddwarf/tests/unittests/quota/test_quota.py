@@ -23,7 +23,7 @@ from reddwarf.db.models import DatabaseModelBase
 from reddwarf.extensions.mgmt.quota.service import QuotaController
 from reddwarf.common import exception
 from reddwarf.common import cfg
-from reddwarf.instance.models import run_with_quotas
+from reddwarf.quota.quota import run_with_quotas
 from reddwarf.quota.quota import QUOTAS
 """
 Unit tests for the classes and functions in DbQuotaDriver.py.

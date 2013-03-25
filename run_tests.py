@@ -123,6 +123,7 @@ if __name__ == "__main__":
         test_config_file = parse_args_for_test_config()
         CONFIG.load_from_file(test_config_file)
 
+        from reddwarf.tests.api import backups
         from reddwarf.tests.api import header
         from reddwarf.tests.api import limits
         from reddwarf.tests.api import flavors

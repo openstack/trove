@@ -18,6 +18,11 @@ from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.db.models import DatabaseModelBase
 from reddwarf.openstack.common import log as logging
+from swiftclient.client import ClientException
+from reddwarf.taskmanager import api
+from reddwarf.common.remote import create_swift_client
+from reddwarf.common import utils
+from reddwarf.quota.quota import run_with_quotas
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -37,27 +42,45 @@ class BackupState(object):
 class Backup(object):
 
     @classmethod
-    def create(cls, context, instance_id, name, description=None):
+    def create(cls, context, instance, name, description=None):
         """
         create db record for Backup
         :param cls:
         :param context: tenant_id included
-        :param instance_id:
+        :param instance:
         :param name:
-        :param note:
+        :param description:
         :return:
         """
-        try:
-            db_info = DBBackup.create(name=name,
-                                      description=description,
-                                      tenant_id=context.tenant,
-                                      state=BackupState.NEW,
-                                      instance_id=instance_id,
-                                      deleted=False)
+
+        def _create_resources():
+            # parse the ID from the Ref
+            instance_id = utils.get_id_from_href(instance)
+
+            # verify that the instance exist and can perform actions
+            from reddwarf.instance.models import Instance
+            instance_model = Instance.load(context, instance_id)
+            instance_model.validate_can_perform_action()
+
+            cls.verify_swift_auth_token(context)
+
+            try:
+                db_info = DBBackup.create(name=name,
+                                          description=description,
+                                          tenant_id=context.tenant,
+                                          state=BackupState.NEW,
+                                          instance_id=instance_id,
+                                          deleted=False)
+            except exception.InvalidModelError as ex:
+                LOG.exception("Unable to create Backup record:")
+                raise exception.BackupCreationError(str(ex))
+
+            api.API(context).create_backup(db_info.id, instance_id)
             return db_info
-        except exception.InvalidModelError as ex:
-            LOG.exception("Unable to create Backup record:")
-            raise exception.BackupCreationError(str(ex))
+
+        return run_with_quotas(context.tenant,
+                               {'backups': 1},
+                               _create_resources)
 
     @classmethod
     def running(cls, instance_id, exclude=None):
@@ -115,17 +138,50 @@ class Backup(object):
         return db_info
 
     @classmethod
-    def delete(cls, backup_id):
+    def delete(cls, context, backup_id):
         """
         update Backup table on deleted flag for given Backup
         :param cls:
+        :param context: context containing the tenant id and token
         :param backup_id: Backup uuid
         :return:
         """
-        #TODO: api (service.py) might take care of actual deletion
-        # on remote swift
-        db_info = cls.get_by_id(backup_id)
-        db_info.delete()
+
+        def _delete_resources():
+            backup = cls.get_by_id(backup_id)
+            if backup.is_running:
+                msg = ("Backup %s cannot be delete because it is running." %
+                       backup_id)
+                raise exception.UnprocessableEntity(msg)
+            cls.verify_swift_auth_token(context)
+            api.API(context).delete_backup(backup_id)
+
+        return run_with_quotas(context.tenant,
+                               {'backups': -1},
+                               _delete_resources)
+
+    @classmethod
+    def verify_swift_auth_token(cls, context):
+        try:
+            client = create_swift_client(context)
+            client.get_account()
+        except ClientException:
+            raise exception.SwiftAuthError(tenant_id=context.tenant)
+
+    @classmethod
+    def check_object_exist(cls, context, location):
+        try:
+            parts = location.split('/')
+            obj = parts[-1]
+            container = parts[-2]
+            client = create_swift_client(context)
+            client.head_object(container, obj)
+            return True
+        except ClientException as e:
+            if e.http_status == 404:
+                return False
+            else:
+                raise exception.SwiftAuthError(tenant_id=context.tenant)
 
 
 def persisted_models():

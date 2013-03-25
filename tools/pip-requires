@@ -13,5 +13,6 @@ httplib2
 lxml
 python-novaclient
 python-keystoneclient
+python-swiftclient
 iso8601
 oslo.config>=1.1.0

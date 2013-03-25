@@ -88,12 +88,23 @@ class API(ManagerAPI):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
         self._cast("delete_instance", instance_id=instance_id)
 
+    def create_backup(self, backup_id, instance_id):
+        LOG.debug("Making async call to create a backup for instance: %s" %
+                  instance_id)
+        self._cast("create_backup",
+                   backup_id=backup_id,
+                   instance_id=instance_id)
+
+    def delete_backup(self, backup_id):
+        LOG.debug("Making async call to delete backup: %s" % backup_id)
+        self._cast("delete_backup", backup_id=backup_id)
+
     def create_instance(self, instance_id, name, flavor_id, flavor_ram,
-                        image_id, databases, users, service_type, volume_size,
-                        security_groups):
+                        image_id, databases, users, service_type,
+                        volume_size, security_groups, backup_id=None):
         LOG.debug("Making async call to create instance %s " % instance_id)
         self._cast("create_instance", instance_id=instance_id, name=name,
                    flavor_id=flavor_id, flavor_ram=flavor_ram,
                    image_id=image_id, databases=databases, users=users,
                    service_type=service_type, volume_size=volume_size,
-                   security_groups=security_groups)
+                   security_groups=security_groups, backup_id=backup_id)

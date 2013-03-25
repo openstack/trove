@@ -360,6 +360,18 @@ class BuiltInstanceTasks(BuiltInstance):
         action = MigrateAction(self)
         action.execute()
 
+    def create_backup(self, backup_id):
+        # TODO
+        # create a temp volume
+        # nova list
+        # nova show
+        # check in progress - make sure no other snapshot creation in progress
+        # volume create
+        # volume attach
+        # call GA.create_backup()
+        self.guest.create_backup(backup_id)
+        LOG.debug("Called create_backup  %s " % self.id)
+
     def reboot(self):
         try:
             LOG.debug("Instance %s calling stop_db..." % self.id)

@@ -310,6 +310,22 @@ QUOTAS = QuotaEngine()
 
 ''' Define all kind of resources here '''
 resources = [Resource(Resource.INSTANCES, 'max_instances_per_user'),
-             Resource(Resource.VOLUMES, 'max_volumes_per_user')]
+             Resource(Resource.VOLUMES, 'max_volumes_per_user'),
+             Resource(Resource.BACKUPS, 'max_backups_per_user')]
 
 QUOTAS.register_resources(resources)
+
+
+def run_with_quotas(tenant_id, deltas, f):
+    """ Quota wrapper """
+
+    reservations = QUOTAS.reserve(tenant_id, **deltas)
+    result = None
+    try:
+        result = f()
+    except:
+        QUOTAS.rollback(reservations)
+        raise
+    else:
+        QUOTAS.commit(reservations)
+    return result

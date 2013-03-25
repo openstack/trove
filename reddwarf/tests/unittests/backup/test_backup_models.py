@@ -15,8 +15,11 @@
 import testtools
 from reddwarf.backup import models
 from reddwarf.tests.unittests.util import util
-from reddwarf.common import utils
+from reddwarf.common import utils, exception
 from reddwarf.common.context import ReddwarfContext
+from reddwarf.instance.models import BuiltInstance, InstanceTasks, Instance
+from mockito import mock, when, unstub, any
+from reddwarf.taskmanager import api
 
 
 def _prep_conf(current_time):
@@ -28,6 +31,7 @@ def _prep_conf(current_time):
 BACKUP_NAME = 'WORKS'
 BACKUP_NAME_2 = 'IT-WORKS'
 BACKUP_STATE = "NEW"
+BACKUP_DESC = 'Backup test'
 
 
 class BackupCreateTest(testtools.TestCase):
@@ -39,17 +43,89 @@ class BackupCreateTest(testtools.TestCase):
 
     def tearDown(self):
         super(BackupCreateTest, self).tearDown()
+        unstub()
         if self.created:
             models.DBBackup.find_by(
                 tenant_id=self.context.tenant).delete()
 
     def test_create(self):
-        models.Backup.create(
-            self.context, self.instance_id, BACKUP_NAME)
+        instance = mock(Instance)
+        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
+            None)
+        when(api.API).create_backup(any()).thenReturn(None)
+
+        bu = models.Backup.create(self.context, self.instance_id,
+                                  BACKUP_NAME, BACKUP_DESC)
         self.created = True
-        db_record = models.DBBackup.find_by(
-            tenant_id=self.context.tenant)
+
+        self.assertEqual(BACKUP_NAME, bu.name)
+        self.assertEqual(BACKUP_DESC, bu.description)
+        self.assertEqual(self.instance_id, bu.instance_id)
+        self.assertEqual(models.BackupState.NEW, bu.state)
+
+        db_record = models.DBBackup.find_by(id=bu.id)
+        self.assertEqual(bu.id, db_record['id'])
+        self.assertEqual(BACKUP_NAME, db_record['name'])
+        self.assertEqual(BACKUP_DESC, db_record['description'])
         self.assertEqual(self.instance_id, db_record['instance_id'])
+        self.assertEqual(models.BackupState.NEW, db_record['state'])
+
+    def test_create_instance_not_found(self):
+        self.assertRaises(exception.NotFound, models.Backup.create,
+                          self.context, self.instance_id,
+                          BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_instance_not_active(self):
+        instance = mock(Instance)
+        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        when(instance).validate_can_perform_action().thenRaise(
+            exception.UnprocessableEntity)
+        self.assertRaises(exception.UnprocessableEntity, models.Backup.create,
+                          self.context, self.instance_id,
+                          BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_backup_swift_token_invalid(self):
+        instance = mock(Instance)
+        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).verify_swift_auth_token(any()).thenRaise(
+            exception.SwiftAuthError)
+        self.assertRaises(exception.SwiftAuthError, models.Backup.create,
+                          self.context, self.instance_id,
+                          BACKUP_NAME, BACKUP_DESC)
+
+
+class BackupDeleteTest(testtools.TestCase):
+    def setUp(self):
+        super(BackupDeleteTest, self).setUp()
+        util.init_db()
+        self.context, self.instance_id = _prep_conf(utils.utcnow())
+
+    def tearDown(self):
+        super(BackupDeleteTest, self).tearDown()
+        unstub()
+
+    def test_delete_backup_not_found(self):
+        self.assertRaises(exception.NotFound, models.Backup.delete,
+                          self.context, 'backup-id')
+
+    def test_delete_backup_is_running(self):
+        backup = mock()
+        backup.is_running = True
+        when(models.Backup).get_by_id(any()).thenReturn(backup)
+        self.assertRaises(exception.UnprocessableEntity,
+                          models.Backup.delete, self.context, 'backup_id')
+
+    def test_delete_backup_swift_token_invalid(self):
+        backup = mock()
+        backup.is_running = False
+        when(models.Backup).get_by_id(any()).thenReturn(backup)
+        when(models.Backup).verify_swift_auth_token(any()).thenRaise(
+            exception.SwiftAuthError)
+        self.assertRaises(exception.SwiftAuthError, models.Backup.delete,
+                          self.context, 'backup_id')
 
 
 class BackupORMTest(testtools.TestCase):
@@ -66,6 +142,7 @@ class BackupORMTest(testtools.TestCase):
 
     def tearDown(self):
         super(BackupORMTest, self).tearDown()
+        unstub()
         if not self.deleted:
             models.DBBackup.find_by(tenant_id=self.context.tenant).delete()
 
@@ -112,7 +189,8 @@ class BackupORMTest(testtools.TestCase):
         self.assertFalse(self.backup.is_done)
 
     def test_backup_delete(self):
-        models.Backup.delete(self.backup.id)
+        backup = models.DBBackup.find_by(id=self.backup.id)
+        backup.delete()
         query = models.Backup.list_for_instance(self.instance_id)
         self.assertEqual(query.count(), 0)
 

@@ -102,7 +102,7 @@ CUSTOM_SERIALIZER_METADATA = {
     # mgmt/account
     'account': {'id': '', 'num_instances': ''},
     # mgmt/quotas
-    'quotas': {'instances': '', 'volumes': ''},
+    'quotas': {'instances': '', 'volumes': '', 'backups': ''},
     #mgmt/instance
     'guest_status': {'state_description': ''},
     #mgmt/instance/diagnostics
@@ -367,6 +367,7 @@ class Controller(object):
         ],
         webob.exc.HTTPUnauthorized: [
             exception.Forbidden,
+            exception.SwiftAuthError,
         ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,
@@ -383,8 +384,11 @@ class Controller(object):
             exception.UserNotFound,
             exception.DatabaseNotFound,
             exception.QuotaResourceUnknown,
+            exception.BackupFileNotFound
         ],
-        webob.exc.HTTPConflict: [],
+        webob.exc.HTTPConflict: [
+            exception.BackupNotCompleteError,
+        ],
         webob.exc.HTTPRequestEntityTooLarge: [
             exception.OverLimit,
             exception.QuotaExceeded,

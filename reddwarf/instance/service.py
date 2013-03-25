@@ -15,7 +15,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import routes
 import webob.exc
 
 from reddwarf.common import cfg
@@ -26,6 +25,8 @@ from reddwarf.common import wsgi
 from reddwarf.extensions.mysql.common import populate_databases
 from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models, views
+from reddwarf.backup.models import Backup as backup_model
+from reddwarf.backup import views as backup_views
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
 
@@ -141,6 +142,15 @@ class InstanceController(wsgi.Controller):
                                                    marker)
         return wsgi.Result(paged.data(), 200)
 
+    def backups(self, req, tenant_id, id):
+        """Return all backups for the specified instance."""
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("Indexing backups for instance '%s'") %
+                 id)
+
+        backups = backup_model.list_for_instance(id)
+        return wsgi.Result(backup_views.BackupViews(backups).data(), 200)
+
     def show(self, req, tenant_id, id):
         """Return a single instance."""
         LOG.info(_("req : '%s'\n\n") % req)
@@ -194,9 +204,17 @@ class InstanceController(wsgi.Controller):
         else:
             volume_size = None
 
+        if 'restorePoint' in body['instance']:
+            backupRef = body['instance']['restorePoint']['backupRef']
+            backup_id = utils.get_id_from_href(backupRef)
+
+        else:
+            backup_id = None
+
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
-                                          service_type, volume_size)
+                                          service_type, volume_size,
+                                          backup_id)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

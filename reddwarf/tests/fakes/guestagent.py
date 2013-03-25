@@ -267,6 +267,15 @@ class FakeGuest(object):
                 } for db in current_grants]
         return dbs
 
+    def create_backup(self, backup_id):
+        from reddwarf.backup.models import Backup, BackupState
+        backup = Backup.get_by_id(backup_id)
+
+        def finish_create_backup():
+            backup.state = BackupState.COMPLETED
+            backup.save()
+        self.event_spawn(1.0, finish_create_backup)
+
 
 def get_or_create(id):
     if id not in DB:

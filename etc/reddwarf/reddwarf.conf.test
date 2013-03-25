@@ -67,6 +67,7 @@ mount_point = /var/lib/mysql
 max_accepted_volume_size = 25
 max_instances_per_user = 55
 max_volumes_per_user = 100
+max_backups_per_user = 5
 volume_time_out=30
 
 # Config options for rate limits
