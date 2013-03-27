@@ -45,6 +45,8 @@ Integer = lambda: sqlalchemy.types.Integer()
 
 BigInteger = lambda: sqlalchemy.types.BigInteger()
 
+Float = lambda: sqlalchemy.types.Float()
+
 
 def create_tables(tables):
     for table in tables:

@@ -46,6 +46,7 @@ def configure_db(options, models_mapper=None):
         from reddwarf.extensions.mysql import models as mysql_models
         from reddwarf.guestagent import models as agent_models
         from reddwarf.quota import models as quota_models
+        from reddwarf.backup import models as backup_models
 
         model_modules = [
             base_models,
@@ -53,6 +54,7 @@ def configure_db(options, models_mapper=None):
             mysql_models,
             agent_models,
             quota_models,
+            backup_models,
         ]
 
         models = {}
