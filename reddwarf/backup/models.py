@@ -16,10 +16,7 @@
 
 from reddwarf.common import cfg
 from reddwarf.common import exception
-from reddwarf.common import utils
-
 from reddwarf.db.models import DatabaseModelBase
-
 from reddwarf.openstack.common import log as logging
 
 CONF = cfg.CONF
@@ -33,6 +30,8 @@ class BackupState(object):
     SAVING = "SAVING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    RUNNING_STATES = [NEW, BUILDING, SAVING]
+    END_STATES = [COMPLETED, FAILED]
 
 
 class Backup(object):
@@ -61,6 +60,37 @@ class Backup(object):
             raise exception.BackupCreationError(str(ex))
 
     @classmethod
+    def running(cls, instance_id, exclude=None):
+        """
+        Returns the first running backup for instance_id
+        :param instance_id: Id of the instance
+        :param exclude: Backup ID to exclude from the query (any other running)
+        """
+        query = DBBackup.query()
+        query = query.filter(DBBackup.instance_id == instance_id,
+                             DBBackup.state.in_(BackupState.RUNNING_STATES))
+        # filter out deleted backups, PEP8 does not like field == False!
+        query = query.filter_by(deleted=False)
+        if exclude:
+            query = query.filter(DBBackup.id != exclude)
+        return query.first()
+
+    @classmethod
+    def get_by_id(cls, backup_id, deleted=False):
+        """
+        get the backup for that id
+        :param cls:
+        :param backup_id: Id of the backup to return
+        :param deleted: Return deleted backups
+        :return:
+        """
+        try:
+            db_info = DBBackup.find_by(id=backup_id, deleted=deleted)
+            return db_info
+        except exception.NotFound:
+            raise exception.NotFound(uuid=backup_id)
+
+    @classmethod
     def list(cls, context):
         """
         list all live Backups belong to given tenant
@@ -85,22 +115,17 @@ class Backup(object):
         return db_info
 
     @classmethod
-    def delete(cls, id):
+    def delete(cls, backup_id):
         """
         update Backup table on deleted flag for given Backup
         :param cls:
-        :param id: Backup uuid
+        :param backup_id: Backup uuid
         :return:
         """
         #TODO: api (service.py) might take care of actual deletion
         # on remote swift
-        try:
-            db_info = DBBackup.find_by(id=id, deleted=False)
-            db_info.update(deleted=True, deleted_at=utils.utcnow())
-        except exception.ReddwarfError as ex:
-            LOG.exception("Backup record cannot be updated for "
-                          "backup %s :") % id
-            raise exception.BackupUpdateError(str(ex))
+        db_info = cls.get_by_id(backup_id)
+        db_info.delete()
 
 
 def persisted_models():
@@ -111,5 +136,14 @@ class DBBackup(DatabaseModelBase):
     """A table for Backup records"""
     _data_fields = ['id', 'name', 'description', 'location', 'backup_type',
                     'size', 'tenant_id', 'state', 'instance_id',
-                    'backup_timestamp', 'deleted', 'created',
+                    'checksum', 'backup_timestamp', 'deleted', 'created',
                     'updated', 'deleted_at']
+    preserve_on_delete = True
+
+    @property
+    def is_running(self):
+        return self.state in BackupState.RUNNING_STATES
+
+    @property
+    def is_done(self):
+        return self.state in BackupState.END_STATES

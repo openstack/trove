@@ -47,6 +47,10 @@ class DatabaseModelBase(models.ModelBase):
     def preserve_on_delete(self):
         return hasattr(self, 'deleted') and hasattr(self, 'deleted_at')
 
+    @classmethod
+    def query(cls):
+        return get_db_api()._base_query(cls)
+
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)

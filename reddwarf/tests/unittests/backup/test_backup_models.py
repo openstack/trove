@@ -57,11 +57,11 @@ class BackupORMTest(testtools.TestCase):
         super(BackupORMTest, self).setUp()
         util.init_db()
         self.context, self.instance_id = _prep_conf(utils.utcnow())
-        models.DBBackup.create(tenant_id=self.context.tenant,
-                               name=BACKUP_NAME,
-                               state=BACKUP_STATE,
-                               instance_id=self.instance_id,
-                               deleted=False)
+        self.backup = models.DBBackup.create(tenant_id=self.context.tenant,
+                                             name=BACKUP_NAME,
+                                             state=BACKUP_STATE,
+                                             instance_id=self.instance_id,
+                                             deleted=False)
         self.deleted = False
 
     def tearDown(self):
@@ -82,11 +82,45 @@ class BackupORMTest(testtools.TestCase):
         db_record = models.Backup.list_for_instance(self.instance_id)
         self.assertEqual(2, db_record.count())
 
+    def test_running(self):
+        running = models.Backup.running(instance_id=self.instance_id)
+        self.assertTrue(running)
+
+    def test_not_running(self):
+        not_running = models.Backup.running(instance_id='non-existent')
+        self.assertFalse(not_running)
+
+    def test_running_exclude(self):
+        not_running = models.Backup.running(instance_id=self.instance_id,
+                                            exclude=self.backup.id)
+        self.assertFalse(not_running)
+
+    def test_is_running(self):
+        self.assertTrue(self.backup.is_running)
+
+    def test_is_done(self):
+        self.backup.state = models.BackupState.COMPLETED
+        self.backup.save()
+        self.assertTrue(self.backup.is_done)
+
+    def test_not_is_running(self):
+        self.backup.state = models.BackupState.COMPLETED
+        self.backup.save()
+        self.assertFalse(self.backup.is_running)
+
+    def test_not_is_done(self):
+        self.assertFalse(self.backup.is_done)
+
+    def test_backup_delete(self):
+        models.Backup.delete(self.backup.id)
+        query = models.Backup.list_for_instance(self.instance_id)
+        self.assertEqual(query.count(), 0)
+
     def test_delete(self):
-        db_record = models.DBBackup.find_by(tenant_id=self.context.tenant)
-        uuid = db_record['id']
-        print uuid
-        models.Backup.delete(uuid)
-        self.deleted = True
-        db_record = models.DBBackup.find_by(id=uuid, deleted=True)
+        self.backup.delete()
+        db_record = models.DBBackup.find_by(id=self.backup.id, deleted=True)
         self.assertEqual(self.instance_id, db_record['instance_id'])
+
+    def test_deleted_not_running(self):
+        self.backup.delete()
+        self.assertFalse(models.Backup.running(self.instance_id))
