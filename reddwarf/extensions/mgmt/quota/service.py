@@ -46,7 +46,12 @@ class QuotaController(wsgi.Controller):
 
         quotas = {}
         quota = None
+        registered_resources = quota_engine.resources
         for resource, limit in body['quotas'].items():
+            if limit is None:
+                continue
+            if resource not in registered_resources:
+                raise exception.QuotaResourceUnknown(unknown=resource)
             try:
                 quota = Quota.find_by(tenant_id=id, resource=resource)
                 quota.hard_limit = limit

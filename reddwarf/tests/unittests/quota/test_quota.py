@@ -11,19 +11,20 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
 import testtools
+from mockito import mock, when, unstub, any, verify, never, times
 from mock import Mock
 from reddwarf.quota.quota import DbQuotaDriver
 from reddwarf.quota.models import Resource
 from reddwarf.quota.models import Quota
 from reddwarf.quota.models import QuotaUsage
 from reddwarf.quota.models import Reservation
+from reddwarf.db.models import DatabaseModelBase
+from reddwarf.extensions.mgmt.quota.service import QuotaController
 from reddwarf.common import exception
 from reddwarf.common import cfg
 from reddwarf.instance.models import run_with_quotas
 from reddwarf.quota.quota import QUOTAS
-
 """
 Unit tests for the classes and functions in DbQuotaDriver.py.
 """
@@ -75,6 +76,57 @@ class Run_with_quotasTest(testtools.TestCase):
         self.assertTrue(QUOTAS.rollback.called)
         self.assertFalse(QUOTAS.commit.called)
         self.assertTrue(f.called)
+
+
+class QuotaControllerTest(testtools.TestCase):
+
+    def setUp(self):
+        super(QuotaControllerTest, self).setUp()
+        context = mock()
+        context.is_admin = True
+        req = mock()
+        req.environ = mock()
+        when(req.environ).get(any()).thenReturn(context)
+        self.req = req
+        self.controller = QuotaController()
+
+    def tearDown(self):
+        super(QuotaControllerTest, self).tearDown()
+        unstub()
+
+    def test_update_unknown_resource(self):
+        body = {'quotas': {'unknown_resource': 5}}
+        self.assertRaises(exception.QuotaResourceUnknown,
+                          self.controller.update, self.req, body,
+                          FAKE_TENANT1, FAKE_TENANT2)
+
+    def test_update_resource_no_value(self):
+        quota = mock(Quota)
+        when(DatabaseModelBase).find_by(tenant_id=FAKE_TENANT2,
+                                        resource='instances').thenReturn(quota)
+        body = {'quotas': {'instances': None}}
+        result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                        FAKE_TENANT2)
+        verify(quota, never).save()
+        self.assertEquals(200, result.status)
+
+    def test_update_resource_(self):
+        instance_quota = mock(Quota)
+        when(DatabaseModelBase).find_by(
+            tenant_id=FAKE_TENANT2,
+            resource='instances').thenReturn(instance_quota)
+        volume_quota = mock(Quota)
+        when(DatabaseModelBase).find_by(
+            tenant_id=FAKE_TENANT2,
+            resource='volumes').thenReturn(volume_quota)
+        body = {'quotas': {'instances': None, 'volumes': 10}}
+        result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                        FAKE_TENANT2)
+        verify(instance_quota, never).save()
+        self.assertFalse('instances' in result._data)
+        verify(volume_quota, times=1).save()
+        self.assertEquals(200, result.status)
+        self.assertEquals(10, result._data['volumes'])
 
 
 class DbQuotaDriverTest(testtools.TestCase):

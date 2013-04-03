@@ -244,9 +244,10 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info = copy.deepcopy(instance_info)
 
     def tearDown(self):
+        quota_dict = {'instances': CONFIG.reddwarf_max_instances_per_user,
+                      'volumes': CONFIG.reddwarf_max_volumes_per_user}
         dbaas_admin.quota.update(self.test_info.user.tenant_id,
-                                 CONFIG.reddwarf_max_instances_per_user,
-                                 CONFIG.reddwarf_max_volumes_per_user)
+                                 quota_dict)
 
     def test_instance_size_too_big(self):
         vol_ok = CONFIG.get('reddwarf_volume_support', False)
@@ -263,14 +264,13 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
     def test_create_too_many_instances(self):
         instance_quota = 0
+        quota_dict = {'instances': instance_quota}
         new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
-                                              instance_quota,
-                                              CONFIG
-                                              .reddwarf_max_volumes_per_user)
+                                              quota_dict)
 
         verify_quota = dbaas_admin.quota.show(self.test_info.user.tenant_id)
 
-        assert_equal(new_quotas._info, verify_quota._info)
+        assert_equal(new_quotas._info, quota_dict)
         assert_equal(0, verify_quota._info['instances'])
         assert_equal(CONFIG.reddwarf_max_volumes_per_user,
                      verify_quota._info['volumes'])
@@ -287,18 +287,15 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
     def test_create_instances_total_volume_exceeded(self):
         volume_quota = 3
+        quota_dict = {'volumes': volume_quota}
         self.test_info.volume = {'size': volume_quota + 1}
         new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
-                                              CONFIG
-                                              .reddwarf_max_instances_per_user,
-                                              volume_quota)
+                                              quota_dict)
 
-        assert_equal(CONFIG.reddwarf_max_instances_per_user,
-                     new_quotas._info['instances'])
         assert_equal(volume_quota,
                      new_quotas._info['volumes'])
 
-        self.test_info.name = "too_many_instances"
+        self.test_info.name = "too_large_volume"
         assert_raises(exceptions.OverLimit,
                       dbaas.instances.create,
                       self.test_info.name,
