@@ -32,7 +32,7 @@ def populate_databases(dbs):
             databases.append(mydb.serialize())
         return databases
     except ValueError as ve:
-        raise exception.BadRequest(ve.message)
+        raise exception.BadRequest(str(ve))
 
 
 def populate_users(users):
@@ -51,7 +51,7 @@ def populate_users(users):
             users_data.append(u.serialize())
         return users_data
     except ValueError as ve:
-        raise exception.BadRequest(ve.message)
+        raise exception.BadRequest(str(ve))
 
 
 def unquote_user_host(user_hostname):
