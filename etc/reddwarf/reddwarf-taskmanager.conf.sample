@@ -63,6 +63,9 @@ agent_call_high_timeout = 150
 # Whether to use nova's contrib api for create server with volume
 use_nova_server_volume = False
 
+# usage notifications
+notification_driver = reddwarf.tests.util.usage
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

@@ -34,9 +34,6 @@ GROUP_DATABASES = "dbaas.api.databases"
 GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 
 from datetime import datetime
-from nose.plugins.skip import SkipTest
-from nose.tools import assert_true
-
 from time import sleep
 
 from reddwarf.common import exception as rd_exceptions
@@ -46,23 +43,22 @@ from proboscis.decorators import time_out
 from proboscis import before_class
 from proboscis import after_class
 from proboscis import test
+from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_is
-from proboscis.asserts import assert_is_none
 from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import assert_is_not
 from proboscis.asserts import assert_true
-from proboscis.asserts import Check
 from proboscis.asserts import fail
 
+from reddwarf.openstack.common import timeutils
 from reddwarf import tests
 from reddwarf.tests.config import CONFIG
-from reddwarf.tests.util import create_client
 from reddwarf.tests.util import create_dbaas_client
 from reddwarf.tests.util import create_nova_client
+from reddwarf.tests.util.usage import create_usage_verifier
+from reddwarf.tests.util import iso_time
 from reddwarf.tests.util import process
 from reddwarf.tests.util.users import Requirements
 from reddwarf.tests.util import skip_if_xml
@@ -102,6 +98,7 @@ class InstanceTestInfo(object):
         self.host_info = None  # Host Info before creating instances
         self.user_context = None  # A regular user context
         self.users = None  # The users created on the instance.
+        self.consumer = create_usage_verifier()
 
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
@@ -131,6 +128,11 @@ def do_not_delete_instance():
 
 def create_new_instance():
     return existing_instance() is None
+
+
+@test(groups=['dbaas.usage', 'dbaas.usage.init'])
+def clear_messages_off_queue():
+    instance_info.consumer.clear_events()
 
 
 @test(groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, 'dbaas.setup'],
@@ -290,7 +292,6 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info.volume = {'size': volume_quota + 1}
         new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
                                               quota_dict)
-
         assert_equal(volume_quota, new_quotas['volumes'])
 
         self.test_info.name = "too_large_volume"
@@ -876,6 +877,30 @@ class TestInstanceListing(object):
             check.volume_mgmt()
 
 
+@test(depends_on_classes=[WaitForGuestInstallationToFinish],
+      groups=[GROUP, 'dbaas.usage'])
+class TestCreateNotification(object):
+    """
+    Test that the create notification has been sent correctly.
+    """
+
+    @test
+    def test_create_notification(self):
+        expected = {
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': iso_time(instance_info.initial_result.created),
+            'launched_at': iso_time(instance_info.initial_result.created),
+            'region': 'LOCAL_DEV',
+            'availability_zone': 'nova',
+        }
+        instance_info.consumer.check_message(instance_info.id,
+                                             'reddwarf.instance.create',
+                                             **expected)
+
+
 @test(depends_on_groups=['dbaas.api.instances.actions'],
       groups=[GROUP, tests.INSTANCES, "dbaas.diagnostics"])
 class CheckDiagnosticsAfterTests(object):
@@ -916,6 +941,7 @@ class DeleteInstance(object):
         # Update the report so the logs inside the instance will be saved.
         CONFIG.get_report().update()
         dbaas.instances.delete(instance_info.id)
+        instance_info.deleted_at = timeutils.utcnow().isoformat()
 
         attempts = 0
         try:
@@ -948,6 +974,26 @@ class DeleteInstance(object):
 
     #TODO: make sure that the actual instance, volume, guest status, and DNS
     #      entries are deleted.
+
+
+@test(depends_on=[WaitForGuestInstallationToFinish],
+      runs_after=[DeleteInstance],
+      groups=[GROUP, GROUP_STOP, 'dbaas.usage'])
+class AfterDeleteChecks(object):
+    @test
+    def test_instance_delete_event_sent(self):
+        expected = {
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': iso_time(instance_info.initial_result.created),
+            'launched_at': iso_time(instance_info.initial_result.created),
+            'deleted_at': iso_time(instance_info.deleted_at),
+        }
+        instance_info.consumer.check_message(instance_info.id,
+                                             'reddwarf.instance.delete',
+                                             **expected)
 
 
 @test(depends_on_classes=[CreateInstance, VerifyGuestStarted,

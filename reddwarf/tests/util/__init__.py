@@ -221,6 +221,17 @@ def unquote_user_host(user_hostname):
     return user, host
 
 
+def iso_time(time_string):
+    """Return a iso formated datetime: 2013-04-15T19:50:23Z"""
+    ts = time_string.replace(' ', 'T')
+    try:
+        micro = ts.rindex('.')
+        ts = ts[:micro]
+    except ValueError:
+        pass
+    return '%sZ' % ts
+
+
 if CONFIG.simulate_events:
     # Without event let, this just calls time.sleep.
     def poll_until(retriever, condition=lambda value: value,
