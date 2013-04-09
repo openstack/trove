@@ -126,7 +126,7 @@ class QuotaControllerTest(testtools.TestCase):
         self.assertFalse('instances' in result._data)
         verify(volume_quota, times=1).save()
         self.assertEquals(200, result.status)
-        self.assertEquals(10, result._data['volumes'])
+        self.assertEquals(10, result._data['quotas']['volumes'])
 
 
 class DbQuotaDriverTest(testtools.TestCase):

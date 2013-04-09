@@ -233,14 +233,13 @@ def test_delete_instance_not_found():
 
 
 @test(depends_on_classes=[InstanceSetup],
-      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, 'dbaas_quotas'],
+      groups=[GROUP, 'dbaas_quotas'],
       runs_after_groups=[tests.PRE_INSTANCES])
 class CreateInstanceQuotaTest(unittest.TestCase):
 
     def setUp(self):
         import copy
 
-        skip_if_xml()
         self.test_info = copy.deepcopy(instance_info)
 
     def tearDown(self):
@@ -270,10 +269,11 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
         verify_quota = dbaas_admin.quota.show(self.test_info.user.tenant_id)
 
-        assert_equal(new_quotas._info, quota_dict)
-        assert_equal(0, verify_quota._info['instances'])
+        assert_equal(int(new_quotas._info['quotas']['instances']),
+                     int(quota_dict['instances']))
+        assert_equal(0, int(verify_quota._info['quotas']['instances']))
         assert_equal(CONFIG.reddwarf_max_volumes_per_user,
-                     verify_quota._info['volumes'])
+                     int(verify_quota._info['quotas']['volumes']))
 
         self.test_info.volume = {'size': 1}
         self.test_info.name = "too_many_instances"
@@ -292,8 +292,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         new_quotas = dbaas_admin.quota.update(self.test_info.user.tenant_id,
                                               quota_dict)
 
-        assert_equal(volume_quota,
-                     new_quotas._info['volumes'])
+        assert_equal(int(volume_quota),
+                     int(new_quotas._info['quotas']['volumes']))
 
         self.test_info.name = "too_large_volume"
         assert_raises(exceptions.OverLimit,

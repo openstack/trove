@@ -25,4 +25,4 @@ class QuotaView(object):
         rtn = {}
         for resource_name, quota in self.quotas.items():
             rtn[resource_name] = quota.hard_limit
-        return rtn
+        return {'quotas': rtn}
