@@ -107,7 +107,7 @@ class UserController(wsgi.Controller):
             user.name = username
             user.host = host
         except ValueError as ve:
-            raise exception.BadRequest(ve.message)
+            raise exception.BadRequest(str(ve))
 
         if not user:
             raise exception.UserNotFound(uuid=id)
@@ -164,7 +164,7 @@ class UserAccessController(wsgi.Controller):
         try:
             user = models.User.load(context, instance_id, username, hostname)
         except ValueError as ve:
-            raise exception.BadRequest(ve.message)
+            raise exception.BadRequest(str(ve))
         if not user:
             raise exception.UserNotFound(uuid=user_id)
         return user
@@ -250,7 +250,7 @@ class SchemaController(wsgi.Controller):
             schema.name = id
             models.Schema.delete(context, instance_id, schema.serialize())
         except ValueError as ve:
-            raise exception.BadRequest(ve.message)
+            raise exception.BadRequest(str(ve))
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):
