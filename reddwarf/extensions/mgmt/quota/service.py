@@ -50,6 +50,8 @@ class QuotaController(wsgi.Controller):
         for resource, limit in body['quotas'].items():
             if limit is None:
                 continue
+            if resource == "xmlns":
+                continue
             if resource not in registered_resources:
                 raise exception.QuotaResourceUnknown(unknown=resource)
             try:
