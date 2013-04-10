@@ -59,13 +59,15 @@ class FakeFlavors(object):
     def __init__(self):
         self.db = {}
         self._add(1, 0, "m1.tiny", 512)
-        self._add(2, 10, "m1.small", 2048)
-        self._add(3, 10, "m1.medium", 4096)
-        self._add(4, 10, "m1.large", 8192)
-        self._add(5, 10, "m1.xlarge", 16384)
+        self._add(2, 20, "m1.small", 2048)
+        self._add(3, 40, "m1.medium", 4096)
+        self._add(4, 80, "m1.large", 8192)
+        self._add(5, 160, "m1.xlarge", 16384)
         self._add(6, 0, "m1.nano", 64)
         self._add(7, 0, "m1.micro", 128)
-        self._add(8, 0, "m1.rd-smaller", 768)
+        self._add(8, 2, "m1.rd-smaller", 768)
+        self._add(9, 10, "tinier", 506)
+        self._add(10, 2, "m1.rd-tiny", 512)
 
     def _add(self, *args, **kwargs):
         new_flavor = FakeFlavor(*args, **kwargs)
