@@ -103,7 +103,7 @@ notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
 
-api_paste_config=api-paste.ini.test
+paste_config_file=api-paste.ini.test
 
 [composite:reddwarf]
 use = call:reddwarf.common.wsgi:versioned_urlmap
