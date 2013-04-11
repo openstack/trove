@@ -53,10 +53,8 @@ class TestUsers(object):
     """
 
     username = "tes!@#tuser"
-    username_urlencoded = "tes%21%40%23tuser"
     password = "testpa$^%ssword"
     username1 = "anous*&^er"
-    username1_urlendcoded = "anous%2A%26%5Eer"
     password1 = "anopas*?.sword"
     db1 = "usersfirstdb"
     db2 = "usersseconddb"
@@ -136,7 +134,8 @@ class TestUsers(object):
 
     @test(depends_on=[test_create_users_list])
     def test_get_one_user(self):
-        user = self.dbaas.users.get(instance_info.id, username=self.username)
+        user = self.dbaas.users.get(instance_info.id, username=self.username,
+                                    hostname='%')
         assert_equal(200, self.dbaas.last_http_code)
         assert_equal(user.name, self.username)
         assert_equal(1, len(user.databases))
@@ -159,9 +158,9 @@ class TestUsers(object):
     @test(depends_on=[test_create_users_list],
           runs_after=[test_fails_when_creating_user_twice])
     def test_delete_users(self):
-        self.dbaas.users.delete(instance_info.id, self.username_urlencoded)
+        self.dbaas.users.delete(instance_info.id, self.username, hostname='%')
         assert_equal(202, self.dbaas.last_http_code)
-        self.dbaas.users.delete(instance_info.id, self.username1_urlendcoded)
+        self.dbaas.users.delete(instance_info.id, self.username1, hostname='%')
         assert_equal(202, self.dbaas.last_http_code)
         if not FAKE:
             time.sleep(5)
@@ -239,7 +238,7 @@ class TestUsers(object):
             fail("User %s not added to collection." % user)
 
         # Confirm via API get.
-        result = self.dbaas.users.get(instance_info.id, user)
+        result = self.dbaas.users.get(instance_info.id, user, '%')
         assert_equal(200, self.dbaas.last_http_code)
         if result.name != user:
             fail("User %s not found via get." % user)

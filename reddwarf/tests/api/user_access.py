@@ -432,11 +432,35 @@ class TestUserAccessNegative(UserAccessBase):
         self._negative_user_test("test.user", self.databases)
 
     @test
-    def test_user_empty(self):
+    def test_user_empty_no_host(self):
         # This creates a request to .../<instance-id>/users//databases,
         # which is parsed to mean "show me user 'databases', which in this
         # case is a valid username, but not one of an extant user.
-        self._negative_user_test("", self.databases, 400, 400, 400, 400)
+        self._negative_user_test("", self.databases, 400, 500, 404, 404)
+
+    @test
+    def test_user_empty_with_host(self):
+        #self._negative_user_test("", self.databases, 400, 400, 400, 400)
+        # Try and fail to create the user.
+        empty_user = {"name": "", "host": "%",
+                      "password": "password", "databases": []}
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.create,
+                      instance_info.id,
+                      [empty_user])
+        assert_equal(400, self.dbaas.last_http_code)
+
+        assert_raises(exceptions.BadRequest, self.dbaas.users.grant,
+                      instance_info.id, "", [], "%")
+        assert_equal(400, self.dbaas.last_http_code)
+
+        assert_raises(exceptions.BadRequest, self.dbaas.users.list_access,
+                      instance_info.id, "", "%")
+        assert_equal(400, self.dbaas.last_http_code)
+
+        assert_raises(exceptions.BadRequest, self.dbaas.users.revoke,
+                      instance_info.id, "", "db", "%")
+        assert_equal(400, self.dbaas.last_http_code)
 
     @test
     def test_user_nametoolong(self):

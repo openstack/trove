@@ -84,7 +84,7 @@ CUSTOM_SERIALIZER_METADATA = {
     'flavor': {'id': '', 'ram': '', 'name': ''},
     'link': {'href': '', 'rel': ''},
     'database': {'name': ''},
-    'user': {'name': '', 'password': ''},
+    'user': {'name': '', 'password': '', 'host': ''},
     'account': {'id': ''},
     'security_group': {'id': '', 'name': '', 'description': '', 'user': '',
                        'tenant_id': ''},

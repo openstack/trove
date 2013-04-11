@@ -91,8 +91,11 @@ class UserController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         users = body['users']
-        model_users = populate_users(users)
-        models.User.create(context, instance_id, model_users)
+        try:
+            model_users = populate_users(users)
+            models.User.create(context, instance_id, model_users)
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=e)
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
@@ -100,18 +103,17 @@ class UserController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         username, host = unquote_user_host(id)
-
         user = None
         try:
             user = guest_models.MySQLUser()
             user.name = username
             user.host = host
-        except ValueError as ve:
-            raise exception.BadRequest(str(ve))
-
+            found_user = models.User.load(context, instance_id, username,
+                                          host)
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=e)
         if not user:
             raise exception.UserNotFound(uuid=id)
-
         models.User.delete(context, instance_id, user.serialize())
         return wsgi.Result(None, 202)
 
@@ -121,7 +123,11 @@ class UserController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         username, host = unquote_user_host(id)
-        user = models.User.load(context, instance_id, username, host)
+        user = None
+        try:
+            user = models.User.load(context, instance_id, username, host)
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=e)
         if not user:
             raise exception.UserNotFound(uuid=id)
         view = views.UserView(user)
@@ -136,11 +142,14 @@ class UserController(wsgi.Controller):
         users = body['users']
         model_users = []
         for user in users:
-            mu = guest_models.MySQLUser()
-            mu.name = user['name']
-            mu.host = user.get('host')
-            mu.password = user['password']
-            model_users.append(mu)
+            try:
+                mu = guest_models.MySQLUser()
+                mu.name = user['name']
+                mu.host = user.get('host')
+                mu.password = user['password']
+                model_users.append(mu)
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=e)
         models.User.change_password(context, instance_id, model_users)
         return wsgi.Result(None, 202)
 
@@ -153,8 +162,10 @@ class UserAccessController(wsgi.Controller):
         """Validate that the request has all the required parameters"""
         if not body:
             raise exception.BadRequest("The request contains an empty body")
-        if not body.get('databases', ''):
+        if not body.get('databases', []):
             raise exception.MissingKey(key='databases')
+        if type(body['databases']) is not list:
+            raise exception.BadRequest("Databases must be provided as a list.")
         for database in body.get('databases'):
             if not database.get('name', ''):
                 raise exception.MissingKey(key='name')
@@ -163,8 +174,8 @@ class UserAccessController(wsgi.Controller):
         username, hostname = unquote_user_host(user_id)
         try:
             user = models.User.load(context, instance_id, username, hostname)
-        except ValueError as ve:
-            raise exception.BadRequest(str(ve))
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=e)
         if not user:
             raise exception.UserNotFound(uuid=user_id)
         return user
@@ -183,6 +194,8 @@ class UserAccessController(wsgi.Controller):
 
     def update(self, req, body, tenant_id, instance_id, user_id):
         """Grant access for a user to one or more databases."""
+        LOG.info(_("Granting user access for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         user = self._get_user(context, instance_id, user_id)
@@ -193,6 +206,8 @@ class UserAccessController(wsgi.Controller):
 
     def delete(self, req, tenant_id, instance_id, user_id, id):
         """Revoke access for a user."""
+        LOG.info(_("Revoking user access for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user = self._get_user(context, instance_id, user_id)
         username, hostname = unquote_user_host(user_id)
@@ -249,8 +264,8 @@ class SchemaController(wsgi.Controller):
             schema = guest_models.MySQLDatabase()
             schema.name = id
             models.Schema.delete(context, instance_id, schema.serialize())
-        except ValueError as ve:
-            raise exception.BadRequest(str(ve))
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=e)
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):

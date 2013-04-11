@@ -60,6 +60,9 @@ class User(object):
     @classmethod
     def load(cls, context, instance_id, username, hostname):
         load_and_verify(context, instance_id)
+        validate = guest_models.MySQLUser()
+        validate.name = username
+        validate.host = hostname
         client = create_guest_client(context, instance_id)
         found_user = client.get_user(username=username, hostname=hostname)
         if not found_user:
@@ -79,6 +82,8 @@ class User(object):
         for user in users:
             user_name = user['_name']
             host_name = user['_host']
+            if host_name is None:
+                host_name = '%'
             userhost = "%s@%s" % (user_name, host_name)
             existing_users, _nadda = Users.load_with_client(
                 client,

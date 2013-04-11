@@ -37,21 +37,18 @@ def populate_databases(dbs):
 
 def populate_users(users):
     """Create a serializable request containing users"""
-    try:
-        users_data = []
-        for user in users:
-            u = guest_models.MySQLUser()
-            u.name = user.get('name', '')
-            u.host = user.get('host', '%')
-            u.password = user.get('password', '')
-            dbs = user.get('databases', '')
-            if dbs:
-                for db in dbs:
-                    u.databases = db.get('name', '')
-            users_data.append(u.serialize())
-        return users_data
-    except ValueError as ve:
-        raise exception.BadRequest(str(ve))
+    users_data = []
+    for user in users:
+        u = guest_models.MySQLUser()
+        u.name = user.get('name', '')
+        u.host = user.get('host')
+        u.password = user.get('password', '')
+        dbs = user.get('databases', '')
+        if dbs:
+            for db in dbs:
+                u.databases = db.get('name', '')
+        users_data.append(u.serialize())
+    return users_data
 
 
 def unquote_user_host(user_hostname):
