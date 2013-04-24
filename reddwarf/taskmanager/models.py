@@ -578,7 +578,7 @@ class MigrateAction(ResizeActionBase):
 
     def _record_action_success(self):
         LOG.debug("Successfully finished Migration to %s: %s" %
-                  (self.hostname, self.instance.id))
+                  (self.instance.hostname, self.instance.id))
 
     def _start_mysql(self):
         self.instance.guest.restart()

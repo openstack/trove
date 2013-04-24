@@ -199,7 +199,14 @@ class MigrateTests(ResizeTestBase):
 
     def tearDown(self):
         super(MigrateTests, self).tearDown()
-        self._teardown()
+        try:
+            self.instance.update_db(task_status=InstanceTasks.NONE)
+            self.mock.ReplayAll()
+            self.assertEqual(None, self.action.execute())
+            self.mock.VerifyAll()
+        finally:
+            self.mock.UnsetStubs()
+            self.db_info.delete()
 
     def _start_mysql(self):
         self.guest.restart()
