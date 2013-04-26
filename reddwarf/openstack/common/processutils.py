@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2011 OpenStack LLC.
+# Copyright 2011 OpenStack Foundation.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -19,7 +19,6 @@
 System-level utilities and helper functions.
 """
 
-import logging
 import random
 import shlex
 
@@ -27,6 +26,7 @@ from eventlet.green import subprocess
 from eventlet import greenthread
 
 from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

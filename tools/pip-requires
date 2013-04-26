@@ -14,3 +14,4 @@ lxml
 python-novaclient
 python-keystoneclient
 iso8601
+oslo.config>=1.1.0

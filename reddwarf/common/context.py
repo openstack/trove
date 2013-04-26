@@ -49,8 +49,7 @@ class ReddwarfContext(context.RequestContext):
     def to_dict(self):
         parent_dict = super(ReddwarfContext, self).to_dict()
         parent_dict.update({'limit': self.limit,
-                            'marker': self.marker,
-                            'auth_tok': parent_dict['auth_token'],
+                            'marker': self.marker
                             })
         return parent_dict
 

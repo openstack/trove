@@ -19,11 +19,9 @@
 
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
-from reddwarf.openstack.common import cfg
-import datetime
+from oslo.config import cfg
 from reddwarf.common import exception
 from reddwarf.openstack.common import importutils
-from reddwarf.openstack.common import timeutils
 from reddwarf.quota.models import Quota
 from reddwarf.quota.models import QuotaUsage
 from reddwarf.quota.models import Reservation

@@ -16,7 +16,7 @@
 #    under the License.
 """Routines for configuring Reddwarf."""
 
-from reddwarf.openstack.common import cfg
+from oslo.config import cfg
 
 common_opts = [
     cfg.StrOpt('sql_connection',

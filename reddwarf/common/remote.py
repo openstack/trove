@@ -37,9 +37,9 @@ def create_guest_client(context, id):
 
 
 def create_nova_client(context):
-    client = Client(context.user, context.auth_tok, project_id=context.tenant,
-                    auth_url=PROXY_AUTH_URL)
-    client.client.auth_token = context.auth_tok
+    client = Client(context.user, context.auth_token,
+                    project_id=context.tenant, auth_url=PROXY_AUTH_URL)
+    client.client.auth_token = context.auth_token
     client.client.management_url = "%s/%s/" % (COMPUTE_URL, context.tenant)
 
     return client
@@ -48,9 +48,9 @@ def create_nova_client(context):
 def create_nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
-    client = Client(context.user, context.auth_tok,
+    client = Client(context.user, context.auth_token,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
-    client.client.auth_token = context.auth_tok
+    client.client.auth_token = context.auth_token
     client.client.management_url = "%s/%s/" % (VOLUME_URL, context.tenant)
 
     return client

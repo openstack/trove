@@ -26,7 +26,7 @@ import weakref
 
 from eventlet import semaphore
 
-from reddwarf.openstack.common import cfg
+from oslo.config import cfg
 from reddwarf.openstack.common import fileutils
 from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import log as logging

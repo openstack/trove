@@ -38,7 +38,7 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 
 from reddwarf.common import cfg
 from reddwarf.common import rpc
-from reddwarf.openstack.common import cfg as openstack_cfg
+from oslo.config import cfg as openstack_cfg
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import service
 from reddwarf.db import get_db_api

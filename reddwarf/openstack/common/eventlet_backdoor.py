@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright (c) 2012 Openstack, LLC.
+# Copyright (c) 2012 OpenStack Foundation.
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
 #
@@ -24,8 +24,7 @@ import traceback
 import eventlet
 import eventlet.backdoor
 import greenlet
-
-from reddwarf.openstack.common import cfg
+from oslo.config import cfg
 
 eventlet_backdoor_opts = [
     cfg.IntOpt('backdoor_port',
@@ -52,12 +51,20 @@ def _print_greenthreads():
         print
 
 
+def _print_nativethreads():
+    for threadId, stack in sys._current_frames().items():
+        print threadId
+        traceback.print_stack(stack)
+        print
+
+
 def initialize_if_enabled():
     backdoor_locals = {
         'exit': _dont_use_this,      # So we don't exit the entire process
         'quit': _dont_use_this,      # So we don't exit the entire process
         'fo': _find_objects,
         'pgt': _print_greenthreads,
+        'pnt': _print_nativethreads,
     }
 
     if CONF.backdoor_port is None:

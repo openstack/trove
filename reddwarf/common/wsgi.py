@@ -307,7 +307,9 @@ class Resource(openstack_wsgi.Resource):
 
         except exception.ReddwarfError as reddwarf_error:
             LOG.debug(traceback.format_exc())
+            LOG.debug("Caught Reddwarf Error %s", reddwarf_error)
             httpError = self._get_http_error(reddwarf_error)
+            LOG.debug("Mapped Error to %s", httpError)
             return Fault(httpError(str(reddwarf_error), request=request))
         except webob.exc.HTTPError as http_error:
             LOG.debug(traceback.format_exc())
@@ -600,7 +602,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
 
     def process_request(self, request):
         tenant_id = request.headers.get('X-Tenant-Id', None)
-        auth_tok = request.headers["X-Auth-Token"]
+        auth_token = request.headers["X-Auth-Token"]
         user = request.headers.get('X-User', None)
         roles = request.headers.get('X-Role', '').split(',')
         is_admin = False
@@ -609,7 +611,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
                 is_admin = True
                 break
         limits = self._extract_limits(request.params)
-        context = rd_context.ReddwarfContext(auth_tok=auth_tok,
+        context = rd_context.ReddwarfContext(auth_token=auth_token,
                                              tenant=tenant_id,
                                              user=user,
                                              is_admin=is_admin,
