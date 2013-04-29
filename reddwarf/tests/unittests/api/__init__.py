@@ -1,4 +1,4 @@
-# Copyright 2013 OpenStack LLC.
+# Copyright 2013 OpenStack Foundation
 # Copyright 2013 Hewlett-Packard Development Company, L.P.
 # All Rights Reserved.
 #
