@@ -38,6 +38,7 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
 
 from reddwarf.common import cfg
 from reddwarf.common import rpc
+from reddwarf.guestagent import dbaas
 from reddwarf.openstack.common import cfg as openstack_cfg
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import service
@@ -53,7 +54,8 @@ if __name__ == '__main__':
 
     try:
         get_db_api().configure_db(CONF)
-        server = rpc.RpcService(manager=CONF.guestagent_manager,
+        manager = dbaas.SERVICE_REGISTRY[CONF.service_type]
+        server = rpc.RpcService(manager=manager,
                                 host=CONF.guest_id)
         launcher = service.launch(server)
         launcher.wait()

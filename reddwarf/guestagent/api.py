@@ -214,17 +214,17 @@ class API(proxy.RpcProxy):
         LOG.debug(_("Sending the call to restart MySQL on the Guest."))
         self._call("restart", AGENT_HIGH_TIMEOUT)
 
-    def start_mysql_with_conf_changes(self, updated_memory_size):
+    def start_db_with_conf_changes(self, updated_memory_size):
         """Start the MySQL server."""
         LOG.debug(_("Sending the call to start MySQL on the Guest with "
                     "a timeout of %s.") % AGENT_HIGH_TIMEOUT)
-        self._call("start_mysql_with_conf_changes", AGENT_HIGH_TIMEOUT,
+        self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
                    updated_memory_size=updated_memory_size)
 
-    def stop_mysql(self, do_not_start_on_reboot=False):
+    def stop_db(self, do_not_start_on_reboot=False):
         """Stop the MySQL server."""
         LOG.debug(_("Sending the call to stop MySQL on the Guest."))
-        self._call("stop_mysql", AGENT_HIGH_TIMEOUT,
+        self._call("stop_db", AGENT_HIGH_TIMEOUT,
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self):

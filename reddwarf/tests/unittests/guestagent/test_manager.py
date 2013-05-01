@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License
 
-from reddwarf.guestagent.manager import Manager
-from reddwarf.guestagent import dbaas
+from reddwarf.guestagent.manager.mysql import Manager
+import reddwarf.guestagent.manager.mysql as dbaas
 from reddwarf.guestagent import volume
 import testtools
 from reddwarf.instance import models as rd_models
@@ -33,7 +33,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
         self.origin_mount = volume.VolumeDevice.mount
         self.origin_is_installed = dbaas.MySqlApp.is_installed
-        self.origin_stop_mysql = dbaas.MySqlApp.stop_mysql
+        self.origin_stop_mysql = dbaas.MySqlApp.stop_db
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
         self.origin_install_mysql = dbaas.MySqlApp._install_mysql
 
@@ -45,7 +45,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
         volume.VolumeDevice.mount = self.origin_mount
         dbaas.MySqlApp.is_installed = self.origin_is_installed
-        dbaas.MySqlApp.stop_mysql = self.origin_stop_mysql
+        dbaas.MySqlApp.stop_db = self.origin_stop_mysql
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
         dbaas.MySqlApp._install_mysql = self.origin_install_mysql
 
@@ -130,7 +130,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = MagicMock()
         volume.VolumeDevice.migrate_data = MagicMock()
         volume.VolumeDevice.mount = MagicMock()
-        dbaas.MySqlApp.stop_mysql = MagicMock()
+        dbaas.MySqlApp.stop_db = MagicMock()
         dbaas.MySqlApp.start_mysql = MagicMock()
         dbaas.MySqlApp.install_if_needed = MagicMock()
         dbaas.MySqlApp.secure = MagicMock()
@@ -148,7 +148,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         #self.assertEqual(1, dbaas.MySqlApp.is_installed.call_count)
 
         self.assertEqual(COUNT * SEC_COUNT,
-                         dbaas.MySqlApp.stop_mysql.call_count)
+                         dbaas.MySqlApp.stop_db.call_count)
 
         self.assertEqual(COUNT * SEC_COUNT,
                          volume.VolumeDevice.migrate_data.call_count)
@@ -189,20 +189,20 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.manager.restart(self.context)
         self.assertEqual(1, dbaas.MySqlApp.restart.call_count)
 
-    def test_start_mysql_with_conf_changes(self):
+    def test_start_db_with_conf_changes(self):
         updated_mem_size = Mock()
         self._setUp_MySqlAppStatus_get()
-        dbaas.MySqlApp.start_mysql_with_conf_changes = MagicMock()
-        self.manager.start_mysql_with_conf_changes(self.context,
-                                                   updated_mem_size)
+        dbaas.MySqlApp.start_db_with_conf_changes = MagicMock()
+        self.manager.start_db_with_conf_changes(self.context,
+                                                updated_mem_size)
         self.assertEqual(1, dbaas.MySqlApp.
-                         start_mysql_with_conf_changes.call_count)
+                         start_db_with_conf_changes.call_count)
 
     def test_stop_mysql(self):
         self._setUp_MySqlAppStatus_get()
-        dbaas.MySqlApp.stop_mysql = MagicMock()
-        self.manager.stop_mysql(self.context)
-        self.assertEqual(1, dbaas.MySqlApp.stop_mysql.call_count)
+        dbaas.MySqlApp.stop_db = MagicMock()
+        self.manager.stop_db(self.context)
+        self.assertEqual(1, dbaas.MySqlApp.stop_db.call_count)
 
     def _setUp_MySqlAppStatus_get(self):
         dbaas.MySqlAppStatus = Mock()

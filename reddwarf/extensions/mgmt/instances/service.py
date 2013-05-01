@@ -110,7 +110,7 @@ class MgmtInstanceController(InstanceController):
 
     def _action_stop(self, context, instance, body):
         LOG.debug("Stopping MySQL on instance %s." % instance.id)
-        instance.stop_mysql()
+        instance.stop_db()
         return wsgi.Result(None, 202)
 
     def _action_reboot(self, context, instance, body):

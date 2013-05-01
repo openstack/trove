@@ -221,11 +221,11 @@ class FakeGuest(object):
         time.sleep(1)
         self._set_status('RUNNING')
 
-    def start_mysql_with_conf_changes(self, updated_memory_size):
+    def start_db_with_conf_changes(self, updated_memory_size):
         time.sleep(2)
         self._set_status('RUNNING')
 
-    def stop_mysql(self, do_not_start_on_reboot=False):
+    def stop_db(self, do_not_start_on_reboot=False):
         self._set_status('SHUTDOWN')
 
     def get_volume_info(self):

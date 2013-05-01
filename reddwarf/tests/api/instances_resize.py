@@ -74,8 +74,8 @@ class ResizeTestBase(TestCase):
             self.mock.UnsetStubs()
             self.db_info.delete()
 
-    def _stop_mysql(self, reboot=True):
-        self.guest.stop_mysql(do_not_start_on_reboot=reboot)
+    def _stop_db(self, reboot=True):
+        self.guest.stop_db(do_not_start_on_reboot=reboot)
 
     def _server_changes_to(self, new_status, new_flavor_id):
         def change():
@@ -107,20 +107,20 @@ class ResizeTests(ResizeTestBase):
         self._teardown()
 
     def _start_mysql(self):
-        self.instance.guest.start_mysql_with_conf_changes(None)
+        self.instance.guest.start_db_with_conf_changes(None)
 
     def test_guest_wont_stop_mysql(self):
-        self.guest.stop_mysql(do_not_start_on_reboot=True)\
+        self.guest.stop_db(do_not_start_on_reboot=True)\
             .AndRaise(RPCException("Could not stop MySQL!"))
 
     def test_nova_wont_resize(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.resize(NEW_FLAVOR_ID).AndRaise(BadRequest)
         self.server.status = "ACTIVE"
         self.guest.restart()
 
     def test_nova_resize_timeout(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
 
         self.mock.StubOutWithMock(utils, 'poll_until')
@@ -128,7 +128,7 @@ class ResizeTests(ResizeTestBase):
             .AndRaise(PollTimeOut)
 
     def test_nova_doesnt_change_flavor(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
         self._server_changes_to("VERIFY_RESIZE", OLD_FLAVOR_ID)
         self.instance.server.revert_resize()
@@ -136,18 +136,18 @@ class ResizeTests(ResizeTestBase):
         self.guest.restart()
 
     def test_nova_resize_fails(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
         self._server_changes_to("ERROR", OLD_FLAVOR_ID)
 
     def test_nova_resizes_in_weird_state(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
         self._server_changes_to("ACTIVE", NEW_FLAVOR_ID)
         self.guest.restart()
 
     def test_guest_is_not_okay(self):
-        self._stop_mysql()
+        self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
         self.instance.service_status = ServiceStatuses.PAUSED
@@ -158,7 +158,7 @@ class ResizeTests(ResizeTestBase):
         self.guest.restart()
 
     def test_mysql_is_not_okay(self):
-        self._stop_mysql()
+        self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
         self.instance.service_status = ServiceStatuses.SHUTDOWN
@@ -169,7 +169,7 @@ class ResizeTests(ResizeTestBase):
         self.guest.restart()
 
     def test_confirm_resize_fails(self):
-        self._stop_mysql()
+        self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
         self.instance.service_status = ServiceStatuses.RUNNING
@@ -179,7 +179,7 @@ class ResizeTests(ResizeTestBase):
         self.instance.server.confirm_resize()
 
     def test_revert_nova_fails(self):
-        self._stop_mysql()
+        self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
         self.instance.service_status = ServiceStatuses.PAUSED
@@ -205,7 +205,7 @@ class MigrateTests(ResizeTestBase):
         self.guest.restart()
 
     def test_successful_migrate(self):
-        self._stop_mysql()
+        self._stop_db()
         self.server.migrate()
         self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
         self.instance._set_service_status_to_paused()

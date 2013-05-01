@@ -124,12 +124,12 @@ class ApiTest(testtools.TestCase):
         self.api.restart()
         self.assertEqual(1, self.rpc_call.call_count)
 
-    def test_start_mysql_with_conf_changes(self):
-        self.api.start_mysql_with_conf_changes(Mock)
+    def test_start_db_with_conf_changes(self):
+        self.api.start_db_with_conf_changes(Mock)
         self.assertEqual(1, self.rpc_call.call_count)
 
     def test_stop_mysql(self):
-        self.api.stop_mysql()
+        self.api.stop_db()
         self.assertEqual(1, self.rpc_call.call_count)
 
     def test_get_volume_info(self):

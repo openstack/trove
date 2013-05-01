@@ -113,8 +113,8 @@ class MgmtInstance(imodels.Instance):
     def get_diagnostics(self):
         return self.get_guest().get_diagnostics()
 
-    def stop_mysql(self):
-        return self.get_guest().stop_mysql()
+    def stop_db(self):
+        return self.get_guest().stop_db()
 
     def get_hwinfo(self):
         return self.get_guest().get_hwinfo()

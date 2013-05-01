@@ -362,8 +362,8 @@ class BuiltInstanceTasks(BuiltInstance):
 
     def reboot(self):
         try:
-            LOG.debug("Instance %s calling stop_mysql..." % self.id)
-            self.guest.stop_mysql()
+            LOG.debug("Instance %s calling stop_db..." % self.id)
+            self.guest.stop_db()
             LOG.debug("Rebooting instance %s" % self.id)
             self.server.reboot()
 
@@ -469,9 +469,9 @@ class ResizeActionBase(object):
     def execute(self):
         """Initiates the action."""
         try:
-            LOG.debug("Instance %s calling stop_mysql..."
+            LOG.debug("Instance %s calling stop_db..."
                       % self.instance.id)
-            self.instance.guest.stop_mysql(do_not_start_on_reboot=True)
+            self.instance.guest.stop_db(do_not_start_on_reboot=True)
             self._perform_nova_action()
         finally:
             self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
@@ -563,7 +563,7 @@ class ResizeAction(ResizeActionBase):
         self.instance.update_db(flavor_id=self.new_flavor_id)
 
     def _start_mysql(self):
-        self.instance.guest.start_mysql_with_conf_changes(self.new_memory_size)
+        self.instance.guest.start_db_with_conf_changes(self.new_memory_size)
 
 
 class MigrateAction(ResizeActionBase):
