@@ -81,6 +81,7 @@ class Query(object):
             self._group_by,
             self._limit,
         ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
 
@@ -119,7 +120,7 @@ class Grant(object):
                    ]
 
     def __init__(self, permissions=None, database=None, table=None, user=None,
-                 host=None, clear=None, hashed=None, grant_option=True):
+                 host=None, clear=None, hashed=None, grant_option=False):
         self.permissions = permissions or []
         self.database = database
         self.table = table
@@ -192,6 +193,7 @@ class Grant(object):
         whom = [("TO %s" % self._user_host),
                 self._identity,
                 ]
+        whom = [w for w in whom if w]
         return " ".join(whom)
 
     @property
@@ -212,6 +214,7 @@ class Grant(object):
                  self._whom,
                  self._with,
                  ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
 
@@ -232,6 +235,7 @@ class Revoke(Grant):
                  self._where,
                  self._whom,
                  ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
     @property
@@ -258,6 +262,7 @@ class Revoke(Grant):
         whom = [("FROM %s" % self._user_host),
                 self._identity,
                 ]
+        whom = [w for w in whom if w]
         return " ".join(whom)
 
 
@@ -288,6 +293,7 @@ class CreateDatabase(object):
                  self._charset,
                  self._collate,
                  ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
 
@@ -335,9 +341,10 @@ class CreateUser(object):
         return ""
 
     def __str__(self):
-        query = ["CREATE USER :user@:host"]
-        if self._identity:
-            query.append(self._identity)
+        query = ["CREATE USER :user@:host",
+                 self._identity,
+                 ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
 
@@ -377,6 +384,7 @@ class UpdateUser(object):
                  self._set_password,
                  self._where,
                  ]
+        query = [q for q in query if q]
         return " ".join(query) + ";"
 
 

@@ -77,7 +77,7 @@ class QueryTest(testtools.TestCase):
         grant = query.Grant()
         self.assertIsNotNone(grant)
         self.assertEqual("GRANT USAGE ON *.* "
-                         "TO ``@`%`  WITH GRANT OPTION;",
+                         "TO ``@`%`;",
                          str(grant))
 
     def test_grant_all_with_grant_option(self):
@@ -90,7 +90,8 @@ class QueryTest(testtools.TestCase):
         grant = query.Grant(permissions=permissions,
                             user=user_name,
                             host=host,
-                            clear=user_password)
+                            clear=user_password,
+                            grant_option=True)
 
         self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
                          "`root`@`localhost` "
@@ -106,7 +107,8 @@ class QueryTest(testtools.TestCase):
         grant = query.Grant(permissions=permissions,
                             user=user_name,
                             host=host,
-                            clear=user_password)
+                            clear=user_password,
+                            grant_option=True)
 
         self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
                          "`root`@`localhost` "
@@ -170,7 +172,7 @@ class QueryTest(testtools.TestCase):
                          "USAGE ON *.* TO "
                          "`root`@`localhost` "
                          "IDENTIFIED BY "
-                         "'password123' WITH GRANT OPTION;",
+                         "'password123';",
                          str(grant))
 
     def test_grant_specify_duplicate_permissions(self):
@@ -233,5 +235,5 @@ class QueryTest(testtools.TestCase):
                          "USAGE ON *.* TO "
                          "`root`@`localhost` "
                          "IDENTIFIED BY "
-                         "'password123' WITH GRANT OPTION;",
+                         "'password123';",
                          str(grant))
