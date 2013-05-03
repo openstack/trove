@@ -95,7 +95,7 @@ class UserController(wsgi.Controller):
             model_users = populate_users(users)
             models.User.create(context, instance_id, model_users)
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=e)
+            raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
@@ -110,8 +110,10 @@ class UserController(wsgi.Controller):
             user.host = host
             found_user = models.User.load(context, instance_id, username,
                                           host)
+            if not found_user:
+                user = None
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=e)
+            raise exception.BadRequest(msg=str(e))
         if not user:
             raise exception.UserNotFound(uuid=id)
         models.User.delete(context, instance_id, user.serialize())
@@ -127,7 +129,7 @@ class UserController(wsgi.Controller):
         try:
             user = models.User.load(context, instance_id, username, host)
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=e)
+            raise exception.BadRequest(msg=str(e))
         if not user:
             raise exception.UserNotFound(uuid=id)
         view = views.UserView(user)
@@ -147,9 +149,16 @@ class UserController(wsgi.Controller):
                 mu.name = user['name']
                 mu.host = user.get('host')
                 mu.password = user['password']
+                found_user = models.User.load(context, instance_id,
+                                              mu.name, mu.host)
+                if not found_user:
+                    user_and_host = mu.name
+                    if mu.host:
+                        user_and_host += '@' + mu.host
+                    raise exception.UserNotFound(uuid=user_and_host)
                 model_users.append(mu)
             except (ValueError, AttributeError) as e:
-                raise exception.BadRequest(msg=e)
+                raise exception.BadRequest(msg=str(e))
         models.User.change_password(context, instance_id, model_users)
         return wsgi.Result(None, 202)
 
@@ -175,7 +184,7 @@ class UserAccessController(wsgi.Controller):
         try:
             user = models.User.load(context, instance_id, username, hostname)
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=e)
+            raise exception.BadRequest(msg=str(e))
         if not user:
             raise exception.UserNotFound(uuid=user_id)
         return user
@@ -265,7 +274,7 @@ class SchemaController(wsgi.Controller):
             schema.name = id
             models.Schema.delete(context, instance_id, schema.serialize())
         except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=e)
+            raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):
