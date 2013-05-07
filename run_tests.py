@@ -141,6 +141,7 @@ if __name__ == "__main__":
         from reddwarf.tests.api.mgmt import instances
         from reddwarf.tests.api.mgmt import instances_actions
         from reddwarf.tests.api.mgmt import storage
+        from reddwarf.tests.api.mgmt import malformed_json
     except Exception as e:
         print("Run tests failed: %s" % e)
         traceback.print_exc()
