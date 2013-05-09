@@ -38,6 +38,7 @@ class FakeFlavor(object):
         self.name = name
         self.ram = ram
         self.vcpus = 10
+        self.ephemeral = 0
 
     @property
     def links(self):

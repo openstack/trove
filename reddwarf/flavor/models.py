@@ -28,7 +28,7 @@ from reddwarf.common.remote import create_nova_client
 
 class Flavor(object):
 
-    _data_fields = ['id', 'links', 'name', 'ram', 'vcpus']
+    _data_fields = ['id', 'links', 'name', 'ram', 'vcpus', 'ephemeral']
 
     def __init__(self, flavor=None, context=None, flavor_id=None):
         if flavor:
@@ -66,6 +66,10 @@ class Flavor(object):
     @property
     def links(self):
         return self.flavor.links
+
+    @property
+    def ephemeral(self):
+        return self.flavor.ephemeral
 
 
 class Flavors(NovaRemoteModelBase):
