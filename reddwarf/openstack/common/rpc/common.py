@@ -22,6 +22,7 @@ import sys
 import traceback
 
 from oslo.config import cfg
+#import six
 
 from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import importutils
@@ -300,6 +301,8 @@ def serialize_remote_exception(failure_info, log_failure=True):
     failure = failure_info[1]
     if log_failure:
         LOG.error(_("Returning exception %s to caller"), unicode(failure))
+#        LOG.error(_("Returning exception %s to caller"),
+#                  six.text_type(failure))
         LOG.error(tb)
 
     kwargs = {}
@@ -310,6 +313,7 @@ def serialize_remote_exception(failure_info, log_failure=True):
         'class': str(failure.__class__.__name__),
         'module': str(failure.__class__.__module__),
         'message': unicode(failure),
+#        'message': six.text_type(failure),
         'tb': tb,
         'args': failure.args,
         'kwargs': kwargs
