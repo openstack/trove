@@ -44,8 +44,9 @@ class BaseLimitTestSuite(testtools.TestCase):
 
     def setUp(self):
         super(BaseLimitTestSuite, self).setUp()
-        self.absolute_limits = {"maxTotalInstances": 55,
-                                "maxTotalVolumes": 100}
+        self.absolute_limits = {"max_instances": 55,
+                                "max_volumes": 100,
+                                "max_backups": 40}
 
 
 class LimitsControllerTest(BaseLimitTestSuite):
@@ -60,8 +61,7 @@ class LimitsControllerTest(BaseLimitTestSuite):
         when(QUOTAS).get_all_quotas_by_tenant(any()).thenReturn({})
 
         view = limit_controller.index(req, "test_tenant_id")
-        expected = {'limits': [{'maxTotalInstances': 0,
-                                'verb': 'ABSOLUTE', 'maxTotalVolumes': 0}]}
+        expected = {'limits': [{'verb': 'ABSOLUTE'}]}
         self.assertEqual(expected, view._data)
 
     def test_limit_index(self):
@@ -111,6 +111,10 @@ class LimitsControllerTest(BaseLimitTestSuite):
                                          resource="instances",
                                          hard_limit=100),
 
+                      "backups": Quota(tenant_id=tenant_id,
+                                       resource="backups",
+                                       hard_limit=40),
+
                       "volumes": Quota(tenant_id=tenant_id,
                                        resource="volumes",
                                        hard_limit=55)}
@@ -124,9 +128,10 @@ class LimitsControllerTest(BaseLimitTestSuite):
         expected = {
             'limits': [
                 {
-                    'maxTotalInstances': 100,
+                    'max_instances': 100,
+                    'max_backups': 40,
                     'verb': 'ABSOLUTE',
-                    'maxTotalVolumes': 55
+                    'max_volumes': 55
                 },
                 {
                     'regex': '.*',
@@ -752,9 +757,7 @@ class LimitsViewsTest(testtools.TestCase):
         self.assertIsNotNone(view_data)
 
         data = view_data.data()
-        expected = {'limits': [{'maxTotalInstances': 0,
-                                'verb': 'ABSOLUTE',
-                                'maxTotalVolumes': 0}]}
+        expected = {'limits': [{'verb': 'ABSOLUTE'}]}
 
         self.assertEqual(expected, data)
 
@@ -797,15 +800,16 @@ class LimitsViewsTest(testtools.TestCase):
                 "resetTime": 1311272226
             }
         ]
-        abs_view = {"instances": 55, "volumes": 100}
+        abs_view = {"instances": 55, "volumes": 100, "backups": 40}
 
         view_data = views.LimitViews(abs_view, rate_limits)
         self.assertIsNotNone(view_data)
 
         data = view_data.data()
-        expected = {'limits': [{'maxTotalInstances': 55,
+        expected = {'limits': [{'max_instances': 55,
+                                'max_backups': 40,
                                 'verb': 'ABSOLUTE',
-                                'maxTotalVolumes': 100},
+                                'max_volumes': 100},
                                {'regex': '.*',
                                 'nextAvailable': '2011-07-21T18:17:06Z',
                                 'uri': '*',

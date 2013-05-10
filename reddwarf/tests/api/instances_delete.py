@@ -1,6 +1,5 @@
 import time
 
-from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import *
@@ -11,6 +10,8 @@ from reddwarf.tests.util import create_dbaas_client
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.util import test_config
 from reddwarf.tests.util.users import Requirements
+from reddwarf.tests.api.instances import instance_info
+from reddwarf.tests.api.instances import VOLUME_SUPPORT
 
 
 class TestBase(object):
@@ -21,7 +22,12 @@ class TestBase(object):
         self.dbaas = create_dbaas_client(self.user)
 
     def create_instance(self, name, size=1):
-        result = self.dbaas.instances.create(name, 1, {'size': size}, [], [])
+        volume = None
+        if VOLUME_SUPPORT:
+            volume = {'size': size}
+        result = self.dbaas.instances.create(name,
+                                             instance_info.dbaas_flavor_href,
+                                             volume, [], [])
         return result.id
 
     def wait_for_instance_status(self, instance_id, status="ACTIVE"):
@@ -73,8 +79,12 @@ class ErroredInstanceDelete(TestBase):
         super(ErroredInstanceDelete, self).set_up()
         # Create an instance that fails during server prov.
         self.server_error = self.create_instance('test_SERVER_ERROR')
-        # Create an instance that fails during volume prov.
-        self.volume_error = self.create_instance('test_VOLUME_ERROR', size=9)
+        if VOLUME_SUPPORT:
+            # Create an instance that fails during volume prov.
+            self.volume_error = self.create_instance('test_VOLUME_ERROR',
+                                                     size=9)
+        else:
+            self.volume_error = None
         # Create an instance that fails during DNS prov.
         #self.dns_error = self.create_instance('test_DNS_ERROR')
         # Create an instance that fails while it's been deleted the first time.
@@ -85,7 +95,7 @@ class ErroredInstanceDelete(TestBase):
     def delete_server_error(self):
         self.delete_errored_instance(self.server_error)
 
-    @test
+    @test(enabled=VOLUME_SUPPORT)
     @time_out(20)
     def delete_volume_error(self):
         self.delete_errored_instance(self.volume_error)

@@ -32,13 +32,13 @@ FAKE_HOSTS = ["fake_host_1", "fake_host_2"]
 
 class FakeFlavor(object):
 
-    def __init__(self, id, disk, name, ram):
+    def __init__(self, id, disk, name, ram, ephemeral=0, vcpus=10):
         self.id = id
         self.disk = disk
         self.name = name
         self.ram = ram
-        self.vcpus = 10
-        self.ephemeral = 0
+        self.vcpus = vcpus
+        self.ephemeral = ephemeral
 
     @property
     def links(self):
@@ -69,6 +69,8 @@ class FakeFlavors(object):
         self._add(8, 2, "m1.rd-smaller", 768)
         self._add(9, 10, "tinier", 506)
         self._add(10, 2, "m1.rd-tiny", 512)
+        self._add(11, 0, "eph.rd-tiny", 512, 1)
+        self._add(12, 20, "eph.rd-smaller", 768, 2)
 
     def _add(self, *args, **kwargs):
         new_flavor = FakeFlavor(*args, **kwargs)

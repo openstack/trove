@@ -196,7 +196,7 @@ class InstanceController(wsgi.Controller):
             users = populate_users(body['instance'].get('users', []))
         except ValueError as ve:
             raise exception.BadRequest(msg=ve)
-        if body['instance'].get('volume', None) is not None:
+        if 'volume' in body['instance']:
             try:
                 volume_size = int(body['instance']['volume']['size'])
             except ValueError as e:

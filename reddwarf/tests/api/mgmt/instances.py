@@ -110,7 +110,8 @@ def mgmt_instance_get():
         server.has_element("name", basestring)
         server.has_element("status", basestring)
         server.has_element("tenant_id", basestring)
-    if CONFIG.reddwarf_main_instance_has_volume:
+    if (CONFIG.reddwarf_volume_support and
+            CONFIG.reddwarf_main_instance_has_volume):
         with CollectionCheck("volume", api_instance.volume) as volume:
             volume.has_element("attachments", list)
             volume.has_element("availability_zone", basestring)
@@ -134,8 +135,14 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
         # Fake volume will fail if the size is 13.
         # TODO(tim.simpson): This would be a lot nicer looking if we used a
         #                    traditional mock framework.
-        response = self.client.instances.create('test_SERVER_ERROR', 1,
-                                                {'size': 13}, [])
+        body = None
+        if CONFIG.reddwarf_volume_support:
+            body = {'size': 13}
+        response = self.client.instances.create(
+            'test_SERVER_ERROR',
+            instance_info.dbaas_flavor_href,
+            body,
+            [])
         poll_until(lambda: self.client.instances.get(response.id),
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
@@ -201,8 +208,10 @@ class MgmtInstancesIndex(object):
             'task_description',
             'tenant_id',
             'updated',
-            'volume',
         ]
+        if CONFIG.reddwarf_volume_support:
+            expected_fields.append('volume')
+
         index = self.client.management.index()
         for instance in index:
             with Check() as check:

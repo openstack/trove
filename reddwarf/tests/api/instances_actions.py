@@ -25,11 +25,14 @@ from proboscis import SkipTest
 from reddwarf import tests
 from reddwarf.tests.util.check import Checker
 from reddwarfclient.exceptions import BadRequest
+from reddwarfclient.exceptions import HTTPNotImplemented
 from reddwarfclient.exceptions import UnprocessableEntity
 from reddwarf.tests.api.instances import GROUP as INSTANCE_GROUP
 from reddwarf.tests.api.instances import GROUP_START
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests.api.instances import assert_unprocessable
+from reddwarf.tests.api.instances import VOLUME_SUPPORT
+from reddwarf.tests.api.instances import EPHEMERAL_SUPPORT
 from reddwarf.tests import util
 from reddwarf.tests.util.server_connection import create_server_connection
 from reddwarf.tests.util import poll_until
@@ -326,7 +329,7 @@ class StopTests(RebootTestBase):
         Confirms the get call behaves appropriately while an instance is
         down.
         """
-        if not CONFIG.reddwarf_volume_support:
+        if not VOLUME_SUPPORT:
             raise SkipTest("Not testing volumes.")
         instance = self.dbaas.instances.get(self.instance_id)
         with TypeCheck("instance", instance) as check:
@@ -416,14 +419,33 @@ class ResizeInstanceTest(ActionTestBase):
         assert_raises(BadRequest, self.dbaas.instances.resize_instance,
                       self.instance_id, self.flavor_id)
 
+    @test(enabled=VOLUME_SUPPORT)
+    def test_instance_resize_to_ephemeral_in_volume_support_should_fail(self):
+        flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
+                                        'eph.rd-smaller')
+        flavors = self.dbaas.find_flavors_by_name(flavor_name)
+        assert_raises(HTTPNotImplemented, self.dbaas.instances.resize_instance,
+                      self.instance_id, flavors[0].id)
+
+    @test(enabled=EPHEMERAL_SUPPORT)
+    def test_instance_resize_to_non_ephemeral_flavor_should_fail(self):
+        flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
+                                        'm1-small')
+        flavors = self.dbaas.find_flavors_by_name(flavor_name)
+        assert_raises(BadRequest, self.dbaas.instances.resize_instance,
+                      self.instance_id, flavors[0].id)
+
     def obtain_flavor_ids(self):
         old_id = self.instance.flavor['id']
         self.expected_old_flavor_id = old_id
         res = instance_info.dbaas.find_flavor_and_self_href(old_id)
         self.expected_dbaas_flavor, _dontcare_ = res
-
-        flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
-                                        'm1.small')
+        if EPHEMERAL_SUPPORT:
+            flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
+                                            'eph.rd-smaller')
+        else:
+            flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
+                                            'm1.small')
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
         assert_equal(len(flavors), 1, "Number of flavors with name '%s' "
                      "found was '%d'." % (flavor_name, len(flavors)))
@@ -548,7 +570,7 @@ def resize_should_not_delete_users():
 
 @test(runs_after=[ResizeInstanceTest], depends_on=[create_user],
       groups=[GROUP, tests.INSTANCES],
-      enabled=CONFIG.reddwarf_volume_support)
+      enabled=VOLUME_SUPPORT)
 class ResizeInstanceVolume(object):
     """ Resize the volume of the instance """
 

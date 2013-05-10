@@ -30,6 +30,8 @@ from reddwarf.tests import util
 from reddwarf.tests.util import create_client
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.util import test_config
+from reddwarf.tests.api.instances import VOLUME_SUPPORT
+from reddwarf.tests.api.instances import EPHEMERAL_SUPPORT
 
 
 @test(groups=["dbaas.api.instances.down"])
@@ -40,13 +42,21 @@ class TestBase(object):
     def set_up(self):
         self.client = create_client(is_admin=False)
         self.mgmt_client = create_client(is_admin=True)
-        flavor_name = test_config.values.get('instance_flavor_name', 'm1.tiny')
+
+        if EPHEMERAL_SUPPORT:
+            flavor_name = test_config.values.get('instance_eph_flavor_name',
+                                                 'eph.rd-tiny')
+            flavor2_name = test_config.values.get(
+                'instance_bigger_eph_flavor_name', 'eph.rd-smaller')
+        else:
+            flavor_name = test_config.values.get('instance_flavor_name',
+                                                 'm1.tiny')
+            flavor2_name = test_config.values.get(
+                'instance_bigger_flavor_name', 'm1.small')
         flavors = self.client.find_flavors_by_name(flavor_name)
         self.flavor_id = flavors[0].id
         self.name = "TEST_" + str(datetime.now())
         # Get the resize to flavor.
-        flavor2_name = test_config.values.get('instance_bigger_flavor_name',
-                                              'm1.small')
         flavors2 = self.client.find_flavors_by_name(flavor2_name)
         self.new_flavor_id = flavors2[0].id
         assert_not_equal(self.flavor_id, self.new_flavor_id)
@@ -58,8 +68,11 @@ class TestBase(object):
 
     @test
     def create_instance(self):
+        volume = None
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
         initial = self.client.instances.create(self.name, self.flavor_id,
-                                               {'size': 1}, [], [])
+                                               volume, [], [])
         self.id = initial.id
         self._wait_for_active()
 
@@ -82,7 +95,8 @@ class TestBase(object):
     def put_into_shutdown_state_2(self):
         self._shutdown_instance()
 
-    @test(depends_on=[put_into_shutdown_state_2])
+    @test(depends_on=[put_into_shutdown_state_2],
+          enabled=VOLUME_SUPPORT)
     @time_out(60 * 5)
     def resize_volume_in_shutdown_state(self):
         self.client.instances.resize_volume(self.id, 2)

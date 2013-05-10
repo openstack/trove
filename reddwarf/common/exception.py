@@ -157,6 +157,26 @@ class VolumeCreationFailure(ReddwarfError):
     message = _("Failed to create a volume in Nova.")
 
 
+class VolumeSizeNotSpecified(BadRequest):
+
+    message = _("Volume size was not specified.")
+
+
+class LocalStorageNotSpecified(BadRequest):
+
+    message = _("Local storage not specified in flavor ID: %(flavor)s.")
+
+
+class LocalStorageNotSupported(ReddwarfError):
+
+    message = _("Local storage support is not enabled.")
+
+
+class VolumeNotSupported(ReddwarfError):
+
+    message = _("Volume support is not enabled.")
+
+
 class TaskManagerError(ReddwarfError):
 
     message = _("An error occurred communicating with the task manager: "

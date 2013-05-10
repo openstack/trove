@@ -110,7 +110,22 @@ class QuotaControllerTest(testtools.TestCase):
         verify(quota, never).save()
         self.assertEquals(200, result.status)
 
-    def test_update_resource_(self):
+    def test_update_resource_instance(self):
+        instance_quota = mock(Quota)
+        when(DatabaseModelBase).find_by(
+            tenant_id=FAKE_TENANT2,
+            resource='instances').thenReturn(instance_quota)
+        body = {'quotas': {'instances': 2}}
+        result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                        FAKE_TENANT2)
+        verify(instance_quota, times=1).save()
+        self.assertTrue('instances' in result._data['quotas'])
+        self.assertEquals(200, result.status)
+        self.assertEquals(2, result._data['quotas']['instances'])
+
+    @testtools.skipIf(not CONF.reddwarf_volume_support,
+                      'Volume support is not enabled')
+    def test_update_resource_volume(self):
         instance_quota = mock(Quota)
         when(DatabaseModelBase).find_by(
             tenant_id=FAKE_TENANT2,
@@ -123,7 +138,7 @@ class QuotaControllerTest(testtools.TestCase):
         result = self.controller.update(self.req, body, FAKE_TENANT1,
                                         FAKE_TENANT2)
         verify(instance_quota, never).save()
-        self.assertFalse('instances' in result._data)
+        self.assertFalse('instances' in result._data['quotas'])
         verify(volume_quota, times=1).save()
         self.assertEquals(200, result.status)
         self.assertEquals(10, result._data['quotas']['volumes'])

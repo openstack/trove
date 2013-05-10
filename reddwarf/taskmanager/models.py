@@ -219,17 +219,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, service_type,
                                            volume_size):
-        volume_info = None
-        block_device_mapping = None
         server = None
-        try:
-            volume_info = self._create_volume(volume_size)
-            block_device_mapping = volume_info['block_device']
-        except Exception as e:
-            msg = "Error provisioning volume for instance."
-            err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
-            self._log_and_raise(e, msg, err)
-
+        volume_info = self._build_volume_info(volume_size)
+        block_device_mapping = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
                                          service_type, block_device_mapping)
@@ -242,6 +234,28 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
             self._log_and_raise(e, msg, err)
         return server, volume_info
 
+    def _build_volume_info(self, volume_size=None):
+        volume_info = None
+        volume_support = CONF.reddwarf_volume_support
+        LOG.debug(_("reddwarf volume support = %s") % volume_support)
+        if volume_support:
+            try:
+                volume_info = self._create_volume(volume_size)
+            except Exception as e:
+                msg = "Error provisioning volume for instance."
+                err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
+                self._log_and_raise(e, msg, err)
+        else:
+            LOG.debug(_("device_path = %s") % CONF.device_path)
+            LOG.debug(_("mount_point = %s") % CONF.mount_point)
+            volume_info = {
+                'block_device': None,
+                'device_path': CONF.device_path,
+                'mount_point': CONF.mount_point,
+                'volumes': None,
+            }
+        return volume_info
+
     def _log_and_raise(self, exc, message, task_status):
         LOG.error(message)
         LOG.error(exc)
@@ -252,18 +266,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
     def _create_volume(self, volume_size):
         LOG.info("Entering create_volume")
         LOG.debug(_("Starting to create the volume for the instance"))
-
-        volume_support = CONF.reddwarf_volume_support
-        LOG.debug(_("reddwarf volume support = %s") % volume_support)
-        if (volume_size is None or
-                volume_support is False):
-            volume_info = {
-                'block_device': None,
-                'device_path': None,
-                'mount_point': None,
-                'volumes': None,
-            }
-            return volume_info
 
         volume_client = create_nova_volume_client(self.context)
         volume_desc = ("mysql volume for %s" % self.id)

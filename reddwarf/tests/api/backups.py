@@ -67,7 +67,7 @@ class AfterBackupCreation(object):
     @test
     def test_instance_action_right_after_backup_create(self):
         """test any instance action while backup is running"""
-        assert_unprocessable(instance_info.dbaas.instances.resize_volume,
+        assert_unprocessable(instance_info.dbaas.instances.resize_instance,
                              instance_info.id, 1)
 
     @test

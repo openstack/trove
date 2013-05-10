@@ -68,6 +68,8 @@ class InstanceStatus(object):
 
 
 def validate_volume_size(size):
+    if size is None:
+        raise exception.VolumeSizeNotSpecified()
     max_size = CONF.max_accepted_volume_size
     if long(size) > max_size:
         msg = ("Volume 'size' cannot exceed maximum "
@@ -336,9 +338,11 @@ class BaseInstance(SimpleInstance):
             self.update_db(task_status=InstanceTasks.DELETING)
             task_api.API(self.context).delete_instance(self.id)
 
+        deltas = {'instances': -1}
+        if CONF.reddwarf_volume_support:
+            deltas['volumes'] = -self.volume_size
         return run_with_quotas(self.tenant_id,
-                               {'instances': -1,
-                                'volumes': -self.volume_size},
+                               deltas,
                                _delete_resources)
 
     def _delete_resources(self):
@@ -415,13 +419,25 @@ class Instance(BuiltInstance):
     def create(cls, context, name, flavor_id, image_id,
                databases, users, service_type, volume_size, backup_id):
 
+        client = create_nova_client(context)
+        try:
+            flavor = client.flavors.get(flavor_id)
+        except nova_exceptions.NotFound:
+            raise exception.FlavorNotFound(uuid=flavor_id)
+
+        deltas = {'instances': 1}
+        if CONF.reddwarf_volume_support:
+            validate_volume_size(volume_size)
+            deltas['volumes'] = volume_size
+        else:
+            if volume_size is not None:
+                raise exception.VolumeNotSupported()
+            ephemeral_support = CONF.device_path
+            if ephemeral_support and flavor.ephemeral == 0:
+                raise exception.LocalStorageNotSpecified(flavor=flavor_id)
+
         def _create_resources():
-            client = create_nova_client(context)
             security_groups = None
-            try:
-                flavor = client.flavors.get(flavor_id)
-            except nova_exceptions.NotFound:
-                raise exception.FlavorNotFound(uuid=flavor_id)
 
             if backup_id is not None:
                 backup_info = Backup.get_by_id(backup_id)
@@ -464,9 +480,8 @@ class Instance(BuiltInstance):
 
             return SimpleInstance(context, db_info, service_status)
 
-        validate_volume_size(volume_size)
         return run_with_quotas(context.tenant,
-                               {'instances': 1, 'volumes': volume_size},
+                               deltas,
                                _create_resources)
 
     def resize_flavor(self, new_flavor_id):
@@ -483,8 +498,18 @@ class Instance(BuiltInstance):
         old_flavor = client.flavors.get(self.flavor_id)
         new_flavor_size = new_flavor.ram
         old_flavor_size = old_flavor.ram
-        if new_flavor_size == old_flavor_size:
-            raise exception.CannotResizeToSameSize()
+        if CONF.reddwarf_volume_support:
+            if new_flavor.ephemeral != 0:
+                raise exception.LocalStorageNotSupported()
+            if new_flavor_size == old_flavor_size:
+                raise exception.CannotResizeToSameSize()
+        elif CONF.device_path is not None:
+            # ephemeral support enabled
+            if new_flavor.ephemeral == 0:
+                raise exception.LocalStorageNotSpecified(flavor=new_flavor_id)
+            if (new_flavor_size == old_flavor_size and
+                    new_flavor.ephemeral == new_flavor.ephemeral):
+                raise exception.CannotResizeToSameSize()
 
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)

@@ -4,6 +4,8 @@ from proboscis import after_class
 from proboscis import before_class
 from proboscis.asserts import Check
 from reddwarf.tests.config import CONFIG
+from reddwarf.tests.api.instances import instance_info
+from reddwarf.tests.api.instances import VOLUME_SUPPORT
 from reddwarfclient import exceptions
 import json
 import requests
@@ -22,10 +24,13 @@ class MalformedJson(object):
         self.reqs = Requirements(is_admin=False)
         self.user = CONFIG.users.find_user(self.reqs)
         self.dbaas = create_dbaas_client(self.user)
+        volume = None
+        if VOLUME_SUPPORT:
+            volume = {"size": 1}
         self.instance = self.dbaas.instances.create(
             name="qe_instance",
-            flavor_id=1,
-            volume={"size": 1},
+            flavor_id=instance_info.dbaas_flavor_href,
+            volume=volume,
             databases=[{"name": "firstdb", "character_set": "latin2",
                         "collate": "latin2_general_ci"}])
 

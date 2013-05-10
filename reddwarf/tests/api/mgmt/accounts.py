@@ -27,6 +27,7 @@ from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests.util import test_config
 from reddwarf.tests.util import create_dbaas_client
 from reddwarf.tests.util import poll_until
+from reddwarf.tests.config import CONFIG
 from reddwarf.tests.util.users import Requirements
 from reddwarf.tests.api.instances import existing_instance
 
@@ -188,8 +189,14 @@ class AccountWithBrokenInstance(object):
         self.client = create_dbaas_client(self.user)
         self.name = 'test_SERVER_ERROR'
         # Create an instance with a broken compute instance.
-        self.response = self.client.instances.create(self.name, 1,
-                                                     {'size': 1}, [])
+        volume = None
+        if CONFIG.reddwarf_volume_support:
+            volume = {'size': 1}
+        self.response = self.client.instances.create(
+            self.name,
+            instance_info.dbaas_flavor_href,
+            volume,
+            [])
         poll_until(lambda: self.client.instances.get(self.response.id),
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
