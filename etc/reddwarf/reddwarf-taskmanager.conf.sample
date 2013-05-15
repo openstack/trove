@@ -44,13 +44,19 @@ server_delete_time_out=480
 # These options are for an admin user in your keystone config.
 # It proxy's the token received from the user to send to nova via this admin users creds,
 # basically acting like the client via that proxy token.
-reddwarf_proxy_admin_user = admin
-reddwarf_proxy_admin_pass = 3de4922d8b6ac5a1aad9
-reddwarf_proxy_admin_tenant_name = admin
+nova_proxy_admin_user = admin
+nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
+nova_proxy_admin_tenant_name = admin
 reddwarf_auth_url = http://0.0.0.0:5000/v2.0
 
 # Manager impl for the taskmanager
 taskmanager_manager=reddwarf.taskmanager.manager.Manager
+
+# Manager sends Exists Notifications
+taskmanager_exists_notification = True
+exists_notification_transformer = reddwarf.extensions.mgmt.instances.models.NovaNotificationTransformer
+exists_notification_ticks = 30
+notification_service_id = 2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b
 
 # Reddwarf DNS
 reddwarf_dns_support = False
@@ -63,9 +69,6 @@ agent_call_high_timeout = 150
 # Whether to use nova's contrib api for create server with volume
 use_nova_server_volume = False
 
-# usage notifications
-notification_driver = reddwarf.tests.util.usage
-
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost
@@ -75,6 +78,10 @@ notifier_queue_ssl = False
 notifier_queue_port = 5672
 notifier_queue_virtual_host = /
 notifier_queue_transport = memory
+
+# usage notifications
+notification_driver=reddwarf.openstack.common.notifier.rpc_notifier
+control_exchange=reddwarf
 
 # ============ Logging information =============================
 #log_dir = /integration/report

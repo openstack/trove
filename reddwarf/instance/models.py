@@ -45,7 +45,7 @@ def load_server(context, instance_id, server_id):
     client = create_nova_client(context)
     try:
         server = client.servers.get(server_id)
-    except nova_exceptions.NotFound as e:
+    except nova_exceptions.NotFound:
         LOG.debug("Could not find nova server_id(%s)" % server_id)
         raise exception.ComputeInstanceNotFound(instance_id=instance_id,
                                                 server_id=server_id)
@@ -89,7 +89,7 @@ def load_simple_instance_server_status(context, db_info):
             server = client.servers.get(db_info.compute_instance_id)
             db_info.server_status = server.status
             db_info.addresses = server.addresses
-        except nova_exceptions.NotFound, e:
+        except nova_exceptions.NotFound:
             db_info.server_status = "SHUTDOWN"
             db_info.addresses = {}
 
@@ -250,8 +250,6 @@ def get_db_info(context, id):
         db_info = DBInstance.find_by(id=id, deleted=False)
     except exception.NotFound:
         raise exception.NotFound(uuid=id)
-    except exception.ModelNotFoundError:
-        raise exception.NotFound(uuid=id)
     if not context.is_admin and db_info.tenant_id != context.tenant:
         LOG.error("Tenant %s tried to access instance %s, owned by %s."
                   % (context.tenant, id, db_info.tenant_id))
@@ -264,7 +262,7 @@ def load_any_instance(context, id):
     # If that fails, try to load it without the server.
     try:
         return load_instance(BuiltInstance, context, id, needs_server=True)
-    except exception.UnprocessableEntity as upe:
+    except exception.UnprocessableEntity:
         LOG.warn("Could not load instance %s." % id)
         return load_instance(FreshInstance, context, id, needs_server=False)
 
@@ -572,7 +570,6 @@ class Instance(BuiltInstance):
         """
         Raises exception if an instance action cannot currently be performed.
         """
-        status = None
         if self.db_info.server_status != 'ACTIVE':
             status = self.db_info.server_status
         elif self.db_info.task_status != InstanceTasks.NONE:
@@ -616,7 +613,7 @@ class Instances(object):
     @staticmethod
     def load(context):
 
-        def load_simple_instance(context, db, status):
+        def load_simple_instance(context, db, status, **kwargs):
             return SimpleInstance(context, db, status)
 
         if context is None:
@@ -662,16 +659,16 @@ class Instances(object):
                 #volumes = find_volumes(server.id)
                 status = InstanceServiceStatus.find_by(instance_id=db.id)
                 LOG.info(_("Server api_status(%s)") %
-                         (status.status.api_status))
+                         status.status.api_status)
                 if not status.status:  # This should never happen.
                     LOG.error(_("Server status could not be read for "
-                                "instance id(%s)") % (db.id))
+                                "instance id(%s)") % db.id)
                     continue
             except exception.ModelNotFoundError:
                 LOG.error(_("Server status could not be read for "
-                            "instance id(%s)") % (db.id))
+                            "instance id(%s)") % db.id)
                 continue
-            ret.append(load_instance(context, db, status))
+            ret.append(load_instance(context, db, status, server=server))
         return ret
 
 
@@ -684,7 +681,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
                     'task_id', 'task_description', 'task_start_time',
                     'volume_id', 'deleted', 'tenant_id']
 
-    def __init__(self, task_status=None, **kwargs):
+    def __init__(self, task_status, **kwargs):
         kwargs["task_id"] = task_status.code
         kwargs["task_description"] = task_status.db_text
         kwargs["deleted"] = False
@@ -717,7 +714,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
 
     _data_fields = ['instance_id', 'status_id', 'status_description']
 
-    def __init__(self, status=None, **kwargs):
+    def __init__(self, status, **kwargs):
         kwargs["status_id"] = status.code
         kwargs["status_description"] = status.description
         super(InstanceServiceStatus, self).__init__(**kwargs)

@@ -48,6 +48,16 @@ def nova_client(context):
     return client
 
 
+def create_admin_nova_client(context):
+    """
+    Creates client that uses reddwarf admin credentials
+    :return: a client for nova for the reddwarf admin
+    """
+    client = create_nova_client(context)
+    client.client.auth_token = None
+    return client
+
+
 def nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
