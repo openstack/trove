@@ -34,7 +34,6 @@ if os.path.exists(os.path.join(possible_topdir, 'reddwarf', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
 from reddwarf.common import cfg
-from reddwarf.openstack.common import service
 from reddwarf.openstack.common import log as logging
 from reddwarf.common import wsgi
 from reddwarf.db import get_db_api
@@ -49,7 +48,8 @@ if __name__ == '__main__':
     try:
         get_db_api().configure_db(CONF)
         conf_file = CONF.find_file(CONF.api_paste_config)
-        launcher = wsgi.launch('reddwarf', CONF.bind_port or 8779, conf_file)
+        launcher = wsgi.launch('reddwarf', CONF.bind_port or 8779, conf_file,
+                               workers=CONF.reddwarf_api_workers)
         launcher.wait()
     except RuntimeError as error:
         import traceback

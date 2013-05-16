@@ -17,6 +17,9 @@ bind_host = 0.0.0.0
 # Port the bind the API server to
 bind_port = 8779
 
+# Number of child processes to run
+#reddwarf_api_workers=5
+
 # AMQP Connection info
 rabbit_password=f7999d1955c5014aa32c
 

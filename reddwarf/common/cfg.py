@@ -113,6 +113,7 @@ common_opts = [
     cfg.BoolOpt('reddwarf_security_groups_support', default=True),
     cfg.StrOpt('reddwarf_security_group_rule_protocol', default='tcp'),
     cfg.IntOpt('reddwarf_security_group_rule_port', default=3306),
+    cfg.IntOpt('reddwarf_api_workers', default=None),
     cfg.IntOpt('usage_sleep_time', default=1,
                help="Time to sleep during the check active guest"),
     cfg.IntOpt('usage_timeout', default=300,
