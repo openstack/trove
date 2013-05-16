@@ -19,13 +19,26 @@
 
 import inspect
 import os
+import kombu
 
 from reddwarf.openstack.common import importutils
 from reddwarf.openstack.common import loopingcall
+from reddwarf.openstack.common import rpc as openstack_rpc
 from reddwarf.openstack.common.rpc import service as rpc_service
 from reddwarf.common import cfg
 
 CONF = cfg.CONF
+
+
+def delete_queue(context, topic):
+    if CONF.rpc_backend == "reddwarf.openstack.common.rpc.impl_kombu":
+        connection = openstack_rpc.create_connection()
+        channel = connection.channel
+        durable = connection.conf.rabbit_durable_queues
+        queue = kombu.entity.Queue(name=topic, channel=channel,
+                                   auto_delete=False, exclusive=False,
+                                   durable=durable)
+        queue.delete()
 
 
 class RpcService(rpc_service.Service):
