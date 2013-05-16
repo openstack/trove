@@ -11,13 +11,14 @@ reddwarf/vcsversion.py
 .coverage
 cover/
 .DS_Store
+dist/
 host-syslog.log
 tags
 .tox
 rdtest.log
 reddwarf/versioninfo
 AUTHORS
-Changelog
+ChangeLog
 reddwarf.iml
 atlassian-ide-plugin.xml
 .testrepository

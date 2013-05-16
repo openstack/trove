@@ -14,7 +14,7 @@ openstack.nose_plugin
 webtest
 wsgi_intercept
 proboscis==1.2.5.3
-https://github.com/stackforge/python-reddwarfclient/tarball/master
+https://github.com/stackforge/python-reddwarfclient/tarball/master#egg=python-reddwarfclient
 mock
 mox
 testtools>=0.9.22
