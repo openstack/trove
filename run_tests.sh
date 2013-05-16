@@ -81,13 +81,6 @@ function run_tests {
 
 function run_pep8 {
   echo "Running pep8 ..."
-  # Opt-out files from pep8
-  ignore_scripts="*.sh:*reddwarf-debug:*clean-vlans"
-  ignore_files="*eventlet-patch:*pip-requires:*test-requires"
-  GLOBIGNORE="$ignore_scripts:$ignore_files"
-  srcfiles=`find bin -type f ! -name "reddwarf.conf*"`
-  srcfiles+=" `find tools/*`"
-  srcfiles+=" setup.py bin reddwarf"
   # Just run PEP8 in current environment
   #
   # NOTE(sirp): W602 (deprecated 3-arg raise) is being ignored for the
@@ -104,9 +97,7 @@ function run_pep8 {
   #     other than what the PEP8 tool claims. It is deprecated in Python 3, so,
   #     perhaps the mistake was thinking that the deprecation applied to Python 2
   #     as well.
-  ${wrapper} pep8 --repeat --show-pep8 --show-source \
-    --ignore=E202,W602 \
-    --exclude=vcsversion.py ${srcfiles}
+  ${wrapper} flake8
 }
 
 NOSETESTS="python run_tests.py $noseopts $noseargs"

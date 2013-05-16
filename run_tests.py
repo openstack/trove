@@ -117,7 +117,8 @@ if __name__ == "__main__":
         app = initialize_reddwarf(config_file)
         # Initialize sqlite database.
         initialize_database()
-        # Swap out WSGI, httplib, and several sleep functions with test doubles.
+        # Swap out WSGI, httplib, and several sleep functions
+        # with test doubles.
         initialize_fakes(app)
         # Initialize the test configuration.
         test_config_file = parse_args_for_test_config()
