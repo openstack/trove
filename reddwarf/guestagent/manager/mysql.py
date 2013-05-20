@@ -184,7 +184,7 @@ def get_engine():
 def load_mysqld_options():
     try:
         out, err = utils.execute("/usr/sbin/mysqld", "--print-defaults",
-                                 run_as_root=True)
+                                 run_as_root=True, root_helper="sudo")
         arglist = re.split("\n", out)[1].split()
         args = {}
         for item in arglist:
@@ -256,7 +256,7 @@ class MySqlAppStatus(object):
         try:
             out, err = utils.execute_with_timeout(
                 "/usr/bin/mysqladmin",
-                "ping", run_as_root=True)
+                "ping", run_as_root=True, root_helper="sudo")
             LOG.info("Service Status is RUNNING.")
             return rd_models.ServiceStatuses.RUNNING
         except ProcessExecutionError as e:
@@ -791,7 +791,7 @@ class MySqlApp(object):
             command = command % locals()
         else:
             command = "sudo update-rc.d mysql enable"
-        utils.execute_with_timeout(command, with_shell=True)
+        utils.execute_with_timeout(command, shell=True)
 
     def _disable_mysql_on_boot(self):
         '''
@@ -809,7 +809,7 @@ class MySqlApp(object):
             command = command % locals()
         else:
             command = "sudo update-rc.d mysql disable"
-        utils.execute_with_timeout(command, with_shell=True)
+        utils.execute_with_timeout(command, shell=True)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         LOG.info(_("Stopping mysql..."))

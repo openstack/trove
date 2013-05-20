@@ -645,7 +645,7 @@ class UpdateGuest(object):
     @test(enabled=UPDATE_GUEST_CONF is not None)
     def upload_update_to_repo(self):
         cmds = UPDATE_GUEST_CONF["install-repo-cmd"]
-        utils.execute(*cmds, run_as_root=True)
+        utils.execute(*cmds, run_as_root=True, root_helper="sudo")
 
     @test(enabled=UPDATE_GUEST_CONF is not None,
           depends_on=[upload_update_to_repo])

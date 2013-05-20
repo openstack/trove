@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2011 OpenStack LLC.
+# Copyright 2011 OpenStack Foundation.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -17,15 +17,22 @@
 
 """Utility methods for working with WSGI servers."""
 
-import datetime
-import eventlet
-import eventlet.wsgi
+from __future__ import print_function
 
+import eventlet
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
+import datetime
+import errno
+import socket
+import sys
+import time
+
+import eventlet.wsgi
+from oslo.config import cfg
 import routes
 import routes.middleware
-import sys
+#import six
 import webob.dec
 import webob.exc
 from xml.dom import minidom
@@ -36,15 +43,29 @@ from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import jsonutils
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import service
+from reddwarf.openstack.common import sslutils
+from reddwarf.openstack.common import xmlutils
 
+socket_opts = [
+    cfg.IntOpt('backlog',
+               default=4096,
+               help="Number of backlog requests to configure the socket with"),
+    cfg.IntOpt('tcp_keepidle',
+               default=600,
+               help="Sets the value of TCP_KEEPIDLE in seconds for each "
+                    "server socket. Not supported on OS X."),
+]
+
+CONF = cfg.CONF
+CONF.register_opts(socket_opts)
 
 LOG = logging.getLogger(__name__)
 
 
-def run_server(application, port):
+def run_server(application, port, **kwargs):
     """Run a WSGI server with the given application."""
     sock = eventlet.listen(('0.0.0.0', port))
-    eventlet.wsgi.server(sock, application)
+    eventlet.wsgi.server(sock, application, **kwargs)
 
 
 class Service(service.Service):
@@ -56,12 +77,54 @@ class Service(service.Service):
     """
 
     def __init__(self, application, port,
-                 host='0.0.0.0', backlog=128, threads=1000):
+                 host='0.0.0.0', backlog=4096, threads=1000):
         self.application = application
         self._port = port
         self._host = host
-        self.backlog = backlog
+        self._backlog = backlog if backlog else CONF.backlog
+        self._socket = self._get_socket(host, port, self._backlog)
         super(Service, self).__init__(threads)
+
+    def _get_socket(self, host, port, backlog):
+        # TODO(dims): eventlet's green dns/socket module does not actually
+        # support IPv6 in getaddrinfo(). We need to get around this in the
+        # future or monitor upstream for a fix
+        info = socket.getaddrinfo(host,
+                                  port,
+                                  socket.AF_UNSPEC,
+                                  socket.SOCK_STREAM)[0]
+        family = info[0]
+        bind_addr = info[-1]
+
+        sock = None
+        retry_until = time.time() + 30
+        while not sock and time.time() < retry_until:
+            try:
+                sock = eventlet.listen(bind_addr,
+                                       backlog=backlog,
+                                       family=family)
+                if sslutils.is_enabled():
+                    sock = sslutils.wrap(sock)
+
+            except socket.error as err:
+                if err.args[0] != errno.EADDRINUSE:
+                    raise
+                eventlet.sleep(0.1)
+        if not sock:
+            raise RuntimeError(_("Could not bind to %(host)s:%(port)s "
+                               "after trying for 30 seconds") %
+                               {'host': host, 'port': port})
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # sockets can hang around forever without keepalive
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+
+        # This option isn't available in the OS X version of eventlet
+        if hasattr(socket, 'TCP_KEEPIDLE'):
+            sock.setsockopt(socket.IPPROTO_TCP,
+                            socket.TCP_KEEPIDLE,
+                            CONF.tcp_keepidle)
+
+        return sock
 
     def start(self):
         """Start serving this service using the provided server instance.
@@ -70,9 +133,11 @@ class Service(service.Service):
 
         """
         super(Service, self).start()
-        self._socket = eventlet.listen((self._host, self._port),
-                                       backlog=self.backlog)
         self.tg.add_thread(self._run, self.application, self._socket)
+
+    @property
+    def backlog(self):
+        return self._backlog
 
     @property
     def host(self):
@@ -93,7 +158,9 @@ class Service(service.Service):
     def _run(self, application, socket):
         """Start a WSGI server in a new green thread."""
         logger = logging.getLogger('eventlet.wsgi')
-        eventlet.wsgi.server(socket, application, custom_pool=self.tg.pool,
+        eventlet.wsgi.server(socket,
+                             application,
+                             custom_pool=self.tg.pool,
                              log=logging.WritableLogger(logger))
 
 
@@ -139,16 +206,16 @@ class Debug(Middleware):
 
     @webob.dec.wsgify
     def __call__(self, req):
-        print ("*" * 40) + " REQUEST ENVIRON"
+        print(("*" * 40) + " REQUEST ENVIRON")
         for key, value in req.environ.items():
-            print key, "=", value
-        print
+            print(key, "=", value)
+        print()
         resp = req.get_response(self.application)
 
-        print ("*" * 40) + " RESPONSE HEADERS"
+        print(("*" * 40) + " RESPONSE HEADERS")
         for (key, value) in resp.headers.iteritems():
-            print key, "=", value
-        print
+            print(key, "=", value)
+        print()
 
         resp.app_iter = self.print_generator(resp.app_iter)
 
@@ -160,12 +227,12 @@ class Debug(Middleware):
         Iterator that prints the contents of a wrapper string iterator
         when iterated.
         """
-        print ("*" * 40) + " BODY"
+        print(("*" * 40) + " BODY")
         for part in app_iter:
             sys.stdout.write(part)
             sys.stdout.flush()
             yield part
-        print
+        print()
 
 
 class Router(object):
@@ -257,7 +324,7 @@ class Request(webob.Request):
         Does not do any body introspection, only checks header
 
         """
-        if not "Content-Type" in self.headers:
+        if "Content-Type" not in self.headers:
             return None
 
         content_type = self.content_type
@@ -388,6 +455,7 @@ class JSONDictSerializer(DictSerializer):
                 _dtime = obj - datetime.timedelta(microseconds=obj.microsecond)
                 return _dtime.isoformat()
             return obj
+#            return six.text_type(obj)
         return jsonutils.dumps(data, default=sanitizer)
 
 
@@ -680,7 +748,7 @@ class XMLDeserializer(TextDeserializer):
         plurals = set(self.metadata.get('plurals', {}))
 
         try:
-            node = minidom.parseString(datastring).childNodes[0]
+            node = xmlutils.safe_minidom_parse_string(datastring).childNodes[0]
             return {node.nodeName: self._from_xml_node(node, plurals)}
         except expat.ExpatError:
             msg = _("cannot understand XML")

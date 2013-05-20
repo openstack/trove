@@ -103,3 +103,16 @@ notifier_queue_transport = memory
 #log_dir = /integration/report
 #log_file = reddwarf-api.log
 
+
+# ============ SSL configuration (and enablement) =============================
+# In order to enable SSL for the reddwarf api server, uncomment
+# the cert_file and key_file - and of course have those files
+# accessible. The existance of those setting and files will
+# enable SSL.
+
+[ssl]
+
+#cert_file = /path/to/server.crt
+#key_file = /path/to/server.key
+#optional:
+#ca_file = /path/to/ca_file
