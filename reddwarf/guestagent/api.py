@@ -23,7 +23,7 @@ from eventlet import Timeout
 
 from reddwarf.common import cfg
 from reddwarf.common import exception
-from reddwarf.common import utils
+from reddwarf.common import rpc as rd_rpc
 from reddwarf.guestagent import models as agent_models
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import rpc
@@ -90,7 +90,9 @@ class API(proxy.RpcProxy):
 
     def delete_queue(self):
         """Deletes the queue."""
-        rpc.delete_queue(self.context, self._get_routing_key())
+        topic = self._get_routing_key()
+        LOG.debug("Deleting queue with name %s." % topic)
+        rd_rpc.delete_queue(self.context, topic)
 
     def _get_routing_key(self):
         """Create the routing key based on the container id"""
