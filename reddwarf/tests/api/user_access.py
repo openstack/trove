@@ -144,6 +144,26 @@ class TestUserAccessPasswordChange(UserAccessBase):
         return choice(users)  # Pick one, it doesn't matter.
 
     @test()
+    def test_change_password_bogus_user(self):
+        user = self._pick_a_user()
+        user["name"] = "thisuserhasanamethatstoolong"
+        password = user["password"]
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.change_passwords,
+                      instance_info.id, [user])
+        assert_equal(400, self.dbaas.last_http_code)
+
+    @test()
+    def test_change_password_nonexistent_user(self):
+        user = self._pick_a_user()
+        user["name"] = "thisuserDNE"
+        password = user["password"]
+        assert_raises(exceptions.NotFound,
+                      self.dbaas.users.change_passwords,
+                      instance_info.id, [user])
+        assert_equal(404, self.dbaas.last_http_code)
+
+    @test()
     def test_create_user_and_dbs(self):
         users = self._user_list_from_names(self.users)
         # Default password for everyone is 'password'.

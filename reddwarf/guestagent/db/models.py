@@ -400,9 +400,9 @@ class MySQLUser(Base):
     @name.setter
     def name(self, value):
         if not self._is_valid_user_name(value):
-            raise ValueError("'%s' is not a valid user name" % value)
+            raise ValueError("'%s' is not a valid user name." % value)
         elif len(value) > 16:
-            raise ValueError("User name '%s' is too long. Max length = 16" %
+            raise ValueError("User name '%s' is too long. Max length = 16." %
                              value)
         else:
             self._name = value
@@ -414,7 +414,7 @@ class MySQLUser(Base):
     @password.setter
     def password(self, value):
         if not self._is_valid(value):
-            raise ValueError("'%s' is not a valid password" % value)
+            raise ValueError("'%s' is not a valid password." % value)
         else:
             self._password = value
 
@@ -437,7 +437,7 @@ class MySQLUser(Base):
     @host.setter
     def host(self, value):
         if not self._is_valid_host_name(value):
-            raise ValueError("'%s' is not a valid hostname" % value)
+            raise ValueError("'%s' is not a valid hostname." % value)
         else:
             self._host = value
 

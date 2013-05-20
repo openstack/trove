@@ -82,6 +82,12 @@ class TestUsers(object):
         self.dbaas.databases.delete(instance_info.id, self.db2)
 
     @test()
+    def test_delete_nonexistent_user(self):
+        assert_raises(exceptions.NotFound, self.dbaas.users.delete,
+                      instance_info.id, "thisuserDNE")
+        assert_equal(404, self.dbaas.last_http_code)
+
+    @test()
     def test_create_users(self):
         users = []
         users.append({"name": self.username, "password": self.password,
