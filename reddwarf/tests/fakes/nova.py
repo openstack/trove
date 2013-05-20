@@ -118,6 +118,7 @@ class FakeServer(object):
             volume.set_attachment(id)
         self.host = FAKE_HOSTS[0]
         self.old_host = None
+        setattr(self, 'OS-EXT-AZ:availability_zone', 'nova')
 
         self._info = {'os:volumes': info_vols}
 

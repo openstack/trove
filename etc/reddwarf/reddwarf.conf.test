@@ -94,6 +94,9 @@ dns_time_out = 120
 resize_time_out = 120
 revert_time_out = 120
 
+# usage notifications
+notification_driver = reddwarf.tests.util.usage
+
 # ============ notifer queue kombu connection options ========================
 
 notifier_queue_hostname = localhost

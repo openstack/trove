@@ -35,6 +35,7 @@ from reddwarf.tests.util.server_connection import create_server_connection
 from reddwarf.tests.util import poll_until
 from reddwarf.tests.config import CONFIG
 from reddwarf.tests.util import LocalSqlClient
+from reddwarf.tests.util import iso_time
 from sqlalchemy import create_engine
 from sqlalchemy import exc as sqlalchemy_exc
 from reddwarf.tests.util.check import TypeCheck
@@ -439,8 +440,6 @@ class ResizeInstanceTest(ActionTestBase):
     def test_status_changed_to_resize(self):
         self.log_current_users()
         self.obtain_flavor_ids()
-        if CONFIG.simulate_events:
-            raise SkipTest("Cannot simulate this test.")
         self.dbaas.instances.resize_instance(
             self.instance_id,
             self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
@@ -457,7 +456,27 @@ class ResizeInstanceTest(ActionTestBase):
     def test_instance_returns_to_active_after_resize(self):
         self.wait_for_resize()
 
-    @test(depends_on=[test_instance_returns_to_active_after_resize])
+    @test(depends_on=[test_instance_returns_to_active_after_resize,
+                      test_status_changed_to_resize],
+          groups=["dbaas.usage"])
+    def test_resize_instance_usage_event_sent(self):
+        expected = {
+            'old_instance_size': self.old_dbaas_flavor.ram,
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': iso_time(instance_info.initial_result.created),
+            'launched_at': iso_time(self.instance.updated),
+            'modify_at': iso_time(self.instance.updated),
+        }
+
+        instance_info.consumer.check_message(instance_info.id,
+                                             'reddwarf.instance.modify_flavor',
+                                             **expected)
+
+    @test(depends_on=[test_instance_returns_to_active_after_resize],
+          runs_after=[test_resize_instance_usage_event_sent])
     def resize_should_not_delete_users(self):
         """Resize should not delete users."""
         # Resize has an incredibly weird bug where users are deleted after
@@ -477,15 +496,11 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_instance_returns_to_active_after_resize],
           runs_after=[resize_should_not_delete_users])
     def test_make_sure_mysql_is_running_after_resize(self):
-        if CONFIG.simulate_events:
-            raise SkipTest("Cannot simulate this test.")
         self.ensure_mysql_is_running()
 
     @test(depends_on=[test_instance_returns_to_active_after_resize],
           runs_after=[test_make_sure_mysql_is_running_after_resize])
     def test_instance_has_new_flavor_after_resize(self):
-        if CONFIG.simulate_events:
-            raise SkipTest("Cannot simulate this test.")
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
         assert_equal(actual, expected)
@@ -493,8 +508,6 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_instance_has_new_flavor_after_resize])
     @time_out(TIME_OUT_TIME)
     def test_resize_down(self):
-        if CONFIG.simulate_events:
-            raise SkipTest("Cannot simulate this test.")
         expected_dbaas_flavor = self.expected_dbaas_flavor
         self.dbaas.instances.resize_instance(
             self.instance_id,
@@ -505,6 +518,23 @@ class ResizeInstanceTest(ActionTestBase):
         self.wait_for_resize()
         assert_equal(str(self.instance.flavor['id']),
                      str(self.expected_old_flavor_id))
+
+    @test(depends_on=[test_resize_down],
+          groups=["dbaas.usage"])
+    def test_resize_instance_down_usage_event_sent(self):
+        expected = {
+            'old_instance_size': self.old_dbaas_flavor.ram,
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': iso_time(instance_info.initial_result.created),
+            'launched_at': iso_time(self.instance.updated),
+            'modify_at': iso_time(self.instance.updated),
+        }
+        instance_info.consumer.check_message(instance_info.id,
+                                             'reddwarf.instance.modify_flavor',
+                                             **expected)
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP,
@@ -556,6 +586,24 @@ class ResizeInstanceVolume(object):
         poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal(instance.volume['size'], self.new_volume_size)
+
+    @test(depends_on=[test_volume_resize_success], groups=["dbaas.usage"])
+    def test_resize_volume_usage_event_sent(self):
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        expected = {
+            'old_volume_size': self.old_volume_size,
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': iso_time(instance_info.initial_result.created),
+            'launched_at': iso_time(instance.updated),
+            'modify_at': iso_time(instance.updated),
+            'volume_size': self.new_volume_size,
+        }
+        instance_info.consumer.check_message(instance_info.id,
+                                             'reddwarf.instance.modify_volume',
+                                             **expected)
 
     @test
     @time_out(300)

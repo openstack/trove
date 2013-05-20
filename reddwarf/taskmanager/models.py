@@ -43,6 +43,8 @@ from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.instance.views import get_ip_address
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
+from reddwarf.openstack.common.notifier import api as notifier
+from reddwarf.openstack.common import timeutils
 
 
 LOG = logging.getLogger(__name__)
@@ -51,11 +53,64 @@ VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
 DNS_TIME_OUT = CONF.dns_time_out  # seconds.
 RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
 REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
+USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
+USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 
 use_nova_server_volume = CONF.use_nova_server_volume
 
 
-class FreshInstanceTasks(FreshInstance):
+class NotifyMixin(object):
+    """Notification Mixin
+
+    This adds the ability to send usage events to an Instance object.
+    """
+
+    def send_usage_event(self, event_type, **kwargs):
+        event_type = 'reddwarf.instance.%s' % event_type
+        publisher_id = CONF.host
+
+        # Grab the instance size from the kwargs or from the nova client
+        instance_size = kwargs.pop('instance_size', None)
+        flavor = self.nova_client.flavors.get(self.flavor_id)
+        server = kwargs.pop('server', None)
+        if server is None:
+            server = self.nova_client.servers.get(self.server_id)
+        az = getattr(server, 'OS-EXT-AZ:availability_zone', None)
+
+        # Default payload
+        created_time = timeutils.isotime(self.db_info.created)
+        payload = {
+            'availability_zone': az,
+            'created_at': created_time,
+            'display_name': self.name,
+            'instance_id': self.id,
+            'instance_name': self.name,
+            'instance_size': instance_size or flavor.ram,
+            'instance_type': flavor.name,
+            'instance_type_id': flavor.id,
+            'launched_at': created_time,
+            'nova_instance_id': self.server_id,
+            'region': CONF.region,
+            'state_description': self.status,
+            'state': self.status,
+            'tenant_id': self.tenant_id,
+            'user_id': self.context.user,
+        }
+
+        if CONF.reddwarf_volume_support:
+            payload.update({
+                'volume_size': self.volume_size,
+                'nova_volume_id': self.volume_id
+            })
+
+        # Update payload with all other kwargs
+        payload.update(kwargs)
+        LOG.debug('Sending event: %s, %s' % (event_type, payload))
+        notifier.notify(self.context, publisher_id, event_type, 'INFO',
+                        payload)
+
+
+class FreshInstanceTasks(FreshInstance, NotifyMixin):
 
     def create_instance(self, flavor_id, flavor_ram, image_id,
                         databases, users, service_type, volume_size,
@@ -87,6 +142,46 @@ class FreshInstanceTasks(FreshInstance):
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
+
+        # Make sure the service becomes active before sending a usage
+        # record to avoid over billing a customer for an instance that
+        # fails to build properly.
+        try:
+            utils.poll_until(self._service_is_active,
+                             sleep_time=USAGE_SLEEP_TIME,
+                             time_out=USAGE_TIMEOUT)
+            self.send_usage_event('create', instance_size=flavor_ram)
+        except PollTimeOut:
+            LOG.error("Timeout for service changing to active. "
+                      "No usage create-event sent.")
+        except Exception:
+            LOG.exception("Error during create-event call.")
+
+    def _service_is_active(self):
+        """
+        Check that the database guest is active.
+
+        This function is meant to be called with poll_until to check that
+        the guest is alive before sending a 'create' message. This prevents
+        over billing a customer for a instance that they can never use.
+
+        Returns: boolean if the service is active.
+        Raises: ReddwarfError if the service is in a failure state.
+        """
+        service = InstanceServiceStatus.find_by(instance_id=self.id)
+        status = service.get_status()
+        if status == ServiceStatuses.RUNNING:
+            return True
+        elif status not in [ServiceStatuses.NEW,
+                            ServiceStatuses.BUILDING]:
+            raise ReddwarfError("Service not active, status: %s" % status)
+
+        c_id = self.db_info.compute_instance_id
+        nova_status = self.nova_client.servers.get(c_id).status
+        if nova_status in [InstanceStatus.ERROR,
+                           InstanceStatus.FAILED]:
+            raise ReddwarfError("Server not active, status: %s" % nova_status)
+        return False
 
     def _create_server_volume(self, flavor_id, image_id, security_groups,
                               service_type, volume_size):
@@ -279,7 +374,7 @@ class FreshInstanceTasks(FreshInstance):
                       (greenthread.getcurrent(), self.id))
 
 
-class BuiltInstanceTasks(BuiltInstance):
+class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
     """
     Performs the various asynchronous instance related tasks.
     """
@@ -293,6 +388,8 @@ class BuiltInstanceTasks(BuiltInstance):
             return mountpoint
 
     def _delete_resources(self):
+        server_id = self.db_info.compute_instance_id
+        old_server = self.nova_client.servers.get(server_id)
         try:
             self.server.delete()
         except Exception as ex:
@@ -313,7 +410,6 @@ class BuiltInstanceTasks(BuiltInstance):
 
         def server_is_finished():
             try:
-                server_id = self.db_info.compute_instance_id
                 server = self.nova_client.servers.get(server_id)
                 if server.status not in ['SHUTDOWN', 'ACTIVE']:
                     msg = "Server %s got into ERROR status during delete " \
@@ -325,11 +421,16 @@ class BuiltInstanceTasks(BuiltInstance):
 
         poll_until(server_is_finished, sleep_time=2,
                    time_out=CONF.server_delete_time_out)
+        self.send_usage_event('delete', deleted_at=timeutils.isotime(),
+                              server=old_server)
 
     def resize_volume(self, new_size):
-        LOG.debug("%s: Resizing volume for instance: %s to %r GB"
-                  % (greenthread.getcurrent(), self.server.id, new_size))
-        self.volume_client.volumes.resize(self.volume_id, int(new_size))
+        old_volume_size = self.volume_size
+        new_size = int(new_size)
+        LOG.debug("%s: Resizing volume for instance: %s from %s to %r GB"
+                  % (greenthread.getcurrent(), self.server.id,
+                     old_volume_size, new_size))
+        self.volume_client.volumes.resize(self.volume_id, new_size)
         try:
             utils.poll_until(
                 lambda: self.volume_client.volumes.get(self.volume_id),
@@ -340,6 +441,11 @@ class BuiltInstanceTasks(BuiltInstance):
             self.update_db(volume_size=volume.size)
             self.nova_client.volumes.rescan_server_volume(self.server,
                                                           self.volume_id)
+            self.send_usage_event('modify_volume',
+                                  old_volume_size=old_volume_size,
+                                  launched_at=timeutils.isotime(),
+                                  modify_at=timeutils.isotime(),
+                                  volume_size=new_size)
         except PollTimeOut as pto:
             LOG.error("Timeout trying to rescan or resize the attached volume "
                       "filesystem for volume: %s" % self.volume_id)
@@ -353,7 +459,8 @@ class BuiltInstanceTasks(BuiltInstance):
 
     def resize_flavor(self, new_flavor_id, old_memory_size,
                       new_memory_size):
-        action = ResizeAction(self, new_flavor_id, new_memory_size)
+        action = ResizeAction(self, new_flavor_id,
+                              new_memory_size, old_memory_size)
         action.execute()
 
     def migrate(self):
@@ -554,8 +661,10 @@ class ResizeActionBase(object):
 
 class ResizeAction(ResizeActionBase):
 
-    def __init__(self, instance, new_flavor_id=None, new_memory_size=None):
+    def __init__(self, instance, new_flavor_id=None,
+                 new_memory_size=None, old_memory_size=None):
         self.instance = instance
+        self.old_memory_size = old_memory_size
         self.new_flavor_id = new_flavor_id
         self.new_memory_size = new_memory_size
 
@@ -573,6 +682,11 @@ class ResizeAction(ResizeActionBase):
         LOG.debug("Updating instance %s to flavor_id %s."
                   % (self.instance.id, self.new_flavor_id))
         self.instance.update_db(flavor_id=self.new_flavor_id)
+        self.instance.send_usage_event('modify_flavor',
+                                       old_instance_size=self.old_memory_size,
+                                       instance_size=self.new_memory_size,
+                                       launched_at=timeutils.isotime(),
+                                       modify_at=timeutils.isotime())
 
     def _start_mysql(self):
         self.instance.guest.start_db_with_conf_changes(self.new_memory_size)

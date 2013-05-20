@@ -47,6 +47,10 @@ class FrozenDict(Mapping):
         return self.original.__str__()
 
 
+USAGE_ENDPOINT = os.environ.get("USAGE_ENDPOINT",
+                                "reddwarf.tests.util.usage.UsageVerifier")
+
+
 class TestConfig(object):
     """
     Holds test configuration values which can be accessed as attributes
@@ -81,6 +85,7 @@ class TestConfig(object):
             "simulate_events": False,
             "reddwarf_volume_support": True,
             "reddwarf_max_volumes_per_user": 100,
+            "usage_endpoint": USAGE_ENDPOINT,
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None
