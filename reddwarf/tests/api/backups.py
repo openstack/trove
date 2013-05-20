@@ -16,12 +16,14 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis import test
+from proboscis import SkipTest
 from proboscis.decorators import time_out
 from reddwarf.tests.util import poll_until
+from reddwarf.tests.util import test_config
 from reddwarfclient import exceptions
 from reddwarf.tests.api.instances import WaitForGuestInstallationToFinish
-from reddwarf.tests.api.instances import instance_info, assert_unprocessable
-
+from reddwarf.tests.api.instances import instance_info
+from reddwarf.tests.api.instances import assert_unprocessable
 
 GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
@@ -29,6 +31,7 @@ BACKUP_DESC = 'test description'
 
 
 backup_info = None
+restore_instance_id = None
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
@@ -80,15 +83,6 @@ class AfterBackupCreation(object):
         result = instance_info.dbaas.backups.list()
         backup = result[0]
         assert_unprocessable(instance_info.dbaas.backups.delete, backup.id)
-
-    @test
-    def test_backup_create_quota_exceeded(self):
-        """test quota exceeded when creating a backup"""
-        instance_info.dbaas_admin.quota.update(instance_info.user.tenant_id,
-                                               {'backups': 1})
-        assert_raises(exceptions.OverLimit,
-                      instance_info.dbaas.backups.create,
-                      'Too_many_backups', instance_info.id, BACKUP_DESC)
 
 
 @test(runs_after=[AfterBackupCreation],
@@ -152,6 +146,57 @@ class ListBackups(object):
 
 @test(runs_after=[ListBackups],
       groups=[GROUP])
+class RestoreUsingBackup(object):
+
+    @test
+    def test_restore(self):
+        """test restore"""
+        if test_config.auth_strategy == "fake":
+            raise SkipTest("Skipping restore tests for fake mode.")
+        restorePoint = {"backupRef": backup_info.id}
+        result = instance_info.dbaas.instances.create(
+            instance_info.name + "_restore",
+            instance_info.dbaas_flavor_href,
+            instance_info.volume,
+            restorePoint=restorePoint)
+        assert_equal(200, instance_info.dbaas.last_http_code)
+        assert_equal("BUILD", result.status)
+        global restore_instance_id
+        restore_instance_id = result.id
+
+
+@test(depends_on_classes=[RestoreUsingBackup],
+      runs_after=[RestoreUsingBackup],
+      groups=[GROUP])
+class WaitForRestoreToFinish(object):
+    """
+        Wait until the instance is finished restoring.
+    """
+
+    @test
+    @time_out(60 * 32)
+    def test_instance_restored(self):
+        if test_config.auth_strategy == "fake":
+            raise SkipTest("Skipping restore tests for fake mode.")
+
+        # This version just checks the REST API status.
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(restore_instance_id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                # If its not ACTIVE, anything but BUILD must be
+                # an error.
+                assert_equal("BUILD", instance.status)
+                if instance_info.volume is not None:
+                    assert_equal(instance.volume.get('used', None), None)
+                return False
+
+        poll_until(result_is_active)
+
+
+@test(runs_after=[WaitForRestoreToFinish],
+      groups=[GROUP])
 class DeleteBackups(object):
 
     @test
@@ -159,3 +204,20 @@ class DeleteBackups(object):
         """test delete unknown backup"""
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.delete,
                       'nonexistent_backup')
+
+    @test
+    @time_out(60 * 2)
+    def test_backup_delete(self):
+        """test delete"""
+        instance_info.dbaas.backups.delete(backup_info.id)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+        def backup_is_gone():
+            result = instance_info.dbaas.instances.backups(instance_info.id)
+            if len(result) == 0:
+                return True
+            else:
+                return False
+        poll_until(backup_is_gone)
+        assert_raises(exceptions.NotFound, instance_info.dbaas.backups.get,
+                      backup_info.id)

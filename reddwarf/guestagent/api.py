@@ -25,8 +25,8 @@ from reddwarf.common import cfg
 from reddwarf.common import exception
 from reddwarf.common import rpc as rd_rpc
 from reddwarf.guestagent import models as agent_models
-from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common import rpc
+from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.rpc import proxy
 from reddwarf.openstack.common.gettextutils import _
 
@@ -75,6 +75,7 @@ class API(proxy.RpcProxy):
             raise exception.GuestError(original_message=str(e))
 
     def _cast_with_consumer(self, method_name, **kwargs):
+        conn = None
         try:
             conn = rpc.create_connection(new=True)
             conn.create_consumer(self._get_routing_key(), None, fanout=False)
@@ -154,7 +155,7 @@ class API(proxy.RpcProxy):
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
         LOG.debug(_("Deleting user %s for Instance %s"), user, self.id)
-        return self._cast("delete_user", user=user)
+        self._cast("delete_user", user=user)
 
     def create_database(self, databases):
         """Make an asynchronous call to create a new database
@@ -203,13 +204,16 @@ class API(proxy.RpcProxy):
         return self._call("get_diagnostics", AGENT_LOW_TIMEOUT)
 
     def prepare(self, memory_mb, databases, users,
-                device_path='/dev/vdb', mount_point='/mnt/volume'):
+                device_path='/dev/vdb', mount_point='/mnt/volume',
+                backup_id=None):
         """Make an asynchronous call to prepare the guest
-           as a database container"""
+           as a database container optionally includes a backup id for restores
+        """
         LOG.debug(_("Sending the call to prepare the Guest"))
         self._cast_with_consumer(
             "prepare", databases=databases, memory_mb=memory_mb,
-            users=users, device_path=device_path, mount_point=mount_point)
+            users=users, device_path=device_path, mount_point=mount_point,
+            backup_id=backup_id)
 
     def restart(self):
         """Restart the MySQL server."""
@@ -244,3 +248,8 @@ class API(proxy.RpcProxy):
     def update_guest(self):
         """Make a synchronous call to update the guest agent."""
         self._call("update_guest", AGENT_HIGH_TIMEOUT)
+
+    def create_backup(self, backup_id):
+        """Make async call to create a full backup of this instance"""
+        LOG.debug(_("Create Backup %s for Instance %s"), backup_id, self.id)
+        self._cast("create_backup", backup_id=backup_id)

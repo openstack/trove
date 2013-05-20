@@ -12,20 +12,44 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock, MagicMock
-import testtools
+import os
+import __builtin__
 from random import randint
 import time
-import reddwarf.guestagent.manager.mysql as dbaas
-from reddwarf.guestagent.db import models
-from reddwarf.guestagent.manager.mysql import MySqlAdmin
-from reddwarf.guestagent.manager.mysql import MySqlApp
-from reddwarf.guestagent.manager.mysql import MySqlAppStatus
+
+from mock import Mock
+from mock import MagicMock
+from mockito import mock
+from mockito import when
+from mockito import any
+from mockito import unstub
+from mockito import verify
+from mockito import contains
+from mockito import never
+from mockito import matchers
+from mockito import inorder, verifyNoMoreInteractions
+from reddwarf.extensions.mysql.models import RootHistory
+import sqlalchemy
+import testtools
+from testtools.matchers import Is
+from testtools.matchers import Equals
+from testtools.matchers import Not
+import reddwarf
+from reddwarf.common.context import ReddwarfContext
+from reddwarf.guestagent import pkg
+from reddwarf.common import utils
+import reddwarf.guestagent.manager.mysql_service as dbaas
+from reddwarf.guestagent.manager.mysql_service import MySqlAdmin
+from reddwarf.guestagent.manager.mysql_service import MySqlRootAccess
+from reddwarf.guestagent.manager.mysql_service import MySqlApp
+from reddwarf.guestagent.manager.mysql_service import MySqlAppStatus
+from reddwarf.guestagent.manager.mysql_service import KeepAliveConnection
 from reddwarf.guestagent.dbaas import Interrogator
-from reddwarf.guestagent.manager.mysql import KeepAliveConnection
+from reddwarf.guestagent.db import models
 from reddwarf.instance.models import ServiceStatuses
 from reddwarf.instance.models import InstanceServiceStatus
 from reddwarf.tests.unittests.util import util
+
 
 """
 Unit tests for the classes and functions in dbaas.py.
@@ -105,6 +129,43 @@ class DbaasTest(testtools.TestCase):
         dbaas.utils.execute = Mock(side_effect=ProcessExecutionError())
 
         self.assertFalse(dbaas.load_mysqld_options())
+
+
+class ResultSetStub(object):
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def __iter__(self):
+        return self._rows.__iter__()
+
+    @property
+    def rowcount(self):
+        return len(self._rows)
+
+    def __repr__(self):
+        return self._rows.__repr__()
+
+
+class MySqlAdminMockTest(testtools.TestCase):
+
+    def tearDown(self):
+        super(MySqlAdminMockTest, self).tearDown()
+        unstub()
+
+    def test_list_databases(self):
+        mock_conn = mock_admin_sql_connection()
+
+        when(mock_conn).execute(
+            TextClauseMatcher('schema_name as name')).thenReturn(
+                ResultSetStub([('db1', 'utf8', 'utf8_bin'),
+                               ('db2', 'utf8', 'utf8_bin'),
+                               ('db3', 'utf8', 'utf8_bin')]))
+
+        databases, next_marker = MySqlAdmin().list_databases(limit=10)
+
+        self.assertThat(next_marker, Is(None))
+        self.assertThat(len(databases), Is(3))
 
 
 class MySqlAdminTest(testtools.TestCase):
@@ -233,49 +294,6 @@ class MySqlAdminTest(testtools.TestCase):
             self.assertEquals(args[0].text.strip(), expected,
                               "Create user queries are not the same")
             self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
-
-
-class EnableRootTest(MySqlAdminTest):
-    def setUp(self):
-        super(EnableRootTest, self).setUp()
-        self.origin_is_valid_user_name = models.MySQLUser._is_valid_user_name
-        self.mySqlAdmin = MySqlAdmin()
-
-    def tearDown(self):
-        super(EnableRootTest, self).tearDown()
-        models.MySQLUser._is_valid_user_name = self.origin_is_valid_user_name
-
-    def test_enable_root(self):
-        models.MySQLUser._is_valid_user_name =\
-            MagicMock(return_value=True)
-        self.mySqlAdmin.enable_root()
-        args_list = dbaas.LocalSqlClient.execute.call_args_list
-        args, keyArgs = args_list[0]
-
-        self.assertEquals(args[0].text.strip(), "CREATE USER :user@:host;",
-                          "Create user queries are not the same")
-        self.assertEquals(keyArgs['user'], 'root')
-        self.assertEquals(keyArgs['host'], '%')
-
-        args, keyArgs = args_list[1]
-        self.assertTrue("UPDATE mysql.user" in args[0].text)
-        args, keyArgs = args_list[2]
-        self.assertTrue("GRANT ALL PRIVILEGES ON *.*" in args[0].text)
-
-        self.assertEqual(3, dbaas.LocalSqlClient.execute.call_count)
-
-    def test_enable_root_failed(self):
-        models.MySQLUser._is_valid_user_name =\
-            MagicMock(return_value=False)
-        self.assertRaises(ValueError, self.mySqlAdmin.enable_root)
-
-    def test_is_root_enable(self):
-        self.mySqlAdmin.is_root_enabled()
-        args, _ = dbaas.LocalSqlClient.execute.call_args
-        expected = ("""SELECT User FROM mysql.user WHERE User = 'root' """
-                    """AND Host != 'localhost';""")
-        self.assertTrue(expected in args[0].text,
-                        "%s not in query." % expected)
 
     def test_list_databases(self):
         self.mySqlAdmin.list_databases()
@@ -598,12 +616,12 @@ class MySqlAppInstallTest(MySqlAppTest):
 
     def setUp(self):
         super(MySqlAppInstallTest, self).setUp()
-        self.orig_create_engine = dbaas.create_engine
+        self.orig_create_engine = sqlalchemy.create_engine
         self.orig_pkg_version = dbaas.pkg.pkg_version
 
     def tearDown(self):
         super(MySqlAppInstallTest, self).tearDown()
-        dbaas.create_engine = self.orig_create_engine
+        sqlalchemy.create_engine = self.orig_create_engine
         dbaas.pkg.pkg_version = self.orig_pkg_version
 
     def test_install(self):
@@ -621,14 +639,14 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mySqlApp._write_mycnf = Mock()
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
-        dbaas.create_engine = Mock()
+        sqlalchemy.create_engine = Mock()
 
         self.mySqlApp.secure(100)
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(ServiceStatuses.RUNNING)
+        self.assert_reported_status(ServiceStatuses.NEW)
 
     def test_install_install_error(self):
 
@@ -653,13 +671,14 @@ class MySqlAppInstallTest(MySqlAppTest):
             Mock(side_effect=pkg.PkgPackageStateError("Install error"))
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
-        dbaas.create_engine = Mock()
+        sqlalchemy.create_engine = Mock()
 
         self.assertRaises(pkg.PkgPackageStateError,
                           self.mySqlApp.secure, 100)
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
+        self.assertFalse(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(ServiceStatuses.NEW)
 
     def test_is_installed(self):
@@ -673,6 +692,170 @@ class MySqlAppInstallTest(MySqlAppTest):
         dbaas.pkg.pkg_version = Mock(return_value=None)
 
         self.assertFalse(self.mySqlApp.is_installed())
+
+
+class TextClauseMatcher(matchers.Matcher):
+    def __init__(self, text):
+        self.contains = contains(text)
+
+    def __repr__(self):
+        return "TextClause(%s)" % self.contains.sub
+
+    def matches(self, arg):
+        print "Matching", arg.text
+        return self.contains.matches(arg.text)
+
+
+def mock_sql_connection():
+    mock_engine = mock()
+    when(sqlalchemy).create_engine("mysql://root:@localhost:3306",
+                                   echo=True).thenReturn(mock_engine)
+    mock_conn = mock()
+    when(dbaas.LocalSqlClient).__enter__().thenReturn(mock_conn)
+    when(dbaas.LocalSqlClient).__exit__(any(), any(), any()).thenReturn(None)
+    return mock_conn
+
+
+def mock_admin_sql_connection():
+    when(utils).execute_with_timeout("sudo", "awk", any(), any()).thenReturn(
+        ['fake_password', None])
+    mock_engine = mock()
+    when(sqlalchemy).create_engine("mysql://root:@localhost:3306",
+                                   pool_recycle=any(), echo=True,
+                                   listeners=[any()]).thenReturn(mock_engine)
+    mock_conn = mock()
+    when(dbaas.LocalSqlClient).__enter__().thenReturn(mock_conn)
+    when(dbaas.LocalSqlClient).__exit__(any(), any(), any()).thenReturn(None)
+    return mock_conn
+
+
+class MySqlAppMockTest(testtools.TestCase):
+
+    @classmethod
+    def stub_file(cls, filename):
+        return MySqlAppMockTest.StubFile(filename)
+
+    class StubFile(object):
+        def __init__(self, filename):
+            when(__builtin__).open(filename, any()).thenReturn(self)
+
+        def next(self):
+            raise StopIteration
+
+        def __iter__(self):
+            return self
+
+        def write(self, data):
+            pass
+
+        def close(self):
+            pass
+
+    def tearDown(self):
+        super(MySqlAppMockTest, self).tearDown()
+        unstub()
+
+    def test_secure_with_mycnf_error(self):
+        mock_conn = mock_sql_connection()
+        when(mock_conn).execute(any()).thenReturn(None)
+        when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
+            None)
+        when(pkg).pkg_install("dbaas-mycnf", any()).thenRaise(
+            pkg.PkgPackageStateError("Install error"))
+        # skip writing the file for now
+        when(os.path).isfile(any()).thenReturn(False)
+        mock_status = mock(MySqlAppStatus)
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(), any(), any()).thenReturn(True)
+        app = MySqlApp(mock_status)
+
+        self.assertRaises(pkg.PkgPackageStateError, app.secure, 2048)
+
+        verify(mock_conn, atleast=2).execute(any())
+        inorder.verify(mock_status).wait_for_real_status_to_change_to(
+            ServiceStatuses.SHUTDOWN, any(), any())
+        verifyNoMoreInteractions(mock_status)
+
+    def test_secure_keep_root(self):
+        mock_conn = mock_sql_connection()
+
+        when(mock_conn).execute(any()).thenReturn(None)
+        when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
+            None)
+        when(pkg).pkg_install("dbaas-mycnf", any()).thenReturn(None)
+        # skip writing the file for now
+        when(os.path).isfile(any()).thenReturn(False)
+        when(utils).execute_with_timeout(
+            "sudo", "chmod", any(), any()).thenReturn(None)
+        MySqlAppMockTest.stub_file("/etc/mysql/my.cnf")
+        MySqlAppMockTest.stub_file("/etc/dbaas/my.cnf/my.cnf.2048M")
+        MySqlAppMockTest.stub_file("/tmp/my.cnf.tmp")
+        mock_status = mock(MySqlAppStatus)
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(), any(), any()).thenReturn(True)
+        app = MySqlApp(mock_status)
+
+        app.secure(2048)
+        verify(mock_conn, never).execute(TextClauseMatcher('root'))
+
+
+class MySqlRootStatusTest(testtools.TestCase):
+
+    def tearDown(self):
+        super(MySqlRootStatusTest, self).tearDown()
+        unstub()
+
+    def test_root_is_enabled(self):
+        mock_conn = mock_admin_sql_connection()
+
+        mock_rs = mock()
+        mock_rs.rowcount = 1
+        when(mock_conn).execute(
+            TextClauseMatcher(
+                "User = 'root' AND Host != 'localhost'")).thenReturn(mock_rs)
+
+        self.assertThat(MySqlRootAccess().is_root_enabled(), Is(True))
+
+    def test_root_is_not_enabled(self):
+        mock_conn = mock_admin_sql_connection()
+
+        mock_rs = mock()
+        mock_rs.rowcount = 0
+        when(mock_conn).execute(
+            TextClauseMatcher(
+                "User = 'root' AND Host != 'localhost'")).thenReturn(mock_rs)
+
+        self.assertThat(MySqlRootAccess.is_root_enabled(), Equals(False))
+
+    def test_enable_root(self):
+        mock_conn = mock_admin_sql_connection()
+        when(mock_conn).execute(any()).thenReturn(None)
+        # invocation
+        user_ser = MySqlRootAccess.enable_root()
+        # verification
+        self.assertThat(user_ser, Not(Is(None)))
+        verify(mock_conn).execute(TextClauseMatcher('CREATE USER'),
+                                  user='root', host='%')
+        verify(mock_conn).execute(TextClauseMatcher(
+            'GRANT ALL PRIVILEGES ON *.*'))
+        verify(mock_conn).execute(TextClauseMatcher('UPDATE mysql.user'))
+
+    def test_enable_root_failed(self):
+        when(models.MySQLUser)._is_valid_user_name(any()).thenReturn(False)
+        self.assertRaises(ValueError, MySqlAdmin().enable_root)
+
+    def test_report_root_enabled(self):
+        mock_db_api = mock()
+        when(reddwarf.extensions.mysql.models).get_db_api().thenReturn(
+            mock_db_api)
+        when(mock_db_api).find_by(any(), id=None).thenReturn(None)
+        root_history = RootHistory('x', 'root')
+        when(mock_db_api).save(any(RootHistory)).thenReturn(root_history)
+        # invocation
+        history = MySqlRootAccess.report_root_enabled(ReddwarfContext())
+        # verification
+        self.assertThat(history, Is(root_history))
+        verify(mock_db_api).save(any(RootHistory))
 
 
 class InterrogatorTest(testtools.TestCase):

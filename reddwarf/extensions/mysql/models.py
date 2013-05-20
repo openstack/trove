@@ -201,8 +201,7 @@ class RootHistory(object):
         if history is not None:
             return history
         history = RootHistory(instance_id, user)
-        history.save()
-        return history
+        return history.save()
 
 
 def load_via_context(cls, context, instance_id):

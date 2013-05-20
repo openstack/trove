@@ -24,6 +24,8 @@ import sys
 import time
 import urlparse
 import uuid
+import os
+import shutil
 
 from eventlet import event
 from eventlet import greenthread
@@ -80,6 +82,23 @@ def generate_uuid():
 
 def utcnow():
     return datetime.datetime.utcnow()
+
+
+def raise_if_process_errored(process, exception):
+    try:
+        err = process.stderr.read()
+        if err:
+            raise exception(err)
+    except OSError:
+        pass
+
+
+def clean_out(folder):
+    for root, dirs, files in os.walk(folder):
+        for f in files:
+            os.unlink(os.path.join(root, f))
+        for d in dirs:
+            shutil.rmtree(os.path.join(root, d))
 
 
 class cached_property(object):

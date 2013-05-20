@@ -78,15 +78,11 @@ class ModelBase(object):
         return self.id.__hash__()
 
 
-class NovaRemoteModelBase(ModelBase):
+class RemoteModelBase(ModelBase):
 
     # This should be set by the remote model during init time
     # The data() method will be using this
     _data_object = None
-
-    @classmethod
-    def get_client(cls, context):
-        return remote.create_nova_client(context)
 
     def _data_item(self, data_object):
         data_fields = self._data_fields + self._auto_generated_attrs
@@ -102,3 +98,17 @@ class NovaRemoteModelBase(ModelBase):
             return [self._data_item(item) for item in self._data_object]
         else:
             return self._data_item(self._data_object)
+
+
+class NovaRemoteModelBase(RemoteModelBase):
+
+    @classmethod
+    def get_client(cls, context):
+        return remote.create_nova_client(context)
+
+
+class SwiftRemoteModelBase(RemoteModelBase):
+
+    @classmethod
+    def get_client(cls, context):
+        return remote.create_swift_client(context)

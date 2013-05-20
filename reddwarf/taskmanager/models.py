@@ -12,40 +12,34 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
-from eventlet import greenthread
-from datetime import datetime
 import traceback
+
+from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
 from reddwarf.common import cfg
-from reddwarf.common import remote
 from reddwarf.common import utils
 from reddwarf.common.exception import GuestError
 from reddwarf.common.exception import PollTimeOut
 from reddwarf.common.exception import VolumeCreationFailure
-from reddwarf.common.exception import NotFound
 from reddwarf.common.exception import ReddwarfError
 from reddwarf.common.remote import create_dns_client
 from reddwarf.common.remote import create_nova_client
 from reddwarf.common.remote import create_nova_volume_client
-from reddwarf.common.remote import create_guest_client
+from swiftclient.client import ClientException
 from reddwarf.common.utils import poll_until
-from reddwarf.extensions.mysql.common import populate_databases
-from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models as inst_models
-from reddwarf.instance.models import DBInstance
 from reddwarf.instance.models import BuiltInstance
 from reddwarf.instance.models import FreshInstance
 from reddwarf.instance.models import InstanceStatus
 from reddwarf.instance.models import InstanceServiceStatus
 from reddwarf.instance.models import ServiceStatuses
-from reddwarf.instance.tasks import InstanceTasks
 from reddwarf.instance.views import get_ip_address
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common.notifier import api as notifier
 from reddwarf.openstack.common import timeutils
-
+import reddwarf.common.remote as remote
+import reddwarf.backup.models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -114,7 +108,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
 
     def create_instance(self, flavor_id, flavor_ram, image_id,
                         databases, users, service_type, volume_size,
-                        security_groups):
+                        security_groups, backup_id):
         if use_nova_server_volume:
             server, volume_info = self._create_server_volume(
                 flavor_id,
@@ -138,7 +132,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
 
         if server:
             self._guest_prepare(server, flavor_ram, volume_info,
-                                databases, users)
+                                databases, users, backup_id)
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
@@ -329,12 +323,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
         return server
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
-                       databases, users):
+                       databases, users, backup_id=None):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, databases, users,
                            device_path=volume_info['device_path'],
-                           mount_point=volume_info['mount_point'])
+                           mount_point=volume_info['mount_point'],
+                           backup_id=backup_id)
 
     def _create_dns_entry(self):
         LOG.debug("%s: Creating dns entry for instance: %s" %
@@ -468,16 +463,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
         action.execute()
 
     def create_backup(self, backup_id):
-        # TODO
-        # create a temp volume
-        # nova list
-        # nova show
-        # check in progress - make sure no other snapshot creation in progress
-        # volume create
-        # volume attach
-        # call GA.create_backup()
+        LOG.debug("Calling create_backup  %s " % self.id)
         self.guest.create_backup(backup_id)
-        LOG.debug("Called create_backup  %s " % self.id)
 
     def reboot(self):
         try:
@@ -532,6 +519,42 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
         status = InstanceServiceStatus.find_by(instance_id=self.id)
         status.set_status(inst_models.ServiceStatuses.PAUSED)
         status.save()
+
+
+class BackupTasks(object):
+
+    @classmethod
+    def delete_files_from_swift(cls, context, filename):
+        client = remote.create_swift_client(context)
+        # Delete the manifest
+        if client.head_object(CONF.backup_swift_container, filename):
+            client.delete_object(CONF.backup_swift_container, filename)
+
+        # Delete the segments
+        if client.head_container(filename + "_segments"):
+
+            for obj in client.get_container(filename + "_segments")[1]:
+                client.delete_object(filename + "_segments", obj['name'])
+
+            # Delete the segments container
+            client.delete_container(filename + "_segments")
+
+    @classmethod
+    def delete_backup(cls, context, backup_id):
+        #delete backup from swift
+        backup = reddwarf.backup.models.Backup.get_by_id(backup_id)
+        try:
+            filename = backup.filename
+            if filename:
+                BackupTasks.delete_files_from_swift(context, filename)
+
+        except (ClientException, ValueError) as e:
+            LOG.exception("Exception deleting from swift. Details: %s" % e)
+            LOG.error("Failed to delete swift objects")
+            backup.state = reddwarf.backup.models.BackupState.FAILED
+
+        else:
+            backup.delete()
 
 
 class ResizeActionBase(object):
