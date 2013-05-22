@@ -17,6 +17,9 @@
 
 
 from reddwarf.common.views import create_links
+from reddwarf.common import cfg
+
+CONF = cfg.CONF
 
 
 class FlavorView(object):
@@ -26,14 +29,18 @@ class FlavorView(object):
         self.req = req
 
     def data(self):
-        return {
-            "flavor": {
-                'id': int(self.flavor.id),
-                'links': self._build_links(),
-                'name': self.flavor.name,
-                'ram': self.flavor.ram,
-            }
+
+        flavor = {
+            'id': int(self.flavor.id),
+            'links': self._build_links(),
+            'name': self.flavor.name,
+            'ram': self.flavor.ram,
         }
+
+        if not CONF.reddwarf_volume_support and CONF.device_path is not None:
+            flavor['local_storage'] = self.flavor.ephemeral
+
+        return {"flavor": flavor}
 
     def _build_links(self):
         return create_links("flavors", self.req, self.flavor.id)

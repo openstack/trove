@@ -140,7 +140,7 @@ class Flavors(object):
 
     @test
     def test_flavor_list_attrs(self):
-        expected_attrs = ['id', 'name', 'ram', 'links']
+        expected_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
         flavors = self.rd_client.flavors.list()
         attrcheck = AttrCheck()
         for flavor in flavors:
@@ -151,7 +151,7 @@ class Flavors(object):
 
     @test
     def test_flavor_get_attrs(self):
-        expected_attrs = ['id', 'name', 'ram', 'links']
+        expected_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
         flavor = self.rd_client.flavors.get(1)
         attrcheck = AttrCheck()
         flavor_dict = flavor._info
