@@ -114,6 +114,9 @@ class InstanceTestInfo(object):
 instance_info = InstanceTestInfo()
 dbaas = None  # Rich client used throughout this test.
 dbaas_admin = None  # Same as above, with admin privs.
+VOLUME_SUPPORT = CONFIG.get('reddwarf_volume_support', False)
+EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path',
+                                                      '/dev/vdb') is not None
 
 
 # This is like a cheat code which allows the tests to skip creating a new
@@ -186,7 +189,11 @@ class InstanceSetup(object):
 
     @test
     def test_find_flavor(self):
-        flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
+        if EPHEMERAL_SUPPORT:
+            flavor_name = CONFIG.values.get('instance_eph_flavor_name',
+                                            'eph.rd-tiny')
+        else:
+            flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
         flavors = dbaas.find_flavors_by_name(flavor_name)
         assert_equal(len(flavors), 1, "Number of flavors with name '%s' "
                      "found was '%d'." % (flavor_name, len(flavors)))
@@ -245,14 +252,15 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info = copy.deepcopy(instance_info)
 
     def tearDown(self):
-        quota_dict = {'instances': CONFIG.reddwarf_max_instances_per_user,
-                      'volumes': CONFIG.reddwarf_max_volumes_per_user}
+        quota_dict = {'instances': CONFIG.reddwarf_max_instances_per_user}
+        if VOLUME_SUPPORT:
+            quota_dict['volumes'] = CONFIG.reddwarf_max_volumes_per_user
         dbaas_admin.quota.update(self.test_info.user.tenant_id,
                                  quota_dict)
 
     def test_instance_size_too_big(self):
-        vol_ok = CONFIG.get('reddwarf_volume_support', False)
-        if 'reddwarf_max_accepted_volume_size' in CONFIG.values and vol_ok:
+        if ('reddwarf_max_accepted_volume_size' in CONFIG.values and
+                VOLUME_SUPPORT):
             too_big = CONFIG.reddwarf_max_accepted_volume_size
 
             self.test_info.volume = {'size': too_big + 1}
@@ -262,6 +270,18 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                           self.test_info.name,
                           self.test_info.dbaas_flavor_href,
                           self.test_info.volume)
+
+    def test_update_quota_invalid_resource_should_fail(self):
+        quota_dict = {'invalid_resource': 100}
+        assert_raises(exceptions.NotFound, dbaas_admin.quota.update,
+                      self.test_info.user.tenant_id, quota_dict)
+
+    def test_update_quota_volume_should_fail_volume_not_supported(self):
+        if VOLUME_SUPPORT:
+            raise SkipTest("Volume support needs to be disabled")
+        quota_dict = {'volumes': 100}
+        assert_raises(exceptions.NotFound, dbaas_admin.quota.update,
+                      self.test_info.user.tenant_id, quota_dict)
 
     def test_create_too_many_instances(self):
         instance_quota = 0
@@ -273,10 +293,13 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
         assert_equal(new_quotas['instances'], quota_dict['instances'])
         assert_equal(0, verify_quota['instances'])
-        assert_equal(CONFIG.reddwarf_max_volumes_per_user,
-                     verify_quota['volumes'])
+        self.test_info.volume = None
 
-        self.test_info.volume = {'size': 1}
+        if VOLUME_SUPPORT:
+            assert_equal(CONFIG.reddwarf_max_volumes_per_user,
+                         verify_quota['volumes'])
+            self.test_info.volume = {'size': 1}
+
         self.test_info.name = "too_many_instances"
         assert_raises(exceptions.OverLimit,
                       dbaas.instances.create,
@@ -287,6 +310,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         assert_equal(413, dbaas.last_http_code)
 
     def test_create_instances_total_volume_exceeded(self):
+        if not VOLUME_SUPPORT:
+            raise SkipTest("Volume support not enabled")
         volume_quota = 3
         quota_dict = {'volumes': volume_quota}
         self.test_info.volume = {'size': volume_quota + 1}
@@ -307,13 +332,14 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 @test(depends_on_classes=[InstanceSetup],
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
       runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
-class CreateInstance(unittest.TestCase):
+class CreateInstance(object):
     """Test to create a Database Instance
 
     If the call returns without raising an exception this test passes.
 
     """
 
+    @test
     def test_create(self):
         databases = []
         databases.append({"name": "firstdb", "character_set": "latin2",
@@ -324,7 +350,7 @@ class CreateInstance(unittest.TestCase):
         users.append({"name": "lite", "password": "litepass",
                       "databases": [{"name": "firstdb"}]})
         instance_info.users = users
-        if CONFIG.values['reddwarf_volume_support']:
+        if VOLUME_SUPPORT:
             instance_info.volume = {'size': 1}
         else:
             instance_info.volume = None
@@ -361,7 +387,7 @@ class CreateInstance(unittest.TestCase):
         # Check these attrs only are returned in create response
         expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
                           'name', 'status', 'updated']
-        if CONFIG.values['reddwarf_volume_support']:
+        if VOLUME_SUPPORT:
             expected_attrs.append('volume')
         if CONFIG.reddwarf_dns_support:
             expected_attrs.append('hostname')
@@ -373,31 +399,52 @@ class CreateInstance(unittest.TestCase):
             # Don't CheckInstance if the instance already exists.
             check.flavor()
             check.links(result._info['links'])
-            if CONFIG.values['reddwarf_volume_support']:
+            if VOLUME_SUPPORT:
                 check.volume()
 
+    @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_empty_volume(self):
-        if CONFIG.values['reddwarf_volume_support']:
-            instance_name = "instance-failure-with-no-volume-size"
-            databases = []
-            volume = {}
-            assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                          instance_name, instance_info.dbaas_flavor_href,
-                          volume, databases)
-            assert_equal(400, dbaas.last_http_code)
+        instance_name = "instance-failure-with-no-volume-size"
+        databases = []
+        volume = {}
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases)
+        assert_equal(400, dbaas.last_http_code)
 
+    @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_no_volume_size(self):
-        if CONFIG.values['reddwarf_volume_support']:
-            instance_name = "instance-failure-with-no-volume-size"
-            databases = []
-            volume = {'size': None}
-            assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                          instance_name, instance_info.dbaas_flavor_href,
-                          volume, databases)
-            assert_equal(400, dbaas.last_http_code)
+        instance_name = "instance-failure-with-no-volume-size"
+        databases = []
+        volume = {'size': None}
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases)
+        assert_equal(400, dbaas.last_http_code)
 
+    @test(enabled=not VOLUME_SUPPORT)
+    def test_create_failure_with_volume_size_and_volume_disabled(self):
+        instance_name = "instance-failure-volume-size_and_volume_disabled"
+        databases = []
+        volume = {'size': 2}
+        assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases)
+        assert_equal(501, dbaas.last_http_code)
+
+    @test(enabled=EPHEMERAL_SUPPORT)
+    def test_create_failure_with_no_ephemeral_flavor(self):
+        instance_name = "instance-failure-with-no-ephemeral-flavor"
+        databases = []
+        flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
+        flavors = dbaas.find_flavors_by_name(flavor_name)
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, flavors[0].id, None, databases)
+        assert_equal(400, dbaas.last_http_code)
+
+    @test
     def test_create_failure_with_no_name(self):
-        if CONFIG.values['reddwarf_volume_support']:
+        if VOLUME_SUPPORT:
             volume = {'size': 1}
         else:
             volume = None
@@ -408,8 +455,9 @@ class CreateInstance(unittest.TestCase):
                       volume, databases)
         assert_equal(400, dbaas.last_http_code)
 
+    @test
     def test_create_failure_with_spaces_for_name(self):
-        if CONFIG.values['reddwarf_volume_support']:
+        if VOLUME_SUPPORT:
             volume = {'size': 1}
         else:
             volume = None
@@ -420,6 +468,7 @@ class CreateInstance(unittest.TestCase):
                       volume, databases)
         assert_equal(400, dbaas.last_http_code)
 
+    @test
     def test_mgmt_get_instance_on_create(self):
         if CONFIG.test_mgmt:
             result = dbaas_admin.management.show(instance_info.id)
@@ -777,7 +826,9 @@ class TestInstanceListing(object):
 
     @test
     def test_index_list(self):
-        expected_attrs = ['id', 'links', 'name', 'status', 'flavor', 'volume']
+        expected_attrs = ['id', 'links', 'name', 'status', 'flavor']
+        if VOLUME_SUPPORT:
+            expected_attrs.append('volume')
         instances = dbaas.instances.list()
         assert_equal(200, dbaas.last_http_code)
         for instance in instances:
@@ -793,7 +844,9 @@ class TestInstanceListing(object):
     @test
     def test_get_instance(self):
         expected_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
-                          'links', 'name', 'status', 'updated', 'volume', 'ip']
+                          'links', 'name', 'status', 'updated', 'ip']
+        if VOLUME_SUPPORT:
+            expected_attrs.append('volume')
         instance = dbaas.instances.get(instance_info.id)
         assert_equal(200, dbaas.last_http_code)
         instance_dict = instance._info
@@ -829,7 +882,7 @@ class TestInstanceListing(object):
     def test_get_legacy_status_notfound(self):
         assert_raises(exceptions.NotFound, dbaas.instances.get, -2)
 
-    @test(enabled=CONFIG.values["reddwarf_volume_support"])
+    @test(enabled=VOLUME_SUPPORT)
     def test_volume_found(self):
         instance = dbaas.instances.get(instance_info.id)
         if create_new_instance():
@@ -960,7 +1013,7 @@ class DeleteInstance(object):
                  " time: %s" % (str(instance_info.id), attempts, str(ex)))
 
     @time_out(30)
-    @test(enabled=CONFIG.values["reddwarf_volume_support"],
+    @test(enabled=VOLUME_SUPPORT,
           depends_on=[test_delete])
     def test_volume_is_deleted(self):
         raise SkipTest("Cannot test volume is deleted from db.")
@@ -1105,14 +1158,13 @@ class CheckInstance(AttrCheck):
             self.links(self.instance['flavor']['links'])
 
     def volume_key_exists(self):
-        if CONFIG.values['reddwarf_volume_support']:
-            if 'volume' not in self.instance:
-                self.fail("'volume' not found in instance.")
-                return False
-            return True
+        if 'volume' not in self.instance:
+            self.fail("'volume' not found in instance.")
+            return False
+        return True
 
     def volume(self):
-        if not CONFIG.values["reddwarf_volume_support"]:
+        if not VOLUME_SUPPORT:
             return
         if self.volume_key_exists():
             expected_attrs = ['size']
@@ -1122,7 +1174,7 @@ class CheckInstance(AttrCheck):
                              msg="Volumes")
 
     def used_volume(self):
-        if not CONFIG.values["reddwarf_volume_support"]:
+        if not VOLUME_SUPPORT:
             return
         if self.volume_key_exists():
             expected_attrs = ['size', 'used']
@@ -1131,6 +1183,8 @@ class CheckInstance(AttrCheck):
                              msg="Volumes")
 
     def volume_mgmt(self):
+        if not VOLUME_SUPPORT:
+            return
         if self.volume_key_exists():
             expected_attrs = ['description', 'id', 'name', 'size']
             self.attrs_exist(self.instance['volume'], expected_attrs,
@@ -1152,6 +1206,8 @@ class CheckInstance(AttrCheck):
                          msg="Guest status")
 
     def mgmt_volume(self):
+        if not VOLUME_SUPPORT:
+            return
         expected_attrs = ['description', 'id', 'name', 'size']
         self.attrs_exist(self.instance['volume'], expected_attrs,
                          msg="Volume")
@@ -1183,7 +1239,13 @@ class BadInstanceStatusBug():
         # can be used as another case.  This all boils back to the same
         # piece of code so I'm not sure if it's relevant or not but could
         # be done.
-        result = self.client.instances.create('testbox', 1, {'size': 5})
+        size = None
+        if VOLUME_SUPPORT:
+            size = {'size': 5}
+
+        result = self.client.instances.create('testbox',
+                                              instance_info.dbaas_flavor_href,
+                                              size)
         id = result.id
         self.instances.append(id)
 

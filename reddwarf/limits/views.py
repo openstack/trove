@@ -50,8 +50,8 @@ class LimitViews(object):
         data = []
         abs_view = dict()
         abs_view["verb"] = "ABSOLUTE"
-        abs_view["maxTotalInstances"] = self.abs_limits.get("instances", 0)
-        abs_view["maxTotalVolumes"] = self.abs_limits.get("volumes", 0)
+        for resource_name, abs_limit in self.abs_limits.items():
+            abs_view["max_" + resource_name] = abs_limit
 
         data.append(abs_view)
         for l in self.rate_limits:

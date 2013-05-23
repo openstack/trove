@@ -376,6 +376,7 @@ class Controller(object):
             exception.BadValue,
             exception.DatabaseAlreadyExists,
             exception.UserAlreadyExists,
+            exception.LocalStorageNotSpecified,
         ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,
@@ -397,6 +398,10 @@ class Controller(object):
         webob.exc.HTTPServerError: [
             exception.VolumeCreationFailure,
             exception.UpdateGuestError,
+        ],
+        webob.exc.HTTPNotImplemented: [
+            exception.VolumeNotSupported,
+            exception.LocalStorageNotSupported
         ],
     }
 
