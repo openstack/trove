@@ -75,6 +75,9 @@ class InstanceDetailView(InstanceView):
         result['instance']['datastore']['version'] = (self.instance.
                                                       datastore_version.name)
 
+        if self.instance.configuration is not None:
+            result['instance']['configuration'] = (self.
+                                                   _build_configuration_info())
         if self.instance.hostname:
             result['instance']['hostname'] = self.instance.hostname
         else:
@@ -96,6 +99,14 @@ class InstanceDetailView(InstanceView):
 
         return result
 
+    def _build_configuration_info(self):
+        return {
+            "id": self.instance.configuration.id,
+            "name": self.instance.configuration.name,
+            "links": create_links("configurations", self.req,
+                                  self.instance.configuration.id)
+        }
+
 
 class InstancesView(object):
     """Shows a list of SimpleInstance objects."""
@@ -114,3 +125,14 @@ class InstancesView(object):
     def data_for_instance(self, instance):
         view = InstanceView(instance, req=self.req)
         return view.data()['instance']
+
+
+class DefaultConfigurationView(object):
+    def __init__(self, config):
+        self.config = config
+
+    def data(self):
+        config_dict = {}
+        for key, val in self.config:
+            config_dict[key] = val
+        return {"instance": {"configuration": config_dict}}

@@ -38,6 +38,7 @@ LOG = logging.getLogger(__name__)
 
 
 class InstanceController(wsgi.Controller):
+
     """Controller for instance functionality"""
     schemas = apischema.instance.copy()
     if not CONF.trove_volume_support:
@@ -189,6 +190,8 @@ class InstanceController(wsgi.Controller):
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
         flavor_id = utils.get_id_from_href(flavor_ref)
+
+        configuration = self._configuration_parse(context, body)
         databases = populate_validated_databases(
             body['instance'].get('databases', []))
         database_names = [database.get('_name', '') for database in databases]
@@ -224,7 +227,50 @@ class InstanceController(wsgi.Controller):
                                           image_id, databases, users,
                                           datastore, datastore_version,
                                           volume_size, backup_id,
-                                          availability_zone, nics)
+                                          availability_zone, nics,
+                                          configuration)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
+
+    def _configuration_parse(self, context, body):
+        if 'configuration' in body['instance']:
+            configuration_ref = body['instance']['configuration']
+            if configuration_ref:
+                configuration_id = utils.get_id_from_href(configuration_ref)
+                return configuration_id
+
+    def update(self, req, id, body, tenant_id):
+        """Updates the instance to attach/detach configuration."""
+        LOG.info(_("Updating instance for tenant id %s") % tenant_id)
+        LOG.info(_("req: %s") % req)
+        LOG.info(_("body: %s") % body)
+        context = req.environ[wsgi.CONTEXT_KEY]
+
+        instance = models.Instance.load(context, id)
+
+        # if configuration is set, then we will update the instance to use
+        # the new configuration.  If configuration is empty, we want to
+        # disassociate the instance from the configuration group and remove the
+        # active overrides file.
+
+        configuration_id = self._configuration_parse(context, body)
+
+        if configuration_id:
+            instance.assign_configuration(configuration_id)
+        else:
+            instance.unassign_configuration()
+        return wsgi.Result(None, 202)
+
+    def configuration(self, req, tenant_id, id):
+        """
+        Returns the default configuration template applied to the instance.
+        """
+        LOG.debug("getting default configuration for the instance(%s)" % id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        LOG.debug("server: %s" % instance)
+        config = instance.get_default_configration_template()
+        LOG.debug("default config for instance is: %s" % config)
+        return wsgi.Result(views.DefaultConfigurationView(
+                           config).data(), 200)

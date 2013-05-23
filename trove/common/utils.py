@@ -18,6 +18,7 @@
 
 import datetime
 import inspect
+import jinja2
 import sys
 import time
 import urlparse
@@ -47,6 +48,12 @@ import_module = importutils.import_module
 bool_from_string = openstack_utils.bool_from_string
 execute = processutils.execute
 isotime = timeutils.isotime
+
+CONF = cfg.CONF
+ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
+                         jinja2.FileSystemLoader(CONF.template_path),
+                         jinja2.PackageLoader("trove", "templates")
+                         ]))
 
 
 def create_method_args_string(*args, **kwargs):

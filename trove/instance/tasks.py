@@ -70,6 +70,8 @@ class InstanceTasks(object):
     RESIZING = InstanceTask(0x04, 'RESIZING', 'Resizing the instance.')
     BUILDING = InstanceTask(0x05, 'BUILDING', 'The instance is building.')
     MIGRATING = InstanceTask(0x06, 'MIGRATING', 'Migrating the instance.')
+    RESTART_REQUIRED = InstanceTask(0x07, 'RESTART_REQUIRED',
+                                    'Instance requires a restart.')
 
     BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
                                       is_error=True)

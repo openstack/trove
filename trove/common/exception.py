@@ -184,6 +184,14 @@ class UserAlreadyExists(BadRequest):
     message = _('A user with the name "%(name)s" already exists.')
 
 
+class InstanceAssignedToConfiguration(BadRequest):
+
+    message = _('A configuration group cannot be deleted if it is '
+                'associated with one or more non-terminated instances. '
+                'Detach the configuration group from all non-terminated '
+                'instances and please try again.')
+
+
 class UnprocessableEntity(TroveError):
 
     message = _("Unable to process the contained request")
@@ -357,3 +365,24 @@ class RestoreBackupIntegrityError(TroveError):
 
     message = _("Current Swift object checksum does not match original "
                 "checksum for backup %(backup_id)s.")
+
+
+class ConfigKeyNotFound(NotFound):
+    message = _("%(key)s is not a supported configuration parameter")
+
+
+class NoConfigParserFound(NotFound):
+    message = _("No configuration parser found for datastore "
+                "%(datastore_manager)s")
+
+
+class ConfigurationDatastoreNotMatchInstance(TroveError):
+    message = _("Datastore Version on Configuration "
+                "%(config_datastore_version)s does not "
+                "match the Datastore Version on the instance "
+                "%(instance_datastore_version)s.")
+
+
+class ConfigurationParameterDeleted(object):
+    message = _("%(parameter_name)s parameter can no longer be "
+                " set as of %(parameter_deleted_at)s")

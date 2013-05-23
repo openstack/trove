@@ -55,6 +55,10 @@ def map(engine, models):
     orm.mapper(models['security_group_instance_association'],
                Table('security_group_instance_associations', meta,
                      autoload=True))
+    orm.mapper(models['configurations'],
+               Table('configurations', meta, autoload=True))
+    orm.mapper(models['configuration_parameters'],
+               Table('configuration_parameters', meta, autoload=True))
 
 
 def mapping_exists(model):

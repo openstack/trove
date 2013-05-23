@@ -350,6 +350,7 @@ class CreateInstance(object):
 
         result = instance_info.initial_result
         instance_info.id = result.id
+        instance_info.dbaas_datastore_version = result.datastore['version']
 
         report = CONFIG.get_report()
         report.log("Instance UUID = %s" % instance_info.id)

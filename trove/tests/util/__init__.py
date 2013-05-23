@@ -235,6 +235,7 @@ def iso_time(time_string):
 # https://bugs.launchpad.net/trove-integration/+bug/1228306
 
 
+#TODO(cp16net): DO NOT USE needs to be removed
 def mysql_connection():
     cls = CONFIG.get('mysql_connection',
                      "local.MySqlConnection")

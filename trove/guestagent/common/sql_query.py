@@ -425,6 +425,25 @@ class DropUser(object):
         return "DROP USER `%s`@`%s`;" % (self.user, self.host)
 
 
+class SetServerVariable(object):
+
+    def __init__(self, key, value):
+        self.key = key
+        self.value = value
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        if self.value is True:
+            return "SET GLOBAL %s=%s" % (self.key, 1)
+        elif self.value is False:
+            return "SET GLOBAL %s=%s" % (self.key, 0)
+        elif self.value is None:
+            return "SET GLOBAL %s" % (self.key)
+        else:
+            return "SET GLOBAL %s=%s" % (self.key, self.value)
+
 ### Miscellaneous queries that need no parameters.
 
 FLUSH = "FLUSH PRIVILEGES;"

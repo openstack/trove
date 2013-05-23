@@ -163,7 +163,8 @@ class GuestAgentManagerTest(testtools.TestCase):
                               is_root_enabled=True)
 
     def _prepare_dynamic(self, device_path='/dev/vdb', is_mysql_installed=True,
-                         backup_id=None, is_root_enabled=False):
+                         backup_id=None, is_root_enabled=False,
+                         overrides=None):
 
         # covering all outcomes is starting to cause trouble here
         COUNT = 1 if device_path else 0
@@ -205,7 +206,8 @@ class GuestAgentManagerTest(testtools.TestCase):
                              users=None,
                              device_path=device_path,
                              mount_point='/var/lib/mysql',
-                             backup_info=backup_info)
+                             backup_info=backup_info,
+                             overrides=overrides)
         # verification/assertion
         verify(mock_status).begin_install()
 
@@ -217,7 +219,7 @@ class GuestAgentManagerTest(testtools.TestCase):
             verify(backup).restore(self.context, backup_info, '/var/lib/mysql')
         verify(dbaas.MySqlApp).install_if_needed(any())
         # We dont need to make sure the exact contents are there
-        verify(dbaas.MySqlApp).secure(any())
+        verify(dbaas.MySqlApp).secure(any(), overrides)
         verify(dbaas.MySqlAdmin, never).create_database()
         verify(dbaas.MySqlAdmin, never).create_user()
         verify(dbaas.MySqlApp).secure_root(secure_remote_root=any())

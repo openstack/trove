@@ -658,6 +658,13 @@ class MySqlAppTest(testtools.TestCase):
                           self.mySqlApp.start_db_with_conf_changes,
                           Mock())
 
+    def test_remove_overrides(self):
+
+        from trove.common.exception import ProcessExecutionError
+        mocked = Mock(side_effect=ProcessExecutionError('Error'))
+        dbaas.utils.execute_with_timeout = mocked
+        self.assertRaises(ProcessExecutionError, self.mySqlApp.start_mysql)
+
 
 class MySqlAppInstallTest(MySqlAppTest):
 
@@ -694,7 +701,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mysql_starts_successfully()
         sqlalchemy.create_engine = Mock()
 
-        self.mySqlApp.secure('contents')
+        self.mySqlApp.secure('contents', None)
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
@@ -728,7 +735,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mysql_starts_successfully()
         sqlalchemy.create_engine = Mock()
 
-        self.assertRaises(IOError, self.mySqlApp.secure, "foo")
+        self.assertRaises(IOError, self.mySqlApp.secure, "foo", None)
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
@@ -789,7 +796,7 @@ class MySqlAppMockTest(testtools.TestCase):
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
         when(dbaas).clear_expired_password().thenReturn(None)
-        self.assertRaises(TypeError, app.secure, None)
+        self.assertRaises(TypeError, app.secure, None, None)
 
         verify(mock_conn, atleast=2).execute(any())
         inorder.verify(mock_status).wait_for_real_status_to_change_to(
@@ -814,7 +821,7 @@ class MySqlAppMockTest(testtools.TestCase):
         when(app)._write_mycnf(any(), any()).thenReturn(True)
         when(app).start_mysql().thenReturn(None)
         when(app).stop_db().thenReturn(None)
-        app.secure('foo')
+        app.secure('foo', None)
         verify(mock_conn, never).execute(TextClauseMatcher('root'))
 
 

@@ -15,6 +15,8 @@
 import routes
 
 from trove.common import wsgi
+from trove.configuration.service import ConfigurationsController
+from trove.configuration.service import ParametersController
 from trove.flavor.service import FlavorController
 from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
@@ -34,6 +36,7 @@ class API(wsgi.Router):
         self._versions_router(mapper)
         self._limits_router(mapper)
         self._backups_router(mapper)
+        self._configurations_router(mapper)
 
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
@@ -76,11 +79,19 @@ class API(wsgi.Router):
                        conditions={'method': ['POST']})
         mapper.connect("/{tenant_id}/instances/{id}",
                        controller=instance_resource,
+                       action="update",
+                       conditions={'method': ['PUT']})
+        mapper.connect("/{tenant_id}/instances/{id}",
+                       controller=instance_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
         mapper.connect("/{tenant_id}/instances/{id}/backups",
                        controller=instance_resource,
                        action="backups",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances/{id}/configuration",
+                       controller=instance_resource,
+                       action="configuration",
                        conditions={'method': ['GET']})
 
     def _flavor_router(self, mapper):
@@ -122,6 +133,59 @@ class API(wsgi.Router):
         mapper.connect("/{tenant_id}/backups/{id}",
                        controller=backups_resource,
                        action="delete",
+                       conditions={'method': ['DELETE']})
+
+    def _configurations_router(self, mapper):
+        parameters_resource = ParametersController().create_resource()
+        path = '/{tenant_id}/datastores/versions/{version}/parameters'
+        mapper.connect(path,
+                       controller=parameters_resource,
+                       action='index_by_version',
+                       conditions={'method': ['GET']})
+        path = '/{tenant_id}/datastores/versions/{version}/parameters/{name}'
+        mapper.connect(path,
+                       controller=parameters_resource,
+                       action='show_by_version',
+                       conditions={'method': ['GET']})
+
+        path = '/{tenant_id}/datastores/{datastore}/versions/{id}'
+        mapper.connect(path + '/parameters',
+                       controller=parameters_resource,
+                       action='index',
+                       conditions={'method': ['GET']})
+        mapper.connect(path + '/parameters/{name}',
+                       controller=parameters_resource,
+                       action='show',
+                       conditions={'method': ['GET']})
+
+        configuration_resource = ConfigurationsController().create_resource()
+        mapper.connect('/{tenant_id}/configurations',
+                       controller=configuration_resource,
+                       action='index',
+                       conditions={'method': ['GET']})
+        mapper.connect('/{tenant_id}/configurations',
+                       controller=configuration_resource,
+                       action='create',
+                       conditions={'method': ['POST']})
+        mapper.connect('/{tenant_id}/configurations/{id}',
+                       controller=configuration_resource,
+                       action='show',
+                       conditions={'method': ['GET']})
+        mapper.connect('/{tenant_id}/configurations/{id}/instances',
+                       controller=configuration_resource,
+                       action='instances',
+                       conditions={'method': ['GET']})
+        mapper.connect('/{tenant_id}/configurations/{id}',
+                       controller=configuration_resource,
+                       action='edit',
+                       conditions={'method': ['PATCH']})
+        mapper.connect('/{tenant_id}/configurations/{id}',
+                       controller=configuration_resource,
+                       action='update',
+                       conditions={'method': ['PUT']})
+        mapper.connect('/{tenant_id}/configurations/{id}',
+                       controller=configuration_resource,
+                       action='delete',
                        conditions={'method': ['DELETE']})
 
 

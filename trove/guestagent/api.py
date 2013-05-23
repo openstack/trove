@@ -220,7 +220,8 @@ class API(proxy.RpcProxy):
 
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
-                backup_info=None, config_contents=None, root_password=None):
+                backup_info=None, config_contents=None, root_password=None,
+                overrides=None):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
@@ -229,7 +230,8 @@ class API(proxy.RpcProxy):
             "prepare", packages=packages, databases=databases,
             memory_mb=memory_mb, users=users, device_path=device_path,
             mount_point=mount_point, backup_info=backup_info,
-            config_contents=config_contents, root_password=root_password)
+            config_contents=config_contents, root_password=root_password,
+            overrides=overrides)
 
     def restart(self):
         """Restart the MySQL server."""
@@ -301,3 +303,13 @@ class API(proxy.RpcProxy):
             'device': device_path, 'id': self.id})
         self._call("resize_fs", AGENT_LOW_TIMEOUT, device_path=device_path,
                    mount_point=mount_point)
+
+    def update_overrides(self, overrides, remove=False):
+        LOG.debug(_("Updating overrides on Instance %s"), self.id)
+        LOG.debug(_("Updating overrides values %s") % overrides)
+        self._cast("update_overrides", overrides=overrides, remove=remove)
+
+    def apply_overrides(self, overrides):
+        LOG.debug(_("Applying overrides on Instance %s"), self.id)
+        LOG.debug(_("Applying overrides values %s") % overrides)
+        self._cast("apply_overrides", overrides=overrides)

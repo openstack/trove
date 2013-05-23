@@ -37,6 +37,7 @@ class FakeGuest(object):
         self.root_was_enabled = False
         self.version = 1
         self.grants = {}
+        self.overrides = {}
 
         # Our default admin user.
         self._create_user({
@@ -209,7 +210,7 @@ class FakeGuest(object):
 
     def prepare(self, memory_mb, packages, databases, users, device_path=None,
                 mount_point=None, backup_info=None, config_contents=None,
-                root_password=None):
+                root_password=None, overrides=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
         from trove.guestagent.models import AgentHeartBeat
@@ -218,6 +219,7 @@ class FakeGuest(object):
         instance_name = DBInstance.find_by(id=self.id).name
         self.create_user(users)
         self.create_database(databases)
+        self.overrides = overrides or {}
 
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
@@ -316,6 +318,12 @@ class FakeGuest(object):
 
     def resize_fs(self, device_path=None, mount_point=None):
         pass
+
+    def update_overrides(self, overrides, remove=False):
+        self.overrides = overrides
+
+    def apply_overrides(self, overrides):
+        self.overrides = overrides
 
 
 def get_or_create(id):

@@ -1,6 +1,7 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
 # Copyright 2011 OpenStack Foundation
+# Copyright 2014 Rackspace Hosting
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -17,6 +18,8 @@
 """Routines for configuring Trove."""
 
 from oslo.config import cfg
+from trove.openstack.common import log as logging
+
 import os.path
 
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
@@ -27,6 +30,8 @@ path_opts = [
                                                     '../')),
                help='Directory where the trove python module is installed.'),
 ]
+
+LOG = logging.getLogger(__name__)
 
 common_opts = [
     cfg.StrOpt('sql_connection',
@@ -80,6 +85,7 @@ common_opts = [
     cfg.IntOpt('databases_page_size', default=20),
     cfg.IntOpt('instances_page_size', default=20),
     cfg.IntOpt('backups_page_size', default=20),
+    cfg.IntOpt('configurations_page_size', default=20),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root']),
     cfg.ListOpt('ignore_dbs', default=['lost+found',
                                        'mysql',

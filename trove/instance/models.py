@@ -1,7 +1,8 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2010-2011 OpenStack Foundation
-# All Rights Reserved.
+#    Copyright 2010-2011 OpenStack Foundation
+#    Copyright 2013-2014 Rackspace Hosting
+#    All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -22,12 +23,15 @@ from datetime import datetime
 from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
 from trove.common import exception
-import trove.common.instance as rd_instance
+from trove.common import template
+from trove.common.configurations import do_configs_require_restart
+import trove.common.instance as tr_instance
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
 from trove.common.remote import create_cinder_client
 from trove.common import utils
+from trove.configuration.models import Configuration
 from trove.extensions.security_group.models import SecurityGroup
 from trove.db import get_db_api
 from trove.db import models as dbmodels
@@ -74,6 +78,7 @@ class InstanceStatus(object):
     BACKUP = "BACKUP"
     SHUTDOWN = "SHUTDOWN"
     ERROR = "ERROR"
+    RESTART_REQUIRED = "RESTART_REQUIRED"
 
 
 def validate_volume_size(size):
@@ -226,6 +231,8 @@ class SimpleInstance(object):
             return InstanceStatus.REBOOT
         if 'RESIZING' == ACTION:
             return InstanceStatus.RESIZE
+        if 'RESTART_REQUIRED' == ACTION:
+            return InstanceStatus.RESTART_REQUIRED
 
         ### Check for server status.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
@@ -254,10 +261,10 @@ class SimpleInstance(object):
 
         ### Check against the service status.
         # The service is only paused during a reboot.
-        if rd_instance.ServiceStatuses.PAUSED == self.service_status.status:
+        if tr_instance.ServiceStatuses.PAUSED == self.service_status.status:
             return InstanceStatus.REBOOT
         # If the service status is NEW, then we are building.
-        if rd_instance.ServiceStatuses.NEW == self.service_status.status:
+        if tr_instance.ServiceStatuses.NEW == self.service_status.status:
             return InstanceStatus.BUILD
 
         # For everything else we can look at the service status mapping.
@@ -286,6 +293,12 @@ class SimpleInstance(object):
     @property
     def root_password(self):
         return self.root_pass
+
+    @property
+    def configuration(self):
+        if self.db_info.configuration_id is not None:
+            return Configuration.load(self.context,
+                                      self.db_info.configuration_id)
 
 
 class DetailInstance(SimpleInstance):
@@ -407,7 +420,8 @@ class BaseInstance(SimpleInstance):
             LOG.debug(_("  ... deleting compute id = %s") %
                       self.db_info.compute_instance_id)
             LOG.debug(_(" ... setting status to DELETING."))
-            self.update_db(task_status=InstanceTasks.DELETING)
+            self.update_db(task_status=InstanceTasks.DELETING,
+                           configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
 
         deltas = {'instances': -1}
@@ -458,7 +472,7 @@ class BaseInstance(SimpleInstance):
 
     def set_servicestatus_deleted(self):
         del_instance = InstanceServiceStatus.find_by(instance_id=self.id)
-        del_instance.set_status(rd_instance.ServiceStatuses.DELETED)
+        del_instance.set_status(tr_instance.ServiceStatuses.DELETED)
         del_instance.save()
 
     @property
@@ -491,7 +505,7 @@ class Instance(BuiltInstance):
     @classmethod
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
-               availability_zone=None, nics=None):
+               availability_zone=None, nics=None, configuration_id=None):
 
         client = create_nova_client(context)
         try:
@@ -533,14 +547,21 @@ class Instance(BuiltInstance):
                                         volume_size=volume_size,
                                         datastore_version_id=
                                         datastore_version.id,
-                                        task_status=InstanceTasks.BUILDING)
+                                        task_status=InstanceTasks.BUILDING,
+                                        configuration_id=configuration_id)
             LOG.debug(_("Tenant %(tenant)s created new "
                         "Trove instance %(db)s...") %
                       {'tenant': context.tenant, 'db': db_info.id})
 
+            # if a configuration group is associated with an instance,
+            # generate an overrides dict to pass into the instance creation
+            # method
+
+            overrides = Configuration.get_configuration_overrides(
+                context, configuration_id)
             service_status = InstanceServiceStatus.create(
                 instance_id=db_info.id,
-                status=rd_instance.ServiceStatuses.NEW)
+                status=tr_instance.ServiceStatuses.NEW)
 
             if CONF.trove_dns_support:
                 dns_client = create_dns_client(context)
@@ -558,7 +579,9 @@ class Instance(BuiltInstance):
                                                   datastore_version.packages,
                                                   volume_size, backup_id,
                                                   availability_zone,
-                                                  root_password, nics)
+                                                  root_password,
+                                                  nics,
+                                                  overrides)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password)
@@ -566,6 +589,17 @@ class Instance(BuiltInstance):
         return run_with_quotas(context.tenant,
                                deltas,
                                _create_resources)
+
+    def get_flavor(self):
+        client = create_nova_client(self.context)
+        return client.flavors.get(self.flavor_id)
+
+    def get_default_configration_template(self):
+        flavor = self.get_flavor()
+        LOG.debug("flavor: %s" % flavor)
+        config = template.SingleInstanceConfigTemplate(
+            self.ds_version.manager, flavor, id)
+        return config.render_dict()
 
     def resize_flavor(self, new_flavor_id):
         self.validate_can_perform_action()
@@ -654,20 +688,72 @@ class Instance(BuiltInstance):
         """
         Raises exception if an instance action cannot currently be performed.
         """
+        # cases where action cannot be performed
         if self.db_info.server_status != 'ACTIVE':
             status = self.db_info.server_status
-        elif self.db_info.task_status != InstanceTasks.NONE:
+        elif (self.db_info.task_status != InstanceTasks.NONE and
+              self.db_info.task_status != InstanceTasks.RESTART_REQUIRED):
             status = self.db_info.task_status
         elif not self.service_status.status.action_is_allowed:
             status = self.status
         elif Backup.running(self.id):
             status = InstanceStatus.BACKUP
         else:
+            # action can be performed
             return
+
         msg = ("Instance is not currently available for an action to be "
                "performed (status was %s)." % status)
         LOG.error(msg)
         raise exception.UnprocessableEntity(msg)
+
+    def unassign_configuration(self):
+        LOG.debug(_("Unassigning the configuration from the instance %s")
+                  % self.id)
+        LOG.debug(_("Unassigning the configuration id %s")
+                  % self.configuration.id)
+        if self.configuration and self.configuration.id:
+            flavor = self.get_flavor()
+            config_id = self.configuration.id
+            task_api.API(self.context).unassign_configuration(self.id,
+                                                              flavor,
+                                                              config_id)
+        else:
+            LOG.debug("no configuration found on instance skipping.")
+
+    def assign_configuration(self, configuration_id):
+        try:
+            configuration = Configuration.load(self.context, configuration_id)
+        except exception.ModelNotFoundError:
+            raise exception.NotFound(
+                message='Configuration group id: %s could not be found'
+                % configuration_id)
+
+        config_ds_v = configuration.datastore_version_id
+        inst_ds_v = self.db_info.datastore_version_id
+        if (config_ds_v != inst_ds_v):
+            raise exception.ConfigurationDatastoreNotMatchInstance(
+                config_datastore_version=config_ds_v,
+                instance_datastore_version=inst_ds_v)
+
+        overrides = Configuration.get_configuration_overrides(
+            self.context, configuration.id)
+
+        LOG.info(overrides)
+
+        self.update_overrides(overrides)
+        self.update_db(configuration_id=configuration.id)
+
+    def update_overrides(self, overrides):
+        LOG.debug(_("Updating or removing overrides for instance %s")
+                  % self.id)
+        need_restart = do_configs_require_restart(
+            overrides, datastore_manager=self.ds_version.manager)
+        LOG.debug(_("config overrides has non-dynamic settings, "
+                    "requires a restart: %s") % need_restart)
+        if need_restart:
+            self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
+        task_api.API(self.context).update_overrides(self.id, overrides)
 
 
 def create_server_list_matcher(server_list):
@@ -765,7 +851,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
                     'volume_id', 'deleted', 'tenant_id',
-                    'datastore_version_id']
+                    'datastore_version_id', 'configuration_id']
 
     def __init__(self, task_status, **kwargs):
         kwargs["task_id"] = task_status.code
@@ -803,11 +889,11 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
     def _validate(self, errors):
         if self.status is None:
             errors['status'] = "Cannot be none."
-        if rd_instance.ServiceStatus.from_code(self.status_id) is None:
+        if tr_instance.ServiceStatus.from_code(self.status_id) is None:
             errors['status_id'] = "Not valid."
 
     def get_status(self):
-        return rd_instance.ServiceStatus.from_code(self.status_id)
+        return tr_instance.ServiceStatus.from_code(self.status_id)
 
     def set_status(self, value):
         self.status_id = value.code
@@ -827,4 +913,4 @@ def persisted_models():
     }
 
 
-MYSQL_RESPONSIVE_STATUSES = [rd_instance.ServiceStatuses.RUNNING]
+MYSQL_RESPONSIVE_STATUSES = [tr_instance.ServiceStatuses.RUNNING]
