@@ -32,7 +32,11 @@ def populate_databases(dbs):
             databases.append(mydb.serialize())
         return databases
     except ValueError as ve:
-        raise exception.BadRequest(str(ve))
+        # str(ve) contains user input and may include '%' which can cause a
+        # format str vulnerability. Escape the '%' to avoid this. This is
+        # okay to do since we're not using dict args here in any case.
+        safe_string = str(ve).replace('%', '%%')
+        raise exception.BadRequest(safe_string)
 
 
 def populate_users(users):
