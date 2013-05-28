@@ -32,7 +32,8 @@ from reddwarf.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 SERVICE_REGISTRY = {
-    'mysql': 'reddwarf.guestagent.manager.mysql.Manager', }
+    'mysql': 'reddwarf.guestagent.manager.mysql.Manager',
+    'percona': 'reddwarf.guestagent.manager.mysql.Manager', }
 
 
 class Interrogator(object):
