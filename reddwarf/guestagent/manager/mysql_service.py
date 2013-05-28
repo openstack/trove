@@ -574,7 +574,10 @@ class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
-    MYSQL_PACKAGE_VERSION = CONF.mysql_pkg
+    if CONF.service_type == "mysql":
+        MYSQL_PACKAGE_VERSION = CONF.mysql_pkg
+    elif CONF.service_type == "percona":
+        MYSQL_PACKAGE_VERSION = CONF.percona_pkg
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """

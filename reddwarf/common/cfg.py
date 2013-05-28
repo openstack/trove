@@ -50,6 +50,7 @@ common_opts = [
     cfg.BoolOpt('reddwarf_dns_support', default=False),
     cfg.StrOpt('db_api_implementation', default='reddwarf.db.sqlalchemy.api'),
     cfg.StrOpt('mysql_pkg', default='mysql-server-5.5'),
+    cfg.StrOpt('percona_pkg', default='percona-server-server-5.5'),
     cfg.StrOpt('dns_driver', default='reddwarf.dns.driver.DnsDriver'),
     cfg.StrOpt('dns_instance_entry_factory',
                default='reddwarf.dns.driver.DnsInstanceEntryFactory'),
