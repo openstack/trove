@@ -30,6 +30,9 @@ CHUNK_SIZE = CONF.backup_chunk_size
 MAX_FILE_SIZE = CONF.backup_segment_max_size
 BACKUP_CONTAINER = CONF.backup_swift_container
 BACKUP_USE_GZIP = CONF.backup_use_gzip_compression
+BACKUP_USE_OPENSSL = CONF.backup_use_openssl_encryption
+BACKUP_ENCRYPT_KEY = CONF.backup_aes_cbc_key
+
 LOG = logging.getLogger(__name__)
 
 
@@ -49,6 +52,8 @@ class BackupRunner(Strategy):
     # The actual system call to run the backup
     cmd = None
     is_zipped = BACKUP_USE_GZIP
+    is_encrypted = BACKUP_USE_OPENSSL
+    encrypt_key = BACKUP_ENCRYPT_KEY
 
     def __init__(self, filename, **kwargs):
         self.filename = filename
@@ -118,6 +123,15 @@ class BackupRunner(Strategy):
     @property
     def zip_manifest(self):
         return '.gz' if self.is_zipped else ''
+
+    @property
+    def encrypt_cmd(self):
+        return (' | openssl enc -aes-256-cbc -salt -pass pass:%s' %
+                self.encrypt_key) if self.is_encrypted else ''
+
+    @property
+    def encrypt_manifest(self):
+        return '.enc' if self.is_encrypted else ''
 
     def read(self, chunk_size):
         """Wrap self.process.stdout.read to allow for segmentation."""

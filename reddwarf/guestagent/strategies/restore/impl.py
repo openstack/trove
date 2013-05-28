@@ -25,10 +25,9 @@ LOG = logging.getLogger(__name__)
 class MySQLDump(base.RestoreRunner):
     """ Implementation of Restore Strategy for MySQLDump """
     __strategy_name__ = 'mysqldump'
-    is_zipped = True
-    restore_cmd = ('mysql '
-                   '--password=%(password)s '
-                   '-u %(user)s')
+    base_restore_cmd = ('mysql '
+                        '--password=%(password)s '
+                        '-u %(user)s')
 
     def _pre_restore(self):
         pass
@@ -40,11 +39,10 @@ class MySQLDump(base.RestoreRunner):
 class InnoBackupEx(base.RestoreRunner):
     """ Implementation of Restore Strategy for InnoBackupEx """
     __strategy_name__ = 'innobackupex'
-    is_zipped = True
-    restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
-    prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s '
-                   '--defaults-file=%(restore_location)s/backup-my.cnf '
-                   '--ibbackup xtrabackup 2>/tmp/innoprepare.log')
+    base_restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
+    base_prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s'
+                        ' --defaults-file=%(restore_location)s/backup-my.cnf'
+                        ' --ibbackup xtrabackup 2>/tmp/innoprepare.log')
 
     def _pre_restore(self):
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())

@@ -32,12 +32,12 @@ class MySQLDump(base.BackupRunner):
             ' --opt'\
             ' --password=%(password)s'\
             ' -u %(user)s'
-        return cmd + self.zip_cmd
+        return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property
     def manifest(self):
-        manifest = '%s' + self.zip_manifest
-        return manifest % self.filename
+        manifest = '%s' % self.filename
+        return manifest + self.zip_manifest + self.encrypt_manifest
 
 
 class InnoBackupEx(base.BackupRunner):
@@ -49,9 +49,9 @@ class InnoBackupEx(base.BackupRunner):
         cmd = 'sudo innobackupex'\
             ' --stream=xbstream'\
             ' /var/lib/mysql 2>/tmp/innobackupex.log'
-        return cmd + self.zip_cmd
+        return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property
     def manifest(self):
-        manifest = '%s.xbstream' + self.zip_manifest
-        return manifest % self.filename
+        manifest = '%s.xbstream' % self.filename
+        return manifest + self.zip_manifest + self.encrypt_manifest

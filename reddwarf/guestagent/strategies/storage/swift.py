@@ -21,7 +21,6 @@ from reddwarf.common import utils
 from eventlet.green import subprocess
 import zlib
 
-UNZIPPER = zlib.decompressobj(16 + zlib.MAX_WBITS)
 LOG = logging.getLogger(__name__)
 
 
@@ -107,7 +106,6 @@ class SwiftDownloadStream(object):
     def __init__(self, **kwargs):
         self.process = None
         self.pid = None
-        self.is_zipped = kwargs.get('is_zipped', False)
         self.cmd = self.cmd % kwargs
 
     def __enter__(self):
@@ -128,9 +126,7 @@ class SwiftDownloadStream(object):
             pass
 
     def read(self, *args, **kwargs):
-        if not self.is_zipped:
-            return self.process.stdout.read(*args, **kwargs)
-        return UNZIPPER.decompress(self.process.stdout.read(*args, **kwargs))
+        return self.process.stdout.read(*args, **kwargs)
 
     def run(self):
         self.process = subprocess.Popen(self.cmd, shell=True,
