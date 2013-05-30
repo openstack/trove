@@ -24,7 +24,7 @@ possess instead of specifying exact identities in the test code.
 class Requirements(object):
     """Defines requirements a test has of a user."""
 
-    def __init__(self, is_admin, services=None):
+    def __init__(self, is_admin=None, services=None):
         self.is_admin = is_admin
         self.services = services or ["reddwarf"]
         # Make sure they're all the same kind of string.
@@ -32,8 +32,9 @@ class Requirements(object):
 
     def satisfies(self, reqs):
         """True if these requirements conform to the given requirements."""
-        if reqs.is_admin != self.is_admin:
-            return False
+        if reqs.is_admin is not None:  # Only check if it was specified.
+            if reqs.is_admin != self.is_admin:
+                return False
         for service in reqs.services:
             if service not in self.services:
                 return False
@@ -62,6 +63,8 @@ class ServiceUser(object):
         self.tenant_id = tenant_id
         self.requirements = requirements
         self.test_count = 0
+        if self.requirements.is_admin is None:
+            raise ValueError("'is_admin' must be specified for a user.")
 
     def __str__(self):
         return "{ user_name=%s, tenant_id=%s, reqs=%s, tests=%d }" % (
