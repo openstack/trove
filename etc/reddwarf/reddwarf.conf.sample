@@ -91,6 +91,9 @@ reddwarf_security_groups_support = True
 reddwarf_security_group_rule_protocol = tcp
 reddwarf_security_group_rule_port = 3306
 
+# Reddwarf api-paste file name
+api_paste_config = api-paste.ini
+
 
 # ============ notifer queue kombu connection options ========================
 
