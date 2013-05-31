@@ -17,7 +17,7 @@ from reddwarf.guestagent.db import models as guest_models
 from urllib import unquote
 
 
-def populate_databases(dbs):
+def populate_validated_databases(dbs):
     """
     Create a serializable request with user provided data
     for creating new databases.
@@ -25,7 +25,7 @@ def populate_databases(dbs):
     try:
         databases = []
         for database in dbs:
-            mydb = guest_models.MySQLDatabase()
+            mydb = guest_models.ValidatedMySQLDatabase()
             mydb.name = database.get('name', '')
             mydb.character_set = database.get('character_set', '')
             mydb.collate = database.get('collate', '')
