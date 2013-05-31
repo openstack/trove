@@ -22,7 +22,7 @@ from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import utils
 from reddwarf.common import wsgi
-from reddwarf.extensions.mysql.common import populate_databases
+from reddwarf.extensions.mysql.common import populate_validated_databases
 from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.instance import models, views
 from reddwarf.backup.models import Backup as backup_model
@@ -190,7 +190,8 @@ class InstanceController(wsgi.Controller):
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
         flavor_id = utils.get_id_from_href(flavor_ref)
-        databases = populate_databases(body['instance'].get('databases', []))
+        databases = populate_validated_databases(
+            body['instance'].get('databases', []))
         users = None
         try:
             users = populate_users(body['instance'].get('users', []))

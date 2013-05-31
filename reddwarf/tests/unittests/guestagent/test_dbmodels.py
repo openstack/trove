@@ -21,7 +21,7 @@ class MySQLDatabaseTest(testtools.TestCase):
     def setUp(self):
         super(MySQLDatabaseTest, self).setUp()
 
-        self.mysqlDb = dbmodels.MySQLDatabase()
+        self.mysqlDb = dbmodels.ValidatedMySQLDatabase()
         self.origin_ignore_db = self.mysqlDb._ignore_dbs
         self.mysqlDb._ignore_dbs = ['mysql']
 

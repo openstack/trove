@@ -20,7 +20,7 @@ import webob.exc
 from reddwarf.common import exception
 from reddwarf.common import pagination
 from reddwarf.common import wsgi
-from reddwarf.extensions.mysql.common import populate_databases
+from reddwarf.extensions.mysql.common import populate_validated_databases
 from reddwarf.extensions.mysql.common import populate_users
 from reddwarf.extensions.mysql.common import unquote_user_host
 from reddwarf.extensions.mysql import models
@@ -261,7 +261,7 @@ class SchemaController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         self.validate(body)
         schemas = body['databases']
-        model_schemas = populate_databases(schemas)
+        model_schemas = populate_validated_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)
         return wsgi.Result(None, 202)
 
@@ -270,7 +270,7 @@ class SchemaController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
-            schema = guest_models.MySQLDatabase()
+            schema = guest_models.ValidatedMySQLDatabase()
             schema.name = id
             models.Schema.delete(context, instance_id, schema.serialize())
         except (ValueError, AttributeError) as e:

@@ -321,7 +321,7 @@ class MySqlAdmin(object):
         """Create the list of specified databases"""
         with LocalSqlClient(get_engine()) as client:
             for item in databases:
-                mydb = models.MySQLDatabase()
+                mydb = models.ValidatedMySQLDatabase()
                 mydb.deserialize(item)
                 cd = query.CreateDatabase(mydb.name,
                                           mydb.character_set,
@@ -343,7 +343,7 @@ class MySqlAdmin(object):
                 t = text(str(g))
                 client.execute(t)
                 for database in user.databases:
-                    mydb = models.MySQLDatabase()
+                    mydb = models.ValidatedMySQLDatabase()
                     mydb.deserialize(database)
                     g = query.Grant(permissions='ALL', database=mydb.name,
                                     user=user.name, host=user.host,
@@ -354,7 +354,7 @@ class MySqlAdmin(object):
     def delete_database(self, database):
         """Delete the specified database"""
         with LocalSqlClient(get_engine()) as client:
-            mydb = models.MySQLDatabase()
+            mydb = models.ValidatedMySQLDatabase()
             mydb.deserialize(database)
             dd = query.DropDatabase(mydb.name)
             t = text(str(dd))

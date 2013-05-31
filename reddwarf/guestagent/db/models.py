@@ -285,16 +285,7 @@ class MySQLDatabase(Base):
 
     @name.setter
     def name(self, value):
-        if any([not value,
-                not self._is_valid(value),
-                not self.dbname.match(value),
-                string.find("%r" % value, "\\") != -1]):
-            raise ValueError("'%s' is not a valid database name" % value)
-        elif len(value) > 64:
-            msg = "Database name '%s' is too long. Max length = 64"
-            raise ValueError(msg % value)
-        else:
-            self._name = value
+        self._name = value
 
     @property
     def collate(self):
@@ -339,6 +330,21 @@ class MySQLDatabase(Base):
             raise ValueError("'%s' not a valid character set" % value)
         else:
             self._character_set = value
+
+
+class ValidatedMySQLDatabase(MySQLDatabase):
+    @MySQLDatabase.name.setter
+    def name(self, value):
+        if any([not value,
+                not self._is_valid(value),
+                not self.dbname.match(value),
+                string.find("%r" % value, "\\") != -1]):
+            raise ValueError("'%s' is not a valid database name" % value)
+        elif len(value) > 64:
+            msg = "Database name '%s' is too long. Max length = 64"
+            raise ValueError(msg % value)
+        else:
+            self._name = value
 
 
 class MySQLUser(Base):
@@ -424,7 +430,7 @@ class MySQLUser(Base):
 
     @databases.setter
     def databases(self, value):
-        mydb = MySQLDatabase()
+        mydb = ValidatedMySQLDatabase()
         mydb.name = value
         self._databases.append(mydb.serialize())
 
