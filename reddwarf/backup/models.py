@@ -210,6 +210,6 @@ class DBBackup(DatabaseModelBase):
             last_slash = self.location.rfind("/")
             if last_slash < 0:
                 raise ValueError("Bad location for backup object.")
-            return self.location[last_slash + 1]
+            return self.location[last_slash + 1:]
         else:
             return None

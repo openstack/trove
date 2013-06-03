@@ -32,6 +32,8 @@ BACKUP_NAME = 'WORKS'
 BACKUP_NAME_2 = 'IT-WORKS'
 BACKUP_STATE = "NEW"
 BACKUP_DESC = 'Backup test'
+BACKUP_FILENAME = '45a3d8cb-ade8-484c-a8a5-0c3c7286fb2f.xbstream.gz'
+BACKUP_LOCATION = 'https://hpcs.com/tenant/database_backups/' + BACKUP_FILENAME
 
 
 class BackupCreateTest(testtools.TestCase):
@@ -137,7 +139,8 @@ class BackupORMTest(testtools.TestCase):
                                              name=BACKUP_NAME,
                                              state=BACKUP_STATE,
                                              instance_id=self.instance_id,
-                                             deleted=False)
+                                             deleted=False,
+                                             location=BACKUP_LOCATION)
         self.deleted = False
 
     def tearDown(self):
@@ -202,3 +205,6 @@ class BackupORMTest(testtools.TestCase):
     def test_deleted_not_running(self):
         self.backup.delete()
         self.assertFalse(models.Backup.running(self.instance_id))
+
+    def test_filename(self):
+        self.assertEqual(BACKUP_FILENAME, self.backup.filename)
