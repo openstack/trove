@@ -99,7 +99,7 @@ class Flavors(object):
 
         if test_config.nova_client is not None:
             nova_user = test_config.users.find_user(
-                Requirements(is_admin=False, services=["nova"]))
+                Requirements(services=["nova"]))
             self.nova_client = create_nova_client(nova_user)
 
     def get_expected_flavors(self):
