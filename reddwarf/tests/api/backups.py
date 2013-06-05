@@ -15,6 +15,7 @@
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
+from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
@@ -24,6 +25,7 @@ from reddwarfclient import exceptions
 from reddwarf.tests.api.instances import WaitForGuestInstallationToFinish
 from reddwarf.tests.api.instances import instance_info
 from reddwarf.tests.api.instances import assert_unprocessable
+import time
 
 GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
@@ -124,7 +126,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list_for_instance(self):
-        """test list backups"""
+        """test backup list for instance"""
         result = instance_info.dbaas.instances.backups(instance_info.id)
         assert_equal(1, len(result))
         backup = result[0]
@@ -198,6 +200,25 @@ class WaitForRestoreToFinish(object):
 @test(runs_after=[WaitForRestoreToFinish],
       groups=[GROUP])
 class DeleteBackups(object):
+
+    @test
+    def test_delete_restored_instance(self):
+        """test delete restored instance"""
+        if test_config.auth_strategy == "fake":
+            raise SkipTest("Skipping delete restored instance for fake mode.")
+        instance_info.dbaas.instances.delete(restore_instance_id)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+        def instance_is_gone():
+            try:
+                instance_info.dbaas.instances.get(restore_instance_id)
+                return False
+            except exceptions.NotFound:
+                return True
+
+        poll_until(instance_is_gone)
+        assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
+                      restore_instance_id)
 
     @test
     def test_backup_delete_not_found(self):
