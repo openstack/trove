@@ -57,14 +57,14 @@ security groups and manage security group rules."
 
         if CONF.reddwarf_security_groups_support:
             security_groups = extensions.ResourceExtension(
-                '{tenant_id}/security_groups',
+                '{tenant_id}/security-groups',
                 service.SecurityGroupController(),
                 deserializer=wsgi.ReddwarfRequestDeserializer(),
                 serializer=serializer)
             resources.append(security_groups)
 
             security_group_rules = extensions.ResourceExtension(
-                '{tenant_id}/security_group_rules',
+                '{tenant_id}/security-group-rules',
                 service.SecurityGroupRuleController(),
                 deserializer=wsgi.ReddwarfRequestDeserializer(),
                 serializer=serializer)
