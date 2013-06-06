@@ -43,6 +43,7 @@ class InnoBackupEx(base.RestoreRunner):
     is_zipped = True
     restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
     prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s '
+                   '--defaults-file=%(restore_location)s/backup-my.cnf '
                    '--ibbackup xtrabackup 2>/tmp/innoprepare.log')
 
     def _pre_restore(self):

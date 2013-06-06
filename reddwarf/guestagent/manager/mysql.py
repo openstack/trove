@@ -6,6 +6,7 @@ from reddwarf.guestagent import volume
 from reddwarf.guestagent.manager.mysql_service import MySqlAppStatus
 from reddwarf.guestagent.manager.mysql_service import MySqlAdmin
 from reddwarf.guestagent.manager.mysql_service import MySqlApp
+from reddwarf.instance import models as rd_models
 from reddwarf.openstack.common import log as logging
 from reddwarf.openstack.common.gettextutils import _
 from reddwarf.openstack.common import periodic_task
@@ -65,10 +66,16 @@ class Manager(periodic_task.PeriodicTasks):
     def is_root_enabled(self, context):
         return MySqlAdmin().is_root_enabled()
 
-    def _perform_restore(self, backup_id, context, restore_location):
+    def _perform_restore(self, backup_id, context, restore_location, app):
         LOG.info(_("Restoring database from backup %s" % backup_id))
-        backup.restore(context, backup_id, restore_location)
-        LOG.info(_("Restored database"))
+        try:
+            backup.restore(context, backup_id, restore_location)
+        except Exception as e:
+            LOG.error(e)
+            LOG.error("Error performing restore from backup %s", backup_id)
+            app.status.set_status(rd_models.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully"))
 
     def prepare(self, context, databases, memory_mb, users, device_path=None,
                 mount_point=None, backup_id=None):
@@ -96,7 +103,7 @@ class Manager(periodic_task.PeriodicTasks):
                 app.start_mysql()
         app.install_if_needed()
         if backup_id:
-            self._perform_restore(backup_id, context, CONF.mount_point)
+            self._perform_restore(backup_id, context, CONF.mount_point, app)
         LOG.info(_("Securing mysql now."))
         app.secure(memory_mb)
         if backup_id and MySqlAdmin().is_root_enabled():

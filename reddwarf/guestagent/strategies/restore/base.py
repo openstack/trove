@@ -14,7 +14,9 @@
 #    under the License.
 #
 from reddwarf.guestagent.strategy import Strategy
-from reddwarf.common import cfg, utils
+from reddwarf.common import cfg
+from reddwarf.common import exception
+from reddwarf.common import utils
 from reddwarf.openstack.common import log as logging
 from eventlet.green import subprocess
 import tempfile
@@ -25,10 +27,24 @@ import glob
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 CHUNK_SIZE = CONF.backup_chunk_size
+RESET_ROOT_RETRY_TIMEOUT = 100
+RESET_ROOT_SLEEP_INTERVAL = 10
 RESET_ROOT_MYSQL_COMMAND = """
 UPDATE mysql.user SET Password=PASSWORD('') WHERE User='root';
 FLUSH PRIVILEGES;
 """
+
+
+def mysql_is_running():
+    try:
+        out, err = utils.execute_with_timeout(
+            "/usr/bin/mysqladmin",
+            "ping", run_as_root=True, root_helper="sudo")
+        LOG.info("The mysqld daemon is up and running.")
+        return True
+    except exception.ProcessExecutionError:
+        LOG.info("Waiting for mysqld daemon to start")
+        return False
 
 
 class RestoreError(Exception):
@@ -115,10 +131,21 @@ class RestoreRunner(Strategy):
         try:
             i = child.expect(['Starting mysqld daemon'])
             if i == 0:
-                LOG.info("Root password reset successfully!")
+                LOG.info("Starting mysqld daemon")
         except pexpect.TIMEOUT as e:
             LOG.error("wait_and_close_proc failed: %s" % e)
         finally:
+            try:
+                # There is a race condition here where we kill mysqld before
+                # the init file been executed. We need to ensure mysqld is up.
+                utils.poll_until(mysql_is_running,
+                                 sleep_time=RESET_ROOT_SLEEP_INTERVAL,
+                                 time_out=RESET_ROOT_RETRY_TIMEOUT)
+            except exception.PollTimeOut:
+                raise RestoreError("Reset root password failed: "
+                                   "mysqld did not start!")
+
+            LOG.info("Root password reset successfully!")
             LOG.info("Cleaning up the temp mysqld process...")
             child.delayafterclose = 1
             child.delayafterterminate = 1
