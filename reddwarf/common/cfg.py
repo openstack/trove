@@ -145,6 +145,16 @@ common_opts = [
                help="Chunk size to stream to swift container."),
     cfg.IntOpt('backup_segment_max_size', default=2 * (1024 ** 3),
                help="Maximum size of each segment of the backup file."),
+    cfg.StrOpt('remote_dns_client',
+               default='reddwarf.common.remote.dns_client'),
+    cfg.StrOpt('remote_guest_client',
+               default='reddwarf.common.remote.guest_client'),
+    cfg.StrOpt('remote_nova_client',
+               default='reddwarf.common.remote.nova_client'),
+    cfg.StrOpt('remote_nova_volume_client',
+               default='reddwarf.common.remote.nova_volume_client'),
+    cfg.StrOpt('remote_swift_client',
+               default='reddwarf.common.remote.swift_client'),
 ]
 
 

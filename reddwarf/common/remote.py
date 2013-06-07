@@ -16,11 +16,12 @@
 #    under the License.
 
 from reddwarf.common import cfg
+from reddwarf.openstack.common.importutils import import_class
 from novaclient.v1_1.client import Client
 from swiftclient.client import Connection
 
-
 CONF = cfg.CONF
+
 COMPUTE_URL = CONF.nova_compute_url
 PROXY_AUTH_URL = CONF.reddwarf_auth_url
 VOLUME_URL = CONF.nova_volume_url
@@ -28,17 +29,17 @@ OBJECT_STORE_URL = CONF.swift_url
 USE_SNET = CONF.backup_use_snet
 
 
-def create_dns_client(context):
+def dns_client(context):
     from reddwarf.dns.manager import DnsManager
     return DnsManager()
 
 
-def create_guest_client(context, id):
+def guest_client(context, id):
     from reddwarf.guestagent.api import API
     return API(context, id)
 
 
-def create_nova_client(context):
+def nova_client(context):
     client = Client(context.user, context.auth_token,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
@@ -47,7 +48,7 @@ def create_nova_client(context):
     return client
 
 
-def create_nova_volume_client(context):
+def nova_volume_client(context):
     # Quite annoying but due to a paste config loading bug.
     # TODO(hub-cap): talk to the openstack-common people about this
     client = Client(context.user, context.auth_token,
@@ -58,7 +59,7 @@ def create_nova_volume_client(context):
     return client
 
 
-def create_swift_client(context):
+def swift_client(context):
     client = Connection(preauthurl=OBJECT_STORE_URL + context.tenant,
                         preauthtoken=context.auth_token,
                         tenant_name=context.tenant,
@@ -66,21 +67,8 @@ def create_swift_client(context):
     return client
 
 
-# Override the functions above with fakes.
-if CONF.remote_implementation == "fake":
-    from reddwarf.tests.fakes.nova import fake_create_nova_client
-    from reddwarf.tests.fakes.nova import fake_create_nova_volume_client
-    from reddwarf.tests.fakes.guestagent import fake_create_guest_client
-    from reddwarf.tests.fakes.swift import fake_create_swift_client
-
-    def create_guest_client(context, id):
-        return fake_create_guest_client(context, id)
-
-    def create_nova_client(context):
-        return fake_create_nova_client(context)
-
-    def create_nova_volume_client(context):
-        return fake_create_nova_volume_client(context)
-
-    def create_swift_client(context):
-        return fake_create_swift_client(context)
+create_dns_client = import_class(CONF.remote_dns_client)
+create_guest_client = import_class(CONF.remote_guest_client)
+create_nova_client = import_class(CONF.remote_nova_client)
+create_nova_volume_client = import_class(CONF.remote_nova_volume_client)
+create_swift_client = import_class(CONF.remote_swift_client)
