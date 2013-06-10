@@ -1,6 +1,12 @@
 [DEFAULT]
 
+# Fake out the remote implementations
 remote_implementation = fake
+remote_nova_client = reddwarf.tests.fakes.nova.fake_create_nova_client
+remote_nova_volume_client = reddwarf.tests.fakes.nova.fake_create_nova_volume_client
+remote_guest_client = reddwarf.tests.fakes.guestagent.fake_create_guest_client
+remote_swift_client = reddwarf.tests.fakes.swift.fake_create_swift_client
+
 fake_mode_events = eventlet
 
 log_file = rdtest.log
