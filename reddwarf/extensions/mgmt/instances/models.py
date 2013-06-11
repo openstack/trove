@@ -11,39 +11,44 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import datetime
 
+from reddwarf.common import cfg
+from reddwarf.common import remote
+from reddwarf.common import utils
 from reddwarf.openstack.common import log as logging
-
-from reddwarf.common.remote import create_nova_client
-from reddwarf.common.remote import create_nova_volume_client
+from reddwarf.openstack.common.notifier import api as notifier
 from reddwarf.instance import models as imodels
-from reddwarf.instance.models import load_instance
+from reddwarf.instance.models import load_instance, InstanceServiceStatus
 from reddwarf.instance import models as instance_models
 from reddwarf.extensions.mysql import models as mysql_models
 
-
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
-def load_mgmt_instances(context, deleted=None):
-    client = create_nova_client(context)
-    mgmt_servers = client.rdservers.list()
-    db_infos = None
+def load_mgmt_instances(context, deleted=None, client=None):
+    if not client:
+        client = remote.create_nova_client(context)
+    try:
+        mgmt_servers = client.rdservers.list()
+    except AttributeError:
+        mgmt_servers = client.servers.list(search_opts={'all_tenants': 1})
+    LOG.info("Found %d servers in Nova" %
+             len(mgmt_servers if mgmt_servers else []))
     if deleted is not None:
         db_infos = instance_models.DBInstance.find_all(deleted=deleted)
     else:
         db_infos = instance_models.DBInstance.find_all()
-    instances = MgmtInstances.load_status_from_existing(
-        context,
-        db_infos,
-        mgmt_servers)
+    instances = MgmtInstances.load_status_from_existing(context, db_infos,
+                                                        mgmt_servers)
     return instances
 
 
 def load_mgmt_instance(cls, context, id):
     try:
         instance = load_instance(cls, context, id, needs_server=True)
-        client = create_nova_client(context)
+        client = remote.create_nova_client(context)
         server = client.rdservers.get(instance.server_id)
         instance.server.host = server.host
         instance.server.deleted = server.deleted
@@ -57,7 +62,6 @@ def load_mgmt_instance(cls, context, id):
 
 
 class SimpleMgmtInstance(imodels.BaseInstance):
-
     def __init__(self, context, db_info, server, service_status):
         super(SimpleMgmtInstance, self).__init__(context, db_info, server,
                                                  service_status)
@@ -86,7 +90,6 @@ class SimpleMgmtInstance(imodels.BaseInstance):
 
 
 class DetailedMgmtInstance(SimpleMgmtInstance):
-
     def __init__(self, *args, **kwargs):
         super(DetailedMgmtInstance, self).__init__(*args, **kwargs)
         self.volume = None
@@ -96,12 +99,12 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
     @classmethod
     def load(cls, context, id):
         instance = load_mgmt_instance(cls, context, id)
-        client = create_nova_volume_client(context)
+        client = remote.create_nova_volume_client(context)
         try:
             instance.volume = client.volumes.get(instance.volume_id)
-        except Exception as ex:
+        except Exception:
             instance.volume = None
-        # Populate the volume_used attribute from the guest agent.
+            # Populate the volume_used attribute from the guest agent.
         instance_models.load_guest_info(instance, context, id)
         instance.root_history = mysql_models.RootHistory.load(context=context,
                                                               instance_id=id)
@@ -109,7 +112,6 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
 
 
 class MgmtInstance(imodels.Instance):
-
     def get_diagnostics(self):
         return self.get_guest().get_diagnostics()
 
@@ -121,10 +123,8 @@ class MgmtInstance(imodels.Instance):
 
 
 class MgmtInstances(imodels.Instances):
-
     @staticmethod
     def load_status_from_existing(context, db_infos, servers):
-
         def load_instance(context, db, status, server=None):
             return SimpleMgmtInstance(context, db, server, status)
 
@@ -132,7 +132,8 @@ class MgmtInstances(imodels.Instances):
             raise TypeError("Argument context not defined.")
         find_server = imodels.create_server_list_matcher(servers)
         instances = imodels.Instances._load_servers_status(load_instance,
-                                                           context, db_infos,
+                                                           context,
+                                                           db_infos,
                                                            find_server)
         _load_servers(instances, find_server)
         return instances
@@ -148,3 +149,91 @@ def _load_servers(instances, find_server):
         except Exception as ex:
             LOG.error(ex)
     return instances
+
+
+def publish_exist_events(transformer, admin_context):
+    notifications = transformer()
+    for notification in notifications:
+        notifier.notify(admin_context,
+                        CONF.host,
+                        "reddwarf.instance.exists",
+                        'INFO',
+                        notification)
+
+
+class NotificationTransformer(object):
+    def __init__(self, **kwargs):
+        pass
+
+    @staticmethod
+    def _get_audit_period():
+        now = datetime.datetime.now()
+        audit_start = utils.isotime(now, subsecond=True)
+        audit_end = utils.isotime(
+            now + datetime.timedelta(
+                seconds=CONF.exists_notification_ticks * CONF.report_interval),
+            subsecond=True)
+        return audit_start, audit_end
+
+    def transform_instance(self, instance, audit_start, audit_end):
+        return {'audit-period-beginning': audit_start,
+                'audit-period-ending': audit_end,
+                'created_at': instance.created,
+                'display_name': instance.name,
+                'instance_id': instance.id,
+                'instance_name': instance.name,
+                'instance_type_id': instance.flavor_id,
+                'launched_at': instance.created,
+                'nova_instance_id': instance.server_id,
+                'region': CONF.region,
+                'state_description': instance.status.lower(),
+                'state': instance.status.lower(),
+                'tenant_id': instance.tenant_id,
+                'service_id': CONF.notification_service_id}
+
+    def __call__(self):
+        audit_start, audit_end = NotificationTransformer._get_audit_period()
+        messages = []
+        db_infos = instance_models.DBInstance.find_all(deleted=False)
+        for db_info in db_infos:
+            service_status = InstanceServiceStatus.find_by(
+                instance_id=db_info.id)
+            instance = SimpleMgmtInstance(None, db_info, None, service_status)
+            message = self.transform_instance(instance, audit_start, audit_end)
+            messages.append(message)
+        return messages
+
+
+class NovaNotificationTransformer(NotificationTransformer):
+    def __init__(self, **kwargs):
+        super(NovaNotificationTransformer, self).__init__(**kwargs)
+        self.context = kwargs['context']
+        self.nova_client = remote.create_admin_nova_client(self.context)
+        self._flavor_cache = {}
+
+    def _lookup_flavor(self, flavor_id):
+        if flavor_id in self._flavor_cache:
+            LOG.debug("Flavor cache hit for %s" % flavor_id)
+            return self._flavor_cache[flavor_id]
+        # fetch flavor resource from nova
+        LOG.info("Flavor cache miss for %s" % flavor_id)
+        flavor = self.nova_client.flavors.get(flavor_id)
+        self._flavor_cache[flavor_id] = flavor.name if flavor else 'unknown'
+        return self._flavor_cache[flavor_id]
+
+    def __call__(self):
+        audit_start, audit_end = NotificationTransformer._get_audit_period()
+        instances = load_mgmt_instances(self.context, deleted=False,
+                                        client=self.nova_client)
+        messages = []
+        for instance in filter(
+                lambda inst: inst.status != 'SHUTDOWN' and inst.server,
+                instances):
+            message = {
+                'instance_type': self._lookup_flavor(instance.flavor_id),
+                'user_id': instance.server.user_id}
+            message.update(self.transform_instance(instance,
+                                                   audit_start,
+                                                   audit_end))
+            messages.append(message)
+        return messages

@@ -14,18 +14,34 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from reddwarf.common.context import ReddwarfContext
 
+import reddwarf.extensions.mgmt.instances.models as mgmtmodels
+import reddwarf.common.cfg as cfg
 from reddwarf.common import exception
 from reddwarf.openstack.common import log as logging
+from reddwarf.openstack.common import importutils
 from reddwarf.openstack.common import periodic_task
 from reddwarf.taskmanager import models
 from reddwarf.taskmanager.models import FreshInstanceTasks
 
 LOG = logging.getLogger(__name__)
 RPC_API_VERSION = "1.0"
+CONF = cfg.CONF
 
 
 class Manager(periodic_task.PeriodicTasks):
+
+    def __init__(self):
+        super(Manager, self).__init__()
+        self.admin_context = ReddwarfContext(
+            user=CONF.nova_proxy_admin_user,
+            auth_token=CONF.nova_proxy_admin_pass,
+            tenant=CONF.nova_proxy_admin_tenant_name)
+        if CONF.exists_notification_transformer:
+            self.exists_transformer = importutils.import_object(
+                CONF.exists_notification_transformer,
+                context=self.admin_context)
 
     def resize_volume(self, context, instance_id, new_size):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
@@ -74,3 +90,14 @@ class Manager(periodic_task.PeriodicTasks):
                                        databases, users, service_type,
                                        volume_size, security_groups,
                                        backup_id)
+
+    if CONF.exists_notification_transformer:
+        @periodic_task.periodic_task(
+            ticks_between_runs=CONF.exists_notification_ticks)
+        def publish_exists_event(self, context):
+            """
+            Push this in Instance Tasks to fetch a report/collection
+            :param context: currently None as specied in bin script
+            """
+            mgmtmodels.publish_exist_events(self.exists_transformer,
+                                            self.admin_context)
