@@ -486,6 +486,36 @@ class DbQuotaDriverTest(testtools.TestCase):
                           resources,
                           delta)
 
+    def test_reserve_over_quota_but_can_apply_negative_deltas(self):
+
+        FAKE_QUOTAS = [QuotaUsage(id=1,
+                                  tenant_id=FAKE_TENANT1,
+                                  resource=Resource.INSTANCES,
+                                  in_use=10,
+                                  reserved=0),
+                       QuotaUsage(id=2,
+                                  tenant_id=FAKE_TENANT1,
+                                  resource=Resource.VOLUMES,
+                                  in_use=50,
+                                  reserved=0)]
+
+        self.mock_quota_result.all = Mock(return_value=[])
+        self.mock_usage_result.all = Mock(return_value=FAKE_QUOTAS)
+
+        QuotaUsage.save = Mock()
+        Reservation.create = Mock()
+
+        delta = {'instances': -1, 'volumes': -3}
+        self.driver.reserve(FAKE_TENANT1, resources, delta)
+        _, kw = Reservation.create.call_args_list[0]
+        self.assertEquals(1, kw['usage_id'])
+        self.assertEquals(-1, kw['delta'])
+        self.assertEquals(Reservation.Statuses.RESERVED, kw['status'])
+        _, kw = Reservation.create.call_args_list[1]
+        self.assertEquals(2, kw['usage_id'])
+        self.assertEquals(-3, kw['delta'])
+        self.assertEquals(Reservation.Statuses.RESERVED, kw['status'])
+
     def test_commit(self):
 
         Reservation.save = Mock()

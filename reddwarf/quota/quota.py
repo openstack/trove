@@ -149,9 +149,10 @@ class DbQuotaDriver(object):
                                                            deltas.keys())
 
         overs = [resource for resource in deltas
-                 if (quota_usages[resource].in_use +
+                 if (int(deltas[resource]) > 0 and
+                    (quota_usages[resource].in_use +
                      quota_usages[resource].reserved +
-                     int(deltas[resource])) > quotas[resource].hard_limit]
+                     int(deltas[resource])) > quotas[resource].hard_limit)]
 
         if overs:
             raise exception.QuotaExceeded(overs=sorted(overs))
