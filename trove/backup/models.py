@@ -99,7 +99,7 @@ class Backup(object):
         return query.first()
 
     @classmethod
-    def get_by_id(cls, backup_id, deleted=False):
+    def get_by_id(cls, context, backup_id, deleted=False):
         """
         get the backup for that id
         :param cls:
@@ -108,7 +108,9 @@ class Backup(object):
         :return:
         """
         try:
-            db_info = DBBackup.find_by(id=backup_id, deleted=deleted)
+            db_info = DBBackup.find_by(context=context,
+                                       id=backup_id,
+                                       deleted=deleted)
             return db_info
         except exception.NotFound:
             raise exception.NotFound(uuid=backup_id)
@@ -148,7 +150,7 @@ class Backup(object):
         """
 
         def _delete_resources():
-            backup = cls.get_by_id(backup_id)
+            backup = cls.get_by_id(context, backup_id)
             if backup.is_running:
                 msg = ("Backup %s cannot be delete because it is running." %
                        backup_id)

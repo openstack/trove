@@ -45,7 +45,8 @@ class BackupController(wsgi.Controller):
         """Return a single backup."""
         LOG.info(_("Showing a backup for tenant '%s'") % tenant_id)
         LOG.info(_("id : '%s'\n\n") % id)
-        backup = Backup.get_by_id(id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        backup = Backup.get_by_id(context, id)
         return wsgi.Result(views.BackupView(backup).data(), 200)
 
     def create(self, req, body, tenant_id):

@@ -247,12 +247,8 @@ def get_db_info(context, id):
     elif id is None:
         raise TypeError("Argument id not defined.")
     try:
-        db_info = DBInstance.find_by(id=id, deleted=False)
+        db_info = DBInstance.find_by(context=context, id=id, deleted=False)
     except exception.NotFound:
-        raise exception.NotFound(uuid=id)
-    if not context.is_admin and db_info.tenant_id != context.tenant:
-        LOG.error("Tenant %s tried to access instance %s, owned by %s."
-                  % (context.tenant, id, db_info.tenant_id))
         raise exception.NotFound(uuid=id)
     return db_info
 
@@ -438,7 +434,7 @@ class Instance(BuiltInstance):
             security_groups = None
 
             if backup_id is not None:
-                backup_info = Backup.get_by_id(backup_id)
+                backup_info = Backup.get_by_id(context, backup_id)
                 if backup_info.is_running:
                     raise exception.BackupNotCompleteError(backup_id=backup_id)
 

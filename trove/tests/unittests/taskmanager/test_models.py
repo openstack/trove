@@ -38,7 +38,7 @@ class BackupTasksTest(testtools.TestCase):
                                    {'name': 'third'}])
         when(backup_models.Backup).delete(any()).thenReturn(None)
         when(backup_models.Backup).get_by_id(
-            self.backup.id).thenReturn(self.backup)
+            any(), self.backup.id).thenReturn(self.backup)
         when(self.backup).delete(any()).thenReturn(None)
         self.swift_client = mock()
         when(remote).create_swift_client(

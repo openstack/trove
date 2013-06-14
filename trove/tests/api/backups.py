@@ -15,17 +15,18 @@
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
-from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
 from trove.tests.util import poll_until
 from trove.tests.util import test_config
+from trove.tests.util import create_dbaas_client
+from trove.tests.util.users import Requirements
+from trove.tests.config import CONFIG
 from troveclient import exceptions
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import assert_unprocessable
-import time
 
 GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
@@ -145,6 +146,16 @@ class ListBackups(object):
         assert_equal(instance_info.id, backup.instance_id)
         assert_equal('COMPLETED', backup.status)
 
+        # Test to make sure that user in other tenant is not able
+        # to GET this backup
+        reqs = Requirements(is_admin=False)
+        other_user = CONFIG.users.find_user(
+            reqs,
+            black_list=[instance_info.user.auth_user])
+        other_client = create_dbaas_client(other_user)
+        assert_raises(exceptions.NotFound, other_client.backups.get,
+                      backup_info.id)
+
 
 @test(runs_after=[ListBackups],
       groups=[GROUP])
@@ -230,6 +241,17 @@ class DeleteBackups(object):
     @time_out(60 * 2)
     def test_backup_delete(self):
         """test delete"""
+
+        # Test to make sure that user in other tenant is not able
+        # to DELETE this backup
+        reqs = Requirements(is_admin=False)
+        other_user = CONFIG.users.find_user(
+            reqs,
+            black_list=[instance_info.user.auth_user])
+        other_client = create_dbaas_client(other_user)
+        assert_raises(exceptions.NotFound, other_client.backups.delete,
+                      backup_info.id)
+
         instance_info.dbaas.backups.delete(backup_info.id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 

@@ -89,11 +89,20 @@ class DatabaseModelBase(models.ModelBase):
             self[k] = v
 
     @classmethod
-    def find_by(cls, **conditions):
+    def find_by(cls, context=None, **conditions):
         model = cls.get_by(**conditions)
+
         if model is None:
             raise exception.ModelNotFoundError(_("%s Not Found") %
                                                cls.__name__)
+
+        if ((context and not context.is_admin and hasattr(model, 'tenant_id')
+             and model.tenant_id != context.tenant)):
+            LOG.error("Tenant %s tried to access %s, owned by %s."
+                      % (context.tenant, cls.__name__, model.tenant_id))
+            raise exception.ModelNotFoundError(_("%s Not Found") %
+                                               cls.__name__)
+
         return model
 
     @classmethod
