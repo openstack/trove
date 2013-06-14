@@ -43,7 +43,6 @@ from reddwarf.openstack.common import log as logging
 from reddwarf.common import cfg
 
 CONTEXT_KEY = 'reddwarf.context'
-Router = openstack_wsgi.Router
 Debug = openstack_wsgi.Debug
 Middleware = openstack_wsgi.Middleware
 JSONDictSerializer = openstack_wsgi.JSONDictSerializer
@@ -205,6 +204,26 @@ class VersionedURLMap(object):
         else:
             app = self.urlmap
         return app(environ, start_response)
+
+
+class Router(openstack_wsgi.Router):
+
+    # Original router did not allow for serialization of the 404 error.
+    # To fix this the _dispatch was modified to use Fault() objects.
+    @staticmethod
+    @webob.dec.wsgify
+    def _dispatch(req):
+        """
+        Called by self._router after matching the incoming request to a route
+        and putting the information into req.environ.  Either returns 404
+        or the routed WSGI app's response.
+        """
+
+        match = req.environ['wsgiorg.routing_args'][1]
+        if not match:
+            return Fault(webob.exc.HTTPNotFound())
+        app = match['controller']
+        return app
 
 
 class Request(openstack_wsgi.Request):
