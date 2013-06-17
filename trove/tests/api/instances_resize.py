@@ -131,6 +131,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
         self._server_changes_to("VERIFY_RESIZE", OLD_FLAVOR_ID)
+        self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
         self.guest.restart()
@@ -153,6 +154,7 @@ class ResizeTests(ResizeTestBase):
         self.instance.service_status = ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
             .AndRaise(PollTimeOut)
+        self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
         self.guest.restart()
@@ -164,6 +166,7 @@ class ResizeTests(ResizeTestBase):
         self.instance.service_status = ServiceStatuses.SHUTDOWN
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
+        self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
         self.guest.restart()
@@ -185,6 +188,7 @@ class ResizeTests(ResizeTestBase):
         self.instance.service_status = ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
             .AndRaise(PollTimeOut)
+        self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ERROR", OLD_FLAVOR_ID)
 

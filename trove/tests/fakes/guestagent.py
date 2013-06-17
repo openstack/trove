@@ -221,6 +221,10 @@ class FakeGuest(object):
         time.sleep(1)
         self._set_status('RUNNING')
 
+    def reset_configuration(self, config):
+        # There's nothing to do here, since there is no config to update.
+        pass
+
     def start_db_with_conf_changes(self, updated_memory_size):
         time.sleep(2)
         self._set_status('RUNNING')

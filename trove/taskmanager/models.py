@@ -703,6 +703,18 @@ class ResizeAction(ResizeActionBase):
     def _initiate_nova_action(self):
         self.instance.server.resize(self.new_flavor_id)
 
+    def _revert_nova_action(self):
+        LOG.debug("Instance %s calling Compute revert resize..."
+                  % self.instance.id)
+        LOG.debug("Repairing config.")
+        try:
+            config = {'memory_mb': self.old_memory_size}
+            self.instance.guest.reset_configuration(config)
+        except GuestTimeout as gt:
+            LOG.exception("Error sending reset_configuration call.")
+        LOG.debug("Reverting resize.")
+        super(ResizeAction, self)._revert_nova_action()
+
     def _record_action_success(self):
         LOG.debug("Updating instance %s to flavor_id %s."
                   % (self.instance.id, self.new_flavor_id))

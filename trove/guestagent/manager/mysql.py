@@ -26,6 +26,10 @@ class Manager(periodic_task.PeriodicTasks):
     def change_passwords(self, context, users):
         return MySqlAdmin().change_passwords(users)
 
+    def reset_configuration(self, context, configuration):
+        app = MySqlApp(MySqlAppStatus.get())
+        app.reset_configuration(configuration)
+
     def create_database(self, context, databases):
         return MySqlAdmin().create_database(databases)
 

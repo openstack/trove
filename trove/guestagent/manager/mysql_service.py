@@ -838,6 +838,12 @@ class MySqlApp(object):
         self._write_mycnf(updated_memory_mb, None)
         self.start_mysql(True)
 
+    def reset_configuration(self, configuration):
+        updated_memory_mb = configuration['memory_mb']
+        LOG.info(_("Changing configuration to memory(%s)...")
+                 % updated_memory_mb)
+        self._write_mycnf(updated_memory_mb, None)
+
     def is_installed(self):
         #(cp16net) could raise an exception, does it need to be handled here?
         version = pkg.pkg_version(self.MYSQL_PACKAGE_VERSION)
