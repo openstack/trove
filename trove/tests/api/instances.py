@@ -61,7 +61,6 @@ from trove.tests.util.usage import create_usage_verifier
 from trove.tests.util import iso_time
 from trove.tests.util import process
 from trove.tests.util.users import Requirements
-from trove.tests.util import skip_if_xml
 from trove.tests.util import string_in_list
 from trove.tests.util import poll_until
 from trove.tests.util.check import AttrCheck
@@ -641,7 +640,7 @@ class AfterInstanceCreation(unittest.TestCase):
     def test_users_create_after_create(self):
         users = list()
         users.append({"name": "testuser", "password": "password",
-                      "database": "testdb"})
+                      "databases": [{"name": "testdb"}]})
         assert_unprocessable(dbaas.users.create, instance_info.id, users)
 
     def test_resize_instance_after_create(self):

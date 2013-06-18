@@ -115,3 +115,38 @@ class SecurityGroupRuleController(wsgi.Controller):
                         "- %s") % e)
             raise exception.SecurityGroupRuleCreationError(
                 "Required element/key - %s was not specified" % e)
+
+    schemas = {
+        "type": "object",
+        "name": "security_group_rule:create",
+        "required": True,
+        "properties": {
+            "security_group_rule": {
+                "type": "object",
+                "required": True,
+                "properties": {
+                    "cidr": {
+                        "type": "string",
+                        "required": True,
+                        "minLength": 9,
+                        "maxLength": 18
+                    },
+                    "group_id": {
+                        "type": "string",
+                        "required": True,
+                        "maxLength": 255
+                    },
+                    "from_port": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 65535
+                    },
+                    "to_port": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 65535
+                    }
+                }
+            }
+        }
+    }

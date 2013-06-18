@@ -83,7 +83,7 @@ class TestDatabases(object):
     @test
     def test_cannot_create_taboo_database_names(self):
         for name in self.system_dbs:
-            databases = [{"name": name, "charset": "latin2",
+            databases = [{"name": name, "character_set": "latin2",
                           "collate": "latin2_general_ci"}]
             assert_raises(exceptions.BadRequest, self.dbaas.databases.create,
                           instance_info.id, databases)
@@ -92,7 +92,7 @@ class TestDatabases(object):
     @test
     def test_create_database(self):
         databases = []
-        databases.append({"name": self.dbname, "charset": "latin2",
+        databases.append({"name": self.dbname, "character_set": "latin2",
                           "collate": "latin2_general_ci"})
         databases.append({"name": self.dbname2})
 
@@ -116,7 +116,7 @@ class TestDatabases(object):
     @test(depends_on=[test_create_database])
     def test_fails_when_creating_a_db_twice(self):
         databases = []
-        databases.append({"name": self.dbname, "charset": "latin2",
+        databases.append({"name": self.dbname, "character_set": "latin2",
                           "collate": "latin2_general_ci"})
         databases.append({"name": self.dbname2})
 
@@ -138,7 +138,7 @@ class TestDatabases(object):
 
     @test
     def test_create_database_on_missing_instance(self):
-        databases = [{"name": "invalid_db", "charset": "latin2",
+        databases = [{"name": "invalid_db", "character_set": "latin2",
                       "collate": "latin2_general_ci"}]
         assert_raises(exceptions.NotFound, self.dbaas.databases.create,
                       -1, databases)
@@ -190,7 +190,7 @@ class TestDatabases(object):
     @test
     def test_pagination(self):
         databases = []
-        databases.append({"name": "Sprockets", "charset": "latin2",
+        databases.append({"name": "Sprockets", "character_set": "latin2",
                           "collate": "latin2_general_ci"})
         databases.append({"name": "Cogs"})
         databases.append({"name": "Widgets"})
