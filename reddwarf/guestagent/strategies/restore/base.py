@@ -27,6 +27,9 @@ import glob
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 CHUNK_SIZE = CONF.backup_chunk_size
+BACKUP_USE_GZIP = CONF.backup_use_gzip_compression
+BACKUP_USE_OPENSSL = CONF.backup_use_openssl_encryption
+BACKUP_DECRYPT_KEY = CONF.backup_aes_cbc_key
 RESET_ROOT_RETRY_TIMEOUT = 100
 RESET_ROOT_SLEEP_INTERVAL = 10
 RESET_ROOT_MYSQL_COMMAND = """
@@ -78,13 +81,20 @@ class RestoreRunner(Strategy):
     # The backup format type
     restore_type = None
 
+    # Decryption Parameters
+    is_zipped = BACKUP_USE_GZIP
+    is_encrypted = BACKUP_USE_OPENSSL
+    decrypt_key = BACKUP_DECRYPT_KEY
+
     def __init__(self, restore_stream, **kwargs):
         self.restore_stream = restore_stream
         self.restore_location = kwargs.get('restore_location',
                                            '/var/lib/mysql')
-        self.restore_cmd = self.restore_cmd % kwargs
-        self.prepare_cmd = self.prepare_cmd % kwargs \
-            if hasattr(self, 'prepare_cmd') else None
+        self.restore_cmd = (self.decrypt_cmd +
+                            self.unzip_cmd +
+                            (self.base_restore_cmd % kwargs))
+        self.prepare_cmd = self.base_prepare_cmd % kwargs \
+            if hasattr(self, 'base_prepare_cmd') else None
         super(RestoreRunner, self).__init__()
 
     def __enter__(self):
@@ -175,3 +185,15 @@ class RestoreRunner(Strategy):
         filelist = glob.glob(self.restore_location + "/ib_logfile*")
         for f in filelist:
             os.unlink(f)
+
+    @property
+    def decrypt_cmd(self):
+        if self.is_encrypted:
+            return ('openssl enc -d -aes-256-cbc -salt -pass pass:%s | '
+                    % self.decrypt_key)
+        else:
+            return ''
+
+    @property
+    def unzip_cmd(self):
+        return 'gzip -d -c | ' if self.is_zipped else ''
