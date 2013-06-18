@@ -43,8 +43,21 @@ def mysql_is_running():
         LOG.info("The mysqld daemon is up and running.")
         return True
     except exception.ProcessExecutionError:
-        LOG.info("Waiting for mysqld daemon to start")
+        LOG.info("The mysqld daemon is not running.")
         return False
+
+
+def mysql_is_not_running():
+    return not mysql_is_running()
+
+
+def poll_until_then_raise(event, exception):
+    try:
+        utils.poll_until(event,
+                         sleep_time=RESET_ROOT_SLEEP_INTERVAL,
+                         time_out=RESET_ROOT_RETRY_TIMEOUT)
+    except exception.PollTimeOut:
+        raise exception
 
 
 class RestoreError(Exception):
@@ -135,22 +148,20 @@ class RestoreRunner(Strategy):
         except pexpect.TIMEOUT as e:
             LOG.error("wait_and_close_proc failed: %s" % e)
         finally:
-            try:
-                # There is a race condition here where we kill mysqld before
-                # the init file been executed. We need to ensure mysqld is up.
-                utils.poll_until(mysql_is_running,
-                                 sleep_time=RESET_ROOT_SLEEP_INTERVAL,
-                                 time_out=RESET_ROOT_RETRY_TIMEOUT)
-            except exception.PollTimeOut:
-                raise RestoreError("Reset root password failed: "
-                                   "mysqld did not start!")
-
+            # There is a race condition here where we kill mysqld before
+            # the init file been executed. We need to ensure mysqld is up.
+            poll_until_then_raise(mysql_is_running,
+                                  RestoreError("Reset root password failed: "
+                                               "mysqld did not start!"))
             LOG.info("Root password reset successfully!")
             LOG.info("Cleaning up the temp mysqld process...")
             child.delayafterclose = 1
             child.delayafterterminate = 1
             child.close(force=True)
             utils.execute_with_timeout("sudo", "killall", "mysqld")
+            poll_until_then_raise(mysql_is_not_running,
+                                  RestoreError("Reset root password failed: "
+                                               "mysqld did not stop!"))
 
     def _reset_root_password(self):
         #Create temp file with reset root password
