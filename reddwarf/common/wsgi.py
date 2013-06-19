@@ -22,6 +22,7 @@ import paste.urlmap
 import re
 import time
 import traceback
+import uuid
 import webob
 import webob.dec
 import webob.exc
@@ -315,9 +316,11 @@ class Resource(openstack_wsgi.Resource):
             LOG.debug(traceback.format_exc())
             return Fault(http_error)
         except Exception as error:
-            LOG.exception(error)
+            exception_uuid = str(uuid.uuid4())
+            LOG.exception(exception_uuid + ": " + str(error))
             return Fault(webob.exc.HTTPInternalServerError(
-                str(error),
+                "Internal Server Error. Please keep this ID to help us "
+                "figure out what went wrong: (%s)" % exception_uuid,
                 request=request))
 
     def _get_http_error(self, error):
