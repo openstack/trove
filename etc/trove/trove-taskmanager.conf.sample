@@ -53,7 +53,6 @@ trove_auth_url = http://0.0.0.0:5000/v2.0
 taskmanager_manager=trove.taskmanager.manager.Manager
 
 # Manager sends Exists Notifications
-taskmanager_exists_notification = True
 exists_notification_transformer = trove.extensions.mgmt.instances.models.NovaNotificationTransformer
 exists_notification_ticks = 30
 notification_service_id = 2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b

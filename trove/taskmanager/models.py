@@ -98,6 +98,11 @@ class NotifyMixin(object):
                 'nova_volume_id': self.volume_id
             })
 
+        if CONF.notification_service_id:
+            payload.update({
+                'service_id': CONF.notification_service_id
+            })
+
         # Update payload with all other kwargs
         payload.update(kwargs)
         LOG.debug('Sending event: %s, %s' % (event_type, payload))
