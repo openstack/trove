@@ -9,10 +9,10 @@ fi
 function run() {
     .tox/py26/bin/python $@
 }
-run bin/reddwarf-manage \
-    --config-file=etc/reddwarf/reddwarf.conf.test db_wipe \
-    reddwarf_test.sqlite mysql fake
-run bin/reddwarf-server \
-    --fork --config-file=etc/reddwarf/reddwarf.conf.test \
+run bin/trove-manage \
+    --config-file=etc/trove/trove.conf.test db_wipe \
+    trove_test.sqlite mysql fake
+run bin/trove-server \
+    --fork --config-file=etc/trove/trove.conf.test \
     $@
 

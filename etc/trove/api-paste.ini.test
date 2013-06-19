@@ -1,0 +1,45 @@
+[composite:trove]
+use = call:trove.common.wsgi:versioned_urlmap
+/: versions
+/v1.0: troveapi
+
+[app:versions]
+paste.app_factory = trove.versions:app_factory
+
+[pipeline:troveapi]
+pipeline = faultwrapper tokenauth authorization contextwrapper extensions ratelimit troveapp
+#pipeline = debug extensions troveapp
+
+[filter:extensions]
+paste.filter_factory = trove.common.extensions:factory
+
+[filter:tokenauth]
+paste.filter_factory = trove.tests.fakes.keystone:filter_factory
+service_protocol = http
+service_host = 127.0.0.1
+service_port = 5000
+auth_host = 127.0.0.1
+auth_port = 35357
+auth_protocol = http
+auth_uri = http://127.0.0.1:5000/
+admin_token = be19c524ddc92109a224
+signing_dir = /tmp/keystone-signing-trove
+
+[filter:authorization]
+paste.filter_factory = trove.common.auth:AuthorizationMiddleware.factory
+
+[filter:contextwrapper]
+paste.filter_factory = trove.common.wsgi:ContextMiddleware.factory
+
+[filter:faultwrapper]
+paste.filter_factory = trove.common.wsgi:FaultWrapper.factory
+
+[filter:ratelimit]
+paste.filter_factory = trove.common.limits:RateLimitingMiddleware.factory
+
+[app:troveapp]
+paste.app_factory = trove.common.api:app_factory
+
+#Add this filter to log request and response for debugging
+[filter:debug]
+paste.filter_factory = trove.common.wsgi:Debug

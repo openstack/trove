@@ -1,0 +1,132 @@
+#!/usr/bin/env python
+# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+# Copyright 2011 OpenStack Foundation
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+import gettext
+import inspect
+import optparse
+import os
+import sys
+
+
+gettext.install('trove', unicode=1)
+
+
+# If ../trove/__init__.py exists, add ../ to Python search path, so that
+# it will override what happens to be installed in /usr/(local/)lib/python...
+possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
+    os.pardir,
+    os.pardir))
+if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
+    sys.path.insert(0, possible_topdir)
+
+from trove import version
+from trove.common import cfg
+from trove.common import utils
+from trove.db import get_db_api
+from trove.openstack.common import log as logging
+from trove.openstack.common import uuidutils
+from trove.instance import models as instance_models
+
+
+CONF = cfg.CONF
+
+
+class Commands(object):
+
+    def __init__(self):
+        self.db_api = get_db_api()
+
+    def db_sync(self, repo_path=None):
+        self.db_api.db_sync(CONF, repo_path=repo_path)
+
+    def db_upgrade(self, version=None, repo_path=None):
+        self.db_api.db_upgrade(CONF, version, repo_path=None)
+
+    def db_downgrade(self, version, repo_path=None):
+        self.db_api.db_downgrade(CONF, version, repo_path=None)
+
+    def execute(self):
+        exec_method = getattr(self, CONF.action.name)
+        args = inspect.getargspec(exec_method)
+        args.args.remove('self')
+        kwargs = {}
+        for arg in args.args:
+            kwargs[arg] = getattr(CONF.action, arg)
+        exec_method(**kwargs)
+
+    def image_update(self, service_name, image_id):
+        self.db_api.configure_db(CONF)
+        image = self.db_api.find_by(instance_models.ServiceImage,
+                               service_name=service_name)
+        if image is None:
+            # Create a new one
+            image = instance_models.ServiceImage()
+            image.id = uuidutils.generate_uuid()
+            image.service_name = service_name
+        image.image_id = image_id
+        self.db_api.save(image)
+
+    def db_wipe(self, repo_path, service_name, image_id):
+        """Drops the database and recreates it."""
+        from trove.instance import models
+        from trove.db.sqlalchemy import session
+        self.db_api.drop_db(CONF)
+        self.db_sync()
+        # Sets up database engine, so the next line will work...
+        session.configure_db(CONF)
+        models.ServiceImage.create(service_name=service_name,
+                                   image_id=image_id)
+
+    def params_of(self, command_name):
+        if Commands.has(command_name):
+            return utils.MethodInspector(getattr(self, command_name))
+
+
+if __name__ == '__main__':
+
+    def actions(subparser):
+        parser = subparser.add_parser('db_sync')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('db_upgrade')
+        parser.add_argument('--version')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('db_downgrade')
+        parser.add_argument('version')
+        parser.add_argument('--repo_path')
+        parser = subparser.add_parser('image_update')
+        parser.add_argument('service_name')
+        parser.add_argument('image_id')
+        parser = subparser.add_parser('db_wipe')
+        parser.add_argument('repo_path')
+        parser.add_argument('service_name')
+        parser.add_argument('image_id')
+
+    cfg.custom_parser('action', actions)
+    cfg.parse_args(sys.argv)
+
+    try:
+        logging.setup(None)
+        
+        Commands().execute()
+        sys.exit(0)
+    except TypeError as e:
+        print _("Possible wrong number of arguments supplied %s" % e)
+        sys.exit(2)
+    except Exception:
+        print _("Command failed, please check log for more info")
+        raise

@@ -2,8 +2,8 @@
 [run]
 branch = True
 
-source=reddwarf
-omit=*reddwarf/tests*,*reddwarf/openstack/common*
+source=trove
+omit=*trove/tests*,*trove/openstack/common*
 
 [report]
 # Regexes for lines to exclude from consideration

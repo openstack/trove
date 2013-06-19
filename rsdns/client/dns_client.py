@@ -19,7 +19,7 @@ We have to duplicate a lot of code from the OpenStack client since so much
 is different here.
 """
 
-from reddwarf.openstack.common import log as logging
+from trove.openstack.common import log as logging
 
 import exceptions
 

@@ -5,7 +5,7 @@ set -eu
 
 function usage {
   echo "Usage: $0 [OPTION]..."
-  echo "Run Reddwarf's test suite(s)"
+  echo "Run Trove's test suite(s)"
   echo ""
   echo "  -V, --virtual-env        Always use virtualenv.  Install automatically if not present"
   echo "  -N, --no-virtual-env     Don't use virtualenv.  Run tests in local environment"
@@ -60,7 +60,7 @@ done
 
 # If enabled, tell nose to collect coverage data
 if [ $coverage -eq 1 ]; then
-    noseopts="$noseopts --with-coverage --cover-package=reddwarf"
+    noseopts="$noseopts --with-coverage --cover-package=trove"
 fi
 
 function run_tests {

@@ -4,9 +4,9 @@ import urllib
 import sys
 import traceback
 
-from reddwarf.common import cfg
-from reddwarf.openstack.common import log as logging
-from reddwarf.tests.config import CONFIG
+from trove.common import cfg
+from trove.openstack.common import log as logging
+from trove.tests.config import CONFIG
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
 import proboscis
 from eventlet import greenthread
@@ -31,24 +31,24 @@ def add_support_for_localization():
     gettext.install('nova', unicode=1)
 
 
-def initialize_reddwarf(config_file):
-    from reddwarf.openstack.common import pastedeploy
+def initialize_trove(config_file):
+    from trove.openstack.common import pastedeploy
 
     cfg.CONF(args=[],
-             project='reddwarf',
+             project='trove',
              default_config_files=[config_file])
     CONF.use_stderr = False
     CONF.log_file = 'rdtest.log'
     logging.setup(None)
     CONF.bind_port = 8779
     CONF.fake_mode_events = 'simulated'
-    return pastedeploy.paste_deploy_app(config_file, 'reddwarf', {})
+    return pastedeploy.paste_deploy_app(config_file, 'trove', {})
 
 
 def initialize_database():
-    from reddwarf.db import get_db_api
-    from reddwarf.instance import models
-    from reddwarf.db.sqlalchemy import session
+    from trove.db import get_db_api
+    from trove.instance import models
+    from trove.db.sqlalchemy import session
     db_api = get_db_api()
     db_api.drop_db(CONF)  # Destroys the database, if it exists.
     db_api.db_sync(CONF)
@@ -83,7 +83,7 @@ def initialize_fakes(app):
     # this queue and call the functions that would normally run in seperate
     # threads.
     import eventlet
-    from reddwarf.tests.fakes.common import event_simulator_sleep
+    from trove.tests.fakes.common import event_simulator_sleep
     eventlet.sleep = event_simulator_sleep
     greenthread.sleep = event_simulator_sleep
     import time
@@ -101,8 +101,8 @@ def parse_args_for_test_config():
 
 
 def replace_poll_until():
-    from reddwarf.common import utils as rd_utils
-    from reddwarf.tests import util as test_utils
+    from trove.common import utils as rd_utils
+    from trove.tests import util as test_utils
     rd_utils.poll_until = test_utils.poll_until
 
 if __name__ == "__main__":
@@ -110,11 +110,11 @@ if __name__ == "__main__":
         wsgi_install()
         add_support_for_localization()
         replace_poll_until()
-        # Load Reddwarf app
+        # Load Trove app
         # Paste file needs absolute path
-        config_file = os.path.realpath('etc/reddwarf/reddwarf.conf.test')
-        # 'etc/reddwarf/test-api-paste.ini'
-        app = initialize_reddwarf(config_file)
+        config_file = os.path.realpath('etc/trove/trove.conf.test')
+        # 'etc/trove/test-api-paste.ini'
+        app = initialize_trove(config_file)
         # Initialize sqlite database.
         initialize_database()
         # Swap out WSGI, httplib, and several sleep functions
@@ -124,26 +124,26 @@ if __name__ == "__main__":
         test_config_file = parse_args_for_test_config()
         CONFIG.load_from_file(test_config_file)
 
-        from reddwarf.tests.api import backups
-        from reddwarf.tests.api import header
-        from reddwarf.tests.api import limits
-        from reddwarf.tests.api import flavors
-        from reddwarf.tests.api import versions
-        from reddwarf.tests.api import instances
-        from reddwarf.tests.api import instances_actions
-        from reddwarf.tests.api import instances_delete
-        from reddwarf.tests.api import instances_mysql_down
-        from reddwarf.tests.api import instances_resize
-        from reddwarf.tests.api import databases
-        from reddwarf.tests.api import root
-        from reddwarf.tests.api import users
-        from reddwarf.tests.api import user_access
-        from reddwarf.tests.api.mgmt import accounts
-        from reddwarf.tests.api.mgmt import admin_required
-        from reddwarf.tests.api.mgmt import instances
-        from reddwarf.tests.api.mgmt import instances_actions
-        from reddwarf.tests.api.mgmt import storage
-        from reddwarf.tests.api.mgmt import malformed_json
+        from trove.tests.api import backups
+        from trove.tests.api import header
+        from trove.tests.api import limits
+        from trove.tests.api import flavors
+        from trove.tests.api import versions
+        from trove.tests.api import instances
+        from trove.tests.api import instances_actions
+        from trove.tests.api import instances_delete
+        from trove.tests.api import instances_mysql_down
+        from trove.tests.api import instances_resize
+        from trove.tests.api import databases
+        from trove.tests.api import root
+        from trove.tests.api import users
+        from trove.tests.api import user_access
+        from trove.tests.api.mgmt import accounts
+        from trove.tests.api.mgmt import admin_required
+        from trove.tests.api.mgmt import instances
+        from trove.tests.api.mgmt import instances_actions
+        from trove.tests.api.mgmt import storage
+        from trove.tests.api.mgmt import malformed_json
     except Exception as e:
         print("Run tests failed: %s" % e)
         traceback.print_exc()

@@ -21,7 +21,7 @@
 #    under the License.
 
 """
-Installation script for Reddwarf's development virtualenv
+Installation script for Trove's development virtualenv
 """
 
 import os
@@ -79,7 +79,7 @@ def check_dependencies():
             print 'Installing virtualenv via easy_install...',
             if not (run_command(['which', 'easy_install']) and
                     run_command(['easy_install', 'virtualenv'])):
-                die('ERROR: virtualenv not found.\n\Reddwarf development'
+                die('ERROR: virtualenv not found.\n\Trove development'
                     ' requires virtualenv, please install it using your'
                     ' favorite package management tool')
             print 'done.'
@@ -109,21 +109,21 @@ def install_dependencies(venv=VENV):
         run_command(['tools/with_venv.sh', '-E', venv, 'pip', 'install', '-r',
                      requires], redirect_output=False)
 
-    # Tell the virtual env how to "import reddwarf"
+    # Tell the virtual env how to "import trove"
     pthfile = os.path.join(venv, "lib", PY_VERSION, "site-packages",
-        "reddwarf.pth")
+        "trove.pth")
     f = open(pthfile, 'w')
     f.write("%s\n" % ROOT)
 
 
 def print_help():
     help = """
-    Reddwarf development environment setup is complete.
+    Trove development environment setup is complete.
 
-    Reddwarf development uses virtualenv to track and manage Python
+    Trove development uses virtualenv to track and manage Python
     dependencies while in development and testing.
 
-    To activate the Reddwarf virtualenv for the extent of your current shell
+    To activate the Trove virtualenv for the extent of your current shell
     session you can run:
 
     $ source .venv/bin/activate
