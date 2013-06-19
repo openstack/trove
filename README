@@ -1,7 +1,7 @@
-Reddwarf
+Trove
 --------
 
-Reddwarf is Database as a Service for Open Stack.
+Trove is Database as a Service for Open Stack.
 
 
 To run all tests and PEP8, run tox, like so:
@@ -14,7 +14,7 @@ To generate a coverage report,run:
 $ tox -ecover
 (note: on some boxes, the results may not be accurate unless you run it twice)
 
-If you'd like to start up a fake Reddwarf API daemon for integration testing
+If you'd like to start up a fake Trove API daemon for integration testing
 with your own tool, run:
 $ ./bin/start_server
 
