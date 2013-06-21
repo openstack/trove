@@ -117,6 +117,8 @@ dbaas_admin = None  # Same as above, with admin privs.
 VOLUME_SUPPORT = CONFIG.get('trove_volume_support', False)
 EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path',
                                                       '/dev/vdb') is not None
+ROOT_PARTITION = not VOLUME_SUPPORT and CONFIG.get('device_path',
+                                                   None) is None
 
 
 # This is like a cheat code which allows the tests to skip creating a new
@@ -847,6 +849,8 @@ class TestInstanceListing(object):
                           'links', 'name', 'status', 'updated', 'ip']
         if VOLUME_SUPPORT:
             expected_attrs.append('volume')
+        else:
+            expected_attrs.append('local_storage')
         instance = dbaas.instances.get(instance_info.id)
         assert_equal(200, dbaas.last_http_code)
         instance_dict = instance._info
@@ -891,6 +895,16 @@ class TestInstanceListing(object):
             assert_true(isinstance(instance_info.volume['size'], int))
         if create_new_instance():
             assert_true(0.12 < instance.volume['used'] < 0.25)
+
+    @test(enabled=EPHEMERAL_SUPPORT)
+    def test_ephemeral_mount(self):
+        instance = dbaas.instances.get(instance_info.id)
+        assert_true(isinstance(instance_info.local_storage['used'], int))
+
+    @test(enabled=ROOT_PARTITION)
+    def test_root_partition(self):
+        instance = dbaas.instances.get(instance_info.id)
+        assert_true(isinstance(instance_info.local_storage['used'], int))
 
     @test(enabled=do_not_delete_instance())
     def test_instance_not_shown_to_other_user(self):

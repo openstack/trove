@@ -302,7 +302,8 @@ def load_guest_info(instance, context, id):
     if instance.status not in AGENT_INVALID_STATUSES:
         guest = create_guest_client(context, id)
         try:
-            instance.volume_used = guest.get_volume_info()['used']
+            volume_info = guest.get_volume_info()
+            instance.volume_used = volume_info['used']
         except Exception as e:
             LOG.error(e)
     return instance
