@@ -181,7 +181,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         if backup_id:
             verify(backup).restore(self.context, backup_id, '/var/lib/mysql')
         verify(dbaas.MySqlApp).install_if_needed()
-        verify(dbaas.MySqlApp).secure('2048')
+        # We dont need to make sure the exact contents are there
+        verify(dbaas.MySqlApp).secure(any(), any())
         verify(dbaas.MySqlAdmin, never).create_database()
         verify(dbaas.MySqlAdmin, never).create_user()
         times_report = 1 if is_root_enabled else 0

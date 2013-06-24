@@ -61,6 +61,7 @@ FAKE_DB_2 = {"_name": "testDB2", "_character_set": "latin2",
              "_collate": "latin2_general_ci"}
 FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_databases": [FAKE_DB]}]
+MYCNF = '/etc/mysql/my.cnf'
 
 
 class FakeAppStatus(MySqlAppStatus):
@@ -595,7 +596,7 @@ class MySqlAppTest(testtools.TestCase):
         self.mysql_starts_successfully()
 
         self.appStatus.status = ServiceStatuses.SHUTDOWN
-        self.mySqlApp.start_db_with_conf_changes(Mock())
+        self.mySqlApp.start_db_with_conf_changes(Mock(), Mock())
 
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
@@ -609,7 +610,8 @@ class MySqlAppTest(testtools.TestCase):
 
         self.appStatus.status = ServiceStatuses.RUNNING
         self.assertRaises(RuntimeError,
-                          self.mySqlApp.start_db_with_conf_changes, Mock())
+                          self.mySqlApp.start_db_with_conf_changes,
+                          Mock(), Mock())
 
 
 class MySqlAppInstallTest(MySqlAppTest):
@@ -641,7 +643,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mysql_starts_successfully()
         sqlalchemy.create_engine = Mock()
 
-        self.mySqlApp.secure(100)
+        self.mySqlApp.secure(MYCNF, 'contents')
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
@@ -668,13 +670,13 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         self.mySqlApp._write_mycnf = \
-            Mock(side_effect=pkg.PkgPackageStateError("Install error"))
+            Mock(side_effect=IOError("Could not write file"))
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
         sqlalchemy.create_engine = Mock()
 
-        self.assertRaises(pkg.PkgPackageStateError,
-                          self.mySqlApp.secure, 100)
+        self.assertRaises(IOError,
+                          self.mySqlApp.secure, "/etc/mycnf/my.cnf", "foo")
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
@@ -731,26 +733,6 @@ def mock_admin_sql_connection():
 
 class MySqlAppMockTest(testtools.TestCase):
 
-    @classmethod
-    def stub_file(cls, filename):
-        return MySqlAppMockTest.StubFile(filename)
-
-    class StubFile(object):
-        def __init__(self, filename):
-            when(__builtin__).open(filename, any()).thenReturn(self)
-
-        def next(self):
-            raise StopIteration
-
-        def __iter__(self):
-            return self
-
-        def write(self, data):
-            pass
-
-        def close(self):
-            pass
-
     def tearDown(self):
         super(MySqlAppMockTest, self).tearDown()
         unstub()
@@ -760,8 +742,6 @@ class MySqlAppMockTest(testtools.TestCase):
         when(mock_conn).execute(any()).thenReturn(None)
         when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
             None)
-        when(pkg).pkg_install("dbaas-mycnf", any()).thenRaise(
-            pkg.PkgPackageStateError("Install error"))
         # skip writing the file for now
         when(os.path).isfile(any()).thenReturn(False)
         mock_status = mock(MySqlAppStatus)
@@ -769,7 +749,7 @@ class MySqlAppMockTest(testtools.TestCase):
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
 
-        self.assertRaises(pkg.PkgPackageStateError, app.secure, 2048)
+        self.assertRaises(TypeError, app.secure, MYCNF, None)
 
         verify(mock_conn, atleast=2).execute(any())
         inorder.verify(mock_status).wait_for_real_status_to_change_to(
@@ -782,20 +762,16 @@ class MySqlAppMockTest(testtools.TestCase):
         when(mock_conn).execute(any()).thenReturn(None)
         when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
             None)
-        when(pkg).pkg_install("dbaas-mycnf", any()).thenReturn(None)
         # skip writing the file for now
         when(os.path).isfile(any()).thenReturn(False)
         when(utils).execute_with_timeout(
             "sudo", "chmod", any(), any()).thenReturn(None)
-        MySqlAppMockTest.stub_file("/etc/mysql/my.cnf")
-        MySqlAppMockTest.stub_file("/etc/dbaas/my.cnf/my.cnf.2048M")
-        MySqlAppMockTest.stub_file("/tmp/my.cnf.tmp")
         mock_status = mock(MySqlAppStatus)
         when(mock_status).wait_for_real_status_to_change_to(
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
-
-        app.secure(2048)
+        when(app)._write_mycnf(any(), any()).thenReturn(True)
+        app.secure(MYCNF, 'foo')
         verify(mock_conn, never).execute(TextClauseMatcher('root'))
 
 

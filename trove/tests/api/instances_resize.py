@@ -21,6 +21,7 @@ from novaclient.exceptions import BadRequest
 from novaclient.v1_1.servers import Server
 
 from trove.common.exception import PollTimeOut
+from trove.common import template
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import api as guest
@@ -114,7 +115,11 @@ class ResizeTests(ResizeTestBase):
         self._teardown()
 
     def _start_mysql(self):
-        self.instance.guest.start_db_with_conf_changes(NEW_FLAVOR.ram)
+        config = template.SingleInstanceConfigTemplate(
+            "mysql", NEW_FLAVOR.__dict__)
+        config.render()
+        self.instance.guest.start_db_with_conf_changes(config.config_location,
+                                                       config.config_contents)
 
     def test_guest_wont_stop_mysql(self):
         self.guest.stop_db(do_not_start_on_reboot=True)\
