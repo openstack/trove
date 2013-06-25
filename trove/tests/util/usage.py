@@ -40,7 +40,7 @@ class UsageVerifier(object):
 
     def check_message(self, resource_id, event_type, **attrs):
         messages = self.get_messages(resource_id)
-        print messages, resource_id
+        print("%s %s" % (messages, resource_id))
         found = None
         for message in messages:
             if message['event_type'] == event_type:

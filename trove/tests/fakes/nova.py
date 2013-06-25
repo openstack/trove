@@ -571,9 +571,9 @@ class FakeHost(object):
         self.totalRAM = 2004  # 16384
         self.usedRAM = 0
         for server in self.servers.list():
-            print server
+            print(server)
             if server.host != self.name:
-                print "\t...not on this host."
+                print("\t...not on this host.")
                 continue
             self.instances.append({
                 'uuid': server.id,

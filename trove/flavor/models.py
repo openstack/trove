@@ -38,9 +38,9 @@ class Flavor(object):
             try:
                 client = create_nova_client(context)
                 self.flavor = client.flavors.get(flavor_id)
-            except nova_exceptions.NotFound, e:
+            except nova_exceptions.NotFound as e:
                 raise exception.NotFound(uuid=flavor_id)
-            except nova_exceptions.ClientException, e:
+            except nova_exceptions.ClientException as e:
                 raise exception.TroveError(str(e))
             return
         msg = ("Flavor is not defined, and"

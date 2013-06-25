@@ -496,7 +496,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
             # when the reboot completes and MySQL is running.
             self._set_service_status_to_paused()
             LOG.debug("Successfully rebooted instance %s" % self.id)
-        except Exception, e:
+        except Exception as e:
             LOG.error("Failed to reboot instance %s: %s" % (self.id, str(e)))
         finally:
             LOG.debug("Rebooting FINALLY  %s" % self.id)

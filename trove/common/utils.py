@@ -210,7 +210,7 @@ class LoopingCall(object):
                     if not self._running:
                         break
                     greenthread.sleep(interval)
-            except LoopingCallDone, e:
+            except LoopingCallDone as e:
                 self.stop()
                 done.send(e.retvalue)
             except Exception:
