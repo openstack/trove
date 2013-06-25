@@ -57,7 +57,7 @@ class ApiTest(testtools.TestCase):
         self.assertTrue(self.api._check_for_hearbeat())
 
     def test_check_for_heartbeat_exception(self):
-        # TODO (juice) maybe it would be ok to extend the test to validate
+        # TODO(juice): maybe it would be ok to extend the test to validate
         # the is_active method on the heartbeat
         when(db_models.DatabaseModelBase).find_by(instance_id=any()).thenRaise(
             exception.ModelNotFoundError)
@@ -68,7 +68,7 @@ class ApiTest(testtools.TestCase):
         verify(agent_models.AgentHeartBeat, times=0).is_active(any())
 
     def test_check_for_heartbeat_negative(self):
-        # TODO (juice) maybe it would be ok to extend the test to validate
+        # TODO(juice): maybe it would be ok to extend the test to validate
         # the is_active method on the heartbeat
         when(db_models.DatabaseModelBase).find_by(
             instance_id=any()).thenReturn('agent')

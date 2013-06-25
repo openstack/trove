@@ -144,7 +144,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         SEC_COUNT = 1 if is_mysql_installed else 0
         migrate_count = 1 * COUNT if not backup_id else 0
 
-        # TODO (juice) this should stub an instance of the MySqlAppStatus
+        # TODO(juice): this should stub an instance of the MySqlAppStatus
         mock_status = mock()
         when(dbaas.MySqlAppStatus).get().thenReturn(mock_status)
         when(mock_status).begin_mysql_install().thenReturn(None)
