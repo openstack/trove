@@ -14,7 +14,7 @@
 
 import testtools
 
-from reddwarf.common.wsgi import Router, Fault
+from trove.common.wsgi import Router, Fault
 
 from routes import Mapper
 

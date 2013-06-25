@@ -97,7 +97,7 @@ def create_client(*args, **kwargs):
 
 
 def create_dbaas_client(user):
-    """Creates a rich client for the RedDwarf API using the test config."""
+    """Creates a rich client for the Trove API using the test config."""
     auth_strategy = None
 
     kwargs = {

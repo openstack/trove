@@ -43,12 +43,12 @@ SERVICE_NAME = "troveapi_database"
 trove_opts = [
     cfg.StrOpt('trove_api_paste_config',
                default='trove-api-paste.ini',
-               help='Reddwarf API paste config'),
+               help='Trove API paste config'),
     # port magic in service.WSGIService the name of the app has to be the same
     # as the name of the service
     cfg.IntOpt('%s_listen_port' % SERVICE_NAME,
               default=8779,
-              help='Reddwarf API default port'),
+              help='Trove API default port'),
     cfg.MultiStrOpt('trove_api_extension',
         default=[
             'trove.api.database.contrib.standard_extensions'
