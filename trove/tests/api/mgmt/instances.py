@@ -106,7 +106,8 @@ def mgmt_instance_get():
             instance.has_field('volume', dict, volume_check)
         else:
             instance.has_field('volume', None)
-        #TODO: Validate additional fields, assert no extra fields exist.
+        #TODO(tim-simpson): Validate additional fields, assert
+        # no extra fields exist.
     with CollectionCheck("server", api_instance.server) as server:
         server.has_element("addresses", dict)
         server.has_element("deleted", bool)
@@ -183,7 +184,8 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
             # Can be None if no volume is given on this instance.
             instance.has_field('server', None)
             instance.has_field('volume', None)
-            #TODO: Validate additional fields, assert no extra fields exist.
+            #TODO(tim-simpson): Validate additional fields,
+            # assert no extra fields exist.
 
 
 @test(depends_on_classes=[CreateInstance], groups=[GROUP])

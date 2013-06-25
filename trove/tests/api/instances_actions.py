@@ -635,7 +635,7 @@ class ResizeInstanceVolume(object):
         for database in databases:
             db_list.append(database.name)
         for name in self.expected_dbs:
-            if not name in db_list:
+            if name not in db_list:
                 fail("Database %s was not found after the volume resize. "
                      "Returned list: %s" % (name, databases))
 

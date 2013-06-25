@@ -1025,8 +1025,8 @@ class DeleteInstance(object):
         except backend_exception.VolumeNotFound:
             pass
 
-    #TODO: make sure that the actual instance, volume, guest status, and DNS
-    #      entries are deleted.
+    #TODO(tim-simpson): make sure that the actual instance, volume,
+    # guest status, and DNS entries are deleted.
 
 
 @test(depends_on=[WaitForGuestInstallationToFinish],

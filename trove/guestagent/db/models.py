@@ -303,12 +303,12 @@ class MySQLDatabase(Base):
         if not value:
             pass
         elif self._character_set:
-            if not value in self.charset[self._character_set]:
+            if value not in self.charset[self._character_set]:
                 msg = "'%s' not a valid collation for charset '%s'"
                 raise ValueError(msg % (value, self._character_set))
             self._collate = value
         else:
-            if not value in self.collation:
+            if value not in self.collation:
                 raise ValueError("'%s' not a valid collation" % value)
             self._collate = value
             self._character_set = self.collation[value]

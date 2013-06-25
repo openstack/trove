@@ -222,7 +222,7 @@ class UserAccessController(wsgi.Controller):
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
         databases = [db.name for db in access.databases]
-        if not id in databases:
+        if id not in databases:
             raise exception.DatabaseNotFound(uuid=id)
         models.User.revoke(context, instance_id, username, hostname, id)
         return wsgi.Result(None, 202)

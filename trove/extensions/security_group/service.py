@@ -105,7 +105,7 @@ class SecurityGroupRuleController(wsgi.Controller):
 
     def _validate_create_body(self, body):
         try:
-            # TODO: Add some better validation here around ports,
+            # TODO(slicknik): Add some better validation here around ports,
             #  protocol, and cidr values.
             body['security_group_rule']
             body['security_group_rule']['group_id']
