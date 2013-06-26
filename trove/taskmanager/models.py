@@ -19,6 +19,7 @@ from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
 from trove.common import utils
 from trove.common.exception import GuestError
+from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
