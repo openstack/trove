@@ -15,7 +15,7 @@
 #    under the License.
 
 """
-Reddwarf Command line tool
+Trove Command line tool
 """
 
 import json

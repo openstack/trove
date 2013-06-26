@@ -22,8 +22,8 @@ except ImportError:
                     'revision_id': 'LOCALREVISION',
                     'revno': 0}
 
-REDDWARF_VERSION = ['2012', '1']
-YEAR, COUNT = REDDWARF_VERSION
+TROVE_VERSION = ['2012', '1']
+YEAR, COUNT = TROVE_VERSION
 
 FINAL = False   # This becomes true at Release Candidate time
 

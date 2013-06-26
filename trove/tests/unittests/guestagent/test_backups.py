@@ -12,15 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import reddwarf.guestagent.strategies.backup.base as backupBase
-import reddwarf.guestagent.strategies.restore.base as restoreBase
+import trove.guestagent.strategies.backup.base as backupBase
+import trove.guestagent.strategies.restore.base as restoreBase
 import testtools
-from reddwarf.common import utils
+from trove.common import utils
 
-BACKUP_XTRA_CLS = "reddwarf.guestagent.strategies.backup.impl.InnoBackupEx"
-RESTORE_XTRA_CLS = "reddwarf.guestagent.strategies.restore.impl.InnoBackupEx"
-BACKUP_SQLDUMP_CLS = "reddwarf.guestagent.strategies.backup.impl.MySQLDump"
-RESTORE_SQLDUMP_CLS = "reddwarf.guestagent.strategies.restore.impl.MySQLDump"
+BACKUP_XTRA_CLS = "trove.guestagent.strategies.backup.impl.InnoBackupEx"
+RESTORE_XTRA_CLS = "trove.guestagent.strategies.restore.impl.InnoBackupEx"
+BACKUP_SQLDUMP_CLS = "trove.guestagent.strategies.backup.impl.MySQLDump"
+RESTORE_SQLDUMP_CLS = "trove.guestagent.strategies.restore.impl.MySQLDump"
 PIPE = " | "
 ZIP = "gzip"
 UNZIP = "gzip -d -c"
