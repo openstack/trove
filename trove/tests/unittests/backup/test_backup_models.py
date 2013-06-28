@@ -116,14 +116,14 @@ class BackupDeleteTest(testtools.TestCase):
     def test_delete_backup_is_running(self):
         backup = mock()
         backup.is_running = True
-        when(models.Backup).get_by_id(any()).thenReturn(backup)
+        when(models.Backup).get_by_id(any(), any()).thenReturn(backup)
         self.assertRaises(exception.UnprocessableEntity,
                           models.Backup.delete, self.context, 'backup_id')
 
     def test_delete_backup_swift_token_invalid(self):
         backup = mock()
         backup.is_running = False
-        when(models.Backup).get_by_id(any()).thenReturn(backup)
+        when(models.Backup).get_by_id(any(), any()).thenReturn(backup)
         when(models.Backup).verify_swift_auth_token(any()).thenRaise(
             exception.SwiftAuthError)
         self.assertRaises(exception.SwiftAuthError, models.Backup.delete,

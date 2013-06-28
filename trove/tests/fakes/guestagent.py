@@ -273,7 +273,7 @@ class FakeGuest(object):
 
     def create_backup(self, backup_id):
         from trove.backup.models import Backup, BackupState
-        backup = Backup.get_by_id(backup_id)
+        backup = Backup.get_by_id(context=None, backup_id=backup_id)
 
         def finish_create_backup():
             backup.state = BackupState.COMPLETED

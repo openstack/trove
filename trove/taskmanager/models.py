@@ -550,7 +550,7 @@ class BackupTasks(object):
     @classmethod
     def delete_backup(cls, context, backup_id):
         #delete backup from swift
-        backup = trove.backup.models.Backup.get_by_id(backup_id)
+        backup = trove.backup.models.Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
             if filename:
