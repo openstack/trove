@@ -115,6 +115,12 @@ class API(proxy.RpcProxy):
         LOG.debug(_("Changing passwords for users on Instance %s"), self.id)
         self._cast("change_passwords", users=users)
 
+    def update_attributes(self, username, hostname, user_attrs):
+        """Update user attributes."""
+        LOG.debug(_("Changing user attributes on Instance %s"), self.id)
+        self._cast("update_attributes", username=username, hostname=hostname,
+                   user_attrs=user_attrs)
+
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
         LOG.debug(_("Creating Users for Instance %s"), self.id)

@@ -350,23 +350,47 @@ class CreateUser(object):
 
 class UpdateUser(object):
 
-    def __init__(self, user, host=None, clear=None):
+    def __init__(self, user, host=None, clear=None, new_user=None,
+                 new_host=None):
         self.user = user
         self.host = host
         self.clear = clear
+        self.new_user = new_user
+        self.new_host = new_host
 
     def __repr__(self):
         return str(self)
 
     @property
     def _set_password(self):
-        return "SET Password=PASSWORD('%s')" % self.clear
+        if self.clear:
+            return "Password=PASSWORD('%s')" % self.clear
+
+    @property
+    def _set_user(self):
+        if self.new_user:
+            return "User='%s'" % self.new_user
+
+    @property
+    def _set_host(self):
+        if self.new_host:
+            return "Host='%s'" % self.new_host
 
     @property
     def _host(self):
         if not self.host:
             return "%"
         return self.host
+
+    @property
+    def _set_attrs(self):
+        sets = [self._set_user,
+                self._set_host,
+                self._set_password,
+                ]
+        sets = [s for s in sets if s]
+        sets = ', '.join(sets)
+        return 'SET %s' % sets
 
     @property
     def _where(self):
@@ -381,7 +405,7 @@ class UpdateUser(object):
 
     def __str__(self):
         query = ["UPDATE mysql.user",
-                 self._set_password,
+                 self._set_attrs,
                  self._where,
                  ]
         query = [q for q in query if q]

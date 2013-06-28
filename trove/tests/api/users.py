@@ -202,6 +202,80 @@ class TestUsers(object):
             self.dbaas.users.delete(instance_info.id, username,
                                     hostname=hostname)
 
+    @test()
+    def test_updateduser_newname_host_unique(self):
+        #The updated_username@hostname should not exist already
+        users = []
+        old_name = "testuser1"
+        hostname = "192.168.0.1"
+        users.append({"name": old_name, "password": "password",
+                      "host": hostname, "databases": []})
+        users.append({"name": "testuser2", "password": "password",
+                      "host": hostname, "databases": []})
+        self.dbaas.users.create(instance_info.id, users)
+        user_new = {"name": "testuser2"}
+        hostname = hostname.replace('.', '%2e')
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      old_name, user_new, hostname)
+        assert_equal(400, self.dbaas.last_http_code)
+        self.dbaas.users.delete(instance_info.id, old_name, hostname=hostname)
+        self.dbaas.users.delete(instance_info.id, "testuser2",
+                                hostname=hostname)
+
+    @test()
+    def test_updateduser_name_newhost_unique(self):
+        # The username@updated_hostname should not exist already
+        users = []
+        username = "testuser"
+        hostname1 = "192.168.0.1"
+        hostname2 = "192.168.0.2"
+        users.append({"name": username, "password": "password",
+                      "host": hostname1, "databases": []})
+        users.append({"name": username, "password": "password",
+                      "host": hostname2, "databases": []})
+        self.dbaas.users.create(instance_info.id, users)
+        hostname1 = hostname1.replace('.', '%2e')
+        hostname2 = hostname2.replace('.', '%2e')
+        user_new = {"host": "192.168.0.2"}
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      username, user_new, hostname1)
+        assert_equal(400, self.dbaas.last_http_code)
+        self.dbaas.users.delete(instance_info.id, username, hostname=hostname1)
+        self.dbaas.users.delete(instance_info.id, username, hostname=hostname2)
+
+    @test()
+    def test_updateduser_newname_newhost_unique(self):
+        # The updated_username@updated_hostname should not exist already
+        users = []
+        username = "testuser1"
+        hostname1 = "192.168.0.1"
+        hostname2 = "192.168.0.2"
+        users.append({"name": username, "password": "password",
+                      "host": hostname1, "databases": []})
+        users.append({"name": "testuser2", "password": "password",
+                      "host": hostname2, "databases": []})
+        self.dbaas.users.create(instance_info.id, users)
+        user_new = {"name": "testuser2", "host": "192.168.0.2"}
+        hostname1 = hostname1.replace('.', '%2e')
+        hostname2 = hostname2.replace('.', '%2e')
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      username, user_new, hostname1)
+        assert_equal(400, self.dbaas.last_http_code)
+        self.dbaas.users.delete(instance_info.id, username, hostname=hostname1)
+        self.dbaas.users.delete(instance_info.id, "testuser2",
+                                hostname=hostname2)
+
+    @test()
+    def test_cannot_change_rootpassword(self):
+        # Cannot change password for a root user
+        user_new = {"password": "12345"}
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      "root", user_new)
+
     @test(depends_on=[test_create_users])
     def test_hostname_ipv4_restriction(self):
         # By default, user hostnames are required to be % or IPv4 addresses.
