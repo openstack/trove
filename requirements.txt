@@ -1,6 +1,6 @@
 d2to1>=0.2.10,<0.3
 pbr>=0.5,<0.6
-SQLAlchemy>=0.7.8,<=0.7.9
+SQLAlchemy>=0.7,<=0.7.99
 eventlet
 extras
 kombu>2.4.7
@@ -10,7 +10,6 @@ PasteDeploy
 paste
 sqlalchemy-migrate>=0.7.2
 netaddr
-factory_boy
 httplib2
 lxml
 python-novaclient
