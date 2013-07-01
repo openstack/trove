@@ -551,20 +551,39 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 class BackupTasks(object):
 
     @classmethod
+    def _parse_manifest(cls, manifest):
+        # manifest is in the format 'container/prefix'
+        # where prefix can be 'path' or 'lots/of/paths'
+        try:
+            container_index = manifest.index('/')
+            prefix_index = container_index + 1
+        except ValueError:
+            return None, None
+        container = manifest[:container_index]
+        prefix = manifest[prefix_index:]
+        return container, prefix
+
+    @classmethod
     def delete_files_from_swift(cls, context, filename):
+        container = CONF.backup_swift_container
         client = remote.create_swift_client(context)
-        # Delete the manifest
-        if client.head_object(CONF.backup_swift_container, filename):
-            client.delete_object(CONF.backup_swift_container, filename)
-
-        # Delete the segments
-        if client.head_container(filename + "_segments"):
-
-            for obj in client.get_container(filename + "_segments")[1]:
-                client.delete_object(filename + "_segments", obj['name'])
-
-            # Delete the segments container
-            client.delete_container(filename + "_segments")
+        obj = client.head_object(container, filename)
+        manifest = obj.get('x-object-manifest', '')
+        cont, prefix = cls._parse_manifest(manifest)
+        if all([cont, prefix]):
+            # This is a manifest file, first delete all segments.
+            LOG.info("Deleting files with prefix: %s/%s", cont, prefix)
+            # list files from container/prefix specified by manifest
+            headers, segments = client.get_container(cont, prefix=prefix)
+            LOG.debug(headers)
+            for segment in segments:
+                name = segment.get('name')
+                if name:
+                    LOG.info("Deleting file: %s/%s", cont, name)
+                    client.delete_object(cont, name)
+        # Delete the manifest file
+        LOG.info("Deleting file: %s/%s", container, filename)
+        client.delete_object(container, filename)
 
     @classmethod
     def delete_backup(cls, context, backup_id):
@@ -574,12 +593,17 @@ class BackupTasks(object):
             filename = backup.filename
             if filename:
                 BackupTasks.delete_files_from_swift(context, filename)
-
-        except (ClientException, ValueError) as e:
-            LOG.exception("Exception deleting from swift. Details: %s" % e)
-            LOG.error("Failed to delete swift objects")
-            backup.state = trove.backup.models.BackupState.FAILED
-
+        except ValueError:
+            backup.delete()
+        except ClientException as e:
+            if e.http_status == 404:
+                # Backup already deleted in swift
+                backup.delete()
+            else:
+                LOG.exception("Exception deleting from swift. Details: %s" % e)
+                backup.state = trove.backup.models.BackupState.DELETE_FAILED
+                backup.save()
+                raise TroveError("Failed to delete swift objects")
         else:
             backup.delete()
 

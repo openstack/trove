@@ -36,41 +36,33 @@ class SwiftStorage(base.Storage):
         super(SwiftStorage, self).__init__()
         self.connection = create_swift_client(context)
 
-    def set_container(self, ):
-        """ Set the container to store to.  """
-        """ This creates the container if it doesn't exist.  """
-
     def save(self, save_location, stream):
         """ Persist information from the stream """
 
         # Create the container (save_location) if it doesn't already exist
-        self.container_name = save_location
-        self.segments_container_name = stream.manifest + "_segments"
-        self.connection.put_container(self.container_name)
-        self.connection.put_container(self.segments_container_name)
+        self.connection.put_container(save_location)
 
         # Read from the stream and write to the container in swift
         while not stream.end_of_file:
-            segment = stream.segment
-            etag = self.connection.put_object(self.segments_container_name,
-                                              segment,
+            etag = self.connection.put_object(save_location,
+                                              stream.segment,
                                               stream)
 
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
             if etag != stream.schecksum.hexdigest():
-                print("%s %s" % (etag, stream.schecksum.hexdigest()))
+                LOG.error(
+                    "Error saving data to swift. ETAG: %s File MD5: %s",
+                    etag, stream.schecksum.hexdigest())
                 return (False, "Error saving data to Swift!", None, None)
 
             checksum = stream.checksum.hexdigest()
             url = self.connection.url
-            location = "%s/%s/%s" % (url, self.container_name, stream.manifest)
+            location = "%s/%s/%s" % (url, save_location, stream.manifest)
 
             # Create the manifest file
-            headers = {
-                'X-Object-Manifest':
-                self.segments_container_name + "/" + stream.filename}
-            self.connection.put_object(self.container_name,
+            headers = {'X-Object-Manifest': stream.prefix}
+            self.connection.put_object(save_location,
                                        stream.manifest,
                                        contents='',
                                        headers=headers)
