@@ -46,6 +46,11 @@ class SecurityGroup(DatabaseModelBase):
     _data_fields = ['id', 'name', 'description', 'user', 'tenant_id',
                     'created', 'updated', 'deleted', 'deleted_at']
 
+    @property
+    def instance_id(self):
+        return SecurityGroupInstanceAssociation\
+            .get_instance_id_by_security_group_id(self.id)
+
     @classmethod
     def create_sec_group(cls, name, description, context):
         try:
@@ -189,6 +194,13 @@ class SecurityGroupInstanceAssociation(DatabaseModelBase):
             instance_id=id,
             deleted=False)
         return association.get_security_group()
+
+    @classmethod
+    def get_instance_id_by_security_group_id(cls, secgroup_id):
+        association = SecurityGroupInstanceAssociation.find_by(
+            security_group_id=secgroup_id,
+            deleted=False)
+        return association.instance_id
 
 
 class RemoteSecurityGroup(NovaRemoteModelBase):

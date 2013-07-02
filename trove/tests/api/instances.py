@@ -539,6 +539,7 @@ class SecurityGroupsTest(object):
         assert_is_not_none(securityGroup)
         assert_equal(securityGroup.name, self.secGroupName)
         assert_equal(securityGroup.description, self.secGroupDescription)
+        assert_equal(securityGroup.instance_id, instance_info.id)
 
 
 @test(depends_on_classes=[SecurityGroupsTest],

@@ -66,6 +66,7 @@ class SecurityGroupView(object):
         return {"id": self.secgroup['id'],
                 "name": self.secgroup['name'],
                 "description": self.secgroup['description'],
+                "instance_id": self.secgroup['instance_id'],
                 "rules": self._build_rules(),
                 "links": self._build_links(),
                 "created": self.secgroup['created'],
