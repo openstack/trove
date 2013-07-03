@@ -54,6 +54,7 @@ class InstanceView(object):
         }
         if CONF.trove_volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
+
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
@@ -94,11 +95,16 @@ class InstanceDetailView(InstanceView):
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
-        if CONF.trove_volume_support:
-            if (isinstance(self.instance, models.DetailInstance) and
-                    self.instance.volume_used):
-                used = self._to_gb(self.instance.volume_used)
+
+        if isinstance(self.instance, models.DetailInstance) and \
+            self.instance.volume_used:
+            used = self._to_gb(self.instance.volume_used)
+            if CONF.trove_volume_support:
                 result['instance']['volume']['used'] = used
+            else:
+                # either ephemeral or root partition
+                result['instance']['local_storage'] = {'used': used}
+
         return result
 
 
