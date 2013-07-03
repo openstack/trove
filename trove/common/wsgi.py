@@ -18,6 +18,7 @@
 
 import eventlet.wsgi
 import math
+import jsonschema
 import paste.urlmap
 import re
 import time
@@ -27,7 +28,6 @@ import webob
 import webob.dec
 import webob.exc
 from lxml import etree
-from paste import deploy
 from xml.dom import minidom
 
 from trove.common import context as rd_context
@@ -156,11 +156,11 @@ def serializers(**serializers):
             func.wsgi_serializers = {}
         func.wsgi_serializers.update(serializers)
         return func
+
     return decorator
 
 
 class TroveMiddleware(Middleware):
-
     # Note: taken from nova
     @classmethod
     def factory(cls, global_config, **local_config):
@@ -185,13 +185,14 @@ class TroveMiddleware(Middleware):
         but using the kwarg passing it shouldn't be necessary.
 
         """
+
         def _factory(app):
             return cls(app, **local_config)
+
         return _factory
 
 
 class VersionedURLMap(object):
-
     def __init__(self, urlmap):
         self.urlmap = urlmap
 
@@ -208,7 +209,6 @@ class VersionedURLMap(object):
 
 
 class Router(openstack_wsgi.Router):
-
     # Original router did not allow for serialization of the 404 error.
     # To fix this the _dispatch was modified to use Fault() objects.
     @staticmethod
@@ -228,7 +228,6 @@ class Router(openstack_wsgi.Router):
 
 
 class Request(openstack_wsgi.Request):
-
     @property
     def params(self):
         return utils.stringify_keys(super(Request, self).params)
@@ -303,7 +302,6 @@ class Result(object):
 
 
 class Resource(openstack_wsgi.Resource):
-
     def __init__(self, controller, deserializer, serializer,
                  exception_map=None):
         exception_map = exception_map or {}
@@ -318,6 +316,7 @@ class Resource(openstack_wsgi.Resource):
         if getattr(self.controller, action, None) is None:
             return Fault(webob.exc.HTTPNotFound())
         try:
+            self.controller.validate_request(action, action_args)
             result = super(Resource, self).execute_action(
                 action,
                 request,
@@ -382,8 +381,6 @@ class Resource(openstack_wsgi.Resource):
 class Controller(object):
     """Base controller that creates a Resource with default serializers."""
 
-    exclude_attr = []
-
     exception_map = {
         webob.exc.HTTPUnprocessableEntity: [
             exception.UnprocessableEntity,
@@ -428,6 +425,38 @@ class Controller(object):
         ],
     }
 
+    schemas = {}
+
+    @classmethod
+    def get_schema(cls, action, body):
+        LOG.debug("Getting schema for %s:%s" %
+                  (cls.__class__.__name__, action))
+        if cls.schemas:
+            matching_schema = cls.schemas.get(action, {})
+            if matching_schema:
+                LOG.debug("Found Schema: %s" % matching_schema.get("name",
+                                                                   "none"))
+            return matching_schema
+
+    def validate_request(self, action, action_args):
+        body = action_args.get('body', {})
+        schema = self.get_schema(action, body)
+        if schema:
+            validator = jsonschema.Draft4Validator(schema)
+            if not validator.is_valid(body):
+                errors = sorted(validator.iter_errors(body),
+                                key=lambda e: e.path)
+                messages = []
+                for error in errors:
+                    messages.append(error.message)
+                    for suberror in sorted(error.context,
+                                           key=lambda e: e.schema_path):
+                        messages.append(suberror.message)
+                error_msg = "; ".join(messages)
+                LOG.info("Validation failed: %s" % error_msg)
+                raise exception.BadRequest(
+                    message="Validation error: %s" % error_msg)
+
     def create_resource(self):
         serializer = TroveResponseSerializer(
             body_serializers={'application/xml': TroveXMLDictSerializer()})
@@ -440,12 +469,6 @@ class Controller(object):
     def _extract_limits(self, params):
         return dict([(key, params[key]) for key in params.keys()
                      if key in ["limit", "marker"]])
-
-    def _extract_required_params(self, params, model_name):
-        params = params or {}
-        model_params = params.get(model_name, {})
-        return utils.stringify_keys(utils.exclude(model_params,
-                                                  *self.exclude_attr))
 
 
 class TroveRequestDeserializer(RequestDeserializer):
@@ -462,14 +485,12 @@ class TroveRequestDeserializer(RequestDeserializer):
 
 
 class TroveXMLDeserializer(XMLDeserializer):
-
     def __init__(self, metadata=None):
         """
         :param metadata: information needed to deserialize xml into
                          a dictionary.
         """
-        if metadata is None:
-            metadata = {}
+        metadata = metadata or {}
         metadata['plurals'] = CUSTOM_PLURALS_METADATA
         super(TroveXMLDeserializer, self).__init__(metadata)
 
@@ -478,11 +499,37 @@ class TroveXMLDeserializer(XMLDeserializer):
         # hub-cap: This feels wrong but minidom keeps the newlines
         # and spaces as childNodes which is expected behavior.
         return {'body': self._from_xml(re.sub(r'((?<=>)\s+)*\n*(\s+(?=<))*',
-                                       '', datastring))}
+                                              '', datastring))}
+
+    def _from_xml_node(self, node, listnames):
+        """Convert a minidom node to a simple Python type.
+
+           Overridden from openstack deserializer to skip xmlns attributes and
+           remove certain unicode characters
+
+        :param listnames: list of XML node names whose subnodes should
+                          be considered list items.
+
+        """
+
+        if len(node.childNodes) == 1 and node.childNodes[0].nodeType == 3:
+            return node.childNodes[0].nodeValue
+        elif node.nodeName in listnames:
+            return [self._from_xml_node(n, listnames) for n in node.childNodes]
+        else:
+            result = dict()
+            for attr in node.attributes.keys():
+                if attr == 'xmlns':
+                    continue
+                result[attr] = node.attributes[attr].nodeValue
+            for child in node.childNodes:
+                if child.nodeType != node.TEXT_NODE:
+                    result[child.nodeName] = self._from_xml_node(child,
+                                                                 listnames)
+            return result
 
 
 class TroveXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
-
     def __init__(self, metadata=None, xmlns=None):
         super(TroveXMLDictSerializer, self).__init__(metadata, XMLNS)
 
@@ -526,7 +573,6 @@ class TroveXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
 
 
 class TroveResponseSerializer(openstack_wsgi.ResponseSerializer):
-
     def serialize_body(self, response, data, content_type, action):
         """Overrides body serialization in openstack_wsgi.ResponseSerializer.
 
@@ -587,7 +633,7 @@ class Fault(webob.exc.HTTPException):
         name = exc.__class__.__name__
         if name in named_exceptions:
             return named_exceptions[name]
-        # If the exception isn't in our list, at least strip off the
+            # If the exception isn't in our list, at least strip off the
         # HTTP from the name, and then drop the case on the first letter.
         name = name.split("HTTP").pop()
         name = name[:1].lower() + name[1:]
@@ -623,14 +669,13 @@ class Fault(webob.exc.HTTPException):
 
 
 class ContextMiddleware(openstack_wsgi.Middleware):
-
     def __init__(self, application):
         self.admin_roles = CONF.admin_roles
         super(ContextMiddleware, self).__init__(application)
 
     def _extract_limits(self, params):
         return dict([(key, params[key]) for key in params.keys()
-                    if key in ["limit", "marker"]])
+                     if key in ["limit", "marker"]])
 
     def process_request(self, request):
         tenant_id = request.headers.get('X-Tenant-Id', None)
@@ -657,6 +702,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
             LOG.debug(_("Created context middleware with config: %s") %
                       local_config)
             return cls(app)
+
         return _factory
 
 
@@ -764,7 +810,6 @@ class JSONDictSerializer(DictSerializer):
 
 
 class XMLDictSerializer(DictSerializer):
-
     def __init__(self, metadata=None, xmlns=None):
         """
         :param metadata: information needed to deserialize xml into

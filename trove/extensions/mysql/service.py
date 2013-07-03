@@ -28,8 +28,8 @@ from trove.extensions.mysql import views
 from trove.guestagent.db import models as guest_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+import trove.common.apischema as apischema
 
-from urllib import unquote
 
 LOG = logging.getLogger(__name__)
 
@@ -58,19 +58,15 @@ class RootController(wsgi.Controller):
 
 class UserController(wsgi.Controller):
     """Controller for instance functionality"""
+    schemas = apischema.user
 
     @classmethod
-    def validate(cls, body):
-        """Validate that the request has all the required parameters"""
-        if not body:
-            raise exception.BadRequest("The request contains an empty body")
-        if body.get('users') is None:
-            raise exception.MissingKey(key='users')
-        for user in body.get('users'):
-            if not user.get('name'):
-                raise exception.MissingKey(key='name')
-            if not user.get('password'):
-                raise exception.MissingKey(key='password')
+    def get_schema(cls, action, body):
+        action_schema = super(UserController, cls).get_schema(action, body)
+        if 'update' == action:
+            update_type = body.keys()[0]
+            action_schema = action_schema.get(update_type, {})
+        return action_schema
 
     def index(self, req, tenant_id, instance_id):
         """Return all users."""
@@ -89,7 +85,6 @@ class UserController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.validate(body)
         users = body['users']
         try:
             model_users = populate_users(users)
@@ -140,7 +135,6 @@ class UserController(wsgi.Controller):
         LOG.info(_("Updating user passwords for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.validate(body)
         users = body['users']
         model_users = []
         for user in users:
@@ -165,19 +159,14 @@ class UserController(wsgi.Controller):
 
 class UserAccessController(wsgi.Controller):
     """Controller for adding and removing database access for a user."""
+    schemas = apischema.user
 
     @classmethod
-    def validate(cls, body):
-        """Validate that the request has all the required parameters"""
-        if not body:
-            raise exception.BadRequest("The request contains an empty body")
-        if not body.get('databases', []):
-            raise exception.MissingKey(key='databases')
-        if type(body['databases']) is not list:
-            raise exception.BadRequest("Databases must be provided as a list.")
-        for database in body.get('databases'):
-            if not database.get('name', ''):
-                raise exception.MissingKey(key='name')
+    def get_schema(cls, action, body):
+        schema = {}
+        if 'update' == action:
+            schema = cls.schemas.get(action).get('databases')
+        return schema
 
     def _get_user(self, context, instance_id, user_id):
         username, hostname = unquote_user_host(user_id)
@@ -206,7 +195,6 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("Granting user access for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.validate(body)
         user = self._get_user(context, instance_id, user_id)
         username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
@@ -230,17 +218,7 @@ class UserAccessController(wsgi.Controller):
 
 class SchemaController(wsgi.Controller):
     """Controller for instance functionality"""
-
-    @classmethod
-    def validate(cls, body):
-        """Validate that the request has all the required parameters"""
-        if not body:
-            raise exception.BadRequest("The request contains an empty body")
-        if not body.get('databases', ''):
-            raise exception.MissingKey(key='databases')
-        for database in body.get('databases'):
-            if not database.get('name', ''):
-                raise exception.MissingKey(key='name')
+    schemas = apischema.dbschema
 
     def index(self, req, tenant_id, instance_id):
         """Return all schemas."""
@@ -259,7 +237,6 @@ class SchemaController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
-        self.validate(body)
         schemas = body['databases']
         model_schemas = populate_validated_databases(schemas)
         models.Schema.create(context, instance_id, model_schemas)

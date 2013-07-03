@@ -12,12 +12,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import uuid
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
+import troveclient
 from trove.tests.util import poll_until
 from trove.tests.util import test_config
 from trove.tests.util import create_dbaas_client
@@ -27,6 +29,7 @@ from troveclient import exceptions
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import assert_unprocessable
+
 
 GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
@@ -42,10 +45,29 @@ restore_instance_id = None
 class CreateBackups(object):
 
     @test
+    def test_backup_create_instance_invalid(self):
+        """test create backup with unknown instance"""
+        invalid_inst_id = 'invalid-inst-id'
+        try:
+            instance_info.dbaas.backups.create(BACKUP_NAME, invalid_inst_id,
+                                               BACKUP_DESC)
+        except exceptions.BadRequest as e:
+            resp, body = instance_info.dbaas.client.last_response
+            assert_equal(resp.status, 400)
+            if not isinstance(instance_info.dbaas.client,
+                              troveclient.xml.TroveXmlClient):
+                assert_equal(e.message, "Validation error: u'%s' "
+                                        "does not match "
+                                        "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
+                                        "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
+                                        "([0-9a-fA-F]){12}$'" %
+                                        invalid_inst_id)
+
+    @test
     def test_backup_create_instance_not_found(self):
         """test create backup with unknown instance"""
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.create,
-                      BACKUP_NAME, 'nonexistent_instance', BACKUP_DESC)
+                      BACKUP_NAME, str(uuid.uuid4()), BACKUP_DESC)
 
     @test
     def test_backup_create_instance(self):

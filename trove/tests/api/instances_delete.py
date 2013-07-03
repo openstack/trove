@@ -91,22 +91,22 @@ class ErroredInstanceDelete(TestBase):
         self.delete_error = self.create_instance('test_ERROR_ON_DELETE')
 
     @test
-    @time_out(20)
+    @time_out(30)
     def delete_server_error(self):
         self.delete_errored_instance(self.server_error)
 
     @test(enabled=VOLUME_SUPPORT)
-    @time_out(20)
+    @time_out(30)
     def delete_volume_error(self):
         self.delete_errored_instance(self.volume_error)
 
     @test(enabled=False)
-    @time_out(20)
+    @time_out(30)
     def delete_dns_error(self):
         self.delete_errored_instance(self.dns_error)
 
     @test
-    @time_out(20)
+    @time_out(30)
     def delete_error_on_delete_instance(self):
         id = self.delete_error
         self.wait_for_instance_status(id, 'ACTIVE')

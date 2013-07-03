@@ -22,6 +22,7 @@ from trove.common import exception
 from trove.common import cfg
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+import trove.common.apischema as apischema
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class BackupController(wsgi.Controller):
     """
     Controller for accessing backups in the OpenStack API.
     """
+    schemas = apischema.backup
 
     def index(self, req, tenant_id):
         """
@@ -51,7 +53,6 @@ class BackupController(wsgi.Controller):
 
     def create(self, req, body, tenant_id):
         LOG.debug("Creating a Backup for tenant '%s'" % tenant_id)
-        self._validate_create_body(body)
         context = req.environ[wsgi.CONTEXT_KEY]
         data = body['backup']
         instance = data['instance']
@@ -65,14 +66,3 @@ class BackupController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         Backup.delete(context, id)
         return wsgi.Result(None, 202)
-
-    def _validate_create_body(self, body):
-        try:
-            body['backup']
-            body['backup']['name']
-            body['backup']['instance']
-        except KeyError as e:
-            LOG.error(_("Create Backup Required field(s) "
-                        "- %s") % e)
-            raise exception.TroveError(
-                "Required element/key - %s was not specified" % e)

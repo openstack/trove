@@ -26,14 +26,11 @@
 .. moduleauthor:: Tim Simpson <tim.simpson@rackspace.com>
 """
 
-import re
 import subprocess
-import sys
 import time
 
 from trove.tests.config import CONFIG as test_config
 from urllib import unquote
-
 
 try:
     from eventlet import event
@@ -46,13 +43,8 @@ from sqlalchemy import create_engine
 
 from troveclient import exceptions
 
-from proboscis import test
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
 from proboscis.asserts import Check
 from proboscis.asserts import fail
-from proboscis.asserts import ASSERTION_ERROR
 from proboscis import SkipTest
 from troveclient import Dbaas
 from troveclient.client import TroveHTTPClient

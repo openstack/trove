@@ -13,7 +13,6 @@
 #    under the License.
 
 import time
-import re
 
 from troveclient import exceptions
 
@@ -22,23 +21,17 @@ from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
-from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
-from proboscis.decorators import expect_exception
-from proboscis.decorators import time_out
 
 from trove import tests
 from trove.tests.api.databases import TestDatabases
-from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
 from trove.tests import util
-from trove.tests.util import skip_if_xml
 from trove.tests.util import test_config
 from trove.tests.api.databases import TestMysqlAccess
 
-from urllib import quote
 
 GROUP = "dbaas.api.users"
 FAKE = test_config.values['fake_mode']
@@ -62,17 +55,20 @@ class TestUsers(object):
     created_users = [username, username1]
     system_users = ['root', 'debian_sys_maint']
 
-    @before_class
-    def setUp(self):
+    def __init__(self):
         self.dbaas = util.create_dbaas_client(instance_info.user)
         self.dbaas_admin = util.create_dbaas_client(instance_info.admin_user)
-        databases = [{"name": self.db1, "charset": "latin2",
+
+    @before_class
+    def setUp(self):
+        databases = [{"name": self.db1, "character_set": "latin2",
                       "collate": "latin2_general_ci"},
                      {"name": self.db2}]
         try:
             self.dbaas.databases.create(instance_info.id, databases)
-        except exceptions.BadRequest:
-            pass  # If the db already exists that's OK.
+        except exceptions.BadRequest as e:
+            if "Validation error" in e.message:
+                raise e
         if not FAKE:
             time.sleep(5)
 
@@ -154,12 +150,10 @@ class TestUsers(object):
         #tests for users that should not be listed
         users = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
-        found = False
         for user in self.system_users:
             found = any(result.name == user for result in users)
             msg = "User '%s' SHOULD NOT BE found in result" % user
             assert_false(found, msg)
-            found = False
 
     @test(depends_on=[test_create_users_list],
           runs_after=[test_fails_when_creating_user_twice])
@@ -251,9 +245,8 @@ class TestUsers(object):
 
     @test
     def test_username_too_long(self):
-        users = []
-        users.append({"name": "1233asdwer345tyg56", "password": self.password,
-                      "database": self.db1})
+        users = [{"name": "1233asdwer345tyg56", "password": self.password,
+                  "database": self.db1}]
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
         assert_equal(400, self.dbaas.last_http_code)
@@ -287,9 +280,8 @@ class TestUsers(object):
 
     @test
     def test_invalid_password(self):
-        users = []
-        users.append({"name": "anouser", "password": "sdf,;",
-                      "database": self.db1})
+        users = [{"name": "anouser", "password": "sdf,;",
+                  "database": self.db1}]
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
         assert_equal(400, self.dbaas.last_http_code)

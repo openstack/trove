@@ -30,6 +30,7 @@ from trove.extensions.mysql import models as mysql_models
 from trove.instance.service import InstanceController
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+import trove.common.apischema as apischema
 
 
 LOG = logging.getLogger(__name__)
@@ -37,6 +38,12 @@ LOG = logging.getLogger(__name__)
 
 class MgmtInstanceController(InstanceController):
     """Controller for instance functionality"""
+    schemas = apischema.mgmt_instance
+
+    @classmethod
+    def get_action_schema(cls, body, action_schema):
+        action_type = body.keys()[0]
+        return action_schema.get(action_type, {})
 
     @admin_context
     def index(self, req, tenant_id, detailed=False):

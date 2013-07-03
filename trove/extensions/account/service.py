@@ -26,12 +26,14 @@ from trove.extensions.account import models
 from trove.extensions.account import views
 from trove.instance.models import DBInstance
 from trove.openstack.common.gettextutils import _
+import trove.common.apischema as apischema
 
 LOG = logging.getLogger(__name__)
 
 
 class AccountController(wsgi.Controller):
     """Controller for account functionality"""
+    schemas = apischema.account
 
     @admin_context
     def show(self, req, tenant_id, id):

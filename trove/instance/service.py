@@ -29,33 +29,44 @@ from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+import trove.common.apischema as apischema
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-class api_validation:
-    """ api validation wrapper """
-    def __init__(self, action=None):
-        self.action = action
-
-    def __call__(self, f):
-        """
-        Apply validation of the api body
-        """
-        def wrapper(*args, **kwargs):
-            body = kwargs['body']
-            if self.action == 'create':
-                InstanceController._validate(body)
-            return f(*args, **kwargs)
-        return wrapper
-
-
 class InstanceController(wsgi.Controller):
     """Controller for instance functionality"""
+    schemas = apischema.instance
+
+    @classmethod
+    def get_action_schema(cls, body, action_schema):
+        action_type = body.keys()[0]
+        action_schema = action_schema.get(action_type, {})
+        if action_type == 'resize':
+            # volume or flavorRef
+            resize_action = body[action_type].keys()[0]
+            action_schema = action_schema.get(resize_action, {})
+        return action_schema
+
+    @classmethod
+    def get_schema(cls, action, body):
+        action_schema = super(InstanceController, cls).get_schema(action, body)
+        if action == 'action':
+            # resize or restart
+            action_schema = cls.get_action_schema(body, action_schema)
+        return action_schema
 
     def action(self, req, body, tenant_id, id):
+        """
+        Handles requests that modify existing instances in some manner. Actions
+        could include 'resize', 'restart', 'reset_password'
+        :param req: http request object
+        :param body: deserialized body of the request as a dict
+        :param tenant_id: the tenant id for whom owns the instance
+        :param id: ???
+        """
         LOG.info("req : '%s'\n\n" % req)
         LOG.info("Comitting an ACTION again instance %s for tenant '%s'"
                  % (id, tenant_id))
@@ -71,18 +82,8 @@ class InstanceController(wsgi.Controller):
         selected_action = None
         for key in body:
             if key in _actions:
-                if selected_action is not None:
-                    msg = _("Only one action can be specified per request.")
-                    raise exception.BadRequest(msg)
                 selected_action = _actions[key]
-            else:
-                msg = _("Invalid instance action: %s") % key
-                raise exception.BadRequest(msg)
-
-        if selected_action:
-            return selected_action(instance, body)
-        else:
-            raise exception.BadRequest(_("Invalid request body."))
+        return selected_action(instance, body)
 
     def _action_restart(self, instance, body):
         instance.restart()
@@ -106,20 +107,12 @@ class InstanceController(wsgi.Controller):
         args = None
         for key in options:
             if key in body['resize']:
-                if selected_option is not None:
-                    msg = _("Not allowed to resize volume and flavor at the "
-                            "same time.")
-                    raise exception.BadRequest(msg)
                 selected_option = options[key]
                 args = body['resize'][key]
-
-        if selected_option:
-            return selected_option(instance, args)
-        else:
-            raise exception.BadRequest(_("Missing resize arguments."))
+                break
+        return selected_option(instance, args)
 
     def _action_resize_volume(self, instance, volume):
-        InstanceController._validate_resize_volume(volume)
         instance.resize_volume(volume['size'])
         return wsgi.Result(None, 202)
 
@@ -175,7 +168,6 @@ class InstanceController(wsgi.Controller):
         # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(None, 202)
 
-    @api_validation(action="create")
     def create(self, req, body, tenant_id):
         # TODO(hub-cap): turn this into middleware
         LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
@@ -197,18 +189,15 @@ class InstanceController(wsgi.Controller):
             users = populate_users(body['instance'].get('users', []))
         except ValueError as ve:
             raise exception.BadRequest(msg=ve)
+
         if 'volume' in body['instance']:
-            try:
-                volume_size = int(body['instance']['volume']['size'])
-            except ValueError as e:
-                raise exception.BadValue(msg=e)
+            volume_size = int(body['instance']['volume']['size'])
         else:
             volume_size = None
 
         if 'restorePoint' in body['instance']:
             backupRef = body['instance']['restorePoint']['backupRef']
             backup_id = utils.get_id_from_href(backupRef)
-
         else:
             backup_id = None
 
@@ -219,62 +208,3 @@ class InstanceController(wsgi.Controller):
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
-
-    @staticmethod
-    def _validate_body_not_empty(body):
-        """Check that the body is not empty"""
-        if not body:
-            msg = "The request contains an empty body"
-            raise exception.TroveError(msg)
-
-    @staticmethod
-    def _validate_resize_volume(volume):
-        """
-        We are going to check that volume resizing data is present.
-        """
-        if 'size' not in volume:
-            raise exception.BadRequest(
-                "Missing 'size' property of 'volume' in request body.")
-        InstanceController._validate_volume_size(volume['size'])
-
-    @staticmethod
-    def _validate_volume_size(size):
-        """Validate the various possible errors for volume size"""
-        try:
-            volume_size = float(size)
-        except (ValueError, TypeError) as err:
-            LOG.error(err)
-            msg = ("Required element/key - instance volume 'size' was not "
-                   "specified as a number (value was %s)." % size)
-            raise exception.TroveError(msg)
-        if int(volume_size) != volume_size or int(volume_size) < 1:
-            msg = ("Volume 'size' needs to be a positive "
-                   "integer value, %s cannot be accepted."
-                   % volume_size)
-            raise exception.TroveError(msg)
-
-    @staticmethod
-    def _validate(body):
-        """Validate that the request has all the required parameters"""
-        InstanceController._validate_body_not_empty(body)
-
-        try:
-            body['instance']
-            body['instance']['flavorRef']
-            name = body['instance'].get('name', '').strip()
-            if not name:
-                raise exception.MissingKey(key='name')
-            if CONF.trove_volume_support:
-                if body['instance'].get('volume', None):
-                    if body['instance']['volume'].get('size', None):
-                        volume_size = body['instance']['volume']['size']
-                        InstanceController._validate_volume_size(volume_size)
-                    else:
-                        raise exception.MissingKey(key="size")
-                else:
-                    raise exception.MissingKey(key="volume")
-
-        except KeyError as e:
-            LOG.error(_("Create Instance Required field(s) - %s") % e)
-            raise exception.TroveError("Required element/key - %s "
-                                       "was not specified" % e)

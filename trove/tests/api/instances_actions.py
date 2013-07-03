@@ -120,7 +120,7 @@ class ActionTestBase(object):
         """Create a MySQL user we can use for this test."""
 
         users = [{"name": MYSQL_USERNAME, "password": MYSQL_PASSWORD,
-                  "database": MYSQL_USERNAME}]
+                  "databases": [{"name": MYSQL_USERNAME}]}]
         self.dbaas.users.create(instance_info.id, users)
 
         def has_user():
