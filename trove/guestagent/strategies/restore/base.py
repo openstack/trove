@@ -38,20 +38,31 @@ FLUSH PRIVILEGES;
 """
 
 
-def mysql_is_running():
+def exec_with_root_helper(*cmd):
     try:
         out, err = utils.execute_with_timeout(
-            "/usr/bin/mysqladmin",
-            "ping", run_as_root=True, root_helper="sudo")
-        LOG.info("The mysqld daemon is up and running.")
+            *cmd, run_as_root=True, root_helper="sudo")
         return True
     except exception.ProcessExecutionError:
+        return False
+
+
+def mysql_is_running():
+    if exec_with_root_helper("/usr/bin/mysqladmin", "ping"):
+        LOG.info("The mysqld daemon is up and running.")
+        return True
+    else:
         LOG.info("The mysqld daemon is not running.")
         return False
 
 
 def mysql_is_not_running():
-    return not mysql_is_running()
+    if exec_with_root_helper("/usr/bin/pgrep", "mysqld"):
+        LOG.info("The mysqld daemon is still running.")
+        return False
+    else:
+        LOG.info("The mysqld daemon is not running.")
+        return True
 
 
 def poll_until_then_raise(event, exception):
