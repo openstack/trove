@@ -130,7 +130,8 @@ class SimpleInstance(object):
 
     @property
     def flavor_id(self):
-        return self.db_info.flavor_id
+        # Flavor ID is a str in the 1.0 API.
+        return str(self.db_info.flavor_id)
 
     @property
     def hostname(self):

@@ -36,10 +36,6 @@ from trove.tests.api.instances import GROUP_TEST
 from trove.tests.util import poll_until
 
 GROUP = "dbaas.api.mgmt.instances"
-XML_SUPPORT = False
-if hasattr(CONFIG, 'trove_client_cls'):
-    if CONFIG.trove_client_cls == "troveclient.xml.TroveXmlClient":
-        XML_SUPPORT = True
 
 
 @test(groups=[GROUP])
@@ -52,10 +48,7 @@ def mgmt_index_requires_admin_account():
 # These functions check some dictionaries in the returned response.
 def flavor_check(flavor):
     with CollectionCheck("flavor", flavor) as check:
-        if XML_SUPPORT:
-            check.has_element("id", basestring)
-        else:
-            check.has_element("id", int)
+        check.has_element("id", basestring)
         check.has_element("links", list)
 
 
