@@ -43,9 +43,9 @@ import traceback
 from oslo.config import cfg
 
 from trove.openstack.common.gettextutils import _
+from trove.openstack.common import importutils
 from trove.openstack.common import jsonutils
 from trove.openstack.common import local
-from trove.openstack.common import notifier
 
 
 _DEFAULT_LOG_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
@@ -74,7 +74,8 @@ logging_cli_opts = [
     cfg.StrOpt('log-format',
                default=None,
                metavar='FORMAT',
-               help='A logging.Formatter log message format string which may '
+               help='DEPRECATED. '
+                    'A logging.Formatter log message format string which may '
                     'use any of the available logging.LogRecord attributes. '
                     'This option is deprecated.  Please use '
                     'logging_context_format_string and '
@@ -322,17 +323,6 @@ class JSONFormatter(logging.Formatter):
         return jsonutils.dumps(message)
 
 
-class PublishErrorsHandler(logging.Handler):
-    def emit(self, record):
-        if ('trove.openstack.common.notifier.log_notifier' in
-                CONF.notification_driver):
-            return
-        notifier.api.notify(None, 'error.publisher',
-                            'error_notification',
-                            notifier.api.ERROR,
-                            dict(error=record.msg))
-
-
 def _create_logging_excepthook(product_name):
     def logging_excepthook(type, value, tb):
         extra = {}
@@ -428,7 +418,10 @@ def _setup_logging_from_conf():
         log_root.addHandler(streamlog)
 
     if CONF.publish_errors:
-        log_root.addHandler(PublishErrorsHandler(logging.ERROR))
+        handler = importutils.import_object(
+            "trove.openstack.common.log_handler.PublishErrorsHandler",
+            logging.ERROR)
+        log_root.addHandler(handler)
 
     datefmt = CONF.log_date_format
     for handler in log_root.handlers:
@@ -467,10 +460,11 @@ def getLogger(name='unknown', version='unknown'):
 
 
 def getLazyLogger(name='unknown', version='unknown'):
-    """
-    create a pass-through logger that does not create the real logger
+    """Returns lazy logger.
+
+    Creates a pass-through logger that does not create the real logger
     until it is really needed and delegates all calls to the real logger
-    once it is created
+    once it is created.
     """
     return LazyAdapter(name, version)
 

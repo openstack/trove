@@ -27,6 +27,7 @@ import sys
 import time
 
 import eventlet
+from eventlet import event
 import logging as std_logging
 from oslo.config import cfg
 
@@ -51,19 +52,8 @@ class Launcher(object):
         :returns: None
 
         """
-        self._services = threadgroup.ThreadGroup()
-        eventlet_backdoor.initialize_if_enabled()
-
-    @staticmethod
-    def run_service(service):
-        """Start and wait for a service to finish.
-
-        :param service: service to run and wait for.
-        :returns: None
-
-        """
-        service.start()
-        service.wait()
+        self.services = Services()
+        self.backdoor_port = eventlet_backdoor.initialize_if_enabled()
 
     def launch_service(self, service):
         """Load and start the given service.
@@ -72,7 +62,8 @@ class Launcher(object):
         :returns: None
 
         """
-        self._services.add_thread(self.run_service, service)
+        service.backdoor_port = self.backdoor_port
+        self.services.add(service)
 
     def stop(self):
         """Stop all services which are currently running.
@@ -80,7 +71,7 @@ class Launcher(object):
         :returns: None
 
         """
-        self._services.stop()
+        self.services.stop()
 
     def wait(self):
         """Waits until all services have been stopped, and then returns.
@@ -88,7 +79,7 @@ class Launcher(object):
         :returns: None
 
         """
-        self._services.wait()
+        self.services.wait()
 
 
 class SignalExit(SystemExit):
@@ -123,9 +114,9 @@ class ServiceLauncher(Launcher):
         except SystemExit as exc:
             status = exc.code
         finally:
+            self.stop()
             if rpc:
                 rpc.cleanup()
-            self.stop()
         return status
 
 
@@ -188,7 +179,8 @@ class ProcessLauncher(object):
         random.seed()
 
         launcher = Launcher()
-        launcher.run_service(service)
+        launcher.launch_service(service)
+        launcher.wait()
 
     def _start_child(self, wrap):
         if len(wrap.forktimes) > wrap.workers:
@@ -270,7 +262,7 @@ class ProcessLauncher(object):
         return wrap
 
     def wait(self):
-        """Loop waiting on children to die and respawning as necessary"""
+        """Loop waiting on children to die and respawning as necessary."""
 
         LOG.debug(_('Full set of CONF:'))
         CONF.log_opt_values(LOG, std_logging.DEBUG)
@@ -312,14 +304,59 @@ class Service(object):
     def __init__(self, threads=1000):
         self.tg = threadgroup.ThreadGroup(threads)
 
+        # signal that the service is done shutting itself down:
+        self._done = event.Event()
+
     def start(self):
         pass
 
     def stop(self):
         self.tg.stop()
+        self.tg.wait()
+        self._done.send()
+
+    def wait(self):
+        self._done.wait()
+
+
+class Services(object):
+
+    def __init__(self):
+        self.services = []
+        self.tg = threadgroup.ThreadGroup()
+        self.done = event.Event()
+
+    def add(self, service):
+        self.services.append(service)
+        self.tg.add_thread(self.run_service, service, self.done)
+
+    def stop(self):
+        # wait for graceful shutdown of services:
+        for service in self.services:
+            service.stop()
+            service.wait()
+
+        # each service has performed cleanup, now signal that the run_service
+        # wrapper threads can now die:
+        self.done.send()
+
+        # reap threads:
+        self.tg.stop()
 
     def wait(self):
         self.tg.wait()
+
+    @staticmethod
+    def run_service(service, done):
+        """Service start wrapper.
+
+        :param service: service to run
+        :param done: event to wait on until a shutdown is triggered
+        :returns: None
+
+        """
+        service.start()
+        done.wait()
 
 
 def launch(service, workers=None):
