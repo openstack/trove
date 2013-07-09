@@ -14,7 +14,7 @@ from trove.common import utils as utils
 from trove.common import exception
 from trove.guestagent import query
 from trove.guestagent.db import models
-from trove.guestagent import pkg
+from trove.guestagent.pkg import Package
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -37,6 +37,9 @@ INCLUDE_MARKER_OPERATORS = {
     True: ">=",
     False: ">"
 }
+
+# Create a package impl
+pkg = Package()
 
 
 def generate_random_password():
