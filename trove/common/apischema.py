@@ -52,6 +52,12 @@ non_empty_string = {
     "pattern": "^.*[0-9a-zA-Z]+.*$"
 }
 
+host_string = {
+    "type": "string",
+    "minLength": 0,
+    "pattern": "^[%]?[\w(-).]*[%]?$"
+}
+
 uuid = {
     "type": "string",
     "minLength": 1,
@@ -132,7 +138,7 @@ users_list = {
         "properties": {
             "name": non_empty_string,
             "password": non_empty_string,
-            "host": non_empty_string,
+            "host": host_string,
             "databases": databases_ref_list
         }
     }
