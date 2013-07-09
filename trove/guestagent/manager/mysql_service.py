@@ -563,7 +563,7 @@ class KeepAliveConnection(interfaces.PoolListener):
                 dbapi_con.ping(False)
             except TypeError:
                 dbapi_con.ping()
-        except dbapi_con.OperationalError, ex:
+        except dbapi_con.OperationalError as ex:
             if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
                 raise exc.DisconnectionError()
             else:
@@ -818,7 +818,7 @@ class MySqlApp(object):
             # don't let a rouge process wander around.
             try:
                 utils.execute_with_timeout("sudo", "pkill", "-9", "mysql")
-            except exception.ProcessExecutionError, p:
+            except exception.ProcessExecutionError as p:
                 LOG.error("Error killing stalled mysql start command.")
                 LOG.error(p)
             # There's nothing more we can do...
@@ -869,7 +869,7 @@ class MySqlRootAccess(object):
         user.host = "%"
         user.password = generate_random_password()
         with LocalSqlClient(get_engine()) as client:
-            print client
+            print(client)
             try:
                 cu = query.CreateUser(user.name, host=user.host)
                 t = text(str(cu))
@@ -879,7 +879,7 @@ class MySqlRootAccess(object):
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)
         with LocalSqlClient(get_engine()) as client:
-            print client
+            print(client)
             uu = query.UpdateUser(user.name, host=user.host,
                                   clear=user.password)
             t = text(str(uu))

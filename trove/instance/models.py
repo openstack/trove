@@ -49,7 +49,7 @@ def load_server(context, instance_id, server_id):
         LOG.debug("Could not find nova server_id(%s)" % server_id)
         raise exception.ComputeInstanceNotFound(instance_id=instance_id,
                                                 server_id=server_id)
-    except nova_exceptions.ClientException, e:
+    except nova_exceptions.ClientException as e:
         raise exception.TroveError(str(e))
     return server
 

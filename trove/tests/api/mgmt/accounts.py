@@ -145,7 +145,7 @@ class AllAccounts(object):
                     except exceptions.NotFound:
                         deleted_count += 1
                     except Exception:
-                        print "Failed to delete instance"
+                        print("Failed to delete instance")
                 if deleted_count == len(user_instances):
                     break
 
@@ -201,7 +201,7 @@ class AccountWithBrokenInstance(object):
                    lambda instance: instance.status == 'ERROR',
                    time_out=10)
         self.instance = self.client.instances.get(self.response.id)
-        print "Status: %s" % self.instance.status
+        print("Status: %s" % self.instance.status)
         msg = "Instance did not drop to error after server prov failure."
         assert_equal(self.instance.status, "ERROR", msg)
 

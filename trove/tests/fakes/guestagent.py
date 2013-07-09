@@ -102,7 +102,7 @@ class FakeGuest(object):
         if hostname is None:
             hostname = '%'
         self.users[(username, hostname)] = user
-        print "CREATING %s @ %s" % (username, hostname)
+        print("CREATING %s @ %s" % (username, hostname))
         databases = [db['_name'] for db in user['_databases']]
         self.grant_access(username, hostname, databases)
         return user
@@ -173,7 +173,7 @@ class FakeGuest(object):
     def get_user(self, username, hostname):
         self._check_username(username)
         for (u, h) in self.users:
-            print "%r @ %r" % (u, h)
+            print("%r @ %r" % (u, h))
         if (username, hostname) not in self.users:
             raise rd_exception.UserNotFound(
                 "User %s@%s cannot be found on the instance."

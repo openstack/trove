@@ -59,7 +59,7 @@ class MgmtInstanceController(InstanceController):
             deleted = False
         try:
             instances = models.load_mgmt_instances(context, deleted=deleted)
-        except nova_exceptions.ClientException, e:
+        except nova_exceptions.ClientException as e:
             LOG.error(e)
             return wsgi.Result(str(e), 403)
 
@@ -146,7 +146,7 @@ class MgmtInstanceController(InstanceController):
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             server = instance_models.Instance.load(context=context, id=id)
-        except exception.TroveError, e:
+        except exception.TroveError as e:
             LOG.error(e)
             return wsgi.Result(str(e), 404)
         reh = mysql_models.RootHistory.load(context=context, instance_id=id)

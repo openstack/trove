@@ -59,7 +59,7 @@ class SwiftStorage(base.Storage):
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
             if etag != stream.schecksum.hexdigest():
-                print etag, stream.schecksum.hexdigest()
+                print("%s %s" % (etag, stream.schecksum.hexdigest()))
                 return (False, "Error saving data to Swift!", None, None)
 
             checksum = stream.checksum.hexdigest()

@@ -702,7 +702,7 @@ class TextClauseMatcher(matchers.Matcher):
         return "TextClause(%s)" % self.contains.sub
 
     def matches(self, arg):
-        print "Matching", arg.text
+        print("Matching %s" % arg.text)
         return self.contains.matches(arg.text)
 
 

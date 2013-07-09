@@ -1192,7 +1192,7 @@ class CheckInstance(AttrCheck):
             return
         if self.volume_key_exists():
             expected_attrs = ['size', 'used']
-            print self.instance
+            print(self.instance)
             self.attrs_exist(self.instance['volume'], expected_attrs,
                              msg="Volumes")
 
@@ -1206,7 +1206,7 @@ class CheckInstance(AttrCheck):
 
     def addresses(self):
         expected_attrs = ['addr', 'version']
-        print self.instance
+        print(self.instance)
         networks = ['usernet']
         for network in networks:
             for address in self.instance['addresses'][network]:
@@ -1265,11 +1265,11 @@ class BadInstanceStatusBug():
 
         def verify_instance_is_active():
             result = self.client.instances.get(id)
-            print result.status
+            print(result.status)
             return result.status == 'ACTIVE'
 
         def attempt_migrate():
-            print 'attempting migration'
+            print('attempting migration')
             try:
                 self.mgmt.migrate(id)
             except exceptions.UnprocessableEntity:

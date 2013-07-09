@@ -60,7 +60,7 @@ class MgmtInstanceBase(object):
     def _make_request(self, path='/', context=None, **kwargs):
         from webob import Request
         path = '/'
-        print "path:", path
+        print("path: %s" % path)
         return Request.blank(path=path, environ={'trove.context': context},
                              **kwargs)
 

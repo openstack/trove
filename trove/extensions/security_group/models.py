@@ -69,7 +69,7 @@ class SecurityGroup(DatabaseModelBase):
                     user=context.user,
                     tenant_id=context.tenant)
 
-        except exception.SecurityGroupCreationError, e:
+        except exception.SecurityGroupCreationError as e:
             LOG.exception("Failed to create remote security group")
             raise e
 
@@ -160,7 +160,7 @@ class SecurityGroupRule(DatabaseModelBase):
                     cidr=cidr,
                     group_id=sec_group['id'])
 
-        except exception.SecurityGroupRuleCreationError, e:
+        except exception.SecurityGroupRuleCreationError as e:
             LOG.exception("Failed to create remote security group")
             raise e
 
@@ -215,9 +215,9 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
             try:
                 client = trove.common.remote.create_nova_client(context)
                 self._data_object = client.security_groups.get(id)
-            except nova_exceptions.NotFound, e:
+            except nova_exceptions.NotFound as e:
                 raise exception.NotFound(id=id)
-            except nova_exceptions.ClientException, e:
+            except nova_exceptions.ClientException as e:
                 raise exception.TroveError(str(e))
         else:
             self._data_object = security_group
@@ -229,7 +229,7 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
         try:
             sec_group = client.security_groups.create(name=name,
                                                       description=description)
-        except nova_exceptions.ClientException, e:
+        except nova_exceptions.ClientException as e:
             LOG.exception('Failed to create remote security group')
             raise exception.SecurityGroupCreationError(str(e))
 
@@ -241,7 +241,7 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
 
         try:
             client.security_groups.delete(sec_group_id)
-        except nova_exceptions.ClientException, e:
+        except nova_exceptions.ClientException as e:
             LOG.exception('Failed to delete remote security group')
             raise exception.SecurityGroupDeletionError(str(e))
 
@@ -260,7 +260,7 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
                 cidr=cidr)
 
             return sec_group_rule.id
-        except nova_exceptions.ClientException, e:
+        except nova_exceptions.ClientException as e:
             LOG.exception('Failed to add rule to remote security group')
             raise exception.SecurityGroupRuleCreationError(str(e))
 
@@ -271,6 +271,6 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
         try:
             client.security_group_rules.delete(sec_group_rule_id)
 
-        except nova_exceptions.ClientException, e:
+        except nova_exceptions.ClientException as e:
             LOG.exception('Failed to delete rule to remote security group')
             raise exception.SecurityGroupRuleDeletionError(str(e))
