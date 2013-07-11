@@ -38,6 +38,16 @@ LOG = logging.getLogger(__name__)
 class API(ManagerAPI):
     """API for interacting with the task manager."""
 
+    def _transform_obj(self, obj_ref):
+        # Turn the object into a dictionary and remove the mgr
+        if "__dict__" in dir(obj_ref):
+            obj_dict = obj_ref.__dict__
+            # We assume manager contains a object due to the *clients
+            if obj_dict.get('manager'):
+                del obj_dict['manager']
+            return obj_dict
+        raise ValueError("Could not transform %s" % obj_ref)
+
     def _fake_cast(self, method_name, **kwargs):
         from trove.tests.fakes.common import get_event_spawer
         from trove.taskmanager.manager import Manager
@@ -63,14 +73,12 @@ class API(ManagerAPI):
                   % instance_id)
         self._cast("resize_volume", new_size=new_size, instance_id=instance_id)
 
-    def resize_flavor(self, instance_id, new_flavor_id, old_memory_size,
-                      new_memory_size):
+    def resize_flavor(self, instance_id, old_flavor, new_flavor):
         LOG.debug("Making async call to resize flavor for instance: %s" %
                   instance_id)
         self._cast("resize_flavor", instance_id=instance_id,
-                   new_flavor_id=new_flavor_id,
-                   old_memory_size=old_memory_size,
-                   new_memory_size=new_memory_size)
+                   old_flavor=self._transform_obj(old_flavor),
+                   new_flavor=self._transform_obj(new_flavor))
 
     def reboot(self, instance_id):
         LOG.debug("Making async call to reboot instance: %s" % instance_id)
@@ -99,12 +107,12 @@ class API(ManagerAPI):
         LOG.debug("Making async call to delete backup: %s" % backup_id)
         self._cast("delete_backup", backup_id=backup_id)
 
-    def create_instance(self, instance_id, name, flavor_id, flavor_ram,
+    def create_instance(self, instance_id, name, flavor,
                         image_id, databases, users, service_type,
                         volume_size, security_groups, backup_id=None):
         LOG.debug("Making async call to create instance %s " % instance_id)
         self._cast("create_instance", instance_id=instance_id, name=name,
-                   flavor_id=flavor_id, flavor_ram=flavor_ram,
-                   image_id=image_id, databases=databases, users=users,
+                   flavor=self._transform_obj(flavor), image_id=image_id,
+                   databases=databases, users=users,
                    service_type=service_type, volume_size=volume_size,
                    security_groups=security_groups, backup_id=backup_id)

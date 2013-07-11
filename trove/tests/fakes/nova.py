@@ -51,9 +51,6 @@ class FakeFlavor(object):
     def href_suffix(self):
         return "flavors/%s" % self.id
 
-    def to_dict(self):
-        return {"id": self.id, "links": self.links}
-
 
 class FakeFlavors(object):
 
@@ -169,7 +166,7 @@ class FakeServer(object):
 
     @property
     def flavor(self):
-        return FLAVORS.get_by_href(self.flavor_ref).to_dict()
+        return FLAVORS.get_by_href(self.flavor_ref).__dict__
 
     @property
     def links(self):
