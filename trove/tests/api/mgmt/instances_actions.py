@@ -13,11 +13,15 @@
 #    under the License.
 
 import mox
+from trove.backup import models as backup_models
 from trove.common.context import TroveContext
 from trove.instance.tasks import InstanceTasks
 from trove.instance import models as imodels
 from trove.instance.models import DBInstance
 from trove.extensions.mgmt.instances.models import MgmtInstance
+from trove.tests.util import create_dbaas_client
+from trove.tests.util import test_config
+from trove.tests.util.users import Requirements
 
 from novaclient.v1_1.servers import Server
 
@@ -74,6 +78,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
     @before_class
     def setUp(self):
         super(RestartTaskStatusTests, self).setUp()
+        self.backups_to_clear = []
 
     @after_class
     def tearDown(self):
@@ -131,3 +136,66 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         self.reset_task_status()
         self._reload_db_info()
         assert_equal(self.db_info.task_status, InstanceTasks.NONE)
+
+    @test
+    def mgmt_reset_task_status_clears_backups(self):
+        self.reset_task_status()
+        self._reload_db_info()
+        assert_equal(self.db_info.task_status, InstanceTasks.NONE)
+
+        user = test_config.users.find_user(Requirements(is_admin=False))
+        dbaas = create_dbaas_client(user)
+        result = dbaas.instances.backups(self.db_info.id)
+        assert_equal(0, len(result))
+
+        # Create some backups.
+        forever_new = backup_models.DBBackup.create(
+            name="forever_new",
+            description="forever new",
+            tenant_id=self.tenant_id,
+            state=backup_models.BackupState.NEW,
+            instance_id=self.db_info.id,
+            deleted=False)
+
+        forever_build = backup_models.DBBackup.create(
+            name="forever_build",
+            description="forever build",
+            tenant_id=self.tenant_id,
+            state=backup_models.BackupState.BUILDING,
+            instance_id=self.db_info.id,
+            deleted=False)
+
+        forever_saved = backup_models.DBBackup.create(
+            name="forever_completed",
+            description="forever completed",
+            tenant_id=self.tenant_id,
+            state=backup_models.BackupState.COMPLETED,
+            instance_id=self.db_info.id,
+            deleted=False)
+
+        # List the backups for this instance. There ought to be three!
+        result = dbaas.instances.backups(self.db_info.id)
+        assert_equal(3, len(result))
+        self.backups_to_clear = result
+
+        # Reset the task status.
+        self.reset_task_status()
+        self._reload_db_info()
+        result = dbaas.instances.backups(self.db_info.id)
+        assert_equal(3, len(result))
+        for backup in result:
+            if backup.name == 'forever_completed':
+                assert_equal(backup.status,
+                             backup_models.BackupState.COMPLETED)
+            else:
+                assert_equal(backup.status, backup_models.BackupState.FAILED)
+
+    @test(runs_after=[mgmt_reset_task_status_clears_backups])
+    def clear_test_backups(self):
+        for backup in self.backups_to_clear:
+            found_backup = backup_models.DBBackup.find_by(id=backup.id)
+            found_backup.delete()
+        user = test_config.users.find_user(Requirements(is_admin=False))
+        dbaas = create_dbaas_client(user)
+        result = dbaas.instances.backups(self.db_info.id)
+        assert_equal(0, len(result))
