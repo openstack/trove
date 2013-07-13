@@ -50,6 +50,7 @@ class MgmtInstanceBase(object):
             flavor_id=1,
             tenant_id=self.tenant_id,
             volume_size=None,
+            service_type='mysql',
             task_status=InstanceTasks.NONE)
         self.server = self.mock.CreateMock(Server)
         self.instance = imodels.Instance(self.context,
