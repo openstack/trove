@@ -468,9 +468,8 @@ class Instance(BuiltInstance):
                     context)
                 security_groups = [security_group["name"]]
 
-            task_api.API(context).create_instance(db_info.id, name, flavor_id,
-                                                  flavor.ram, image_id,
-                                                  databases, users,
+            task_api.API(context).create_instance(db_info.id, name, flavor,
+                                                  image_id, databases, users,
                                                   service_type, volume_size,
                                                   security_groups, backup_id)
 
@@ -510,9 +509,8 @@ class Instance(BuiltInstance):
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)
         LOG.debug("Instance %s set to RESIZING." % self.id)
-        task_api.API(self.context).resize_flavor(self.id, new_flavor_id,
-                                                 old_flavor_size,
-                                                 new_flavor_size)
+        task_api.API(self.context).resize_flavor(self.id, old_flavor,
+                                                 new_flavor)
 
     def resize_volume(self, new_size):
         def _resize_resources():

@@ -29,11 +29,14 @@ from trove.instance.models import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 from trove.openstack.common.rpc.common import RPCException
 from trove.taskmanager import models as models
+from trove.tests.fakes import nova
 
 GROUP = 'dbaas.api.instances.resize'
 
 OLD_FLAVOR_ID = 1
 NEW_FLAVOR_ID = 2
+OLD_FLAVOR = nova.FLAVORS.get(OLD_FLAVOR_ID)
+NEW_FLAVOR = nova.FLAVORS.get(NEW_FLAVOR_ID)
 
 
 class ResizeTestBase(TestCase):
@@ -99,15 +102,18 @@ class ResizeTests(ResizeTestBase):
     def setUp(self):
         super(ResizeTests, self).setUp()
         self._init()
+        # By the time flavor objects pass over amqp to the
+        # resize action they have been turned into dicts
         self.action = models.ResizeAction(self.instance,
-                                          new_flavor_id=NEW_FLAVOR_ID)
+                                          OLD_FLAVOR.__dict__,
+                                          NEW_FLAVOR.__dict__)
 
     def tearDown(self):
         super(ResizeTests, self).tearDown()
         self._teardown()
 
     def _start_mysql(self):
-        self.instance.guest.start_db_with_conf_changes(None)
+        self.instance.guest.start_db_with_conf_changes(NEW_FLAVOR.ram)
 
     def test_guest_wont_stop_mysql(self):
         self.guest.stop_db(do_not_start_on_reboot=True)\

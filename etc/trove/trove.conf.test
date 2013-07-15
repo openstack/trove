@@ -7,6 +7,9 @@ remote_nova_volume_client = trove.tests.fakes.nova.fake_create_nova_volume_clien
 remote_guest_client = trove.tests.fakes.guestagent.fake_create_guest_client
 remote_swift_client = trove.tests.fakes.swift.fake_create_swift_client
 
+# This will remove some of the verbose logging when trying to diagnose tox issues
+#default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
+
 fake_mode_events = eventlet
 
 log_file = rdtest.log

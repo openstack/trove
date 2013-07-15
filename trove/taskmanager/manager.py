@@ -47,11 +47,9 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.resize_volume(new_size)
 
-    def resize_flavor(self, context, instance_id, new_flavor_id,
-                      old_memory_size, new_memory_size):
+    def resize_flavor(self, context, instance_id, old_flavor, new_flavor):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.resize_flavor(new_flavor_id, old_memory_size,
-                                     new_memory_size)
+        instance_tasks.resize_flavor(old_flavor, new_flavor)
 
     def reboot(self, context, instance_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
@@ -82,11 +80,11 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.create_backup(backup_id)
 
-    def create_instance(self, context, instance_id, name, flavor_id,
-                        flavor_ram, image_id, databases, users, service_type,
+    def create_instance(self, context, instance_id, name, flavor,
+                        image_id, databases, users, service_type,
                         volume_size, security_groups, backup_id):
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
-        instance_tasks.create_instance(flavor_id, flavor_ram, image_id,
+        instance_tasks.create_instance(flavor, image_id,
                                        databases, users, service_type,
                                        volume_size, security_groups,
                                        backup_id)

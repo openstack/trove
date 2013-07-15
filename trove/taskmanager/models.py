@@ -112,19 +112,19 @@ class NotifyMixin(object):
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin):
 
-    def create_instance(self, flavor_id, flavor_ram, image_id,
-                        databases, users, service_type, volume_size,
-                        security_groups, backup_id):
+    def create_instance(self, flavor, image_id, databases, users,
+                        service_type, volume_size, security_groups,
+                        backup_id):
         if use_nova_server_volume:
             server, volume_info = self._create_server_volume(
-                flavor_id,
+                flavor['id'],
                 image_id,
                 security_groups,
                 service_type,
                 volume_size)
         else:
             server, volume_info = self._create_server_volume_individually(
-                flavor_id,
+                flavor['id'],
                 image_id,
                 security_groups,
                 service_type,
@@ -137,7 +137,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
             self._log_and_raise(e, msg, err)
 
         if server:
-            self._guest_prepare(server, flavor_ram, volume_info,
+            self._guest_prepare(server, flavor['ram'], volume_info,
                                 databases, users, backup_id)
 
         if not self.db_info.task_status.is_error:
@@ -150,7 +150,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
                              time_out=USAGE_TIMEOUT)
-            self.send_usage_event('create', instance_size=flavor_ram)
+            self.send_usage_event('create', instance_size=flavor['ram'])
         except PollTimeOut:
             LOG.error("Timeout for service changing to active. "
                       "No usage create-event sent.")
@@ -460,10 +460,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
         finally:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
-    def resize_flavor(self, new_flavor_id, old_memory_size,
-                      new_memory_size):
-        action = ResizeAction(self, new_flavor_id,
-                              new_memory_size, old_memory_size)
+    def resize_flavor(self, old_flavor, new_flavor):
+        action = ResizeAction(self, old_flavor, new_flavor)
         action.execute()
 
     def migrate(self):
@@ -692,12 +690,11 @@ class ResizeActionBase(object):
 
 class ResizeAction(ResizeActionBase):
 
-    def __init__(self, instance, new_flavor_id=None,
-                 new_memory_size=None, old_memory_size=None):
+    def __init__(self, instance, old_flavor, new_flavor):
         self.instance = instance
-        self.old_memory_size = old_memory_size
-        self.new_flavor_id = new_flavor_id
-        self.new_memory_size = new_memory_size
+        self.old_flavor = old_flavor
+        self.new_flavor = new_flavor
+        self.new_flavor_id = new_flavor['id']
 
     def _assert_nova_action_was_successful(self):
         # Do check to make sure the status and flavor id are correct.
@@ -714,7 +711,7 @@ class ResizeAction(ResizeActionBase):
                   % self.instance.id)
         LOG.debug("Repairing config.")
         try:
-            config = {'memory_mb': self.old_memory_size}
+            config = {'memory_mb': self.old_flavor['ram']}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout as gt:
             LOG.exception("Error sending reset_configuration call.")
@@ -725,14 +722,15 @@ class ResizeAction(ResizeActionBase):
         LOG.debug("Updating instance %s to flavor_id %s."
                   % (self.instance.id, self.new_flavor_id))
         self.instance.update_db(flavor_id=self.new_flavor_id)
-        self.instance.send_usage_event('modify_flavor',
-                                       old_instance_size=self.old_memory_size,
-                                       instance_size=self.new_memory_size,
-                                       launched_at=timeutils.isotime(),
-                                       modify_at=timeutils.isotime())
+        self.instance.send_usage_event(
+            'modify_flavor',
+            old_instance_size=self.old_flavor['ram'],
+            instance_size=self.new_flavor['ram'],
+            launched_at=timeutils.isotime(),
+            modify_at=timeutils.isotime())
 
     def _start_mysql(self):
-        self.instance.guest.start_db_with_conf_changes(self.new_memory_size)
+        self.instance.guest.start_db_with_conf_changes(self.new_flavor['ram'])
 
 
 class MigrateAction(ResizeActionBase):
