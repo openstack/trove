@@ -221,6 +221,10 @@ class SimpleInstance(object):
     def volume_size(self):
         return self.db_info.volume_size
 
+    @property
+    def service_type(self):
+        return self.db_info.service_type
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instnace.
@@ -448,6 +452,7 @@ class Instance(BuiltInstance):
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,
                                         volume_size=volume_size,
+                                        service_type=service_type,
                                         task_status=InstanceTasks.BUILDING)
             LOG.debug(_("Tenant %s created new Trove instance %s...")
                       % (context.tenant, db_info.id))
@@ -675,7 +680,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
-                    'volume_id', 'deleted', 'tenant_id']
+                    'volume_id', 'deleted', 'tenant_id', 'service_type']
 
     def __init__(self, task_status, **kwargs):
         kwargs["task_id"] = task_status.code

@@ -50,6 +50,7 @@ class ResizeTestBase(TestCase):
             flavor_id=OLD_FLAVOR_ID,
             tenant_id=999,
             volume_size=None,
+            service_type='mysql',
             task_status=InstanceTasks.RESIZING)
         self.server = self.mock.CreateMock(Server)
         self.instance = models.BuiltInstanceTasks(context,
