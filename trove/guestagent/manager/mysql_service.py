@@ -29,10 +29,7 @@ MYSQLD_ARGS = None
 PREPARING = False
 UUID = False
 
-ORIG_MYCNF = "/etc/mysql/my.cnf"
-FINAL_MYCNF = "/var/lib/mysql/my.cnf"
 TMP_MYCNF = "/tmp/my.cnf.tmp"
-DBAAS_MYCNF = "/etc/dbaas/my.cnf/my.cnf.%dM"
 MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONF = cfg.CONF
@@ -614,7 +611,7 @@ class MySqlApp(object):
     def complete_install_or_restart(self):
         self.status.end_install_or_restart()
 
-    def secure(self, memory_mb):
+    def secure(self, config_location, config_contents):
         LOG.info(_("Generating admin password..."))
         admin_password = generate_random_password()
 
@@ -625,7 +622,7 @@ class MySqlApp(object):
             self._create_admin_user(client, admin_password)
 
         self.stop_db()
-        self._write_mycnf(memory_mb, admin_password)
+        self._write_mycnf(admin_password, config_location, config_contents)
         self.start_mysql()
 
         LOG.info(_("Dbaas secure complete."))
@@ -757,40 +754,27 @@ class MySqlApp(object):
                 if "No such file or directory" not in str(pe):
                     raise
 
-    def _write_mycnf(self, update_memory_mb, admin_password):
+    def _write_mycnf(self, admin_password, config_location, config_contents):
         """
-        Install the set of mysql my.cnf templates from dbaas-mycnf package.
-        The package generates a template suited for the current
-        container flavor. Update the os_admin user and password
-        to the my.cnf file for direct login from localhost
+        Install the set of mysql my.cnf templates.
+        Update the os_admin user and password to the my.cnf
+        file for direct login from localhost
         """
         LOG.info(_("Writing my.cnf templates."))
         if admin_password is None:
             admin_password = get_auth_password()
 
-        # As of right here, the admin_password contains the password to be
-        # applied to the my.cnf file, whether it was there before (and we
-        # passed it in) or we generated a new one just now (because we didn't
-        # find it).
+        with open(TMP_MYCNF, 'w') as t:
+            t.write(config_contents)
+        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
+                                   config_location)
 
-        LOG.debug(_("Installing my.cnf templates"))
-        pkg.pkg_install("dbaas-mycnf", self.TIME_OUT)
-
-        LOG.info(_("Replacing my.cnf with template."))
-        template_path = DBAAS_MYCNF % update_memory_mb
-        # replace my.cnf with template.
-        self._replace_mycnf_with_template(template_path, ORIG_MYCNF)
-
-        LOG.info(_("Writing new temp my.cnf."))
-        self._write_temp_mycnf_with_admin_account(ORIG_MYCNF, TMP_MYCNF,
+        self._write_temp_mycnf_with_admin_account(config_location,
+                                                  TMP_MYCNF,
                                                   admin_password)
-        # permissions work-around
-        LOG.info(_("Moving tmp into final."))
-        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF, FINAL_MYCNF)
-        LOG.info(_("Removing original my.cnf."))
-        utils.execute_with_timeout("sudo", "rm", ORIG_MYCNF)
-        LOG.info(_("Symlinking final my.cnf."))
-        utils.execute_with_timeout("sudo", "ln", "-s", FINAL_MYCNF, ORIG_MYCNF)
+        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
+                                   config_location)
+
         self.wipe_ib_logfiles()
 
     def start_mysql(self, update_db=False):
@@ -825,9 +809,8 @@ class MySqlApp(object):
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 
-    def start_db_with_conf_changes(self, updated_memory_mb):
-        LOG.info(_("Starting mysql with conf changes to memory(%s)...")
-                 % updated_memory_mb)
+    def start_db_with_conf_changes(self, config_location, config_contents):
+        LOG.info(_("Starting mysql with conf changes..."))
         LOG.info(_("inside the guest - self.status.is_mysql_running(%s)...")
                  % self.status.is_mysql_running)
         if self.status.is_mysql_running:
@@ -835,14 +818,14 @@ class MySqlApp(object):
                         "MySQL state == %s!") % self.status)
             raise RuntimeError("MySQL not stopped.")
         LOG.info(_("Initiating config."))
-        self._write_mycnf(updated_memory_mb, None)
+        self._write_mycnf(None, config_location, config_contents)
         self.start_mysql(True)
 
     def reset_configuration(self, configuration):
-        updated_memory_mb = configuration['memory_mb']
-        LOG.info(_("Changing configuration to memory(%s)...")
-                 % updated_memory_mb)
-        self._write_mycnf(updated_memory_mb, None)
+        config_location = configuration['config_location']
+        config_contents = configuration['config_contents']
+        LOG.info(_("Resetting configuration"))
+        self._write_mycnf(None, config_location, config_contents)
 
     def is_installed(self):
         #(cp16net) could raise an exception, does it need to be handled here?

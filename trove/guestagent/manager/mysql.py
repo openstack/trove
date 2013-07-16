@@ -18,7 +18,7 @@ CONF = cfg.CONF
 
 class Manager(periodic_task.PeriodicTasks):
 
-    @periodic_task.periodic_task(ticks_between_runs=10)
+    @periodic_task.periodic_task(ticks_between_runs=3)
     def update_status(self, context):
         """Update the status of the MySQL service"""
         MySqlAppStatus.get().update()
@@ -82,7 +82,8 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Restored database successfully"))
 
     def prepare(self, context, databases, memory_mb, users, device_path=None,
-                mount_point=None, backup_id=None):
+                mount_point=None, backup_id=None, config_location=None,
+                config_contents=None):
         """Makes ready DBAAS on a Guest container."""
         MySqlAppStatus.get().begin_mysql_install()
         # status end_mysql_install set with secure()
@@ -109,7 +110,7 @@ class Manager(periodic_task.PeriodicTasks):
         if backup_id:
             self._perform_restore(backup_id, context, CONF.mount_point, app)
         LOG.info(_("Securing mysql now."))
-        app.secure(memory_mb)
+        app.secure(config_location, config_contents)
         if backup_id and MySqlAdmin().is_root_enabled():
             MySqlAdmin().report_root_enabled(context)
         else:
@@ -128,9 +129,10 @@ class Manager(periodic_task.PeriodicTasks):
         app = MySqlApp(MySqlAppStatus.get())
         app.restart()
 
-    def start_db_with_conf_changes(self, context, updated_memory_size):
+    def start_db_with_conf_changes(self, context, config_location,
+                                   config_contents):
         app = MySqlApp(MySqlAppStatus.get())
-        app.start_db_with_conf_changes(updated_memory_size)
+        app.start_db_with_conf_changes(config_location, config_contents)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
         app = MySqlApp(MySqlAppStatus.get())

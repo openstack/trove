@@ -181,7 +181,8 @@ class FakeGuest(object):
         return self.users.get((username, hostname), None)
 
     def prepare(self, memory_mb, databases, users, device_path=None,
-                mount_point=None, backup_id=None):
+                mount_point=None, backup_id=None, config_location=None,
+                config_contents=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
         from trove.instance.models import ServiceStatuses
@@ -225,7 +226,7 @@ class FakeGuest(object):
         # There's nothing to do here, since there is no config to update.
         pass
 
-    def start_db_with_conf_changes(self, updated_memory_size):
+    def start_db_with_conf_changes(self, config_location, config_contents):
         time.sleep(2)
         self._set_status('RUNNING')
 

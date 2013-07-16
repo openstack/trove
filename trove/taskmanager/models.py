@@ -17,6 +17,7 @@ import traceback
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
+from trove.common import template
 from trove.common import utils
 from trove.common.exception import GuestError
 from trove.common.exception import GuestTimeout
@@ -110,7 +111,20 @@ class NotifyMixin(object):
                         payload)
 
 
-class FreshInstanceTasks(FreshInstance, NotifyMixin):
+class ConfigurationMixin(object):
+    """Configuration Mixin
+
+    Configuration related tasks for instances and resizes.
+    """
+
+    def _render_config(self, service_type, flavor):
+        config = template.SingleInstanceConfigTemplate(
+            service_type, flavor)
+        config.render()
+        return config
+
+
+class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def create_instance(self, flavor, image_id, databases, users,
                         service_type, volume_size, security_groups,
@@ -136,9 +150,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
             err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
             self._log_and_raise(e, msg, err)
 
+        config = self._render_config(service_type, flavor)
+
         if server:
             self._guest_prepare(server, flavor['ram'], volume_info,
-                                databases, users, backup_id)
+                                databases, users, backup_id,
+                                config.config_location,
+                                config.config_contents)
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
@@ -331,13 +349,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
         return server
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
-                       databases, users, backup_id=None):
+                       databases, users, backup_id=None,
+                       config_location=None, config_contents=None):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, databases, users,
                            device_path=volume_info['device_path'],
                            mount_point=volume_info['mount_point'],
-                           backup_id=backup_id)
+                           backup_id=backup_id,
+                           config_location=config_location,
+                           config_contents=config_contents)
 
     def _create_dns_entry(self):
         LOG.debug("%s: Creating dns entry for instance: %s" %
@@ -377,7 +398,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin):
                       (greenthread.getcurrent(), self.id))
 
 
-class BuiltInstanceTasks(BuiltInstance, NotifyMixin):
+class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
     Performs the various asynchronous instance related tasks.
     """
@@ -563,7 +584,7 @@ class BackupTasks(object):
             backup.delete()
 
 
-class ResizeActionBase(object):
+class ResizeActionBase(ConfigurationMixin):
     """Base class for executing a resize action."""
 
     def __init__(self, instance):
@@ -711,7 +732,10 @@ class ResizeAction(ResizeActionBase):
                   % self.instance.id)
         LOG.debug("Repairing config.")
         try:
-            config = {'memory_mb': self.old_flavor['ram']}
+            config = self._render_config(self.instance.service_type,
+                                         self.old_flavor)
+            config = {'config_location': config.config_location,
+                      'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout as gt:
             LOG.exception("Error sending reset_configuration call.")
@@ -730,7 +754,10 @@ class ResizeAction(ResizeActionBase):
             modify_at=timeutils.isotime())
 
     def _start_mysql(self):
-        self.instance.guest.start_db_with_conf_changes(self.new_flavor['ram'])
+        config = self._render_config(self.instance.service_type,
+                                     self.new_flavor)
+        self.instance.guest.start_db_with_conf_changes(config.config_location,
+                                                       config.config_contents)
 
 
 class MigrateAction(ResizeActionBase):
