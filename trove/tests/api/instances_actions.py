@@ -424,6 +424,14 @@ class ResizeInstanceTest(ActionTestBase):
         flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
                                         'eph.rd-smaller')
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
+
+        def is_active():
+            return self.instance.status == 'ACTIVE'
+        poll_until(is_active, time_out=TIME_OUT_TIME)
+        assert_equal(self.instance.status, 'ACTIVE')
+
+        old_flavor_href = self.get_flavor_href(
+            flavor_id=self.expected_old_flavor_id)
         assert_raises(HTTPNotImplemented, self.dbaas.instances.resize_instance,
                       self.instance_id, flavors[0].id)
 
@@ -531,9 +539,16 @@ class ResizeInstanceTest(ActionTestBase):
     @time_out(TIME_OUT_TIME)
     def test_resize_down(self):
         expected_dbaas_flavor = self.expected_dbaas_flavor
-        self.dbaas.instances.resize_instance(
-            self.instance_id,
-            self.get_flavor_href(flavor_id=self.expected_old_flavor_id))
+
+        def is_active():
+            return self.instance.status == 'ACTIVE'
+        poll_until(is_active, time_out=TIME_OUT_TIME)
+        assert_equal(self.instance.status, 'ACTIVE')
+
+        old_flavor_href = self.get_flavor_href(
+            flavor_id=self.expected_old_flavor_id)
+
+        self.dbaas.instances.resize_instance(self.instance_id, old_flavor_href)
         assert_equal(202, self.dbaas.last_http_code)
         self.old_dbaas_flavor = instance_info.dbaas_flavor
         instance_info.dbaas_flavor = expected_dbaas_flavor
