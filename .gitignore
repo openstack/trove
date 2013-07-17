@@ -25,3 +25,7 @@ atlassian-ide-plugin.xml
 .pid
 .project
 .pydevproject
+
+# Sphinx
+doc/build/*
+doc/source/api/*
