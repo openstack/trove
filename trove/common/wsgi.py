@@ -438,6 +438,20 @@ class Controller(object):
                                                                    "none"))
             return matching_schema
 
+    @staticmethod
+    def format_validation_msg(errors):
+        # format path like object['field1'][i]['subfield2']
+        messages = []
+        for error in errors:
+            path = list(error.path)
+            f_path = "%s%s" % (path[0],
+                               ''.join(['[%r]' % i for i in path[1:]]))
+            messages.append("%s %s" % (f_path, error.message))
+            for suberror in sorted(error.context, key=lambda e: e.schema_path):
+                messages.append(suberror.message)
+        error_msg = "; ".join(messages)
+        return "Validation error: %s" % error_msg
+
     def validate_request(self, action, action_args):
         body = action_args.get('body', {})
         schema = self.get_schema(action, body)
@@ -446,16 +460,9 @@ class Controller(object):
             if not validator.is_valid(body):
                 errors = sorted(validator.iter_errors(body),
                                 key=lambda e: e.path)
-                messages = []
-                for error in errors:
-                    messages.append(error.message)
-                    for suberror in sorted(error.context,
-                                           key=lambda e: e.schema_path):
-                        messages.append(suberror.message)
-                error_msg = "; ".join(messages)
-                LOG.info("Validation failed: %s" % error_msg)
-                raise exception.BadRequest(
-                    message="Validation error: %s" % error_msg)
+                error_msg = self.format_validation_msg(errors)
+                LOG.info(error_msg)
+                raise exception.BadRequest(message=error_msg)
 
     def create_resource(self):
         serializer = TroveResponseSerializer(

@@ -1,3 +1,4 @@
+from collections import deque
 from proboscis import test, SkipTest
 from proboscis.asserts import *
 from proboscis import after_class
@@ -54,9 +55,10 @@ class MalformedJson(object):
                 users = "u'bar'"
                 assert_equal(e.message,
                              "Validation error: "
-                             "%s is not of type 'array'; "
-                             "%s is not of type 'array'; "
-                             "3 is not of type 'object'" % (databases, users))
+                             "instance['databases'] %s is not of type 'array';"
+                             " instance['users'] %s is not of type 'array'; "
+                             "instance['volume'] 3 is not of type 'object'" %
+                             (databases, users))
 
     @test
     def test_bad_database_data(self):
@@ -74,11 +76,19 @@ class MalformedJson(object):
                               troveclient.xml.TroveXmlClient):
                 _bad_db_data = "u'{foo}'"
             assert_equal(e.message,
-                         "Validation error: %s is not of type 'array'" %
+                         "Validation error: "
+                         "databases %s is not of type 'array'" %
                          _bad_db_data)
 
     @test
     def test_bad_user_data(self):
+
+        def format_path(values):
+            values = list(values)
+            msg = "%s%s" % (values[0],
+                            ''.join(['[%r]' % i for i in values[1:]]))
+            return msg
+
         _user = []
         _user_name = "F343jasdf"
         _user.append({"name12": _user_name,
@@ -91,12 +101,14 @@ class MalformedJson(object):
             assert_equal(httpCode, 400,
                          "Create user failed with code %s, exception %s"
                          % (httpCode, e))
+            err_1 = format_path(deque(('users', 0)))
             assert_equal(e.message,
-                         "Validation error: Additional properties are not "
-                         "allowed "
+                         "Validation error: %s "
+                         "Additional properties are not allowed "
                          "(u'password12', u'name12' were unexpected); "
-                         "'name' is a required property; "
-                         "'password' is a required property")
+                         "%s 'name' is a required property; "
+                         "%s 'password' is a required property" %
+                         (err_1, err_1, err_1))
 
     @test
     def test_bad_resize_instance_data(self):
@@ -139,9 +151,11 @@ class MalformedJson(object):
             data = "u'bad data'"
             assert_equal(e.message,
                          "Validation error: "
-                         "%s is not valid under any of the given schemas; "
+                         "resize['volume']['size'] %s "
+                         "is not valid under any of the given schemas; "
                          "%s is not of type 'integer'; "
-                         "%s does not match '[0-9]+'" % (data, data, data))
+                         "%s does not match '[0-9]+'" %
+                         (data, data, data))
 
     @test
     def test_bad_change_user_password(self):
@@ -167,12 +181,13 @@ class MalformedJson(object):
             if not isinstance(self.dbaas.client,
                               troveclient.xml.TroveXmlClient):
                 password = "u''"
-                assert_equal(e.message, "Validation error: "
-                                        "'password' is a required property; "
-                                        "%s is too short; "
-                                        "%s does not match "
-                                        "'^.*[0-9a-zA-Z]+.*$'" %
-                                        (password, password))
+                assert_equal(e.message,
+                             "Validation error: "
+                             "users[0] 'password' is a required property; "
+                             "users[0]['name'] %s is too short; "
+                             "users[0]['name'] %s does not match "
+                             "'^.*[0-9a-zA-Z]+.*$'" %
+                             (password, password))
 
     @test
     def test_bad_grant_user_access(self):
@@ -238,12 +253,13 @@ class MalformedJson(object):
                               troveclient.xml.TroveXmlClient):
                 flavorId = [u'?']
                 assert_equal(e.message,
-                             "Validation error: %s is not valid under any "
+                             "Validation error: "
+                             "instance['flavorRef'] %s is not valid under any "
                              "of the given schemas; "
                              "%s is not of type 'string'; "
                              "%s is not of type 'string'; "
                              "%s is not of type 'integer'; "
-                             "2 is not of type 'object'" %
+                             "instance['volume'] 2 is not of type 'object'" %
                              (flavorId, flavorId, flavorId, flavorId))
 
     @test
@@ -263,5 +279,6 @@ class MalformedJson(object):
                               troveclient.xml.TroveXmlClient):
                 volsize = "u'h3ll0'"
                 assert_equal(e.message,
-                             "Validation error: %s is not of type 'object'" %
+                             "Validation error: "
+                             "instance['volume'] %s is not of type 'object'" %
                              volsize)

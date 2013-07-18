@@ -56,12 +56,13 @@ class CreateBackups(object):
             assert_equal(resp.status, 400)
             if not isinstance(instance_info.dbaas.client,
                               troveclient.xml.TroveXmlClient):
-                assert_equal(e.message, "Validation error: u'%s' "
-                                        "does not match "
-                                        "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
-                                        "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
-                                        "([0-9a-fA-F]){12}$'" %
-                                        invalid_inst_id)
+                assert_equal(e.message,
+                             "Validation error: "
+                             "backup['instance'] u'%s' does not match "
+                             "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
+                             "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
+                             "([0-9a-fA-F]){12}$'" %
+                             invalid_inst_id)
 
     @test
     def test_backup_create_instance_not_found(self):
