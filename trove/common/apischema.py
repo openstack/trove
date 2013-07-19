@@ -13,6 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from trove.common import cfg
+
+CONF = cfg.CONF
 
 flavorref = {
     'oneOf': [
@@ -152,7 +155,8 @@ instance = {
         "properties": {
             "instance": {
                 "type": "object",
-                "required": ["name", "flavorRef", "volume"],
+                "required": ["name", "flavorRef",
+                             "volume" if CONF.trove_volume_support else None],
                 "additionalProperties": False,
                 "properties": {
                     "name": non_empty_string,
