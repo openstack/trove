@@ -125,7 +125,6 @@ class ConfigurationMixin(object):
 
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
-
     def create_instance(self, flavor, image_id, databases, users,
                         service_type, volume_size, security_groups,
                         backup_id):
@@ -387,6 +386,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                             "server had status (%s).")
                     LOG.error(msg % (self.id, server.status))
                     raise TroveError(status=server.status)
+
             poll_until(get_server, ip_is_available,
                        sleep_time=1, time_out=DNS_TIME_OUT)
             server = nova_client.servers.get(self.db_info.compute_instance_id)
@@ -411,7 +411,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         else:
             return mountpoint
 
-    def _delete_resources(self):
+    def _delete_resources(self, deleted_at):
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
         try:
@@ -430,7 +430,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.error("Error during dns entry for instance %s "
                       % self.db_info.id)
             LOG.error(ex)
-        # Poll until the server is gone.
+            # Poll until the server is gone.
 
         def server_is_finished():
             try:
@@ -443,9 +443,13 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             except nova_exceptions.NotFound:
                 return True
 
-        poll_until(server_is_finished, sleep_time=2,
-                   time_out=CONF.server_delete_time_out)
-        self.send_usage_event('delete', deleted_at=timeutils.isotime(),
+        try:
+            poll_until(server_is_finished, sleep_time=2,
+                       time_out=CONF.server_delete_time_out)
+        except PollTimeOut as e:
+            LOG.error("Timout during nova server delete", e)
+        self.send_usage_event('delete',
+                              deleted_at=timeutils.isotime(deleted_at),
                               server=old_server)
 
     def resize_volume(self, new_size):
@@ -506,6 +510,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             def update_server_info():
                 self._refresh_compute_server_info()
                 return self.server.status == 'ACTIVE'
+
             utils.poll_until(
                 update_server_info,
                 sleep_time=2,
@@ -549,7 +554,6 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
 
 class BackupTasks(object):
-
     @classmethod
     def _parse_manifest(cls, manifest):
         # manifest is in the format 'container/prefix'
@@ -581,7 +585,7 @@ class BackupTasks(object):
                 if name:
                     LOG.info("Deleting file: %s/%s", cont, name)
                     client.delete_object(cont, name)
-        # Delete the manifest file
+            # Delete the manifest file
         LOG.info("Deleting file: %s/%s", container, filename)
         client.delete_object(container, filename)
 
@@ -717,6 +721,7 @@ class ResizeActionBase(ConfigurationMixin):
         def update_server_info():
             self.instance._refresh_compute_server_info()
             return self.instance.server.status != 'RESIZE'
+
         utils.poll_until(
             update_server_info,
             sleep_time=2,
@@ -727,6 +732,7 @@ class ResizeActionBase(ConfigurationMixin):
         def update_server_info():
             self.instance._refresh_compute_server_info()
             return self.instance.server.status == 'ACTIVE'
+
         utils.poll_until(
             update_server_info,
             sleep_time=2,
@@ -734,7 +740,6 @@ class ResizeActionBase(ConfigurationMixin):
 
 
 class ResizeAction(ResizeActionBase):
-
     def __init__(self, instance, old_flavor, new_flavor):
         self.instance = instance
         self.old_flavor = old_flavor
@@ -785,7 +790,6 @@ class ResizeAction(ResizeActionBase):
 
 
 class MigrateAction(ResizeActionBase):
-
     def _assert_nova_action_was_successful(self):
         LOG.debug("Currently no assertions for a Migrate Action")
 

@@ -345,11 +345,12 @@ class BaseInstance(SimpleInstance):
                                deltas,
                                _delete_resources)
 
-    def _delete_resources(self):
+    def _delete_resources(self, deleted_at):
         pass
 
     def delete_async(self):
-        self._delete_resources()
+        deleted_at = datetime.utcnow()
+        self._delete_resources(deleted_at)
         LOG.debug("Setting instance %s to deleted..." % self.id)
         # Delete guest queue.
         try:
@@ -357,8 +358,7 @@ class BaseInstance(SimpleInstance):
             guest.delete_queue()
         except Exception as ex:
             LOG.warn(ex)
-        time_now = datetime.now()
-        self.update_db(deleted=True, deleted_at=time_now,
+        self.update_db(deleted=True, deleted_at=deleted_at,
                        task_status=InstanceTasks.NONE)
         # Delete associated security group
         if CONF.trove_security_groups_support:
@@ -411,9 +411,6 @@ class Instance(BuiltInstance):
     pass them between threads.
 
     """
-
-    def _delete_resources(self):
-        pass
 
     @classmethod
     def create(cls, context, name, flavor_id, image_id,
