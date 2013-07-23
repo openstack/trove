@@ -12,35 +12,40 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-_ENV = None
-
 import jinja2
 
-
-def get_env():
-    global _ENV
-    if not _ENV:
-        _ENV = create_env()
-    return _ENV
-
-
-def create_env():
-    loader = jinja2.ChoiceLoader([
-        jinja2.FileSystemLoader("/etc/trove/templates"),
-        jinja2.PackageLoader("trove", "templates")
-    ])
-    return jinja2.Environment(loader=loader)
+ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
+    jinja2.FileSystemLoader("/etc/trove/templates"),
+    jinja2.PackageLoader("trove", "templates")
+]))
 
 
 class SingleInstanceConfigTemplate(object):
-    _location_types = {'mysql': '/etc/mysql/my.cnf',
-                       'percona': '/etc/mysql/my.cnf'}
+    """ This class selects a single configuration file by database type for
+    rendering on the guest """
+    _config_paths = {'mysql': '/etc/mysql/my.cnf',
+                     'percona': '/etc/mysql/my.cnf'}
 
-    def __init__(self, location_type, flavor_dict):
-        self.config_location = self._location_types[location_type]
+    def __init__(self, service_type, flavor_dict):
+        """ Constructor
+
+        :param service_type: The database type.
+        :type name: str.
+        :param flavor_dict: dict containing flavor details for use in jinja.
+        :type flavor_dict: dict.
+
+        """
+        self.config_location = self._config_paths[service_type]
         self.flavor_dict = flavor_dict
-        self.template = get_env().get_template("mysql.config.template")
+        template_filename = "%s.config.template" % service_type
+        self.template = ENV.get_template(template_filename)
 
     def render(self):
+        """ Renders the jinja template
+
+        :returns: str -- The rendered configuration file
+
+        """
         self.config_contents = self.template.render(
             flavor=self.flavor_dict)
+        return self.config_contents

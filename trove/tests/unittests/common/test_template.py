@@ -22,7 +22,7 @@ class TemplateTest(testtools.TestCase):
     def setUp(self):
         super(TemplateTest, self).setUp()
         util.init_db()
-        self.env = template.get_env()
+        self.env = template.ENV
         self.template = self.env.get_template("mysql.config.template")
         self.flavor_dict = {'ram': 1024}
 
@@ -51,7 +51,6 @@ class TemplateTest(testtools.TestCase):
         location = "/etc/mysql/my.cnf"
         config = template.SingleInstanceConfigTemplate('mysql',
                                                        self.flavor_dict)
-        config.render()
         self.assertEqual(location, config.config_location)
-        self.validate_template(config.config_contents, "query_cache_size",
+        self.validate_template(config.render(), "query_cache_size",
                                self.flavor_dict)

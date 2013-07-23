@@ -117,9 +117,8 @@ class ResizeTests(ResizeTestBase):
     def _start_mysql(self):
         config = template.SingleInstanceConfigTemplate(
             "mysql", NEW_FLAVOR.__dict__)
-        config.render()
         self.instance.guest.start_db_with_conf_changes(config.config_location,
-                                                       config.config_contents)
+                                                       config.render())
 
     def test_guest_wont_stop_mysql(self):
         self.guest.stop_db(do_not_start_on_reboot=True)\
