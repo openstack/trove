@@ -13,6 +13,7 @@ netaddr
 httplib2
 lxml
 python-novaclient
+python-cinderclient>=1.0.4
 python-keystoneclient
 python-swiftclient
 iso8601

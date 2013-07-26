@@ -3,9 +3,9 @@
 # Fake out the remote implementations
 remote_implementation = fake
 remote_nova_client = trove.tests.fakes.nova.fake_create_nova_client
-remote_nova_volume_client = trove.tests.fakes.nova.fake_create_nova_volume_client
 remote_guest_client = trove.tests.fakes.guestagent.fake_create_guest_client
 remote_swift_client = trove.tests.fakes.swift.fake_create_swift_client
+remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
 
 # This will remove some of the verbose logging when trying to diagnose tox issues
 #default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN

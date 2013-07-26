@@ -26,7 +26,7 @@ from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_nova_client
-from trove.common.remote import create_nova_volume_client
+from trove.common.remote import create_cinder_client
 from swiftclient.client import ClientException
 from trove.common.utils import poll_until
 from trove.instance import models as inst_models
@@ -78,7 +78,7 @@ class NotifyMixin(object):
         payload = {
             'availability_zone': az,
             'created_at': created_time,
-            'display_name': self.name,
+            'name': self.name,
             'instance_id': self.id,
             'instance_name': self.name,
             'instance_size': instance_size or flavor.ram,
@@ -290,12 +290,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.info("Entering create_volume")
         LOG.debug(_("Starting to create the volume for the instance"))
 
-        volume_client = create_nova_volume_client(self.context)
+        volume_client = create_cinder_client(self.context)
         volume_desc = ("mysql volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
-            volume_size,
-            display_name="mysql-%s" % self.id,
-            display_description=volume_desc)
+            volume_size, name="mysql-%s" % self.id, description=volume_desc)
 
         # Record the volume ID in case something goes wrong.
         self.update_db(volume_id=volume_ref.id)
@@ -404,7 +402,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     """
 
     def get_volume_mountpoint(self):
-        volume = create_nova_volume_client(self.context).volumes.get(volume_id)
+        volume = create_cinder_client(self.context).volumes.get(volume_id)
         mountpoint = volume.attachments[0]['device']
         if mountpoint[0] is not "/":
             return "/%s" % mountpoint

@@ -387,15 +387,15 @@ class FakeServerVolumes(object):
 
 class FakeVolume(object):
 
-    def __init__(self, parent, owner, id, size, display_name,
-                 display_description):
+    def __init__(self, parent, owner, id, size, name,
+                 description):
         self.attachments = []
         self.parent = parent
         self.owner = owner  # This is a context.
         self.id = id
         self.size = size
-        self.display_name = display_name
-        self.display_description = display_description
+        self.name = name
+        self.description = description
         self.event_spawn = get_event_spawer()
         self._current_status = "BUILD"
         # For some reason we grab this thing from device then call it mount
@@ -403,10 +403,10 @@ class FakeVolume(object):
         self.device = "vdb"
 
     def __repr__(self):
-        msg = ("FakeVolume(id=%s, size=%s, display_name=%s, "
-               "display_description=%s, _current_status=%s)")
-        params = (self.id, self.size, self.display_name,
-                  self.display_description, self._current_status)
+        msg = ("FakeVolume(id=%s, size=%s, name=%s, "
+               "description=%s, _current_status=%s)")
+        params = (self.id, self.size, self.name,
+                  self.description, self._current_status)
         return (msg % params)
 
     @property
@@ -476,10 +476,10 @@ class FakeVolumes(object):
             else:
                 raise nova_exceptions.NotFound(404, "Bad permissions")
 
-    def create(self, size, display_name=None, display_description=None):
+    def create(self, size, name=None, description=None):
         id = "FAKE_VOL_%s" % uuid.uuid4()
-        volume = FakeVolume(self, self.context, id, size, display_name,
-                            display_description)
+        volume = FakeVolume(self, self.context, id, size, name,
+                            description)
         self.db[id] = volume
         if size == 9:
             volume.schedule_status("error", 2)
@@ -777,4 +777,8 @@ def fake_create_nova_client(context):
 
 
 def fake_create_nova_volume_client(context):
+    return get_client_data(context)['volume']
+
+
+def fake_create_cinder_client(context):
     return get_client_data(context)['volume']

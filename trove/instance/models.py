@@ -24,7 +24,7 @@ from trove.common import exception
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
-from trove.common.remote import create_nova_volume_client
+from trove.common.remote import create_cinder_client
 from trove.extensions.security_group.models import SecurityGroup
 from trove.db import models as dbmodels
 from trove.backup.models import Backup
@@ -386,7 +386,7 @@ class BaseInstance(SimpleInstance):
     @property
     def volume_client(self):
         if not self._volume_client:
-            self._volume_client = create_nova_volume_client(self.context)
+            self._volume_client = create_cinder_client(self.context)
         return self._volume_client
 
 
