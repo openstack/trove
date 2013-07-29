@@ -510,8 +510,7 @@ class SecurityGroupsTest(object):
         self.testSecurityGroup = dbaas.security_groups.get(
             instance_info.id)
         self.secGroupName = "SecGroup_%s" % instance_info.id
-        self.secGroupDescription = \
-            "Default Security Group For DBaaS Instance <%s>" % instance_info.id
+        self.secGroupDescription = "Security Group for %s" % instance_info.id
 
     @test
     def test_created_security_group(self):
@@ -553,8 +552,7 @@ class SecurityGroupsRulesTest(object):
         self.testSecurityGroup = dbaas.security_groups.get(
             instance_info.id)
         self.secGroupName = "SecGroup_%s" % instance_info.id
-        self.secGroupDescription = \
-            "Default Security Group For DBaaS Instance <%s>" % instance_info.id
+        self.secGroupDescription = "Security Group for %s" % instance_info.id
 
     @test
     def test_create_security_group_rule(self):
