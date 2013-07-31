@@ -172,7 +172,8 @@ common_opts = [
     cfg.StrOpt('nova_proxy_admin_pass', default='',
                help="Admin password used to connect to Nova"),
     cfg.StrOpt('nova_proxy_admin_tenant_name', default='',
-               help="Admin tenant used to connect to Nova")
+               help="Admin tenant used to connect to Nova"),
+    cfg.StrOpt('network_label_regex', default='^private$'),
 ]
 
 

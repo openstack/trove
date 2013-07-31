@@ -47,6 +47,7 @@ swift_url = http://localhost:8080/v1/AUTH_
 
 # Config option for showing the IP address that nova doles out
 add_addresses = True
+network_label_regex = ^private$
 
 # Config options for enabling volume service
 trove_volume_support = True

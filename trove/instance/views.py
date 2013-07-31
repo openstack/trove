@@ -15,9 +15,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import re
 from trove.openstack.common import log as logging
 from trove.common import cfg
-from trove.common import utils
 from trove.common.views import create_links
 from trove.instance import models
 
@@ -27,14 +27,14 @@ CONF = cfg.CONF
 
 
 def get_ip_address(addresses):
-    if (addresses is not None and
-            addresses.get('private') is not None and
-            len(addresses['private']) > 0):
-        return [addr.get('addr') for addr in addresses['private']]
-    if (addresses is not None and
-            addresses.get('usernet') is not None and
-            len(addresses['usernet']) > 0):
-        return [addr.get('addr') for addr in addresses['usernet']]
+    if addresses is None:
+        return None
+    IPs = []
+    for label in addresses:
+        if (re.search(CONF.network_label_regex, label) and
+                len(addresses[label]) > 0):
+            IPs.extend([addr.get('addr') for addr in addresses[label]])
+    return IPs
 
 
 class InstanceView(object):
