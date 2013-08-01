@@ -35,7 +35,6 @@ from testtools.matchers import Equals
 from testtools.matchers import Not
 import trove
 from trove.common.context import TroveContext
-from trove.guestagent import pkg
 from trove.common import utils
 import trove.guestagent.manager.mysql_service as dbaas
 from trove.guestagent.dbaas import to_gb
@@ -1005,56 +1004,54 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.assertEqual(ServiceStatuses.BLOCKED, status)
 
     def test_is_mysql_installed(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = ServiceStatuses.RUNNING
 
         self.assertTrue(self.mySqlAppStatus.is_mysql_installed)
 
     def test_is_mysql_installed_none(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = None
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
     def test_is_mysql_installed_building(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = ServiceStatuses.BUILDING
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
-    def test_is_mysql_installed_failed(self):
+    def test_is_mysql_installed_new(self):
+        self.mySqlAppStatus = MySqlAppStatus()
+        self.mySqlAppStatus.status = ServiceStatuses.NEW
 
+        self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
+
+    def test_is_mysql_installed_failed(self):
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = ServiceStatuses.FAILED
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
     def test_is_mysql_restarting(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.restart_mode = True
 
         self.assertTrue(self.mySqlAppStatus._is_mysql_restarting)
 
     def test_is_mysql_running(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = ServiceStatuses.RUNNING
 
         self.assertTrue(self.mySqlAppStatus.is_mysql_running)
 
     def test_is_mysql_running_not(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus.status = ServiceStatuses.SHUTDOWN
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_running)
 
     def test_wait_for_real_status_to_change_to(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus._get_actual_db_status = \
             Mock(return_value=ServiceStatuses.RUNNING)
@@ -1065,7 +1062,6 @@ class MySqlAppStatusTest(testtools.TestCase):
                         (ServiceStatuses.RUNNING, 10))
 
     def test_wait_for_real_status_to_change_to_timeout(self):
-
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus._get_actual_db_status = \
             Mock(return_value=ServiceStatuses.RUNNING)

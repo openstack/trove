@@ -117,7 +117,7 @@ class MySqlAppStatus(object):
     def __init__(self):
         if self._instance is not None:
             raise RuntimeError("Cannot instantiate twice.")
-        self.status = self._load_status()
+        self.status = self._load_status().status
         self.restart_mode = False
 
     def begin_mysql_install(self):
@@ -182,6 +182,7 @@ class MySqlAppStatus(object):
         its status won't result in nonsense.
         """
         return (self.status is not None and
+                self.status != rd_models.ServiceStatuses.NEW and
                 self.status != rd_models.ServiceStatuses.BUILDING and
                 self.status != rd_models.ServiceStatuses.FAILED)
 
@@ -204,7 +205,7 @@ class MySqlAppStatus(object):
     def set_status(self, status):
         """Changes the status of the MySQL app in the database."""
         db_status = self._load_status()
-        db_status.set_status(status)
+        db_status.status = status
         db_status.save()
         self.status = status
 
