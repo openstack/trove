@@ -139,6 +139,29 @@ class User(object):
             change_users.append(change_user)
         client.change_passwords(change_users)
 
+    @classmethod
+    def update_attributes(cls, context, instance_id, username, hostname,
+                          user_attrs):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        user_name = user_attrs.get('name')
+        host_name = user_attrs.get('host')
+        user = user_name or username
+        host = host_name or hostname
+        userhost = "%s@%s" % (user, host)
+        if user_name or host_name:
+            existing_users, _nadda = Users.load_with_client(
+                client,
+                limit=1,
+                marker=userhost,
+                include_marker=True)
+            if (len(existing_users) > 0 and
+                    existing_users[0].name == user and
+                    existing_users[0].host == host):
+                raise exception.UserAlreadyExists(name=user,
+                                                  host=host)
+        client.update_attributes(username, hostname, user_attrs)
+
 
 class UserAccess(object):
     _data_fields = ['databases']

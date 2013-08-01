@@ -87,6 +87,33 @@ class FakeGuest(object):
                     % (username, hostname))
             self.users[(username, hostname)]['password'] = password
 
+    def update_attributes(self, username, hostname, user_attrs):
+        LOG.debug("Updating attributes")
+        self._check_username(username)
+        if (username, hostname) not in self.users:
+                raise rd_exception.UserNotFound(
+                    "User %s@%s cannot be found on the instance."
+                    % (username, hostname))
+        new_name = user_attrs.get('name')
+        new_host = user_attrs.get('host')
+        new_password = user_attrs.get('password')
+        old_name = username
+        old_host = hostname
+        name = new_name or old_name
+        host = new_host or old_host
+        if new_name or new_host:
+            old_grants = self.grants.get((old_name, old_host), set())
+            self._create_user({
+                "_name": name,
+                "_host": host,
+                "_password": self.users[(name, host)]['password'],
+                "_databases": [],
+            })
+            self.grants[(name, host)] = old_grants
+            del self.users[(old_name, old_host)]
+        if new_password:
+            self.users[(name, host)]['password'] = new_password
+
     def create_database(self, databases):
         for db in databases:
             self.dbs[db['_name']] = db

@@ -314,6 +314,41 @@ class MySqlAdmin(object):
                 t = text(str(uu))
                 client.execute(t)
 
+    def update_attributes(self, username, hostname, user_attrs):
+        """Change the attributes of one existing user."""
+        LOG.debug("Changing the user attributes")
+        LOG.debug("User is %s" % username)
+        user = self._get_user(username, hostname)
+        db_access = set()
+        grantee = set()
+        with LocalSqlClient(get_engine()) as client:
+            q = query.Query()
+            q.columns = ["grantee", "table_schema"]
+            q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
+            q.group = ["grantee", "table_schema"]
+            q.where = ["privilege_type != 'USAGE'"]
+            t = text(str(q))
+            db_result = client.execute(t)
+            for db in db_result:
+                grantee.add(db['grantee'])
+                if db['grantee'] == "'%s'@'%s'" % (user.name, user.host):
+                    db_name = db['table_schema']
+                    db_access.add(db_name)
+        with LocalSqlClient(get_engine()) as client:
+            uu = query.UpdateUser(user.name, host=user.host,
+                                  clear=user_attrs.get('password'),
+                                  new_user=user_attrs.get('name'),
+                                  new_host=user_attrs.get('host'))
+            t = text(str(uu))
+            client.execute(t)
+            if user_attrs.get('name') is not None:
+                if user_attrs['name'] not in grantee:
+                    if user_attrs.get('host') is None:
+                        host = user.host
+                    else:
+                        host = user_attrs.get('host')
+                    self.grant_access(user_attrs['name'], host, db_access)
+
     def create_database(self, databases):
         """Create the list of specified databases"""
         with LocalSqlClient(get_engine()) as client:

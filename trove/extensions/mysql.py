@@ -65,7 +65,8 @@ class Mysql(extensions.ExtensionsDescriptor):
             # deserializer=extensions.ExtensionsXMLSerializer()
             deserializer=wsgi.TroveRequestDeserializer(),
             serializer=serializer,
-            collection_actions={'update': 'PUT'})
+            member_actions={'update': 'PUT'},
+            collection_actions={'update_all': 'PUT'})
         resources.append(resource)
 
         collection_url = '{tenant_id}/instances/:instance_id/users'

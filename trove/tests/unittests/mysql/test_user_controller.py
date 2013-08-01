@@ -34,12 +34,12 @@ class TestUserController(TestCase):
 
     def test_get_update_user_pw(self):
         body = {'users': [{'name': 'test', 'password': 'test'}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         self.assertTrue('users' in schema['properties'])
 
     def test_get_update_user_db(self):
         body = {'databases': [{'name': 'test'}, {'name': 'test'}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         self.assertTrue('databases' in schema['properties'])
 
     def test_validate_create_empty(self):
@@ -116,7 +116,7 @@ class TestUserController(TestCase):
 
     def test_validate_update_empty(self):
         body = {"users": []}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -126,7 +126,7 @@ class TestUserController(TestCase):
 
     def test_validate_update_short_password(self):
         body = {"users": [{"name": "joe", "password": ""}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -139,7 +139,7 @@ class TestUserController(TestCase):
     def test_validate_update_user_complete(self):
         body = {"users": [{"name": "joe", "password": "",
                           "databases": [{"name": "testdb"}]}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -152,7 +152,7 @@ class TestUserController(TestCase):
     def test_validate_update_user_with_db_short_password(self):
         body = {"users": [{"name": "joe", "password": "",
                           "databases": [{"name": "testdb"}]}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -162,7 +162,7 @@ class TestUserController(TestCase):
 
     def test_validate_update_no_password(self):
         body = {"users": [{"name": "joe"}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -172,13 +172,13 @@ class TestUserController(TestCase):
 
     def test_validate_update_database_complete(self):
         body = {"databases": [{"name": "test1"}, {"name": "test2"}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
     def test_validate_update_database_empty(self):
         body = {"databases": []}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -187,7 +187,7 @@ class TestUserController(TestCase):
 
     def test_validate_update_short_name(self):
         body = {"users": [{"name": ""}]}
-        schema = self.controller.get_schema('update', body)
+        schema = self.controller.get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
@@ -199,11 +199,28 @@ class TestUserController(TestCase):
                         Equals("'' does not match '^.*[0-9a-zA-Z]+.*$'"))
         self.assertThat(errors[1].path.pop(), Equals("name"))
 
+    def test_get_update_user_attributes(self):
+        body = {'user': {'name': 'test'}}
+        schema = self.controller.get_schema('update', body)
+        self.assertTrue('user' in schema['properties'])
+
+    def test_validate_update_user_attributes(self):
+        body = {'user': {'name': 'test', 'password': 'test', 'host': '%'}}
+        schema = self.controller.get_schema('update', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_update_user_attributes_empty(self):
+        body = {"user": {}}
+        schema = self.controller.get_schema('update', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+
 
 class TestUserAccessController(TestCase):
     def test_validate_update_db(self):
         body = {"databases": []}
-        schema = (UserAccessController()).get_schema('update', body)
+        schema = (UserAccessController()).get_schema('update_all', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)

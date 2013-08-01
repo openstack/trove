@@ -63,7 +63,7 @@ class UserController(wsgi.Controller):
     @classmethod
     def get_schema(cls, action, body):
         action_schema = super(UserController, cls).get_schema(action, body)
-        if 'update' == action:
+        if 'update_all' == action:
             update_type = body.keys()[0]
             action_schema = action_schema.get(update_type, {})
         return action_schema
@@ -130,7 +130,25 @@ class UserController(wsgi.Controller):
         view = views.UserView(user)
         return wsgi.Result(view.data(), 200)
 
-    def update(self, req, body, tenant_id, instance_id):
+    def update(self, req, body, tenant_id, instance_id, id):
+        """Change attributes for one user."""
+        LOG.info(_("Updating user attributes for instance '%s'") % instance_id)
+        LOG.info(_("req : '%s'\n\n") % req)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        username, hostname = unquote_user_host(id)
+        user = None
+        user_attrs = body['user']
+        try:
+            user = models.User.load(context, instance_id, username, hostname)
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=str(e))
+        if not user:
+            raise exception.UserNotFound(uuid=id)
+        models.User.update_attributes(context, instance_id, username, hostname,
+                                      user_attrs)
+        return wsgi.Result(None, 202)
+
+    def update_all(self, req, body, tenant_id, instance_id):
         """Change the password of one or more users."""
         LOG.info(_("Updating user passwords for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
@@ -164,7 +182,7 @@ class UserAccessController(wsgi.Controller):
     @classmethod
     def get_schema(cls, action, body):
         schema = {}
-        if 'update' == action:
+        if 'update_all' == action:
             schema = cls.schemas.get(action).get('databases')
         return schema
 

@@ -61,6 +61,13 @@ host_string = {
     "pattern": "^[%]?[\w(-).]*[%]?$"
 }
 
+name_string = {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 16,
+    "pattern": "^.*[0-9a-zA-Z]+.*$"
+}
+
 uuid = {
     "type": "string",
     "minLength": 1,
@@ -131,6 +138,18 @@ databases_def = {
     }
 }
 
+user_attributes = {
+    "type": "object",
+    "additionalProperties": False,
+    "minProperties": 1,
+    "properties": {
+        "name": name_string,
+        "password": non_empty_string,
+        "host": host_string
+    }
+}
+
+
 users_list = {
     "type": "array",
     "minItems": 1,
@@ -139,7 +158,7 @@ users_list = {
         "required": ["name", "password"],
         "additionalProperties": False,
         "properties": {
-            "name": non_empty_string,
+            "name": name_string,
             "password": non_empty_string,
             "host": host_string,
             "databases": databases_ref_list
@@ -266,7 +285,7 @@ user = {
             "users": users_list
         }
     },
-    "update": {
+    "update_all": {
         "users": {
             "type": "object",
             "required": ["users"],
@@ -276,6 +295,14 @@ user = {
             }
         },
         "databases": databases_ref
+    },
+    "update": {
+        "type": "object",
+        "required": ["user"],
+        "additionalProperties": False,
+        "properties": {
+            "user": user_attributes
+        }
     }
 }
 
