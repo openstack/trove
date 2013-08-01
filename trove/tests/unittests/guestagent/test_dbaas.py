@@ -13,7 +13,6 @@
 #    under the License.
 
 import os
-import __builtin__
 from random import randint
 import time
 
@@ -39,12 +38,13 @@ from trove.common.context import TroveContext
 from trove.guestagent import pkg
 from trove.common import utils
 import trove.guestagent.manager.mysql_service as dbaas
+from trove.guestagent.dbaas import to_gb
+from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.manager.mysql_service import MySqlAdmin
 from trove.guestagent.manager.mysql_service import MySqlRootAccess
 from trove.guestagent.manager.mysql_service import MySqlApp
 from trove.guestagent.manager.mysql_service import MySqlAppStatus
 from trove.guestagent.manager.mysql_service import KeepAliveConnection
-from trove.guestagent.dbaas import Interrogator
 from trove.guestagent.db import models
 from trove.instance.models import ServiceStatuses
 from trove.instance.models import InstanceServiceStatus
@@ -834,67 +834,37 @@ class MySqlRootStatusTest(testtools.TestCase):
         verify(mock_db_api).save(any(RootHistory))
 
 
+class MockStats:
+    f_blocks = 1024 ** 2
+    f_bsize = 4096
+    f_bfree = 512 * 1024
+
+
 class InterrogatorTest(testtools.TestCase):
 
-    def setUp(self):
-        super(InterrogatorTest, self).setUp()
-        self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
-        self.orig_LOG_err = dbaas.LOG
+    def test_to_gb(self):
+        result = to_gb(123456789)
+        self.assertEqual(result, 0.11)
 
-    def tearDown(self):
-        super(InterrogatorTest, self).tearDown()
-        dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-        dbaas.LOG = self.orig_LOG_err
+    def test_to_gb_zero(self):
+        result = to_gb(0)
+        self.assertEqual(result, 0.0)
 
     def test_get_filesystem_volume_stats(self):
+        when(os).statvfs(any()).thenReturn(MockStats)
+        result = get_filesystem_volume_stats('/some/path/')
 
-        path = 'aPath'
-        block_size = 4096
-        total_block = 2582828
-        free_block = 767118
-        total = total_block * block_size
-        free = free_block * block_size
-        used = total - free
-        out = " ".join(str(x) for x in (path, 'fb518d79428291bb', 255, 'ef53',
-                                        block_size, '4096', total_block,
-                                        free_block, 636216, 655360, 583768))
-        err = None
-        return_exp = out, err
-        dbaas.utils.execute_with_timeout = Mock(return_value=return_exp)
-
-        self.interrogator = Interrogator()
-        result = self.interrogator.get_filesystem_volume_stats(path)
-
-        self.assertTrue(dbaas.utils.execute_with_timeout.called)
-        self.assertTrue('stat' in
-                        dbaas.utils.execute_with_timeout.call_args[0])
-        self.assertTrue(path in dbaas.utils.execute_with_timeout.call_args[0])
-
-        self.assertEqual(result['block_size'], block_size)
-        self.assertEqual(result['total_blocks'], total_block)
-        self.assertEqual(result['free_blocks'], free_block)
-        self.assertEqual(result['total'], total)
-        self.assertEqual(result['free'], free)
-        self.assertEqual(result['used'], used)
+        self.assertEqual(result['block_size'], 4096)
+        self.assertEqual(result['total_blocks'], 1048576)
+        self.assertEqual(result['free_blocks'], 524288)
+        self.assertEqual(result['total'], 4294967296)
+        self.assertEqual(result['free'], 2147483648)
+        self.assertEqual(result['used'], 2.0)
 
     def test_get_filesystem_volume_stats_error(self):
-
-        path = 'aPath'
-        block_size = 4096
-        total_block = 2582828
-        free_block = 767118
-
-        out = " ".join(str(x) for x in (path, 'fb518d79428291bb', 255, 'ef53',
-                                        block_size, '4096', total_block,
-                                        free_block, 636216, 655360, 583768))
-        err = "Error found"
-        return_exp = out, err
-        dbaas.utils.execute_with_timeout = Mock(return_value=return_exp)
-        dbaas.LOG.err = Mock()
-
-        self.interrogator = Interrogator()
-        self.assertRaises(RuntimeError,
-                          self.interrogator.get_filesystem_volume_stats, path)
+        self.assertRaises(
+            RuntimeError,
+            get_filesystem_volume_stats, '/nonexistent/path')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):

@@ -892,19 +892,19 @@ class TestInstanceListing(object):
         if create_new_instance():
             assert_equal(instance_info.volume['size'], instance.volume['size'])
         else:
-            assert_true(isinstance(instance_info.volume['size'], int))
+            assert_true(isinstance(instance_info.volume['size'], float))
         if create_new_instance():
             assert_true(0.12 < instance.volume['used'] < 0.25)
 
     @test(enabled=EPHEMERAL_SUPPORT)
     def test_ephemeral_mount(self):
         instance = dbaas.instances.get(instance_info.id)
-        assert_true(isinstance(instance_info.local_storage['used'], int))
+        assert_true(isinstance(instance.local_storage['used'], float))
 
     @test(enabled=ROOT_PARTITION)
     def test_root_partition(self):
         instance = dbaas.instances.get(instance_info.id)
-        assert_true(isinstance(instance_info.local_storage['used'], int))
+        assert_true(isinstance(instance.local_storage['used'], float))
 
     @test(enabled=do_not_delete_instance())
     def test_instance_not_shown_to_other_user(self):

@@ -32,6 +32,7 @@ class BackupTasksTest(testtools.TestCase):
         self.backup.instance_id = 'instance id'
         self.backup.created = 'yesterday'
         self.backup.updated = 'today'
+        self.backup.size = 2.0
         self.backup.state = backup_models.BackupState.NEW
         self.container_content = (None,
                                   [{'name': 'first'},

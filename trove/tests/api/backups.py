@@ -145,6 +145,7 @@ class ListBackups(object):
         backup = result[0]
         assert_equal(BACKUP_NAME, backup.name)
         assert_equal(BACKUP_DESC, backup.description)
+        assert_not_equal(0.0, backup.size)
         assert_equal(instance_info.id, backup.instance_id)
         assert_equal('COMPLETED', backup.status)
 
@@ -156,6 +157,7 @@ class ListBackups(object):
         backup = result[0]
         assert_equal(BACKUP_NAME, backup.name)
         assert_equal(BACKUP_DESC, backup.description)
+        assert_not_equal(0.0, backup.size)
         assert_equal(instance_info.id, backup.instance_id)
         assert_equal('COMPLETED', backup.status)
 
@@ -167,6 +169,7 @@ class ListBackups(object):
         assert_equal(backup_info.name, backup.name)
         assert_equal(backup_info.description, backup.description)
         assert_equal(instance_info.id, backup.instance_id)
+        assert_not_equal(0.0, backup.size)
         assert_equal('COMPLETED', backup.status)
 
         # Test to make sure that user in other tenant is not able

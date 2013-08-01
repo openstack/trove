@@ -140,6 +140,7 @@ class BackupORMTest(testtools.TestCase):
                                              state=BACKUP_STATE,
                                              instance_id=self.instance_id,
                                              deleted=False,
+                                             size=2.0,
                                              location=BACKUP_LOCATION)
         self.deleted = False
 
@@ -158,6 +159,7 @@ class BackupORMTest(testtools.TestCase):
                                name=BACKUP_NAME_2,
                                state=BACKUP_STATE,
                                instance_id=self.instance_id,
+                               size=2.0,
                                deleted=False)
         db_record = models.Backup.list_for_instance(self.instance_id)
         self.assertEqual(2, db_record.count())
@@ -190,6 +192,10 @@ class BackupORMTest(testtools.TestCase):
 
     def test_not_is_done(self):
         self.assertFalse(self.backup.is_done)
+
+    def test_backup_size(self):
+        db_record = models.DBBackup.find_by(id=self.backup.id)
+        self.assertEqual(db_record.size, self.backup.size)
 
     def test_backup_delete(self):
         backup = models.DBBackup.find_by(id=self.backup.id)

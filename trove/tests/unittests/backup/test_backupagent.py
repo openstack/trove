@@ -13,6 +13,7 @@
 #limitations under the License.
 
 import hashlib
+import os
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent.strategies.restore.base import RestoreRunner
@@ -129,6 +130,13 @@ class MockRestoreRunner(RestoreRunner):
     def is_zipped(self):
         return False
 
+
+class MockStats:
+    f_blocks = 1024 ** 2
+    f_bsize = 4096
+    f_bfree = 512 * 1024
+
+
 BACKUP_NS = 'trove.guestagent.strategies.backup'
 
 
@@ -139,6 +147,7 @@ class BackupAgentTest(testtools.TestCase):
         when(backupagent).get_auth_password().thenReturn('secret')
         when(backupagent).get_storage_strategy(any(), any()).thenReturn(
             MockSwift)
+        when(os).statvfs(any()).thenReturn(MockStats)
 
     def tearDown(self):
         super(BackupAgentTest, self).tearDown()

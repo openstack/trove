@@ -79,9 +79,6 @@ class InstanceDetailView(InstanceView):
         super(InstanceDetailView, self).__init__(instance,
                                                  req=req)
 
-    def _to_gb(self, bytes):
-        return bytes / 1024.0 ** 3
-
     def data(self):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
@@ -98,7 +95,7 @@ class InstanceDetailView(InstanceView):
 
         if isinstance(self.instance, models.DetailInstance) and \
             self.instance.volume_used:
-            used = self._to_gb(self.instance.volume_used)
+            used = self.instance.volume_used
             if CONF.trove_volume_support:
                 result['instance']['volume']['used'] = used
             else:

@@ -25,33 +25,43 @@ handles RPC calls relating to Platform specific operations.
 
 """
 
+import os
 
-from trove.common import utils
-from trove.openstack.common import log as logging
+from trove.openstack.common import log
 
 
-LOG = logging.getLogger(__name__)
+LOG = log.getLogger(__name__)
 SERVICE_REGISTRY = {
     'mysql': 'trove.guestagent.manager.mysql.Manager',
-    'percona': 'trove.guestagent.manager.mysql.Manager', }
+    'percona': 'trove.guestagent.manager.mysql.Manager',
+}
 
 
-class Interrogator(object):
-    def get_filesystem_volume_stats(self, fs_path):
-        out, err = utils.execute_with_timeout(
-            "stat",
-            "-f",
-            "-t",
-            fs_path)
-        if err:
-            LOG.error(err)
-            raise RuntimeError("Filesystem not found (%s) : %s"
-                               % (fs_path, err))
-        stats = out.split()
-        output = {'block_size': int(stats[4]),
-                  'total_blocks': int(stats[6]),
-                  'free_blocks': int(stats[7]),
-                  'total': int(stats[6]) * int(stats[4]),
-                  'free': int(stats[7]) * int(stats[4])}
-        output['used'] = int(output['total']) - int(output['free'])
-        return output
+def to_gb(bytes):
+    if bytes == 0:
+        return 0.0
+    size = bytes / 1024.0 ** 3
+    return round(size, 2)
+
+
+def get_filesystem_volume_stats(fs_path):
+    try:
+        stats = os.statvfs(fs_path)
+    except OSError:
+        LOG.exception("Error getting volume stats.")
+        raise RuntimeError("Filesystem not found (%s)" % fs_path)
+
+    total = stats.f_blocks * stats.f_bsize
+    free = stats.f_bfree * stats.f_bsize
+    # return the size in GB
+    used = to_gb(total - free)
+
+    output = {
+        'block_size': stats.f_bsize,
+        'total_blocks': stats.f_blocks,
+        'free_blocks': stats.f_bfree,
+        'total': total,
+        'free': free,
+        'used': used
+    }
+    return output
