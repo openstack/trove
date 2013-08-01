@@ -77,8 +77,7 @@ class SecurityGroup(DatabaseModelBase):
     def create_for_instance(cls, instance_id, context):
         # Create a new security group
         name = _("SecGroup_%s") % instance_id
-        description = \
-            _("Default Security Group For DBaaS Instance <%s>") % instance_id
+        description = _("Security Group for %s") % instance_id
         sec_group = cls.create_sec_group(name, description, context)
 
         # Currently this locked down by default, since we don't create any
