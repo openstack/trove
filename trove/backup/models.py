@@ -141,6 +141,16 @@ class Backup(object):
         return db_info
 
     @classmethod
+    def fail_for_instance(cls, instance_id):
+        query = DBBackup.query()
+        query = query.filter(DBBackup.instance_id == instance_id,
+                             DBBackup.state.in_(BackupState.RUNNING_STATES))
+        query = query.filter_by(deleted=False)
+        for backup in query.all():
+            backup.state = BackupState.FAILED
+            backup.save()
+
+    @classmethod
     def delete(cls, context, backup_id):
         """
         update Backup table on deleted flag for given Backup

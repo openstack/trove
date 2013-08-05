@@ -18,6 +18,7 @@
 
 from novaclient import exceptions as nova_exceptions
 
+from trove.backup.models import Backup
 from trove.common import exception
 from trove.common import wsgi
 from trove.common.auth import admin_context
@@ -134,6 +135,10 @@ class MgmtInstanceController(InstanceController):
         LOG.debug("Setting Task-Status to NONE on instance %s." %
                   instance.id)
         instance.reset_task_status()
+
+        LOG.debug("Failing backups for instance %s." % instance.id)
+        Backup.fail_for_instance(instance.id)
+
         return wsgi.Result(None, 202)
 
     @admin_context
