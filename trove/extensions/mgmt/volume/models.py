@@ -21,7 +21,7 @@ Model classes that extend the instances functionality for volumes.
 
 from trove.openstack.common import log as logging
 
-from trove.common.remote import create_nova_volume_client
+from trove.common.remote import create_cinder_client
 
 
 LOG = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class StorageDevices(object):
 
     @staticmethod
     def load(context):
-        client = create_nova_volume_client(context)
+        client = create_cinder_client(context)
         rdstorages = client.rdstorage.list()
         for rdstorage in rdstorages:
             LOG.debug("rdstorage=" + str(rdstorage))

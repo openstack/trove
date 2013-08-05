@@ -99,7 +99,7 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
     @classmethod
     def load(cls, context, id):
         instance = load_mgmt_instance(cls, context, id)
-        client = remote.create_nova_volume_client(context)
+        client = remote.create_cinder_client(context)
         try:
             instance.volume = client.volumes.get(instance.volume_id)
         except Exception:
