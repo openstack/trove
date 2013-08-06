@@ -34,7 +34,7 @@ sql_idle_timeout = 3600
 db_api_implementation = "trove.db.sqlalchemy.api"
 
 # Path to the extensions
-api_extensions_path = trove/extensions
+api_extensions_path = trove/extensions/routes
 
 # Configuration options for talking to nova via the novaclient.
 # These options are for an admin user in your keystone config.

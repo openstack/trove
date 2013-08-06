@@ -37,7 +37,7 @@ sql_idle_timeout = 3600
 db_api_implementation = "trove.db.sqlalchemy.api"
 
 # Path to the extensions
-api_extensions_path = trove/extensions
+api_extensions_path = trove/extensions/routes
 
 # Configuration options for talking to nova via the novaclient.
 trove_auth_url = http://0.0.0.0:5000/v2.0
