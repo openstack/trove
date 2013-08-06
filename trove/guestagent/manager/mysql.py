@@ -143,7 +143,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def get_filesystem_stats(self, context, fs_path):
         """ Gets the filesystem stats for the path given """
-        return dbaas.Interrogator().get_filesystem_volume_stats(fs_path)
+        return dbaas.get_filesystem_volume_stats(fs_path)
 
     def create_backup(self, context, backup_id):
         """

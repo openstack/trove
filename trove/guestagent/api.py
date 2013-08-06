@@ -259,7 +259,7 @@ class API(proxy.RpcProxy):
         LOG.debug(_("Check Volume Info on Instance %s"), self.id)
         # self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
-                          fs_path="/var/lib/mysql")
+                          fs_path=CONF.mount_point)
 
     def update_guest(self):
         """Make a synchronous call to update the guest agent."""
