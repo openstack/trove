@@ -14,7 +14,7 @@ from trove.common import utils as utils
 from trove.common import exception
 from trove.guestagent import query
 from trove.guestagent.db import models
-from trove.guestagent.pkg import Package
+from trove.guestagent import pkg
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -39,7 +39,7 @@ INCLUDE_MARKER_OPERATORS = {
 }
 
 # Create a package impl
-pkg = Package()
+packager = pkg.Package()
 
 
 def generate_random_password():
@@ -678,7 +678,7 @@ class MySqlApp(object):
     def _install_mysql(self):
         """Install mysql server. The current version is 5.5"""
         LOG.debug(_("Installing mysql server"))
-        pkg.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
+        packager.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
         LOG.debug(_("Finished installing mysql server"))
         #TODO(rnirmal): Add checks to make sure the package got installed
 
@@ -698,6 +698,8 @@ class MySqlApp(object):
             command = command % locals()
         else:
             command = "sudo update-rc.d mysql enable"
+            if pkg.OS == pkg.REDHAT:
+                command = "sudo chkconfig mysql on"
         utils.execute_with_timeout(command, shell=True)
 
     def _disable_mysql_on_boot(self):
@@ -716,6 +718,8 @@ class MySqlApp(object):
             command = command % locals()
         else:
             command = "sudo update-rc.d mysql disable"
+            if pkg.OS == pkg.REDHAT:
+                command = "sudo chkconfig mysql off"
         utils.execute_with_timeout(command, shell=True)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
@@ -869,7 +873,7 @@ class MySqlApp(object):
 
     def is_installed(self):
         #(cp16net) could raise an exception, does it need to be handled here?
-        version = pkg.pkg_version(self.MYSQL_PACKAGE_VERSION)
+        version = packager.pkg_version(self.MYSQL_PACKAGE_VERSION)
         return not version is None
 
 

@@ -20,3 +20,4 @@ iso8601
 oslo.config>=1.1.0
 jsonschema>=1.0.0,!=1.4.0,<2
 Jinja2
+pexpect

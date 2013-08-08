@@ -34,6 +34,13 @@ LOG = logging.getLogger(__name__)
 OK = 0
 RUN_DPKG_FIRST = 1
 REINSTALL_FIRST = 2
+REDHAT = 'redhat'
+DEBIAN = 'debian'
+
+# The default is debian
+OS = DEBIAN
+if os.path.isfile("/etc/redhat-release"):
+    OS = REDHAT
 
 
 class PkgAdminLockError(exception.TroveError):
@@ -56,34 +63,41 @@ class PkgTimeout(exception.TroveError):
     pass
 
 
-class RedhatPackagerMixin:
-
-    def pkg_install(self, package_name, time_out):
-        pass
-
-    def pkg_version(self, package_name):
-        return "1.0"
-
-    def pkg_remove(self, package_name, time_out):
-        pass
+class PkgScriptletError(exception.TroveError):
+    pass
 
 
-class DebianPackagerMixin:
+class PkgTransactionCheckError(exception.TroveError):
+    pass
 
-    def kill_proc(self, child):
+
+class PkgDownloadError(exception.TroveError):
+    pass
+
+
+class BasePackagerMixin:
+
+    def pexpect_kill_proc(self, child):
         child.delayafterclose = 1
         child.delayafterterminate = 1
         child.close(force=True)
 
-    def wait_and_close_proc(self, child, time_out=-1):
+    def pexpect_wait_and_close_proc(self, child, time_out=-1):
         child.expect(pexpect.EOF, timeout=time_out)
         child.close()
 
-    def _fix(self, time_out):
-        """Sometimes you have to run this command before a pkg will install."""
-        #sudo dpkg --configure -a
-        child = pexpect.spawn("sudo -E dpkg --configure -a")
-        self.wait_and_close_proc(child, time_out)
+    def pexpect_run(self, cmd, output_expects, time_out):
+        child = pexpect.spawn(cmd)
+        try:
+            i = child.expect(output_expects, timeout=time_out)
+            self.pexpect_wait_and_close_proc(child)
+        except pexpect.TIMEOUT:
+            self.pexpect_kill_proc(child)
+            raise PkgTimeout("Process timeout after %i seconds." % time_out)
+        return i
+
+
+class RedhatPackagerMixin(BasePackagerMixin):
 
     def _install(self, package_name, time_out):
         """Attempts to install a package.
@@ -93,37 +107,27 @@ class DebianPackagerMixin:
         Raises an exception if a non-recoverable error or time out occurs.
 
         """
-        child = pexpect.spawn("sudo -E DEBIAN_FRONTEND=noninteractive "
-                              "apt-get -y --allow-unauthenticated install %s"
-                              % package_name)
-        try:
-            i = child.expect(['.*password*',
-                              'E: Unable to locate package %s' % package_name,
-                              "Couldn't find package % s" % package_name,
-                              ("dpkg was interrupted, you must manually run "
-                               "'sudo dpkg --configure -a'"),
-                              "Unable to lock the administration directory",
-                              "Setting up %s*" % package_name,
-                              "is already the newest version"],
-                             timeout=time_out)
-            if i == 0:
-                raise PkgPermissionError("Invalid permissions.")
-            elif i == 1 or i == 2:
-                raise PkgNotFoundError("Could not find apt %s" % package_name)
-            elif i == 3:
-                return RUN_DPKG_FIRST
-            elif i == 4:
-                raise PkgAdminLockError()
-        except pexpect.TIMEOUT:
-            self.kill_proc(child)
-            raise PkgTimeout("Process timeout after %i seconds." % time_out)
-        try:
-            self.wait_and_close_proc(child)
-        except pexpect.TIMEOUT as e:
-            LOG.error("wait_and_close_proc failed: %s" % e)
-            #TODO(tim.simpson): As of RDL, and on my machine exclusively (in
-            #                   both Virtual Box and VmWare!) this fails, but
-            #                   the package is installed.
+        cmd = "sudo yum --color=never -y install %s" % package_name
+        output_expects = ['\[sudo\] password for .*:',
+                          'No package %s available.' % package_name,
+                          'Transaction Check Error:',
+                          '.*scriptlet failed*',
+                          'HTTP Error',
+                          'No more mirrors to try.',
+                          '.*already installed and latest version',
+                          'Updated:',
+                          'Installed:']
+        i = self.pexpect_run(cmd, output_expects, time_out)
+        if i == 0:
+            raise PkgPermissionError("Invalid permissions.")
+        elif i == 1:
+            raise PkgNotFoundError("Could not find pkg %s" % package_name)
+        elif i == 2:
+            raise PkgTransactionCheckError("Transaction Check Error")
+        elif i == 3:
+            raise PkgScriptletError("Package scriptlet failed")
+        elif i == 4 or i == 5:
+            raise PkgDownloadError("Package download problem")
         return OK
 
     def _remove(self, package_name, time_out):
@@ -134,34 +138,117 @@ class DebianPackagerMixin:
         Raises an exception if a non-recoverable error or time out occurs.
 
         """
-        child = pexpect.spawn("sudo -E apt-get -y --allow-unauthenticated "
-                              "remove %s" % package_name)
+        cmd = "sudo yum --color=never -y remove %s" % package_name
+        output_expects = ['\[sudo\] password for .*:',
+                          'No Packages marked for removal',
+                          'Removed:']
+        i = self.pexpect_run(cmd, output_expects, time_out)
+        if i == 0:
+            raise PkgPermissionError("Invalid permissions.")
+        elif i == 1:
+            raise PkgNotFoundError("Could not find pkg %s" % package_name)
+        return OK
+
+    def pkg_install(self, package_name, time_out):
+        result = self._install(package_name, time_out)
+        if result != OK:
+            raise PkgPackageStateError("Package %s is in a bad state."
+                                       % package_name)
+
+    def pkg_version(self, package_name):
+        cmd_list = ["rpm", "-qa", "--qf", "'%{VERSION}-%{RELEASE}\n'",
+                    package_name]
+        p = commands.getstatusoutput(' '.join(cmd_list))
+        # Need to capture the version string
+        # check the command output
+        std_out = p[1]
+        for line in std_out.split("\n"):
+            regex = re.compile("[0-9.]+-.*")
+            matches = regex.match(line)
+            if matches:
+                line = matches.group()
+                return line
+        msg = _("version() saw unexpected output from rpm!")
+        LOG.error(msg)
+
+    def pkg_remove(self, package_name, time_out):
+        """Removes a package."""
+        if self.pkg_version(package_name) is None:
+            return
+        result = self._remove(package_name, time_out)
+        if result != OK:
+            raise PkgPackageStateError("Package %s is in a bad state."
+                                       % package_name)
+
+
+class DebianPackagerMixin(BasePackagerMixin):
+
+    def _fix(self, time_out):
+        """Sometimes you have to run this command before a pkg will install."""
         try:
-            i = child.expect(['.*password*',
-                              'E: Unable to locate package %s' % package_name,
-                              'Package is in a very bad inconsistent state',
-                              ("Sub-process /usr/bin/dpkg returned an error "
-                               "code"),
-                              ("dpkg was interrupted, you must manually run "
-                               "'sudo dpkg --configure -a'"),
-                              "Unable to lock the administration directory",
-                              #'The following packages will be REMOVED',
-                              "Removing %s*" % package_name],
-                             timeout=time_out)
-            if i == 0:
-                raise PkgPermissionError("Invalid permissions.")
-            elif i == 1:
-                raise PkgNotFoundError("Could not find pkg %s" % package_name)
-            elif i == 2 or i == 3:
-                return REINSTALL_FIRST
-            elif i == 4:
-                return RUN_DPKG_FIRST
-            elif i == 5:
-                raise PkgAdminLockError()
-            self.wait_and_close_proc(child)
-        except pexpect.TIMEOUT:
-            self.kill_proc(child)
-            raise PkgTimeout("Process timeout after %i seconds." % time_out)
+            utils.execute("dpkg", "--configure", "-a", run_as_root=True,
+                          root_helper="sudo")
+        except ProcessExecutionError as e:
+            LOG.error(_("Error fixing dpkg"))
+
+    def _install(self, package_name, time_out):
+        """Attempts to install a package.
+
+        Returns OK if the package installs fine or a result code if a
+        recoverable-error occurred.
+        Raises an exception if a non-recoverable error or time out occurs.
+
+        """
+        cmd = "sudo -E DEBIAN_FRONTEND=noninteractive " \
+              "apt-get -y --allow-unauthenticated install %s" % package_name
+        output_expects = ['.*password*',
+                          'E: Unable to locate package %s' % package_name,
+                          "Couldn't find package % s" % package_name,
+                          ("dpkg was interrupted, you must manually run "
+                           "'sudo dpkg --configure -a'"),
+                          "Unable to lock the administration directory",
+                          "Setting up %s*" % package_name,
+                          "is already the newest version"]
+        i = self.pexpect_run(cmd, output_expects, time_out)
+        if i == 0:
+            raise PkgPermissionError("Invalid permissions.")
+        elif i == 1 or i == 2:
+            raise PkgNotFoundError("Could not find apt %s" % package_name)
+        elif i == 3:
+            return RUN_DPKG_FIRST
+        elif i == 4:
+            raise PkgAdminLockError()
+        return OK
+
+    def _remove(self, package_name, time_out):
+        """Removes a package.
+
+        Returns OK if the package is removed successfully or a result code if a
+        recoverable-error occurs.
+        Raises an exception if a non-recoverable error or time out occurs.
+
+        """
+        cmd = "sudo -E apt-get -y --allow-unauthenticated remove %s" \
+              % package_name
+        output_expects = ['.*password*',
+                          'E: Unable to locate package %s' % package_name,
+                          'Package is in a very bad inconsistent state',
+                          'Sub-process /usr/bin/dpkg returned an error code',
+                          ("dpkg was interrupted, you must manually run "
+                           "'sudo dpkg --configure -a'"),
+                          "Unable to lock the administration directory",
+                          "Removing %s*" % package_name]
+        i = self.pexpect_run(cmd, output_expects, time_out)
+        if i == 0:
+            raise PkgPermissionError("Invalid permissions.")
+        elif i == 1:
+            raise PkgNotFoundError("Could not find pkg %s" % package_name)
+        elif i == 2 or i == 3:
+            return REINSTALL_FIRST
+        elif i == 4:
+            return RUN_DPKG_FIRST
+        elif i == 5:
+            raise PkgAdminLockError()
         return OK
 
     def pkg_install(self, package_name, time_out):
@@ -216,7 +303,6 @@ class DebianPackagerMixin:
                     return parts[2]
         msg = _("version() saw unexpected output from dpkg!")
         LOG.error(msg)
-        raise exception.GuestError(msg)
 
     def pkg_remove(self, package_name, time_out):
         """Removes a package."""
@@ -238,9 +324,7 @@ class DebianPackagerMixin:
 class BasePackage(type):
 
     def __new__(meta, name, bases, dct):
-        if os.path.isfile("/etc/debian_version"):
-            bases += (DebianPackagerMixin, )
-        elif os.path.isfile("/etc/redhat-release"):
+        if OS == REDHAT:
             bases += (RedhatPackagerMixin, )
         else:
             # The default is debian

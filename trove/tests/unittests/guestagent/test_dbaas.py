@@ -618,12 +618,12 @@ class MySqlAppInstallTest(MySqlAppTest):
     def setUp(self):
         super(MySqlAppInstallTest, self).setUp()
         self.orig_create_engine = sqlalchemy.create_engine
-        self.orig_pkg_version = dbaas.pkg.pkg_version
+        self.orig_pkg_version = dbaas.packager.pkg_version
 
     def tearDown(self):
         super(MySqlAppInstallTest, self).tearDown()
         sqlalchemy.create_engine = self.orig_create_engine
-        dbaas.pkg.pkg_version = self.orig_pkg_version
+        dbaas.packager.pkg_version = self.orig_pkg_version
 
     def test_install(self):
 
@@ -684,13 +684,13 @@ class MySqlAppInstallTest(MySqlAppTest):
 
     def test_is_installed(self):
 
-        dbaas.pkg.pkg_version = Mock(return_value=True)
+        dbaas.packager.pkg_version = Mock(return_value=True)
 
         self.assertTrue(self.mySqlApp.is_installed())
 
     def test_is_installed_not(self):
 
-        dbaas.pkg.pkg_version = Mock(return_value=None)
+        dbaas.packager.pkg_version = Mock(return_value=None)
 
         self.assertFalse(self.mySqlApp.is_installed())
 
