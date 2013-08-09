@@ -28,13 +28,26 @@ handles RPC calls relating to Platform specific operations.
 import os
 
 from trove.openstack.common import log
+from itertools import chain
+from trove.common import cfg
 
 
 LOG = log.getLogger(__name__)
-SERVICE_REGISTRY = {
+defaults = {
     'mysql': 'trove.guestagent.manager.mysql.Manager',
     'percona': 'trove.guestagent.manager.mysql.Manager',
 }
+
+CONF = cfg.CONF
+
+
+def get_custom_managers():
+    return CONF.service_registry_ext
+
+
+def service_registry():
+    return dict(chain(defaults.iteritems(),
+                get_custom_managers().iteritems()))
 
 
 def to_gb(bytes):

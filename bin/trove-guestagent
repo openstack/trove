@@ -38,7 +38,6 @@ if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
 
 from trove.common import cfg
 from trove.common import rpc
-from trove.guestagent import dbaas
 from oslo.config import cfg as openstack_cfg
 from trove.openstack.common import log as logging
 from trove.openstack.common import service
@@ -50,13 +49,16 @@ CONF.register_opts([openstack_cfg.StrOpt('guestagent_manager'),
 
 if __name__ == '__main__':
     cfg.parse_args(sys.argv)
+    from trove.guestagent import dbaas
     logging.setup(None)
 
     try:
         get_db_api().configure_db(CONF)
-        manager = dbaas.SERVICE_REGISTRY[CONF.service_type]
-        server = rpc.RpcService(manager=manager,
-                                host=CONF.guest_id)
+        manager = dbaas.service_registry().get(CONF.service_type)
+        if not manager:
+            msg = "Manager not found for service type " + CONF.service_type
+            raise RuntimeError(msg)
+        server = rpc.RpcService(manager=manager, host=CONF.guest_id)
         launcher = service.launch(server)
         launcher.wait()
     except RuntimeError as error:

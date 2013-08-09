@@ -198,6 +198,10 @@ common_opts = [
     cfg.StrOpt('guest_config',
                default='$pybasedir/etc/trove/trove-guestagent.conf.sample',
                help="Path to guestagent config file"),
+    cfg.DictOpt('service_registry_ext', default=dict(),
+                help='Extention for default service managers.'
+                     ' Allows to use custom managers for each of'
+                     ' service type supported in trove'),
 ]
 
 
