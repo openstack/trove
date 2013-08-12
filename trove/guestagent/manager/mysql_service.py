@@ -666,13 +666,14 @@ class MySqlApp(object):
 
         LOG.info(_("Dbaas secure complete."))
 
-    def secure_root(self):
+    def secure_root(self, secure_remote_root=True):
         engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
                                           echo=True)
         with LocalSqlClient(engine) as client:
             LOG.info(_("Preserving root access from restore"))
             self._generate_root_password(client)
-            self._remove_remote_root_access(client)
+            if secure_remote_root:
+                self._remove_remote_root_access(client)
 
     def _install_mysql(self):
         """Install mysql server. The current version is 5.5"""
