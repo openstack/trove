@@ -842,6 +842,10 @@ class MockStats:
 
 class InterrogatorTest(testtools.TestCase):
 
+    def tearDown(self):
+        super(InterrogatorTest, self).tearDown()
+        unstub()
+
     def test_to_gb(self):
         result = to_gb(123456789)
         self.assertEqual(result, 0.11)
@@ -862,6 +866,7 @@ class InterrogatorTest(testtools.TestCase):
         self.assertEqual(result['used'], 2.0)
 
     def test_get_filesystem_volume_stats_error(self):
+        when(os).statvfs(any()).thenRaise(OSError)
         self.assertRaises(
             RuntimeError,
             get_filesystem_volume_stats, '/nonexistent/path')
