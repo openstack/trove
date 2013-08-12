@@ -59,9 +59,9 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.restart()
 
-    def migrate(self, context, instance_id):
+    def migrate(self, context, instance_id, host):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.migrate()
+        instance_tasks.migrate(host)
 
     def delete_instance(self, context, instance_id):
         try:

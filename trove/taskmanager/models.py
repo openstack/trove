@@ -487,8 +487,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         action = ResizeAction(self, old_flavor, new_flavor)
         action.execute()
 
-    def migrate(self):
-        action = MigrateAction(self)
+    def migrate(self, host):
+        LOG.debug("Calling migrate with host(%s)..." % host)
+        action = MigrateAction(self, host)
         action.execute()
 
     def create_backup(self, backup_id):
@@ -788,13 +789,18 @@ class ResizeAction(ResizeActionBase):
 
 
 class MigrateAction(ResizeActionBase):
+    def __init__(self, instance, host=None):
+        self.instance = instance
+        self.host = host
+
     def _assert_nova_action_was_successful(self):
         LOG.debug("Currently no assertions for a Migrate Action")
 
     def _initiate_nova_action(self):
         LOG.debug("Migrating instance %s without flavor change ..."
                   % self.instance.id)
-        self.instance.server.migrate()
+        LOG.debug("Forcing migration to host(%s)" % self.host)
+        self.instance.server.migrate(force_host=self.host)
 
     def _record_action_success(self):
         LOG.debug("Successfully finished Migration to %s: %s" %

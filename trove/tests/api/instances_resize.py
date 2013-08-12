@@ -227,8 +227,9 @@ class MigrateTests(ResizeTestBase):
         self.guest.restart()
 
     def test_successful_migrate(self):
+        self.mock.StubOutWithMock(self.instance.server, 'migrate')
         self._stop_db()
-        self.server.migrate()
+        self.server.migrate(force_host=None)
         self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = ServiceStatuses.RUNNING

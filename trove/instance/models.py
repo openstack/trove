@@ -554,11 +554,11 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).restart(self.id)
 
-    def migrate(self):
+    def migrate(self, host=None):
         self.validate_can_perform_action()
-        LOG.info("Migrating instance %s..." % self.id)
+        LOG.info("Migrating instance id = %s, to host = %s" % (self.id, host))
         self.update_db(task_status=InstanceTasks.MIGRATING)
-        task_api.API(self.context).migrate(self.id)
+        task_api.API(self.context).migrate(self.id, host)
 
     def reset_task_status(self):
         LOG.info("Settting task status to NONE on instance %s..." % self.id)

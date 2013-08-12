@@ -88,9 +88,9 @@ class API(ManagerAPI):
         LOG.debug("Making async call to restart instance: %s" % instance_id)
         self._cast("restart", instance_id=instance_id)
 
-    def migrate(self, instance_id):
+    def migrate(self, instance_id, host):
         LOG.debug("Making async call to migrate instance: %s" % instance_id)
-        self._cast("migrate", instance_id=instance_id)
+        self._cast("migrate", instance_id=instance_id, host=host)
 
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
