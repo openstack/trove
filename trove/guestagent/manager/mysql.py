@@ -114,10 +114,10 @@ class Manager(periodic_task.PeriodicTasks):
             self._perform_restore(backup_id, context, CONF.mount_point, app)
         LOG.info(_("Securing mysql now."))
         app.secure(config_location, config_contents)
-        if backup_id and MySqlAdmin().is_root_enabled():
+        enable_root_on_restore = (backup_id and MySqlAdmin().is_root_enabled())
+        if enable_root_on_restore:
             MySqlAdmin().report_root_enabled(context)
-        else:
-            app.secure_root()
+        app.secure_root(secure_remote_root=not enable_root_on_restore)
         app.complete_install_or_restart()
 
         if databases:
