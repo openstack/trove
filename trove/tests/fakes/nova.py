@@ -497,7 +497,7 @@ class FakeVolumes(object):
     def list(self, detailed=True):
         return [self.db[key] for key in self.db]
 
-    def resize(self, volume_id, new_size):
+    def extend(self, volume_id, new_size):
         LOG.debug("Resize volume id (%s) to size (%s)" % (volume_id, new_size))
         volume = self.get(volume_id)
 

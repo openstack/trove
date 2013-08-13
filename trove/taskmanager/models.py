@@ -14,6 +14,7 @@
 
 import traceback
 
+from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
@@ -456,7 +457,15 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("%s: Resizing volume for instance: %s from %s to %r GB"
                   % (greenthread.getcurrent(), self.server.id,
                      old_volume_size, new_size))
-        self.volume_client.volumes.resize(self.volume_id, new_size)
+        try:
+            self.volume_client.volumes.extend(self.volume_id, new_size)
+        except cinder_exceptions.ClientException:
+            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+            LOG.exception("Error encountered trying to rescan or resize the "
+                          "attached volume filesystem for volume: "
+                          "%s" % self.volume_id)
+            raise
+
         try:
             utils.poll_until(
                 lambda: self.volume_client.volumes.get(self.volume_id),
