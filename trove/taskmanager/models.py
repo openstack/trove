@@ -25,7 +25,6 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
 from trove.common.remote import create_dns_client
-from trove.common.remote import create_nova_client
 from trove.common.remote import create_cinder_client
 from swiftclient.client import ClientException
 from trove.common.utils import poll_until
@@ -204,7 +203,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               service_type, volume_size):
         server = None
         try:
-            nova_client = create_nova_client(self.context)
             files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
                                          "%s\n--service_type=%s\n" %
                                          (self.id, service_type))}
@@ -214,7 +212,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             volume_ref = {'size': volume_size, 'name': volume_name,
                           'description': volume_desc}
 
-            server = nova_client.servers.create(
+            server = self.nova_client.servers.create(
                 name, image_id, flavor_id,
                 files=files, volume=volume_ref,
                 security_groups=security_groups)
@@ -332,16 +330,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server(self, flavor_id, image_id, security_groups,
                        service_type, block_device_mapping):
-        nova_client = create_nova_client(self.context)
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "service_type=%s\n" %
                                      (self.id, service_type))}
         name = self.hostname or self.name
         bdmap = block_device_mapping
-        server = nova_client.servers.create(name, image_id, flavor_id,
-                                            files=files,
-                                            security_groups=security_groups,
-                                            block_device_mapping=bdmap)
+        server = self.nova_client.servers.create(name, image_id, flavor_id,
+                                                 files=files,
+                                                 security_groups=
+                                                 security_groups,
+                                                 block_device_mapping=bdmap)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server
 
@@ -364,12 +362,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug(_("trove dns support = %s") % dns_support)
 
         if dns_support:
-            nova_client = create_nova_client(self.context)
             dns_client = create_dns_client(self.context)
 
             def get_server():
                 c_id = self.db_info.compute_instance_id
-                return nova_client.servers.get(c_id)
+                return self.nova_client.servers.get(c_id)
 
             def ip_is_available(server):
                 LOG.info("Polling for ip addresses: $%s " % server.addresses)
@@ -387,7 +384,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
             poll_until(get_server, ip_is_available,
                        sleep_time=1, time_out=DNS_TIME_OUT)
-            server = nova_client.servers.get(self.db_info.compute_instance_id)
+            server = self.nova_client.servers.get(
+                self.db_info.compute_instance_id)
             LOG.info("Creating dns entry...")
             dns_client.create_instance_entry(self.id,
                                              get_ip_address(server.addresses))
