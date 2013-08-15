@@ -19,6 +19,71 @@ import trove.backup.models as backup_models
 from trove.common.exception import TroveError
 from mockito import mock, when, unstub, any, verify, never
 from swiftclient.client import ClientException
+from tempfile import NamedTemporaryFile
+import os
+
+
+class fake_Server:
+    def __init__(self):
+        self.id = None
+        self.name = None
+        self.image_id = None
+        self.flavor_id = None
+        self.files = None
+        self.userdata = None
+        self.security_groups = None
+        self.block_device_mapping = None
+
+
+class fake_ServerManager:
+    def create(self, name, image_id, flavor_id, files, userdata,
+               security_groups, block_device_mapping):
+        server = fake_Server()
+        server.id = "server_id"
+        server.name = name
+        server.image_id = image_id
+        server.flavor_id = flavor_id
+        server.files = files
+        server.userdata = userdata
+        server.security_groups = security_groups
+        server.block_device_mapping = block_device_mapping
+        return server
+
+
+class fake_nova_client:
+    def __init__(self):
+        self.servers = fake_ServerManager()
+
+
+class FreshInstanceTasksTest(testtools.TestCase):
+    def setUp(self):
+        super(FreshInstanceTasksTest, self).setUp()
+        when(taskmanager_models.FreshInstanceTasks).id().thenReturn(
+            "instance_id")
+        when(taskmanager_models.FreshInstanceTasks).hostname().thenReturn(
+            "hostname")
+        taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
+        taskmanager_models.CONF = mock()
+        self.userdata = "hello moto"
+        with NamedTemporaryFile(suffix=".cloudinit", delete=False) as f:
+            self.cloudinit = f.name
+            f.write(self.userdata)
+        self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
+            None, None, None, None)
+
+    def tearDown(self):
+        super(FreshInstanceTasksTest, self).tearDown()
+        os.remove(self.cloudinit)
+        unstub()
+
+    def test_create_instance_userdata(self):
+        cloudinit_location = os.path.dirname(self.cloudinit)
+        service_type = os.path.splitext(os.path.basename(self.cloudinit))[0]
+        when(taskmanager_models.CONF).get("cloudinit_location").thenReturn(
+            cloudinit_location)
+        server = self.freshinstancetasks._create_server(None, None, None,
+                                                        service_type, None)
+        self.assertEqual(server.userdata, self.userdata)
 
 
 class BackupTasksTest(testtools.TestCase):

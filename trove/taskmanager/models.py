@@ -13,7 +13,7 @@
 #    under the License.
 
 import traceback
-
+import os.path
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
@@ -334,10 +334,17 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "service_type=%s\n" %
                                      (self.id, service_type))}
+        userdata = None
+        cloudinit = os.path.join(CONF.get('cloudinit_location'),
+                                 "%s.cloudinit" % service_type)
+        if os.path.isfile(cloudinit):
+            with open(cloudinit, "r") as f:
+                userdata = f.read()
         name = self.hostname or self.name
         bdmap = block_device_mapping
         server = self.nova_client.servers.create(name, image_id, flavor_id,
                                                  files=files,
+                                                 userdata=userdata,
                                                  security_groups=
                                                  security_groups,
                                                  block_device_mapping=bdmap)

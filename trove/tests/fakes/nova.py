@@ -262,7 +262,7 @@ class FakeServers(object):
         return (self.context.is_admin or
                 server.owner.tenant == self.context.tenant)
 
-    def create(self, name, image_id, flavor_ref, files=None,
+    def create(self, name, image_id, flavor_ref, files=None, userdata=None,
                block_device_mapping=None, volume=None, security_groups=None):
         id = "FAKE_%s" % uuid.uuid4()
         if volume:

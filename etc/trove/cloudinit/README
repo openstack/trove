@@ -1,0 +1,3 @@
+These cloudinit scripts will used as userdata on instance create
+File names should match pattern: service_type.cloudinit
+For example: mysql.cloudinit

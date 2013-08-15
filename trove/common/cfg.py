@@ -174,6 +174,8 @@ common_opts = [
     cfg.StrOpt('nova_proxy_admin_tenant_name', default='',
                help="Admin tenant used to connect to Nova"),
     cfg.StrOpt('network_label_regex', default='^private$'),
+    cfg.StrOpt('cloudinit_location', default='/etc/trove/cloudinit',
+               help="Path to folder with cloudinit scripts"),
 ]
 
 
