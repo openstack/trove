@@ -49,7 +49,10 @@ def load_mgmt_instance(cls, context, id):
     try:
         instance = load_instance(cls, context, id, needs_server=True)
         client = remote.create_nova_client(context)
-        server = client.rdservers.get(instance.server_id)
+        try:
+            server = client.rdservers.get(instance.server_id)
+        except AttributeError:
+            server = client.servers.get(instance.server_id)
         instance.server.host = server.host
         instance.server.deleted = server.deleted
         instance.server.deleted_at = server.deleted_at

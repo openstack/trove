@@ -20,6 +20,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.check import Check
+from proboscis import SkipTest
 
 from trove import tests
 from trove.tests.config import CONFIG
@@ -101,16 +102,24 @@ def mgmt_instance_get():
             instance.has_field('volume', None)
         #TODO(tim-simpson): Validate additional fields, assert
         # no extra fields exist.
-    with CollectionCheck("server", api_instance.server) as server:
-        server.has_element("addresses", dict)
-        server.has_element("deleted", bool)
-        server.has_element("deleted_at", (basestring, None))
-        server.has_element("host", basestring)
-        server.has_element("id", basestring)
-        server.has_element("local_id", int)
-        server.has_element("name", basestring)
-        server.has_element("status", basestring)
-        server.has_element("tenant_id", basestring)
+    if api_instance.server is not None:
+        print "the real content of server: %s" % dir(api_instance.server)
+        print "the type of server: %s" % type(api_instance.server)
+        print "the real content of api_instance: %s" % dir(api_instance)
+        print "the type of api_instance: %s" % type(api_instance)
+        print hasattr(api_instance, "server")
+
+        with CollectionCheck("server", api_instance.server) as server:
+            server.has_element("addresses", dict)
+            server.has_element("deleted", bool)
+            server.has_element("deleted_at", (basestring, None))
+            server.has_element("host", basestring)
+            server.has_element("id", basestring)
+            server.has_element("local_id", int)
+            server.has_element("name", basestring)
+            server.has_element("status", basestring)
+            server.has_element("tenant_id", basestring)
+
     if (CONFIG.trove_volume_support and
             CONFIG.trove_main_instance_has_volume):
         with CollectionCheck("volume", api_instance.volume) as volume:
@@ -215,6 +224,11 @@ class MgmtInstancesIndex(object):
             expected_fields.append('volume')
 
         index = self.client.management.index()
+
+        if not hasattr(index, "deleted"):
+            raise SkipTest("instance index must have a "
+                           "deleted label for this test")
+
         for instance in index:
             with Check() as check:
                 for field in expected_fields:
@@ -227,6 +241,9 @@ class MgmtInstancesIndex(object):
         Make sure that the deleted= filter works as expected, and no instances
         are excluded.
         """
+        if not hasattr(self.client.management.index, 'deleted'):
+            raise SkipTest("instance index must have a deleted "
+                           "label for this test")
         instance_counts = []
         for deleted_filter in (True, False):
             filtered_index = self.client.management.index(

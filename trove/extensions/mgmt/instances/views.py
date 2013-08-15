@@ -31,15 +31,21 @@ class MgmtInstanceView(InstanceDetailView):
         else:
             server = self.instance.server
             result['instance']['server'] = {
-                'deleted': server.deleted,
-                'deleted_at': server.deleted_at,
-                'host': server.host,
                 'id': server.id,
-                'local_id': server.local_id,
                 'name': server.name,
                 'status': server.status,
                 'tenant_id': server.tenant_id,
             }
+            if hasattr(server, 'hostId'):
+                result['instance']['server']['host'] = server.hostId
+            else:
+                result['instance']['server']['host'] = server.host
+            if hasattr(server, 'deleted'):
+                result['instance']['server']['deleted'] = server.deleted
+            if hasattr(server, 'deleted_at'):
+                result['instance']['server']['deleted_at'] = server.deleted_at
+            if hasattr(server, 'local_id'):
+                result['instance']['server']['local_id'] = server.local_id
 
         try:
             service_status = self.instance.service_status.status.api_status

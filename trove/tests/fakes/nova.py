@@ -116,7 +116,7 @@ class FakeServer(object):
         for volume in self.volumes:
             info_vols.append({'id': volume.id})
             volume.set_attachment(id)
-        self.host = FAKE_HOSTS[0]
+        self.hostId = FAKE_HOSTS[0]
         self.old_host = None
         setattr(self, 'OS-EXT-AZ:availability_zone', 'nova')
 
@@ -134,7 +134,7 @@ class FakeServer(object):
     def revert_resize(self):
         if self.status != "VERIFY_RESIZE":
             raise RuntimeError("Not in resize confirm mode.")
-        self.host = self.old_host
+        self.hostId = self.old_host
         self.old_host = None
         self.flavor_ref = self.old_flavor_ref
         self.old_flavor_ref = None
@@ -520,7 +520,7 @@ class FakeAccount(object):
             server_dict['id'] = server.id
             server_dict['name'] = server.name
             server_dict['status'] = server.status
-            server_dict['host'] = server.host
+            server_dict['hostId'] = server.hostId
             ret.append(server_dict)
         return ret
 
