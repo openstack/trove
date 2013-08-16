@@ -334,6 +334,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "service_type=%s\n" %
                                      (self.id, service_type))}
+        if os.path.isfile(CONF.get('guest_config')):
+            with open(CONF.get('guest_config'), "r") as f:
+                files["/etc/trove-guestagent.conf"] = f.read()
         userdata = None
         cloudinit = os.path.join(CONF.get('cloudinit_location'),
                                  "%s.cloudinit" % service_type)
