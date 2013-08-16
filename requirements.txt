@@ -17,7 +17,9 @@ python-cinderclient>=1.0.4
 python-keystoneclient
 python-swiftclient
 iso8601
-oslo.config>=1.1.0
 jsonschema>=1.0.0,!=1.4.0,<2
 Jinja2
 pexpect
+-f http://tarballs.openstack.org/oslo.config/oslo.config-1.2.0a3.tar.gz#egg=oslo.config-1.2.0a3
+oslo.config>=1.2.0a3
+
