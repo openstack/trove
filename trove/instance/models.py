@@ -360,6 +360,7 @@ class BaseInstance(SimpleInstance):
             LOG.warn(ex)
         self.update_db(deleted=True, deleted_at=deleted_at,
                        task_status=InstanceTasks.NONE)
+        self.set_servicestatus_deleted()
         # Delete associated security group
         if CONF.trove_security_groups_support:
             SecurityGroup.delete_for_instance(self.db_info.id,
@@ -382,6 +383,11 @@ class BaseInstance(SimpleInstance):
         for key in values:
             setattr(self.db_info, key, values[key])
         self.db_info.save()
+
+    def set_servicestatus_deleted(self):
+        del_instance = InstanceServiceStatus.find_by(instance_id=self.id)
+        del_instance.set_status(ServiceStatuses.DELETED)
+        del_instance.save()
 
     @property
     def volume_client(self):
@@ -820,6 +826,7 @@ class ServiceStatuses(object):
     BUILDING = ServiceStatus(0x09, 'building', 'BUILD')
     UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
     NEW = ServiceStatus(0x17, 'new', 'NEW')
+    DELETED = ServiceStatus(0x05, 'deleted', 'DELETED')
 
 
 MYSQL_RESPONSIVE_STATUSES = [ServiceStatuses.RUNNING]

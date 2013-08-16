@@ -1060,6 +1060,16 @@ class AfterDeleteChecks(object):
                                              'trove.instance.delete',
                                              **expected)
 
+    @test
+    def test_instance_status_deleted_in_db(self):
+        mgmt_details = dbaas_admin.management.index(deleted=True)
+        for instance in mgmt_details:
+            if instance.id == instance_info.id:
+                assert_equal(instance.service_status, 'DELETED')
+                break
+        else:
+            fail("Could not find instance %s" % instance_info.id)
+
 
 @test(depends_on_classes=[CreateInstance, VerifyGuestStarted,
       WaitForGuestInstallationToFinish],
