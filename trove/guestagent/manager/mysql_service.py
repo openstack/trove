@@ -345,13 +345,11 @@ class MySqlAdmin(object):
                                   new_host=user_attrs.get('host'))
             t = text(str(uu))
             client.execute(t)
-            if user_attrs.get('name') is not None:
-                if user_attrs['name'] not in grantee:
-                    if user_attrs.get('host') is None:
-                        host = user.host
-                    else:
-                        host = user_attrs.get('host')
-                    self.grant_access(user_attrs['name'], host, db_access)
+            uname = user_attrs.get('name') or username
+            host = user_attrs.get('host') or hostname
+            find_user = "'%s'@'%s'" % (uname, host)
+            if find_user not in grantee:
+                self.grant_access(uname, host, db_access)
 
     def create_database(self, databases):
         """Create the list of specified databases"""
