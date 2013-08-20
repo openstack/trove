@@ -211,7 +211,7 @@ class API(proxy.RpcProxy):
 
     def prepare(self, memory_mb, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
-                backup_id=None, config_location=None, config_contents=None):
+                backup_id=None, config_contents=None):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
@@ -219,20 +219,18 @@ class API(proxy.RpcProxy):
         self._cast_with_consumer(
             "prepare", databases=databases, memory_mb=memory_mb,
             users=users, device_path=device_path, mount_point=mount_point,
-            backup_id=backup_id, config_location=config_location,
-            config_contents=config_contents)
+            backup_id=backup_id, config_contents=config_contents)
 
     def restart(self):
         """Restart the MySQL server."""
         LOG.debug(_("Sending the call to restart MySQL on the Guest."))
         self._call("restart", AGENT_HIGH_TIMEOUT)
 
-    def start_db_with_conf_changes(self, config_location, config_contents):
+    def start_db_with_conf_changes(self, config_contents):
         """Start the MySQL server."""
         LOG.debug(_("Sending the call to start MySQL on the Guest with "
                     "a timeout of %s.") % AGENT_HIGH_TIMEOUT)
         self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
-                   config_location=config_location,
                    config_contents=config_contents)
 
     def reset_configuration(self, configuration):

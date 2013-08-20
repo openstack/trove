@@ -177,9 +177,9 @@ class ApiTest(testtools.TestCase):
 
     def test_start_db_with_conf_changes(self):
         exp_msg = RpcMsgMatcher('start_db_with_conf_changes',
-                                'config_location', 'config_contents')
+                                'config_contents')
         self._mock_rpc_call(exp_msg)
-        self.api.start_db_with_conf_changes(None, None)
+        self.api.start_db_with_conf_changes(None)
         self._verify_rpc_call(exp_msg)
 
     def test_stop_db(self):
@@ -219,12 +219,12 @@ class ApiTest(testtools.TestCase):
         when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
         exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'databases', 'users',
                                 'device_path', 'mount_point', 'backup_id',
-                                'config_location', 'config_contents')
+                                'config_contents')
 
         when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
 
         self.api.prepare('2048', 'db1', 'user1', '/dev/vdt', '/mnt/opt',
-                         'bkup-1232', 'loc', 'cont')
+                         'bkup-1232', 'cont')
 
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
@@ -234,11 +234,11 @@ class ApiTest(testtools.TestCase):
         when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
         exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'databases', 'users',
                                 'device_path', 'mount_point', 'backup_id',
-                                'config_location', 'config_contents')
+                                'config_contents')
         when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
 
         self.api.prepare('2048', 'db1', 'user1', '/dev/vdt', '/mnt/opt',
-                         'backup_id_123', 'loc', 'cont')
+                         'backup_id_123', 'cont')
 
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 

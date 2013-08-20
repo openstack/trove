@@ -27,6 +27,7 @@ from trove.common import exception
 from trove.common import utils
 from trove.common.exception import ProcessExecutionError
 from trove.openstack.common import log as logging
+from trove.guestagent import system
 from trove.openstack.common.gettextutils import _
 
 
@@ -34,13 +35,6 @@ LOG = logging.getLogger(__name__)
 OK = 0
 RUN_DPKG_FIRST = 1
 REINSTALL_FIRST = 2
-REDHAT = 'redhat'
-DEBIAN = 'debian'
-
-# The default is debian
-OS = DEBIAN
-if os.path.isfile("/etc/redhat-release"):
-    OS = REDHAT
 
 
 class PkgAdminLockError(exception.TroveError):
@@ -82,14 +76,14 @@ class BasePackagerMixin:
         child.delayafterterminate = 1
         child.close(force=True)
 
-    def pexpect_wait_and_close_proc(self, child, time_out=-1):
-        child.expect(pexpect.EOF, timeout=time_out)
+    def pexpect_wait_and_close_proc(self, child):
+        child.expect(pexpect.EOF)
         child.close()
 
     def pexpect_run(self, cmd, output_expects, time_out):
-        child = pexpect.spawn(cmd)
+        child = pexpect.spawn(cmd, timeout=time_out)
         try:
-            i = child.expect(output_expects, timeout=time_out)
+            i = child.expect(output_expects)
             self.pexpect_wait_and_close_proc(child)
         except pexpect.TIMEOUT:
             self.pexpect_kill_proc(child)
@@ -324,7 +318,7 @@ class DebianPackagerMixin(BasePackagerMixin):
 class BasePackage(type):
 
     def __new__(meta, name, bases, dct):
-        if OS == REDHAT:
+        if system.OS == system.REDHAT:
             bases += (RedhatPackagerMixin, )
         else:
             # The default is debian

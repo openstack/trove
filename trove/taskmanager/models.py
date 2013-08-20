@@ -154,7 +154,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if server:
             self._guest_prepare(server, flavor['ram'], volume_info,
                                 databases, users, backup_id,
-                                config.config_location,
                                 config.config_contents)
 
         if not self.db_info.task_status.is_error:
@@ -353,14 +352,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
                        databases, users, backup_id=None,
-                       config_location=None, config_contents=None):
+                       config_contents=None):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, databases, users,
                            device_path=volume_info['device_path'],
                            mount_point=volume_info['mount_point'],
                            backup_id=backup_id,
-                           config_location=config_location,
                            config_contents=config_contents)
 
     def _create_dns_entry(self):
@@ -776,8 +774,7 @@ class ResizeAction(ResizeActionBase):
         try:
             config = self._render_config(self.instance.service_type,
                                          self.old_flavor)
-            config = {'config_location': config.config_location,
-                      'config_contents': config.config_contents}
+            config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout as gt:
             LOG.exception("Error sending reset_configuration call.")
@@ -798,8 +795,7 @@ class ResizeAction(ResizeActionBase):
     def _start_mysql(self):
         config = self._render_config(self.instance.service_type,
                                      self.new_flavor)
-        self.instance.guest.start_db_with_conf_changes(config.config_location,
-                                                       config.config_contents)
+        self.instance.guest.start_db_with_conf_changes(config.config_contents)
 
 
 class MigrateAction(ResizeActionBase):

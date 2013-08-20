@@ -48,9 +48,7 @@ class TemplateTest(testtools.TestCase):
         self.validate_template(rendered, "query_cache_size", self.flavor_dict)
 
     def test_single_instance_config_rendering(self):
-        location = "/etc/mysql/my.cnf"
         config = template.SingleInstanceConfigTemplate('mysql',
                                                        self.flavor_dict)
-        self.assertEqual(location, config.config_location)
         self.validate_template(config.render(), "query_cache_size",
                                self.flavor_dict)

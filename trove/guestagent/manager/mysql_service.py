@@ -14,6 +14,7 @@ from trove.common import utils as utils
 from trove.common import exception
 from trove.guestagent import query
 from trove.guestagent.db import models
+from trove.guestagent import system
 from trove.guestagent import pkg
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
@@ -51,7 +52,7 @@ def get_auth_password():
         "sudo",
         "awk",
         "/password\\t=/{print $3; exit}",
-        "/etc/mysql/my.cnf")
+        system.MYSQL_CONFIG)
     if err:
         LOG.error(err)
         raise RuntimeError("Problem reading my.cnf! : %s" % err)
@@ -77,7 +78,7 @@ def get_engine():
 
 def load_mysqld_options():
     try:
-        out, err = utils.execute("/usr/sbin/mysqld", "--print-defaults",
+        out, err = utils.execute(system.MYSQL_BIN, "--print-defaults",
                                  run_as_root=True, root_helper="sudo")
         arglist = re.split("\n", out)[1].split()
         args = {}
@@ -650,7 +651,7 @@ class MySqlApp(object):
     def complete_install_or_restart(self):
         self.status.end_install_or_restart()
 
-    def secure(self, config_location, config_contents):
+    def secure(self, config_contents):
         LOG.info(_("Generating admin password..."))
         admin_password = generate_random_password()
 
@@ -661,7 +662,7 @@ class MySqlApp(object):
             self._create_admin_user(client, admin_password)
 
         self.stop_db()
-        self._write_mycnf(admin_password, config_location, config_contents)
+        self._write_mycnf(admin_password, config_contents)
         self.start_mysql()
 
         LOG.info(_("Dbaas secure complete."))
@@ -679,6 +680,7 @@ class MySqlApp(object):
         """Install mysql server. The current version is 5.5"""
         LOG.debug(_("Installing mysql server"))
         packager.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
+        self.start_mysql()
         LOG.debug(_("Finished installing mysql server"))
         #TODO(rnirmal): Add checks to make sure the package got installed
 
@@ -697,9 +699,7 @@ class MySqlApp(object):
             command = "sudo sed -i '/^manual$/d' %(conf)s"
             command = command % locals()
         else:
-            command = "sudo update-rc.d mysql enable"
-            if pkg.OS == pkg.REDHAT:
-                command = "sudo chkconfig mysql on"
+            command = system.MYSQL_CMD_ENABLE
         utils.execute_with_timeout(command, shell=True)
 
     def _disable_mysql_on_boot(self):
@@ -717,16 +717,14 @@ class MySqlApp(object):
             command = '''sudo sh -c "echo manual >> %(conf)s"'''
             command = command % locals()
         else:
-            command = "sudo update-rc.d mysql disable"
-            if pkg.OS == pkg.REDHAT:
-                command = "sudo chkconfig mysql off"
+            command = system.MYSQL_CMD_DISABLE
         utils.execute_with_timeout(command, shell=True)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         LOG.info(_("Stopping mysql..."))
         if do_not_start_on_reboot:
             self._disable_mysql_on_boot()
-        utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "stop")
+        utils.execute_with_timeout(system.MYSQL_CMD_STOP, shell=True)
         if not self.status.wait_for_real_status_to_change_to(
                 rd_models.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
@@ -798,7 +796,7 @@ class MySqlApp(object):
                 if "No such file or directory" not in str(pe):
                     raise
 
-    def _write_mycnf(self, admin_password, config_location, config_contents):
+    def _write_mycnf(self, admin_password, config_contents):
         """
         Install the set of mysql my.cnf templates.
         Update the os_admin user and password to the my.cnf
@@ -811,13 +809,13 @@ class MySqlApp(object):
         with open(TMP_MYCNF, 'w') as t:
             t.write(config_contents)
         utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   config_location)
+                                   system.MYSQL_CONFIG)
 
-        self._write_temp_mycnf_with_admin_account(config_location,
+        self._write_temp_mycnf_with_admin_account(system.MYSQL_CONFIG,
                                                   TMP_MYCNF,
                                                   admin_password)
         utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   config_location)
+                                   system.MYSQL_CONFIG)
 
         self.wipe_ib_logfiles()
 
@@ -830,7 +828,7 @@ class MySqlApp(object):
         self._enable_mysql_on_boot()
 
         try:
-            utils.execute_with_timeout("sudo", "/etc/init.d/mysql", "start")
+            utils.execute_with_timeout(system.MYSQL_CMD_START, shell=True)
         except exception.ProcessExecutionError:
             # it seems mysql (percona, at least) might come back with [Fail]
             # but actually come up ok. we're looking into the timing issue on
@@ -853,7 +851,7 @@ class MySqlApp(object):
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 
-    def start_db_with_conf_changes(self, config_location, config_contents):
+    def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting mysql with conf changes..."))
         LOG.info(_("inside the guest - self.status.is_mysql_running(%s)...")
                  % self.status.is_mysql_running)
@@ -862,14 +860,13 @@ class MySqlApp(object):
                         "MySQL state == %s!") % self.status)
             raise RuntimeError("MySQL not stopped.")
         LOG.info(_("Initiating config."))
-        self._write_mycnf(None, config_location, config_contents)
+        self._write_mycnf(None, config_contents)
         self.start_mysql(True)
 
     def reset_configuration(self, configuration):
-        config_location = configuration['config_location']
         config_contents = configuration['config_contents']
         LOG.info(_("Resetting configuration"))
-        self._write_mycnf(None, config_location, config_contents)
+        self._write_mycnf(None, config_contents)
 
     def is_installed(self):
         #(cp16net) could raise an exception, does it need to be handled here?

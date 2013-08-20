@@ -23,9 +23,6 @@ ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
 class SingleInstanceConfigTemplate(object):
     """ This class selects a single configuration file by database type for
     rendering on the guest """
-    _config_paths = {'mysql': '/etc/mysql/my.cnf',
-                     'percona': '/etc/mysql/my.cnf'}
-
     def __init__(self, service_type, flavor_dict):
         """ Constructor
 
@@ -35,7 +32,6 @@ class SingleInstanceConfigTemplate(object):
         :type flavor_dict: dict.
 
         """
-        self.config_location = self._config_paths[service_type]
         self.flavor_dict = flavor_dict
         template_filename = "%s.config.template" % service_type
         self.template = ENV.get_template(template_filename)
