@@ -64,16 +64,22 @@ class FreshInstanceTasksTest(testtools.TestCase):
             "hostname")
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
         taskmanager_models.CONF = mock()
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         self.userdata = "hello moto"
+        self.guestconfig_content = "guest config"
         with NamedTemporaryFile(suffix=".cloudinit", delete=False) as f:
             self.cloudinit = f.name
             f.write(self.userdata)
+        with NamedTemporaryFile(delete=False) as f:
+            self.guestconfig = f.name
+            f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
             None, None, None, None)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()
         os.remove(self.cloudinit)
+        os.remove(self.guestconfig)
         unstub()
 
     def test_create_instance_userdata(self):
@@ -84,6 +90,15 @@ class FreshInstanceTasksTest(testtools.TestCase):
         server = self.freshinstancetasks._create_server(None, None, None,
                                                         service_type, None)
         self.assertEqual(server.userdata, self.userdata)
+
+    def test_create_instance_guestconfig(self):
+        when(taskmanager_models.CONF).get("guest_config").thenReturn(
+            self.guestconfig)
+        server = self.freshinstancetasks._create_server(None, None, None,
+                                                        "test", None)
+        self.assertTrue('/etc/trove-guestagent.conf' in server.files)
+        self.assertEqual(server.files['/etc/trove-guestagent.conf'],
+                         self.guestconfig_content)
 
 
 class BackupTasksTest(testtools.TestCase):

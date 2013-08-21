@@ -17,6 +17,14 @@
 """Routines for configuring Trove."""
 
 from oslo.config import cfg
+import os.path
+
+path_opts = [
+    cfg.StrOpt('pybasedir',
+               default=os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                    '../')),
+               help='Directory where the trove python module is installed'),
+]
 
 common_opts = [
     cfg.StrOpt('sql_connection',
@@ -176,10 +184,14 @@ common_opts = [
     cfg.StrOpt('network_label_regex', default='^private$'),
     cfg.StrOpt('cloudinit_location', default='/etc/trove/cloudinit',
                help="Path to folder with cloudinit scripts"),
+    cfg.StrOpt('guest_config',
+               default='$pybasedir/etc/trove/trove-guestagent.conf.sample',
+               help="Path to guestagent config file"),
 ]
 
 
 CONF = cfg.CONF
+CONF.register_opts(path_opts)
 CONF.register_opts(common_opts)
 
 
