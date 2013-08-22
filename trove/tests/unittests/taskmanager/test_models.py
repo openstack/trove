@@ -17,12 +17,12 @@ from testtools.matchers import Equals
 from mockito import mock, when, unstub, any, verify, never
 from trove.datastore import models as datastore_models
 from trove.taskmanager import models as taskmanager_models
-import trove.common.remote as remote
+from trove.backup import models as backup_models
+from trove.common import remote
 from trove.common.instance import ServiceStatuses
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
-import trove.backup.models as backup_models
 from trove.common.exception import TroveError
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile

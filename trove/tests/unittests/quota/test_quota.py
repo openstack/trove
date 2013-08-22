@@ -68,9 +68,9 @@ class Run_with_quotasTest(testtools.TestCase):
 
     def test_run_with_quotas_error(self):
 
-        f = Mock(side_effect=Exception())
+        f = Mock(side_effect=exception.TroveError())
 
-        self.assertRaises(Exception, run_with_quotas, FAKE_TENANT1,
+        self.assertRaises(exception.TroveError, run_with_quotas, FAKE_TENANT1,
                           {'instances': 1, 'volumes': 5}, f)
         self.assertTrue(QUOTAS.reserve.called)
         self.assertTrue(QUOTAS.rollback.called)

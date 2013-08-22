@@ -208,7 +208,7 @@ class FakeGuest(object):
         return self.users.get((username, hostname), None)
 
     def prepare(self, memory_mb, packages, databases, users, device_path=None,
-                mount_point=None, backup_id=None, config_contents=None,
+                mount_point=None, backup_info=None, config_contents=None,
                 root_password=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
@@ -296,9 +296,10 @@ class FakeGuest(object):
                 } for db in current_grants]
         return dbs
 
-    def create_backup(self, backup_id):
+    def create_backup(self, backup_info):
         from trove.backup.models import Backup, BackupState
-        backup = Backup.get_by_id(context=None, backup_id=backup_id)
+        backup = Backup.get_by_id(context=None,
+                                  backup_id=backup_info['id'])
 
         def finish_create_backup():
             backup.state = BackupState.COMPLETED

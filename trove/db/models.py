@@ -29,15 +29,17 @@ class DatabaseModelBase(models.ModelBase):
 
     @classmethod
     def create(cls, **values):
-        if 'id' not in values:
-            values['id'] = utils.generate_uuid()
-        if hasattr(cls, 'deleted') and 'deleted' not in values:
-            values['deleted'] = False
-        values['created'] = utils.utcnow()
-        instance = cls(**values).save()
+        init_vals = {
+            'id': utils.generate_uuid(),
+            'created': utils.utcnow(),
+        }
+        if hasattr(cls, 'deleted'):
+            init_vals['deleted'] = False
+        init_vals.update(values)
+        instance = cls(**init_vals)
         if not instance.is_valid():
             raise exception.InvalidModelError(errors=instance.errors)
-        return instance
+        return instance.save()
 
     @property
     def db_api(self):

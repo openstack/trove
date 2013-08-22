@@ -214,7 +214,7 @@ class API(proxy.RpcProxy):
 
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
-                backup_id=None, config_contents=None, root_password=None):
+                backup_info=None, config_contents=None, root_password=None):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
@@ -222,7 +222,7 @@ class API(proxy.RpcProxy):
         self._cast_with_consumer(
             "prepare", packages=packages, databases=databases,
             memory_mb=memory_mb, users=users, device_path=device_path,
-            mount_point=mount_point, backup_id=backup_id,
+            mount_point=mount_point, backup_info=backup_info,
             config_contents=config_contents, root_password=root_password)
 
     def restart(self):
@@ -267,9 +267,9 @@ class API(proxy.RpcProxy):
         """Make a synchronous call to update the guest agent."""
         self._call("update_guest", AGENT_HIGH_TIMEOUT)
 
-    def create_backup(self, backup_id):
+    def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance"""
         LOG.debug(_("Create Backup %(backup_id)s "
-                    "for Instance %(instance_id)s") % {'backup_id': backup_id,
-                                                       'instance_id': self.id})
-        self._cast("create_backup", backup_id=backup_id)
+                    "for Instance %(instance_id)s") %
+                  {'backup_id': backup_info['id'], 'instance_id': self.id})
+        self._cast("create_backup", backup_info=backup_info)

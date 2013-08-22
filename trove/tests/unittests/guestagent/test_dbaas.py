@@ -13,7 +13,7 @@
 #    under the License.
 
 import os
-from random import randint
+from uuid import uuid4
 import time
 from mock import Mock
 from mock import MagicMock
@@ -37,6 +37,7 @@ import trove
 from trove.common.context import TroveContext
 from trove.common import utils
 from trove.common import instance as rd_instance
+from trove.conductor import api as conductor_api
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent import pkg
@@ -65,6 +66,9 @@ FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_databases": [FAKE_DB]}]
 
 
+conductor_api.API.heartbeat = Mock()
+
+
 class FakeAppStatus(MySqlAppStatus):
 
     def __init__(self, id, status):
@@ -73,9 +77,6 @@ class FakeAppStatus(MySqlAppStatus):
 
     def _get_actual_db_status(self):
         return self.next_fake_status
-
-    def _load_status(self):
-        return InstanceServiceStatus.find_by(instance_id=self.id)
 
     def set_next_status(self, next_status):
         self.next_fake_status = next_status
@@ -455,7 +456,7 @@ class MySqlAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
         self.orig_time_sleep = dbaas.time.sleep
         util.init_db()
-        self.FAKE_ID = randint(1, 10000)
+        self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
         self.appStatus = FakeAppStatus(self.FAKE_ID,
@@ -523,7 +524,8 @@ class MySqlAppTest(testtools.TestCase):
             rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.mySqlApp.stop_db(True)
-        self.assert_reported_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'shutdown'}))
 
     def test_stop_mysql_error(self):
 
@@ -543,7 +545,8 @@ class MySqlAppTest(testtools.TestCase):
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(rd_instance.ServiceStatuses.RUNNING)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'running'}))
 
     def test_restart_mysql_wont_start_up(self):
 
@@ -589,8 +592,9 @@ class MySqlAppTest(testtools.TestCase):
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
 
-        self.mySqlApp.start_mysql(True)
-        self.assert_reported_status(rd_instance.ServiceStatuses.RUNNING)
+        self.mySqlApp.start_mysql(update_db=True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'running'}))
 
     def test_start_mysql_runs_forever(self):
 
@@ -600,7 +604,8 @@ class MySqlAppTest(testtools.TestCase):
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
-        self.assert_reported_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'shutdown'}))
 
     def test_start_mysql_error(self):
 
@@ -1003,7 +1008,7 @@ class BaseDbStatusTest(testtools.TestCase):
         super(BaseDbStatusTest, self).setUp()
         util.init_db()
         self.orig_dbaas_time_sleep = dbaas.time.sleep
-        self.FAKE_ID = randint(1, 10000)
+        self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
         dbaas.CONF.guest_id = self.FAKE_ID
@@ -1122,7 +1127,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.orig_load_mysqld_options = dbaas.load_mysqld_options
         self.orig_dbaas_os_path_exists = dbaas.os.path.exists
         self.orig_dbaas_time_sleep = dbaas.time.sleep
-        self.FAKE_ID = randint(1, 10000)
+        self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
         dbaas.CONF.guest_id = self.FAKE_ID

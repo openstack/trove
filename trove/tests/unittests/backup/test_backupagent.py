@@ -12,16 +12,18 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-import hashlib
-import os
-
-import testtools
+from mock import Mock
+from mockito import when, verify, unstub, mock, any, contains
 from testtools.matchers import Equals, Is
 from webob.exc import HTTPNotFound
-from mockito import when, verify, unstub, mock, any, contains
+
+import hashlib
+import os
+import testtools
 
 from trove.common import utils
 from trove.common.context import TroveContext
+from trove.conductor import api as conductor_api
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.backup.models import DBBackup
@@ -32,6 +34,8 @@ from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
+
+conductor_api.API.update_backup = Mock()
 
 
 def create_fake_data():
@@ -216,48 +220,60 @@ class BackupAgentTest(testtools.TestCase):
                 starts storage
                 reports status
         """
-        backup = mock(DBBackup)
-        when(DatabaseModelBase).find_by(id='123').thenReturn(backup)
-        when(backup).save().thenReturn(backup)
-
         agent = backupagent.BackupAgent()
-        agent.execute_backup(context=None, backup_id='123', runner=MockBackup)
+        backup_info = {'id': '123',
+                       'location': 'fake-location',
+                       'type': 'InnoBackupEx',
+                       'checksum': 'fake-checksum',
+                       }
+        agent.execute_backup(context=None, backup_info=backup_info,
+                             runner=MockBackup)
 
-        verify(DatabaseModelBase).find_by(id='123')
-        self.assertThat(backup.state, Is(BackupState.COMPLETED))
-        self.assertThat(backup.location,
-                        Equals('http://mockswift/v1/database_backups/123'))
-        verify(backup, times=3).save()
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                state=BackupState.NEW))
+
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                size=any(),
+                state=BackupState.BUILDING))
+
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                checksum=any(),
+                location=any(),
+                note=any(),
+                backup_type=backup_info['type'],
+                state=BackupState.COMPLETED))
 
     def test_execute_lossy_backup(self):
         """This test verifies that incomplete writes to swift will fail."""
-        backup = mock(DBBackup)
         when(backupagent).get_auth_password().thenReturn('secret')
-        when(DatabaseModelBase).find_by(id='123').thenReturn(backup)
-        when(backup).save().thenReturn(backup)
         when(MockSwift).save(any(), any()).thenReturn((False, 'Error', 'y',
                                                        'z'))
         agent = backupagent.BackupAgent()
 
+        backup_info = {'id': '123',
+                       'location': 'fake-location',
+                       'type': 'InnoBackupEx',
+                       'checksum': 'fake-checksum',
+                       }
         self.assertRaises(backupagent.BackupError, agent.execute_backup,
-                          context=None, backup_id='123',
+                          context=None, backup_info=backup_info,
                           runner=MockLossyBackup)
 
-        self.assertThat(backup.state, Is(BackupState.FAILED))
-        verify(backup, times=3).save()
-
-    def test_execute_backup_model_exception(self):
-        """This test should ensure backup agent
-                properly handles condition where backup model is not found
-        """
-        when(DatabaseModelBase).find_by(id='123').thenRaise(ModelNotFoundError)
-
-        agent = backupagent.BackupAgent()
-        # probably should catch this exception and return a backup exception
-        # also note that since the model is not found there is no way to report
-        # this error
-        self.assertRaises(ModelNotFoundError, agent.execute_backup,
-                          context=None, backup_id='123')
+        #self.assertThat(backup.state, Is(BackupState.FAILED))
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                state=BackupState.FAILED))
 
     def test_execute_restore(self):
         """This test should ensure backup agent
@@ -282,7 +298,12 @@ class BackupAgentTest(testtools.TestCase):
 
         agent = backupagent.BackupAgent()
 
-        agent.execute_restore(TroveContext(), '123', '/var/lib/mysql')
+        bkup_info = {'id': '123',
+                     'location': 'fake-location',
+                     'type': 'InnoBackupEx',
+                     'checksum': 'fake-checksum',
+                     }
+        agent.execute_restore(TroveContext(), bkup_info, '/var/lib/mysql')
 
     def test_restore_unknown(self):
         backup = mock(DBBackup)
@@ -296,6 +317,11 @@ class BackupAgentTest(testtools.TestCase):
 
         agent = backupagent.BackupAgent()
 
+        bkup_info = {'id': '123',
+                     'location': backup.location,
+                     'type': backup.backup_type,
+                     'checksum': 'fake-checksum',
+                     }
         self.assertRaises(UnknownBackupType, agent.execute_restore,
-                          context=None, backup_id='123',
+                          context=None, backup_info=bkup_info,
                           restore_location='/var/lib/mysql')

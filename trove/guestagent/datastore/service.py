@@ -19,7 +19,9 @@
 import time
 
 from trove.common import cfg
+from trove.common import context
 from trove.common import instance as rd_instance
+from trove.conductor import api as conductor_api
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
 
@@ -55,7 +57,9 @@ class BaseDbStatus(object):
     def __init__(self):
         if self._instance is not None:
             raise RuntimeError("Cannot instantiate twice.")
-        self.status = self._load_status().status
+        self.status = rd_models.InstanceServiceStatus(
+            instance_id=CONF.guest_id,
+            status=rd_instance.ServiceStatuses.NEW)
         self.restart_mode = False
 
     def begin_install(self):
@@ -101,17 +105,17 @@ class BaseDbStatus(object):
         return (self.status is not None and
                 self.status == rd_instance.ServiceStatuses.RUNNING)
 
-    @staticmethod
-    def _load_status():
-        """Loads the status from the database."""
-        inst_id = CONF.guest_id
-        return rd_models.InstanceServiceStatus.find_by(instance_id=inst_id)
-
     def set_status(self, status):
-        """Changes the status of the DB app in the database."""
-        db_status = self._load_status()
-        db_status.status = status
-        db_status.save()
+        """Use conductor to update the DB app status."""
+        LOG.debug("Casting set_status message to conductor.")
+        ctxt = context.TroveContext(user=CONF.nova_proxy_admin_user,
+                                    auth_token=CONF.nova_proxy_admin_pass)
+
+        heartbeat = {
+            'service_status': status.description,
+        }
+        conductor_api.API(ctxt).heartbeat(CONF.guest_id, heartbeat)
+        LOG.debug("Successfully cast set_status.")
         self.status = status
 
     def update(self):

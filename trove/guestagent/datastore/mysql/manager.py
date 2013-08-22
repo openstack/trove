@@ -73,19 +73,20 @@ class Manager(periodic_task.PeriodicTasks):
     def is_root_enabled(self, context):
         return MySqlAdmin().is_root_enabled()
 
-    def _perform_restore(self, backup_id, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s") % backup_id)
+    def _perform_restore(self, backup_info, context, restore_location, app):
+        LOG.info(_("Restoring database from backup %s") % backup_info['id'])
         try:
-            backup.restore(context, backup_id, restore_location)
+            backup.restore(context, backup_info, restore_location)
         except Exception as e:
             LOG.error(e)
-            LOG.error("Error performing restore from backup %s", backup_id)
+            LOG.error("Error performing restore from backup %s",
+                      backup_info['id'])
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
         LOG.info(_("Restored database successfully"))
 
     def prepare(self, context, packages, databases, memory_mb, users,
-                device_path=None, mount_point=None, backup_id=None,
+                device_path=None, mount_point=None, backup_info=None,
                 config_contents=None, root_password=None):
         """Makes ready DBAAS on a Guest container."""
         MySqlAppStatus.get().begin_install()
@@ -104,12 +105,14 @@ class Manager(periodic_task.PeriodicTasks):
             device.mount(mount_point)
             LOG.debug(_("Mounted the volume."))
             app.start_mysql()
-        if backup_id:
-            self._perform_restore(backup_id, context, CONF.mount_point, app)
+        if backup_info:
+            self._perform_restore(backup_info, context,
+                                  CONF.mount_point, app)
         LOG.info(_("Securing mysql now."))
         app.secure(config_contents)
-        enable_root_on_restore = (backup_id and MySqlAdmin().is_root_enabled())
-        if root_password and not backup_id:
+        enable_root_on_restore = (backup_info and
+                                  MySqlAdmin().is_root_enabled())
+        if root_password and not backup_info:
             app.secure_root(secure_remote_root=True)
             MySqlAdmin().enable_root(root_password)
             MySqlAdmin().report_root_enabled(context)
@@ -145,13 +148,14 @@ class Manager(periodic_task.PeriodicTasks):
         """ Gets the filesystem stats for the path given """
         return dbaas.get_filesystem_volume_stats(fs_path)
 
-    def create_backup(self, context, backup_id):
+    def create_backup(self, context, backup_info):
         """
         Entry point for initiating a backup for this guest agents db instance.
         The call currently blocks until the backup is complete or errors. If
         device_path is specified, it will be mounted based to a point specified
         in configuration.
 
-        :param backup_id: the db instance id of the backup task
+        :param backup_info: a dictionary containing the db instance id of the
+                            backup task, location, type, and other data.
         """
-        backup.backup(context, backup_id)
+        backup.backup(context, backup_info)

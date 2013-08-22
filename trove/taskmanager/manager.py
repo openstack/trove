@@ -76,9 +76,9 @@ class Manager(periodic_task.PeriodicTasks):
     def delete_backup(self, context, backup_id):
         models.BackupTasks.delete_backup(context, backup_id)
 
-    def create_backup(self, context, backup_id, instance_id):
+    def create_backup(self, context, backup_info, instance_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.create_backup(backup_id)
+        instance_tasks.create_backup(backup_info)
 
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,

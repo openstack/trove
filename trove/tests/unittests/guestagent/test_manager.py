@@ -140,6 +140,13 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         # covering all outcomes is starting to cause trouble here
         COUNT = 1 if device_path else 0
+        backup_info = None
+        if backup_id is not None:
+            backup_info = {'id': backup_id,
+                           'location': 'fake-location',
+                           'type': 'InnoBackupEx',
+                           'checksum': 'fake-checksum',
+                           }
 
         # TODO(juice): this should stub an instance of the MySqlAppStatus
         mock_status = mock()
@@ -150,8 +157,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         when(VolumeDevice).mount().thenReturn(None)
         when(dbaas.MySqlApp).stop_db().thenReturn(None)
         when(dbaas.MySqlApp).start_mysql().thenReturn(None)
-        when(dbaas.MySqlApp).install_if_needed().thenReturn(None)
-        when(backup).restore(self.context, backup_id).thenReturn(None)
+        when(dbaas.MySqlApp).install_if_needed(any()).thenReturn(None)
+        when(backup).restore(self.context,
+                             backup_info,
+                             '/var/lib/mysql').thenReturn(None)
         when(dbaas.MySqlApp).secure(any()).thenReturn(None)
         when(dbaas.MySqlApp).secure_root(any()).thenReturn(None)
         (when(pkg.Package).pkg_is_installed(any()).
@@ -164,12 +173,14 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         when(os.path).exists(any()).thenReturn(True)
         # invocation
-        self.manager.prepare(context=self.context, packages=None,
+        self.manager.prepare(context=self.context,
+                             packages=None,
+                             memory_mb='2048',
                              databases=None,
-                             memory_mb='2048', users=None,
+                             users=None,
                              device_path=device_path,
                              mount_point='/var/lib/mysql',
-                             backup_id=backup_id)
+                             backup_info=backup_info)
         # verification/assertion
         verify(mock_status).begin_install()
 
@@ -177,8 +188,9 @@ class GuestAgentManagerTest(testtools.TestCase):
         verify(dbaas.MySqlApp, times=COUNT).stop_db()
         verify(VolumeDevice, times=COUNT).migrate_data(
             any())
-        if backup_id:
-            verify(backup).restore(self.context, backup_id, '/var/lib/mysql')
+        if backup_info:
+            verify(backup).restore(self.context, backup_info, '/var/lib/mysql')
+        verify(dbaas.MySqlApp).install_if_needed(any())
         # We dont need to make sure the exact contents are there
         verify(dbaas.MySqlApp).secure(any())
         verify(dbaas.MySqlAdmin, never).create_database()

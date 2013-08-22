@@ -87,11 +87,11 @@ class API(proxy.RpcProxy):
         self.cast(self.context,
                   self.make_msg("delete_instance", instance_id=instance_id))
 
-    def create_backup(self, backup_id, instance_id):
+    def create_backup(self, backup_info, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s" %
                   instance_id)
         self.cast(self.context, self.make_msg("create_backup",
-                                              backup_id=backup_id,
+                                              backup_info=backup_info,
                                               instance_id=instance_id))
 
     def delete_backup(self, backup_id):

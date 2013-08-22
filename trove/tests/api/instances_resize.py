@@ -74,7 +74,8 @@ class ResizeTestBase(TestCase):
         try:
             self.instance.update_db(task_status=InstanceTasks.NONE)
             self.mock.ReplayAll()
-            self.assertRaises(Exception, self.action.execute)
+            excs = (Exception)
+            self.assertRaises(excs, self.action.execute)
             self.mock.VerifyAll()
         finally:
             self.mock.UnsetStubs()

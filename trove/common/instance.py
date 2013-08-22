@@ -67,7 +67,8 @@ class ServiceStatus(object):
     @staticmethod
     def from_description(desc):
         all_items = ServiceStatus._lookup.items()
-        status_codes = [code for (code, status) in all_items if status == desc]
+        status_codes = [code for (code, status) in all_items
+                        if status.description == desc]
         if not status_codes:
             msg = 'Status description %s is not a valid ServiceStatus.'
             raise ValueError(msg % desc)

@@ -58,7 +58,7 @@ class Backup(object):
             # parse the ID from the Ref
             instance_id = utils.get_id_from_href(instance)
 
-            # verify that the instance exist and can perform actions
+            # verify that the instance exists and can perform actions
             from trove.instance.models import Instance
             instance_model = Instance.load(context, instance_id)
             instance_model.validate_can_perform_action()
@@ -76,7 +76,14 @@ class Backup(object):
                 LOG.exception("Unable to create Backup record:")
                 raise exception.BackupCreationError(str(ex))
 
-            api.API(context).create_backup(db_info.id, instance_id)
+            backup_info = {'id': db_info.id,
+                           'name': name,
+                           'description': description,
+                           'instance_id': instance_id,
+                           'backup_type': db_info.backup_type,
+                           'checksum': db_info.checksum,
+                           }
+            api.API(context).create_backup(backup_info, instance_id)
             return db_info
 
         return run_with_quotas(context.tenant,

@@ -17,6 +17,7 @@ import os.path
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
+from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import template
 from trove.common import utils
@@ -47,7 +48,6 @@ from trove.openstack.common.gettextutils import _
 from trove.openstack.common.notifier import api as notifier
 from trove.openstack.common import timeutils
 import trove.common.remote as remote
-import trove.backup.models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -193,8 +193,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         config = self._render_config(datastore_manager, flavor, self.id)
 
         if server:
+            backup_info = None
+            if backup_id is not None:
+                backup = bkup_models.Backup.get_by_id(self.context, backup_id)
+                backup_info = {'id': backup_id,
+                               'location': backup.location,
+                               'type': backup.backup_type,
+                               'checksum': backup.checksum,
+                               }
             self._guest_prepare(server, flavor['ram'], volume_info,
-                                packages, databases, users, backup_id,
+                                packages, databases, users, backup_info,
                                 config.config_contents, root_password)
 
         if not self.db_info.task_status.is_error:
@@ -507,14 +515,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return server
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
-                       packages, databases, users, backup_id=None,
+                       packages, databases, users, backup_info=None,
                        config_contents=None, root_password=None):
         LOG.info(_("Entering guest_prepare"))
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, packages, databases, users,
                            device_path=volume_info['device_path'],
                            mount_point=volume_info['mount_point'],
-                           backup_id=backup_id,
+                           backup_info=backup_info,
                            config_contents=config_contents,
                            root_password=root_password)
 
@@ -733,9 +741,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         action = MigrateAction(self, host)
         action.execute()
 
-    def create_backup(self, backup_id):
+    def create_backup(self, backup_info):
         LOG.debug(_("Calling create_backup  %s ") % self.id)
-        self.guest.create_backup(backup_id)
+        self.guest.create_backup(backup_info)
 
     def reboot(self):
         try:
@@ -836,7 +844,7 @@ class BackupTasks(object):
     @classmethod
     def delete_backup(cls, context, backup_id):
         #delete backup from swift
-        backup = trove.backup.models.Backup.get_by_id(context, backup_id)
+        backup = bkup_models.Backup.get_by_id(context, backup_id)
         try:
             filename = backup.filename
             if filename:
@@ -849,8 +857,8 @@ class BackupTasks(object):
                 backup.delete()
             else:
                 LOG.exception(_("Exception deleting from swift. "
-                              "Details: %s") % e)
-                backup.state = trove.backup.models.BackupState.DELETE_FAILED
+                                "Details: %s") % e)
+                backup.state = bkup_models.BackupState.DELETE_FAILED
                 backup.save()
                 raise TroveError("Failed to delete swift objects")
         else:

@@ -15,9 +15,11 @@
 #
 
 import logging
-from trove.backup.models import DBBackup
 from trove.backup.models import BackupState
-from trove.common import cfg, utils
+from trove.common import cfg
+from trove.common import context as trove_context
+from trove.common import utils
+from trove.conductor import api as conductor_api
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
 from trove.guestagent.datastore.mysql.service import get_auth_password
@@ -45,15 +47,14 @@ class BackupAgent(object):
             raise UnknownBackupType("Unknown Backup type: %s" % backup_type)
         return runner
 
-    def execute_backup(self, context, backup_id, runner=RUNNER):
-        LOG.debug("Searching for backup instance %s", backup_id)
-        backup = DBBackup.find_by(id=backup_id)
-        LOG.info("Setting task state to %s for instance %s",
-                 BackupState.NEW, backup.instance_id)
-        backup.state = BackupState.NEW
-        backup.save()
+    def execute_backup(self, context, backup_info, runner=RUNNER):
+        LOG.debug("Searching for backup instance %s", backup_info['id'])
+        ctxt = trove_context.TroveContext(
+            user=CONF.nova_proxy_admin_user,
+            auth_token=CONF.nova_proxy_admin_pass)
+        conductor = conductor_api.API(ctxt)
 
-        LOG.info("Running backup %s", backup_id)
+        LOG.info("Running backup %s", backup_info['id'])
         user = ADMIN_USER_NAME
         password = get_auth_password()
         swiftStorage = get_storage_strategy(
@@ -62,43 +63,50 @@ class BackupAgent(object):
 
         # Store the size of the filesystem before the backup.
         stats = get_filesystem_volume_stats(CONF.mount_point)
-        backup.size = stats.get('used', 0.0)
-        backup.state = BackupState.BUILDING
-        backup.save()
+        conductor.update_backup(CONF.guest_id,
+                                backup_id=backup_info['id'],
+                                size=stats.get('used', 0.0),
+                                state=BackupState.BUILDING)
 
-        try:
-            with runner(filename=backup_id, user=user, password=password)\
-                    as bkup:
-                LOG.info("Starting Backup %s", backup_id)
+        with runner(filename=backup_info['id'],
+                    user=user, password=password) as bkup:
+            try:
+                LOG.info("Starting Backup %s", backup_info['id'])
                 success, note, checksum, location = swiftStorage.save(
                     BACKUP_CONTAINER,
                     bkup)
 
-            LOG.info("Backup %s completed status: %s", backup_id, success)
-            LOG.info("Backup %s file size: %s", backup_id, bkup.content_length)
-            LOG.info('Backup %s swift checksum: %s', backup_id, checksum)
-            LOG.info('Backup %s location: %s', backup_id, location)
+                LOG.info("Backup %s completed status: %s", backup_info['id'],
+                         success)
+                LOG.info("Backup %s file size: %s", backup_info['id'],
+                         bkup.content_length)
+                LOG.info('Backup %s file swift checksum: %s',
+                         backup_info['id'], checksum)
+                LOG.info('Backup %s location: %s', backup_info['id'],
+                         location)
 
-            if not success:
-                raise BackupError(backup.note)
+                if not success:
+                    raise BackupError(note)
 
-        except Exception as e:
-            LOG.error(e)
-            LOG.error("Error saving %s Backup", backup_id)
-            backup.state = BackupState.FAILED
-            backup.save()
-            raise
+            except Exception as e:
+                LOG.error(e)
+                LOG.error("Error saving %s Backup", backup_info['id'])
+                conductor.update_backup(CONF.guest_id,
+                                        backup_id=backup_info['id'],
+                                        state=BackupState.FAILED)
+                raise
 
-        else:
-            LOG.info("Saving %s Backup Info to model", backup_id)
-            backup.state = BackupState.COMPLETED
-            backup.checksum = checksum
-            backup.location = location
-            backup.note = note
-            backup.backup_type = bkup.backup_type
-            backup.save()
+            else:
+                LOG.info("Saving %s Backup Info to model", backup_info['id'])
+                conductor.update_backup(CONF.guest_id,
+                                        backup_id=backup_info['id'],
+                                        checksum=checksum,
+                                        location=location,
+                                        note=note,
+                                        backup_type=bkup.backup_type,
+                                        state=BackupState.COMPLETED)
 
-    def execute_restore(self, context, backup_id, restore_location):
+    def execute_restore(self, context, backup_info, restore_location):
 
         try:
             LOG.debug("Cleaning out restore location: %s", restore_location)
@@ -106,11 +114,8 @@ class BackupAgent(object):
                                        "0777", restore_location)
             utils.clean_out(restore_location)
 
-            LOG.debug("Finding backup %s to restore", backup_id)
-            backup = DBBackup.find_by(id=backup_id)
-
-            LOG.debug("Getting Restore Runner of type %s", backup.backup_type)
-            restore_runner = self._get_restore_runner(backup.backup_type)
+            LOG.debug("Getting Restore Runner of type %s", backup_info['type'])
+            restore_runner = self._get_restore_runner(backup_info['type'])
 
             LOG.debug("Getting Storage Strategy")
             storage_strategy = get_storage_strategy(
@@ -119,17 +124,17 @@ class BackupAgent(object):
 
             LOG.debug("Preparing storage to download stream.")
             download_stream = storage_strategy.load(context,
-                                                    backup.location,
+                                                    backup_info['location'],
                                                     restore_runner.is_zipped,
-                                                    backup.checksum)
+                                                    backup_info['checksum'])
 
             with restore_runner(restore_stream=download_stream,
                                 restore_location=restore_location) as runner:
                 LOG.debug("Restoring instance from backup %s to %s",
-                          backup_id, restore_location)
+                          backup_info['id'], restore_location)
                 content_size = runner.restore()
                 LOG.info("Restore from backup %s completed successfully to %s",
-                         backup_id, restore_location)
+                         backup_info['id'], restore_location)
                 LOG.info("Restore size: %s", content_size)
 
                 utils.execute_with_timeout("sudo", "chown", "-R",
@@ -137,8 +142,8 @@ class BackupAgent(object):
 
         except Exception as e:
             LOG.error(e)
-            LOG.error("Error restoring backup %s", backup_id)
+            LOG.error("Error restoring backup %s", backup_info['id'])
             raise
 
         else:
-            LOG.info("Restored Backup %s", backup_id)
+            LOG.info("Restored Backup %s", backup_info['id'])
