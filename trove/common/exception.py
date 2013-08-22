@@ -16,6 +16,9 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
+
+import re
+
 from trove.openstack.common import log as logging
 from trove.openstack.common import exception as openstack_exception
 from trove.openstack.common import processutils
@@ -30,6 +33,10 @@ LOG = logging.getLogger(__name__)
 wrap_exception = openstack_exception.wrap_exception
 
 
+def safe_fmt_string(text):
+    return re.sub(r'%([0-9]+)', r'\1', text)
+
+
 class TroveError(openstack_exception.OpenstackException):
     """Base exception that all custom trove app exceptions inherit from."""
     internal_message = None
@@ -39,9 +46,10 @@ class TroveError(openstack_exception.OpenstackException):
             self.message = message
         if self.internal_message is not None:
             try:
-                LOG.error(self.internal_message % kwargs)
+                LOG.error(safe_fmt_string(self.internal_message) % kwargs)
             except Exception:
                 LOG.error(self.internal_message)
+        self.message = safe_fmt_string(self.message)
         super(TroveError, self).__init__(**kwargs)
 
 
