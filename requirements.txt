@@ -12,6 +12,7 @@ sqlalchemy-migrate>=0.7.2
 netaddr
 httplib2
 lxml
+python-heatclient>=0.2.3
 python-novaclient
 python-cinderclient>=1.0.4
 python-keystoneclient

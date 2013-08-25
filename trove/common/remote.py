@@ -18,6 +18,7 @@
 from trove.common import cfg
 from trove.openstack.common.importutils import import_class
 from cinderclient.v2 import client as CinderClient
+from heatclient.v1 import client as HeatClient
 from novaclient.v1_1.client import Client
 from swiftclient.client import Connection
 
@@ -28,6 +29,7 @@ PROXY_AUTH_URL = CONF.trove_auth_url
 VOLUME_URL = CONF.cinder_url
 OBJECT_STORE_URL = CONF.swift_url
 USE_SNET = CONF.backup_use_snet
+HEAT_URL = CONF.heat_url
 
 
 def dns_client(context):
@@ -68,6 +70,16 @@ def cinder_client(context):
     return client
 
 
+def heat_client(context):
+    endpoint = "%s/%s/" % (HEAT_URL, context.tenant)
+    client = HeatClient.Client(username=context.user,
+                               password="radmin",
+                               token=context.auth_token,
+                               os_no_client_auth=True,
+                               endpoint=endpoint)
+    return client
+
+
 def swift_client(context):
     client = Connection(preauthurl=OBJECT_STORE_URL + context.tenant,
                         preauthtoken=context.auth_token,
@@ -81,3 +93,4 @@ create_guest_client = import_class(CONF.remote_guest_client)
 create_nova_client = import_class(CONF.remote_nova_client)
 create_swift_client = import_class(CONF.remote_swift_client)
 create_cinder_client = import_class(CONF.remote_cinder_client)
+create_heat_client = import_class(CONF.remote_heat_client)

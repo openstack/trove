@@ -17,6 +17,9 @@ import os.path
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
+from novaclient import base
+from novaclient.v1_1 import servers
+from novaclient.v1_1 import volumes
 from trove.common import cfg
 from trove.common import template
 from trove.common import utils
@@ -26,12 +29,15 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
 from trove.common.remote import create_dns_client
+from trove.common.remote import create_nova_client
+from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
 from swiftclient.client import ClientException
 from trove.common.utils import poll_until
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
 from trove.instance.models import FreshInstance
+
 from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import ServiceStatuses
@@ -49,10 +55,12 @@ VOLUME_TIME_OUT = CONF.volume_time_out  # seconds.
 DNS_TIME_OUT = CONF.dns_time_out  # seconds.
 RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
 REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
+HEAT_TIME_OUT = CONF.heat_time_out  # seconds.
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 
 use_nova_server_volume = CONF.use_nova_server_volume
+use_heat = CONF.use_heat
 
 
 class NotifyMixin(object):
@@ -128,7 +136,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         service_type, volume_size, security_groups,
                         backup_id):
-        if use_nova_server_volume:
+        if use_heat:
+            server, volume_info = self._create_server_volume_heat(
+                flavor,
+                image_id,
+                security_groups,
+                service_type,
+                volume_size)
+        elif use_nova_server_volume:
             server, volume_info = self._create_server_volume(
                 flavor['id'],
                 image_id,
@@ -142,6 +157,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 security_groups,
                 service_type,
                 volume_size)
+
         try:
             self._create_dns_entry()
         except Exception as e:
@@ -237,6 +253,42 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         return server, volume_info
 
+    def _create_server_volume_heat(self, flavor, image_id,
+                                   security_groups, service_type,
+                                   volume_size):
+        client = create_heat_client(self.context)
+        novaclient = create_nova_client(self.context)
+        cinderclient = create_cinder_client(self.context)
+        heat_template = template.HeatTemplate().template()
+        parameters = {"KeyName": "heatkey",
+                      "Flavor": flavor["name"],
+                      "VolumeSize": volume_size,
+                      "ServiceType": "mysql",
+                      "InstanceId": self.id}
+        stack_name = 'trove-%s' % self.id
+        stack = client.stacks.create(stack_name=stack_name,
+                                     template=heat_template,
+                                     parameters=parameters)
+        stack = client.stacks.get(stack_name)
+
+        utils.poll_until(
+            lambda: client.stacks.get(stack_name),
+            lambda stack: stack.stack_status in ['CREATE_COMPLETE',
+                                                 'CREATE_FAILED'],
+            sleep_time=2,
+            time_out=HEAT_TIME_OUT)
+
+        resource = client.resources.get(stack.id, 'BaseInstance')
+        server = novaclient.servers.get(resource.physical_resource_id)
+
+        resource = client.resources.get(stack.id, 'DataVolume')
+        volume = cinderclient.volumes.get(resource.physical_resource_id)
+        volume_info = self._build_volume(volume)
+
+        self.update_db(compute_instance_id=server.id, volume_id=volume.id)
+
+        return server, volume_info
+
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, service_type,
                                            volume_size):
@@ -305,6 +357,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         v_ref = volume_client.volumes.get(volume_ref.id)
         if v_ref.status in ['error']:
             raise VolumeCreationFailure()
+        return self._build_volume(v_ref)
+
+    def _build_volume(self, v_ref):
         LOG.debug(_("Created volume %s") % v_ref)
         # The mapping is in the format:
         # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
@@ -417,7 +472,13 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
         try:
-            self.server.delete()
+            if use_heat:
+                # Delete the server via heat
+                heatclient = create_heat_client(self.context)
+                name = 'trove-%s' % self.id
+                heatclient.stacks.delete(name)
+            else:
+                self.server.delete()
         except Exception as ex:
             LOG.error("Error during delete compute server %s "
                       % self.server.id)
