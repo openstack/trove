@@ -501,10 +501,22 @@ class FakeVolumes(object):
         LOG.debug("Resize volume id (%s) to size (%s)" % (volume_id, new_size))
         volume = self.get(volume_id)
 
+        if volume._current_status != 'available':
+            raise Exception("Invalid volume status")
+
         def finish_resize():
-            volume._current_status = "in-use"
             volume.size = new_size
         self.event_spawn(1.0, finish_resize)
+
+    def detach(self, volume_id):
+        volume = self.get(volume_id)
+
+        if volume._current_status != 'in-use':
+            raise Exception("Invalid volume status")
+
+        def finish_detach():
+            volume._current_status = "available"
+        self.event_spawn(1.0, finish_detach)
 
 
 class FakeAccount(object):
