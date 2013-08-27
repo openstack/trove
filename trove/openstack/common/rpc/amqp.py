@@ -34,13 +34,27 @@ from eventlet import greenpool
 from eventlet import pools
 from eventlet import queue
 from eventlet import semaphore
+from oslo.config import cfg
 
 from trove.openstack.common import excutils
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.openstack.common import local
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import common as rpc_common
 
+
+amqp_opts = [
+    cfg.BoolOpt('amqp_durable_queues',
+                default=False,
+                deprecated_name='rabbit_durable_queues',
+                deprecated_group='DEFAULT',
+                help='Use durable queues in amqp.'),
+    cfg.BoolOpt('amqp_auto_delete',
+                default=False,
+                help='Auto-delete queues in amqp.'),
+]
+
+cfg.CONF.register_opts(amqp_opts)
 
 UNIQUE_ID = '_unique_id'
 LOG = logging.getLogger(__name__)
@@ -286,8 +300,13 @@ def pack_context(msg, context):
     for args at some point.
 
     """
-    context_d = dict([('_context_%s' % key, value)
-                      for (key, value) in context.to_dict().iteritems()])
+    if isinstance(context, dict):
+        context_d = dict([('_context_%s' % key, value)
+                          for (key, value) in context.iteritems()])
+    else:
+        context_d = dict([('_context_%s' % key, value)
+                          for (key, value) in context.to_dict().iteritems()])
+
     msg.update(context_d)
 
 

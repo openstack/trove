@@ -22,7 +22,7 @@ import sys
 from eventlet import event
 from eventlet import greenthread
 
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.openstack.common import log as logging
 from trove.openstack.common import timeutils
 

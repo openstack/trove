@@ -34,7 +34,7 @@ def delete_queue(context, topic):
     if CONF.rpc_backend == "trove.openstack.common.rpc.impl_kombu":
         connection = openstack_rpc.create_connection()
         channel = connection.channel
-        durable = connection.conf.rabbit_durable_queues
+        durable = connection.conf.amqp_durable_queues
         queue = kombu.entity.Queue(name=topic, channel=channel,
                                    auto_delete=False, exclusive=False,
                                    durable=durable)

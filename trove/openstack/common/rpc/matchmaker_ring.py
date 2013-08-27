@@ -23,7 +23,7 @@ import json
 
 from oslo.config import cfg
 
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import matchmaker as mm
 
@@ -63,9 +63,7 @@ class RingExchange(mm.Exchange):
             self.ring0[k] = itertools.cycle(self.ring[k])
 
     def _ring_has(self, key):
-        if key in self.ring0:
-            return True
-        return False
+        return key in self.ring0
 
 
 class RoundRobinRingExchange(RingExchange):

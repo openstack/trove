@@ -24,3 +24,4 @@ pexpect
 -f http://tarballs.openstack.org/oslo.config/oslo.config-1.2.0a3.tar.gz#egg=oslo.config-1.2.0a3
 oslo.config>=1.2.0a3
 mysql-python
+Babel>=0.9.6

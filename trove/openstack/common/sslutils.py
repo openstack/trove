@@ -19,7 +19,7 @@ import ssl
 
 from oslo.config import cfg
 
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 
 
 ssl_opts = [
@@ -78,3 +78,23 @@ def wrap(sock):
         ssl_kwargs['cert_reqs'] = ssl.CERT_REQUIRED
 
     return ssl.wrap_socket(sock, **ssl_kwargs)
+
+
+_SSL_PROTOCOLS = {
+    "tlsv1": ssl.PROTOCOL_TLSv1,
+    "sslv23": ssl.PROTOCOL_SSLv23,
+    "sslv3": ssl.PROTOCOL_SSLv3
+}
+
+try:
+    _SSL_PROTOCOLS["sslv2"] = ssl.PROTOCOL_SSLv2
+except AttributeError:
+    pass
+
+
+def validate_ssl_version(version):
+    key = version.lower()
+    try:
+        return _SSL_PROTOCOLS[key]
+    except KeyError:
+        raise RuntimeError(_("Invalid SSL version : %s") % version)

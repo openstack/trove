@@ -31,20 +31,20 @@ import eventlet.backdoor
 import greenlet
 from oslo.config import cfg
 
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.openstack.common import log as logging
 
-help_for_backdoor_port = 'Acceptable ' + \
-    'values are 0, <port> and <start>:<end>, where 0 results in ' + \
-    'listening on a random tcp port number, <port> results in ' + \
-    'listening on the specified port number and not enabling backdoor' + \
-    'if it is in use and <start>:<end> results in listening on the ' + \
-    'smallest unused port number within the specified range of port ' + \
-    'numbers. The chosen port is displayed in the service\'s log file.'
+help_for_backdoor_port = (
+    "Acceptable values are 0, <port>, and <start>:<end>, where 0 results "
+    "in listening on a random tcp port number; <port> results in listening "
+    "on the specified port number (and not enabling backdoor if that port "
+    "is in use); and <start>:<end> results in listening on the smallest "
+    "unused port number within the specified range of port numbers.  The "
+    "chosen port is displayed in the service's log file.")
 eventlet_backdoor_opts = [
     cfg.StrOpt('backdoor_port',
                default=None,
-               help='Enable eventlet backdoor. %s' % help_for_backdoor_port)
+               help="Enable eventlet backdoor.  %s" % help_for_backdoor_port)
 ]
 
 CONF = cfg.CONF

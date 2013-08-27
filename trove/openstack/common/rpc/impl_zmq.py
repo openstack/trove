@@ -27,7 +27,7 @@ import greenlet
 from oslo.config import cfg
 
 from trove.openstack.common import excutils
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.openstack.common import importutils
 from trove.openstack.common import jsonutils
 from trove.openstack.common.rpc import common as rpc_common
@@ -383,6 +383,7 @@ class ZmqBaseReactor(ConsumerBase):
         LOG.info(_("In reactor registered"))
 
     def consume_in_thread(self):
+        @excutils.forever_retry_uncaught_exceptions
         def _consume(sock):
             LOG.info(_("Consuming socket"))
             while True:
