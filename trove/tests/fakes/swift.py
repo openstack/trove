@@ -24,6 +24,7 @@ import httplib
 import json
 import os
 import socket
+from hashlib import md5
 
 from swiftclient import client as swift
 
@@ -135,6 +136,75 @@ class FakeSwiftConnection(object):
         if container == 'socket_error_on_delete':
             raise socket.error(111, 'ECONNREFUSED')
         pass
+
+
+class FakeSwiftConnectionWithRealEtag(FakeSwiftConnection):
+    """
+    Overides methods that deal with object etags/checksums so it returns
+    the actual object etag/checksum
+
+    This fake swift client is meant to only handle at most one large segmented
+    object.
+    """
+
+    MANIFEST_HEADER_KEY = 'X-Object-Manifest'
+    url = 'http://mockswift/v1'
+
+    def __init__(self, *args, **kwargs):
+        super(FakeSwiftConnectionWithRealEtag, self).__init__(args, kwargs)
+        self.manifest_prefix = None
+        self.manifest_name = None
+        self.container_objects = {}
+
+    def head_object(self, container, name):
+        checksum = md5()
+        if self.manifest_prefix and self.manifest_name == name:
+            for object_name in sorted(self.container_objects.iterkeys()):
+                object_checksum = md5(self.container_objects[object_name])
+                # The manifest file etag for a HEAD or GET is the checksum of
+                # the concatenated checksums.
+                checksum.update(object_checksum.hexdigest())
+            # this is included to test bad swift segment etags
+            if name.startswith("bad_manifest_etag_"):
+                return {'etag': '"this_is_an_intentional_bad_manifest_etag"'}
+        else:
+            if name in self.container_objects:
+                checksum.update(self.container_objects[name])
+            else:
+                return {'etag': ""}
+
+        # Currently a swift HEAD object returns etag with double quotes
+        return {'etag': '"%s"' % checksum.hexdigest()}
+
+    def put_object(self, container, name, contents, **kwargs):
+        headers = kwargs.get('headers', {})
+        object_checksum = md5()
+        if self.MANIFEST_HEADER_KEY in headers:
+            # the manifest prefix format is <container>/<prefix> where
+            # container is where the object segments are in and prefix is the
+            # common prefix for all segments.
+            self.manifest_prefix = headers.get(self.MANIFEST_HEADER_KEY)
+            self.manifest_name = name
+            object_checksum.update(contents)
+        else:
+            if hasattr(contents, 'read'):
+                chunk_size = 128
+                object_content = ""
+                chunk = contents.read(chunk_size)
+                while chunk:
+                    object_content += chunk
+                    object_checksum.update(chunk)
+                    chunk = contents.read(chunk_size)
+
+                self.container_objects[name] = object_content
+            else:
+                object_checksum.update(contents)
+                self.container_objects[name] = contents
+
+            # this is included to test bad swift segment etags
+            if name.startswith("bad_segment_etag_"):
+                return "this_is_an_intentional_bad_segment_etag"
+        return object_checksum.hexdigest()
 
 
 class SwiftClientStub(object):
@@ -398,5 +468,7 @@ class SwiftClientStub(object):
         return self
 
 
-def fake_create_swift_client(*args):
+def fake_create_swift_client(calculate_etag=False, *args):
+    if calculate_etag:
+        return FakeSwiftConnectionWithRealEtag()
     return FakeSwiftClient.Connection(*args)

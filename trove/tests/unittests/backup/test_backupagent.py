@@ -93,7 +93,7 @@ class MockSwift(object):
         location = '%s/%s/%s' % (self.url, save_location, stream.manifest)
         return True, 'w00t', 'fake-checksum', location
 
-    def load(self, context, storage_url, container, filename):
+    def load(self, context, storage_url, container, filename, backup_checksum):
         pass
 
 
@@ -105,7 +105,7 @@ class MockStorage(Storage):
     def __call__(self, *args, **kwargs):
         return self
 
-    def load(self, context, location, is_zipped):
+    def load(self, context, location, is_zipped, backup_checksum):
         pass
 
     def save(self, save_location, stream):

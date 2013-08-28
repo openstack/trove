@@ -157,6 +157,10 @@ common_opts = [
     cfg.StrOpt('restore_namespace',
                default='trove.guestagent.strategies.restore.mysql_impl',
                help='Namespace to load restore strategies from'),
+    cfg.BoolOpt('verify_swift_checksum_on_restore', default=True,
+                help='Enable verification of swift checksum before starting '
+                ' restore; makes sure the checksum of original backup matches '
+                ' checksum of the swift backup file.'),
     cfg.StrOpt('storage_strategy', default='SwiftStorage',
                help="Default strategy to store backups"),
     cfg.StrOpt('storage_namespace',

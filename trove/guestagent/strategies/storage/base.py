@@ -35,5 +35,5 @@ class Storage(Strategy):
         """ Persist information from the stream """
 
     @abc.abstractmethod
-    def load(self, context, location, is_zipped):
+    def load(self, context, location, is_zipped, backup_checksum):
         """ Load a stream from a persisted storage location  """
