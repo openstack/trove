@@ -179,8 +179,8 @@ class NotificationTransformer(object):
         return audit_start, audit_end
 
     def transform_instance(self, instance, audit_start, audit_end):
-        return {'audit-period-beginning': audit_start,
-                'audit-period-ending': audit_end,
+        return {'audit_period_beginning': audit_start,
+                'audit_period_ending': audit_end,
                 'created_at': instance.created,
                 'display_name': instance.name,
                 'instance_id': instance.id,

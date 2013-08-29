@@ -76,8 +76,8 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
         self.assertIsNotNone(payloads)
         self.assertThat(len(payloads), Equals(1))
         payload = payloads[0]
-        self.assertThat(payload['audit-period-beginning'], Not(Is(None)))
-        self.assertThat(payload['audit-period-ending'], Not(Is(None)))
+        self.assertThat(payload['audit_period_beginning'], Not(Is(None)))
+        self.assertThat(payload['audit_period_ending'], Not(Is(None)))
         self.assertThat(payload['state'], Equals(status.lower()))
 
 
@@ -132,8 +132,8 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertIsNotNone(payloads)
         self.assertThat(len(payloads), Equals(1))
         payload = payloads[0]
-        self.assertThat(payload['audit-period-beginning'], Not(Is(None)))
-        self.assertThat(payload['audit-period-ending'], Not(Is(None)))
+        self.assertThat(payload['audit_period_beginning'], Not(Is(None)))
+        self.assertThat(payload['audit_period_ending'], Not(Is(None)))
         self.assertThat(payload['state'], Equals(status.lower()))
         self.assertThat(payload['instance_type'], Equals('db.small'))
         self.assertThat(payload['instance_type_id'], Equals('flavor_1'))
@@ -240,8 +240,8 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertIsNotNone(payloads)
         self.assertThat(len(payloads), Equals(1))
         payload = payloads[0]
-        self.assertThat(payload['audit-period-beginning'], Not(Is(None)))
-        self.assertThat(payload['audit-period-ending'], Not(Is(None)))
+        self.assertThat(payload['audit_period_beginning'], Not(Is(None)))
+        self.assertThat(payload['audit_period_ending'], Not(Is(None)))
         self.assertThat(payload['state'], Equals(status.lower()))
         self.assertThat(payload['instance_type'], Equals('db.small'))
         self.assertThat(payload['instance_type_id'], Equals('flavor_1'))
