@@ -26,6 +26,7 @@ from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
 from trove.common.remote import create_cinder_client
 from trove.extensions.security_group.models import SecurityGroup
+from trove.extensions.security_group.models import SecurityGroupRule
 from trove.db import models as dbmodels
 from trove.backup.models import Backup
 from trove.quota.quota import run_with_quotas
@@ -55,7 +56,6 @@ def load_server(context, instance_id, server_id):
 
 
 class InstanceStatus(object):
-
     ACTIVE = "ACTIVE"
     BLOCKED = "BLOCKED"
     BUILD = "BUILD"
@@ -391,14 +391,12 @@ class BaseInstance(SimpleInstance):
 
 
 class FreshInstance(BaseInstance):
-
     @classmethod
     def load(cls, context, id):
         return load_instance(cls, context, id, needs_server=False)
 
 
 class BuiltInstance(BaseInstance):
-
     @classmethod
     def load(cls, context, id):
         return load_instance(cls, context, id, needs_server=True)
@@ -468,6 +466,15 @@ class Instance(BuiltInstance):
                 security_group = SecurityGroup.create_for_instance(
                     db_info.id,
                     context)
+                if CONF.trove_security_groups_rules_support:
+                    SecurityGroupRule.create_sec_group_rule(
+                        security_group,
+                        CONF.trove_security_group_rule_protocol,
+                        CONF.trove_security_group_rule_port,
+                        CONF.trove_security_group_rule_port,
+                        CONF.trove_security_group_rule_cidr,
+                        context
+                    )
                 security_groups = [security_group["name"]]
 
             task_api.API(context).create_instance(db_info.id, name, flavor,
@@ -601,11 +608,11 @@ def create_server_list_matcher(server_list):
             LOG.error(_("Server %s for instance %s was found twice!") %
                       (server_id, instance_id))
             raise exception.TroveError(uuid=instance_id)
+
     return find_server
 
 
 class Instances(object):
-
     DEFAULT_LIMIT = CONF.instances_page_size
 
     @staticmethod
@@ -709,7 +716,6 @@ class ServiceImage(dbmodels.DatabaseModelBase):
 
 
 class InstanceServiceStatus(dbmodels.DatabaseModelBase):
-
     _data_fields = ['instance_id', 'status_id', 'status_description']
 
     def __init__(self, status, **kwargs):

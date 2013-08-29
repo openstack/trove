@@ -196,7 +196,8 @@ class InstanceSetup(object):
         else:
             flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
         flavors = dbaas.find_flavors_by_name(flavor_name)
-        assert_equal(len(flavors), 1, "Number of flavors with name '%s' "
+        assert_equal(len(flavors), 1,
+                     "Number of flavors with name '%s' "
                      "found was '%d'." % (flavor_name, len(flavors)))
         flavor = flavors[0]
         assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
@@ -547,6 +548,9 @@ class SecurityGroupsTest(object):
       runs_after_groups=[tests.PRE_INSTANCES])
 class SecurityGroupsRulesTest(object):
 
+    # Security group already have default rule
+    # that is why 'delete'-test is not needed anymore
+
     @before_class
     def setUp(self):
         self.testSecurityGroup = dbaas.security_groups.get(
@@ -556,28 +560,32 @@ class SecurityGroupsRulesTest(object):
 
     @test
     def test_create_security_group_rule(self):
-        self.testSecurityGroupRule = dbaas.security_group_rules.create(
-            group_id=self.testSecurityGroup.id,
-            protocol="tcp",
-            from_port=3306,
-            to_port=3306,
-            cidr="0.0.0.0/0")
-        assert_is_not_none(self.testSecurityGroupRule)
-        with TypeCheck('SecurityGroupRule',
-                       self.testSecurityGroupRule) as secGrpRule:
-            secGrpRule.has_field('id', basestring)
-            secGrpRule.has_field('security_group_id', basestring)
-            secGrpRule.has_field('protocol', basestring)
-            secGrpRule.has_field('cidr', basestring)
-            secGrpRule.has_field('from_port', int)
-            secGrpRule.has_field('to_port', int)
-            secGrpRule.has_field('created', basestring)
-        assert_equal(self.testSecurityGroupRule.security_group_id,
-                     self.testSecurityGroup.id)
-        assert_equal(self.testSecurityGroupRule.protocol, "tcp")
-        assert_equal(int(self.testSecurityGroupRule.from_port), 3306)
-        assert_equal(int(self.testSecurityGroupRule.to_port), 3306)
-        assert_equal(self.testSecurityGroupRule.cidr, "0.0.0.0/0")
+        if len(self.testSecurityGroup.rules) == 0:
+            self.testSecurityGroupRule = \
+                dbaas.security_group_rules.create(
+                    group_id=self.testSecurityGroup.id,
+                    protocol="tcp",
+                    from_port=3306,
+                    to_port=3306,
+                    cidr="0.0.0.0/0")
+            assert_is_not_none(self.testSecurityGroupRule)
+            with TypeCheck('SecurityGroupRule',
+                           self.testSecurityGroupRule) as secGrpRule:
+                secGrpRule.has_field('id', basestring)
+                secGrpRule.has_field('security_group_id', basestring)
+                secGrpRule.has_field('protocol', basestring)
+                secGrpRule.has_field('cidr', basestring)
+                secGrpRule.has_field('from_port', int)
+                secGrpRule.has_field('to_port', int)
+                secGrpRule.has_field('created', basestring)
+            assert_equal(self.testSecurityGroupRule.security_group_id,
+                         self.testSecurityGroup.id)
+            assert_equal(self.testSecurityGroupRule.protocol, "tcp")
+            assert_equal(int(self.testSecurityGroupRule.from_port), 3306)
+            assert_equal(int(self.testSecurityGroupRule.to_port), 3306)
+            assert_equal(self.testSecurityGroupRule.cidr, "0.0.0.0/0")
+        else:
+            assert_not_equal(len(self.testSecurityGroup.rules), 0)
 
     @test
     def test_deep_list_security_group_with_rules(self):
@@ -586,17 +594,7 @@ class SecurityGroupsRulesTest(object):
         securityGroup = [x for x in securityGroupList
                          if x.name in self.secGroupName]
         assert_is_not_none(securityGroup[0])
-        assert_equal(len(securityGroup[0].rules), 1)
-
-    @test
-    def test_delete_security_group_rule(self):
-        dbaas.security_group_rules.delete(self.testSecurityGroupRule.id)
-        securityGroupList = dbaas.security_groups.list()
-        assert_is_not_none(securityGroupList)
-        securityGroup = [x for x in securityGroupList
-                         if x.name in self.secGroupName]
-        assert_is_not_none(securityGroup[0])
-        assert_equal(len(securityGroup[0].rules), 0)
+        assert_not_equal(len(securityGroup[0].rules), 0)
 
 
 @test(depends_on_classes=[CreateInstance],
