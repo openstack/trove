@@ -81,7 +81,11 @@ class TestRoot(object):
         """Test that root is disabled"""
         enabled = self.dbaas.root.is_root_enabled(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
-        assert_false(enabled, "Root SHOULD NOT be enabled.")
+
+        is_enabled = enabled
+        if hasattr(enabled, 'rootEnabled'):
+            is_enabled = enabled.rootEnabled
+        assert_false(is_enabled, "Root SHOULD NOT be enabled.")
 
     @test
     def test_create_user_os_admin_failure(self):
