@@ -29,8 +29,8 @@ gettext.install('trove', unicode=1)
 # If ../trove/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-    os.pardir,
-    os.pardir))
+                                                os.pardir,
+                                                os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
@@ -72,7 +72,7 @@ class Commands(object):
     def image_update(self, service_name, image_id):
         self.db_api.configure_db(CONF)
         image = self.db_api.find_by(instance_models.ServiceImage,
-                               service_name=service_name)
+                                    service_name=service_name)
         if image is None:
             # Create a new one
             image = instance_models.ServiceImage()
@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     try:
         logging.setup(None)
-        
+
         Commands().execute()
         sys.exit(0)
     except TypeError as e:

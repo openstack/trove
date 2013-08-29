@@ -27,7 +27,7 @@ import sys
 
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(
-        sys.argv[0]), os.pardir, os.pardir))
+    sys.argv[0]), os.pardir, os.pardir))
 if os.path.exists(os.path.join(possible_topdir, "nova", "__init__.py")):
     sys.path.insert(0, possible_topdir)
 
@@ -47,14 +47,12 @@ trove_opts = [
     # port magic in service.WSGIService the name of the app has to be the same
     # as the name of the service
     cfg.IntOpt('%s_listen_port' % SERVICE_NAME,
-              default=8779,
-              help='Trove API default port'),
+               default=8779,
+               help='Trove API default port'),
     cfg.MultiStrOpt('trove_api_extension',
-        default=[
-            'trove.api.database.contrib.standard_extensions'
-        ],
-        help='osapi compute extension to load'),
-    ]
+                    default=['trove.api.database.contrib.standard_extensions'],
+                    help='osapi compute extension to load'), ]
+
 FLAGS = flags.FLAGS
 FLAGS.register_opts(trove_opts)
 

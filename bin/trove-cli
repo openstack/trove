@@ -288,7 +288,7 @@ def main():
                 print "Possible wrong number of arguments supplied."
                 print "%s %s: %s" % (cmd, action, fn.__doc__)
                 print "\t\t", [fn.func_code.co_varnames[i] for i in
-                                            range(fn.func_code.co_argcount)]
+                               range(fn.func_code.co_argcount)]
                 print "ERROR: %s" % err
             except Exception:
                 print "Command failed, please check the log for more info."

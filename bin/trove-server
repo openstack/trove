@@ -28,8 +28,8 @@ gettext.install('trove', unicode=1)
 # If ../trove/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-    os.pardir,
-    os.pardir))
+                                                os.pardir,
+                                                os.pardir))
 if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
@@ -41,13 +41,13 @@ from trove.db import get_db_api
 
 extra_opts = [
     openstack_cfg.BoolOpt('fork',
-               short='f',
-               default=False,
-               dest='fork'),
+                          short='f',
+                          default=False,
+                          dest='fork'),
     openstack_cfg.StrOpt('pid-file',
-               default='.pid'),
+                         default='.pid'),
     openstack_cfg.StrOpt('override-logfile',
-               default=None),
+                         default=None),
 ]
 
 CONF = cfg.CONF
@@ -60,8 +60,6 @@ def run_server():
         conf_file = CONF.find_file(CONF.api_paste_config)
         launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
                                workers=CONF.trove_api_workers)
-
-
 
         launcher.wait()
     except RuntimeError as error:
@@ -89,4 +87,3 @@ if __name__ == '__main__':
                 f.write(str(pid))
     else:
         run_server()
-
