@@ -679,10 +679,17 @@ class MySqlApp(object):
     def _install_mysql(self):
         """Install mysql server. The current version is 5.5"""
         LOG.debug(_("Installing mysql server"))
+        self._create_mysql_confd_dir()
         packager.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
         self.start_mysql()
         LOG.debug(_("Finished installing mysql server"))
         #TODO(rnirmal): Add checks to make sure the package got installed
+
+    def _create_mysql_confd_dir(self):
+        conf_dir = "/etc/mysql/conf.d"
+        LOG.debug("Creating %s" % conf_dir)
+        command = "sudo mkdir -p %s" % conf_dir
+        utils.execute_with_timeout(command)
 
     def _enable_mysql_on_boot(self):
         """
