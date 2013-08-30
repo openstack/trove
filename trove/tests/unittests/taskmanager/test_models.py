@@ -37,7 +37,7 @@ class fake_Server:
 
 class fake_ServerManager:
     def create(self, name, image_id, flavor_id, files, userdata,
-               security_groups, block_device_mapping):
+               security_groups, block_device_mapping, availability_zone=None):
         server = fake_Server()
         server.id = "server_id"
         server.name = name
@@ -47,6 +47,7 @@ class fake_ServerManager:
         server.userdata = userdata
         server.security_groups = security_groups
         server.block_device_mapping = block_device_mapping
+        server.availability_zone = availability_zone
         return server
 
 
@@ -87,18 +88,39 @@ class FreshInstanceTasksTest(testtools.TestCase):
         service_type = os.path.splitext(os.path.basename(self.cloudinit))[0]
         when(taskmanager_models.CONF).get("cloudinit_location").thenReturn(
             cloudinit_location)
-        server = self.freshinstancetasks._create_server(None, None, None,
-                                                        service_type, None)
+        server = self.freshinstancetasks._create_server(
+            None, None, None, service_type, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
     def test_create_instance_guestconfig(self):
         when(taskmanager_models.CONF).get("guest_config").thenReturn(
             self.guestconfig)
-        server = self.freshinstancetasks._create_server(None, None, None,
-                                                        "test", None)
+        server = self.freshinstancetasks._create_server(
+            None, None, None, "test", None, None)
         self.assertTrue('/etc/trove-guestagent.conf' in server.files)
         self.assertEqual(server.files['/etc/trove-guestagent.conf'],
                          self.guestconfig_content)
+
+    def test_create_instance_with_az_kwarg(self):
+        service_type = 'mysql'
+        server = self.freshinstancetasks._create_server(
+            None, None, None, service_type, None, availability_zone='nova')
+
+        self.assertIsNotNone(server)
+
+    def test_create_instance_with_az(self):
+        service_type = 'mysql'
+        server = self.freshinstancetasks._create_server(
+            None, None, None, service_type, None, 'nova')
+
+        self.assertIsNotNone(server)
+
+    def test_create_instance_with_az_none(self):
+        service_type = 'mysql'
+        server = self.freshinstancetasks._create_server(
+            None, None, None, service_type, None, None)
+
+        self.assertIsNotNone(server)
 
 
 class BackupTasksTest(testtools.TestCase):

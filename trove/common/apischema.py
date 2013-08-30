@@ -176,7 +176,7 @@ instance = {
                 "type": "object",
                 "required": ["name", "flavorRef",
                              "volume" if CONF.trove_volume_support else None],
-                "additionalProperties": False,
+                "additionalProperties": True,
                 "properties": {
                     "name": non_empty_string,
                     "flavorRef": flavorref,
@@ -190,7 +190,8 @@ instance = {
                         "properties": {
                             "backupRef": uuid
                         }
-                    }
+                    },
+                    "availability_zone": non_empty_string
                 }
             }
         }
