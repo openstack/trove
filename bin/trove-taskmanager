@@ -16,17 +16,23 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
-eventlet.monkey_patch()
-
 import gettext
-import optparse
 import os
 import sys
 
+import eventlet
+
+from trove.common import cfg
+from oslo.config import cfg as openstack_cfg
+from trove.openstack.common import log as logging
+from trove.common import debug_utils
+
+# Apply whole eventlet.mankey_patch excluding 'thread' module.
+# Decision for 'thread' module patching will be made
+# after debug_utils setting up
+eventlet.monkey_patch(all=True, thread=False)
 
 gettext.install('trove', unicode=1)
-
 
 # If ../trove/__init__.py exists, add ../ to Python search path, so that
 # it will override what happens to be installed in /usr/(local/)lib/python...
@@ -36,19 +42,22 @@ possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
 if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
     sys.path.insert(0, possible_topdir)
 
-from trove.common import cfg
-from trove.common import rpc
-from oslo.config import cfg as openstack_cfg
-from trove.openstack.common import log as logging
-from trove.openstack.common import service
-from trove.db import get_db_api
-
 CONF = cfg.CONF
 CONF.register_opts([openstack_cfg.StrOpt('taskmanager_manager')])
 
 if __name__ == '__main__':
     cfg.parse_args(sys.argv)
     logging.setup(None)
+
+    debug_utils.setup()
+
+    # Patch 'thread' module if debug is disabled
+    if not debug_utils.enabled():
+        eventlet.monkey_patch(thread=True)
+
+    from trove.common import rpc
+    from trove.openstack.common import service
+    from trove.db import get_db_api
 
     try:
         get_db_api().configure_db(CONF)

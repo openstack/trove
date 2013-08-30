@@ -85,3 +85,18 @@ control_exchange=trove
 # ============ Logging information =============================
 #log_dir = /integration/report
 #log_file = trove-taskmanager.log
+
+# ============ PyDev remote dubugging =============================
+
+# Enable or disable pydev remote debugging.
+# There are three values allowed: 'disabled', 'enabled' and 'auto'
+# If value is 'auto' tries to connect to remote debugger server,
+# but in case of error continue running with disabled debugging
+pydev_debug = disabled
+
+# remote debug server host and port options
+#pydev_debug_host = localhost
+#pydev_debug_port = 5678
+
+# path to pydevd library. It will be used if pydevd is absent in sys.path
+#pydev_path = <path>
