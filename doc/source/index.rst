@@ -31,6 +31,8 @@ github in the `Trove Integration`_ Repository.
 For further details on how to install Trove using the integration
 scripts please refer to the :doc:`dev/install` page.
 
+For further details on how to install Trove to work with existing
+OpenStack environment please refer to the :doc:`dev/manual_install` page.
 
 Developer Resources
 ===================
