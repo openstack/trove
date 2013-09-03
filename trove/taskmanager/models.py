@@ -454,36 +454,50 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                               deleted_at=timeutils.isotime(deleted_at),
                               server=old_server)
 
-    def resize_volume(self, new_size):
-        old_volume_size = self.volume_size
-        new_size = int(new_size)
-        LOG.debug("%s: Resizing volume for instance: %s from %s to %r GB"
-                  % (greenthread.getcurrent(), self.server.id,
-                     old_volume_size, new_size))
+    def _resize_active_volume(self, new_size):
+        try:
+            LOG.debug("Instance %s calling stop_db..." % self.server.id)
+            self.guest.stop_db()
+
+            LOG.debug("Detach volume %s from instance %s" % (self.volume_id,
+                                                             self.server.id))
+            self.volume_client.volumes.detach(self.volume_id)
+
+            utils.poll_until(
+                lambda: self.volume_client.volumes.get(self.volume_id),
+                lambda volume: volume.status == 'available',
+                sleep_time=2,
+                time_out=CONF.volume_time_out)
+
+            LOG.debug("Successfully detach volume %s" % self.volume_id)
+        except Exception as e:
+            LOG.error("Failed to detach volume %s instance %s: %s" % (
+                self.volume_id, self.server.id, str(e)))
+            self.restart()
+            raise
+
+        self._do_resize(new_size)
+        self.volume_client.volumes.attach(self.server.id, self.volume_id)
+
+        self.restart()
+
+    def _do_resize(self, new_size):
         try:
             self.volume_client.volumes.extend(self.volume_id, new_size)
         except cinder_exceptions.ClientException:
-            self.update_db(task_status=inst_models.InstanceTasks.NONE)
             LOG.exception("Error encountered trying to rescan or resize the "
                           "attached volume filesystem for volume: "
                           "%s" % self.volume_id)
             raise
 
         try:
+            volume = self.volume_client.volumes.get(self.volume_id)
             utils.poll_until(
                 lambda: self.volume_client.volumes.get(self.volume_id),
-                lambda volume: volume.status == 'in-use',
+                lambda volume: volume.size == int(new_size),
                 sleep_time=2,
                 time_out=CONF.volume_time_out)
-            volume = self.volume_client.volumes.get(self.volume_id)
-            self.update_db(volume_size=volume.size)
-            self.nova_client.volumes.rescan_server_volume(self.server,
-                                                          self.volume_id)
-            self.send_usage_event('modify_volume',
-                                  old_volume_size=old_volume_size,
-                                  launched_at=timeutils.isotime(),
-                                  modify_at=timeutils.isotime(),
-                                  volume_size=new_size)
+            self.update_db(volume_size=new_size)
         except PollTimeOut as pto:
             LOG.error("Timeout trying to rescan or resize the attached volume "
                       "filesystem for volume: %s" % self.volume_id)
@@ -494,6 +508,23 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                       % self.volume_id)
         finally:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
+
+    def resize_volume(self, new_size):
+        old_volume_size = self.volume_size
+        new_size = int(new_size)
+        LOG.debug("%s: Resizing volume for instance: %s from %s to %r GB"
+                  % (greenthread.getcurrent(), self.server.id,
+                     old_volume_size, new_size))
+
+        if self.server.status == 'active':
+            self._resize_active_volume(new_size)
+        else:
+            self._do_resize(new_size)
+
+        self.send_usage_event('modify_volume', old_volume_size=old_volume_size,
+                              launched_at=timeutils.isotime(),
+                              modify_at=timeutils.isotime(),
+                              volume_size=new_size)
 
     def resize_flavor(self, old_flavor, new_flavor):
         action = ResizeAction(self, old_flavor, new_flavor)
