@@ -122,6 +122,7 @@ common_opts = [
                 help="Require user hostnames to be IPv4 addresses."),
     cfg.BoolOpt('trove_security_groups_support', default=True),
     cfg.BoolOpt('trove_security_groups_rules_support', default=True),
+    cfg.StrOpt('trove_security_group_name_prefix', default='SecGroup'),
     cfg.StrOpt('trove_security_group_rule_protocol', default='tcp'),
     cfg.IntOpt('trove_security_group_rule_port', default=3306),
     cfg.StrOpt('trove_security_group_rule_cidr', default='0.0.0.0/0'),
