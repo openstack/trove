@@ -45,3 +45,60 @@ class SingleInstanceConfigTemplate(object):
         self.config_contents = self.template.render(
             flavor=self.flavor_dict)
         return self.config_contents
+
+
+class HeatTemplate(object):
+    template_contents = """HeatTemplateFormatVersion: '2012-12-12'
+Description: Instance creation
+Parameters:
+  KeyName: {Type: String}
+  Flavor: {Type: String}
+  VolumeSize: {Type: Number}
+  ServiceType: {Type: String}
+  InstanceId: {Type: String}
+Resources:
+  BaseInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /etc/guest_info:
+              content:
+                Fn::Join:
+                - ''
+                - ["[DEFAULT]\\nguest_id=", {Ref: InstanceId},
+                  "\\nservice_type=", {Ref: ServiceType}]
+              mode: '000644'
+              owner: root
+              group: root
+    Properties:
+      ImageId:
+        Fn::Join:
+        - ''
+        - ["ubuntu_", {Ref: ServiceType}]
+      InstanceType: {Ref: Flavor}
+      KeyName: {Ref: KeyName}
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - ["#!/bin/bash -v\\n",
+              "/opt/aws/bin/cfn-init\\n",
+              "sudo service trove-guest start\\n"]
+  DataVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: {Ref: VolumeSize}
+      AvailabilityZone: nova
+      Tags:
+      - {Key: Usage, Value: Test}
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      VolumeId: {Ref: DataVolume}
+      Device: /dev/vdb"""
+
+    def template(self):
+        return self.template_contents
