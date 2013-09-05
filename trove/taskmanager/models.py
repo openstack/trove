@@ -17,9 +17,6 @@ import os.path
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
-from novaclient import base
-from novaclient.v1_1 import servers
-from novaclient.v1_1 import volumes
 from trove.common import cfg
 from trove.common import template
 from trove.common import utils
@@ -69,6 +66,15 @@ class NotifyMixin(object):
     This adds the ability to send usage events to an Instance object.
     """
 
+    def _get_service_id(self, service_type, id_map):
+        if service_type in id_map:
+            service_type_id = id_map[service_type]
+        else:
+            service_type_id = cfg.UNKNOWN_SERVICE_ID
+            LOG.error("Service ID for Type (%s) is not configured"
+                      % service_type)
+        return service_type_id
+
     def send_usage_event(self, event_type, **kwargs):
         event_type = 'trove.instance.%s' % event_type
         publisher_id = CONF.host
@@ -107,10 +113,8 @@ class NotifyMixin(object):
                 'nova_volume_id': self.volume_id
             })
 
-        if CONF.notification_service_id:
-            payload.update({
-                'service_id': CONF.notification_service_id
-            })
+        payload['service_id'] = self._get_service_id(
+            self.service_type, CONF.notification_service_id)
 
         # Update payload with all other kwargs
         payload.update(kwargs)

@@ -180,21 +180,34 @@ class NotificationTransformer(object):
             subsecond=True)
         return audit_start, audit_end
 
+    def _get_service_id(self, service_type, id_map):
+        if service_type in id_map:
+            service_type_id = id_map[service_type]
+        else:
+            service_type_id = cfg.UNKNOWN_SERVICE_ID
+            LOG.error("Service ID for Type (%s) is not configured"
+                      % service_type)
+        return service_type_id
+
     def transform_instance(self, instance, audit_start, audit_end):
-        return {'audit_period_beginning': audit_start,
-                'audit_period_ending': audit_end,
-                'created_at': instance.created,
-                'display_name': instance.name,
-                'instance_id': instance.id,
-                'instance_name': instance.name,
-                'instance_type_id': instance.flavor_id,
-                'launched_at': instance.created,
-                'nova_instance_id': instance.server_id,
-                'region': CONF.region,
-                'state_description': instance.status.lower(),
-                'state': instance.status.lower(),
-                'tenant_id': instance.tenant_id,
-                'service_id': CONF.notification_service_id}
+        payload = {
+            'audit_period_beginning': audit_start,
+            'audit_period_ending': audit_end,
+            'created_at': instance.created,
+            'display_name': instance.name,
+            'instance_id': instance.id,
+            'instance_name': instance.name,
+            'instance_type_id': instance.flavor_id,
+            'launched_at': instance.created,
+            'nova_instance_id': instance.server_id,
+            'region': CONF.region,
+            'state_description': instance.status.lower(),
+            'state': instance.status.lower(),
+            'tenant_id': instance.tenant_id
+        }
+        payload['service_id'] = self._get_service_id(
+            instance.service_type, CONF.notification_service_id)
+        return payload
 
     def __call__(self):
         audit_start, audit_end = NotificationTransformer._get_audit_period()

@@ -26,20 +26,17 @@ from trove import tests
 from trove.tests.util.check import Checker
 from troveclient.exceptions import BadRequest
 from troveclient.exceptions import HTTPNotImplemented
-from troveclient.exceptions import UnprocessableEntity
 from trove.tests.api.instances import GROUP as INSTANCE_GROUP
 from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
-from trove.tests import util
 from trove.tests.util.server_connection import create_server_connection
 from trove.tests.util import poll_until
 from trove.tests.config import CONFIG
 from trove.tests.util import LocalSqlClient
 from trove.tests.util import iso_time
-from sqlalchemy import create_engine
 from sqlalchemy import exc as sqlalchemy_exc
 from trove.tests.util.check import TypeCheck
 from sqlalchemy.sql.expression import text
@@ -50,6 +47,8 @@ GROUP_RESTART = "dbaas.api.instances.actions.restart"
 GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
+# stored in test conf
+SERVICE_ID = '123'
 FAKE_MODE = CONFIG.fake_mode
 # If true, then we will actually log into the database.
 USE_IP = not FAKE_MODE
@@ -499,6 +498,7 @@ class ResizeInstanceTest(ActionTestBase):
             'created_at': iso_time(instance_info.initial_result.created),
             'launched_at': iso_time(self.instance.updated),
             'modify_at': iso_time(self.instance.updated),
+            'service_id': SERVICE_ID
         }
 
         instance_info.consumer.check_message(instance_info.id,
@@ -568,6 +568,7 @@ class ResizeInstanceTest(ActionTestBase):
             'created_at': iso_time(instance_info.initial_result.created),
             'launched_at': iso_time(self.instance.updated),
             'modify_at': iso_time(self.instance.updated),
+            'service_id': SERVICE_ID
         }
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.modify_flavor',
@@ -637,6 +638,7 @@ class ResizeInstanceVolume(object):
             'launched_at': iso_time(instance.updated),
             'modify_at': iso_time(instance.updated),
             'volume_size': self.new_volume_size,
+            'service_id': SERVICE_ID
         }
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.modify_volume',
