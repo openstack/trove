@@ -50,13 +50,13 @@ Float = lambda: sqlalchemy.types.Float()
 
 def create_tables(tables):
     for table in tables:
-        logger.info("creating table %(table)s" % locals())
+        logger.info("creating table %(table)s" % {'table': table})
         table.create()
 
 
 def drop_tables(tables):
     for table in tables:
-        logger.info("dropping table %(table)s" % locals())
+        logger.info("dropping table %(table)s" % {'table': table})
         table.drop()
 
 

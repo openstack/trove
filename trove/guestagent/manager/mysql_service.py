@@ -703,8 +703,7 @@ class MySqlApp(object):
         LOG.info("Enabling mysql on boot.")
         conf = "/etc/init/mysql.conf"
         if os.path.isfile(conf):
-            command = "sudo sed -i '/^manual$/d' %(conf)s"
-            command = command % locals()
+            command = "sudo sed -i '/^manual$/d' %(conf)s" % {'conf': conf}
         else:
             command = system.MYSQL_CMD_ENABLE
         utils.execute_with_timeout(command, shell=True)
@@ -721,8 +720,7 @@ class MySqlApp(object):
         LOG.info("Disabling mysql on boot.")
         conf = "/etc/init/mysql.conf"
         if os.path.isfile(conf):
-            command = '''sudo sh -c "echo manual >> %(conf)s"'''
-            command = command % locals()
+            command = "sudo sh -c 'echo manual >> %(conf)s'" % {'conf': conf}
         else:
             command = system.MYSQL_CMD_DISABLE
         utils.execute_with_timeout(command, shell=True)

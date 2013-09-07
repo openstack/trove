@@ -270,9 +270,10 @@ def execute_with_timeout(*args, **kwargs):
     time = kwargs.get('timeout', 30)
 
     def cb_timeout():
-        msg = _("Time out after waiting"
-                " %(time)s seconds when running proc: %(args)s"
-                " %(kwargs)s") % locals()
+        msg = (_("Time out after waiting"
+                 " %(time)s seconds when running proc: %(args)s"
+                 " %(kwargs)s") % {'time': time, 'args': args,
+                                   'kwargs': kwargs})
         LOG.error(msg)
         raise exception.ProcessExecutionError(msg)
 
@@ -284,9 +285,10 @@ def execute_with_timeout(*args, **kwargs):
             LOG.error("Timeout reached but not from our timeout. This is bad!")
             raise
         else:
-            msg = _("Time out after waiting "
-                    "%(time)s seconds when running proc: %(args)s"
-                    " %(kwargs)s") % locals()
+            msg = (_("Time out after waiting "
+                     "%(time)s seconds when running proc: %(args)s"
+                     " %(kwargs)s") % {'time': time, 'args': args,
+                                       'kwargs': kwargs})
             LOG.error(msg)
             raise exception.ProcessExecutionError(msg)
     finally:
