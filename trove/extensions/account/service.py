@@ -39,8 +39,8 @@ class AccountController(wsgi.Controller):
     def show(self, req, tenant_id, id):
         """Return a account and instances associated with a single account."""
         LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing account information for '%s' to '%s'") %
-                 (id, tenant_id))
+        LOG.info(_("Showing account information for '%(account)s' "
+                   "to '%(tenant)s'") % {'account': id, 'tenant': tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         account = models.Account.load(context, id)

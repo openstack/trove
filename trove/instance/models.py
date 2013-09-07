@@ -193,9 +193,10 @@ class SimpleInstance(object):
             if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED"]:
                 return InstanceStatus.SHUTDOWN
             else:
-                msg = _("While shutting down instance (%s): server had "
-                        "status (%s).")
-                LOG.error(msg % (self.id, self.db_info.server_status))
+                LOG.error(_("While shutting down instance (%(instance)s): "
+                            "server had status (%(status)s).") %
+                          {'instance': self.id,
+                           'status': self.db_info.server_status})
                 return InstanceStatus.ERROR
 
         ### Check against the service status.
@@ -455,8 +456,9 @@ class Instance(BuiltInstance):
                                         volume_size=volume_size,
                                         service_type=service_type,
                                         task_status=InstanceTasks.BUILDING)
-            LOG.debug(_("Tenant %s created new Trove instance %s...")
-                      % (context.tenant, db_info.id))
+            LOG.debug(_("Tenant %(tenant)s created new "
+                        "Trove instance %(db)s...") %
+                      {'tenant': context.tenant, 'db': db_info.id})
 
             service_status = InstanceServiceStatus.create(
                 instance_id=db_info.id,
@@ -611,8 +613,9 @@ def create_server_list_matcher(server_list):
                 instance_id=instance_id, server_id=server_id)
         else:
             # Should never happen, but never say never.
-            LOG.error(_("Server %s for instance %s was found twice!") %
-                      (server_id, instance_id))
+            LOG.error(_("Server %(server)s for instance %(instance)s was"
+                        "found twice!") % {'server': server_id,
+                                           'instance': instance_id})
             raise exception.TroveError(uuid=instance_id)
 
     return find_server

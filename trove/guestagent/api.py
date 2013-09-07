@@ -160,7 +160,8 @@ class API(proxy.RpcProxy):
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
-        LOG.debug(_("Deleting user %s for Instance %s"), user, self.id)
+        LOG.debug(_("Deleting user %(user)s for Instance %(instance_id)s") %
+                  {'user': user, 'instance_id': self.id})
         self._cast("delete_user", user=user)
 
     def create_database(self, databases):
@@ -178,7 +179,9 @@ class API(proxy.RpcProxy):
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database
            within the specified container"""
-        LOG.debug(_("Deleting database %s for Instance %s"), database, self.id)
+        LOG.debug(_("Deleting database %(database)s for "
+                    "Instance %(instance_id)s") % {'database': database,
+                                                   'instance_id': self.id})
         self._cast("delete_database", database=database)
 
     def enable_root(self):
@@ -265,5 +268,7 @@ class API(proxy.RpcProxy):
 
     def create_backup(self, backup_id):
         """Make async call to create a full backup of this instance"""
-        LOG.debug(_("Create Backup %s for Instance %s"), backup_id, self.id)
+        LOG.debug(_("Create Backup %(backup_id)s "
+                    "for Instance %(instance_id)s") % {'backup_id': backup_id,
+                                                       'instance_id': self.id})
         self._cast("create_backup", backup_id=backup_id)

@@ -55,14 +55,14 @@ class DatabaseModelBase(models.ModelBase):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
         self['updated'] = utils.utcnow()
-        LOG.debug(_("Saving %s: %s") %
-                  (self.__class__.__name__, self.__dict__))
+        LOG.debug(_("Saving %(name)s: %(dict)s") %
+                  {'name': self.__class__.__name__, 'dict': self.__dict__})
         return self.db_api.save(self)
 
     def delete(self):
         self['updated'] = utils.utcnow()
-        LOG.debug(_("Deleting %s: %s") %
-                  (self.__class__.__name__, self.__dict__))
+        LOG.debug(_("Deleting %(name)s: %(dict)s") %
+                  {'name': self.__class__.__name__, 'dict': self.__dict__})
 
         if self.preserve_on_delete:
             self['deleted_at'] = utils.utcnow()
