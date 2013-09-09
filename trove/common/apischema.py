@@ -93,7 +93,7 @@ databases_ref_list = {
     "items": {
         "type": "object",
         "required": ["name"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "name": non_empty_string
         }
@@ -102,12 +102,12 @@ databases_ref_list = {
 
 databases_ref_list_required = {
     "type": "array",
-    "minItems": 1,
+    "minItems": 0,
     "uniqueItems": True,
     "items": {
         "type": "object",
         "required": ["name"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "name": non_empty_string
         }
@@ -117,7 +117,7 @@ databases_ref_list_required = {
 databases_ref = {
     "type": "object",
     "required": ["databases"],
-    "additionalProperties": False,
+    "additionalProperties": True,
     "properties": {
         "databases": databases_ref_list_required
     }
@@ -125,11 +125,11 @@ databases_ref = {
 
 databases_def = {
     "type": "array",
-    "minItems": 1,
+    "minItems": 0,
     "items": {
         "type": "object",
         "required": ["name"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "name": non_empty_string,
             "character_set": non_empty_string,
@@ -140,7 +140,7 @@ databases_def = {
 
 user_attributes = {
     "type": "object",
-    "additionalProperties": False,
+    "additionalProperties": True,
     "minProperties": 1,
     "properties": {
         "name": name_string,
@@ -152,11 +152,11 @@ user_attributes = {
 
 users_list = {
     "type": "array",
-    "minItems": 1,
+    "minItems": 0,
     "items": {
         "type": "object",
         "required": ["name", "password"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "name": name_string,
             "password": non_empty_string,
@@ -170,23 +170,24 @@ instance = {
     "create": {
         "type": "object",
         "required": ["instance"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "instance": {
                 "type": "object",
                 "required": ["name", "flavorRef",
                              "volume" if CONF.trove_volume_support else None],
-                "additionalProperties": False,
+                "additionalProperties": True,
                 "properties": {
                     "name": non_empty_string,
                     "flavorRef": flavorref,
                     "volume": volume,
                     "databases": databases_def,
                     "users": users_list,
+                    "service_type": non_empty_string,
                     "restorePoint": {
                         "type": "object",
                         "required": ["backupRef"],
-                        "additionalProperties": False,
+                        "additionalProperties": True,
                         "properties": {
                             "backupRef": uuid
                         }
@@ -200,12 +201,12 @@ instance = {
             "volume": {
                 "type": "object",
                 "required": ["resize"],
-                "additionalProperties": False,
+                "additionalProperties": True,
                 "properties": {
                     "resize": {
                         "type": "object",
                         "required": ["volume"],
-                        "additionalProperties": False,
+                        "additionalProperties": True,
                         "properties": {
                             "volume": volume
                         }
@@ -215,12 +216,12 @@ instance = {
             'flavorRef': {
                 "type": "object",
                 "required": ["resize"],
-                "additionalProperties": False,
+                "additionalProperties": True,
                 "properties": {
                     "resize": {
                         "type": "object",
                         "required": ["flavorRef"],
-                        "additionalProperties": False,
+                        "additionalProperties": True,
                         "properties": {
                             "flavorRef": flavorref
                         }
@@ -231,7 +232,7 @@ instance = {
         "restart": {
             "type": "object",
             "required": ["restart"],
-            "additionalProperties": False,
+            "additionalProperties": True,
             "properties": {
                 "restart": {
                     "type": "object"
@@ -246,7 +247,7 @@ mgmt_instance = {
         'migrate': {
             "type": "object",
             "required": ["migrate"],
-            "additionalProperties": False,
+            "additionalProperties": True,
             "properties": {
                 "migrate": {
                     "type": "object"
@@ -256,7 +257,7 @@ mgmt_instance = {
         "reboot": {
             "type": "object",
             "required": ["reboot"],
-            "additionalProperties": False,
+            "additionalProperties": True,
             "properties": {
                 "reboot": {
                     "type": "object"
@@ -266,7 +267,7 @@ mgmt_instance = {
         "stop": {
             "type": "object",
             "required": ["stop"],
-            "additionalProperties": False,
+            "additionalProperties": True,
             "properties": {
                 "stop": {
                     "type": "object"
@@ -289,7 +290,7 @@ user = {
         "users": {
             "type": "object",
             "required": ["users"],
-            "additionalProperties": False,
+            "additionalProperties": True,
             "properties": {
                 "users": users_list
             }
@@ -299,7 +300,7 @@ user = {
     "update": {
         "type": "object",
         "required": ["user"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "user": user_attributes
         }
@@ -310,7 +311,7 @@ dbschema = {
     "create": {
         "type": "object",
         "required": ["databases"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "databases": databases_def
         }
@@ -341,7 +342,7 @@ account = {
         "type": "object",
         "name": "users",
         "required": ["users"],
-        "additionalProperties": False,
+        "additionalProperties": True,
         "properties": {
             "users": users_list
         }

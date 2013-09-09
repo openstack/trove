@@ -103,12 +103,10 @@ class MalformedJson(object):
                          % (httpCode, e))
             err_1 = format_path(deque(('users', 0)))
             assert_equal(e.message,
-                         "Validation error: %s "
-                         "Additional properties are not allowed "
-                         "(u'password12', u'name12' were unexpected); "
-                         "%s 'name' is a required property; "
-                         "%s 'password' is a required property" %
-                         (err_1, err_1, err_1))
+                         "Validation error: "
+                         "%(err_1)s 'name' is a required property; "
+                         "%(err_1)s 'password' is a required property" %
+                         {'err_1': err_1})
 
     @test
     def test_bad_resize_instance_data(self):
