@@ -27,4 +27,4 @@ while getopts ":hE:" opt; do
 done
 shift $((OPTIND-1))
 
-source "${venv}/bin/activate" && $@
+source "${venv}/bin/activate" && "$@"
