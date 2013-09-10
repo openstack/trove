@@ -135,7 +135,7 @@ class ConfigurationMixin(object):
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         service_type, volume_size, security_groups,
-                        backup_id, availability_zone):
+                        backup_id, availability_zone, root_password):
         if use_heat:
             server, volume_info = self._create_server_volume_heat(
                 flavor,
@@ -173,7 +173,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if server:
             self._guest_prepare(server, flavor['ram'], volume_info,
                                 databases, users, backup_id,
-                                config.config_contents)
+                                config.config_contents, root_password)
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
@@ -416,14 +416,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
                        databases, users, backup_id=None,
-                       config_contents=None):
+                       config_contents=None, root_password=None):
         LOG.info("Entering guest_prepare.")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, databases, users,
                            device_path=volume_info['device_path'],
                            mount_point=volume_info['mount_point'],
                            backup_id=backup_id,
-                           config_contents=config_contents)
+                           config_contents=config_contents,
+                           root_password=root_password)
 
     def _create_dns_entry(self):
         LOG.debug("%s: Creating dns entry for instance: %s" %

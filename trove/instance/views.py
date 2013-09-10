@@ -93,14 +93,17 @@ class InstanceDetailView(InstanceView):
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
 
-        if isinstance(self.instance, models.DetailInstance) and \
-            self.instance.volume_used:
+        if (isinstance(self.instance, models.DetailInstance) and
+                self.instance.volume_used):
             used = self.instance.volume_used
             if CONF.trove_volume_support:
                 result['instance']['volume']['used'] = used
             else:
                 # either ephemeral or root partition
                 result['instance']['local_storage'] = {'used': used}
+
+        if self.instance.root_password:
+            result['instance']['password'] = self.instance.root_password
 
         return result
 

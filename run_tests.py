@@ -136,6 +136,7 @@ if __name__ == "__main__":
         from trove.tests.api import instances_resize
         from trove.tests.api import databases
         from trove.tests.api import root
+        from trove.tests.api import root_on_create
         from trove.tests.api import users
         from trove.tests.api import user_access
         from trove.tests.api.mgmt import accounts

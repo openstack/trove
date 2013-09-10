@@ -85,7 +85,8 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Restored database successfully"))
 
     def prepare(self, context, databases, memory_mb, users, device_path=None,
-                mount_point=None, backup_id=None, config_contents=None):
+                mount_point=None, backup_id=None, config_contents=None,
+                root_password=None):
         """Makes ready DBAAS on a Guest container."""
         MySqlAppStatus.get().begin_mysql_install()
         # status end_mysql_install set with secure()
@@ -114,9 +115,16 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Securing mysql now."))
         app.secure(config_contents)
         enable_root_on_restore = (backup_id and MySqlAdmin().is_root_enabled())
-        if enable_root_on_restore:
+        if root_password and not backup_id:
+            app.secure_root(secure_remote_root=True)
+            MySqlAdmin().enable_root(root_password)
             MySqlAdmin().report_root_enabled(context)
-        app.secure_root(secure_remote_root=not enable_root_on_restore)
+        elif enable_root_on_restore:
+            app.secure_root(secure_remote_root=False)
+            MySqlAdmin().report_root_enabled(context)
+        else:
+            app.secure_root(secure_remote_root=True)
+
         app.complete_install_or_restart()
 
         if databases:

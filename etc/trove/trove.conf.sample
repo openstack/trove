@@ -75,6 +75,8 @@ taskmanager_queue = taskmanager
 # Auth
 admin_roles = admin
 
+root_on_create = False
+
 # Users to ignore for user create/list/delete operations
 ignore_users = os_admin, root
 ignore_dbs = lost+found, mysql, information_schema

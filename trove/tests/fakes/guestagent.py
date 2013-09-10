@@ -208,7 +208,8 @@ class FakeGuest(object):
         return self.users.get((username, hostname), None)
 
     def prepare(self, memory_mb, databases, users, device_path=None,
-                mount_point=None, backup_id=None, config_contents=None):
+                mount_point=None, backup_id=None, config_contents=None,
+                root_password=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
         from trove.instance.models import ServiceStatuses
