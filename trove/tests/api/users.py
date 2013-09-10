@@ -276,6 +276,23 @@ class TestUsers(object):
                       self.dbaas.users.update_attributes, instance_info.id,
                       "root", user_new)
 
+    @test()
+    def test_updateuser_emptyhost(self):
+        # Cannot update the user hostname with an empty string
+        users = []
+        username = "testuser1"
+        hostname = "192.168.0.1"
+        users.append({"name": username, "password": "password",
+                      "host": hostname, "databases": []})
+        self.dbaas.users.create(instance_info.id, users)
+        user_new = {"host": ""}
+        hostname = hostname.replace('.', '%2e')
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      username, user_new, hostname)
+        assert_equal(400, self.dbaas.last_http_code)
+        self.dbaas.users.delete(instance_info.id, username, hostname=hostname)
+
     @test(depends_on=[test_create_users])
     def test_hostname_ipv4_restriction(self):
         # By default, user hostnames are required to be % or IPv4 addresses.

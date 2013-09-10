@@ -106,13 +106,13 @@ class FakeGuest(object):
             self._create_user({
                 "_name": name,
                 "_host": host,
-                "_password": self.users[(name, host)]['password'],
+                "_password": self.users[(old_name, host)]['_password'],
                 "_databases": [],
             })
             self.grants[(name, host)] = old_grants
             del self.users[(old_name, old_host)]
         if new_password:
-            self.users[(name, host)]['password'] = new_password
+            self.users[(name, host)]['_password'] = new_password
 
     def create_database(self, databases):
         for db in databases:

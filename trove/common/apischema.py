@@ -57,7 +57,7 @@ non_empty_string = {
 
 host_string = {
     "type": "string",
-    "minLength": 0,
+    "minLength": 1,
     "pattern": "^[%]?[\w(-).]*[%]?$"
 }
 
