@@ -41,6 +41,7 @@ class MockMgmtInstanceTest(TestCase):
     def setUp(self):
         super(MockMgmtInstanceTest, self).setUp()
         self.context = TroveContext()
+        self.context.auth_token = 'some_secret_password'
         self.client = mock(Client)
         self.server_mgr = mock(ServerManager)
         self.client.servers = self.server_mgr
@@ -277,6 +278,7 @@ class TestMgmtInstanceTasks(MockMgmtInstanceTest):
         flavor = mock(Flavor)
         flavor.name = 'db.small'
         when(self.flavor_mgr).get('flavor_1').thenReturn(flavor)
+        self.assertThat(self.context.auth_token, Is('some_secret_password'))
         when(notifier).notify(self.context,
                               any(str),
                               'trove.instance.exists',
@@ -291,3 +293,4 @@ class TestMgmtInstanceTasks(MockMgmtInstanceTest):
                                          'trove.instance.exists',
                                          'INFO',
                                          any(dict))
+        self.assertThat(self.context.auth_token, Is(None))
