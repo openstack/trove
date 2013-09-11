@@ -23,6 +23,7 @@ from novaclient.v1_1.servers import Server, ServerManager
 from trove.backup.models import Backup
 
 from trove.common.context import TroveContext
+from trove.common import instance as rd_instance
 from trove.db.models import DatabaseModelBase
 from trove.extensions.mgmt.instances.models import NotificationTransformer
 from trove.extensions.mgmt.instances.models import \
@@ -30,7 +31,6 @@ from trove.extensions.mgmt.instances.models import \
 from trove.extensions.mgmt.instances.models import SimpleMgmtInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
-from trove.instance.models import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.openstack.common.notifier import api as notifier
@@ -57,7 +57,7 @@ class MockMgmtInstanceTest(TestCase):
 class TestNotificationTransformer(MockMgmtInstanceTest):
     def test_tranformer(self):
         transformer = NotificationTransformer(context=self.context)
-        status = ServiceStatuses.BUILDING.api_status
+        status = rd_instance.ServiceStatuses.BUILDING.api_status
         db_instance = DBInstance(InstanceTasks.BUILDING,
                                  created='xyz',
                                  name='test_name',
@@ -70,7 +70,7 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
         when(DatabaseModelBase).find_all(deleted=False).thenReturn(
             [db_instance])
         when(DatabaseModelBase).find_by(instance_id='1').thenReturn(
-            InstanceServiceStatus(ServiceStatuses.BUILDING))
+            InstanceServiceStatus(rd_instance.ServiceStatuses.BUILDING))
 
         payloads = transformer()
         self.assertIsNotNone(payloads)
@@ -100,7 +100,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(transformer._lookup_flavor('2'), Equals('unknown'))
 
     def test_tranformer(self):
-        status = ServiceStatuses.BUILDING.api_status
+        status = rd_instance.ServiceStatuses.BUILDING.api_status
         db_instance = DBInstance(InstanceTasks.BUILDING,
                                  created='xyz',
                                  name='test_name',
@@ -140,7 +140,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(payload['user_id'], Equals('test_user_id'))
 
     def test_tranformer_shutdown_instance(self):
-        status = ServiceStatuses.SHUTDOWN.api_status
+        status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
         db_instance = DBInstance(InstanceTasks.DELETING,
                                  created='xyz',
                                  name='test_name',
@@ -175,7 +175,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(len(payloads), Equals(0))
 
     def test_tranformer_no_nova_instance(self):
-        status = ServiceStatuses.SHUTDOWN.api_status
+        status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
         db_instance = DBInstance(InstanceTasks.DELETING,
                                  created='xyz',
                                  name='test_name',
@@ -208,7 +208,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(len(payloads), Equals(0))
 
     def test_tranformer_flavor_cache(self):
-        status = ServiceStatuses.BUILDING.api_status
+        status = rd_instance.ServiceStatuses.BUILDING.api_status
         db_instance = DBInstance(InstanceTasks.BUILDING,
                                  created='xyz',
                                  name='test_name',
@@ -252,7 +252,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
 
 class TestMgmtInstanceTasks(MockMgmtInstanceTest):
     def test_public_exists_events(self):
-        status = ServiceStatuses.BUILDING.api_status
+        status = rd_instance.ServiceStatuses.BUILDING.api_status
         db_instance = DBInstance(InstanceTasks.BUILDING,
                                  created='xyz',
                                  name='test_name',

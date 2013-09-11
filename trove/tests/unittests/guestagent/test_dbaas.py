@@ -36,6 +36,7 @@ from testtools.matchers import Not
 import trove
 from trove.common.context import TroveContext
 from trove.common import utils
+from trove.common import instance as rd_instance
 import trove.guestagent.manager.mysql_service as dbaas
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
@@ -45,7 +46,6 @@ from trove.guestagent.manager.mysql_service import MySqlApp
 from trove.guestagent.manager.mysql_service import MySqlAppStatus
 from trove.guestagent.manager.mysql_service import KeepAliveConnection
 from trove.guestagent.db import models
-from trove.instance.models import ServiceStatuses
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
 
@@ -447,8 +447,9 @@ class MySqlAppTest(testtools.TestCase):
         util.init_db()
         self.FAKE_ID = randint(1, 10000)
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=ServiceStatuses.NEW)
-        self.appStatus = FakeAppStatus(self.FAKE_ID, ServiceStatuses.NEW)
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
         self.mySqlApp = MySqlApp(self.appStatus)
         time.sleep = Mock()
 
@@ -465,7 +466,8 @@ class MySqlAppTest(testtools.TestCase):
 
     def mysql_starts_successfully(self):
         def start(update_db=False):
-            self.appStatus.set_next_status(ServiceStatuses.RUNNING)
+            self.appStatus.set_next_status(
+                rd_instance.ServiceStatuses.RUNNING)
 
         self.mySqlApp.start_mysql.side_effect = start
 
@@ -477,7 +479,8 @@ class MySqlAppTest(testtools.TestCase):
 
     def mysql_stops_successfully(self):
         def stop():
-            self.appStatus.set_next_status(ServiceStatuses.SHUTDOWN)
+            self.appStatus.set_next_status(
+                rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.mySqlApp.stop_db.side_effect = stop
 
@@ -490,23 +493,25 @@ class MySqlAppTest(testtools.TestCase):
     def test_stop_mysql(self):
 
         dbaas.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(ServiceStatuses.SHUTDOWN)
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.mySqlApp.stop_db()
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_stop_mysql_with_db_update(self):
 
         dbaas.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(ServiceStatuses.SHUTDOWN)
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.mySqlApp.stop_db(True)
-        self.assert_reported_status(ServiceStatuses.SHUTDOWN)
+        self.assert_reported_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
     def test_stop_mysql_error(self):
 
         dbaas.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(ServiceStatuses.RUNNING)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         self.mySqlApp.state_change_wait_time = 1
         self.assertRaises(RuntimeError, self.mySqlApp.stop_db)
 
@@ -521,7 +526,7 @@ class MySqlAppTest(testtools.TestCase):
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(ServiceStatuses.RUNNING)
+        self.assert_reported_status(rd_instance.ServiceStatuses.RUNNING)
 
     def test_restart_mysql_wont_start_up(self):
 
@@ -534,7 +539,7 @@ class MySqlAppTest(testtools.TestCase):
 
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertFalse(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_wipe_ib_logfiles_no_file(self):
 
@@ -556,27 +561,27 @@ class MySqlAppTest(testtools.TestCase):
     def test_start_mysql(self):
 
         dbaas.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(ServiceStatuses.RUNNING)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
 
         self.mySqlApp.start_mysql()
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_start_mysql_with_db_update(self):
 
         dbaas.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(ServiceStatuses.RUNNING)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
 
         self.mySqlApp.start_mysql(True)
-        self.assert_reported_status(ServiceStatuses.RUNNING)
+        self.assert_reported_status(rd_instance.ServiceStatuses.RUNNING)
 
     def test_start_mysql_runs_forever(self):
 
         dbaas.utils.execute_with_timeout = Mock()
         self.mySqlApp.state_change_wait_time = 1
-        self.appStatus.set_next_status(ServiceStatuses.SHUTDOWN)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
-        self.assert_reported_status(ServiceStatuses.SHUTDOWN)
+        self.assert_reported_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
     def test_start_mysql_error(self):
 
@@ -593,20 +598,20 @@ class MySqlAppTest(testtools.TestCase):
         self.mySqlApp._write_mycnf = Mock()
         self.mysql_starts_successfully()
 
-        self.appStatus.status = ServiceStatuses.SHUTDOWN
+        self.appStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
         self.mySqlApp.start_db_with_conf_changes(Mock())
 
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
         self.assertEqual(self.appStatus._get_actual_db_status(),
-                         ServiceStatuses.RUNNING)
+                         rd_instance.ServiceStatuses.RUNNING)
 
     def test_start_db_with_conf_changes_mysql_is_running(self):
 
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp._write_mycnf = Mock()
 
-        self.appStatus.status = ServiceStatuses.RUNNING
+        self.appStatus.status = rd_instance.ServiceStatuses.RUNNING
         self.assertRaises(RuntimeError,
                           self.mySqlApp.start_db_with_conf_changes,
                           Mock())
@@ -630,7 +635,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mySqlApp.is_installed = Mock(return_value=False)
         self.mySqlApp.install_if_needed()
         self.assertTrue(self.mySqlApp._install_mysql.called)
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_secure(self):
 
@@ -646,7 +651,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_install_install_error(self):
 
@@ -660,7 +665,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertRaises(pkg.PkgPackageStateError,
                           self.mySqlApp.install_if_needed)
 
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_secure_write_conf_error(self):
 
@@ -678,7 +683,7 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertFalse(self.mySqlApp.start_mysql.called)
-        self.assert_reported_status(ServiceStatuses.NEW)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_is_installed(self):
 
@@ -750,7 +755,7 @@ class MySqlAppMockTest(testtools.TestCase):
 
         verify(mock_conn, atleast=2).execute(any())
         inorder.verify(mock_status).wait_for_real_status_to_change_to(
-            ServiceStatuses.SHUTDOWN, any(), any())
+            rd_instance.ServiceStatuses.SHUTDOWN, any(), any())
         verifyNoMoreInteractions(mock_status)
 
     def test_secure_keep_root(self):
@@ -930,7 +935,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.orig_dbaas_time_sleep = dbaas.time.sleep
         self.FAKE_ID = randint(1, 10000)
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=ServiceStatuses.NEW)
+                                     status=rd_instance.ServiceStatuses.NEW)
         dbaas.CONF.guest_id = self.FAKE_ID
 
     def tearDown(self):
@@ -948,7 +953,8 @@ class MySqlAppStatusTest(testtools.TestCase):
 
         self.mySqlAppStatus.begin_mysql_install()
 
-        self.assertEquals(self.mySqlAppStatus.status, ServiceStatuses.BUILDING)
+        self.assertEquals(self.mySqlAppStatus.status,
+                          rd_instance.ServiceStatuses.BUILDING)
 
     def test_begin_mysql_restart(self):
 
@@ -963,11 +969,12 @@ class MySqlAppStatusTest(testtools.TestCase):
 
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=ServiceStatuses.SHUTDOWN)
+            Mock(return_value=rd_instance.ServiceStatuses.SHUTDOWN)
 
         self.mySqlAppStatus.end_install_or_restart()
 
-        self.assertEqual(ServiceStatuses.SHUTDOWN, self.mySqlAppStatus.status)
+        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
+                         self.mySqlAppStatus.status)
         self.assertFalse(self.mySqlAppStatus.restart_mode)
 
     def test_get_actual_db_status(self):
@@ -977,7 +984,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.mySqlAppStatus = MySqlAppStatus()
         status = self.mySqlAppStatus._get_actual_db_status()
 
-        self.assertEqual(ServiceStatuses.RUNNING, status)
+        self.assertEqual(rd_instance.ServiceStatuses.RUNNING, status)
 
     def test_get_actual_db_status_error_shutdown(self):
 
@@ -990,7 +997,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.mySqlAppStatus = MySqlAppStatus()
         status = self.mySqlAppStatus._get_actual_db_status()
 
-        self.assertEqual(ServiceStatuses.SHUTDOWN, status)
+        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN, status)
 
     def test_get_actual_db_status_error_crashed(self):
 
@@ -1004,11 +1011,11 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.mySqlAppStatus = MySqlAppStatus()
         status = self.mySqlAppStatus._get_actual_db_status()
 
-        self.assertEqual(ServiceStatuses.BLOCKED, status)
+        self.assertEqual(rd_instance.ServiceStatuses.BLOCKED, status)
 
     def test_is_mysql_installed(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.RUNNING
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.RUNNING
 
         self.assertTrue(self.mySqlAppStatus.is_mysql_installed)
 
@@ -1020,19 +1027,19 @@ class MySqlAppStatusTest(testtools.TestCase):
 
     def test_is_mysql_installed_building(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.BUILDING
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.BUILDING
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
     def test_is_mysql_installed_new(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.NEW
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.NEW
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
     def test_is_mysql_installed_failed(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.FAILED
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.FAILED
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
 
@@ -1044,32 +1051,32 @@ class MySqlAppStatusTest(testtools.TestCase):
 
     def test_is_mysql_running(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.RUNNING
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.RUNNING
 
         self.assertTrue(self.mySqlAppStatus.is_mysql_running)
 
     def test_is_mysql_running_not(self):
         self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = ServiceStatuses.SHUTDOWN
+        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
 
         self.assertFalse(self.mySqlAppStatus.is_mysql_running)
 
     def test_wait_for_real_status_to_change_to(self):
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=ServiceStatuses.RUNNING)
+            Mock(return_value=rd_instance.ServiceStatuses.RUNNING)
         dbaas.time.sleep = Mock()
 
         self.assertTrue(self.mySqlAppStatus.
                         wait_for_real_status_to_change_to
-                        (ServiceStatuses.RUNNING, 10))
+                        (rd_instance.ServiceStatuses.RUNNING, 10))
 
     def test_wait_for_real_status_to_change_to_timeout(self):
         self.mySqlAppStatus = MySqlAppStatus()
         self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=ServiceStatuses.RUNNING)
+            Mock(return_value=rd_instance.ServiceStatuses.RUNNING)
         dbaas.time.sleep = Mock()
 
         self.assertFalse(self.mySqlAppStatus.
                          wait_for_real_status_to_change_to
-                         (ServiceStatuses.SHUTDOWN, 10))
+                         (rd_instance.ServiceStatuses.SHUTDOWN, 10))

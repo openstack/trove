@@ -18,6 +18,7 @@
 from novaclient import exceptions as nova_exceptions
 from novaclient.v1_1.client import Client
 from trove.common.exception import PollTimeOut
+from trove.common import instance as rd_instance
 from trove.common.utils import poll_until
 from trove.openstack.common import log as logging
 from trove.tests.fakes.common import authorize
@@ -334,13 +335,12 @@ class FakeServers(object):
     def schedule_simulate_running_server(self, id, time_from_now):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
-        from trove.instance.models import ServiceStatuses
 
         def set_server_running():
             instance = DBInstance.find_by(compute_instance_id=id)
             LOG.debug("Setting server %s to running" % instance.id)
             status = InstanceServiceStatus.find_by(instance_id=instance.id)
-            status.status = ServiceStatuses.RUNNING
+            status.status = rd_instance.ServiceStatuses.RUNNING
             status.save()
         self.event_spawn(time_from_now, set_server_running)
 

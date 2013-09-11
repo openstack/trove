@@ -24,9 +24,9 @@ from trove.common.exception import PollTimeOut
 from trove.common import template
 from trove.common import utils
 from trove.common.context import TroveContext
+from trove.common import instance as rd_instance
 from trove.guestagent import api as guest
 from trove.instance.models import DBInstance
-from trove.instance.models import ServiceStatuses
 from trove.instance.tasks import InstanceTasks
 from trove.openstack.common.rpc.common import RPCException
 from trove.taskmanager import models as models
@@ -161,7 +161,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
-        self.instance.service_status = ServiceStatuses.PAUSED
+        self.instance.service_status = rd_instance.ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
             .AndRaise(PollTimeOut)
         self.instance.guest.reset_configuration(mox.IgnoreArg())
@@ -173,7 +173,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
-        self.instance.service_status = ServiceStatuses.SHUTDOWN
+        self.instance.service_status = rd_instance.ServiceStatuses.SHUTDOWN
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
         self.instance.guest.reset_configuration(mox.IgnoreArg())
@@ -185,7 +185,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
-        self.instance.service_status = ServiceStatuses.RUNNING
+        self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
         self.server.status = "SHUTDOWN"
@@ -195,7 +195,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self._nova_resizes_successfully()
         self.instance._set_service_status_to_paused()
-        self.instance.service_status = ServiceStatuses.PAUSED
+        self.instance.service_status = rd_instance.ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
             .AndRaise(PollTimeOut)
         self.instance.guest.reset_configuration(mox.IgnoreArg())
@@ -231,7 +231,7 @@ class MigrateTests(ResizeTestBase):
         self.server.migrate(force_host=None)
         self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
         self.instance._set_service_status_to_paused()
-        self.instance.service_status = ServiceStatuses.RUNNING
+        self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
         self.instance.server.confirm_resize()

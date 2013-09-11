@@ -21,6 +21,7 @@ import re
 
 from trove.tests.fakes.common import get_event_spawer
 from trove.common import exception as rd_exception
+from trove.common import instance as rd_instance
 from trove.tests.util import unquote_user_host
 
 DB = {}
@@ -211,7 +212,6 @@ class FakeGuest(object):
                 mount_point=None, backup_id=None, config_contents=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
-        from trove.instance.models import ServiceStatuses
         from trove.guestagent.models import AgentHeartBeat
         LOG.debug("users... %s" % users)
         LOG.debug("databases... %s" % databases)
@@ -222,19 +222,18 @@ class FakeGuest(object):
         def update_db():
             status = InstanceServiceStatus.find_by(instance_id=self.id)
             if instance_name.endswith('GUEST_ERROR'):
-                status.status = ServiceStatuses.FAILED
+                status.status = rd_instance.ServiceStatuses.FAILED
             else:
-                status.status = ServiceStatuses.RUNNING
+                status.status = rd_instance.ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
         self.event_spawn(1.0, update_db)
 
     def _set_status(self, new_status='RUNNING'):
         from trove.instance.models import InstanceServiceStatus
-        from trove.instance.models import ServiceStatuses
         print("Setting status to %s" % new_status)
-        states = {'RUNNING': ServiceStatuses.RUNNING,
-                  'SHUTDOWN': ServiceStatuses.SHUTDOWN,
+        states = {'RUNNING': rd_instance.ServiceStatuses.RUNNING,
+                  'SHUTDOWN': rd_instance.ServiceStatuses.SHUTDOWN,
                   }
         status = InstanceServiceStatus.find_by(instance_id=self.id)
         status.status = states[new_status]
