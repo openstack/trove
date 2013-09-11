@@ -156,6 +156,8 @@ def _load_servers(instances, find_server):
 
 def publish_exist_events(transformer, admin_context):
     notifications = transformer()
+    # clear out admin_context.auth_token so it does not get logged
+    admin_context.auth_token = None
     for notification in notifications:
         notifier.notify(admin_context,
                         CONF.host,
