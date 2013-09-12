@@ -272,7 +272,8 @@ class QuotaEngine(object):
 
         reservations = self._driver.reserve(tenant_id, self._resources, deltas)
 
-        LOG.debug(_("Created reservations %(reservations)s") % locals())
+        LOG.debug(_("Created reservations %(reservations)s") %
+                  {'reservations': reservations})
 
         return reservations
 
@@ -287,7 +288,7 @@ class QuotaEngine(object):
             self._driver.commit(reservations)
         except Exception:
             LOG.exception(_("Failed to commit reservations "
-                            "%(reservations)s") % locals())
+                          "%(reservations)s") % {'reservations': reservations})
 
     def rollback(self, reservations):
         """Roll back reservations.
@@ -300,7 +301,7 @@ class QuotaEngine(object):
             self._driver.rollback(reservations)
         except Exception:
             LOG.exception(_("Failed to roll back reservations "
-                            "%(reservations)s") % locals())
+                          "%(reservations)s") % {'reservations': reservations})
 
     @property
     def resources(self):
