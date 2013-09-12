@@ -209,8 +209,8 @@ class RootHistory(object):
         self.created = utils.utcnow()
 
     def save(self):
-        LOG.debug(_("Saving %s: %s") % (self.__class__.__name__,
-                                        self.__dict__))
+        LOG.debug(_("Saving %(name)s: %(dict)s") %
+                  {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 
     @classmethod
