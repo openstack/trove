@@ -57,10 +57,8 @@ class API(ManagerAPI):
             try:
                 method(self.context, **kwargs)
             except Exception as ex:
-                type_, value, tb = sys.exc_info()
-                LOG.error("Error running async task:")
-                LOG.error((traceback.format_exception(type_, value, tb)))
-                raise type_(*value.args), None, tb
+                LOG.exception("Error running async task")
+                raise
 
         get_event_spawer()(0, func)
 
