@@ -687,7 +687,7 @@ class MySqlApp(object):
         conf_dir = "/etc/mysql/conf.d"
         LOG.debug("Creating %s" % conf_dir)
         command = "sudo mkdir -p %s" % conf_dir
-        utils.execute_with_timeout(command)
+        utils.execute_with_timeout(command, shell=True)
 
     def _enable_mysql_on_boot(self):
         """
