@@ -28,9 +28,28 @@ from trove.guestagent import api
 import trove.openstack.common.rpc as rpc
 
 
+def _mock_call_pwd_change(cmd, users=None):
+    if users == 'dummy':
+        return True
+    else:
+        raise BaseException("Test Failed")
+
+
+def _mock_call(cmd, timerout, username=None, hostname=None,
+               database=None, databases=None):
+    #To check get_user, list_access, grant_access, revoke_access in cmd.
+    if cmd in ('get_user', 'list_access', 'grant_access', 'revoke_access'):
+        return True
+    else:
+        raise BaseException("Test Failed")
+
+
 class ApiTest(testtools.TestCase):
     def setUp(self):
         super(ApiTest, self).setUp()
+        self.guest = api.API('mock_content', 0)
+        self.guest._cast = _mock_call_pwd_change
+        self.guest._call = _mock_call
         self.FAKE_ID = 'instance-id-x23d2d'
         self.api = api.API(mock(), self.FAKE_ID)
         when(rpc).call(any(), any(), any(), any(int)).thenRaise(
@@ -45,6 +64,22 @@ class ApiTest(testtools.TestCase):
     def test_delete_queue(self):
         self.skipTest("find out if this delete_queue function is needed "
                       "anymore, Bug#1097482")
+
+    def test_change_passwords(self):
+        self.assertIsNone(self.guest.change_passwords("dummy"))
+
+    def test_get_user(self):
+        self.assertTrue(self.guest.get_user("dummyname", "dummyhost"))
+
+    def test_list_access(self):
+        self.assertTrue(self.guest.list_access("dummyname", "dummyhost"))
+
+    def test_grant_access(self):
+        self.assertTrue(self.guest.grant_access("dumname", "dumhost", "dumdb"))
+
+    def test_revoke_access(self):
+        self.assertTrue(self.guest.revoke_access("dumname", "dumhost",
+                                                 "dumdb"))
 
     def test_get_routing_key(self):
         self.assertEqual('guestagent.' + self.FAKE_ID,

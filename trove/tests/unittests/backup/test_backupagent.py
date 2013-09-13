@@ -30,6 +30,8 @@ from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
+from trove.guestagent.strategies.backup.impl import MySQLDump
+from trove.guestagent.strategies.backup.impl import InnoBackupEx
 
 
 def create_fake_data():
@@ -136,7 +138,6 @@ class MockStats:
     f_bsize = 4096
     f_bfree = 512 * 1024
 
-
 BACKUP_NS = 'trove.guestagent.strategies.backup'
 
 
@@ -152,6 +153,60 @@ class BackupAgentTest(testtools.TestCase):
     def tearDown(self):
         super(BackupAgentTest, self).tearDown()
         unstub()
+
+    def test_backup_impl_MySQLDump(self):
+        """This test is for
+           guestagent/strategies/backup/impl
+        """
+        mysql_dump = MySQLDump('abc', password='123', user='123')
+        self.assertIsNotNone(mysql_dump.cmd)
+        str_mysql_dump_cmd = '/usr/bin/mysqldump'\
+            ' --all-databases'\
+            ' --opt'\
+            ' --password=%(password)s'\
+            ' -u %(user)s'\
+            ' | gzip |'\
+            ' openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key'
+        self.assertEqual(mysql_dump.cmd, str_mysql_dump_cmd)
+        self.assertIsNotNone(mysql_dump.manifest)
+        self.assertEqual(mysql_dump.manifest, 'abc.gz.enc')
+
+    def test_backup_impl_InnoBackupEx(self):
+        """This test is for
+           guestagent/strategies/backup/impl
+        """
+        inno_backup_ex = InnoBackupEx('innobackupex')
+        self.assertIsNotNone(inno_backup_ex.cmd)
+        str_innobackup_cmd = 'sudo innobackupex'\
+            ' --stream=xbstream'\
+            ' /var/lib/mysql 2>/tmp/innobackupex.log'\
+            ' | gzip |'\
+            ' openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key'
+        self.assertEqual(inno_backup_ex.cmd, str_innobackup_cmd)
+        self.assertIsNotNone(inno_backup_ex.manifest)
+        str_innobackup_manifest = 'innobackupex.xbstream.gz.enc'
+        self.assertEqual(inno_backup_ex.manifest, str_innobackup_manifest)
+
+    def test_backup_base(self):
+        """This test is for
+           guestagent/strategies/backup/base
+        """
+        BackupRunner.cmd = "%s"
+        backup_runner = BackupRunner('sample', cmd='echo command')
+        if backup_runner.is_zipped:
+            self.assertEqual(backup_runner.zip_manifest, '.gz')
+            self.assertIsNotNone(backup_runner.zip_manifest)
+            self.assertIsNotNone(backup_runner.zip_cmd)
+            self.assertEqual(backup_runner.zip_cmd, ' | gzip')
+        else:
+            self.assertIsNone(backup_runner.zip_manifest)
+            self.assertIsNone(backup_runner.zip_cmd)
+        self.assertIsNotNone(backup_runner.prefix)
+        self.assertEqual(backup_runner.prefix, 'database_backups/sample_')
+        self.assertIsNotNone(backup_runner.segment)
+        self.assertEqual(backup_runner.segment, 'sample_00000000')
+        self.assertIsNotNone(backup_runner.backup_type)
+        self.assertEqual(backup_runner.backup_type, 'BackupRunner')
 
     def test_execute_backup(self):
         """This test should ensure backup agent
