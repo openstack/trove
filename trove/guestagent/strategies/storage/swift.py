@@ -60,15 +60,15 @@ class SwiftStorage(base.Storage):
             url = self.connection.url
             location = "%s/%s/%s" % (url, save_location, stream.manifest)
 
-            # Create the manifest file
-            headers = {'X-Object-Manifest': stream.prefix}
-            self.connection.put_object(save_location,
-                                       stream.manifest,
-                                       contents='',
-                                       headers=headers)
+        # Create the manifest file
+        headers = {'X-Object-Manifest': stream.prefix}
+        self.connection.put_object(save_location,
+                                   stream.manifest,
+                                   contents='',
+                                   headers=headers)
 
-            return (True, "Successfully saved data to Swift!",
-                    checksum, location)
+        return (True, "Successfully saved data to Swift!",
+                checksum, location)
 
     def _explodeLocation(self, location):
         storage_url = "/".join(location.split('/')[:-2])
