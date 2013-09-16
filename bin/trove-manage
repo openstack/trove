@@ -125,7 +125,7 @@ if __name__ == '__main__':
         Commands().execute()
         sys.exit(0)
     except TypeError as e:
-        print _("Possible wrong number of arguments supplied %s" % e)
+        print _("Possible wrong number of arguments supplied %s") % e
         sys.exit(2)
     except Exception:
         print _("Command failed, please check log for more info")

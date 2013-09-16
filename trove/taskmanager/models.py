@@ -440,8 +440,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       server.status == InstanceStatus.ERROR):
                     LOG.error(_("Instance IP not available, "
                                 "instance (%(instance)s): "
-                                "server had status (%(status)s)." %
-                              {'instance': self.id, 'status': server.status}))
+                                "server had status (%(status)s).") %
+                              {'instance': self.id, 'status': server.status})
                     raise TroveError(status=server.status)
 
             poll_until(get_server, ip_is_available,

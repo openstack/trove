@@ -289,7 +289,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                         LOG.error(msg)
                         raise exception.GuestError(msg)
                     if parts[1] != package_name:
-                        msg = _("Unexpected output:[1] = %s" % str(parts[1]))
+                        msg = _("Unexpected output:[1] = %s") % str(parts[1])
                         LOG.error(msg)
                         raise exception.GuestError(msg)
                     if parts[0] == 'un' or parts[2] == '<none>':

@@ -74,7 +74,7 @@ class Manager(periodic_task.PeriodicTasks):
         return MySqlAdmin().is_root_enabled()
 
     def _perform_restore(self, backup_id, context, restore_location, app):
-        LOG.info(_("Restoring database from backup %s" % backup_id))
+        LOG.info(_("Restoring database from backup %s") % backup_id)
         try:
             backup.restore(context, backup_id, restore_location)
         except Exception as e:
