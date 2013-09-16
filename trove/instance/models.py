@@ -25,8 +25,10 @@ from trove.common.remote import create_dns_client
 from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
 from trove.common.remote import create_cinder_client
+from trove.common import utils
 from trove.extensions.security_group.models import SecurityGroup
 from trove.extensions.security_group.models import SecurityGroupRule
+from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.backup.models import Backup
 from trove.quota.quota import run_with_quotas
@@ -725,7 +727,8 @@ class ServiceImage(dbmodels.DatabaseModelBase):
 
 
 class InstanceServiceStatus(dbmodels.DatabaseModelBase):
-    _data_fields = ['instance_id', 'status_id', 'status_description']
+    _data_fields = ['instance_id', 'status_id', 'status_description',
+                    'updated_at']
 
     def __init__(self, status, **kwargs):
         kwargs["status_id"] = status.code
@@ -745,6 +748,10 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
     def set_status(self, value):
         self.status_id = value.code
         self.status_description = value.description
+
+    def save(self):
+        self['updated_at'] = utils.utcnow()
+        return get_db_api().save(self)
 
     status = property(get_status, set_status)
 
