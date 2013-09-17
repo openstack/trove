@@ -303,7 +303,7 @@ class LocalSqlClient(object):
     def execute(self, t, **kwargs):
         try:
             return self.conn.execute(t, kwargs)
-        except:
+        except Exception:
             self.trans.rollback()
             self.trans = None
             raise

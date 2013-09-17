@@ -81,7 +81,7 @@ def admin_context(f):
         try:
             req = args[1]
             context = req.environ.get('trove.context')
-        except:
+        except Exception:
             raise exception.TroveError("Cannot load request context.")
         if not context.is_admin:
             raise exception.Forbidden("User does not have admin privileges.")
