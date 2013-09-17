@@ -891,7 +891,7 @@ class MySqlRootAccess(object):
     @classmethod
     def enable_root(cls):
         """Enable the root user global access and/or reset the root password"""
-        user = models.MySQLUser()
+        user = models.RootUser()
         user.name = "root"
         user.host = "%"
         user.password = generate_random_password()

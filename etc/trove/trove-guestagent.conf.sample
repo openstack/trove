@@ -64,6 +64,10 @@ rabbit_host=10.0.0.1
 log_dir = /tmp/
 log_file = logfile.txt
 
+# Users to ignore for user create/list/delete operations
+ignore_users = os_admin
+ignore_dbs = lost+found, mysql, information_schema
+
 # Strategy information for backups
 backup_strategy = InnoBackupEx
 backup_namespace = trove.guestagent.strategies.backup.impl
