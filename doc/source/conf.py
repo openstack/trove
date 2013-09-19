@@ -183,7 +183,7 @@ latex_documents = [
         'index',
         '%s.tex' % project,
         u'%s Documentation' % project,
-        u'OpenStack LLC',
+        u'OpenStack Foundation',
         'manual'
     ),
 ]
@@ -218,7 +218,7 @@ latex_documents = [
 #         'index',
 #         '%s' % project,
 #         u'%s Documentation' % project,
-#         u'OpenStack LLC',
+#         u'OpenStack Foundation',
 #         1
 #     ),
 # ]
@@ -237,7 +237,7 @@ texinfo_documents = [
         'index',
         '%s' % project,
         u'%s Documentation' % project,
-        u'OpenStack LLC',
+        u'OpenStack Foundation',
         '%s' % project,
         'Database as a service.',
         'Miscellaneous'
@@ -262,9 +262,9 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = u'%s' % project
-epub_author = u'OpenStack LLC'
-epub_publisher = u'OpenStack LLC'
-epub_copyright = u'2013, OpenStack LLC'
+epub_author = u'OpenStack Foundation'
+epub_publisher = u'OpenStack Foundation'
+epub_copyright = u'2013, OpenStack Foundation'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.
