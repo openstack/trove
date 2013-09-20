@@ -33,7 +33,7 @@ from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
 from trove.tests.util.server_connection import create_server_connection
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 from trove.tests.config import CONFIG
 from trove.tests.util import LocalSqlClient
 from trove.tests.util import iso_time

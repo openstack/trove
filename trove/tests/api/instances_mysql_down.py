@@ -28,7 +28,7 @@ from datetime import datetime
 from troveclient import exceptions
 from trove.tests import util
 from trove.tests.util import create_client
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 from trove.tests.util import test_config
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT

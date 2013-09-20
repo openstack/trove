@@ -62,7 +62,7 @@ from trove.tests.util import iso_time
 from trove.tests.util import process
 from trove.tests.util.users import Requirements
 from trove.tests.util import string_in_list
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
 

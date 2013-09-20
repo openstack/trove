@@ -19,24 +19,23 @@ Routes all the requests to the task manager.
 """
 
 
-import traceback
-import sys
-
 from trove.common import cfg
-from trove.common.manager import ManagerAPI
+from trove.openstack.common.rpc import proxy
 from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+RPC_API_VERSION = "1.0"
 
 
-#todo(hub-cap): find a better way to deal w/ the fakes. Im sure we can
-# use a fake impl to deal w/ this and switch it out in the configs.
-# The ManagerAPI is only used here and should eventually be removed when
-# we have a better way to handle fake casts (see rpc fake_impl)
-class API(ManagerAPI):
+class API(proxy.RpcProxy):
     """API for interacting with the task manager."""
+
+    def __init__(self, context):
+        self.context = context
+        super(API, self).__init__(self._get_routing_key(),
+                                  RPC_API_VERSION)
 
     def _transform_obj(self, obj_ref):
         # Turn the object into a dictionary and remove the mgr
@@ -48,20 +47,6 @@ class API(ManagerAPI):
             return obj_dict
         raise ValueError("Could not transform %s" % obj_ref)
 
-    def _fake_cast(self, method_name, **kwargs):
-        from trove.tests.fakes.common import get_event_spawer
-        from trove.taskmanager.manager import Manager
-        method = getattr(Manager(), method_name)
-
-        def func():
-            try:
-                method(self.context, **kwargs)
-            except Exception:
-                LOG.exception("Error running async task")
-                raise
-
-        get_event_spawer()(0, func)
-
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
         return CONF.taskmanager_queue
@@ -69,51 +54,66 @@ class API(ManagerAPI):
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"
                   % instance_id)
-        self._cast("resize_volume", new_size=new_size, instance_id=instance_id)
+        self.cast(self.context, self.make_msg("resize_volume",
+                                              new_size=new_size,
+                                              instance_id=instance_id))
 
     def resize_flavor(self, instance_id, old_flavor, new_flavor):
         LOG.debug("Making async call to resize flavor for instance: %s" %
                   instance_id)
-        self._cast("resize_flavor", instance_id=instance_id,
-                   old_flavor=self._transform_obj(old_flavor),
-                   new_flavor=self._transform_obj(new_flavor))
+        self.cast(self.context,
+                  self.make_msg("resize_flavor",
+                                instance_id=instance_id,
+                                old_flavor=self._transform_obj(old_flavor),
+                                new_flavor=self._transform_obj(new_flavor)))
 
     def reboot(self, instance_id):
         LOG.debug("Making async call to reboot instance: %s" % instance_id)
-        self._cast("reboot", instance_id=instance_id)
+        self.cast(self.context,
+                  self.make_msg("reboot", instance_id=instance_id))
 
     def restart(self, instance_id):
         LOG.debug("Making async call to restart instance: %s" % instance_id)
-        self._cast("restart", instance_id=instance_id)
+        self.cast(self.context,
+                  self.make_msg("restart", instance_id=instance_id))
 
     def migrate(self, instance_id, host):
         LOG.debug("Making async call to migrate instance: %s" % instance_id)
-        self._cast("migrate", instance_id=instance_id, host=host)
+        self.cast(self.context,
+                  self.make_msg("migrate", instance_id=instance_id, host=host))
 
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
-        self._cast("delete_instance", instance_id=instance_id)
+        self.cast(self.context,
+                  self.make_msg("delete_instance", instance_id=instance_id))
 
     def create_backup(self, backup_id, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s" %
                   instance_id)
-        self._cast("create_backup",
-                   backup_id=backup_id,
-                   instance_id=instance_id)
+        self.cast(self.context, self.make_msg("create_backup",
+                                              backup_id=backup_id,
+                                              instance_id=instance_id))
 
     def delete_backup(self, backup_id):
         LOG.debug("Making async call to delete backup: %s" % backup_id)
-        self._cast("delete_backup", backup_id=backup_id)
+        self.cast(self.context, self.make_msg("delete_backup",
+                                              backup_id=backup_id))
 
     def create_instance(self, instance_id, name, flavor,
                         image_id, databases, users, service_type,
                         volume_size, security_groups, backup_id=None,
                         availability_zone=None, root_password=None):
         LOG.debug("Making async call to create instance %s " % instance_id)
-        self._cast("create_instance", instance_id=instance_id, name=name,
-                   flavor=self._transform_obj(flavor), image_id=image_id,
-                   databases=databases, users=users,
-                   service_type=service_type, volume_size=volume_size,
-                   security_groups=security_groups, backup_id=backup_id,
-                   availability_zone=availability_zone,
-                   root_password=root_password)
+        self.cast(self.context,
+                  self.make_msg("create_instance",
+                                instance_id=instance_id, name=name,
+                                flavor=self._transform_obj(flavor),
+                                image_id=image_id,
+                                databases=databases,
+                                users=users,
+                                service_type=service_type,
+                                volume_size=volume_size,
+                                security_groups=security_groups,
+                                backup_id=backup_id,
+                                availability_zone=availability_zone,
+                                root_password=root_password))

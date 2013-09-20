@@ -546,7 +546,7 @@ class WsgiLimiterTest(BaseLimitTestSuite):
         self.assertEqual(delay, None)
 
         delay = self._request("GET", "/delayed")
-        self.assertEqual(delay, '60.00')
+        self.assertAlmostEqual(float(delay), 60, 1)
 
     def test_response_to_delays_usernames(self):
         delay = self._request("GET", "/delayed", "user1")
@@ -556,10 +556,10 @@ class WsgiLimiterTest(BaseLimitTestSuite):
         self.assertEqual(delay, None)
 
         delay = self._request("GET", "/delayed", "user1")
-        self.assertEqual(delay, '60.00')
+        self.assertAlmostEqual(float(delay), 60, 1)
 
         delay = self._request("GET", "/delayed", "user2")
-        self.assertEqual(delay, '60.00')
+        self.assertAlmostEqual(float(delay), 60, 1)
 
 
 class FakeHttplibSocket(object):
@@ -681,10 +681,9 @@ class WsgiLimiterProxyTest(BaseLimitTestSuite):
         delay, error = self.proxy.check_for_delay("GET", "/delayed")
         error = error.strip()
 
-        expected = ("60.00", "403 Forbidden\n\nOnly 1 GET request(s) can be "
-                             "made to /delayed every minute.")
-
-        self.assertEqual((delay, error), expected)
+        self.assertAlmostEqual(float(delay), 60, 1)
+        self.assertEqual(error, "403 Forbidden\n\nOnly 1 GET request(s) can be"
+                                " made to /delayed every minute.")
 
     def tearDown(self):
         # restore original HTTPConnection object

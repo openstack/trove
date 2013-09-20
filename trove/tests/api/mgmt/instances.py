@@ -34,7 +34,7 @@ from trove.tests.api.instances import CreateInstance
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import GROUP_TEST
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 
 GROUP = "dbaas.api.mgmt.instances"
 

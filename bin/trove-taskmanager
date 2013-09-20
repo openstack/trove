@@ -55,14 +55,14 @@ if __name__ == '__main__':
     if not debug_utils.enabled():
         eventlet.monkey_patch(thread=True)
 
-    from trove.common import rpc
-    from trove.openstack.common import service
+    from trove.common.rpc import service as rpc_service
+    from trove.openstack.common import service as openstack_service
     from trove.db import get_db_api
 
     try:
         get_db_api().configure_db(CONF)
-        server = rpc.RpcService(manager=CONF.taskmanager_manager)
-        launcher = service.launch(server)
+        server = rpc_service.RpcService(manager=CONF.taskmanager_manager)
+        launcher = openstack_service.launch(server)
         launcher.wait()
     except RuntimeError as error:
         import traceback

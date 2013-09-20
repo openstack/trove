@@ -9,8 +9,11 @@ from trove.openstack.common import log as logging
 from trove.tests.config import CONFIG
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
 import proboscis
-from eventlet import greenthread
 import wsgi_intercept
+from trove.openstack.common.rpc import service as rpc_service
+
+import eventlet
+eventlet.monkey_patch(thread=False)
 
 CONF = cfg.CONF
 
@@ -37,11 +40,15 @@ def initialize_trove(config_file):
     cfg.CONF(args=[],
              project='trove',
              default_config_files=[config_file])
-    CONF.use_stderr = False
-    CONF.log_file = 'rdtest.log'
     logging.setup(None)
-    CONF.bind_port = 8779
-    CONF.fake_mode_events = 'simulated'
+    topic = CONF.taskmanager_queue
+
+    from trove.taskmanager import manager
+    manager_impl = manager.Manager()
+    taskman_service = rpc_service.Service(None, topic=topic,
+                                          manager=manager_impl)
+    taskman_service.start()
+
     return pastedeploy.paste_deploy_app(config_file, 'trove', {})
 
 
@@ -76,19 +83,6 @@ def initialize_fakes(app):
                                       CONF.bind_port,
                                       wsgi_interceptor)
 
-    # Finally, engage in some truly evil monkey business. We want
-    # to change anything which spawns threads with eventlet to instead simply
-    # put those functions on a queue in memory. Then, we swap out any functions
-    # which might try to take a nap to instead call functions that go through
-    # this queue and call the functions that would normally run in seperate
-    # threads.
-    import eventlet
-    from trove.tests.fakes.common import event_simulator_sleep
-    eventlet.sleep = event_simulator_sleep
-    greenthread.sleep = event_simulator_sleep
-    import time
-    time.sleep = event_simulator_sleep
-
 
 def parse_args_for_test_config():
     for index in range(len(sys.argv)):
@@ -99,17 +93,10 @@ def parse_args_for_test_config():
             return arg[14:]
     return 'etc/tests/localhost.test.conf'
 
-
-def replace_poll_until():
-    from trove.common import utils as rd_utils
-    from trove.tests import util as test_utils
-    rd_utils.poll_until = test_utils.poll_until
-
 if __name__ == "__main__":
     try:
         wsgi_install()
         add_support_for_localization()
-        replace_poll_until()
         # Load Trove app
         # Paste file needs absolute path
         config_file = os.path.realpath('etc/trove/trove.conf.test')
@@ -120,6 +107,7 @@ if __name__ == "__main__":
         # Swap out WSGI, httplib, and several sleep functions
         # with test doubles.
         initialize_fakes(app)
+
         # Initialize the test configuration.
         test_config_file = parse_args_for_test_config()
         CONFIG.load_from_file(test_config_file)

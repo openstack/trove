@@ -36,7 +36,8 @@ class UsageVerifier(object):
         pass
 
     def check_message(self, resource_id, event_type, **attrs):
-        messages = self.get_messages(resource_id)
+        messages = utils.poll_until(lambda: self.get_messages(resource_id),
+                                    lambda x: len(x) > 0, time_out=30)
         found = None
         for message in messages:
             if message['event_type'] == event_type:

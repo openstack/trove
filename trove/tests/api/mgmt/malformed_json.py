@@ -11,7 +11,7 @@ from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.util.users import Requirements
 from trove.tests.util import create_dbaas_client
 import trove.tests.util as tests_utils
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 
 
 @test(groups=["dbaas.api.mgmt.malformed_json"])

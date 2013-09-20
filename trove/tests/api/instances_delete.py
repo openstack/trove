@@ -7,7 +7,7 @@ from proboscis.decorators import time_out
 
 from troveclient import exceptions
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import poll_until
+from trove.common.utils import poll_until
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 from trove.tests.api.instances import instance_info

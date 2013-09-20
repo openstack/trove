@@ -19,7 +19,7 @@ from trove.openstack.common import log as logging
 import time
 import re
 
-from trove.tests.fakes.common import get_event_spawer
+import eventlet
 from trove.common import exception as rd_exception
 from trove.common import instance as rd_instance
 from trove.tests.util import unquote_user_host
@@ -36,7 +36,6 @@ class FakeGuest(object):
         self.dbs = {}
         self.root_was_enabled = False
         self.version = 1
-        self.event_spawn = get_event_spawer()
         self.grants = {}
 
         # Our default admin user.
@@ -228,7 +227,7 @@ class FakeGuest(object):
                 status.status = rd_instance.ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
-        self.event_spawn(1.0, update_db)
+        eventlet.spawn_after(1.0, update_db)
 
     def _set_status(self, new_status='RUNNING'):
         from trove.instance.models import InstanceServiceStatus
@@ -305,7 +304,7 @@ class FakeGuest(object):
             backup.state = BackupState.COMPLETED
             backup.location = 'http://localhost/path/to/backup'
             backup.save()
-        self.event_spawn(1.0, finish_create_backup)
+        eventlet.spawn_after(1.0, finish_create_backup)
 
 
 def get_or_create(id):

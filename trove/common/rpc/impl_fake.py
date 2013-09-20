@@ -1,6 +1,6 @@
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2010-2011 OpenStack Foundation
+# Copyright 2011 OpenStack Foundation
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,17 +15,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Common code to help in faking the models."""
+"""
+Standard openstack.common.rpc.impl_fake with nonblocking cast
+"""
 
-from novaclient import exceptions as nova_exceptions
-from trove.common import cfg
-from trove.openstack.common import log as logging
-
-
-CONF = cfg.CONF
-LOG = logging.getLogger(__name__)
+from trove.openstack.common.rpc.impl_fake import *
 
 
-def authorize(context):
-    if not context.is_admin:
-        raise nova_exceptions.Forbidden(403, "Forbidden")
+original_cast = cast
+
+
+def non_blocking_cast(*args, **kwargs):
+    eventlet.spawn_n(original_cast, *args, **kwargs)
+
+
+cast = non_blocking_cast

@@ -15,16 +15,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 """RPC helper for launching a rpc service."""
 
-import inspect
-import os
 import kombu
 
-from trove.openstack.common import importutils
-from trove.openstack.common import loopingcall
 from trove.openstack.common import rpc as openstack_rpc
-from trove.openstack.common.rpc import service as rpc_service
 from trove.common import cfg
 
 CONF = cfg.CONF
@@ -39,24 +35,3 @@ def delete_queue(context, topic):
                                    auto_delete=False, exclusive=False,
                                    durable=durable)
         queue.delete()
-
-
-class RpcService(rpc_service.Service):
-
-    def __init__(self, host=None, binary=None, topic=None, manager=None):
-        host = host or CONF.host
-        binary = binary or os.path.basename(inspect.stack()[-1][1])
-        topic = topic or binary.rpartition('trove-')[2]
-        self.manager_impl = importutils.import_object(manager)
-        self.report_interval = CONF.report_interval
-        super(RpcService, self).__init__(host, topic,
-                                         manager=self.manager_impl)
-
-    def start(self):
-        super(RpcService, self).start()
-        # TODO(hub-cap): Currently the context is none... do we _need_ it here?
-        pulse = loopingcall.LoopingCall(self.manager_impl.run_periodic_tasks,
-                                        context=None)
-        pulse.start(interval=self.report_interval,
-                    initial_delay=self.report_interval)
-        pulse.wait()

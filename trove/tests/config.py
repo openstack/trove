@@ -24,7 +24,6 @@ environments if we choose to.
 import json
 import os
 from collections import Mapping
-from trove.tests.fakes.common import event_simulator_sleep
 
 
 #TODO(tim.simpson): I feel like this class already exists somewhere in core
@@ -81,8 +80,6 @@ class TestConfig(object):
             "known_bugs": {},
             "in_proc_server": True,
             "report_directory": os.environ.get("REPORT_DIRECTORY", None),
-            "sleep_mode": "simulated",
-            "simulate_events": False,
             "trove_volume_support": True,
             "trove_max_volumes_per_user": 100,
             "usage_endpoint": USAGE_ENDPOINT,
@@ -90,21 +87,6 @@ class TestConfig(object):
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None
-        self._dawdler = None
-
-    @property
-    def dawdler(self):
-        """Equivalent (in theory) to time.sleep.
-
-        Calling this in place of sleep allows the tests to run faster in
-        fake mode.
-        """
-        if not self._dawdler:
-            if self.sleep_mode == "simulated":
-                self._dawdler = event_simulator_sleep
-            else:
-                self._dawdler = greenthread.sleep
-        return self._dawdler
 
     def get(self, name, default_value):
         return self.values.get(name, default_value)

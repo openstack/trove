@@ -223,31 +223,10 @@ def iso_time(time_string):
         pass
     return '%sZ' % ts
 
-
-if CONFIG.simulate_events:
-    # Without event let, this just calls time.sleep.
-    def poll_until(retriever, condition=lambda value: value,
-                   sleep_time=1, time_out=None):
-        """Retrieves object until it passes condition, then returns it.
-
-        If time_out_limit is passed in, PollTimeOut will be raised once that
-        amount of time is eclipsed.
-
-        """
-        start_time = time.time()
-
-        def check_timeout():
-            if time_out is not None and time.time() > start_time + time_out:
-                raise PollTimeOut
-
-        while True:
-            obj = retriever()
-            if condition(obj):
-                return
-            check_timeout()
-            time.sleep(sleep_time)
-else:
-    from trove.common.utils import poll_until
+# TODO(dukhlov): Still required by trove integration
+# Should be removed after trove integration fix
+# https://bugs.launchpad.net/trove-integration/+bug/1228306
+from trove.common.utils import poll_until
 
 
 def mysql_connection():

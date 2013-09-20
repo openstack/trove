@@ -31,7 +31,6 @@ from trove.common.remote import create_nova_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
 from swiftclient.client import ClientException
-from trove.common.utils import poll_until
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
 from trove.instance.models import FreshInstance
@@ -461,8 +460,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               {'instance': self.id, 'status': server.status})
                     raise TroveError(status=server.status)
 
-            poll_until(get_server, ip_is_available,
-                       sleep_time=1, time_out=DNS_TIME_OUT)
+            utils.poll_until(get_server, ip_is_available,
+                             sleep_time=1, time_out=DNS_TIME_OUT)
             server = self.nova_client.servers.get(
                 self.db_info.compute_instance_id)
             LOG.info("Creating dns entry...")
@@ -525,10 +524,10 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 return True
 
         try:
-            poll_until(server_is_finished, sleep_time=2,
-                       time_out=CONF.server_delete_time_out)
-        except PollTimeOut as e:
-            LOG.error("Timout during nova server delete", e)
+            utils.poll_until(server_is_finished, sleep_time=2,
+                             time_out=CONF.server_delete_time_out)
+        except PollTimeOut:
+            LOG.exception("Timout during nova server delete.")
         self.send_usage_event('delete',
                               deleted_at=timeutils.isotime(deleted_at),
                               server=old_server)
