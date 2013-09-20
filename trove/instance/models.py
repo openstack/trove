@@ -421,7 +421,8 @@ class Instance(BuiltInstance):
 
     @classmethod
     def create(cls, context, name, flavor_id, image_id,
-               databases, users, service_type, volume_size, backup_id):
+               databases, users, service_type, volume_size, backup_id,
+               availability_zone=None):
 
         client = create_nova_client(context)
         try:
@@ -490,7 +491,8 @@ class Instance(BuiltInstance):
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,
                                                   service_type, volume_size,
-                                                  security_groups, backup_id)
+                                                  security_groups, backup_id,
+                                                  availability_zone)
 
             return SimpleInstance(context, db_info, service_status)
 

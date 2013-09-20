@@ -205,10 +205,15 @@ class InstanceController(wsgi.Controller):
         else:
             backup_id = None
 
+        if 'availability_zone' in body['instance']:
+            availability_zone = body['instance']['availability_zone']
+        else:
+            availability_zone = None
+
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           service_type, volume_size,
-                                          backup_id)
+                                          backup_id, availability_zone)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

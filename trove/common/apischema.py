@@ -191,7 +191,8 @@ instance = {
                         "properties": {
                             "backupRef": uuid
                         }
-                    }
+                    },
+                    "availability_zone": non_empty_string
                 }
             }
         }

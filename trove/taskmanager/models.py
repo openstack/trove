@@ -135,28 +135,31 @@ class ConfigurationMixin(object):
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         service_type, volume_size, security_groups,
-                        backup_id):
+                        backup_id, availability_zone):
         if use_heat:
             server, volume_info = self._create_server_volume_heat(
                 flavor,
                 image_id,
                 security_groups,
                 service_type,
-                volume_size)
+                volume_size,
+                availability_zone)
         elif use_nova_server_volume:
             server, volume_info = self._create_server_volume(
                 flavor['id'],
                 image_id,
                 security_groups,
                 service_type,
-                volume_size)
+                volume_size,
+                availability_zone)
         else:
             server, volume_info = self._create_server_volume_individually(
                 flavor['id'],
                 image_id,
                 security_groups,
                 service_type,
-                volume_size)
+                volume_size,
+                availability_zone)
 
         try:
             self._create_dns_entry()
@@ -216,7 +219,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return False
 
     def _create_server_volume(self, flavor_id, image_id, security_groups,
-                              service_type, volume_size):
+                              service_type, volume_size,
+                              availability_zone):
         server = None
         try:
             files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
@@ -231,7 +235,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             server = self.nova_client.servers.create(
                 name, image_id, flavor_id,
                 files=files, volume=volume_ref,
-                security_groups=security_groups)
+                security_groups=security_groups,
+                availability_zone=availability_zone)
             LOG.debug(_("Created new compute instance %s.") % server.id)
 
             server_dict = server._info
@@ -291,13 +296,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, service_type,
-                                           volume_size):
+                                           volume_size,
+                                           availability_zone):
         server = None
         volume_info = self._build_volume_info(volume_size)
         block_device_mapping = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
-                                         service_type, block_device_mapping)
+                                         service_type, block_device_mapping,
+                                         availability_zone)
             server_id = server.id
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
@@ -384,7 +391,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return volume_info
 
     def _create_server(self, flavor_id, image_id, security_groups,
-                       service_type, block_device_mapping):
+                       service_type, block_device_mapping,
+                       availability_zone):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "service_type=%s\n" %
                                      (self.id, service_type))}
@@ -401,7 +409,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         bdmap = block_device_mapping
         server = self.nova_client.servers.create(
             name, image_id, flavor_id, files=files, userdata=userdata,
-            security_groups=security_groups, block_device_mapping=bdmap)
+            security_groups=security_groups, block_device_mapping=bdmap,
+            availability_zone=availability_zone)
         LOG.debug(_("Created new compute instance %s.") % server.id)
         return server
 

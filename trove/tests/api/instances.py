@@ -363,7 +363,8 @@ class CreateInstance(object):
                 instance_info.dbaas_flavor_href,
                 instance_info.volume,
                 databases,
-                users)
+                users,
+                availability_zone="nova")
             assert_equal(200, dbaas.last_http_code)
         else:
             id = existing_instance()
@@ -403,6 +404,15 @@ class CreateInstance(object):
             check.links(result._info['links'])
             if VOLUME_SUPPORT:
                 check.volume()
+
+    @test
+    def test_create_with_bad_availability_zone(self):
+        instance_name = "instance-failure-with-bad-ephemeral"
+        databases = []
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      None, databases, availability_zone="NOOP")
+        assert_equal(400, dbaas.last_http_code)
 
     @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_empty_volume(self):
