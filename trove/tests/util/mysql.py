@@ -76,7 +76,7 @@ class SqlAlchemyConnection(object):
         cmd = cmd.replace("%", "%%")
         try:
             return self.conn.execute(cmd).fetchall()
-        except:
+        except Exception:
             self.trans.rollback()
             self.trans = None
             try:

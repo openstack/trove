@@ -326,7 +326,7 @@ def run_with_quotas(tenant_id, deltas, f):
     result = None
     try:
         result = f()
-    except:
+    except Exception:
         QUOTAS.rollback(reservations)
         raise
     else:

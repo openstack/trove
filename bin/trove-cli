@@ -60,7 +60,7 @@ class InstanceCommands(object):
         try:
             result = dbaas.instances.create(name, flavorRef, volume)
             _pretty_print(result._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def delete(self, id):
@@ -70,7 +70,7 @@ class InstanceCommands(object):
             result = dbaas.instances.delete(id)
             if result:
                 print result
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def get(self, id):
@@ -78,7 +78,7 @@ class InstanceCommands(object):
         dbaas = common.get_client()
         try:
             _pretty_print(dbaas.instances.get(id)._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def list(self):
@@ -87,7 +87,7 @@ class InstanceCommands(object):
         try:
             for instance in dbaas.instances.list():
                 _pretty_print(instance._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def resize(self, id, size):
@@ -97,7 +97,7 @@ class InstanceCommands(object):
             result = dbaas.instances.resize(id, size)
             if result:
                 print result
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def restart(self, id):
@@ -107,7 +107,7 @@ class InstanceCommands(object):
             result = dbaas.instances.restart(id)
             if result:
                 print result
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
@@ -123,7 +123,7 @@ class FlavorsCommands(object):
         try:
             for flavor in dbaas.flavors.list():
                 _pretty_print(flavor._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
@@ -139,7 +139,7 @@ class DatabaseCommands(object):
         try:
             databases = [{'name': dbname}]
             dbaas.databases.create(id, databases)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def delete(self, id, dbname):
@@ -147,7 +147,7 @@ class DatabaseCommands(object):
         dbaas = common.get_client()
         try:
             dbaas.databases.delete(id, dbname)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def list(self, id):
@@ -156,7 +156,7 @@ class DatabaseCommands(object):
         try:
             for database in dbaas.databases.list(id):
                 _pretty_print(database._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
@@ -175,7 +175,7 @@ class UserCommands(object):
             users = [{'name': username, 'password': password,
                       'databases': databases}]
             dbaas.users.create(id, users)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def delete(self, id, user):
@@ -183,7 +183,7 @@ class UserCommands(object):
         dbaas = common.get_client()
         try:
             dbaas.users.delete(id, user)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def list(self, id):
@@ -192,7 +192,7 @@ class UserCommands(object):
         try:
             for user in dbaas.users.list(id):
                 _pretty_print(user._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
@@ -208,7 +208,7 @@ class RootCommands(object):
         try:
             user, password = dbaas.root.create(id)
             print "User:\t\t%s\nPassword:\t%s" % (user, password)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
     def enabled(self, id):
@@ -216,7 +216,7 @@ class RootCommands(object):
         dbaas = common.get_client()
         try:
             _pretty_print(dbaas.root.is_root_enabled(id))
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
@@ -233,7 +233,7 @@ class VersionCommands(object):
             versions = dbaas.versions.index(url)
             for version in versions:
                 _pretty_print(version._info)
-        except:
+        except Exception:
             print sys.exc_info()[1]
 
 
