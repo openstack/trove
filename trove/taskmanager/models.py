@@ -166,13 +166,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_size,
                 availability_zone)
 
-        try:
-            self._create_dns_entry()
-        except Exception as e:
-            msg = "Error creating DNS entry for instance: %s" % self.id
-            err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
-            self._log_and_raise(e, msg, err)
-
         config = self._render_config(service_type, flavor, self.id)
 
         if server:
@@ -183,6 +176,20 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
+        # when DNS is supported, we attempt to add this after the
+        # instance is prepared.  Otherwise, if DNS fails, instances
+        # end up in a poorer state and there's no tooling around
+        # re-sending the prepare call; retrying DNS is much easier.
+        try:
+            self._create_dns_entry()
+        except Exception as e:
+            msg = _("Error creating DNS entry for instance: %s") % self.id
+            err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
+            self._log_and_raise(e, msg, err)
+        else:
+            LOG.debug(_("Successfully created DNS entry for instance: %s") %
+                      self.id)
+
         # Make sure the service becomes active before sending a usage
         # record to avoid over billing a customer for an instance that
         # fails to build properly.
@@ -192,11 +199,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                              time_out=USAGE_TIMEOUT)
             self.send_usage_event('create', instance_size=flavor['ram'])
         except PollTimeOut:
-            LOG.error("Timeout for service changing to active. "
-                      "No usage create-event sent.")
+            LOG.error(_("Timeout for service changing to active. "
+                      "No usage create-event sent."))
             self.update_statuses_on_time_out()
         except Exception:
-            LOG.exception("Error during create-event call.")
+            LOG.exception(_("Error during create-event call."))
 
     def update_statuses_on_time_out(self):
 
