@@ -28,6 +28,7 @@ from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
+from trove.common import instance as rd_instance
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_nova_client
 from trove.common.remote import create_heat_client
@@ -40,7 +41,6 @@ from trove.instance.models import FreshInstance
 
 from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
-from trove.instance.models import ServiceStatuses
 from trove.instance.views import get_ip_address
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -205,10 +205,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         """
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
-        if status == ServiceStatuses.RUNNING:
+        if status == rd_instance.ServiceStatuses.RUNNING:
             return True
-        elif status not in [ServiceStatuses.NEW,
-                            ServiceStatuses.BUILDING]:
+        elif status not in [rd_instance.ServiceStatuses.NEW,
+                            rd_instance.ServiceStatuses.BUILDING]:
             raise TroveError("Service not active, status: %s" % status)
 
         c_id = self.db_info.compute_instance_id
@@ -662,7 +662,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
     def _set_service_status_to_paused(self):
         status = InstanceServiceStatus.find_by(instance_id=self.id)
-        status.set_status(inst_models.ServiceStatuses.PAUSED)
+        status.set_status(rd_instance.ServiceStatuses.PAUSED)
         status.save()
 
 
@@ -754,7 +754,7 @@ class ResizeActionBase(ConfigurationMixin):
         self._start_mysql()
         # The guest should do this for us... but sometimes it walks funny.
         self.instance._refresh_compute_service_status()
-        if self.instance.service_status != ServiceStatuses.RUNNING:
+        if self.instance.service_status != rd_instance.ServiceStatuses.RUNNING:
             raise Exception("Migration failed! Service status was %s."
                             % self.instance.service_status)
 
@@ -788,7 +788,8 @@ class ResizeActionBase(ConfigurationMixin):
 
     def _guest_is_awake(self):
         self.instance._refresh_compute_service_status()
-        return self.instance.service_status != ServiceStatuses.PAUSED
+        return self.instance.service_status !=\
+            rd_instance.ServiceStatuses.PAUSED
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""

@@ -12,6 +12,7 @@ from sqlalchemy.sql.expression import text
 from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
+from trove.common import instance as rd_instance
 from trove.guestagent import query
 from trove.guestagent.db import models
 from trove.guestagent import system
@@ -123,7 +124,7 @@ class MySqlAppStatus(object):
 
     def begin_mysql_install(self):
         """Called right before MySQL is prepared."""
-        self.set_status(rd_models.ServiceStatuses.BUILDING)
+        self.set_status(rd_instance.ServiceStatuses.BUILDING)
 
     def begin_mysql_restart(self):
         """Called before restarting MySQL."""
@@ -153,7 +154,7 @@ class MySqlAppStatus(object):
                 "/usr/bin/mysqladmin",
                 "ping", run_as_root=True, root_helper="sudo")
             LOG.info("Service Status is RUNNING.")
-            return rd_models.ServiceStatuses.RUNNING
+            return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError as e:
             LOG.error("Process execution ")
             try:
@@ -163,7 +164,7 @@ class MySqlAppStatus(object):
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
                 LOG.info("Service Status is BLOCKED.")
-                return rd_models.ServiceStatuses.BLOCKED
+                return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError as e:
                 if not MYSQLD_ARGS:
                     MYSQLD_ARGS = load_mysqld_options()
@@ -171,10 +172,10 @@ class MySqlAppStatus(object):
                                            '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
                     LOG.info("Service Status is CRASHED.")
-                    return rd_models.ServiceStatuses.CRASHED
+                    return rd_instance.ServiceStatuses.CRASHED
                 else:
                     LOG.info("Service Status is SHUTDOWN.")
-                    return rd_models.ServiceStatuses.SHUTDOWN
+                    return rd_instance.ServiceStatuses.SHUTDOWN
 
     @property
     def is_mysql_installed(self):
@@ -183,9 +184,9 @@ class MySqlAppStatus(object):
         its status won't result in nonsense.
         """
         return (self.status is not None and
-                self.status != rd_models.ServiceStatuses.NEW and
-                self.status != rd_models.ServiceStatuses.BUILDING and
-                self.status != rd_models.ServiceStatuses.FAILED)
+                self.status != rd_instance.ServiceStatuses.NEW and
+                self.status != rd_instance.ServiceStatuses.BUILDING and
+                self.status != rd_instance.ServiceStatuses.FAILED)
 
     @property
     def _is_mysql_restarting(self):
@@ -195,7 +196,7 @@ class MySqlAppStatus(object):
     def is_mysql_running(self):
         """True if MySQL is running."""
         return (self.status is not None and
-                self.status == rd_models.ServiceStatuses.RUNNING)
+                self.status == rd_instance.ServiceStatuses.RUNNING)
 
     @staticmethod
     def _load_status():
@@ -729,7 +730,7 @@ class MySqlApp(object):
             self._disable_mysql_on_boot()
         utils.execute_with_timeout(system.MYSQL_CMD_STOP, shell=True)
         if not self.status.wait_for_real_status_to_change_to(
-                rd_models.ServiceStatuses.SHUTDOWN,
+                rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop MySQL!"))
             self.status.end_install_or_restart()
@@ -840,7 +841,7 @@ class MySqlApp(object):
             # we'll assume mysql comes up and check it's status for a while.
             pass
         if not self.status.wait_for_real_status_to_change_to(
-                rd_models.ServiceStatuses.RUNNING,
+                rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Start up of MySQL failed!"))
             # If it won't start, but won't die either, kill it by hand so we

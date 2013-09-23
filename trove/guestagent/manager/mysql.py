@@ -1,12 +1,12 @@
 import os
 from trove.common import cfg
+from trove.common import instance as rd_instance
 from trove.guestagent import dbaas
 from trove.guestagent import backup
 from trove.guestagent import volume
 from trove.guestagent.manager.mysql_service import MySqlAppStatus
 from trove.guestagent.manager.mysql_service import MySqlAdmin
 from trove.guestagent.manager.mysql_service import MySqlApp
-from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import periodic_task
@@ -80,7 +80,7 @@ class Manager(periodic_task.PeriodicTasks):
         except Exception as e:
             LOG.error(e)
             LOG.error("Error performing restore from backup %s", backup_id)
-            app.status.set_status(rd_models.ServiceStatuses.FAILED)
+            app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
         LOG.info(_("Restored database successfully"))
 
