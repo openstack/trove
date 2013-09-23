@@ -18,7 +18,6 @@ from trove.instance import models as rd_models
 import os
 
 from mockito import verify, when, unstub, any, mock, never
-import testtools
 from testtools.matchers import Is, Equals, Not
 from trove.common.context import TroveContext
 
