@@ -293,3 +293,21 @@ class BackupFileNotFound(NotFound):
 class SwiftAuthError(TroveError):
 
     message = _("Swift account not accessible for tenant %(tenant_id)s.")
+
+
+class DatabaseForUserNotInDatabaseListError(TroveError):
+    message = _("The request indicates that user %(user)s should have access "
+                "to database %(database)s, but database %(database)s is not "
+                "included in the initial databases list.")
+
+
+class DatabaseInitialDatabaseDuplicateError(TroveError):
+    message = _("Two or more databases share the same name in the initial "
+                "databases list. Please correct the names or remove the "
+                "duplicate entries.")
+
+
+class DatabaseInitialUserDuplicateError(TroveError):
+    message = _("Two or more users share the same name and host in the "
+                "initial users list. Please correct the names or remove the "
+                "duplicate entries.")

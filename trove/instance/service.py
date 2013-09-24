@@ -188,9 +188,11 @@ class InstanceController(wsgi.Controller):
         flavor_id = utils.get_id_from_href(flavor_ref)
         databases = populate_validated_databases(
             body['instance'].get('databases', []))
+        database_names = [database.get('_name', '') for database in databases]
         users = None
         try:
-            users = populate_users(body['instance'].get('users', []))
+            users = populate_users(body['instance'].get('users', []),
+                                   database_names)
         except ValueError as ve:
             raise exception.BadRequest(msg=ve)
 
