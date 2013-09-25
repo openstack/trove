@@ -11,7 +11,7 @@ To quickly run the tests for Python 2.7, run:
 $ tox -epy27
 
 To quickly run PEP8, run:
-$ to -epep8
+$ tox -epep8
 
 To generate a coverage report,run:
 $ tox -ecover
