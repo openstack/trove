@@ -260,7 +260,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume_heat(self, flavor, image_id,
                                    security_groups, service_type,
-                                   volume_size):
+                                   volume_size, availability_zone):
         client = create_heat_client(self.context)
         novaclient = create_nova_client(self.context)
         cinderclient = create_cinder_client(self.context)
@@ -269,7 +269,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       "Flavor": flavor["name"],
                       "VolumeSize": volume_size,
                       "ServiceType": "mysql",
-                      "InstanceId": self.id}
+                      "InstanceId": self.id,
+                      "AvailabilityZone": availability_zone}
         stack_name = 'trove-%s' % self.id
         stack = client.stacks.create(stack_name=stack_name,
                                      template=heat_template,

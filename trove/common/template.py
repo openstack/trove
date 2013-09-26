@@ -56,6 +56,7 @@ Parameters:
   VolumeSize: {Type: Number}
   ServiceType: {Type: String}
   InstanceId: {Type: String}
+  AvailabilityZone : {Type: String}
 Resources:
   BaseInstance:
     Type: AWS::EC2::Instance
@@ -79,6 +80,7 @@ Resources:
         - ["ubuntu_", {Ref: ServiceType}]
       InstanceType: {Ref: Flavor}
       KeyName: {Ref: KeyName}
+      AvailabilityZone: {Ref: AvailabilityZone}
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -90,7 +92,7 @@ Resources:
     Type: AWS::EC2::Volume
     Properties:
       Size: {Ref: VolumeSize}
-      AvailabilityZone: nova
+      AvailabilityZone: {Ref: AvailabilityZone}
       Tags:
       - {Key: Usage, Value: Test}
   MountPoint:
