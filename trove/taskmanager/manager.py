@@ -68,7 +68,7 @@ class Manager(periodic_task.PeriodicTasks):
             instance_tasks = models.BuiltInstanceTasks.load(context,
                                                             instance_id)
             instance_tasks.delete_async()
-        except exception.UnprocessableEntity as upe:
+        except exception.UnprocessableEntity:
             instance_tasks = models.FreshInstanceTasks.load(context,
                                                             instance_id)
             instance_tasks.delete_async()

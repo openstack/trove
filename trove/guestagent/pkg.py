@@ -182,7 +182,7 @@ class DebianPackagerMixin(BasePackagerMixin):
         try:
             utils.execute("dpkg", "--configure", "-a", run_as_root=True,
                           root_helper="sudo")
-        except ProcessExecutionError as e:
+        except ProcessExecutionError:
             LOG.error(_("Error fixing dpkg"))
 
     def _install(self, package_name, time_out):
@@ -250,7 +250,7 @@ class DebianPackagerMixin(BasePackagerMixin):
         try:
             utils.execute("apt-get", "update", run_as_root=True,
                           root_helper="sudo")
-        except ProcessExecutionError as e:
+        except ProcessExecutionError:
             LOG.error(_("Error updating the apt sources"))
 
         result = self._install(package_name, time_out)

@@ -149,7 +149,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         assert_equal(0, len(result))
 
         # Create some backups.
-        forever_new = backup_models.DBBackup.create(
+        backup_models.DBBackup.create(
             name="forever_new",
             description="forever new",
             tenant_id=self.tenant_id,
@@ -157,7 +157,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             instance_id=self.db_info.id,
             deleted=False)
 
-        forever_build = backup_models.DBBackup.create(
+        backup_models.DBBackup.create(
             name="forever_build",
             description="forever build",
             tenant_id=self.tenant_id,
@@ -165,7 +165,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             instance_id=self.db_info.id,
             deleted=False)
 
-        forever_saved = backup_models.DBBackup.create(
+        backup_models.DBBackup.create(
             name="forever_completed",
             description="forever completed",
             tenant_id=self.tenant_id,

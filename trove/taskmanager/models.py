@@ -563,13 +563,17 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
         try:
             volume = self.volume_client.volumes.get(self.volume_id)
+            if not volume:
+                raise (cinder_exceptions.
+                       ClientException('Failed to get volume with id: %(id)s'
+                                       % {'id': self.volume_id}))
             utils.poll_until(
                 lambda: self.volume_client.volumes.get(self.volume_id),
                 lambda volume: volume.size == int(new_size),
                 sleep_time=2,
                 time_out=CONF.volume_time_out)
             self.update_db(volume_size=new_size)
-        except PollTimeOut as pto:
+        except PollTimeOut:
             LOG.error("Timeout trying to rescan or resize the attached volume "
                       "filesystem for volume: %s" % self.volume_id)
         except Exception as e:
@@ -879,7 +883,7 @@ class ResizeAction(ResizeActionBase):
                                          self.old_flavor)
             config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
-        except GuestTimeout as gt:
+        except GuestTimeout:
             LOG.exception("Error sending reset_configuration call.")
         LOG.debug("Reverting resize.")
         super(ResizeAction, self)._revert_nova_action()

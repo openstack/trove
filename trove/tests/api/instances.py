@@ -218,7 +218,7 @@ class InstanceSetup(object):
         config = {'key': key, 'value': value, 'description': description}
         try:
             dbaas_admin.configs.create([config])
-        except exceptions.ClientException as e:
+        except exceptions.ClientException:
             # configs.create will throw an exception if the config already
             # exists we will check the value after to make sure it is correct
             # and set
@@ -687,7 +687,7 @@ class WaitForGuestInstallationToFinish(object):
                 return False
 
         poll_until(result_is_active)
-        result = dbaas.instances.get(instance_info.id)
+        dbaas.instances.get(instance_info.id)
 
         report = CONFIG.get_report()
         report.log("Created an instance, ID = %s." % instance_info.id)
@@ -1123,7 +1123,7 @@ class VerifyInstanceMgmtInfo(object):
         cid = ir.id
         instance_id = instance_info.local_id
         expected = {
-            'id': ir.id,
+            'id': cid,
             'name': ir.name,
             'account_id': info.user.auth_user,
             # TODO(hub-cap): fix this since its a flavor object now

@@ -263,7 +263,7 @@ class MySqlConnection(object):
     def assert_fails(self, user_name, password, ip):
         from trove.tests.util import mysql
         try:
-            with mysql.create_mysql_connection(ip, user_name, password) as db:
+            with mysql.create_mysql_connection(ip, user_name, password):
                 pass
             fail("Should have failed to connect: mysql --host %s -u %s -p%s"
                  % (ip, user_name, password))

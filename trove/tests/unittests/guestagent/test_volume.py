@@ -66,6 +66,8 @@ class VolumeDeviceTest(testtools.TestCase):
 
     def test__check_format_2(self):
         fake_spawn = _setUp_fake_spawn(return_val=1)
+
+        self.assertEqual(0, fake_spawn.expect.call_count)
         self.assertRaises(IOError, self.volumeDevice._check_format)
 
     def test__format(self):
@@ -173,7 +175,9 @@ class VolumeMountPointTest(testtools.TestCase):
         origin_execute = utils.execute
         utils.execute = Mock()
         open = MagicMock()
-
+        # Avoiding error at PEP8 F841 rule
+        if open:
+            pass
         self.volumeMountPoint.write_to_fstab()
 
         self.assertEqual(5, utils.execute.call_count)

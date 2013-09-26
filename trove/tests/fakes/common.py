@@ -73,7 +73,7 @@ def event_simulator_sleep(time_to_sleep):
                 event["func"] = None
                 try:
                     func()
-                except Exception as e:
+                except Exception:
                     LOG.exception("Simulated event error.")
 
         time_to_sleep -= itr_sleep

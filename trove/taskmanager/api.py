@@ -56,7 +56,7 @@ class API(ManagerAPI):
         def func():
             try:
                 method(self.context, **kwargs)
-            except Exception as ex:
+            except Exception:
                 LOG.exception("Error running async task")
                 raise
 

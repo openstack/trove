@@ -90,7 +90,7 @@ def load_mysqld_options():
             else:
                 args[item.lstrip("--")] = None
         return args
-    except exception.ProcessExecutionError as e:
+    except exception.ProcessExecutionError:
         return None
 
 
@@ -155,7 +155,7 @@ class MySqlAppStatus(object):
                 "ping", run_as_root=True, root_helper="sudo")
             LOG.info("Service Status is RUNNING.")
             return rd_instance.ServiceStatuses.RUNNING
-        except exception.ProcessExecutionError as e:
+        except exception.ProcessExecutionError:
             LOG.error("Process execution ")
             try:
                 out, err = utils.execute_with_timeout("/bin/ps", "-C",
@@ -163,9 +163,10 @@ class MySqlAppStatus(object):
                 pid = out.split()[0]
                 # TODO(rnirmal): Need to create new statuses for instances
                 # where the mysql service is up, but unresponsive
+                LOG.info('MySQL pid: %(pid)s' % {'pid': pid})
                 LOG.info("Service Status is BLOCKED.")
                 return rd_instance.ServiceStatuses.BLOCKED
-            except exception.ProcessExecutionError as e:
+            except exception.ProcessExecutionError:
                 if not MYSQLD_ARGS:
                     MYSQLD_ARGS = load_mysqld_options()
                 pid_file = MYSQLD_ARGS.get('pid_file',

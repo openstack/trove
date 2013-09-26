@@ -193,7 +193,7 @@ class Root(object):
         root = create_guest_client(context, instance_id).enable_root()
         root_user = guest_models.RootUser()
         root_user.deserialize(root)
-        root_history = RootHistory.create(context, instance_id, user)
+        RootHistory.create(context, instance_id, user)
         return root_user
 
 

@@ -70,8 +70,7 @@ class TestRoot(object):
 
     def _root(self):
         global root_password
-        host = "%"
-        user, password = self.dbaas.root.create(instance_info.id)
+        self.dbaas.root.create(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
         reh = self.dbaas_admin.management.root_enabled_history
         self.root_enabled_timestamp = reh(instance_info.id).enabled
@@ -89,8 +88,7 @@ class TestRoot(object):
 
     @test
     def test_create_user_os_admin_failure(self):
-        users = []
-        users.append({"name": "os_admin", "password": "12345"})
+        users = [{"name": "os_admin", "password": "12345"}]
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
 

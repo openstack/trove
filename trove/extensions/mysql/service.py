@@ -203,6 +203,9 @@ class UserAccessController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         # Make sure this user exists.
         user = self._get_user(context, instance_id, user_id)
+        if not user:
+            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
         view = views.UserAccessView(access.databases)
@@ -214,6 +217,9 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user = self._get_user(context, instance_id, user_id)
+        if not user:
+            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
         models.User.grant(context, instance_id, username, hostname, databases)
@@ -225,6 +231,9 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         user = self._get_user(context, instance_id, user_id)
+        if not user:
+            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
         databases = [db.name for db in access.databases]

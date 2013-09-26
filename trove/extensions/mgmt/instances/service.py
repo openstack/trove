@@ -152,17 +152,15 @@ class MgmtInstanceController(InstanceController):
         LOG.info(_("id : '%s'\n\n") % id)
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
-            server = instance_models.Instance.load(context=context, id=id)
+            instance_models.Instance.load(context=context, id=id)
         except exception.TroveError as e:
             LOG.error(e)
             return wsgi.Result(str(e), 404)
+        rhv = views.RootHistoryView(id)
         reh = mysql_models.RootHistory.load(context=context, instance_id=id)
-        rhv = None
         if reh:
             rhv = views.RootHistoryView(reh.id, enabled=reh.created,
                                         user_id=reh.user)
-        else:
-            rhv = views.RootHistoryView(id)
         return wsgi.Result(rhv.data(), 200)
 
     @admin_context

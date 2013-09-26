@@ -129,8 +129,8 @@ def call_xmllint(name, body):
         args = [CONFIG.xml_temp_file]
         if CONFIG.get('xml_xsd', None):
             args += ["--schema", CONFIG.xml_xsd]
-        output = processutils.execute(CONFIG.xmllint_bin, *args,
-                                      check_exit_code=0, shell=False)
+        processutils.execute(CONFIG.xmllint_bin, *args,
+                             check_exit_code=0, shell=False)
     except processutils.ProcessExecutionError as pe:
         fail("Error validating XML! %s" % pe)
 

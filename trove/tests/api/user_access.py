@@ -58,11 +58,11 @@ class UserAccessBase(object):
             Potentially, expect an exception in the process."""
         try:
             self.dbaas.users.grant(instance_info.id, user, databases)
-        except exceptions.BadRequest as br:
+        except exceptions.BadRequest:
             assert_equal(400, expected_response)
-        except exceptions.NotFound as nf:
+        except exceptions.NotFound:
             assert_equal(404, expected_response)
-        except exceptions.ClientException as ce:
+        except exceptions.ClientException:
             assert_equal(500, expected_response)
         finally:
             assert_equal(expected_response, self.dbaas.last_http_code)
@@ -79,9 +79,9 @@ class UserAccessBase(object):
         try:
             self.dbaas.users.revoke(instance_info.id, user, database)
             assert_true(expected_response, self.dbaas.last_http_code)
-        except exceptions.BadRequest as nf:
+        except exceptions.BadRequest:
             assert_equal(400, self.dbaas.last_http_code)
-        except exceptions.NotFound as nf:
+        except exceptions.NotFound:
             assert_equal(404, self.dbaas.last_http_code)
 
     def _revoke_access_plural(self, users, databases, expected_response=202):
@@ -108,7 +108,7 @@ class UserAccessBase(object):
                 try:
                     self.dbaas.users.revoke(instance_info.id, user, database)
                     assert_true(self.dbaas.last_http_code in [202, 404])
-                except exceptions.NotFound as nf:
+                except exceptions.NotFound:
                     # This is all right here, since we're resetting.
                     pass
         self._test_access(self.users, [])
@@ -147,7 +147,6 @@ class TestUserAccessPasswordChange(UserAccessBase):
     def test_change_password_bogus_user(self):
         user = self._pick_a_user()
         user["name"] = "thisuserhasanamethatstoolong"
-        password = user["password"]
         assert_raises(exceptions.BadRequest,
                       self.dbaas.users.change_passwords,
                       instance_info.id, [user])
@@ -157,7 +156,6 @@ class TestUserAccessPasswordChange(UserAccessBase):
     def test_change_password_nonexistent_user(self):
         user = self._pick_a_user()
         user["name"] = "thisuserDNE"
-        password = user["password"]
         assert_raises(exceptions.NotFound,
                       self.dbaas.users.change_passwords,
                       instance_info.id, [user])
@@ -370,15 +368,15 @@ class TestUserAccessNegative(UserAccessBase):
         try:
             self.dbaas.users.create(instance_info.id, user_list)
             assert_equal(self.dbaas.last_http_code, 202)
-        except exceptions.BadRequest as br:
+        except exceptions.BadRequest:
             assert_equal(self.dbaas.last_http_code, 400)
         assert_equal(expected_response, self.dbaas.last_http_code)
 
     @test()
     def test_create_duplicate_user_and_dbs(self):
-        '''
-        create the same user to the first DB - allowed, not part of change
-        '''
+        """
+        Create the same user to the first DB - allowed, not part of change
+        """
         users = self._user_list_from_names(self.users)
         self.dbaas.users.create(instance_info.id, users)
         assert_equal(202, self.dbaas.last_http_code)
@@ -388,9 +386,9 @@ class TestUserAccessNegative(UserAccessBase):
 
     @test(depends_on=[test_create_duplicate_user_and_dbs])
     def test_neg_duplicate_useraccess(self):
-        '''
+        """
         Grant duplicate users access to all database.
-        '''
+        """
         username = "qe_user.neg2E"
         self._add_users([username])
         self._add_users([username], 400)
@@ -434,9 +432,9 @@ class TestUserAccessNegative(UserAccessBase):
         try:
             access = self.dbaas.users.list_access(instance_info.id, username)
             assert_equal(200, self.dbaas.last_http_code)
-        except exceptions.BadRequest as br:
+        except exceptions.BadRequest:
             assert_equal(400, self.dbaas.last_http_code)
-        except exceptions.NotFound as nf:
+        except exceptions.NotFound:
             assert_equal(404, self.dbaas.last_http_code)
         finally:
             assert_equal(access_response, self.dbaas.last_http_code)

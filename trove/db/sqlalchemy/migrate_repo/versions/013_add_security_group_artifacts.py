@@ -83,7 +83,7 @@ security_group_rules = Table(
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    instances = Table(
+    Table(
         'instances',
         meta,
         autoload=True,

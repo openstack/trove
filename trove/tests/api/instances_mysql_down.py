@@ -77,7 +77,7 @@ class TestBase(object):
         self._wait_for_active()
 
     def _shutdown_instance(self):
-        instance = self.client.instances.get(self.id)
+        self.client.instances.get(self.id)
         self.mgmt_client.management.stop(self.id)
 
     @test(depends_on=[create_instance])

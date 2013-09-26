@@ -43,7 +43,7 @@ class TestBase(object):
     def is_instance_deleted(self, instance_id):
         while True:
             try:
-                instance = self.dbaas.instances.get(instance_id)
+                self.dbaas.instances.get(instance_id)
             except exceptions.NotFound:
                 return True
             time.sleep(.5)

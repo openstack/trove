@@ -430,7 +430,7 @@ class ResizeInstanceTest(ActionTestBase):
         poll_until(is_active, time_out=TIME_OUT_TIME)
         assert_equal(self.instance.status, 'ACTIVE')
 
-        old_flavor_href = self.get_flavor_href(
+        self.get_flavor_href(
             flavor_id=self.expected_old_flavor_id)
         assert_raises(HTTPNotImplemented, self.dbaas.instances.resize_instance,
                       self.instance_id, flavors[0].id)

@@ -277,7 +277,6 @@ class FakeGuest(object):
         if (username, hostname) not in self.users:
             raise rd_exception.UserNotFound(
                 "User %s cannot be found on the instance." % username)
-        g = self.grants.get((username, hostname), set())
         if database not in self.grants.get((username, hostname), set()):
             raise rd_exception.DatabaseNotFound(
                 "Database %s cannot be found on the instance." % database)
