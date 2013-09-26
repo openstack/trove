@@ -87,7 +87,7 @@ class Manager(periodic_task.PeriodicTasks):
     def prepare(self, context, databases, memory_mb, users, device_path=None,
                 mount_point=None, backup_id=None, config_contents=None):
         """Makes ready DBAAS on a Guest container."""
-        MySqlAppStatus.get().begin_mysql_install()
+        MySqlAppStatus.get().begin_install()
         # status end_mysql_install set with secure()
         app = MySqlApp(MySqlAppStatus.get())
         restart_mysql = False

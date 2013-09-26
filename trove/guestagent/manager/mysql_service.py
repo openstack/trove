@@ -17,7 +17,7 @@ from trove.guestagent import query
 from trove.guestagent.db import models
 from trove.guestagent import system
 from trove.guestagent import pkg
-from trove.instance import models as rd_models
+from trove.guestagent.manager import service
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.extensions.mysql.models import RootHistory
@@ -94,52 +94,7 @@ def load_mysqld_options():
         return None
 
 
-class MySqlAppStatus(object):
-    """
-    Answers the question "what is the status of the MySQL application on
-    this box?" The answer can be that the application is not installed, or
-    the state of the application is determined by calling a series of
-    commands.
-
-    This class also handles saving and load the status of the MySQL application
-    in the database.
-    The status is updated whenever the update() method is called, except
-    if the state is changed to building or restart mode using the
-     "begin_mysql_install" and "begin_mysql_restart" methods.
-    The building mode persists in the database while restarting mode does
-    not (so if there is a Python Pete crash update() will set the status to
-    show a failure).
-    These modes are exited and functionality to update() returns when
-    end_install_or_restart() is called, at which point the status again
-    reflects the actual status of the MySQL app.
-    """
-
-    _instance = None
-
-    def __init__(self):
-        if self._instance is not None:
-            raise RuntimeError("Cannot instantiate twice.")
-        self.status = self._load_status().status
-        self.restart_mode = False
-
-    def begin_mysql_install(self):
-        """Called right before MySQL is prepared."""
-        self.set_status(rd_instance.ServiceStatuses.BUILDING)
-
-    def begin_mysql_restart(self):
-        """Called before restarting MySQL."""
-        self.restart_mode = True
-
-    def end_install_or_restart(self):
-        """Called after MySQL is installed or restarted.
-
-        Updates the database with the actual MySQL status.
-        """
-        LOG.info("Ending install_if_needed or restart.")
-        self.restart_mode = False
-        real_status = self._get_actual_db_status()
-        LOG.info("Updating status to %s" % real_status)
-        self.set_status(real_status)
+class MySqlAppStatus(service.BaseDbStatus):
 
     @classmethod
     def get(cls):
@@ -176,77 +131,6 @@ class MySqlAppStatus(object):
                 else:
                     LOG.info("Service Status is SHUTDOWN.")
                     return rd_instance.ServiceStatuses.SHUTDOWN
-
-    @property
-    def is_mysql_installed(self):
-        """
-        True if MySQL app should be installed and attempts to ascertain
-        its status won't result in nonsense.
-        """
-        return (self.status is not None and
-                self.status != rd_instance.ServiceStatuses.NEW and
-                self.status != rd_instance.ServiceStatuses.BUILDING and
-                self.status != rd_instance.ServiceStatuses.FAILED)
-
-    @property
-    def _is_mysql_restarting(self):
-        return self.restart_mode
-
-    @property
-    def is_mysql_running(self):
-        """True if MySQL is running."""
-        return (self.status is not None and
-                self.status == rd_instance.ServiceStatuses.RUNNING)
-
-    @staticmethod
-    def _load_status():
-        """Loads the status from the database."""
-        inst_id = CONF.guest_id
-        return rd_models.InstanceServiceStatus.find_by(instance_id=inst_id)
-
-    def set_status(self, status):
-        """Changes the status of the MySQL app in the database."""
-        db_status = self._load_status()
-        db_status.status = status
-        db_status.save()
-        self.status = status
-
-    def update(self):
-        """Find and report status of MySQL on this machine.
-
-        The database is update and the status is also returned.
-        """
-        if self.is_mysql_installed and not self._is_mysql_restarting:
-            LOG.info("Determining status of MySQL app...")
-            status = self._get_actual_db_status()
-            self.set_status(status)
-        else:
-            LOG.info("MySQL is not installed or is in restart mode, so for "
-                     "now we'll skip determining the status of MySQL on this "
-                     "box.")
-
-    def wait_for_real_status_to_change_to(self, status, max_time,
-                                          update_db=False):
-        """
-        Waits the given time for the real status to change to the one
-        specified. Does not update the publicly viewable status Unless
-        "update_db" is True.
-        """
-        WAIT_TIME = 3
-        waited_time = 0
-        while waited_time < max_time:
-            time.sleep(WAIT_TIME)
-            waited_time += WAIT_TIME
-            LOG.info("Waiting for MySQL status to change to %s..." % status)
-            actual_status = self._get_actual_db_status()
-            LOG.info("MySQL status was %s after %d seconds."
-                     % (actual_status, waited_time))
-            if actual_status == status:
-                if update_db:
-                    self.set_status(actual_status)
-                return True
-        LOG.error("Time out while waiting for MySQL app status to change!")
-        return False
 
 
 class LocalSqlClient(object):
@@ -746,7 +630,7 @@ class MySqlApp(object):
 
     def restart(self):
         try:
-            self.status.begin_mysql_restart()
+            self.status.begin_restart()
             self.stop_db()
             self.start_mysql()
         finally:
@@ -858,8 +742,8 @@ class MySqlApp(object):
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting mysql with conf changes..."))
         LOG.info(_("inside the guest - self.status.is_mysql_running(%s)...")
-                 % self.status.is_mysql_running)
-        if self.status.is_mysql_running:
+                 % self.status.is_running)
+        if self.status.is_running:
             LOG.error(_("Cannot execute start_db_with_conf_changes because "
                         "MySQL state == %s!") % self.status)
             raise RuntimeError("MySQL not stopped.")
