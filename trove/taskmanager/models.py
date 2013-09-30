@@ -125,9 +125,9 @@ class ConfigurationMixin(object):
     Configuration related tasks for instances and resizes.
     """
 
-    def _render_config(self, service_type, flavor):
+    def _render_config(self, service_type, flavor, instance_id):
         config = template.SingleInstanceConfigTemplate(
-            service_type, flavor)
+            service_type, flavor, instance_id)
         config.render()
         return config
 
@@ -168,7 +168,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
             self._log_and_raise(e, msg, err)
 
-        config = self._render_config(service_type, flavor)
+        config = self._render_config(service_type, flavor, self.id)
 
         if server:
             self._guest_prepare(server, flavor['ram'], volume_info,
@@ -880,7 +880,7 @@ class ResizeAction(ResizeActionBase):
         LOG.debug("Repairing config.")
         try:
             config = self._render_config(self.instance.service_type,
-                                         self.old_flavor)
+                                         self.old_flavor, self.instance.id)
             config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout:
@@ -901,7 +901,7 @@ class ResizeAction(ResizeActionBase):
 
     def _start_mysql(self):
         config = self._render_config(self.instance.service_type,
-                                     self.new_flavor)
+                                     self.new_flavor, self.instance.id)
         self.instance.guest.start_db_with_conf_changes(config.config_contents)
 
 

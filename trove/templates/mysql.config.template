@@ -42,6 +42,7 @@ max_user_connections = {{ 100 * flavor['ram']//512 }}
 max_connections = {{ 100 * flavor['ram']//512 }}
 default_storage_engine = innodb
 local-infile = 0
+server_id = {{server_id}}
 
 [mysqldump]
 quick

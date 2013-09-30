@@ -23,18 +23,21 @@ ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
 class SingleInstanceConfigTemplate(object):
     """ This class selects a single configuration file by database type for
     rendering on the guest """
-    def __init__(self, service_type, flavor_dict):
+    def __init__(self, service_type, flavor_dict, instance_id):
         """ Constructor
 
         :param service_type: The database type.
         :type name: str.
         :param flavor_dict: dict containing flavor details for use in jinja.
         :type flavor_dict: dict.
+        :param instance_id: trove instance id
+        :type: instance_id: str
 
         """
         self.flavor_dict = flavor_dict
         template_filename = "%s.config.template" % service_type
         self.template = ENV.get_template(template_filename)
+        self.instance_id = instance_id
 
     def render(self):
         """ Renders the jinja template
@@ -42,9 +45,18 @@ class SingleInstanceConfigTemplate(object):
         :returns: str -- The rendered configuration file
 
         """
+        server_id = self._calculate_unique_id()
         self.config_contents = self.template.render(
-            flavor=self.flavor_dict)
+            flavor=self.flavor_dict, server_id=server_id)
         return self.config_contents
+
+    def _calculate_unique_id(self):
+        """
+        Returns a positive unique id based off of the instance id
+
+        :return: a positive integer
+        """
+        return abs(hash(self.instance_id) % (2 ** 31))
 
 
 class HeatTemplate(object):
