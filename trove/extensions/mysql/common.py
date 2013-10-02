@@ -50,7 +50,7 @@ def populate_users(users, initial_databases=None):
     for user in users:
         u = guest_models.MySQLUser()
         u.name = user.get('name', '')
-        u.host = user.get('host')
+        u.host = user.get('host', '%')
         user_identity = (u.name, u.host)
         if user_identity in unique_identities:
             raise exception.DatabaseInitialUserDuplicateError()
