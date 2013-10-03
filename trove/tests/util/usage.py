@@ -63,7 +63,7 @@ class UsageVerifier(object):
 class FakeVerifier(object):
     """This is the default handler in fake mode, it is basically a no-op."""
 
-    def clear_event(self):
+    def clear_events(self):
         pass
 
     def check_message(self, *args, **kwargs):
