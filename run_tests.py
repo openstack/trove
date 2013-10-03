@@ -129,8 +129,8 @@ if __name__ == "__main__":
         from trove.tests.api import limits
         from trove.tests.api import flavors
         from trove.tests.api import versions
-        from trove.tests.api import instances
-        from trove.tests.api import instances_actions
+        from trove.tests.api import instances as rd_instances
+        from trove.tests.api import instances_actions as rd_actions
         from trove.tests.api import instances_delete
         from trove.tests.api import instances_mysql_down
         from trove.tests.api import instances_resize
@@ -140,8 +140,8 @@ if __name__ == "__main__":
         from trove.tests.api import user_access
         from trove.tests.api.mgmt import accounts
         from trove.tests.api.mgmt import admin_required
-        from trove.tests.api.mgmt import instances
-        from trove.tests.api.mgmt import instances_actions
+        from trove.tests.api.mgmt import instances as mgmt_instances
+        from trove.tests.api.mgmt import instances_actions as mgmt_actions
         from trove.tests.api.mgmt import storage
         from trove.tests.api.mgmt import malformed_json
     except Exception as e:

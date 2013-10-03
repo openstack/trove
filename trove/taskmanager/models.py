@@ -375,10 +375,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         mapping = "%s:%s:%s:%s" % (v_ref.id, '', v_ref.size, 1)
         bdm = CONF.block_device_mapping
         block_device = {bdm: mapping}
-        volumes = [{'id': v_ref.id,
-                    'size': v_ref.size}]
+        created_volumes = [{'id': v_ref.id,
+                            'size': v_ref.size}]
         LOG.debug("block_device = %s" % block_device)
-        LOG.debug("volume = %s" % volumes)
+        LOG.debug("volume = %s" % created_volumes)
 
         device_path = CONF.device_path
         mount_point = CONF.mount_point
@@ -388,7 +388,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         volume_info = {'block_device': block_device,
                        'device_path': device_path,
                        'mount_point': mount_point,
-                       'volumes': volumes}
+                       'volumes': created_volumes}
         return volume_info
 
     def _create_server(self, flavor_id, image_id, security_groups,
@@ -444,10 +444,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 if server.addresses != {}:
                     return True
                 elif (server.addresses == {} and
-                      server.status != InstanceStatus.ERROR):
+                        server.status != InstanceStatus.ERROR):
                     return False
                 elif (server.addresses == {} and
-                      server.status == InstanceStatus.ERROR):
+                        server.status == InstanceStatus.ERROR):
                     LOG.error(_("Instance IP not available, "
                                 "instance (%(instance)s): "
                                 "server had status (%(status)s).") %
@@ -703,7 +703,7 @@ class BackupTasks(object):
                 if name:
                     LOG.info("Deleting file: %s/%s", cont, name)
                     client.delete_object(cont, name)
-            # Delete the manifest file
+        # Delete the manifest file
         LOG.info("Deleting file: %s/%s", container, filename)
         client.delete_object(container, filename)
 
@@ -793,8 +793,8 @@ class ResizeActionBase(ConfigurationMixin):
 
     def _guest_is_awake(self):
         self.instance._refresh_compute_service_status()
-        return self.instance.service_status !=\
-            rd_instance.ServiceStatuses.PAUSED
+        return (self.instance.service_status !=
+                rd_instance.ServiceStatuses.PAUSED)
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""

@@ -93,8 +93,8 @@ class InstanceDetailView(InstanceView):
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
 
-        if isinstance(self.instance, models.DetailInstance) and \
-            self.instance.volume_used:
+        if (isinstance(self.instance, models.DetailInstance) and
+                self.instance.volume_used):
             used = self.instance.volume_used
             if CONF.trove_volume_support:
                 result['instance']['volume']['used'] = used

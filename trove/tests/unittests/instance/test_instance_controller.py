@@ -108,7 +108,7 @@ class TestInstanceController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
-    def test_validate_create_complete_with_restore(self):
+    def test_validate_create_complete_with_restore_error(self):
         body = self.instance
         backup_id_ref = "invalid-backup-id-ref"
         body['instance']['restorePoint'] = {
