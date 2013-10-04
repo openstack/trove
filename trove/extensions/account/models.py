@@ -32,7 +32,6 @@ class Server(object):
         self.id = server['id']
         self.status = server['status']
         self.name = server['name']
-        self.host = server['hostId']
         self.host = server.get('hostId') or server['host']
 
     @staticmethod
