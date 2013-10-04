@@ -223,9 +223,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               availability_zone):
         server = None
         try:
-            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
-                                         "%s\n--service_type=%s\n" %
-                                         (self.id, service_type))}
+            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id=%s\n"
+                                         "--service_type=%s\n"
+                                         "--tenant_id=%s\n" %
+                                         (self.id, service_type,
+                                          self.tenant_id))}
             name = self.hostname or self.name
             volume_desc = ("mysql volume for %s" % self.id)
             volume_name = ("mysql-%s" % self.id)
@@ -395,8 +397,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        service_type, block_device_mapping,
                        availability_zone):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
-                                     "service_type=%s\n" %
-                                     (self.id, service_type))}
+                                     "service_type=%s\n" "tenant_id=%s\n" %
+                                     (self.id, service_type, self.tenant_id))}
         if os.path.isfile(CONF.get('guest_config')):
             with open(CONF.get('guest_config'), "r") as f:
                 files["/etc/trove-guestagent.conf"] = f.read()

@@ -61,6 +61,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         super(FreshInstanceTasksTest, self).setUp()
         when(taskmanager_models.FreshInstanceTasks).id().thenReturn(
             "instance_id")
+        when(taskmanager_models.FreshInstanceTasks).tenant_id().thenReturn(
+            "tenant_id")
         when(taskmanager_models.FreshInstanceTasks).hostname().thenReturn(
             "hostname")
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
