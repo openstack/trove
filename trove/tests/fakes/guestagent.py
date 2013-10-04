@@ -302,6 +302,7 @@ class FakeGuest(object):
 
         def finish_create_backup():
             backup.state = BackupState.COMPLETED
+            backup.location = 'http://localhost/path/to/backup'
             backup.save()
         self.event_spawn(1.0, finish_create_backup)
 
