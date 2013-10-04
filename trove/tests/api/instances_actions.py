@@ -27,16 +27,15 @@ from trove.tests.util.check import Checker
 from troveclient.compat.exceptions import BadRequest
 from troveclient.compat.exceptions import HTTPNotImplemented
 from trove.tests.api.instances import GROUP as INSTANCE_GROUP
-from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
 from trove.tests.util.server_connection import create_server_connection
-from trove.common.utils import poll_until
+import trove.tests.util as testsutil
 from trove.tests.config import CONFIG
 from trove.tests.util import LocalSqlClient
-from trove.tests.util import iso_time
 from sqlalchemy import exc as sqlalchemy_exc
 from trove.tests.util.check import TypeCheck
 from sqlalchemy.sql.expression import text
@@ -126,7 +125,7 @@ class ActionTestBase(object):
             users = self.dbaas.users.list(instance_info.id)
             return any([user.name == MYSQL_USERNAME for user in users])
 
-        poll_until(has_user, time_out=30)
+        testsutil.poll_until(has_user, time_out=30)
         if not FAKE_MODE:
             time.sleep(5)
 
@@ -160,6 +159,19 @@ class ActionTestBase(object):
         for user in users:
             CONFIG.get_report().log("\t" + str(user))
 
+    def _build_expected_msg(self):
+        expected = {
+            'instance_size': instance_info.dbaas_flavor.ram,
+            'tenant_id': instance_info.user.tenant_id,
+            'instance_id': instance_info.id,
+            'instance_name': instance_info.name,
+            'created_at': testsutil.iso_time(
+                instance_info.initial_result.created),
+            'launched_at': testsutil.iso_time(self.instance.updated),
+            'modify_at': testsutil.iso_time(self.instance.updated)
+        }
+        return expected
+
 
 @test(depends_on_groups=[GROUP_START])
 def create_user():
@@ -188,9 +200,9 @@ class RebootTestBase(ActionTestBase):
             return
         if not hasattr(self, "connection"):
             return
-        poll_until(self.connection.is_connected,
-                   lambda connected: not connected,
-                   time_out=TIME_OUT_TIME)
+        testsutil.poll_until(self.connection.is_connected,
+                             lambda connected: not connected,
+                             time_out=TIME_OUT_TIME)
 
     def wait_for_successful_restart(self):
         """Wait until status becomes running."""
@@ -201,7 +213,7 @@ class RebootTestBase(ActionTestBase):
             assert_equal("ACTIVE", instance.status)
             return True
 
-        poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
+        testsutil.poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
     def assert_mysql_proc_is_different(self):
         if not USE_IP:
@@ -249,7 +261,7 @@ class RebootTestBase(ActionTestBase):
             assert_true(instance.status in ("SHUTDOWN", "BLOCKED"))
             return True
 
-        poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
+        testsutil.poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
     def unsuccessful_restart(self):
         """Restart MySQL via the REST when it should fail, assert it does."""
@@ -401,7 +413,7 @@ class ResizeInstanceTest(ActionTestBase):
                 return False
             assert_equal("ACTIVE", instance.status)
             return True
-        poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
+        testsutil.poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
 
     @before_class
     def setup(self):
@@ -425,7 +437,7 @@ class ResizeInstanceTest(ActionTestBase):
 
         def is_active():
             return self.instance.status == 'ACTIVE'
-        poll_until(is_active, time_out=TIME_OUT_TIME)
+        testsutil.poll_until(is_active, time_out=TIME_OUT_TIME)
         assert_equal(self.instance.status, 'ACTIVE')
 
         self.get_flavor_href(
@@ -488,18 +500,8 @@ class ResizeInstanceTest(ActionTestBase):
                       test_status_changed_to_resize],
           groups=["dbaas.usage"])
     def test_resize_instance_usage_event_sent(self):
-        expected = {
-            'old_instance_size': self.old_dbaas_flavor.ram,
-            'instance_size': instance_info.dbaas_flavor.ram,
-            'tenant_id': instance_info.user.tenant_id,
-            'instance_id': instance_info.id,
-            'instance_name': instance_info.name,
-            'created_at': iso_time(instance_info.initial_result.created),
-            'launched_at': iso_time(self.instance.updated),
-            'modify_at': iso_time(self.instance.updated),
-            'service_id': SERVICE_ID
-        }
-
+        expected = self._build_expected_msg()
+        expected['old_instance_size'] = self.old_dbaas_flavor.ram
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.modify_flavor',
                                              **expected)
@@ -541,7 +543,7 @@ class ResizeInstanceTest(ActionTestBase):
 
         def is_active():
             return self.instance.status == 'ACTIVE'
-        poll_until(is_active, time_out=TIME_OUT_TIME)
+        testsutil.poll_until(is_active, time_out=TIME_OUT_TIME)
         assert_equal(self.instance.status, 'ACTIVE')
 
         old_flavor_href = self.get_flavor_href(
@@ -558,17 +560,8 @@ class ResizeInstanceTest(ActionTestBase):
     @test(depends_on=[test_resize_down],
           groups=["dbaas.usage"])
     def test_resize_instance_down_usage_event_sent(self):
-        expected = {
-            'old_instance_size': self.old_dbaas_flavor.ram,
-            'instance_size': instance_info.dbaas_flavor.ram,
-            'tenant_id': instance_info.user.tenant_id,
-            'instance_id': instance_info.id,
-            'instance_name': instance_info.name,
-            'created_at': iso_time(instance_info.initial_result.created),
-            'launched_at': iso_time(self.instance.updated),
-            'modify_at': iso_time(self.instance.updated),
-            'service_id': SERVICE_ID
-        }
+        expected = self._build_expected_msg()
+        expected['old_instance_size'] = self.old_dbaas_flavor.ram
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.modify_flavor',
                                              **expected)
@@ -586,11 +579,12 @@ def resize_should_not_delete_users():
 @test(runs_after=[ResizeInstanceTest], depends_on=[create_user],
       groups=[GROUP, tests.INSTANCES],
       enabled=VOLUME_SUPPORT)
-class ResizeInstanceVolume(object):
+class ResizeInstanceVolume(ActionTestBase):
     """ Resize the volume of the instance """
 
     @before_class
     def setUp(self):
+        self.set_up()
         self.old_volume_size = int(instance_info.volume['size'])
         self.new_volume_size = self.old_volume_size + 1
 
@@ -620,25 +614,15 @@ class ResizeInstanceVolume(object):
             else:
                 fail("Status should not be %s" % instance.status)
 
-        poll_until(check_resize_status, sleep_time=2, time_out=300)
+        testsutil.poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal(instance.volume['size'], self.new_volume_size)
 
     @test(depends_on=[test_volume_resize_success], groups=["dbaas.usage"])
     def test_resize_volume_usage_event_sent(self):
-        instance = instance_info.dbaas.instances.get(instance_info.id)
-        expected = {
-            'old_volume_size': self.old_volume_size,
-            'instance_size': instance_info.dbaas_flavor.ram,
-            'tenant_id': instance_info.user.tenant_id,
-            'instance_id': instance_info.id,
-            'instance_name': instance_info.name,
-            'created_at': iso_time(instance_info.initial_result.created),
-            'launched_at': iso_time(instance.updated),
-            'modify_at': iso_time(instance.updated),
-            'volume_size': self.new_volume_size,
-            'service_id': SERVICE_ID
-        }
+        expected = self._build_expected_msg()
+        expected['volume_size'] = self.new_volume_size
+        expected['old_volume_size'] = self.old_volume_size
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.modify_volume',
                                              **expected)
@@ -683,7 +667,7 @@ class UpdateGuest(object):
     @test(enabled=UPDATE_GUEST_CONF is not None)
     def upload_update_to_repo(self):
         cmds = UPDATE_GUEST_CONF["install-repo-cmd"]
-        utils.execute(*cmds, run_as_root=True, root_helper="sudo")
+        testsutil.execute(*cmds, run_as_root=True, root_helper="sudo")
 
     @test(enabled=UPDATE_GUEST_CONF is not None,
           depends_on=[upload_update_to_repo])
@@ -697,7 +681,7 @@ class UpdateGuest(object):
             # The only valid thing for it to be aside from next_version is
             # old version.
             assert_equal(current_version, self.old_version)
-        poll_until(finished, sleep_time=1, time_out=3 * 60)
+        testsutil.poll_until(finished, sleep_time=1, time_out=3 * 60)
 
     @test(enabled=UPDATE_GUEST_CONF is not None,
           depends_on=[upload_update_to_repo])
