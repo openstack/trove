@@ -47,7 +47,6 @@ server_delete_time_out=480
 nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 nova_proxy_admin_tenant_name = admin
-trove_auth_url = http://0.0.0.0:5000/v2.0
 
 # Manager impl for the taskmanager
 taskmanager_manager=trove.taskmanager.manager.Manager
