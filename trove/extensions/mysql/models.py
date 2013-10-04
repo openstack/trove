@@ -82,8 +82,6 @@ class User(object):
         for user in users:
             user_name = user['_name']
             host_name = user['_host']
-            if host_name is None:
-                host_name = '%'
             userhost = "%s@%s" % (user_name, host_name)
             existing_users, _nadda = Users.load_with_client(
                 client,
