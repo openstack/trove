@@ -19,6 +19,8 @@
 from oslo.config import cfg
 import os.path
 
+UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
+
 path_opts = [
     cfg.StrOpt('pybasedir',
                default=os.path.abspath(os.path.join(os.path.dirname(__file__),
@@ -184,8 +186,8 @@ common_opts = [
     cfg.IntOpt('exists_notification_ticks', default=360,
                help='Number of report_intevals to wait between pushing events '
                     '(see report_interval)'),
-    cfg.StrOpt('notification_service_id',
-               help='Unique ID to tag notification events'),
+    cfg.DictOpt('notification_service_id', default={},
+                help='Unique ID to tag notification events'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
                help="Admin username used to connect to Nova", secret=True),
     cfg.StrOpt('nova_proxy_admin_pass', default='',
@@ -199,7 +201,6 @@ common_opts = [
                default='$pybasedir/etc/trove/trove-guestagent.conf.sample',
                help="Path to guestagent config file"),
 ]
-
 
 CONF = cfg.CONF
 CONF.register_opts(path_opts)

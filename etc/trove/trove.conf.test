@@ -109,6 +109,7 @@ revert_time_out = 120
 
 # usage notifications
 notification_driver = trove.tests.util.usage
+notification_service_id = mysql:123,percona:abc
 
 # ============ notifer queue kombu connection options ========================
 

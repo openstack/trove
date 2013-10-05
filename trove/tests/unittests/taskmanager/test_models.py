@@ -11,13 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import trove.common.remote as remote
 import testtools
+from testtools.matchers import Equals
+from mockito import mock, when, unstub, any, verify, never
+
+from trove.taskmanager.models import NotifyMixin
+import trove.common.remote as remote
 import trove.taskmanager.models as taskmanager_models
 import trove.backup.models as backup_models
 from trove.common.exception import TroveError
-from mockito import mock, when, unstub, any, verify, never
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
@@ -222,3 +224,23 @@ class BackupTasksTest(testtools.TestCase):
         cont, prefix = taskmanager_models.BackupTasks._parse_manifest(manifest)
         self.assertEqual(cont, 'container')
         self.assertEqual(prefix, '')
+
+
+class NotifyMixinTest(testtools.TestCase):
+
+    def test_get_service_id(self):
+        id_map = {
+            'mysql': '123',
+            'percona': 'abc'
+        }
+        mixin = NotifyMixin()
+        self.assertThat(mixin._get_service_id('mysql', id_map), Equals('123'))
+
+    def test_get_service_id_unknown(self):
+        id_map = {
+            'mysql': '123',
+            'percona': 'abc'
+        }
+        transformer = NotifyMixin()
+        self.assertThat(transformer._get_service_id('m0ng0', id_map),
+                        Equals('unknown-service-id-error'))
