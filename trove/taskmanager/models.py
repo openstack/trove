@@ -604,8 +604,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             self._do_resize(new_size)
 
         self.send_usage_event('modify_volume', old_volume_size=old_volume_size,
-                              launched_at=timeutils.isotime(),
-                              modify_at=timeutils.isotime(),
+                              launched_at=timeutils.isotime(self.updated),
+                              modify_at=timeutils.isotime(self.updated),
                               volume_size=new_size)
 
     def resize_flavor(self, old_flavor, new_flavor):
@@ -903,8 +903,8 @@ class ResizeAction(ResizeActionBase):
             'modify_flavor',
             old_instance_size=self.old_flavor['ram'],
             instance_size=self.new_flavor['ram'],
-            launched_at=timeutils.isotime(),
-            modify_at=timeutils.isotime())
+            launched_at=timeutils.isotime(self.instance.updated),
+            modify_at=timeutils.isotime(self.instance.updated))
 
     def _start_mysql(self):
         config = self._render_config(self.instance.service_type,
