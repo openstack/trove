@@ -38,6 +38,7 @@ from trove.common.context import TroveContext
 from trove.common import utils
 from trove.common import instance as rd_instance
 import trove.guestagent.manager.mysql_service as dbaas
+from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.manager.mysql_service import MySqlAdmin
@@ -872,6 +873,54 @@ class InterrogatorTest(testtools.TestCase):
         self.assertRaises(
             RuntimeError,
             get_filesystem_volume_stats, '/nonexistent/path')
+
+
+class ServiceRegistryTest(testtools.TestCase):
+
+    def setUp(self):
+        super(ServiceRegistryTest, self).setUp()
+
+    def tearDown(self):
+        super(ServiceRegistryTest, self).tearDown()
+
+    def test_service_registry_with_extra_manager(self):
+        service_registry_ext_test = {
+            'test': 'trove.guestagent.manager.test.Manager',
+        }
+        dbaas_sr.get_custom_managers = Mock(return_value=
+                                            service_registry_ext_test)
+        test_dict = dbaas_sr.service_registry()
+        self.assertEqual(3, len(test_dict))
+        self.assertEqual(test_dict.get('test'),
+                         service_registry_ext_test.get('test'))
+        self.assertEqual(test_dict.get('mysql'),
+                         'trove.guestagent.manager.mysql.Manager')
+        self.assertEqual(test_dict.get('percona'),
+                         'trove.guestagent.manager.mysql.Manager')
+
+    def test_service_registry_with_existing_manager(self):
+        service_registry_ext_test = {
+            'mysql': 'trove.guestagent.manager.mysql.Manager123',
+        }
+        dbaas_sr.get_custom_managers = Mock(return_value=
+                                            service_registry_ext_test)
+        test_dict = dbaas_sr.service_registry()
+        self.assertEqual(2, len(test_dict))
+        self.assertEqual(test_dict.get('mysql'),
+                         'trove.guestagent.manager.mysql.Manager123')
+        self.assertEqual(test_dict.get('percona'),
+                         'trove.guestagent.manager.mysql.Manager')
+
+    def test_service_registry_with_blank_dict(self):
+        service_registry_ext_test = dict()
+        dbaas_sr.get_custom_managers = Mock(return_value=
+                                            service_registry_ext_test)
+        test_dict = dbaas_sr.service_registry()
+        self.assertEqual(2, len(test_dict))
+        self.assertEqual(test_dict.get('mysql'),
+                         'trove.guestagent.manager.mysql.Manager')
+        self.assertEqual(test_dict.get('percona'),
+                         'trove.guestagent.manager.mysql.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
