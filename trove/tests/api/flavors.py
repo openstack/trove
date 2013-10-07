@@ -20,7 +20,6 @@ from nose.tools import assert_false
 from nose.tools import assert_true
 from troveclient import exceptions
 from troveclient.flavors import Flavor
-from troveclient.flavors import Flavors
 
 from proboscis import before_class
 from proboscis import test

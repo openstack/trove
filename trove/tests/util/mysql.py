@@ -148,7 +148,7 @@ class PexpectMySqlConnection(object):
                 if len(result) == 0:
                     end_line = "1 row in set"
                 if (line.startswith("***************************") or
-                    line.startswith(end_line)):
+                        line.startswith(end_line)):
                     if row is not None:
                         result.append(row)
                     row = {}
