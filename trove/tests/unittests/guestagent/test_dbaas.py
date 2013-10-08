@@ -41,6 +41,7 @@ import trove.guestagent.manager.mysql_service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
+from trove.guestagent.manager.service import BaseDbStatus
 from trove.guestagent.manager.mysql_service import MySqlAdmin
 from trove.guestagent.manager.mysql_service import MySqlRootAccess
 from trove.guestagent.manager.mysql_service import MySqlApp
@@ -93,8 +94,8 @@ class DbaasTest(testtools.TestCase):
 
     def test_get_auth_password(self):
 
-        dbaas.utils.execute_with_timeout = \
-            Mock(return_value=("password    ", None))
+        dbaas.utils.execute_with_timeout = Mock(
+            return_value=("password    ", None))
 
         password = dbaas.get_auth_password()
 
@@ -102,8 +103,8 @@ class DbaasTest(testtools.TestCase):
 
     def test_get_auth_password_error(self):
 
-        dbaas.utils.execute_with_timeout = \
-            Mock(return_value=("password", "Error"))
+        dbaas.utils.execute_with_timeout = Mock(
+            return_value=("password", "Error"))
 
         self.assertRaises(RuntimeError, dbaas.get_auth_password)
 
@@ -179,8 +180,8 @@ class MySqlAdminTest(testtools.TestCase):
         self.orig_LocalSqlClient_enter = dbaas.LocalSqlClient.__enter__
         self.orig_LocalSqlClient_exit = dbaas.LocalSqlClient.__exit__
         self.orig_LocalSqlClient_execute = dbaas.LocalSqlClient.execute
-        self.orig_MySQLUser_is_valid_user_name = \
-            models.MySQLUser._is_valid_user_name
+        self.orig_MySQLUser_is_valid_user_name = (
+            models.MySQLUser._is_valid_user_name)
         dbaas.get_engine = MagicMock(name='get_engine')
         dbaas.LocalSqlClient = Mock
         dbaas.LocalSqlClient.__enter__ = Mock()
@@ -196,8 +197,8 @@ class MySqlAdminTest(testtools.TestCase):
         dbaas.LocalSqlClient.__enter__ = self.orig_LocalSqlClient_enter
         dbaas.LocalSqlClient.__exit__ = self.orig_LocalSqlClient_exit
         dbaas.LocalSqlClient.execute = self.orig_LocalSqlClient_execute
-        models.MySQLUser._is_valid_user_name = \
-            self.orig_MySQLUser_is_valid_user_name
+        models.MySQLUser._is_valid_user_name = (
+            self.orig_MySQLUser_is_valid_user_name)
 
     def test_create_database(self):
 
@@ -660,8 +661,8 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         self.mySqlApp.is_installed = Mock(return_value=False)
-        self.mySqlApp._install_mysql = \
-            Mock(side_effect=pkg.PkgPackageStateError("Install error"))
+        self.mySqlApp._install_mysql = Mock(
+            side_effect=pkg.PkgPackageStateError("Install error"))
 
         self.assertRaises(pkg.PkgPackageStateError,
                           self.mySqlApp.install_if_needed)
@@ -673,8 +674,8 @@ class MySqlAppInstallTest(MySqlAppTest):
         from trove.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
-        self.mySqlApp._write_mycnf = \
-            Mock(side_effect=IOError("Could not write file"))
+        self.mySqlApp._write_mycnf = Mock(
+            side_effect=IOError("Could not write file"))
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
         sqlalchemy.create_engine = Mock()
@@ -747,7 +748,7 @@ class MySqlAppMockTest(testtools.TestCase):
             None)
         # skip writing the file for now
         when(os.path).isfile(any()).thenReturn(False)
-        mock_status = mock(MySqlAppStatus)
+        mock_status = mock()
         when(mock_status).wait_for_real_status_to_change_to(
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
@@ -769,7 +770,7 @@ class MySqlAppMockTest(testtools.TestCase):
         when(os.path).isfile(any()).thenReturn(False)
         when(utils).execute_with_timeout(
             "sudo", "chmod", any(), any()).thenReturn(None)
-        mock_status = mock(MySqlAppStatus)
+        mock_status = mock()
         when(mock_status).wait_for_real_status_to_change_to(
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
@@ -973,6 +974,122 @@ class KeepAliveConnectionTest(testtools.TestCase):
                           dbapi_con, Mock(), Mock())
 
 
+class BaseDbStatusTest(testtools.TestCase):
+
+    def setUp(self):
+        super(BaseDbStatusTest, self).setUp()
+        util.init_db()
+        self.orig_dbaas_time_sleep = dbaas.time.sleep
+        self.FAKE_ID = randint(1, 10000)
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        dbaas.CONF.guest_id = self.FAKE_ID
+
+    def tearDown(self):
+        super(BaseDbStatusTest, self).tearDown()
+        dbaas.time.sleep = self.orig_dbaas_time_sleep
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        dbaas.CONF.guest_id = None
+
+    def test_begin_install(self):
+
+        self.baseDbStatus = BaseDbStatus()
+
+        self.baseDbStatus.begin_install()
+
+        self.assertEquals(self.baseDbStatus.status,
+                          rd_instance.ServiceStatuses.BUILDING)
+
+    def test_begin_restart(self):
+
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.restart_mode = False
+
+        self.baseDbStatus.begin_restart()
+
+        self.assertTrue(self.baseDbStatus.restart_mode)
+
+    def test_end_install_or_restart(self):
+
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus._get_actual_db_status = Mock(
+            return_value=rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.baseDbStatus.end_install_or_restart()
+
+        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
+                         self.baseDbStatus.status)
+        self.assertFalse(self.baseDbStatus.restart_mode)
+
+    def test_is_installed(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.RUNNING
+
+        self.assertTrue(self.baseDbStatus.is_installed)
+
+    def test_is_installed_none(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = None
+
+        self.assertFalse(self.baseDbStatus.is_installed)
+
+    def test_is_installed_building(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.BUILDING
+
+        self.assertFalse(self.baseDbStatus.is_installed)
+
+    def test_is_installed_new(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.NEW
+
+        self.assertFalse(self.baseDbStatus.is_installed)
+
+    def test_is_installed_failed(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.FAILED
+
+        self.assertFalse(self.baseDbStatus.is_installed)
+
+    def test_is_restarting(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.restart_mode = True
+
+        self.assertTrue(self.baseDbStatus._is_restarting)
+
+    def test_is_running(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.RUNNING
+
+        self.assertTrue(self.baseDbStatus.is_running)
+
+    def test_is_running_not(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
+
+        self.assertFalse(self.baseDbStatus.is_running)
+
+    def test_wait_for_real_status_to_change_to(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus._get_actual_db_status = Mock(
+            return_value=rd_instance.ServiceStatuses.RUNNING)
+        dbaas.time.sleep = Mock()
+
+        self.assertTrue(self.baseDbStatus.
+                        wait_for_real_status_to_change_to
+                        (rd_instance.ServiceStatuses.RUNNING, 10))
+
+    def test_wait_for_real_status_to_change_to_timeout(self):
+        self.baseDbStatus = BaseDbStatus()
+        self.baseDbStatus._get_actual_db_status = Mock(
+            return_value=rd_instance.ServiceStatuses.RUNNING)
+        dbaas.time.sleep = Mock()
+
+        self.assertFalse(self.baseDbStatus.
+                         wait_for_real_status_to_change_to
+                         (rd_instance.ServiceStatuses.SHUTDOWN, 10))
+
+
 class MySqlAppStatusTest(testtools.TestCase):
 
     def setUp(self):
@@ -995,36 +1112,6 @@ class MySqlAppStatusTest(testtools.TestCase):
         dbaas.time.sleep = self.orig_dbaas_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
-
-    def test_being_mysql_install(self):
-
-        self.mySqlAppStatus = MySqlAppStatus()
-
-        self.mySqlAppStatus.begin_mysql_install()
-
-        self.assertEquals(self.mySqlAppStatus.status,
-                          rd_instance.ServiceStatuses.BUILDING)
-
-    def test_begin_mysql_restart(self):
-
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.restart_mode = False
-
-        self.mySqlAppStatus.begin_mysql_restart()
-
-        self.assertTrue(self.mySqlAppStatus.restart_mode)
-
-    def test_end_install_or_restart(self):
-
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=rd_instance.ServiceStatuses.SHUTDOWN)
-
-        self.mySqlAppStatus.end_install_or_restart()
-
-        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
-                         self.mySqlAppStatus.status)
-        self.assertFalse(self.mySqlAppStatus.restart_mode)
 
     def test_get_actual_db_status(self):
 
@@ -1051,9 +1138,8 @@ class MySqlAppStatusTest(testtools.TestCase):
     def test_get_actual_db_status_error_crashed(self):
 
         from trove.common.exception import ProcessExecutionError
-        dbaas.utils.execute_with_timeout = \
-            MagicMock(side_effect=[ProcessExecutionError(),
-                                   ("some output", None)])
+        dbaas.utils.execute_with_timeout = MagicMock(
+            side_effect=[ProcessExecutionError(), ("some output", None)])
         dbaas.load_mysqld_options = Mock()
         dbaas.os.path.exists = Mock(return_value=True)
 
@@ -1061,71 +1147,3 @@ class MySqlAppStatusTest(testtools.TestCase):
         status = self.mySqlAppStatus._get_actual_db_status()
 
         self.assertEqual(rd_instance.ServiceStatuses.BLOCKED, status)
-
-    def test_is_mysql_installed(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.RUNNING
-
-        self.assertTrue(self.mySqlAppStatus.is_mysql_installed)
-
-    def test_is_mysql_installed_none(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = None
-
-        self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
-
-    def test_is_mysql_installed_building(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.BUILDING
-
-        self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
-
-    def test_is_mysql_installed_new(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.NEW
-
-        self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
-
-    def test_is_mysql_installed_failed(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.FAILED
-
-        self.assertFalse(self.mySqlAppStatus.is_mysql_installed)
-
-    def test_is_mysql_restarting(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.restart_mode = True
-
-        self.assertTrue(self.mySqlAppStatus._is_mysql_restarting)
-
-    def test_is_mysql_running(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.RUNNING
-
-        self.assertTrue(self.mySqlAppStatus.is_mysql_running)
-
-    def test_is_mysql_running_not(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
-
-        self.assertFalse(self.mySqlAppStatus.is_mysql_running)
-
-    def test_wait_for_real_status_to_change_to(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=rd_instance.ServiceStatuses.RUNNING)
-        dbaas.time.sleep = Mock()
-
-        self.assertTrue(self.mySqlAppStatus.
-                        wait_for_real_status_to_change_to
-                        (rd_instance.ServiceStatuses.RUNNING, 10))
-
-    def test_wait_for_real_status_to_change_to_timeout(self):
-        self.mySqlAppStatus = MySqlAppStatus()
-        self.mySqlAppStatus._get_actual_db_status = \
-            Mock(return_value=rd_instance.ServiceStatuses.RUNNING)
-        dbaas.time.sleep = Mock()
-
-        self.assertFalse(self.mySqlAppStatus.
-                         wait_for_real_status_to_change_to
-                         (rd_instance.ServiceStatuses.SHUTDOWN, 10))

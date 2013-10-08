@@ -88,7 +88,7 @@ class Manager(periodic_task.PeriodicTasks):
                 mount_point=None, backup_id=None, config_contents=None,
                 root_password=None):
         """Makes ready DBAAS on a Guest container."""
-        MySqlAppStatus.get().begin_mysql_install()
+        MySqlAppStatus.get().begin_install()
         # status end_mysql_install set with secure()
         app = MySqlApp(MySqlAppStatus.get())
         restart_mysql = False

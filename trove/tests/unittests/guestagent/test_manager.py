@@ -146,7 +146,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         # TODO(juice): this should stub an instance of the MySqlAppStatus
         mock_status = mock()
         when(dbaas.MySqlAppStatus).get().thenReturn(mock_status)
-        when(mock_status).begin_mysql_install().thenReturn(None)
+        when(mock_status).begin_install().thenReturn(None)
         when(VolumeDevice).format().thenReturn(None)
         when(VolumeDevice).migrate_data(any()).thenReturn(None)
         when(VolumeDevice).mount().thenReturn(None)
@@ -171,7 +171,7 @@ class GuestAgentManagerTest(testtools.TestCase):
                              mount_point='/var/lib/mysql',
                              backup_id=backup_id)
         # verification/assertion
-        verify(mock_status).begin_mysql_install()
+        verify(mock_status).begin_install()
 
         verify(VolumeDevice, times=COUNT).format()
         verify(dbaas.MySqlApp, times=(COUNT * SEC_COUNT)).stop_db()
