@@ -102,6 +102,9 @@ class InstanceDetailView(InstanceView):
                 # either ephemeral or root partition
                 result['instance']['local_storage'] = {'used': used}
 
+        if self.instance.root_password:
+            result['instance']['password'] = self.instance.root_password
+
         return result
 
 

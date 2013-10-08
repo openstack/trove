@@ -86,6 +86,7 @@ class TestConfig(object):
             "trove_volume_support": True,
             "trove_max_volumes_per_user": 100,
             "usage_endpoint": USAGE_ENDPOINT,
+            "root_on_create": False
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

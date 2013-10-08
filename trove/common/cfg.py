@@ -120,6 +120,11 @@ common_opts = [
     cfg.IntOpt('dns_time_out', default=60 * 2),
     cfg.IntOpt('resize_time_out', default=60 * 10),
     cfg.IntOpt('revert_time_out', default=60 * 10),
+    cfg.BoolOpt('root_on_create', default=False,
+                help='Enable the automatic creation of the root user for the '
+                ' service during instance-create. The generated password for '
+                ' the root user is immediately returned in the response of '
+                " instance-create as the 'password' field."),
     cfg.ListOpt('root_grant', default=['ALL']),
     cfg.BoolOpt('root_grant_option', default=True),
     cfg.IntOpt('http_get_rate', default=200),

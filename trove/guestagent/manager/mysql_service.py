@@ -455,9 +455,9 @@ class MySqlAdmin(object):
         """Return True if root access is enabled; False otherwise."""
         return MySqlRootAccess.is_root_enabled()
 
-    def enable_root(self):
+    def enable_root(self, root_password=None):
         """Enable the root user global access and/or reset the root password"""
-        return MySqlRootAccess.enable_root()
+        return MySqlRootAccess.enable_root(root_password)
 
     def report_root_enabled(self, context=None):
         """Records in the Root History that the root is enabled"""
@@ -891,12 +891,12 @@ class MySqlRootAccess(object):
             return result.rowcount != 0
 
     @classmethod
-    def enable_root(cls):
+    def enable_root(cls, root_password=None):
         """Enable the root user global access and/or reset the root password"""
         user = models.RootUser()
         user.name = "root"
         user.host = "%"
-        user.password = generate_random_password()
+        user.password = root_password or generate_random_password()
         with LocalSqlClient(get_engine()) as client:
             print(client)
             try:

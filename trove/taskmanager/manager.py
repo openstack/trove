@@ -83,12 +83,13 @@ class Manager(periodic_task.PeriodicTasks):
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, service_type,
                         volume_size, security_groups, backup_id,
-                        availability_zone):
+                        availability_zone, root_password):
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
         instance_tasks.create_instance(flavor, image_id,
                                        databases, users, service_type,
                                        volume_size, security_groups,
-                                       backup_id, availability_zone)
+                                       backup_id, availability_zone,
+                                       root_password)
 
     if CONF.exists_notification_transformer:
         @periodic_task.periodic_task(

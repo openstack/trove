@@ -37,6 +37,7 @@ from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.openstack.common import log as logging
+from trove.openstack.common import uuidutils
 from trove.openstack.common.gettextutils import _
 
 
@@ -116,10 +117,11 @@ class SimpleInstance(object):
 
     """
 
-    def __init__(self, context, db_info, service_status):
+    def __init__(self, context, db_info, service_status, root_password=None):
         self.context = context
         self.db_info = db_info
         self.service_status = service_status
+        self.root_pass = root_password
 
     @property
     def addresses(self):
@@ -228,6 +230,10 @@ class SimpleInstance(object):
     @property
     def service_type(self):
         return self.db_info.service_type
+
+    @property
+    def root_password(self):
+        return self.root_pass
 
 
 class DetailInstance(SimpleInstance):
@@ -489,13 +495,19 @@ class Instance(BuiltInstance):
                     )
                 security_groups = [security_group["name"]]
 
+            root_password = None
+            if CONF.root_on_create and not backup_id:
+                root_password = uuidutils.generate_uuid()
+
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,
                                                   service_type, volume_size,
                                                   security_groups, backup_id,
-                                                  availability_zone)
+                                                  availability_zone,
+                                                  root_password)
 
-            return SimpleInstance(context, db_info, service_status)
+            return SimpleInstance(context, db_info, service_status,
+                                  root_password)
 
         return run_with_quotas(context.tenant,
                                deltas,

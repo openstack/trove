@@ -113,6 +113,7 @@ class InstanceTestInfo(object):
 instance_info = InstanceTestInfo()
 dbaas = None  # Rich client used throughout this test.
 dbaas_admin = None  # Same as above, with admin privs.
+ROOT_ON_CREATE = CONFIG.get('root_on_create', False)
 VOLUME_SUPPORT = CONFIG.get('trove_volume_support', False)
 EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path',
                                                       '/dev/vdb') is not None
@@ -390,6 +391,8 @@ class CreateInstance(object):
         # Check these attrs only are returned in create response
         expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
                           'name', 'status', 'updated']
+        if ROOT_ON_CREATE:
+            expected_attrs.append('password')
         if VOLUME_SUPPORT:
             expected_attrs.append('volume')
         if CONFIG.trove_dns_support:
