@@ -25,7 +25,7 @@ from proboscis.asserts import *
 import time
 
 from datetime import datetime
-from troveclient import exceptions
+from troveclient.compat import exceptions
 from trove.tests import util
 from trove.tests.util import create_client
 from trove.common.utils import poll_until

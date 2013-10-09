@@ -41,15 +41,15 @@ except ImportError:
 
 from sqlalchemy import create_engine
 
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 from proboscis.asserts import Check
 from proboscis.asserts import fail
 from proboscis import SkipTest
-from troveclient import Dbaas
-from troveclient.client import TroveHTTPClient
+from troveclient.compat import Dbaas
+from troveclient.compat.client import TroveHTTPClient
 from trove import tests
-from troveclient.xml import TroveXmlClient
+from troveclient.compat.xml import TroveXmlClient
 from trove.tests.util import test_config as CONFIG
 from trove.tests.util.client import TestClient as TestClient
 from trove.tests.util.users import Requirements
@@ -122,7 +122,7 @@ def create_dbaas_client(user):
         kwargs['service_url'] += "/" + user.tenant
 
     if auth_strategy == 'fake':
-        from troveclient import auth
+        from troveclient.compat import auth
 
         class FakeAuth(auth.Authenticator):
 

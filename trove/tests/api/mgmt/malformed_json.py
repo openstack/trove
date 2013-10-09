@@ -3,7 +3,7 @@ from proboscis import test, SkipTest
 from proboscis.asserts import *
 from proboscis import after_class
 from proboscis import before_class
-import troveclient
+import troveclient.compat
 from trove.tests.config import CONFIG
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
@@ -50,7 +50,7 @@ class MalformedJson(object):
                          "Create instance failed with code %s, exception %s"
                          % (httpCode, e))
             if not isinstance(self.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 databases = "u'foo'"
                 users = "u'bar'"
                 assert_equal(e.message,
@@ -73,7 +73,7 @@ class MalformedJson(object):
                          "Create database failed with code %s, exception %s"
                          % (httpCode, e))
             if not isinstance(self.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 _bad_db_data = "u'{foo}'"
             assert_equal(e.message,
                          "Validation error: "
@@ -177,7 +177,7 @@ class MalformedJson(object):
                          "Change usr/passwd failed with code %s, exception %s"
                          % (httpCode, e))
             if not isinstance(self.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 password = "u''"
                 assert_equal(e.message,
                              "Validation error: "
@@ -248,7 +248,7 @@ class MalformedJson(object):
                          (httpCode, e))
 
             if not isinstance(self.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 flavorId = [u'?']
                 assert_equal(e.message,
                              "Validation error: "
@@ -274,7 +274,7 @@ class MalformedJson(object):
                          "Create instance failed with code %s, exception %s" %
                          (httpCode, e))
             if not isinstance(self.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 volsize = "u'h3ll0'"
                 assert_equal(e.message,
                              "Validation error: "

@@ -7,7 +7,7 @@ from proboscis import test
 
 from trove.openstack.common import timeutils
 from trove.tests.util import create_dbaas_client
-from troveclient import exceptions
+from troveclient.compat import exceptions
 from datetime import datetime
 from trove.tests.util.users import Users
 from trove.tests.config import CONFIG

@@ -14,7 +14,7 @@
 
 import time
 
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 from nose.plugins.skip import SkipTest
 from proboscis import before_class

@@ -14,7 +14,7 @@
 
 import time
 
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 from proboscis import after_class
 from proboscis import before_class

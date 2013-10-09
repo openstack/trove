@@ -19,13 +19,13 @@ from proboscis.asserts import assert_raises
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
-import troveclient
+import troveclient.compat
 from trove.common.utils import poll_until
 from trove.tests.util import test_config
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 from trove.tests.config import CONFIG
-from troveclient import exceptions
+from troveclient.compat import exceptions
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import assert_unprocessable
@@ -55,7 +55,7 @@ class CreateBackups(object):
             resp, body = instance_info.dbaas.client.last_response
             assert_equal(resp.status, 400)
             if not isinstance(instance_info.dbaas.client,
-                              troveclient.xml.TroveXmlClient):
+                              troveclient.compat.xml.TroveXmlClient):
                 assert_equal(e.message,
                              "Validation error: "
                              "backup['instance'] u'%s' does not match "

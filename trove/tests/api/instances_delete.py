@@ -5,7 +5,7 @@ from proboscis import test
 from proboscis.asserts import *
 from proboscis.decorators import time_out
 
-from troveclient import exceptions
+from troveclient.compat import exceptions
 from trove.tests.util import create_dbaas_client
 from trove.common.utils import poll_until
 from trove.tests.util import test_config

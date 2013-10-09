@@ -10,7 +10,7 @@ from trove.tests.util.users import Requirements
 from trove.tests.config import CONFIG
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 
 class QuotasBase(object):

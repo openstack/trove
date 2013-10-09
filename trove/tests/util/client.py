@@ -29,7 +29,7 @@
 
 from proboscis.asserts import *
 from trove.tests.config import CONFIG
-from troveclient.xml import TroveXmlClient
+from troveclient.compat.xml import TroveXmlClient
 from trove.openstack.common import processutils
 
 

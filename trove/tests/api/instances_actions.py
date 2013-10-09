@@ -24,8 +24,8 @@ from proboscis import SkipTest
 
 from trove import tests
 from trove.tests.util.check import Checker
-from troveclient.exceptions import BadRequest
-from troveclient.exceptions import HTTPNotImplemented
+from troveclient.compat.exceptions import BadRequest
+from troveclient.compat.exceptions import HTTPNotImplemented
 from trove.tests.api.instances import GROUP as INSTANCE_GROUP
 from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info

@@ -37,7 +37,7 @@ from datetime import datetime
 from time import sleep
 
 from trove.common import exception as rd_exceptions
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 from proboscis.decorators import time_out
 from proboscis import before_class

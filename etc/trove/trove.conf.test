@@ -10,7 +10,7 @@ remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
 rpc_backend = trove.common.rpc.impl_fake
 
 # This will remove some of the verbose logging when trying to diagnose tox issues
-#default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
+default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
 
 log_file = rdtest.log
 

@@ -3,9 +3,9 @@ from proboscis.asserts import *
 from proboscis import SkipTest
 from functools import wraps
 
-from troveclient.client import TroveHTTPClient
+from troveclient.compat.client import TroveHTTPClient
 from trove.tests.api.versions import Versions
-from troveclient import exceptions
+from troveclient.compat import exceptions
 
 
 @test(groups=['dbaas.api.headers'])

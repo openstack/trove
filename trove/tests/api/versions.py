@@ -17,7 +17,7 @@ from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis import SkipTest
 
-from troveclient.exceptions import ClientException
+from troveclient.compat.exceptions import ClientException
 from trove import tests
 from trove.tests.util import test_config
 from trove.tests.util import create_dbaas_client

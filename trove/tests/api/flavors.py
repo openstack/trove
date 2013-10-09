@@ -18,8 +18,8 @@ import os
 from nose.tools import assert_equal
 from nose.tools import assert_false
 from nose.tools import assert_true
-from troveclient import exceptions
-from troveclient.flavors import Flavor
+from troveclient.compat import exceptions
+from troveclient.v1.flavors import Flavor
 
 from proboscis import before_class
 from proboscis import test
