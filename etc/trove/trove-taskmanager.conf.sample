@@ -99,3 +99,7 @@ pydev_debug = disabled
 
 # path to pydevd library. It will be used if pydevd is absent in sys.path
 #pydev_path = <path>
+
+# ================= Guestagent related ========================
+#guest_config = $pybasedir/etc/trove/trove-guestagent.conf.sample
+#cloudinit_location = /etc/trove/cloudinit
