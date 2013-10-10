@@ -46,8 +46,7 @@ nova_proxy_admin_tenant_name = admin
 trove_auth_url = http://0.0.0.0:5000/v2.0
 swift_url = http://10.0.0.1:8080/v1/AUTH_
 
-# Manager impl for the taskmanager
-guestagent_manager=trove.guestagent.manager.Manager
+# service_registry_ext=mysql:trove.guestagent.manager.mysql.Manager, percona:trove.guestagent.manager.mysql.Manager
 
 # Root configuration
 root_grant = ALL
