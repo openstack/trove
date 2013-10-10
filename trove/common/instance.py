@@ -95,7 +95,8 @@ class ServiceStatuses(object):
     UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
     NEW = ServiceStatus(0x17, 'new', 'NEW')
     DELETED = ServiceStatus(0x05, 'deleted', 'DELETED')
-
+    FAILED_TIMEOUT_GUESTAGENT = ServiceStatus(0x18, 'guestagent error',
+                                              'ERROR')
 
 # Dissuade further additions at run-time.
 ServiceStatus.__init__ = None

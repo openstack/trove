@@ -25,6 +25,7 @@ from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
+from trove.common.instance import ServiceStatuses
 from trove.common import instance as rd_instance
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_nova_client
@@ -33,8 +34,9 @@ from trove.common.remote import create_cinder_client
 from swiftclient.client import ClientException
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
+from trove.instance.models import DBInstance
 from trove.instance.models import FreshInstance
-
+from trove.instance.tasks import InstanceTasks
 from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.views import get_ip_address
@@ -192,8 +194,35 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         except PollTimeOut:
             LOG.error("Timeout for service changing to active. "
                       "No usage create-event sent.")
+            self.update_statuses_on_time_out()
         except Exception:
             LOG.exception("Error during create-event call.")
+
+    def update_statuses_on_time_out(self):
+
+        if CONF.update_status_on_fail:
+            #Updating service status
+            service = InstanceServiceStatus.find_by(instance_id=self.id)
+            service.set_status(ServiceStatuses.
+                               FAILED_TIMEOUT_GUESTAGENT)
+            service.save()
+            LOG.error(_("Service status: %(status)s") %
+                      {'status': ServiceStatuses.
+                      FAILED_TIMEOUT_GUESTAGENT.api_status})
+            LOG.error(_("Service error description: %(desc)s") %
+                      {'desc': ServiceStatuses.
+                      FAILED_TIMEOUT_GUESTAGENT.description})
+            #Updating instance status
+            db_info = DBInstance.find_by(name=self.name)
+            db_info.set_task_status(InstanceTasks.
+                                    BUILDING_ERROR_TIMEOUT_GA)
+            db_info.save()
+            LOG.error(_("Trove instance status: %(action)s") %
+                      {'action': InstanceTasks.
+                      BUILDING_ERROR_TIMEOUT_GA.action})
+            LOG.error(_("Trove instance status description: %(text)s") %
+                      {'text': InstanceTasks.
+                      BUILDING_ERROR_TIMEOUT_GA.db_text})
 
     def _service_is_active(self):
         """

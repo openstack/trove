@@ -5,6 +5,9 @@ verbose = True
 # Show debugging output in logs (sets DEBUG log level output)
 debug = True
 
+# Updates service and instance task statuses if instance failed become active
+update_status_on_fail = False
+
 # AMQP Connection info
 rabbit_password=f7999d1955c5014aa32c
 

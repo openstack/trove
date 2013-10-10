@@ -12,12 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import testtools
+from mock import Mock
 from testtools.matchers import Equals
 from mockito import mock, when, unstub, any, verify, never
-
-from trove.taskmanager.models import NotifyMixin
+from trove.taskmanager import models as taskmanager_models
 import trove.common.remote as remote
-import trove.taskmanager.models as taskmanager_models
+from trove.common.instance import ServiceStatuses
+from trove.instance.models import InstanceServiceStatus
+from trove.instance.models import DBInstance
+from trove.instance.tasks import InstanceTasks
 import trove.backup.models as backup_models
 from trove.common.exception import TroveError
 from swiftclient.client import ClientException
@@ -35,6 +38,7 @@ class fake_Server:
         self.userdata = None
         self.security_groups = None
         self.block_device_mapping = None
+        self.status = 'ACTIVE'
 
 
 class fake_ServerManager:
@@ -58,18 +62,87 @@ class fake_nova_client:
         self.servers = fake_ServerManager()
 
 
+class fake_InstanceServiceStatus(object):
+
+    _instance = None
+
+    def __init__(self):
+        self.deleted = False
+        pass
+
+    def set_status(self, status):
+        self.status = status
+        pass
+
+    def get_status(self):
+        return self.status
+
+    @classmethod
+    def find_by(cls, **kwargs):
+        if not cls._instance:
+            cls._instance = fake_InstanceServiceStatus()
+        return cls._instance
+
+    def save(self):
+        pass
+
+    def delete(self):
+        self.deleted = True
+        pass
+
+    def is_deleted(self):
+        return self.deleted
+
+
+class fake_DBInstance(object):
+
+    _instance = None
+
+    def __init__(self):
+        self.deleted = False
+        pass
+
+    @classmethod
+    def find_by(cls, **kwargs):
+        if not cls._instance:
+            cls._instance = fake_DBInstance()
+        return cls._instance
+
+    def set_task_status(self, status):
+        self.status = status
+        pass
+
+    def get_task_status(self):
+        return self.status
+
+    def save(self):
+        pass
+
+    def delete(self):
+        self.deleted = True
+        pass
+
+    def is_deleted(self):
+        return self.deleted
+
+
 class FreshInstanceTasksTest(testtools.TestCase):
     def setUp(self):
         super(FreshInstanceTasksTest, self).setUp()
+
         when(taskmanager_models.FreshInstanceTasks).id().thenReturn(
             "instance_id")
         when(taskmanager_models.FreshInstanceTasks).tenant_id().thenReturn(
             "tenant_id")
         when(taskmanager_models.FreshInstanceTasks).hostname().thenReturn(
             "hostname")
+        when(taskmanager_models.FreshInstanceTasks).name().thenReturn(
+            'name')
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
         taskmanager_models.CONF = mock()
         when(taskmanager_models.CONF).get(any()).thenReturn('')
+        self.orig_ISS_find_by = InstanceServiceStatus.find_by
+        self.orig_DBI_find_by = DBInstance.find_by
         self.userdata = "hello moto"
         self.guestconfig_content = "guest config"
         with NamedTemporaryFile(suffix=".cloudinit", delete=False) as f:
@@ -85,6 +158,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         super(FreshInstanceTasksTest, self).tearDown()
         os.remove(self.cloudinit)
         os.remove(self.guestconfig)
+        InstanceServiceStatus.find_by = self.orig_ISS_find_by
+        DBInstance.find_by = self.orig_DBI_find_by
         unstub()
 
     def test_create_instance_userdata(self):
@@ -125,6 +200,17 @@ class FreshInstanceTasksTest(testtools.TestCase):
             None, None, None, service_type, None, None)
 
         self.assertIsNotNone(server)
+
+    def test_update_status_of_intance_failure(self):
+
+        InstanceServiceStatus.find_by = Mock(
+            return_value=fake_InstanceServiceStatus.find_by())
+        DBInstance.find_by = Mock(return_value=fake_DBInstance.find_by())
+        self.freshinstancetasks.update_statuses_on_time_out()
+        self.assertEqual(fake_InstanceServiceStatus.find_by().get_status(),
+                         ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
+        self.assertEqual(fake_DBInstance.find_by().get_task_status(),
+                         InstanceTasks.BUILDING_ERROR_TIMEOUT_GA)
 
 
 class BackupTasksTest(testtools.TestCase):
@@ -227,13 +313,12 @@ class BackupTasksTest(testtools.TestCase):
 
 
 class NotifyMixinTest(testtools.TestCase):
-
     def test_get_service_id(self):
         id_map = {
             'mysql': '123',
             'percona': 'abc'
         }
-        mixin = NotifyMixin()
+        mixin = taskmanager_models.NotifyMixin()
         self.assertThat(mixin._get_service_id('mysql', id_map), Equals('123'))
 
     def test_get_service_id_unknown(self):
@@ -241,6 +326,6 @@ class NotifyMixinTest(testtools.TestCase):
             'mysql': '123',
             'percona': 'abc'
         }
-        transformer = NotifyMixin()
+        transformer = taskmanager_models.NotifyMixin()
         self.assertThat(transformer._get_service_id('m0ng0', id_map),
                         Equals('unknown-service-id-error'))

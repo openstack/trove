@@ -79,7 +79,10 @@ class InstanceTasks(object):
     BUILDING_ERROR_VOLUME = InstanceTask(0x52, 'BUILDING',
                                          'Build error: Volume.',
                                          is_error=True)
-
+    BUILDING_ERROR_TIMEOUT_GA = InstanceTask(0x54, 'ERROR',
+                                             'Build error: '
+                                             'guestagent timeout.',
+                                             is_error=True)
 
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None
