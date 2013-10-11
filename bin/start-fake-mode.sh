@@ -12,7 +12,7 @@ function run() {
 run bin/trove-manage \
     --config-file=etc/trove/trove.conf.test db_wipe \
     trove_test.sqlite mysql fake
-run bin/trove-server \
+run bin/trove-fake-mode \
     --fork --config-file=etc/trove/trove.conf.test \
     $@
 

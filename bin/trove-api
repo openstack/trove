@@ -41,6 +41,7 @@ from trove.db import get_db_api
 
 CONF = cfg.CONF
 
+
 if __name__ == '__main__':
     cfg.parse_args(sys.argv)
     logging.setup(None)
