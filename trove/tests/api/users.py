@@ -32,6 +32,8 @@ from trove.tests import util
 from trove.tests.util import test_config
 from trove.tests.api.databases import TestMysqlAccess
 
+import urllib
+
 
 GROUP = "dbaas.api.users"
 FAKE = test_config.values['fake_mode']
@@ -409,6 +411,8 @@ class TestUsers(object):
         assert_true(len(users) <= limit)
         assert_true(users.next is not None)
         expected_marker = "%s@%s" % (users[-1].name, users[-1].host)
+        expected_marker = urllib.quote(expected_marker)
+        expected_marker = expected_marker.replace('.', '%2e')
         assert_equal(marker, expected_marker)
         marker = users.next
 
