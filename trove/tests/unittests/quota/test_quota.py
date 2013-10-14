@@ -552,6 +552,29 @@ class DbQuotaDriverTest(testtools.TestCase):
         self.assertEqual(Reservation.Statuses.COMMITTED,
                          FAKE_RESERVATIONS[1].status)
 
+    def test_commit_cannot_be_less_than_zero(self):
+
+        Reservation.save = Mock()
+        QuotaUsage.save = Mock()
+
+        FAKE_QUOTAS = [QuotaUsage(id=1,
+                                  tenant_id=FAKE_TENANT1,
+                                  resource=Resource.INSTANCES,
+                                  in_use=0,
+                                  reserved=-1)]
+
+        FAKE_RESERVATIONS = [Reservation(usage_id=1,
+                                         delta=-1,
+                                         status=Reservation.Statuses.RESERVED)]
+
+        QuotaUsage.find_by = Mock(side_effect=FAKE_QUOTAS)
+        self.driver.commit(FAKE_RESERVATIONS)
+
+        self.assertEqual(0, FAKE_QUOTAS[0].in_use)
+        self.assertEqual(0, FAKE_QUOTAS[0].reserved)
+        self.assertEqual(Reservation.Statuses.COMMITTED,
+                         FAKE_RESERVATIONS[0].status)
+
     def test_rollback(self):
 
         Reservation.save = Mock()

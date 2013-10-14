@@ -161,11 +161,11 @@ class DbQuotaDriver(object):
         for resource in deltas:
             reserved = deltas[resource]
             usage = quota_usages[resource]
-            usage.reserved = reserved
+            usage.reserved += reserved
             usage.save()
 
             resv = Reservation.create(usage_id=usage.id,
-                                      delta=usage.reserved,
+                                      delta=reserved,
                                       status=Reservation.Statuses.RESERVED)
             reservations.append(resv)
 
@@ -181,6 +181,8 @@ class DbQuotaDriver(object):
         for reservation in reservations:
             usage = QuotaUsage.find_by(id=reservation.usage_id)
             usage.in_use += reservation.delta
+            if usage.in_use < 0:
+                usage.in_use = 0
             usage.reserved -= reservation.delta
             reservation.status = Reservation.Statuses.COMMITTED
             usage.save()
