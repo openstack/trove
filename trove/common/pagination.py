@@ -23,7 +23,7 @@ from xml.dom import minidom
 def url_quote(s):
     if s is None:
         return s
-    return urllib.quote(s).replace('.', '%2e')
+    return urllib.quote(str(s)).replace('.', '%2e')
 
 
 class PaginatedDataView(object):
