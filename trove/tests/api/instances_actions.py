@@ -137,10 +137,9 @@ class ActionTestBase(object):
                 self.connection.connect()
                 check.true(self.connection.is_connected(),
                            "Able to connect to MySQL.")
-            if USE_LOCAL_OVZ:
                 self.proc_id = self.find_mysql_proc_on_instance()
                 check.true(self.proc_id is not None,
-                           "MySQL process can be found.")
+                           "MySQL process can not be found.")
             instance = self.instance
             check.false(instance is None)
             check.equal(instance.status, "ACTIVE")
@@ -205,7 +204,7 @@ class RebootTestBase(ActionTestBase):
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
     def assert_mysql_proc_is_different(self):
-        if not USE_LOCAL_OVZ:
+        if not USE_IP:
             return
         new_proc_id = self.find_mysql_proc_on_instance()
         assert_not_equal(new_proc_id, self.proc_id,
@@ -221,9 +220,9 @@ class RebootTestBase(ActionTestBase):
 
     def mess_up_mysql(self):
         """Ruin MySQL's ability to restart."""
-        self.fix_mysql()  # kill files
         server = create_server_connection(self.instance_id)
         cmd = "sudo cp /dev/null /var/lib/mysql/ib_logfile%d"
+        instance_info.dbaas_admin.management.stop(self.instance_id)
         for index in range(2):
             server.execute(cmd % index)
 

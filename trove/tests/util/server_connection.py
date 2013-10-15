@@ -35,7 +35,7 @@ class ServerSSHConnection(object):
         self.ip_address = self.instance.ip[0]
 
     def execute(self, cmd):
-        exe_cmd = "%s %s '%s'" % (tests.SSH_CMD, self.ip_address, cmd)
+        exe_cmd = "%s %s %s" % (tests.SSH_CMD, self.ip_address, cmd)
         print("RUNNING COMMAND: %s" % exe_cmd)
         return util.process(exe_cmd)
 
@@ -50,6 +50,6 @@ class OpenVZServerConnection(object):
         self.instance_local_id = self.instance.server["local_id"]
 
     def execute(self, cmd):
-        exe_cmd = "sudo vzctl exec %s '%s'" % (self.instance_local_id, cmd)
+        exe_cmd = "sudo vzctl exec %s %s" % (self.instance_local_id, cmd)
         print("RUNNING COMMAND: %s" % exe_cmd)
         return util.process(exe_cmd)

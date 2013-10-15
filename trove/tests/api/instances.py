@@ -702,67 +702,11 @@ class WaitForGuestInstallationToFinish(object):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
-      enabled=CONFIG.white_box and create_new_instance())
-class VerifyGuestStarted(unittest.TestCase):
-    """
-        Test to verify the guest instance is started and we can get the init
-        process pid.
-    """
-
-    def test_instance_created(self):
-        def check_status_of_instance():
-            status, err = process("sudo vzctl status %s | awk '{print $5}'"
-                                  % str(instance_info.local_id))
-            if string_in_list(status, ["running"]):
-                self.assertEqual("running", status.strip())
-                return True
-            else:
-                return False
-        poll_until(check_status_of_instance, sleep_time=5, time_out=(60 * 8))
-
-    def test_get_init_pid(self):
-        def get_the_pid():
-            out, err = process("pgrep init | vzpid - | awk '/%s/{print $1}'"
-                               % str(instance_info.local_id))
-            instance_info.pid = out.strip()
-            return len(instance_info.pid) > 0
-        poll_until(get_the_pid, sleep_time=10, time_out=(60 * 10))
-
-
-@test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_START], enabled=create_new_instance())
 class TestGuestProcess(object):
     """
         Test that the guest process is started with all the right parameters
     """
-
-    @test(enabled=CONFIG.use_local_ovz)
-    @time_out(60 * 10)
-    def check_process_alive_via_local_ovz(self):
-        init_re = ("[\w\W\|\-\s\d,]*nova-guest "
-                   "--flagfile=/etc/nova/nova.conf nova[\W\w\s]*")
-        init_proc = re.compile(init_re)
-        guest_re = ("[\w\W\|\-\s]*/usr/bin/nova-guest "
-                    "--flagfile=/etc/nova/nova.conf[\W\w\s]*")
-        guest_proc = re.compile(guest_re)
-        apt = re.compile("[\w\W\|\-\s]*apt-get[\w\W\|\-\s]*")
-        while True:
-            guest_process, err = process("pstree -ap %s | grep nova-guest"
-                                         % instance_info.pid)
-            if not string_in_list(guest_process, ["nova-guest"]):
-                time.sleep(10)
-            else:
-                if apt.match(guest_process):
-                    time.sleep(10)
-                else:
-                    init = init_proc.match(guest_process)
-                    guest = guest_proc.match(guest_process)
-                    if init and guest:
-                        assert_true(True, init.group())
-                    else:
-                        assert_false(False, guest_process)
-                    break
 
     @test
     def check_hwinfo_before_tests(self):
@@ -992,13 +936,14 @@ class CheckDiagnosticsAfterTests(object):
 
 @test(depends_on=[WaitForGuestInstallationToFinish],
       depends_on_groups=[GROUP_USERS, GROUP_DATABASES, GROUP_ROOT],
-      groups=[GROUP, GROUP_STOP])
+      groups=[GROUP, GROUP_STOP],
+      runs_after_groups=[GROUP_START,
+                         GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES])
 class DeleteInstance(object):
     """ Delete the created instance """
 
     @time_out(3 * 60)
-    @test(runs_after_groups=[GROUP_START,
-                             GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES])
+    @test
     def test_delete(self):
         if do_not_delete_instance():
             CONFIG.get_report().log("TESTS_DO_NOT_DELETE_INSTANCE=True was "
@@ -1082,8 +1027,8 @@ class AfterDeleteChecks(object):
             fail("Could not find instance %s" % instance_info.id)
 
 
-@test(depends_on_classes=[CreateInstance, VerifyGuestStarted,
-      WaitForGuestInstallationToFinish],
+@test(depends_on_classes=[CreateInstance,
+                          WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE],
       enabled=CONFIG.test_mgmt)
 class VerifyInstanceMgmtInfo(object):
