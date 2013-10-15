@@ -19,8 +19,8 @@ from trove.backup.models import DBBackup
 from trove.backup.models import BackupState
 from trove.common import cfg, utils
 from trove.guestagent.dbaas import get_filesystem_volume_stats
-from trove.guestagent.manager.mysql_service import ADMIN_USER_NAME
-from trove.guestagent.manager.mysql_service import get_auth_password
+from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
+from trove.guestagent.datastore.mysql.service import get_auth_password
 from trove.guestagent.strategies.backup.base import BackupError
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage import get_storage_strategy

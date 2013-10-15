@@ -14,14 +14,16 @@
 
 import hashlib
 import os
-from trove.common import utils
-from trove.common.context import TroveContext
-from trove.guestagent.strategies.restore.base import RestoreRunner
+
 import testtools
 from testtools.matchers import Equals, Is
 from webob.exc import HTTPNotFound
 from mockito import when, verify, unstub, mock, any, contains
 
+from trove.common import utils
+from trove.common.context import TroveContext
+from trove.guestagent.strategies.backup import mysql_impl
+from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.backup.models import DBBackup
 from trove.backup.models import BackupState
 from trove.common.exception import ModelNotFoundError
@@ -30,13 +32,12 @@ from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
-from trove.guestagent.strategies.backup.impl import MySQLDump
-from trove.guestagent.strategies.backup.impl import InnoBackupEx
 
 
 def create_fake_data():
     from random import choice
     from string import ascii_letters
+
     return ''.join([choice(ascii_letters) for _ in xrange(1024)])
 
 
@@ -97,7 +98,6 @@ class MockSwift(object):
 
 
 class MockStorage(Storage):
-
     def __init__(self, context):
         super(MockStorage, self).__init__()
         pass
@@ -116,7 +116,6 @@ class MockStorage(Storage):
 
 
 class MockRestoreRunner(RestoreRunner):
-
     def __init__(self, restore_stream, restore_location):
         pass
 
@@ -138,11 +137,8 @@ class MockStats:
     f_bsize = 4096
     f_bfree = 512 * 1024
 
-BACKUP_NS = 'trove.guestagent.strategies.backup'
-
 
 class BackupAgentTest(testtools.TestCase):
-
     def setUp(self):
         super(BackupAgentTest, self).setUp()
         when(backupagent).get_auth_password().thenReturn('secret')
@@ -158,15 +154,18 @@ class BackupAgentTest(testtools.TestCase):
         """This test is for
            guestagent/strategies/backup/impl
         """
-        mysql_dump = MySQLDump('abc', password='123', user='123')
+        mysql_dump = mysql_impl.MySQLDump('abc',
+                                          password='123',
+                                          user='123')
         self.assertIsNotNone(mysql_dump.cmd)
-        str_mysql_dump_cmd = '/usr/bin/mysqldump'\
-            ' --all-databases'\
-            ' --opt'\
-            ' --password=%(password)s'\
-            ' -u %(user)s'\
-            ' | gzip |'\
-            ' openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key'
+        str_mysql_dump_cmd = ('/usr/bin/mysqldump'
+                              ' --all-databases'
+                              ' --opt'
+                              ' --password=%(password)s'
+                              ' -u %(user)s'
+                              ' | gzip |'
+                              ' openssl enc -aes-256-cbc -salt '
+                              '-pass pass:default_aes_cbc_key')
         self.assertEqual(mysql_dump.cmd, str_mysql_dump_cmd)
         self.assertIsNotNone(mysql_dump.manifest)
         self.assertEqual(mysql_dump.manifest, 'abc.gz.enc')
@@ -175,13 +174,14 @@ class BackupAgentTest(testtools.TestCase):
         """This test is for
            guestagent/strategies/backup/impl
         """
-        inno_backup_ex = InnoBackupEx('innobackupex')
+        inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex')
         self.assertIsNotNone(inno_backup_ex.cmd)
-        str_innobackup_cmd = 'sudo innobackupex'\
-            ' --stream=xbstream'\
-            ' /var/lib/mysql 2>/tmp/innobackupex.log'\
-            ' | gzip |'\
-            ' openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key'
+        str_innobackup_cmd = ('sudo innobackupex'
+                              ' --stream=xbstream'
+                              ' /var/lib/mysql 2>/tmp/innobackupex.log'
+                              ' | gzip |'
+                              ' openssl enc -aes-256-cbc -salt '
+                              '-pass pass:default_aes_cbc_key')
         self.assertEqual(inno_backup_ex.cmd, str_innobackup_cmd)
         self.assertIsNotNone(inno_backup_ex.manifest)
         str_innobackup_manifest = 'innobackupex.xbstream.gz.enc'

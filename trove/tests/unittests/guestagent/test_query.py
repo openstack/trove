@@ -13,7 +13,7 @@
 #    under the License.
 
 import testtools
-from trove.guestagent import query
+from trove.guestagent.common import sql_query
 
 
 class QueryTestBase(testtools.TestCase):
@@ -32,53 +32,53 @@ class QueryTest(QueryTestBase):
         super(QueryTest, self).tearDown()
 
     def test_columns(self):
-        myQuery = query.Query(columns=None)
+        myQuery = sql_query.Query(columns=None)
         self.assertEqual("SELECT *", myQuery._columns)
 
     def test_columns_2(self):
         columns = ["col_A", "col_B"]
-        myQuery = query.Query(columns=columns)
+        myQuery = sql_query.Query(columns=columns)
         self.assertEqual("SELECT col_A, col_B", myQuery._columns)
 
     def test_tables(self):
         tables = ['table_A', 'table_B']
-        myQuery = query.Query(tables=tables)
+        myQuery = sql_query.Query(tables=tables)
         self.assertEqual("FROM table_A, table_B", myQuery._tables)
 
     def test_where(self):
-        myQuery = query.Query(where=None)
+        myQuery = sql_query.Query(where=None)
         self.assertEqual("", myQuery._where)
 
     def test_where_2(self):
         conditions = ['cond_A', 'cond_B']
-        myQuery = query.Query(where=conditions)
+        myQuery = sql_query.Query(where=conditions)
         self.assertEqual("WHERE cond_A AND cond_B", myQuery._where)
 
     def test_order(self):
-        myQuery = query.Query(order=None)
+        myQuery = sql_query.Query(order=None)
         self.assertEqual('', myQuery._order)
 
     def test_order_2(self):
         orders = ['deleted_at', 'updated_at']
-        myQuery = query.Query(order=orders)
+        myQuery = sql_query.Query(order=orders)
         self.assertEqual('ORDER BY deleted_at, updated_at', myQuery._order)
 
     def test_group_by(self):
-        myQuery = query.Query(group=None)
+        myQuery = sql_query.Query(group=None)
         self.assertEqual('', myQuery._group_by)
 
     def test_group_by_2(self):
         groups = ['deleted=1']
-        myQuery = query.Query(group=groups)
+        myQuery = sql_query.Query(group=groups)
         self.assertEqual('GROUP BY deleted=1', myQuery._group_by)
 
     def test_limit(self):
-        myQuery = query.Query(limit=None)
+        myQuery = sql_query.Query(limit=None)
         self.assertEqual('', myQuery._limit)
 
     def test_limit_2(self):
         limit_count = 20
-        myQuery = query.Query(limit=limit_count)
+        myQuery = sql_query.Query(limit=limit_count)
         self.assertEqual('LIMIT 20', myQuery._limit)
 
 
@@ -90,7 +90,7 @@ class GrantTest(QueryTestBase):
         super(GrantTest, self).tearDown()
 
     def test_grant_no_arg_constr(self):
-        grant = query.Grant()
+        grant = sql_query.Grant()
         self.assertIsNotNone(grant)
         self.assertEqual("GRANT USAGE ON *.* "
                          "TO ``@`%`;",
@@ -103,11 +103,11 @@ class GrantTest(QueryTestBase):
         host = 'localhost'
 
         # grant_option defaults to True
-        grant = query.Grant(permissions=permissions,
-                            user=user_name,
-                            host=host,
-                            clear=user_password,
-                            grant_option=True)
+        grant = sql_query.Grant(permissions=permissions,
+                                user=user_name,
+                                host=host,
+                                clear=user_password,
+                                grant_option=True)
 
         self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
                          "`root`@`localhost` "
@@ -120,11 +120,11 @@ class GrantTest(QueryTestBase):
         user_name = 'root'
         user_password = 'password123'
         host = 'localhost'
-        grant = query.Grant(permissions=permissions,
-                            user=user_name,
-                            host=host,
-                            clear=user_password,
-                            grant_option=True)
+        grant = sql_query.Grant(permissions=permissions,
+                                user=user_name,
+                                host=host,
+                                clear=user_password,
+                                grant_option=True)
 
         self.assertEqual("GRANT ALL PRIVILEGES ON *.* TO "
                          "`root`@`localhost` "
@@ -159,10 +159,10 @@ class GrantTest(QueryTestBase):
         user_name = 'root'
         user_password = 'password123'
         host = 'localhost'
-        grant = query.Grant(permissions=permissions,
-                            user=user_name,
-                            host=host,
-                            clear=user_password)
+        grant = sql_query.Grant(permissions=permissions,
+                                user=user_name,
+                                host=host,
+                                clear=user_password)
 
         self.assertEqual("GRANT ALTER, "
                          "ALTER ROUTINE, "
@@ -222,10 +222,10 @@ class GrantTest(QueryTestBase):
         user_name = 'root'
         user_password = 'password123'
         host = 'localhost'
-        grant = query.Grant(permissions=permissions,
-                            user=user_name,
-                            host=host,
-                            clear=user_password)
+        grant = sql_query.Grant(permissions=permissions,
+                                user=user_name,
+                                host=host,
+                                clear=user_password)
 
         self.assertEqual("GRANT ALTER, "
                          "ALTER ROUTINE, "
@@ -256,7 +256,6 @@ class GrantTest(QueryTestBase):
 
 
 class RevokeTest(QueryTestBase):
-
     def setUp(self):
         super(RevokeTest, self).setUp()
 
@@ -264,44 +263,43 @@ class RevokeTest(QueryTestBase):
         super(RevokeTest, self).tearDown()
 
     def test_defaults(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         # Technically, this isn't valid for MySQL.
         self.assertEqual(str(r), "REVOKE ALL ON *.* FROM ``@`%`;")
 
     def test_permissions(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         r.user = 'x'
         r.permissions = ['CREATE', 'DELETE', 'DROP']
         self.assertEqual(str(r),
                          "REVOKE CREATE, DELETE, DROP ON *.* FROM `x`@`%`;")
 
     def test_database(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         r.user = 'x'
         r.database = 'foo'
         self.assertEqual(str(r), "REVOKE ALL ON `foo`.* FROM `x`@`%`;")
 
     def test_table(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         r.user = 'x'
         r.database = 'foo'
         r.table = 'bar'
         self.assertEqual(str(r), "REVOKE ALL ON `foo`.'bar' FROM `x`@`%`;")
 
     def test_user(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         r.user = 'x'
         self.assertEqual(str(r), "REVOKE ALL ON *.* FROM `x`@`%`;")
 
     def test_user_host(self):
-        r = query.Revoke()
+        r = sql_query.Revoke()
         r.user = 'x'
         r.host = 'y'
         self.assertEqual(str(r), "REVOKE ALL ON *.* FROM `x`@`y`;")
 
 
 class CreateDatabaseTest(QueryTestBase):
-
     def setUp(self):
         super(CreateDatabaseTest, self).setUp()
 
@@ -309,24 +307,23 @@ class CreateDatabaseTest(QueryTestBase):
         super(CreateDatabaseTest, self).tearDown()
 
     def test_defaults(self):
-        cd = query.CreateDatabase('foo')
+        cd = sql_query.CreateDatabase('foo')
         self.assertEqual(str(cd), "CREATE DATABASE IF NOT EXISTS `foo`;")
 
     def test_charset(self):
-        cd = query.CreateDatabase('foo')
+        cd = sql_query.CreateDatabase('foo')
         cd.charset = "foo"
         self.assertEqual(str(cd), ("CREATE DATABASE IF NOT EXISTS `foo` "
                                    "CHARACTER SET = 'foo';"))
 
     def test_collate(self):
-        cd = query.CreateDatabase('foo')
+        cd = sql_query.CreateDatabase('foo')
         cd.collate = "bar"
         self.assertEqual(str(cd), ("CREATE DATABASE IF NOT EXISTS `foo` "
                                    "COLLATE = 'bar';"))
 
 
 class DropDatabaseTest(QueryTestBase):
-
     def setUp(self):
         super(DropDatabaseTest, self).setUp()
 
@@ -334,12 +331,11 @@ class DropDatabaseTest(QueryTestBase):
         super(DropDatabaseTest, self).tearDown()
 
     def test_defaults(self):
-        dd = query.DropDatabase('foo')
+        dd = sql_query.DropDatabase('foo')
         self.assertEqual(str(dd), "DROP DATABASE `foo`;")
 
 
 class CreateUserTest(QueryTestBase):
-
     def setUp(self):
         super(CreateUserTest, self).setUp()
 
@@ -350,13 +346,12 @@ class CreateUserTest(QueryTestBase):
         username = 'root'
         hostname = 'localhost'
         password = 'password123'
-        cu = query.CreateUser(user=username, host=hostname, clear=password)
+        cu = sql_query.CreateUser(user=username, host=hostname, clear=password)
         self.assertEqual(str(cu), "CREATE USER :user@:host "
                                   "IDENTIFIED BY 'password123';")
 
 
 class UpdateUserTest(QueryTestBase):
-
     def setUp(self):
         super(UpdateUserTest, self).setUp()
 
@@ -367,8 +362,8 @@ class UpdateUserTest(QueryTestBase):
         username = 'root'
         hostname = 'localhost'
         new_user = 'root123'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              new_user=new_user)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  new_user=new_user)
         self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123' "
                                   "WHERE User = 'root' "
                                   "AND Host = 'localhost';")
@@ -377,8 +372,8 @@ class UpdateUserTest(QueryTestBase):
         username = 'root'
         hostname = 'localhost'
         new_password = 'password123'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              clear=new_password)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  clear=new_password)
         self.assertEqual(str(uu), "UPDATE mysql.user SET "
                                   "Password=PASSWORD('password123') "
                                   "WHERE User = 'root' "
@@ -388,8 +383,8 @@ class UpdateUserTest(QueryTestBase):
         username = 'root'
         hostname = 'localhost'
         new_host = '%'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              new_host=new_host)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  new_host=new_host)
         self.assertEqual(str(uu), "UPDATE mysql.user SET Host='%' "
                                   "WHERE User = 'root' "
                                   "AND Host = 'localhost';")
@@ -399,8 +394,8 @@ class UpdateUserTest(QueryTestBase):
         hostname = 'localhost'
         new_user = 'root123'
         new_password = 'password123'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              clear=new_password, new_user=new_user)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  clear=new_password, new_user=new_user)
         self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
                                   "Password=PASSWORD('password123') "
                                   "WHERE User = 'root' "
@@ -412,9 +407,9 @@ class UpdateUserTest(QueryTestBase):
         new_user = 'root123'
         new_password = 'password123'
         new_host = '%'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              clear=new_password, new_user=new_user,
-                              new_host=new_host)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  clear=new_password, new_user=new_user,
+                                  new_host=new_host)
         self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
                                   "Host='%', "
                                   "Password=PASSWORD('password123') "
@@ -426,8 +421,8 @@ class UpdateUserTest(QueryTestBase):
         hostname = 'localhost'
         new_user = 'root123'
         new_host = '%'
-        uu = query.UpdateUser(user=username, host=hostname,
-                              new_host=new_host, new_user=new_user)
+        uu = sql_query.UpdateUser(user=username, host=hostname,
+                                  new_host=new_host, new_user=new_user)
         self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
                                   "Host='%' "
                                   "WHERE User = 'root' "
@@ -435,7 +430,6 @@ class UpdateUserTest(QueryTestBase):
 
 
 class DropUserTest(QueryTestBase):
-
     def setUp(self):
         super(DropUserTest, self).setUp()
 
@@ -445,5 +439,5 @@ class DropUserTest(QueryTestBase):
     def test_defaults(self):
         username = 'root'
         hostname = 'localhost'
-        du = query.DropUser(user=username, host=hostname)
+        du = sql_query.DropUser(user=username, host=hostname)
         self.assertEqual(str(du), "DROP USER `root`@`localhost`;")

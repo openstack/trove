@@ -4,9 +4,9 @@ from trove.common import instance as rd_instance
 from trove.guestagent import dbaas
 from trove.guestagent import backup
 from trove.guestagent import volume
-from trove.guestagent.manager.mysql_service import MySqlAppStatus
-from trove.guestagent.manager.mysql_service import MySqlAdmin
-from trove.guestagent.manager.mysql_service import MySqlApp
+from trove.guestagent.datastore.mysql.service import MySqlAppStatus
+from trove.guestagent.datastore.mysql.service import MySqlAdmin
+from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import periodic_task

@@ -1,10 +1,9 @@
 import os
 import re
-import time
 import uuid
-import sqlalchemy
-
+import time
 from datetime import date
+import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
@@ -13,19 +12,18 @@ from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
 from trove.common import instance as rd_instance
-from trove.guestagent import query
+from trove.guestagent.common import sql_query
 from trove.guestagent.db import models
-from trove.guestagent import system
 from trove.guestagent import pkg
-from trove.guestagent.manager import service
+from trove.guestagent.datastore import service
+from trove.guestagent.datastore.mysql import system
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.extensions.mysql.models import RootHistory
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
-FLUSH = text(query.FLUSH)
-
+FLUSH = text(sql_query.FLUSH)
 ENGINE = None
 MYSQLD_ARGS = None
 PREPARING = False
@@ -61,20 +59,19 @@ def get_auth_password():
 
 
 def get_engine():
-        """Create the default engine with the updated admin user"""
-        #TODO(rnirmal):Based on permissions issues being resolved we may revert
-        #url = URL(drivername='mysql', host='localhost',
-        #          query={'read_default_file': '/etc/mysql/my.cnf'})
-        global ENGINE
-        if ENGINE:
-            return ENGINE
-        #ENGINE = create_engine(name_or_url=url)
-        pwd = get_auth_password()
-        ENGINE = sqlalchemy.create_engine("mysql://%s:%s@localhost:3306" %
-                                          (ADMIN_USER_NAME, pwd.strip()),
-                                          pool_recycle=7200, echo=True,
-                                          listeners=[KeepAliveConnection()])
+    """Create the default engine with the updated admin user"""
+    #TODO(rnirmal):Based on permissions issues being resolved we may revert
+    #url = URL(drivername='mysql', host='localhost',
+    #          query={'read_default_file': '/etc/mysql/my.cnf'})
+    global ENGINE
+    if ENGINE:
         return ENGINE
+    pwd = get_auth_password()
+    ENGINE = sqlalchemy.create_engine("mysql://%s:%s@localhost:3306" %
+                                      (ADMIN_USER_NAME, pwd.strip()),
+                                      pool_recycle=7200, echo=True,
+                                      listeners=[KeepAliveConnection()])
+    return ENGINE
 
 
 def load_mysqld_options():
@@ -95,7 +92,6 @@ def load_mysqld_options():
 
 
 class MySqlAppStatus(service.BaseDbStatus):
-
     @classmethod
     def get(cls):
         if not cls._instance:
@@ -172,7 +168,7 @@ class MySqlAdmin(object):
         """Internal. Given a MySQLUser, populate its databases attribute."""
         LOG.debug("Associating dbs to user %s at %s" % (user.name, user.host))
         with LocalSqlClient(get_engine()) as client:
-            q = query.Query()
+            q = sql_query.Query()
             q.columns = ["grantee", "table_schema"]
             q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
             q.group = ["grantee", "table_schema"]
@@ -195,13 +191,12 @@ class MySqlAdmin(object):
                 LOG.debug("\tUser: %s" % item)
                 user_dict = {'_name': item['name'],
                              '_host': item['host'],
-                             '_password': item['password'],
-                             }
+                             '_password': item['password']}
                 user = models.MySQLUser()
                 user.deserialize(user_dict)
                 LOG.debug("\tDeserialized: %s" % user.__dict__)
-                uu = query.UpdateUser(user.name, host=user.host,
-                                      clear=user.password)
+                uu = sql_query.UpdateUser(user.name, host=user.host,
+                                          clear=user.password)
                 t = text(str(uu))
                 client.execute(t)
 
@@ -213,7 +208,7 @@ class MySqlAdmin(object):
         db_access = set()
         grantee = set()
         with LocalSqlClient(get_engine()) as client:
-            q = query.Query()
+            q = sql_query.Query()
             q.columns = ["grantee", "table_schema"]
             q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
             q.group = ["grantee", "table_schema"]
@@ -226,10 +221,10 @@ class MySqlAdmin(object):
                     db_name = db['table_schema']
                     db_access.add(db_name)
         with LocalSqlClient(get_engine()) as client:
-            uu = query.UpdateUser(user.name, host=user.host,
-                                  clear=user_attrs.get('password'),
-                                  new_user=user_attrs.get('name'),
-                                  new_host=user_attrs.get('host'))
+            uu = sql_query.UpdateUser(user.name, host=user.host,
+                                      clear=user_attrs.get('password'),
+                                      new_user=user_attrs.get('name'),
+                                      new_host=user_attrs.get('host'))
             t = text(str(uu))
             client.execute(t)
             uname = user_attrs.get('name') or username
@@ -244,9 +239,9 @@ class MySqlAdmin(object):
             for item in databases:
                 mydb = models.ValidatedMySQLDatabase()
                 mydb.deserialize(item)
-                cd = query.CreateDatabase(mydb.name,
-                                          mydb.character_set,
-                                          mydb.collate)
+                cd = sql_query.CreateDatabase(mydb.name,
+                                              mydb.character_set,
+                                              mydb.collate)
                 t = text(str(cd))
                 client.execute(t)
 
@@ -259,16 +254,16 @@ class MySqlAdmin(object):
                 user.deserialize(item)
                 # TODO(cp16net):Should users be allowed to create users
                 # 'os_admin' or 'debian-sys-maint'
-                g = query.Grant(user=user.name, host=user.host,
-                                clear=user.password)
+                g = sql_query.Grant(user=user.name, host=user.host,
+                                    clear=user.password)
                 t = text(str(g))
                 client.execute(t)
                 for database in user.databases:
                     mydb = models.ValidatedMySQLDatabase()
                     mydb.deserialize(database)
-                    g = query.Grant(permissions='ALL', database=mydb.name,
-                                    user=user.name, host=user.host,
-                                    clear=user.password)
+                    g = sql_query.Grant(permissions='ALL', database=mydb.name,
+                                        user=user.name, host=user.host,
+                                        clear=user.password)
                     t = text(str(g))
                     client.execute(t)
 
@@ -277,7 +272,7 @@ class MySqlAdmin(object):
         with LocalSqlClient(get_engine()) as client:
             mydb = models.ValidatedMySQLDatabase()
             mydb.deserialize(database)
-            dd = query.DropDatabase(mydb.name)
+            dd = sql_query.DropDatabase(mydb.name)
             t = text(str(dd))
             client.execute(t)
 
@@ -286,7 +281,7 @@ class MySqlAdmin(object):
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
             mysql_user.deserialize(user)
-            du = query.DropUser(mysql_user.name, host=mysql_user.host)
+            du = sql_query.DropUser(mysql_user.name, host=mysql_user.host)
             t = text(str(du))
             client.execute(t)
 
@@ -305,13 +300,12 @@ class MySqlAdmin(object):
             raise exception.BadRequest("Username %s is not valid: %s"
                                        % (username, ve.message))
         with LocalSqlClient(get_engine()) as client:
-            q = query.Query()
+            q = sql_query.Query()
             q.columns = ['User', 'Host', 'Password']
             q.tables = ['mysql.user']
             q.where = ["Host != 'localhost'",
                        "User = '%s'" % username,
-                       "Host = '%s'" % hostname,
-                       ]
+                       "Host = '%s'" % hostname]
             q.order = ['User', 'Host']
             t = text(str(q))
             result = client.execute(t).fetchall()
@@ -329,9 +323,9 @@ class MySqlAdmin(object):
         user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
             for database in databases:
-                g = query.Grant(permissions='ALL', database=database,
-                                user=user.name, host=user.host,
-                                hashed=user.password)
+                g = sql_query.Grant(permissions='ALL', database=database,
+                                    user=user.name, host=user.host,
+                                    hashed=user.password)
                 t = text(str(g))
                 client.execute(t)
 
@@ -356,7 +350,7 @@ class MySqlAdmin(object):
             # the lost+found directory will show up in mysql as a database
             # which will create errors if you try to do any database ops
             # on it.  So we remove it here if it exists.
-            q = query.Query()
+            q = sql_query.Query()
             q.columns = [
                 'schema_name as name',
                 'default_character_set_name as charset',
@@ -417,13 +411,13 @@ class MySqlAdmin(object):
         users = []
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
-            iq = query.Query()  # Inner query.
+            iq = sql_query.Query()  # Inner query.
             iq.columns = ['User', 'Host', "CONCAT(User, '@', Host) as Marker"]
             iq.tables = ['mysql.user']
             iq.order = ['User', 'Host']
             innerquery = str(iq).rstrip(';')
 
-            oq = query.Query()  # Outer query.
+            oq = sql_query.Query()  # Outer query.
             oq.columns = ['User', 'Host', 'Marker']
             oq.tables = ['(%s) as innerquery' % innerquery]
             oq.where = ["Host != 'localhost'"]
@@ -458,8 +452,10 @@ class MySqlAdmin(object):
         """Give a user permission to use a given database."""
         user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
-            r = query.Revoke(database=database, user=user.name, host=user.host,
-                             hashed=user.password)
+            r = sql_query.Revoke(database=database,
+                                 user=user.name,
+                                 host=user.host,
+                                 hashed=user.password)
             t = text(str(r))
             client.execute(t)
 
@@ -511,8 +507,8 @@ class MySqlApp(object):
         with all privileges similar to the root user
         """
         localhost = "localhost"
-        g = query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
-                        host=localhost, grant_option=True, clear=password)
+        g = sql_query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
+                            host=localhost, grant_option=True, clear=password)
         t = text(str(g))
         client.execute(t)
 
@@ -520,8 +516,8 @@ class MySqlApp(object):
     def _generate_root_password(client):
         """ Generate and set a random root password and forget about it. """
         localhost = "localhost"
-        uu = query.UpdateUser("root", host=localhost,
-                              clear=generate_random_password())
+        uu = sql_query.UpdateUser("root", host=localhost,
+                                  clear=generate_random_password())
         t = text(str(uu))
         client.execute(t)
 
@@ -622,11 +618,11 @@ class MySqlApp(object):
             raise RuntimeError("Could not stop MySQL!")
 
     def _remove_anonymous_user(self, client):
-        t = text(query.REMOVE_ANON)
+        t = text(sql_query.REMOVE_ANON)
         client.execute(t)
 
     def _remove_remote_root_access(self, client):
-        t = text(query.REMOVE_ROOT)
+        t = text(sql_query.REMOVE_ROOT)
         client.execute(t)
 
     def restart(self):
@@ -647,7 +643,7 @@ class MySqlApp(object):
                     "sudo", "mv", original_path,
                     "%(name)s.%(date)s" %
                     {'name': original_path, 'date':
-                    date.today().isoformat()})
+                        date.today().isoformat()})
             utils.execute_with_timeout("sudo", "cp", template_path,
                                        original_path)
 
@@ -674,8 +670,9 @@ class MySqlApp(object):
         LOG.info(_("Wiping ib_logfiles..."))
         for index in range(2):
             try:
-                utils.execute_with_timeout("sudo", "rm", "%s/ib_logfile%d"
-                                           % (MYSQL_BASE_DIR, index))
+                (utils.
+                 execute_with_timeout("sudo", "rm", "%s/ib_logfile%d"
+                                                    % (MYSQL_BASE_DIR, index)))
             except exception.ProcessExecutionError as pe:
                 # On restarts, sometimes these are wiped. So it can be a race
                 # to have MySQL start up before it's restarted and these have
@@ -717,7 +714,8 @@ class MySqlApp(object):
         self._enable_mysql_on_boot()
 
         try:
-            utils.execute_with_timeout(system.MYSQL_CMD_START, shell=True)
+            utils.execute_with_timeout(system.
+                                       MYSQL_CMD_START, shell=True)
         except exception.ProcessExecutionError:
             # it seems mysql (percona, at least) might come back with [Fail]
             # but actually come up ok. we're looking into the timing issue on
@@ -736,7 +734,7 @@ class MySqlApp(object):
             except exception.ProcessExecutionError as p:
                 LOG.error("Error killing stalled mysql start command.")
                 LOG.error(p)
-            # There's nothing more we can do...
+                # There's nothing more we can do...
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MySQL!")
 
@@ -764,12 +762,11 @@ class MySqlApp(object):
 
 
 class MySqlRootAccess(object):
-
     @classmethod
     def is_root_enabled(cls):
         """Return True if root access is enabled; False otherwise."""
         with LocalSqlClient(get_engine()) as client:
-            t = text(query.ROOT_ENABLED)
+            t = text(sql_query.ROOT_ENABLED)
             result = client.execute(t)
             LOG.debug("Found %s with remote root access" % result.rowcount)
             return result.rowcount != 0
@@ -784,7 +781,7 @@ class MySqlRootAccess(object):
         with LocalSqlClient(get_engine()) as client:
             print(client)
             try:
-                cu = query.CreateUser(user.name, host=user.host)
+                cu = sql_query.CreateUser(user.name, host=user.host)
                 t = text(str(cu))
                 client.execute(t, **cu.keyArgs)
             except exc.OperationalError as err:
@@ -793,19 +790,19 @@ class MySqlRootAccess(object):
                 LOG.debug(err)
         with LocalSqlClient(get_engine()) as client:
             print(client)
-            uu = query.UpdateUser(user.name, host=user.host,
-                                  clear=user.password)
+            uu = sql_query.UpdateUser(user.name, host=user.host,
+                                      clear=user.password)
             t = text(str(uu))
             client.execute(t)
 
             LOG.debug("CONF.root_grant: %s CONF.root_grant_option: %s" %
                       (CONF.root_grant, CONF.root_grant_option))
 
-            g = query.Grant(permissions=CONF.root_grant,
-                            user=user.name,
-                            host=user.host,
-                            grant_option=CONF.root_grant_option,
-                            clear=user.password)
+            g = sql_query.Grant(permissions=CONF.root_grant,
+                                user=user.name,
+                                host=user.host,
+                                grant_option=CONF.root_grant_option,
+                                clear=user.password)
 
             t = text(str(g))
             client.execute(t)

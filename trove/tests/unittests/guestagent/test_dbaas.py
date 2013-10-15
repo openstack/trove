@@ -15,7 +15,6 @@
 import os
 from random import randint
 import time
-
 from mock import Mock
 from mock import MagicMock
 from mockito import mock
@@ -27,26 +26,27 @@ from mockito import contains
 from mockito import never
 from mockito import matchers
 from mockito import inorder, verifyNoMoreInteractions
-from trove.extensions.mysql.models import RootHistory
 import sqlalchemy
 import testtools
 from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
+
+from trove.extensions.mysql.models import RootHistory
 import trove
 from trove.common.context import TroveContext
 from trove.common import utils
 from trove.common import instance as rd_instance
-import trove.guestagent.manager.mysql_service as dbaas
+import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
-from trove.guestagent.manager.service import BaseDbStatus
-from trove.guestagent.manager.mysql_service import MySqlAdmin
-from trove.guestagent.manager.mysql_service import MySqlRootAccess
-from trove.guestagent.manager.mysql_service import MySqlApp
-from trove.guestagent.manager.mysql_service import MySqlAppStatus
-from trove.guestagent.manager.mysql_service import KeepAliveConnection
+from trove.guestagent.datastore.service import BaseDbStatus
+from trove.guestagent.datastore.mysql.service import MySqlAdmin
+from trove.guestagent.datastore.mysql.service import MySqlRootAccess
+from trove.guestagent.datastore.mysql.service import MySqlApp
+from trove.guestagent.datastore.mysql.service import MySqlAppStatus
+from trove.guestagent.datastore.mysql.service import KeepAliveConnection
 from trove.guestagent.db import models
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
@@ -445,7 +445,7 @@ class MySqlAppTest(testtools.TestCase):
     def setUp(self):
         super(MySqlAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
-        self.orig_time_sleep = time.sleep
+        self.orig_time_sleep = dbaas.time.sleep
         util.init_db()
         self.FAKE_ID = randint(1, 10000)
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
@@ -453,12 +453,12 @@ class MySqlAppTest(testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
         self.mySqlApp = MySqlApp(self.appStatus)
-        time.sleep = Mock()
+        dbaas.time.sleep = Mock()
 
     def tearDown(self):
         super(MySqlAppTest, self).tearDown()
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-        time.sleep = self.orig_time_sleep
+        dbaas.time.sleep = self.orig_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
@@ -671,7 +671,6 @@ class MySqlAppInstallTest(MySqlAppTest):
 
     def test_secure_write_conf_error(self):
 
-        from trove.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         self.mySqlApp._write_mycnf = Mock(
@@ -886,31 +885,36 @@ class ServiceRegistryTest(testtools.TestCase):
 
     def test_service_registry_with_extra_manager(self):
         service_registry_ext_test = {
-            'test': 'trove.guestagent.manager.test.Manager',
+            'test': 'trove.guestagent.datastore.test.manager.Manager',
         }
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             service_registry_ext_test)
         test_dict = dbaas_sr.service_registry()
         self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('test'),
-                         service_registry_ext_test.get('test'))
+                         service_registry_ext_test.get('test', None))
         self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.manager.mysql.Manager')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
         self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.manager.mysql.Manager')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
 
     def test_service_registry_with_existing_manager(self):
         service_registry_ext_test = {
-            'mysql': 'trove.guestagent.manager.mysql.Manager123',
+            'mysql': 'trove.guestagent.datastore.mysql.'
+                     'manager.Manager123',
         }
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             service_registry_ext_test)
         test_dict = dbaas_sr.service_registry()
         self.assertEqual(2, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.manager.mysql.Manager123')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager123')
         self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.manager.mysql.Manager')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
 
     def test_service_registry_with_blank_dict(self):
         service_registry_ext_test = dict()
@@ -919,9 +923,11 @@ class ServiceRegistryTest(testtools.TestCase):
         test_dict = dbaas_sr.service_registry()
         self.assertEqual(2, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.manager.mysql.Manager')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
         self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.manager.mysql.Manager')
+                         'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):

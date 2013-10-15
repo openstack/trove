@@ -12,17 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.guestagent import volume
-import testtools
-from trove.instance import models as rd_models
 import os
 
+import testtools
 from mockito import verify, when, unstub, any, mock, never
 from testtools.matchers import Is, Equals, Not
-from trove.common.context import TroveContext
 
-from trove.guestagent.manager.mysql import Manager
-import trove.guestagent.manager.mysql_service as dbaas
+from trove.guestagent import volume
+from trove.common.context import TroveContext
+from trove.guestagent.datastore.mysql.manager import Manager
+import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import backup
 from trove.guestagent.volume import VolumeDevice
 
