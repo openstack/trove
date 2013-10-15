@@ -120,13 +120,20 @@ class SecurityGroup(DatabaseModelBase):
 
     @classmethod
     def delete_for_instance(cls, instance_id, context):
-        association = SecurityGroupInstanceAssociation.find_by(
-            instance_id=instance_id,
-            deleted=False)
-        if association:
-            sec_group = association.get_security_group()
-            sec_group.delete(context)
-            association.delete()
+        try:
+            association = SecurityGroupInstanceAssociation.find_by(
+                instance_id=instance_id,
+                deleted=False)
+            if association:
+                sec_group = association.get_security_group()
+                if sec_group:
+                    sec_group.delete(context)
+                association.delete()
+        except (exception.ModelNotFoundError,
+                exception.TroveError):
+            LOG.info(_('Security Group with id: %(id)s '
+                       'already had been deleted')
+                     % {'id': instance_id})
 
 
 class SecurityGroupRule(DatabaseModelBase):

@@ -28,7 +28,6 @@ from trove.common.remote import create_nova_client
 from trove.common.remote import create_cinder_client
 from trove.common import utils
 from trove.extensions.security_group.models import SecurityGroup
-from trove.extensions.security_group.models import SecurityGroupRule
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.backup.models import Backup
@@ -449,8 +448,6 @@ class Instance(BuiltInstance):
                 raise exception.LocalStorageNotSpecified(flavor=flavor_id)
 
         def _create_resources():
-            security_groups = None
-
             if backup_id is not None:
                 backup_info = Backup.get_by_id(context, backup_id)
                 if backup_info.is_running:
@@ -480,21 +477,6 @@ class Instance(BuiltInstance):
                 db_info.hostname = hostname
                 db_info.save()
 
-            if CONF.trove_security_groups_support:
-                security_group = SecurityGroup.create_for_instance(
-                    db_info.id,
-                    context)
-                if CONF.trove_security_groups_rules_support:
-                    SecurityGroupRule.create_sec_group_rule(
-                        security_group,
-                        CONF.trove_security_group_rule_protocol,
-                        CONF.trove_security_group_rule_port,
-                        CONF.trove_security_group_rule_port,
-                        CONF.trove_security_group_rule_cidr,
-                        context
-                    )
-                security_groups = [security_group["name"]]
-
             root_password = None
             if CONF.root_on_create and not backup_id:
                 root_password = uuidutils.generate_uuid()
@@ -502,7 +484,7 @@ class Instance(BuiltInstance):
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,
                                                   service_type, volume_size,
-                                                  security_groups, backup_id,
+                                                  backup_id,
                                                   availability_zone,
                                                   root_password)
 

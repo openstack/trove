@@ -31,6 +31,8 @@ from trove.common.remote import create_dns_client
 from trove.common.remote import create_nova_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
+from trove.extensions.security_group.models import SecurityGroup
+from trove.extensions.security_group.models import SecurityGroupRule
 from swiftclient.client import ClientException
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
@@ -139,8 +141,22 @@ class ConfigurationMixin(object):
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
-                        service_type, volume_size, security_groups,
-                        backup_id, availability_zone, root_password):
+                        service_type, volume_size, backup_id,
+                        availability_zone, root_password):
+
+        security_groups = None
+        if CONF.trove_security_groups_support:
+            try:
+                self._create_secgroup()
+            except Exception as e:
+                msg = (_("Error creating security group for instance: %s") %
+                       self.id)
+                err = inst_models.InstanceTasks.BUILDING_ERROR_SEC_GROUP
+                self._log_and_raise(e, msg, err)
+            else:
+                LOG.debug(_("Successfully created security group for "
+                            "instance: %s") % self.id)
+
         if use_heat:
             server, volume_info = self._create_server_volume_heat(
                 flavor,
@@ -202,6 +218,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.error(_("Timeout for service changing to active. "
                       "No usage create-event sent."))
             self.update_statuses_on_time_out()
+
         except Exception:
             LOG.exception(_("Error during create-event call."))
 
@@ -506,6 +523,20 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         else:
             LOG.debug("%s: DNS not enabled for instance: %s" %
                       (greenthread.getcurrent(), self.id))
+
+    def _create_secgroup(self):
+        security_group = SecurityGroup.create_for_instance(self.id,
+                                                           self.context)
+        if CONF.trove_security_groups_rules_support:
+            SecurityGroupRule.create_sec_group_rule(
+                security_group,
+                CONF.trove_security_group_rule_protocol,
+                CONF.trove_security_group_rule_port,
+                CONF.trove_security_group_rule_port,
+                CONF.trove_security_group_rule_cidr,
+                self.context
+            )
+        return [security_group["name"]]
 
 
 class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):

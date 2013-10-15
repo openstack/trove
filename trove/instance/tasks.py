@@ -83,6 +83,10 @@ class InstanceTasks(object):
                                              'Build error: '
                                              'guestagent timeout.',
                                              is_error=True)
+    BUILDING_ERROR_SEC_GROUP = InstanceTask(0x53, 'BUILDING',
+                                            'Build error: Security group '
+                                            'or rule.',
+                                            is_error=True)
 
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None
