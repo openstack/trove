@@ -211,8 +211,8 @@ class MySqlAdminTest(testtools.TestCase):
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEquals(args[0].text, expected,
-                          "Create database queries are not the same")
+        self.assertEqual(args[0].text, expected,
+                         "Create database queries are not the same")
 
         self.assertEqual(1, dbaas.LocalSqlClient.execute.call_count,
                          "The client object was not 2 times")
@@ -229,15 +229,15 @@ class MySqlAdminTest(testtools.TestCase):
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEquals(args[0].text, expected,
-                          "Create database queries are not the same")
+        self.assertEqual(args[0].text, expected,
+                         "Create database queries are not the same")
 
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB2` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEquals(args[0].text, expected,
-                          "Create database queries are not the same")
+        self.assertEqual(args[0].text, expected,
+                         "Create database queries are not the same")
 
         self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count,
                          "The client object was not 2 times")
@@ -260,8 +260,8 @@ class MySqlAdminTest(testtools.TestCase):
 
         args, _ = dbaas.LocalSqlClient.execute.call_args
         expected = "DROP DATABASE `testDB`;"
-        self.assertEquals(args[0].text, expected,
-                          "Delete database queries are not the same")
+        self.assertEqual(args[0].text, expected,
+                         "Delete database queries are not the same")
 
         self.assertTrue(dbaas.LocalSqlClient.execute.called,
                         "The client object was not called")
@@ -277,8 +277,8 @@ class MySqlAdminTest(testtools.TestCase):
         if call_args is not None:
             args, _ = call_args
             expected = "DROP USER `testUser`;"
-            self.assertEquals(args[0].text, expected,
-                              "Delete user queries are not the same")
+            self.assertEqual(args[0].text, expected,
+                             "Delete user queries are not the same")
 
             self.assertTrue(dbaas.LocalSqlClient.execute.called,
                             "The client object was not called")
@@ -292,8 +292,8 @@ class MySqlAdminTest(testtools.TestCase):
         call_args = dbaas.LocalSqlClient.execute.call_args
         if call_args is not None:
             args, _ = call_args
-            self.assertEquals(args[0].text.strip(), expected,
-                              "Create user queries are not the same")
+            self.assertEqual(args[0].text.strip(), expected,
+                             "Create user queries are not the same")
             self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
 
     def test_list_databases(self):
@@ -997,8 +997,8 @@ class BaseDbStatusTest(testtools.TestCase):
 
         self.baseDbStatus.begin_install()
 
-        self.assertEquals(self.baseDbStatus.status,
-                          rd_instance.ServiceStatuses.BUILDING)
+        self.assertEqual(self.baseDbStatus.status,
+                         rd_instance.ServiceStatuses.BUILDING)
 
     def test_begin_restart(self):
 
