@@ -128,6 +128,7 @@ common_opts = [
                 " instance-create as the 'password' field."),
     cfg.ListOpt('root_grant', default=['ALL']),
     cfg.BoolOpt('root_grant_option', default=True),
+    cfg.IntOpt('default_password_length', default=36),
     cfg.IntOpt('http_get_rate', default=200),
     cfg.IntOpt('http_post_rate', default=200),
     cfg.IntOpt('http_delete_rate', default=200),
