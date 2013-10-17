@@ -82,6 +82,8 @@ def initialize_fakes(app):
     wsgi_intercept.add_wsgi_intercept('localhost',
                                       CONF.bind_port,
                                       wsgi_interceptor)
+    from trove.tests.util import event_simulator
+    event_simulator.monkey_patch()
 
 
 def parse_args_for_test_config():
