@@ -12,7 +12,7 @@ openstack.nose_plugin
 webtest
 wsgi_intercept
 proboscis==1.2.5.3
-http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
+python-troveclient<1
 mock
 mox
 testtools>=0.9.22
