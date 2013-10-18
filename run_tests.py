@@ -129,6 +129,7 @@ if __name__ == "__main__":
         from trove.tests.api import user_access
         from trove.tests.api.mgmt import accounts
         from trove.tests.api.mgmt import admin_required
+        from trove.tests.api.mgmt import hosts
         from trove.tests.api.mgmt import instances as mgmt_instances
         from trove.tests.api.mgmt import instances_actions as mgmt_actions
         from trove.tests.api.mgmt import storage
