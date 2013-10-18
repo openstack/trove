@@ -687,7 +687,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
     def process_request(self, request):
         tenant_id = request.headers.get('X-Tenant-Id', None)
         auth_token = request.headers["X-Auth-Token"]
-        user = request.headers.get('X-User', None)
+        user_id = request.headers.get('X-User-ID', None)
         roles = request.headers.get('X-Role', '').split(',')
         is_admin = False
         for role in roles:
@@ -697,7 +697,7 @@ class ContextMiddleware(openstack_wsgi.Middleware):
         limits = self._extract_limits(request.params)
         context = rd_context.TroveContext(auth_token=auth_token,
                                           tenant=tenant_id,
-                                          user=user,
+                                          user=user_id,
                                           is_admin=is_admin,
                                           limit=limits.get('limit'),
                                           marker=limits.get('marker'))
