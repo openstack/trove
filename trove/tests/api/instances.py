@@ -171,23 +171,8 @@ class InstanceSetup(object):
             instance_info.user = CONFIG.users.find_user(reqs)
 
         instance_info.dbaas = create_dbaas_client(instance_info.user)
-        if CONFIG.white_box:
-            instance_info.nova_client = create_nova_client(instance_info.user)
-            instance_info.volume_client = create_nova_client(
-                instance_info.user,
-                service_type=CONFIG.nova_client['volume_service_type'])
         global dbaas
         dbaas = instance_info.dbaas
-
-        if CONFIG.white_box:
-            user = instance_info.user.auth_user
-            tenant = instance_info.user.tenant
-            instance_info.user_context = context.RequestContext(user, tenant)
-
-    @test(enabled=CONFIG.white_box)
-    def find_image(self):
-        result = dbaas_admin.find_image_and_self_href(CONFIG.dbaas_image)
-        instance_info.dbaas_image, instance_info.dbaas_image_href = result
 
     @test
     def test_find_flavor(self):
@@ -207,25 +192,6 @@ class InstanceSetup(object):
                     "Flavor href '%s' not found!" % flavor_name)
         instance_info.dbaas_flavor = flavor
         instance_info.dbaas_flavor_href = flavor_href
-
-    @test(enabled=CONFIG.white_box)
-    def test_add_imageref_config(self):
-        #TODO(tim.simpson): I'm not sure why this is here. The default image
-        # setup should be in initialization test code that lives somewhere
-        # else, probably with the code that uploads the image.
-        key = "trove_imageref"
-        value = 1
-        description = "Default Image for Trove"
-        config = {'key': key, 'value': value, 'description': description}
-        try:
-            dbaas_admin.configs.create([config])
-        except exceptions.ClientException:
-            # configs.create will throw an exception if the config already
-            # exists we will check the value after to make sure it is correct
-            # and set
-            pass
-        result = dbaas_admin.configs.get(key)
-        assert_equal(result.value, str(value))
 
     @test
     def create_instance_name(self):
@@ -373,15 +339,10 @@ class CreateInstance(object):
 
         result = instance_info.initial_result
         instance_info.id = result.id
-        if CONFIG.white_box:
-            instance_info.local_id = dbapi.localid_from_uuid(result.id)
 
         report = CONFIG.get_report()
         report.log("Instance UUID = %s" % instance_info.id)
         if create_new_instance():
-            if CONFIG.white_box:
-                building = dbaas_mapping[power_state.BUILDING]
-                assert_equal(result.status, building)
             assert_equal("BUILD", instance_info.initial_result.status)
 
         else:
@@ -727,20 +688,6 @@ class TestGuestProcess(object):
             diagnostic_tests_helper(diagnostics)
 
 
-@test(depends_on_classes=[CreateInstance],
-      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, GROUP_TEST,
-              "nova.volumes.instance"],
-      enabled=CONFIG.white_box)
-class TestVolume(unittest.TestCase):
-    """Make sure the volume is attached to instance correctly."""
-
-    def test_db_should_have_instance_to_volume_association(self):
-        """The compute manager should associate a volume to the instance."""
-        volumes = db.volume_get_all_by_instance(context.get_admin_context(),
-                                                instance_info.local_id)
-        self.assertEqual(1, len(volumes))
-
-
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_TEST, "dbaas.guest.start.test"])
 class TestAfterInstanceCreatedGuestData(object):
@@ -950,13 +897,6 @@ class DeleteInstance(object):
         global dbaas
         if not hasattr(instance_info, "initial_result"):
             raise SkipTest("Instance was never created, skipping test...")
-        if CONFIG.white_box:
-            # Change this code to get the volume using the API.
-            # That way we can keep it while keeping it black box.
-            admin_context = context.get_admin_context()
-            volumes = db.volume_get_all_by_instance(admin_context(),
-                                                    instance_info.local_id)
-            instance_info.volume_id = volumes[0].id
         # Update the report so the logs inside the instance will be saved.
         CONFIG.get_report().update()
         dbaas.instances.delete(instance_info.id)
@@ -1067,7 +1007,6 @@ class VerifyInstanceMgmtInfo(object):
         info = instance_info
         ir = info.initial_result
         cid = ir.id
-        instance_id = instance_info.local_id
         expected = {
             'id': cid,
             'name': ir.name,
@@ -1087,19 +1026,6 @@ class VerifyInstanceMgmtInfo(object):
                 }
             ],
         }
-
-        if CONFIG.white_box:
-            admin_context = context.get_admin_context()
-            volumes = db.volume_get_all_by_instance(admin_context(),
-                                                    instance_id)
-            assert_equal(len(volumes), 1)
-            volume = volumes[0]
-            expected['volume'] = {
-                'id': volume.id,
-                'name': volume.display_name,
-                'size': volume.size,
-                'description': volume.display_description,
-            }
 
         expected_entry = info.expected_dns_entry()
         if expected_entry:

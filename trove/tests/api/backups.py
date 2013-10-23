@@ -29,6 +29,7 @@ from troveclient.compat import exceptions
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import assert_unprocessable
+from trove import tests
 
 
 GROUP = "dbaas.api.backups"
@@ -41,7 +42,7 @@ restore_instance_id = None
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class CreateBackups(object):
 
     @test
@@ -87,7 +88,7 @@ class CreateBackups(object):
 
 
 @test(runs_after=[CreateBackups],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class AfterBackupCreation(object):
 
     @test
@@ -112,7 +113,7 @@ class AfterBackupCreation(object):
 
 
 @test(runs_after=[AfterBackupCreation],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class WaitForBackupCreateToFinish(object):
     """
         Wait until the backup create is finished.
@@ -134,7 +135,7 @@ class WaitForBackupCreateToFinish(object):
 
 
 @test(depends_on=[WaitForBackupCreateToFinish],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class ListBackups(object):
 
     @test
@@ -184,7 +185,7 @@ class ListBackups(object):
 
 
 @test(runs_after=[ListBackups],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class RestoreUsingBackup(object):
 
     @test
@@ -206,7 +207,7 @@ class RestoreUsingBackup(object):
 
 @test(depends_on_classes=[RestoreUsingBackup],
       runs_after=[RestoreUsingBackup],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class WaitForRestoreToFinish(object):
     """
         Wait until the instance is finished restoring.
@@ -235,7 +236,7 @@ class WaitForRestoreToFinish(object):
 
 
 @test(runs_after=[WaitForRestoreToFinish],
-      groups=[GROUP])
+      groups=[GROUP, tests.INSTANCES])
 class DeleteBackups(object):
 
     @test
