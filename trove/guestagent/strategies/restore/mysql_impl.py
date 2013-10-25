@@ -17,7 +17,7 @@
 from trove.guestagent.strategies.restore import base
 from trove.openstack.common import log as logging
 from trove.common import utils
-import trove.guestagent.manager.mysql_service as dbaas
+import trove.guestagent.datastore.mysql.service as dbaas
 
 LOG = logging.getLogger(__name__)
 

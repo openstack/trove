@@ -17,10 +17,14 @@ import trove.guestagent.strategies.restore.base as restoreBase
 import testtools
 from trove.common import utils
 
-BACKUP_XTRA_CLS = "trove.guestagent.strategies.backup.impl.InnoBackupEx"
-RESTORE_XTRA_CLS = "trove.guestagent.strategies.restore.impl.InnoBackupEx"
-BACKUP_SQLDUMP_CLS = "trove.guestagent.strategies.backup.impl.MySQLDump"
-RESTORE_SQLDUMP_CLS = "trove.guestagent.strategies.restore.impl.MySQLDump"
+BACKUP_XTRA_CLS = ("trove.guestagent.strategies.backup."
+                   "mysql_impl.InnoBackupEx")
+RESTORE_XTRA_CLS = ("trove.guestagent.strategies.restore."
+                    "mysql_impl.InnoBackupEx")
+BACKUP_SQLDUMP_CLS = ("trove.guestagent.strategies.backup."
+                      "mysql_impl.MySQLDump")
+RESTORE_SQLDUMP_CLS = ("trove.guestagent.strategies.restore."
+                       "mysql_impl.MySQLDump")
 PIPE = " | "
 ZIP = "gzip"
 UNZIP = "gzip -d -c"

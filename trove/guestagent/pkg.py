@@ -19,15 +19,15 @@
 Manages packages on the Guest VM.
 """
 import commands
-import os
-import pexpect
 import re
+
+import pexpect
 
 from trove.common import exception
 from trove.common import utils
 from trove.common.exception import ProcessExecutionError
+from trove.guestagent.common import operating_system
 from trove.openstack.common import log as logging
-from trove.guestagent import system
 from trove.openstack.common.gettextutils import _
 
 
@@ -318,7 +318,7 @@ class DebianPackagerMixin(BasePackagerMixin):
 class BasePackage(type):
 
     def __new__(meta, name, bases, dct):
-        if system.OS == system.REDHAT:
+        if operating_system.get_os() == operating_system.REDHAT:
             bases += (RedhatPackagerMixin, )
         else:
             # The default is debian

@@ -46,7 +46,8 @@ nova_proxy_admin_tenant_name = admin
 trove_auth_url = http://0.0.0.0:5000/v2.0
 swift_url = http://10.0.0.1:8080/v1/AUTH_
 
-# service_registry_ext=mysql:trove.guestagent.manager.mysql.Manager, percona:trove.guestagent.manager.mysql.Manager
+# Datastore management implementations. Format datastore:manager.impl
+# service_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager
 
 # Root configuration
 root_grant = ALL
@@ -69,8 +70,8 @@ ignore_dbs = lost+found, mysql, information_schema
 
 # Strategy information for backups
 backup_strategy = InnoBackupEx
-backup_namespace = trove.guestagent.strategies.backup.impl
-restore_namespace = trove.guestagent.strategies.restore.impl
+backup_namespace = trove.guestagent.strategies.backup.mysql_impl
+restore_namespace = trove.guestagent.strategies.restore.mysql_impl
 storage_strategy = SwiftStorage
 storage_namespace = trove.guestagent.strategies.storage.swift
 backup_swift_container = database_backups
