@@ -37,6 +37,10 @@ def get_ip_address(addresses):
     return IPs
 
 
+def filter_ips(ips, regex):
+    return [ip for ip in ips if re.search(regex, ip)]
+
+
 class InstanceView(object):
     """Uses a SimpleInstance."""
 
@@ -91,7 +95,11 @@ class InstanceDetailView(InstanceView):
         if CONF.add_addresses:
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
-                result['instance']['ip'] = ip
+                # Includes ip addresses that match the regexp pattern
+                if CONF.ip_regex:
+                    ip = filter_ips(ip, CONF.ip_regex)
+                if len(ip) > 0:
+                    result['instance']['ip'] = ip
 
         if (isinstance(self.instance, models.DetailInstance) and
                 self.instance.volume_used):
