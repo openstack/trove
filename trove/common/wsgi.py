@@ -364,18 +364,18 @@ class Resource(openstack_wsgi.Resource):
         # If an exception is raised here in the base class, it is swallowed,
         # and the action_result is returned as-is. For us, that's bad news -
         # we never want that to happen except in the case of webob types.
-        # So we override the behavior here so we can at least log it (raising
-        # an exception in the base class creates a circular reference issue).
+        # So we override the behavior here so we can at least log it.
         try:
             return super(Resource, self).serialize_response(
                 action, action_result, accept)
-        except Exception as ex:
-            # The super class code seems designed to either serialize things
-            # or pass them back if they're webobs.
-            if not isinstance(action_result, webob.Response):
-                LOG.error("unserializable result detected! "
-                          "Exception type: %s Message: %s" % (type(ex), ex))
+        except Exception:
+            # execute_action either returns the results or a Fault object.
+            # If action_result is not a Fault then there really was a
+            # serialization error which we log. Otherwise return the Fault.
+            if not isinstance(action_result, Fault):
+                LOG.exception("unserializable result detected.")
                 raise
+            return action_result
 
 
 class Controller(object):
