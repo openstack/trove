@@ -124,6 +124,46 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
+    def test_validate_create_host_no_wildcard(self):
+        body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
+                           "password": "123", "host": "192.168.1.1"}]}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_create_host_wildcard(self):
+        body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
+                           "password": "123", "host": "%"}]}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_create_host_wildcard_prefix(self):
+        body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
+                           "password": "123", "host": "%.168.1.1"}]}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_create_host_wildcard_middle(self):
+        body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
+                           "password": "123", "host": "192.%.1.1"}]}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertThat(len(errors), Is(1))
+        self.assertThat(errors[0].message,
+                        Equals(("'192.%.1.1' does not match "
+                                "'^[%]?[\\\\w(-).]*[%]?$'")))
+
+    def test_validate_create_host_wildcard_suffix(self):
+        body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
+                           "password": "123", "host": "192.168.1.%"}]}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
     def test_validate_update_empty(self):
         body = {"users": []}
         schema = self.controller.get_schema('update_all', body)
@@ -292,7 +332,7 @@ class TestSchemaController(TestCase):
 
     def test_validate_mixed(self):
         schema = self.controller.get_schema('create', self.body)
-        self.assertIsNotNone(schema)
+        self.assertNotEqual(schema, None)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(self.body))
 
@@ -300,14 +340,14 @@ class TestSchemaController(TestCase):
         body = self.body.copy()
         body['databases'].append({"collate": "some_collation"})
         schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
+        self.assertNotEqual(schema, None)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
 
     def test_validate_empty(self):
         body = {"databases": []}
         schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
+        self.assertNotEqual(schema, None)
         self.assertTrue('databases' in body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))

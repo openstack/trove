@@ -30,7 +30,7 @@ class MySQLDatabaseTest(testtools.TestCase):
         self.mysqlDb._ignore_dbs = self.origin_ignore_db
 
     def test_name(self):
-        self.assertIsNone(self.mysqlDb.name)
+        self.assertEqual(self.mysqlDb.name, None)
 
     def test_name_setter(self):
         test_name = "Anna"
@@ -84,3 +84,27 @@ class IsValidUsernameTest(testtools.TestCase):
 
         self.mysqlUser._is_valid = MagicMock(return_value=True)
         self.assertFalse(self.mysqlUser._is_valid_user_name("king"))
+
+
+class IsValidHostnameTest(testtools.TestCase):
+    def setUp(self):
+        super(IsValidHostnameTest, self).setUp()
+        self.mysqlUser = dbmodels.MySQLUser()
+
+    def tearDown(self):
+        super(IsValidHostnameTest, self).tearDown()
+
+    def test_is_valid_octet(self):
+        self.assertTrue(self.mysqlUser._is_valid_host_name('192.168.1.1'))
+
+    def test_is_valid_bad_octet(self):
+        self.assertFalse(self.mysqlUser._is_valid_host_name('999.168.1.1'))
+
+    def test_is_valid_global_wildcard(self):
+        self.assertTrue(self.mysqlUser._is_valid_host_name('%'))
+
+    def test_is_valid_prefix_wildcard(self):
+        self.assertTrue(self.mysqlUser._is_valid_host_name('%.168.1.1'))
+
+    def test_is_valid_suffix_wildcard(self):
+        self.assertTrue(self.mysqlUser._is_valid_host_name('192.168.1.%'))

@@ -389,7 +389,7 @@ class MySQLUser(Base):
                 # A, A.B, A.B.C, and A.B.C.D are all valid technically.
                 return False
             try:
-                octets = [int(octet, 10) for octet in octets]
+                octets = [int(octet, 10) for octet in octets if octet != '%']
             except ValueError:
                 # If these weren't decimal, there's a problem.
                 return False
