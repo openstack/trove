@@ -326,7 +326,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         parameters = {"KeyName": "heatkey",
                       "Flavor": flavor["name"],
                       "VolumeSize": volume_size,
-                      "ServiceType": "mysql",
+                      "ServiceType": service_type,
                       "InstanceId": self.id,
                       "AvailabilityZone": availability_zone}
         stack_name = 'trove-%s' % self.id
