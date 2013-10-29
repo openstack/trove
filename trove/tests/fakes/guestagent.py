@@ -303,6 +303,7 @@ class FakeGuest(object):
         def finish_create_backup():
             backup.state = BackupState.COMPLETED
             backup.location = 'http://localhost/path/to/backup'
+            backup.checksum = 'fake-md5-sum'
             backup.save()
         eventlet.spawn_after(1.0, finish_create_backup)
 

@@ -447,16 +447,18 @@ class Instance(BuiltInstance):
             if ephemeral_support and flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=flavor_id)
 
-        def _create_resources():
-            if backup_id is not None:
-                backup_info = Backup.get_by_id(context, backup_id)
-                if backup_info.is_running:
-                    raise exception.BackupNotCompleteError(backup_id=backup_id)
+        if backup_id is not None:
+            backup_info = Backup.get_by_id(context, backup_id)
+            if backup_info.is_running:
+                raise exception.BackupNotCompleteError(backup_id=backup_id)
 
-                location = backup_info.location
-                LOG.info(_("Checking if backup exist in '%s'") % location)
-                if not Backup.check_object_exist(context, location):
-                    raise exception.BackupFileNotFound(location=location)
+            if not backup_info.check_swift_object_exist(
+                    context,
+                    verify_checksum=CONF.verify_swift_checksum_on_restore):
+                raise exception.BackupFileNotFound(
+                    location=backup_info.location)
+
+        def _create_resources():
 
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,

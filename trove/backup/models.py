@@ -181,21 +181,6 @@ class Backup(object):
         except ClientException:
             raise exception.SwiftAuthError(tenant_id=context.tenant)
 
-    @classmethod
-    def check_object_exist(cls, context, location):
-        try:
-            parts = location.split('/')
-            obj = parts[-1]
-            container = parts[-2]
-            client = create_swift_client(context)
-            client.head_object(container, obj)
-            return True
-        except ClientException as e:
-            if e.http_status == 404:
-                return False
-            else:
-                raise exception.SwiftAuthError(tenant_id=context.tenant)
-
 
 def persisted_models():
     return {'backups': DBBackup}
@@ -226,3 +211,26 @@ class DBBackup(DatabaseModelBase):
             return self.location[last_slash + 1:]
         else:
             return None
+
+    def check_swift_object_exist(self, context, verify_checksum=False):
+        try:
+            parts = self.location.split('/')
+            obj = parts[-1]
+            container = parts[-2]
+            client = create_swift_client(context)
+            LOG.info(_("Checking if backup exist in '%s'") % self.location)
+            resp = client.head_object(container, obj)
+            if verify_checksum:
+                LOG.info(_("Checking if backup checksum matches swift."))
+                # swift returns etag in double quotes
+                # e.g. '"dc3b0827f276d8d78312992cc60c2c3f"'
+                swift_checksum = resp['etag'].strip('"')
+                if self.checksum != swift_checksum:
+                    raise exception.RestoreBackupIntegrityError(
+                        backup_id=backup_id)
+            return True
+        except ClientException as e:
+            if e.http_status == 404:
+                return False
+            else:
+                raise exception.SwiftAuthError(tenant_id=context.tenant)

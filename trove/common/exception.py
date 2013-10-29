@@ -311,3 +311,9 @@ class DatabaseInitialUserDuplicateError(TroveError):
     message = _("Two or more users share the same name and host in the "
                 "initial users list. Please correct the names or remove the "
                 "duplicate entries.")
+
+
+class RestoreBackupIntegrityError(TroveError):
+
+    message = _("Current Swift object checksum does not match original "
+                "checksum for backup %(backup_id)s.")

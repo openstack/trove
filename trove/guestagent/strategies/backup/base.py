@@ -68,8 +68,8 @@ class BackupRunner(Strategy):
         self.written = -1
         self.end_of_file = False
         self.end_of_segment = False
-        self.checksum = hashlib.md5()
-        self.schecksum = hashlib.md5()
+        self.file_checksum = hashlib.md5()
+        self.segment_checksum = hashlib.md5()
         self.command = self.cmd % kwargs
         super(BackupRunner, self).__init__()
 
@@ -137,7 +137,7 @@ class BackupRunner(Strategy):
         """Wrap self.process.stdout.read to allow for segmentation."""
         if self.end_of_segment:
             self.segment_length = 0
-            self.schecksum = hashlib.md5()
+            self.segment_checksum = hashlib.md5()
             self.end_of_segment = False
 
         # Upload to a new file if we are starting or too large
@@ -151,8 +151,8 @@ class BackupRunner(Strategy):
             self.end_of_file = True
             return ''
 
-        self.checksum.update(chunk)
-        self.schecksum.update(chunk)
+        self.file_checksum.update(chunk)
+        self.segment_checksum.update(chunk)
         self.content_length += len(chunk)
         self.segment_length += len(chunk)
         return chunk
