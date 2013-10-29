@@ -43,7 +43,8 @@ from trove.db import get_db_api
 CONF = cfg.CONF
 CONF.register_opts([openstack_cfg.StrOpt('guest_id')])
 
-if __name__ == '__main__':
+
+def main():
     cfg.parse_args(sys.argv)
     from trove.guestagent import dbaas
     logging.setup(None)
@@ -62,3 +63,7 @@ if __name__ == '__main__':
         import traceback
         print(traceback.format_exc())
         sys.exit("ERROR: %s" % error)
+
+
+if __name__ == '__main__':
+    main()

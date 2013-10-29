@@ -95,7 +95,7 @@ class Commands(object):
             return utils.MethodInspector(getattr(self, command_name))
 
 
-if __name__ == '__main__':
+def main():
 
     def actions(subparser):
         parser = subparser.add_parser('db_sync')
@@ -133,3 +133,7 @@ if __name__ == '__main__':
     except Exception:
         print(_("Command failed, please check log for more info"))
         raise
+
+
+if __name__ == '__main__':
+    main()

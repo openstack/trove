@@ -45,7 +45,8 @@ from trove.db import get_db_api
 CONF = cfg.CONF
 CONF.register_opts([openstack_cfg.StrOpt('taskmanager_manager')])
 
-if __name__ == '__main__':
+
+def main():
     cfg.parse_args(sys.argv)
     logging.setup(None)
 
@@ -59,3 +60,7 @@ if __name__ == '__main__':
         import traceback
         print(traceback.format_exc())
         sys.exit("ERROR: %s" % error)
+
+
+if __name__ == '__main__':
+    main()
