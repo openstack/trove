@@ -61,6 +61,17 @@ notification_service_id = mysql:2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b
 
 # Trove DNS
 trove_dns_support = False
+dns_account_id = 123456
+dns_auth_url = http://127.0.0.1:5000/v2.0
+dns_username = user
+dns_passkey = password
+dns_ttl = 3600
+dns_domain_name = 'trove.com.'
+dns_domain_id = 11111111-1111-1111-1111-111111111111
+dns_driver = trove.dns.designate.driver.DesignateDriver
+dns_instance_entry_factory = trove.dns.designate.driver.DesignateInstanceEntryFactory
+dns_endpoint_url = http://127.0.0.1/v1/
+dns_service_type = dns
 
 # Trove Security Groups for Instances
 trove_security_groups_support = True

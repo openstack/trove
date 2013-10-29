@@ -35,12 +35,12 @@ class DnsManager(object):
                  *args, **kwargs):
         if not dns_driver:
             dns_driver = CONF.dns_driver
-        dns_driver = utils.import_object(dns_driver)
+        dns_driver = utils.import_class(dns_driver)
         self.driver = dns_driver()
 
         if not dns_instance_entry_factory:
             dns_instance_entry_factory = CONF.dns_instance_entry_factory
-        entry_factory = utils.import_object(dns_instance_entry_factory)
+        entry_factory = utils.import_class(dns_instance_entry_factory)
         self.entry_factory = entry_factory()
 
     def create_instance_entry(self, instance_id, content):
