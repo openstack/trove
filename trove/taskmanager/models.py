@@ -147,7 +147,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         security_groups = None
         if CONF.trove_security_groups_support:
             try:
-                self._create_secgroup()
+                security_groups = self._create_secgroup()
             except Exception as e:
                 msg = (_("Error creating security group for instance: %s") %
                        self.id)
