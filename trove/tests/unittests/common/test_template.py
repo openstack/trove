@@ -12,9 +12,11 @@
 
 
 import testtools
+import mock
 import re
 
 from trove.common import template
+from trove.common import exception
 from trove.tests.unittests.util import util
 
 
@@ -23,7 +25,7 @@ class TemplateTest(testtools.TestCase):
         super(TemplateTest, self).setUp()
         util.init_db()
         self.env = template.ENV
-        self.template = self.env.get_template("mysql.config.template")
+        self.template = self.env.get_template("mysql/config.template")
         self.flavor_dict = {'ram': 1024}
         self.server_id = "180b5ed1-3e57-4459-b7a3-2aeee4ac012a"
 
@@ -60,3 +62,28 @@ class TemplateTest(testtools.TestCase):
                                                        self.server_id)
         self.validate_template(config.render(), "query_cache_size",
                                self.flavor_dict, self.server_id)
+
+
+class HeatTemplateLoadTest(testtools.TestCase):
+
+    def setUp(self):
+        super(HeatTemplateLoadTest, self).setUp()
+        self.fException = mock.Mock(side_effect=
+                                    lambda *args, **kwargs:
+                                    _raise(template.jinja2.
+                                    TemplateNotFound("Test")))
+
+        def _raise(ex):
+            raise ex
+
+    def tearDown(self):
+        super(HeatTemplateLoadTest, self).tearDown()
+
+    def test_heat_template_load_fail(self):
+        self.assertRaises(exception.TroveError,
+                          template.load_heat_template,
+                          'mysql-blah')
+
+    def test_heat_template_load_success(self):
+        htmpl = template.load_heat_template('mysql')
+        self.assertNotEqual(None, htmpl)

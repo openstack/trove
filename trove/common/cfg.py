@@ -216,6 +216,9 @@ common_opts = [
                 help='Extention for default service managers.'
                      ' Allows to use custom managers for each of'
                      ' service type supported in trove'),
+    cfg.StrOpt('template_path',
+               default='/etc/trove/templates/',
+               help='Path which leads to datastore templates'),
 ]
 
 CONF = cfg.CONF

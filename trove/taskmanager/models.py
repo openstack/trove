@@ -145,7 +145,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                         availability_zone, root_password):
 
         security_groups = None
-        if CONF.trove_security_groups_support:
+
+        # If security group support is enabled and heat based instance
+        # orchestration is disabled, create a security group.
+        #
+        # Heat based orchestration handles security group(resource)
+        # in the template defination.
+        if CONF.trove_security_groups_support and not use_heat:
             try:
                 security_groups = self._create_secgroup()
             except Exception as e:
@@ -322,17 +328,24 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         client = create_heat_client(self.context)
         novaclient = create_nova_client(self.context)
         cinderclient = create_cinder_client(self.context)
-        heat_template = template.HeatTemplate().template()
-        parameters = {"KeyName": "heatkey",
-                      "Flavor": flavor["name"],
+
+        template_obj = template.load_heat_template(service_type)
+        heat_template_unicode = template_obj.render()
+        try:
+            heat_template = heat_template_unicode.encode('ascii')
+        except UnicodeEncodeError:
+            LOG.error(_("heat template ascii encode issue"))
+            raise TroveError("heat template ascii encode issue")
+
+        parameters = {"Flavor": flavor["name"],
                       "VolumeSize": volume_size,
-                      "ServiceType": service_type,
                       "InstanceId": self.id,
+                      "ImageId": image_id,
                       "AvailabilityZone": availability_zone}
         stack_name = 'trove-%s' % self.id
-        stack = client.stacks.create(stack_name=stack_name,
-                                     template=heat_template,
-                                     parameters=parameters)
+        client.stacks.create(stack_name=stack_name,
+                             template=heat_template,
+                             parameters=parameters)
         stack = client.stacks.get(stack_name)
 
         utils.poll_until(

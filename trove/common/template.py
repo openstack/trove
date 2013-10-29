@@ -13,20 +13,27 @@
 #    under the License.
 
 import jinja2
+from trove.common import cfg
+from trove.common import exception
+from trove.openstack.common import log as logging
+
+CONF = cfg.CONF
+LOG = logging.getLogger(__name__)
 
 ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
-    jinja2.FileSystemLoader("/etc/trove/templates"),
-    jinja2.PackageLoader("trove", "templates")
+    jinja2.FileSystemLoader(CONF.template_path),
+    jinja2.PackageLoader("trove", "templates"),
 ]))
 
 
 class SingleInstanceConfigTemplate(object):
     """ This class selects a single configuration file by database type for
     rendering on the guest """
-    def __init__(self, service_type, flavor_dict, instance_id):
+
+    def __init__(self, datastore_type, flavor_dict, instance_id):
         """ Constructor
 
-        :param service_type: The database type.
+        :param datastore_type: The database type.
         :type name: str.
         :param flavor_dict: dict containing flavor details for use in jinja.
         :type flavor_dict: dict.
@@ -35,7 +42,7 @@ class SingleInstanceConfigTemplate(object):
 
         """
         self.flavor_dict = flavor_dict
-        template_filename = "%s.config.template" % service_type
+        template_filename = "%s/config.template" % datastore_type
         self.template = ENV.get_template(template_filename)
         self.instance_id = instance_id
 
@@ -59,60 +66,12 @@ class SingleInstanceConfigTemplate(object):
         return abs(hash(self.instance_id) % (2 ** 31))
 
 
-class HeatTemplate(object):
-    template_contents = """HeatTemplateFormatVersion: '2012-12-12'
-Description: Instance creation
-Parameters:
-  KeyName: {Type: String}
-  Flavor: {Type: String}
-  VolumeSize: {Type: Number}
-  ServiceType: {Type: String}
-  InstanceId: {Type: String}
-  AvailabilityZone : {Type: String}
-Resources:
-  BaseInstance:
-    Type: AWS::EC2::Instance
-    Metadata:
-      AWS::CloudFormation::Init:
-        config:
-          files:
-            /etc/guest_info:
-              content:
-                Fn::Join:
-                - ''
-                - ["[DEFAULT]\\nguest_id=", {Ref: InstanceId},
-                  "\\nservice_type=", {Ref: ServiceType}]
-              mode: '000644'
-              owner: root
-              group: root
-    Properties:
-      ImageId:
-        Fn::Join:
-        - ''
-        - ["ubuntu_", {Ref: ServiceType}]
-      InstanceType: {Ref: Flavor}
-      KeyName: {Ref: KeyName}
-      AvailabilityZone: {Ref: AvailabilityZone}
-      UserData:
-        Fn::Base64:
-          Fn::Join:
-          - ''
-          - ["#!/bin/bash -v\\n",
-              "/opt/aws/bin/cfn-init\\n",
-              "sudo service trove-guest start\\n"]
-  DataVolume:
-    Type: AWS::EC2::Volume
-    Properties:
-      Size: {Ref: VolumeSize}
-      AvailabilityZone: {Ref: AvailabilityZone}
-      Tags:
-      - {Key: Usage, Value: Test}
-  MountPoint:
-    Type: AWS::EC2::VolumeAttachment
-    Properties:
-      InstanceId: {Ref: BaseInstance}
-      VolumeId: {Ref: DataVolume}
-      Device: /dev/vdb"""
-
-    def template(self):
-        return self.template_contents
+def load_heat_template(datastore_type):
+    template_filename = "%s/heat.template" % datastore_type
+    try:
+        template_obj = ENV.get_template(template_filename)
+        return template_obj
+    except jinja2.TemplateNotFound:
+        msg = "Missing heat template for %s" % datastore_type
+        LOG.error(msg)
+        raise exception.TroveError(msg)

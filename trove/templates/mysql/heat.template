@@ -1,0 +1,72 @@
+HeatTemplateFormatVersion: '2012-12-12'
+Description: Instance creation template for mysql
+Parameters:
+   Flavor:
+    Type: String
+  VolumeSize:
+    Type: Number
+    Default : '1'
+  InstanceId:
+    Type: String
+  ImageId:
+    Type: String
+  AvailabilityZone:
+    Type: String
+    Default: nova
+Resources:
+  BaseInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /etc/guest_info:
+              content:
+                Fn::Join:
+                - ''
+                - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
+                  "\nservice_type=mysql"]
+              mode: '000644'
+              owner: root
+              group: root
+    Properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: Flavor}
+      AvailabilityZone: {Ref: AvailabilityZone}
+      SecurityGroups : [{Ref: MySqlDbaasSG}]
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - ["#!/bin/bash -v\n",
+              "/opt/aws/bin/cfn-init\n",
+              "sudo service trove-guest start\n"]
+  DataVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: {Ref: VolumeSize}
+      AvailabilityZone: {Ref: AvailabilityZone}
+      Tags:
+      - {Key: Usage, Value: Test}
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      VolumeId: {Ref: DataVolume}
+      Device: /dev/vdb
+  MySqlDbaasSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default Security group for MySQL
+      SecurityGroupIngress:
+      - IpProtocol: "tcp"
+        FromPort: "3306"
+        ToPort: "3306"
+        CidrIp: "0.0.0.0/0"
+  DatabaseIPAddress:
+    Type: AWS::EC2::EIP
+  DatabaseIPAssoc :
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      EIP: {Ref: DatabaseIPAddress}
