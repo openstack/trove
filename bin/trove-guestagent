@@ -53,9 +53,10 @@ if __name__ == '__main__':
 
     try:
         get_db_api().configure_db(CONF)
-        manager = dbaas.service_registry().get(CONF.service_type)
+        manager = dbaas.datastore_registry().get(CONF.datastore_manager)
         if not manager:
-            msg = "Manager not found for service type " + CONF.service_type
+            msg = ("Manager class not registered for datastore manager " +
+                   CONF.datastore_manager)
             raise RuntimeError(msg)
         server = rpc_service.RpcService(manager=manager, host=CONF.guest_id)
         launcher = openstack_service.launch(server)

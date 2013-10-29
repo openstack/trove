@@ -92,6 +92,9 @@ http_post_rate = 200
 http_put_rate = 200
 http_delete_rate = 200
 
+# default datastore
+default_datastore = a00000a0-00a0-0a00-00a0-000a000000aa
+
 # Auth
 admin_roles = admin
 

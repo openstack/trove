@@ -52,9 +52,9 @@ class MgmtInstanceBase(object):
         self.db_info = DBInstance.create(
             name="instance",
             flavor_id=1,
+            datastore_version_id=test_config.dbaas_datastore_version,
             tenant_id=self.tenant_id,
             volume_size=None,
-            service_type='mysql',
             task_status=InstanceTasks.NONE)
         self.server = self.mock.CreateMock(Server)
         self.instance = imodels.Instance(self.context,

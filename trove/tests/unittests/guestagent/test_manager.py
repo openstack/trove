@@ -24,6 +24,7 @@ from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import backup
 from trove.guestagent.volume import VolumeDevice
+from trove.guestagent import pkg
 
 
 class GuestAgentManagerTest(testtools.TestCase):
@@ -37,10 +38,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
         self.origin_mount = volume.VolumeDevice.mount
-        self.origin_is_installed = dbaas.MySqlApp.is_installed
         self.origin_stop_mysql = dbaas.MySqlApp.stop_db
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
-        self.origin_install_mysql = dbaas.MySqlApp._install_mysql
+        self.origin_pkg_is_installed = pkg.Package.pkg_is_installed
+        self.origin_os_path_exists = os.path.exists
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
@@ -49,10 +50,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
         volume.VolumeDevice.mount = self.origin_mount
-        dbaas.MySqlApp.is_installed = self.origin_is_installed
         dbaas.MySqlApp.stop_db = self.origin_stop_mysql
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
-        dbaas.MySqlApp._install_mysql = self.origin_install_mysql
+        pkg.Package.pkg_is_installed = self.origin_pkg_is_installed
+        os.path.exists = self.origin_os_path_exists
         unstub()
 
     def test_update_status(self):
@@ -139,8 +140,6 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         # covering all outcomes is starting to cause trouble here
         COUNT = 1 if device_path else 0
-        SEC_COUNT = 1 if is_mysql_installed else 0
-        migrate_count = 1 * COUNT if not backup_id else 0
 
         # TODO(juice): this should stub an instance of the MySqlAppStatus
         mock_status = mock()
@@ -155,16 +154,18 @@ class GuestAgentManagerTest(testtools.TestCase):
         when(backup).restore(self.context, backup_id).thenReturn(None)
         when(dbaas.MySqlApp).secure(any()).thenReturn(None)
         when(dbaas.MySqlApp).secure_root(any()).thenReturn(None)
-        when(dbaas.MySqlApp).is_installed().thenReturn(is_mysql_installed)
+        (when(pkg.Package).pkg_is_installed(any()).
+         thenReturn(is_mysql_installed))
         when(dbaas.MySqlAdmin).is_root_enabled().thenReturn(is_root_enabled)
         when(dbaas.MySqlAdmin).create_user().thenReturn(None)
         when(dbaas.MySqlAdmin).create_database().thenReturn(None)
         when(dbaas.MySqlAdmin).report_root_enabled(self.context).thenReturn(
             None)
 
-        when(os.path).exists(any()).thenReturn(is_mysql_installed)
+        when(os.path).exists(any()).thenReturn(True)
         # invocation
-        self.manager.prepare(context=self.context, databases=None,
+        self.manager.prepare(context=self.context, packages=None,
+                             databases=None,
                              memory_mb='2048', users=None,
                              device_path=device_path,
                              mount_point='/var/lib/mysql',
@@ -173,12 +174,11 @@ class GuestAgentManagerTest(testtools.TestCase):
         verify(mock_status).begin_install()
 
         verify(VolumeDevice, times=COUNT).format()
-        verify(dbaas.MySqlApp, times=(COUNT * SEC_COUNT)).stop_db()
-        verify(VolumeDevice, times=(migrate_count * SEC_COUNT)).migrate_data(
+        verify(dbaas.MySqlApp, times=COUNT).stop_db()
+        verify(VolumeDevice, times=COUNT).migrate_data(
             any())
         if backup_id:
             verify(backup).restore(self.context, backup_id, '/var/lib/mysql')
-        verify(dbaas.MySqlApp).install_if_needed()
         # We dont need to make sure the exact contents are there
         verify(dbaas.MySqlApp).secure(any())
         verify(dbaas.MySqlAdmin, never).create_database()

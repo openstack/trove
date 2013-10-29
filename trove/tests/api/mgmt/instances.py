@@ -53,6 +53,12 @@ def flavor_check(flavor):
         check.has_element("links", list)
 
 
+def datastore_check(datastore):
+    with CollectionCheck("datastore", datastore) as check:
+        check.has_element("type", basestring)
+        check.has_element("version", basestring)
+
+
 def guest_status_check(guest_status):
     with CollectionCheck("guest_status", guest_status) as check:
         check.has_element("state_description", basestring)
@@ -87,6 +93,7 @@ def mgmt_instance_get():
         # lets avoid creating more ordering work.
         instance.has_field('deleted_at', (basestring, None))
         instance.has_field('flavor', dict, flavor_check)
+        instance.has_field('datastore', dict, datastore_check)
         instance.has_field('guest_status', dict, guest_status_check)
         instance.has_field('id', basestring)
         instance.has_field('links', list)
@@ -175,6 +182,7 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
             # lets avoid creating more ordering work.
             instance.has_field('deleted_at', (basestring, None))
             instance.has_field('flavor', dict, flavor_check)
+            instance.has_field('datastore', dict, datastore_check)
             instance.has_field('guest_status', dict, guest_status_check)
             instance.has_field('id', basestring)
             instance.has_field('links', list)
@@ -211,6 +219,7 @@ class MgmtInstancesIndex(object):
             'deleted',
             'deleted_at',
             'flavor',
+            'datastore',
             'id',
             'links',
             'name',

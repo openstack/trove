@@ -36,11 +36,13 @@ if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
 
 from trove import version
 from trove.common import cfg
+from trove.common import exception
 from trove.common import utils
 from trove.db import get_db_api
 from trove.openstack.common import log as logging
 from trove.openstack.common import uuidutils
 from trove.instance import models as instance_models
+from trove.datastore import models as datastore_models
 
 
 CONF = cfg.CONF
@@ -69,28 +71,30 @@ class Commands(object):
             kwargs[arg] = getattr(CONF.action, arg)
         exec_method(**kwargs)
 
-    def image_update(self, service_name, image_id):
-        self.db_api.configure_db(CONF)
-        image = self.db_api.find_by(instance_models.ServiceImage,
-                                    service_name=service_name)
-        if image is None:
-            # Create a new one
-            image = instance_models.ServiceImage()
-            image.id = uuidutils.generate_uuid()
-            image.service_name = service_name
-        image.image_id = image_id
-        self.db_api.save(image)
+    def datastore_update(self, datastore_name, manager, default_version):
+        try:
+            datastore_models.update_datastore(datastore_name, manager,
+                                              default_version)
+            print("Datastore '%s' updated." % datastore_name)
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
 
-    def db_wipe(self, repo_path, service_name, image_id):
+    def datastore_version_update(self, datastore, version_name, image_id,
+                                 packages, active):
+        try:
+            datastore_models.update_datastore_version(datastore,
+                                                      version_name, image_id,
+                                                      packages, active)
+            print("Datastore version '%s' updated." % version_name)
+        except exception.DatastoreNotFound as e:
+            print(e)
+
+    def db_wipe(self, repo_path):
         """Drops the database and recreates it."""
         from trove.instance import models
         from trove.db.sqlalchemy import session
         self.db_api.drop_db(CONF)
         self.db_sync()
-        # Sets up database engine, so the next line will work...
-        session.configure_db(CONF)
-        models.ServiceImage.create(service_name=service_name,
-                                   image_id=image_id)
 
     def params_of(self, command_name):
         if Commands.has(command_name):
@@ -108,13 +112,18 @@ if __name__ == '__main__':
         parser = subparser.add_parser('db_downgrade')
         parser.add_argument('version')
         parser.add_argument('--repo_path')
-        parser = subparser.add_parser('image_update')
-        parser.add_argument('service_name')
+        parser = subparser.add_parser('datastore_update')
+        parser.add_argument('datastore_name')
+        parser.add_argument('manager')
+        parser.add_argument('default_version')
+        parser = subparser.add_parser('datastore_version_update')
+        parser.add_argument('datastore')
+        parser.add_argument('version_name')
         parser.add_argument('image_id')
+        parser.add_argument('packages')
+        parser.add_argument('active')
         parser = subparser.add_parser('db_wipe')
         parser.add_argument('repo_path')
-        parser.add_argument('service_name')
-        parser.add_argument('image_id')
 
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)

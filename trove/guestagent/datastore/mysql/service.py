@@ -13,11 +13,11 @@ from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
 from trove.common import instance as rd_instance
+from trove.guestagent.common import operating_system
 from trove.guestagent.common import sql_query
 from trove.guestagent.db import models
 from trove.guestagent import pkg
 from trove.guestagent.datastore import service
-from trove.guestagent.datastore.mysql import system
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.extensions.mysql.models import RootHistory
@@ -26,7 +26,6 @@ ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
-MYSQLD_ARGS = None
 PREPARING = False
 UUID = False
 
@@ -39,6 +38,11 @@ INCLUDE_MARKER_OPERATORS = {
     False: ">"
 }
 
+MYSQL_CONFIG = "/etc/mysql/my.cnf"
+MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
+MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
+
+
 # Create a package impl
 packager = pkg.Package()
 
@@ -47,12 +51,41 @@ def generate_random_password():
     return passlib.utils.generate_password(size=CONF.default_password_length)
 
 
+def clear_expired_password():
+    """
+    Some mysql installations generating random root password
+    and save it in /root/.mysql_secret, this password is
+    expired and should be changed by client that supports expired passwords.
+    """
+    LOG.debug("Removing expired password.")
+    secret_file = "/root/.mysql_secret"
+    try:
+        out, err = utils.execute("cat", secret_file,
+                                 run_as_root=True, root_helper="sudo")
+    except exception.ProcessExecutionError:
+        LOG.debug("/root/.mysql_secret is not exists.")
+        return
+    m = re.match('# The random password set for the root user at .*: (.*)',
+                 out)
+    if m:
+        try:
+            out, err = utils.execute("mysqladmin", "-p%s" % m.group(1),
+                                     "password", "", run_as_root=True,
+                                     root_helper="sudo")
+        except exception.ProcessExecutionError:
+            LOG.error("Cannot change mysql password.")
+            return
+        utils.execute("rm", "-f", secret_file, run_as_root=True,
+                      root_helper="sudo")
+        LOG.debug("Expired password removed.")
+
+
 def get_auth_password():
     pwd, err = utils.execute_with_timeout(
         "sudo",
         "awk",
         "/password\\t=/{print $3; exit}",
-        system.MYSQL_CONFIG)
+        MYSQL_CONFIG)
     if err:
         LOG.error(err)
         raise RuntimeError("Problem reading my.cnf! : %s" % err)
@@ -76,8 +109,13 @@ def get_engine():
 
 
 def load_mysqld_options():
+    #find mysqld bin
+    for bin in MYSQL_BIN_CANDIDATES:
+        if os.path.isfile(bin):
+            mysqld_bin = bin
+            break
     try:
-        out, err = utils.execute(system.MYSQL_BIN, "--print-defaults",
+        out, err = utils.execute(mysqld_bin, "--print-defaults",
                                  run_as_root=True, root_helper="sudo")
         arglist = re.split("\n", out)[1].split()
         args = {}
@@ -89,7 +127,7 @@ def load_mysqld_options():
                 args[item.lstrip("--")] = None
         return args
     except exception.ProcessExecutionError:
-        return None
+        return {}
 
 
 class MySqlAppStatus(service.BaseDbStatus):
@@ -100,7 +138,6 @@ class MySqlAppStatus(service.BaseDbStatus):
         return cls._instance
 
     def _get_actual_db_status(self):
-        global MYSQLD_ARGS
         try:
             out, err = utils.execute_with_timeout(
                 "/usr/bin/mysqladmin",
@@ -119,10 +156,9 @@ class MySqlAppStatus(service.BaseDbStatus):
                 LOG.info("Service Status is BLOCKED.")
                 return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError:
-                if not MYSQLD_ARGS:
-                    MYSQLD_ARGS = load_mysqld_options()
-                pid_file = MYSQLD_ARGS.get('pid_file',
-                                           '/var/run/mysqld/mysqld.pid')
+                mysql_args = load_mysqld_options()
+                pid_file = mysql_args.get('pid_file',
+                                          '/var/run/mysqld/mysqld.pid')
                 if os.path.exists(pid_file):
                     LOG.info("Service Status is CRASHED.")
                     return rd_instance.ServiceStatuses.CRASHED
@@ -492,10 +528,6 @@ class MySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
-    if CONF.service_type == "mysql":
-        MYSQL_PACKAGE_VERSION = CONF.mysql_pkg
-    elif CONF.service_type == "percona":
-        MYSQL_PACKAGE_VERSION = CONF.percona_pkg
 
     def __init__(self, status):
         """ By default login with root no password for initial setup. """
@@ -522,11 +554,19 @@ class MySqlApp(object):
         t = text(str(uu))
         client.execute(t)
 
-    def install_if_needed(self):
+    def install_if_needed(self, packages):
         """Prepare the guest machine with a secure mysql server installation"""
         LOG.info(_("Preparing Guest as MySQL Server"))
-        if not self.is_installed():
-            self._install_mysql()
+        if not packager.pkg_is_installed(packages):
+            LOG.debug(_("Installing mysql server"))
+            self._clear_mysql_config()
+            # set blank password on pkg configuration stage
+            pkg_opts = {'root_password': '',
+                        'root_password_again': ''}
+            packager.pkg_install(packages, pkg_opts, self.TIME_OUT)
+            self._create_mysql_confd_dir()
+            LOG.debug(_("Finished installing mysql server"))
+        self.start_mysql()
         LOG.info(_("Dbaas install_if_needed complete"))
 
     def complete_install_or_restart(self):
@@ -535,7 +575,7 @@ class MySqlApp(object):
     def secure(self, config_contents):
         LOG.info(_("Generating admin password..."))
         admin_password = generate_random_password()
-
+        clear_expired_password()
         engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
                                           echo=True)
         with LocalSqlClient(engine) as client:
@@ -549,22 +589,25 @@ class MySqlApp(object):
         LOG.info(_("Dbaas secure complete."))
 
     def secure_root(self, secure_remote_root=True):
-        engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
-                                          echo=True)
-        with LocalSqlClient(engine) as client:
+        with LocalSqlClient(get_engine()) as client:
             LOG.info(_("Preserving root access from restore"))
             self._generate_root_password(client)
             if secure_remote_root:
                 self._remove_remote_root_access(client)
 
-    def _install_mysql(self):
-        """Install mysql server. The current version is 5.5"""
-        LOG.debug(_("Installing mysql server"))
-        self._create_mysql_confd_dir()
-        packager.pkg_install(self.MYSQL_PACKAGE_VERSION, self.TIME_OUT)
-        self.start_mysql()
-        LOG.debug(_("Finished installing mysql server"))
-        #TODO(rnirmal): Add checks to make sure the package got installed
+    def _clear_mysql_config(self):
+        """Clear old configs, which can be incompatible with new version """
+        LOG.debug("Clearing old mysql config")
+        random_uuid = str(uuid.uuid4())
+        configs = ["/etc/my.cnf", "/etc/mysql/conf.d", "/etc/mysql/my.cnf"]
+        for config in configs:
+            command = "mv %s %s_%s" % (config, config, random_uuid)
+            try:
+                utils.execute_with_timeout(command, shell=True,
+                                           root_helper="sudo")
+                LOG.debug("%s saved to %s_%s" % (config, config, random_uuid))
+            except exception.ProcessExecutionError:
+                pass
 
     def _create_mysql_confd_dir(self):
         conf_dir = "/etc/mysql/conf.d"
@@ -573,44 +616,33 @@ class MySqlApp(object):
         utils.execute_with_timeout(command, shell=True)
 
     def _enable_mysql_on_boot(self):
-        """
-        There is a difference between the init.d mechanism and the upstart
-        The stock mysql uses the upstart mechanism, therefore, there is a
-        mysql.conf file responsible for the job. to toggle enable/disable
-        on boot one needs to modify this file. Percona uses the init.d
-        mechanism and there is no mysql.conf file. Instead, the update-rc.d
-        command needs to be used to modify the /etc/rc#.d/[S/K]##mysql links
-        """
         LOG.info("Enabling mysql on boot.")
-        conf = "/etc/init/mysql.conf"
-        if os.path.isfile(conf):
-            command = "sudo sed -i '/^manual$/d' %(conf)s" % {'conf': conf}
-        else:
-            command = system.MYSQL_CMD_ENABLE
-        utils.execute_with_timeout(command, shell=True)
+        try:
+            mysql_service = operating_system.service_discovery(
+                MYSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(mysql_service['cmd_enable'], shell=True)
+        except KeyError:
+            raise RuntimeError("Service is not discovered.")
 
     def _disable_mysql_on_boot(self):
-        """
-        There is a difference between the init.d mechanism and the upstart
-        The stock mysql uses the upstart mechanism, therefore, there is a
-        mysql.conf file responsible for the job. to toggle enable/disable
-        on boot one needs to modify this file. Percona uses the init.d
-        mechanism and there is no mysql.conf file. Instead, the update-rc.d
-        command needs to be used to modify the /etc/rc#.d/[S/K]##mysql links
-        """
-        LOG.info("Disabling mysql on boot.")
-        conf = "/etc/init/mysql.conf"
-        if os.path.isfile(conf):
-            command = "sudo sh -c 'echo manual >> %(conf)s'" % {'conf': conf}
-        else:
-            command = system.MYSQL_CMD_DISABLE
-        utils.execute_with_timeout(command, shell=True)
+        try:
+            mysql_service = operating_system.service_discovery(
+                MYSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(mysql_service['cmd_disable'],
+                                       shell=True)
+        except KeyError:
+            raise RuntimeError("Service is not discovered.")
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         LOG.info(_("Stopping mysql..."))
         if do_not_start_on_reboot:
             self._disable_mysql_on_boot()
-        utils.execute_with_timeout(system.MYSQL_CMD_STOP, shell=True)
+        try:
+            mysql_service = operating_system.service_discovery(
+                MYSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(mysql_service['cmd_stop'], shell=True)
+        except KeyError:
+            raise RuntimeError("Service is not discovered.")
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
@@ -696,13 +728,13 @@ class MySqlApp(object):
         with open(TMP_MYCNF, 'w') as t:
             t.write(config_contents)
         utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   system.MYSQL_CONFIG)
+                                   MYSQL_CONFIG)
 
-        self._write_temp_mycnf_with_admin_account(system.MYSQL_CONFIG,
+        self._write_temp_mycnf_with_admin_account(MYSQL_CONFIG,
                                                   TMP_MYCNF,
                                                   admin_password)
         utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   system.MYSQL_CONFIG)
+                                   MYSQL_CONFIG)
 
         self.wipe_ib_logfiles()
 
@@ -715,8 +747,11 @@ class MySqlApp(object):
         self._enable_mysql_on_boot()
 
         try:
-            utils.execute_with_timeout(system.
-                                       MYSQL_CMD_START, shell=True)
+            mysql_service = operating_system.service_discovery(
+                MYSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(mysql_service['cmd_start'], shell=True)
+        except KeyError:
+            raise RuntimeError("Service is not discovered.")
         except exception.ProcessExecutionError:
             # it seems mysql (percona, at least) might come back with [Fail]
             # but actually come up ok. we're looking into the timing issue on
@@ -755,11 +790,6 @@ class MySqlApp(object):
         config_contents = configuration['config_contents']
         LOG.info(_("Resetting configuration"))
         self._write_mycnf(None, config_contents)
-
-    def is_installed(self):
-        #(cp16net) could raise an exception, does it need to be handled here?
-        version = packager.pkg_version(self.MYSQL_PACKAGE_VERSION)
-        return not version is None
 
 
 class MySqlRootAccess(object):

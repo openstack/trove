@@ -84,32 +84,26 @@ class Manager(periodic_task.PeriodicTasks):
             raise
         LOG.info(_("Restored database successfully"))
 
-    def prepare(self, context, databases, memory_mb, users, device_path=None,
-                mount_point=None, backup_id=None, config_contents=None,
-                root_password=None):
+    def prepare(self, context, packages, databases, memory_mb, users,
+                device_path=None, mount_point=None, backup_id=None,
+                config_contents=None, root_password=None):
         """Makes ready DBAAS on a Guest container."""
         MySqlAppStatus.get().begin_install()
         # status end_mysql_install set with secure()
         app = MySqlApp(MySqlAppStatus.get())
-        restart_mysql = False
+        app.install_if_needed(packages)
         if device_path:
+            #stop and do not update database
+            app.stop_db()
             device = volume.VolumeDevice(device_path)
             device.format()
-            #if a /var/lib/mysql folder exists, back it up.
             if os.path.exists(CONF.mount_point):
-                #stop and do not update database
-                app.stop_db()
                 #rsync exiting data
-                if not backup_id:
-                    restart_mysql = True
-                    device.migrate_data(CONF.mount_point)
+                device.migrate_data(CONF.mount_point)
             #mount the volume
             device.mount(mount_point)
             LOG.debug(_("Mounted the volume."))
-            #check mysql was installed and stopped
-            if restart_mysql:
-                app.start_mysql()
-        app.install_if_needed()
+            app.start_mysql()
         if backup_id:
             self._perform_restore(backup_id, context, CONF.mount_point, app)
         LOG.info(_("Securing mysql now."))

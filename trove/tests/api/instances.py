@@ -36,6 +36,7 @@ GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 from datetime import datetime
 from time import sleep
 
+from trove.datastore import models as datastore_models
 from trove.common import exception as rd_exceptions
 from troveclient.compat import exceptions
 
@@ -65,6 +66,9 @@ from trove.tests.util import string_in_list
 from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
+from trove.tests.util import test_config
+
+FAKE = test_config.values['fake_mode']
 
 
 class InstanceTestInfo(object):
@@ -75,8 +79,8 @@ class InstanceTestInfo(object):
         self.dbaas_admin = None  # The rich client with admin access.
         self.dbaas_flavor = None  # The flavor object of the instance.
         self.dbaas_flavor_href = None  # The flavor of the instance.
-        self.dbaas_image = None  # The image used to create the instance.
-        self.dbaas_image_href = None  # The link of the image.
+        self.dbaas_datastore = None  # The datastore id
+        self.dbaas_datastore_version = None  # The datastore version id
         self.id = None  # The ID of the instance in the database.
         self.local_id = None
         self.address = None
@@ -162,7 +166,7 @@ def clear_messages_off_queue():
 class InstanceSetup(object):
     """Makes sure the client can hit the ReST service.
 
-    This test also uses the API to find the image and flavor to use.
+    This test also uses the API to find the flavor to use.
 
     """
 
@@ -223,6 +227,7 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         import copy
 
         self.test_info = copy.deepcopy(instance_info)
+        self.test_info.dbaas_datastore = CONFIG.dbaas_datastore
 
     def tearDown(self):
         quota_dict = {'instances': CONFIG.trove_max_instances_per_user}
@@ -323,6 +328,7 @@ class CreateInstance(object):
         users.append({"name": "lite", "password": "litepass",
                       "databases": [{"name": "firstdb"}]})
         instance_info.users = users
+        instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         if VOLUME_SUPPORT:
             instance_info.volume = {'size': 1}
         else:
@@ -335,7 +341,9 @@ class CreateInstance(object):
                 instance_info.volume,
                 databases,
                 users,
-                availability_zone="nova")
+                availability_zone="nova",
+                datastore=instance_info.dbaas_datastore,
+                datastore_version=instance_info.dbaas_datastore_version)
             assert_equal(200, dbaas.last_http_code)
         else:
             id = existing_instance()
@@ -355,7 +363,7 @@ class CreateInstance(object):
 
         # Check these attrs only are returned in create response
         expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
-                          'name', 'status', 'updated']
+                          'name', 'status', 'updated', 'datastore']
         if ROOT_ON_CREATE:
             expected_attrs.append('password')
         if VOLUME_SUPPORT:
@@ -369,6 +377,7 @@ class CreateInstance(object):
                                   msg="Create response")
             # Don't CheckInstance if the instance already exists.
             check.flavor()
+            check.datastore()
             check.links(result._info['links'])
             if VOLUME_SUPPORT:
                 check.volume()
@@ -454,7 +463,7 @@ class CreateInstance(object):
             result = dbaas_admin.management.show(instance_info.id)
             expected_attrs = ['account_id', 'addresses', 'created',
                               'databases', 'flavor', 'guest_status', 'host',
-                              'hostname', 'id', 'name',
+                              'hostname', 'id', 'name', 'datastore',
                               'server_state_description', 'status', 'updated',
                               'users', 'volume', 'root_enabled_at',
                               'root_enabled_by']
@@ -462,7 +471,121 @@ class CreateInstance(object):
                 check.attrs_exist(result._info, expected_attrs,
                                   msg="Mgmt get instance")
                 check.flavor()
+                check.datastore()
                 check.guest_status()
+
+    @test
+    def test_create_failure_with_datastore_default_notfound(self):
+        if not FAKE:
+            raise SkipTest("This test only for fake mode.")
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "datastore_default_notfound"
+        databases = []
+        users = []
+        origin_default_datastore = (datastore_models.CONF.
+                                    default_datastore)
+        datastore_models.CONF.default_datastore = ""
+        try:
+            assert_raises(exceptions.NotFound,
+                          dbaas.instances.create, instance_name,
+                          instance_info.dbaas_flavor_href,
+                          volume, databases, users)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Please specify datastore.")
+        datastore_models.CONF.default_datastore = \
+            origin_default_datastore
+
+    @test
+    def test_create_failure_with_datastore_default_version_notfound(self):
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "datastore_default_version_notfound"
+        databases = []
+        users = []
+        datastore = "Test_Datastore_1"
+        try:
+            assert_raises(exceptions.NotFound,
+                          dbaas.instances.create, instance_name,
+                          instance_info.dbaas_flavor_href,
+                          volume, databases, users,
+                          datastore=datastore)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Default version for datastore '%s' not found." %
+                         datastore)
+
+    @test
+    def test_create_failure_with_datastore_notfound(self):
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "datastore_notfound"
+        databases = []
+        users = []
+        datastore = "nonexistent"
+        try:
+            assert_raises(exceptions.NotFound,
+                          dbaas.instances.create, instance_name,
+                          instance_info.dbaas_flavor_href,
+                          volume, databases, users,
+                          datastore=datastore)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore '%s' cannot be found." %
+                         datastore)
+
+    @test
+    def test_create_failure_with_datastore_version_notfound(self):
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "datastore_version_notfound"
+        databases = []
+        users = []
+        datastore = "Test_Mysql"
+        datastore_version = "nonexistent"
+        try:
+            assert_raises(exceptions.NotFound,
+                          dbaas.instances.create, instance_name,
+                          instance_info.dbaas_flavor_href,
+                          volume, databases, users,
+                          datastore=datastore,
+                          datastore_version=datastore_version)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore version '%s' cannot be found." %
+                         datastore_version)
+
+    @test
+    def test_create_failure_with_datastore_version_inactive(self):
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        instance_name = "datastore_version_inactive"
+        databases = []
+        users = []
+        datastore = "Test_Mysql"
+        datastore_version = "mysql_inactive_version"
+        try:
+            assert_raises(exceptions.NotFound,
+                          dbaas.instances.create, instance_name,
+                          instance_info.dbaas_flavor_href,
+                          volume, databases, users,
+                          datastore=datastore,
+                          datastore_version=datastore_version)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore version '%s' is not active." %
+                         datastore_version)
 
 
 def assert_unprocessable(func, *args):
@@ -730,7 +853,8 @@ class TestInstanceListing(object):
 
     @test
     def test_index_list(self):
-        expected_attrs = ['id', 'links', 'name', 'status', 'flavor']
+        expected_attrs = ['id', 'links', 'name', 'status', 'flavor',
+                          'datastore']
         if VOLUME_SUPPORT:
             expected_attrs.append('volume')
         instances = dbaas.instances.list()
@@ -743,12 +867,14 @@ class TestInstanceListing(object):
                                   msg="Instance Index")
                 check.links(instance_dict['links'])
                 check.flavor()
+                check.datastore()
                 check.volume()
 
     @test
     def test_get_instance(self):
         expected_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
-                          'links', 'name', 'status', 'updated', 'ip']
+                          'links', 'name', 'status', 'updated', 'ip',
+                          'datastore']
         if VOLUME_SUPPORT:
             expected_attrs.append('volume')
         else:
@@ -761,6 +887,7 @@ class TestInstanceListing(object):
             check.attrs_exist(instance_dict, expected_attrs,
                               msg="Get Instance")
             check.flavor()
+            check.datastore()
             check.links(instance_dict['links'])
             check.used_volume()
 
@@ -835,12 +962,13 @@ class TestInstanceListing(object):
         expected_attrs = ['account_id', 'addresses', 'created', 'databases',
                           'flavor', 'guest_status', 'host', 'hostname', 'id',
                           'name', 'root_enabled_at', 'root_enabled_by',
-                          'server_state_description', 'status',
+                          'server_state_description', 'status', 'datastore',
                           'updated', 'users', 'volume']
         with CheckInstance(result._info) as check:
             check.attrs_exist(result._info, expected_attrs,
                               msg="Mgmt get instance")
             check.flavor()
+            check.datastore()
             check.guest_status()
             check.addresses()
             check.volume_mgmt()
@@ -1062,6 +1190,14 @@ class CheckInstance(AttrCheck):
             self.attrs_exist(self.instance['flavor'], expected_attrs,
                              msg="Flavor")
             self.links(self.instance['flavor']['links'])
+
+    def datastore(self):
+        if 'datastore' not in self.instance:
+            self.fail("'datastore' not found in instance.")
+        else:
+            expected_attrs = ['type', 'version']
+            self.attrs_exist(self.instance['datastore'], expected_attrs,
+                             msg="datastore")
 
     def volume_key_exists(self):
         if 'volume' not in self.instance:

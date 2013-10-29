@@ -25,6 +25,7 @@ from trove.common import wsgi
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import populate_users
 from trove.instance import models, views
+from trove.datastore import models as datastore_models
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 from trove.openstack.common import log as logging
@@ -178,11 +179,10 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("body : '%s'\n\n") % body)
         context = req.environ[wsgi.CONTEXT_KEY]
-        # Set the service type to mysql if its not in the request
-        service_type = (body['instance'].get('service_type') or
-                        CONF.service_type)
-        service = models.ServiceImage.find_by(service_name=service_type)
-        image_id = service['image_id']
+        datastore_args = body['instance'].get('datastore', {})
+        datastore, datastore_version = (
+            datastore_models.get_datastore_version(**datastore_args))
+        image_id = datastore_version.image_id
         name = body['instance']['name']
         flavor_ref = body['instance']['flavorRef']
         flavor_id = utils.get_id_from_href(flavor_ref)
@@ -214,8 +214,9 @@ class InstanceController(wsgi.Controller):
 
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
-                                          service_type, volume_size,
-                                          backup_id, availability_zone)
+                                          datastore, datastore_version,
+                                          volume_size, backup_id,
+                                          availability_zone)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

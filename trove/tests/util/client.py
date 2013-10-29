@@ -102,20 +102,6 @@ class TestClient(object):
         flavor_href = self.find_flavor_self_href(flavor)
         return flavor, flavor_href
 
-    def find_image_and_self_href(self, image_id):
-        """Given an ID, returns tuple with image and its self href."""
-        assert_false(image_id is None)
-        image = self.images.get(image_id)
-        assert_true(image is not None)
-        self_links = [link['href'] for link in image.links
-                      if link['rel'] == 'self']
-        assert_true(len(self_links) > 0,
-                    "Found image with ID %s but it had no self link!" %
-                    str(image_id))
-        image_href = self_links[0]
-        assert_false(image_href is None, "Image link self href missing.")
-        return image, image_href
-
     def __getattr__(self, item):
         return getattr(self.real_client, item)
 

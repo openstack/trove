@@ -31,6 +31,7 @@ from trove.instance.tasks import InstanceTasks
 from trove.openstack.common.rpc.common import RPCException
 from trove.taskmanager import models as models
 from trove.tests.fakes import nova
+from trove.tests.util import test_config
 
 GROUP = 'dbaas.api.instances.resize'
 
@@ -51,7 +52,7 @@ class ResizeTestBase(TestCase):
             flavor_id=OLD_FLAVOR_ID,
             tenant_id=999,
             volume_size=None,
-            service_type='mysql',
+            datastore_version_id=test_config.dbaas_datastore_version,
             task_status=InstanceTasks.RESIZING)
         self.server = self.mock.CreateMock(Server)
         self.instance = models.BuiltInstanceTasks(context,

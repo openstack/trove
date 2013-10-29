@@ -183,7 +183,6 @@ instance = {
                     "volume": volume,
                     "databases": databases_def,
                     "users": users_list,
-                    "service_type": non_empty_string,
                     "restorePoint": {
                         "type": "object",
                         "required": ["backupRef"],
@@ -192,7 +191,15 @@ instance = {
                             "backupRef": uuid
                         }
                     },
-                    "availability_zone": non_empty_string
+                    "availability_zone": non_empty_string,
+                    "datastore": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "properties": {
+                            "type": non_empty_string,
+                            "version": non_empty_string
+                        }
+                    }
                 }
             }
         }

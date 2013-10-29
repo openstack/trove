@@ -41,8 +41,7 @@ class MalformedJson(object):
         users = "bar"
         try:
             self.dbaas.instances.create("bad_instance", 3, 3,
-                                        databases=databases,
-                                        users=users)
+                                        databases=databases, users=users)
         except Exception as e:
             resp, body = self.dbaas.client.last_response
             httpCode = resp.status
@@ -259,6 +258,33 @@ class MalformedJson(object):
                              "%s is not of type 'integer'; "
                              "instance['volume'] 2 is not of type 'object'" %
                              (flavorId, flavorId, flavorId, flavorId))
+
+    @test
+    def test_bad_body_datastore_create_instance(self):
+        tests_utils.skip_if_xml()
+
+        datastore = "*"
+        datastore_version = "*"
+        try:
+            self.dbaas.instances.create("test_instance",
+                                        3, {"size": 2},
+                                        datastore=datastore,
+                                        datastore_version=datastore_version)
+        except Exception as e:
+            resp, body = self.dbaas.client.last_response
+            httpCode = resp.status
+            assert_equal(httpCode, 400,
+                         "Create instance failed with code %s, exception %s" %
+                         (httpCode, e))
+
+            if not isinstance(self.dbaas.client,
+                              troveclient.compat.xml.TroveXmlClient):
+                assert_equal(e.message,
+                             "Validation error: instance['datastore']['type']"
+                             " u'%s' does not match '^.*[0-9a-zA-Z]+.*$'; "
+                             "instance['datastore']['version'] u'%s' does not"
+                             " match '^.*[0-9a-zA-Z]+.*$'" %
+                             (datastore, datastore_version))
 
     @test
     def test_bad_body_volsize_create_instance(self):

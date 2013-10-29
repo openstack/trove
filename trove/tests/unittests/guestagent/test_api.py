@@ -252,14 +252,15 @@ class ApiTest(testtools.TestCase):
         mock_conn = mock()
         when(rpc).create_connection(new=True).thenReturn(mock_conn)
         when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
-        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'databases', 'users',
-                                'device_path', 'mount_point', 'backup_id',
-                                'config_contents', 'root_password')
+        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
+                                'databases', 'users', 'device_path',
+                                'mount_point', 'backup_id', 'config_contents',
+                                'root_password')
 
         when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
 
-        self.api.prepare('2048', 'db1', 'user1', '/dev/vdt', '/mnt/opt',
-                         'bkup-1232', 'cont', '1-2-3-4')
+        self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
+                         '/mnt/opt', 'bkup-1232', 'cont', '1-2-3-4')
 
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
@@ -267,13 +268,14 @@ class ApiTest(testtools.TestCase):
         mock_conn = mock()
         when(rpc).create_connection(new=True).thenReturn(mock_conn)
         when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
-        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'databases', 'users',
-                                'device_path', 'mount_point', 'backup_id',
-                                'config_contents', 'root_password')
+        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
+                                'databases', 'users', 'device_path',
+                                'mount_point', 'backup_id', 'config_contents',
+                                'root_password')
         when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
 
-        self.api.prepare('2048', 'db1', 'user1', '/dev/vdt', '/mnt/opt',
-                         'backup_id_123', 'cont', '1-2-3-4')
+        self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
+                         '/mnt/opt', 'backup_id_123', 'cont', '1-2-3-4')
 
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
@@ -291,11 +293,13 @@ class ApiTest(testtools.TestCase):
     def test_rpc_cast_with_consumer_exception(self):
         mock_conn = mock()
         when(rpc).create_connection(new=True).thenRaise(IOError('host down'))
-        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'databases', 'users',
-                                'device_path', 'mount_point')
+        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
+                                'databases', 'users', 'device_path',
+                                'mount_point')
 
         with testtools.ExpectedException(exception.GuestError, '.* host down'):
-            self.api.prepare('2048', 'db1', 'user1', '/dev/vdt', '/mnt/opt')
+            self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
+                             '/mnt/opt')
 
         verify(rpc).create_connection(new=True)
         verifyZeroInteractions(mock_conn)
