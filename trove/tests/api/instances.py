@@ -99,6 +99,23 @@ class InstanceTestInfo(object):
         self.users = None  # The users created on the instance.
         self.consumer = create_usage_verifier()
 
+    def find_default_flavor(self):
+        if EPHEMERAL_SUPPORT:
+            flavor_name = CONFIG.values.get('instance_eph_flavor_name',
+                                            'eph.rd-tiny')
+        else:
+            flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
+        flavors = self.dbaas.find_flavors_by_name(flavor_name)
+        assert_equal(len(flavors), 1,
+                     "Number of flavors with name '%s' "
+                     "found was '%d'." % (flavor_name, len(flavors)))
+        flavor = flavors[0]
+        assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
+        flavor_href = self.dbaas.find_flavor_self_href(flavor)
+        assert_true(flavor_href is not None,
+                    "Flavor href '%s' not found!" % flavor_name)
+        return flavor, flavor_href
+
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
         return result.ip[0]
@@ -176,20 +193,7 @@ class InstanceSetup(object):
 
     @test
     def test_find_flavor(self):
-        if EPHEMERAL_SUPPORT:
-            flavor_name = CONFIG.values.get('instance_eph_flavor_name',
-                                            'eph.rd-tiny')
-        else:
-            flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
-        flavors = dbaas.find_flavors_by_name(flavor_name)
-        assert_equal(len(flavors), 1,
-                     "Number of flavors with name '%s' "
-                     "found was '%d'." % (flavor_name, len(flavors)))
-        flavor = flavors[0]
-        assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
-        flavor_href = dbaas.find_flavor_self_href(flavor)
-        assert_true(flavor_href is not None,
-                    "Flavor href '%s' not found!" % flavor_name)
+        flavor, flavor_href = instance_info.find_default_flavor()
         instance_info.dbaas_flavor = flavor
         instance_info.dbaas_flavor_href = flavor_href
 

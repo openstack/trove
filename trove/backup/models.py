@@ -227,7 +227,7 @@ class DBBackup(DatabaseModelBase):
                 swift_checksum = resp['etag'].strip('"')
                 if self.checksum != swift_checksum:
                     raise exception.RestoreBackupIntegrityError(
-                        backup_id=backup_id)
+                        backup_id=self.id)
             return True
         except ClientException as e:
             if e.http_status == 404:

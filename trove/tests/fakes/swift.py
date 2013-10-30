@@ -469,6 +469,4 @@ class SwiftClientStub(object):
 
 
 def fake_create_swift_client(calculate_etag=False, *args):
-    if calculate_etag:
-        return FakeSwiftConnectionWithRealEtag()
     return FakeSwiftClient.Connection(*args)

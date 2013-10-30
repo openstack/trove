@@ -16,7 +16,8 @@ import testtools
 from mockito import when, verify, unstub, mock, any, contains
 from trove.common.context import TroveContext
 
-from trove.tests.fakes.swift import fake_create_swift_client
+from trove.tests.fakes.swift import FakeSwiftConnection
+from trove.tests.fakes.swift import FakeSwiftConnectionWithRealEtag
 from trove.tests.unittests.backup.test_backupagent \
     import MockBackup as MockBackupRunner
 from trove.guestagent.strategies.storage.swift \
@@ -54,7 +55,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
         backup_container = 'database_backups'
 
-        swift_client = fake_create_swift_client(calculate_etag=True)
+        swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -83,7 +84,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
         backup_container = 'database_backups'
 
-        swift_client = fake_create_swift_client(calculate_etag=True)
+        swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -114,7 +115,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
         backup_container = 'database_backups'
 
-        swift_client = fake_create_swift_client(calculate_etag=True)
+        swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -155,7 +156,7 @@ class SwiftStorageLoad(testtools.TestCase):
         is_zipped = False
         backup_checksum = "fake-md5-sum"
 
-        swift_client = fake_create_swift_client()
+        swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         download_process = MockProcess()
         subprocess = mock(swift.subprocess)
@@ -192,7 +193,7 @@ class SwiftStorageLoad(testtools.TestCase):
         is_zipped = False
         backup_checksum = "checksum_different_then_fake_swift_etag"
 
-        swift_client = fake_create_swift_client()
+        swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
 
         storage_strategy = SwiftStorage(context)

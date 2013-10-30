@@ -191,12 +191,11 @@ class RestoreUsingBackup(object):
     @test
     def test_restore(self):
         """test restore"""
-        if test_config.auth_strategy == "fake":
-            raise SkipTest("Skipping restore tests for fake mode.")
+        _flavor, flavor_href = instance_info.find_default_flavor()
         restorePoint = {"backupRef": backup_info.id}
         result = instance_info.dbaas.instances.create(
             instance_info.name + "_restore",
-            instance_info.dbaas_flavor_href,
+            flavor_href,
             instance_info.volume,
             restorePoint=restorePoint)
         assert_equal(200, instance_info.dbaas.last_http_code)
@@ -216,9 +215,6 @@ class WaitForRestoreToFinish(object):
     @test
     @time_out(60 * 32)
     def test_instance_restored(self):
-        if test_config.auth_strategy == "fake":
-            raise SkipTest("Skipping restore tests for fake mode.")
-
         # This version just checks the REST API status.
         def result_is_active():
             instance = instance_info.dbaas.instances.get(restore_instance_id)
@@ -242,8 +238,6 @@ class DeleteBackups(object):
     @test
     def test_delete_restored_instance(self):
         """test delete restored instance"""
-        if test_config.auth_strategy == "fake":
-            raise SkipTest("Skipping delete restored instance for fake mode.")
         instance_info.dbaas.instances.delete(restore_instance_id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
