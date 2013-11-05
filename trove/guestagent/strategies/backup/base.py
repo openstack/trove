@@ -100,6 +100,8 @@ class BackupRunner(Strategy):
                 # Already stopped
                 pass
             utils.raise_if_process_errored(self.process, BackupError)
+            if not self.check_process():
+                raise BackupError
 
         return True
 
@@ -132,6 +134,10 @@ class BackupRunner(Strategy):
     @property
     def encrypt_manifest(self):
         return '.enc' if self.is_encrypted else ''
+
+    def check_process(self):
+        """Hook for subclasses to check process for errors."""
+        return True
 
     def read(self, chunk_size):
         """Wrap self.process.stdout.read to allow for segmentation."""

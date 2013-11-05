@@ -14,9 +14,10 @@
 #    under the License.
 #
 
+import re
+
 from trove.guestagent.strategies.backup import base
 from trove.openstack.common import log as logging
-
 
 LOG = logging.getLogger(__name__)
 
@@ -27,11 +28,11 @@ class MySQLDump(base.BackupRunner):
 
     @property
     def cmd(self):
-        cmd = '/usr/bin/mysqldump'\
-            ' --all-databases'\
-            ' --opt'\
-            ' --password=%(password)s'\
-            ' -u %(user)s'
+        cmd = ('/usr/bin/mysqldump'
+               ' --all-databases'
+               ' --opt'
+               ' --password=%(password)s'
+               ' -u %(user)s')
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property
@@ -46,12 +47,28 @@ class InnoBackupEx(base.BackupRunner):
 
     @property
     def cmd(self):
-        cmd = 'sudo innobackupex'\
-            ' --stream=xbstream'\
-            ' /var/lib/mysql 2>/tmp/innobackupex.log'
+        cmd = ('sudo innobackupex'
+               ' --stream=xbstream'
+               ' /var/lib/mysql 2>/tmp/innobackupex.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property
     def manifest(self):
         manifest = '%s.xbstream' % self.filename
         return manifest + self.zip_manifest + self.encrypt_manifest
+
+    def check_process(self):
+        """Check the output from innobackupex for 'completed OK!'"""
+        LOG.debug('Checking innobackupex process output')
+        with open('/tmp/innobackupex.log', 'r') as backup_log:
+            output = backup_log.read()
+            LOG.info(output)
+            if not output:
+                LOG.error("Innobackupex log file empty")
+                return False
+            last_line = output.splitlines()[-1].strip()
+            if not re.search('completed OK!', last_line):
+                LOG.error("Innobackupex did not complete successfully")
+                return False
+
+        return True
