@@ -1,4 +1,5 @@
 import os
+import passlib.utils
 import re
 import uuid
 import time
@@ -43,7 +44,7 @@ packager = pkg.Package()
 
 
 def generate_random_password():
-    return str(uuid.uuid4())
+    return passlib.utils.generate_password(size=CONF.default_password_length)
 
 
 def get_auth_password():

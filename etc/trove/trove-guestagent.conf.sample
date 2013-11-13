@@ -56,6 +56,9 @@ root_grant_option = True
 #root_grant = ALTER ROUTINE, CREATE, ALTER, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, CREATE USER, DELETE, DROP, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, PROCESS, REFERENCES, SELECT, SHOW DATABASES, SHOW VIEW, TRIGGER, UPDATE, USAGE
 #root_grant_option = False
 
+# used by passlib to generate root password
+#default_password_length = 36
+
 # ============ kombu connection options ========================
 
 rabbit_host=10.0.0.1
