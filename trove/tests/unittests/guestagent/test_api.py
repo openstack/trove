@@ -341,6 +341,7 @@ class RpcMsgMatcher(mockito.matchers.Matcher):
     def __init__(self, method, *args_dict):
         self.wanted_method = method
         self.wanted_dict = KeysEqual('version', 'method', 'args', 'namespace')
+        args_dict = args_dict or [{}]
         self.args_dict = KeysEqual(*args_dict)
 
     def matches(self, arg):
