@@ -16,7 +16,7 @@
 from testtools import TestCase
 from trove.common import cfg
 from trove.instance.views import get_ip_address
-
+from trove.instance.views import filter_ips
 
 CONF = cfg.CONF
 
@@ -33,6 +33,7 @@ class InstanceViewsTest(TestCase):
     def tearDown(self):
         super(InstanceViewsTest, self).tearDown()
         CONF.network_label_regex = self.orig_conf
+        CONF.ip_start = None
 
     def test_one_network_label_exact(self):
         CONF.network_label_regex = '^internal$'
@@ -56,5 +57,14 @@ class InstanceViewsTest(TestCase):
         ip = get_ip_address(self.addresses)
         self.assertTrue(len(ip) == 3)
         self.assertTrue('10.123.123.123' in ip)
+        self.assertTrue('123.123.123.123' in ip)
+        self.assertTrue('15.123.123.123' in ip)
+
+    def test_filter_ips(self):
+        CONF.network_label_regex = '.*'
+        CONF.ip_regex = '^(15.|123.)'
+        ip = get_ip_address(self.addresses)
+        ip = filter_ips(ip, CONF.ip_regex)
+        self.assertTrue(len(ip) == 2)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
