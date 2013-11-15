@@ -70,6 +70,7 @@ class MockSwift(object):
     def __init__(self, *args, **kwargs):
         self.store = ''
         self.containers = []
+        self.container = "database_backups"
         self.url = 'http://mockswift/v1'
         self.etag = hashlib.md5()
 
@@ -91,8 +92,8 @@ class MockSwift(object):
         self.etag.update(self.store)
         return self.etag.hexdigest()
 
-    def save(self, save_location, stream):
-        location = '%s/%s/%s' % (self.url, save_location, stream.manifest)
+    def save(self, filename, stream):
+        location = '%s/%s/%s' % (self.url, self.container, filename)
         return True, 'w00t', 'fake-checksum', location
 
     def load(self, context, storage_url, container, filename, backup_checksum):
@@ -100,9 +101,6 @@ class MockSwift(object):
 
 
 class MockStorage(Storage):
-    def __init__(self, context):
-        super(MockStorage, self).__init__()
-        pass
 
     def __call__(self, *args, **kwargs):
         return self
@@ -110,7 +108,7 @@ class MockStorage(Storage):
     def load(self, context, location, is_zipped, backup_checksum):
         pass
 
-    def save(self, save_location, stream):
+    def save(self, filename, stream):
         pass
 
     def is_enabled(self):
@@ -207,11 +205,6 @@ class BackupAgentTest(testtools.TestCase):
         else:
             self.assertIsNone(backup_runner.zip_manifest)
             self.assertIsNone(backup_runner.zip_cmd)
-        self.assertIsNotNone(backup_runner.prefix)
-        self.assertEqual(backup_runner.prefix, 'database_backups/sample_')
-        self.assertIsNotNone(backup_runner.segment)
-        self.assertEqual(backup_runner.segment, 'sample_00000000')
-        self.assertIsNotNone(backup_runner.backup_type)
         self.assertEqual(backup_runner.backup_type, 'BackupRunner')
 
     def test_execute_backup(self):

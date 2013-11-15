@@ -14,8 +14,6 @@
 #    under the License.
 #
 
-import hashlib
-
 from trove.guestagent.strategy import Strategy
 from trove.openstack.common import log as logging
 from trove.common import cfg, utils
@@ -24,16 +22,6 @@ import os
 import signal
 
 CONF = cfg.CONF
-
-# Read in multiples of 128 bytes, since this is the size of an md5 digest block
-# this allows us to update that while streaming the file.
-#http://stackoverflow.com/questions/1131220/get-md5-hash-of-big-files-in-python
-CHUNK_SIZE = CONF.backup_chunk_size
-MAX_FILE_SIZE = CONF.backup_segment_max_size
-BACKUP_CONTAINER = CONF.backup_swift_container
-BACKUP_USE_GZIP = CONF.backup_use_gzip_compression
-BACKUP_USE_OPENSSL = CONF.backup_use_openssl_encryption
-BACKUP_ENCRYPT_KEY = CONF.backup_aes_cbc_key
 
 LOG = logging.getLogger(__name__)
 
@@ -53,25 +41,15 @@ class BackupRunner(Strategy):
 
     # The actual system call to run the backup
     cmd = None
-    is_zipped = BACKUP_USE_GZIP
-    is_encrypted = BACKUP_USE_OPENSSL
-    encrypt_key = BACKUP_ENCRYPT_KEY
+    is_zipped = CONF.backup_use_gzip_compression
+    is_encrypted = CONF.backup_use_openssl_encryption
+    encrypt_key = CONF.backup_aes_cbc_key
 
     def __init__(self, filename, **kwargs):
-        self.filename = filename
-        self.container = BACKUP_CONTAINER
-        # how much we have written
-        self.content_length = 0
-        self.segment_length = 0
+        self.base_filename = filename
         self.process = None
         self.pid = None
-        self.writer = None
-        self.file_number = 0
-        self.written = -1
-        self.end_of_file = False
-        self.end_of_segment = False
-        self.file_checksum = hashlib.md5()
-        self.segment_checksum = hashlib.md5()
+        kwargs.update({'filename': filename})
         self.command = self.cmd % kwargs
         super(BackupRunner, self).__init__()
 
@@ -114,17 +92,15 @@ class BackupRunner(Strategy):
         return True
 
     @property
-    def segment(self):
-        return '%s_%08d' % (self.filename, self.file_number)
+    def filename(self):
+        """Subclasses may overwrite this to declare a format (.tar)"""
+        return self.base_filename
 
     @property
     def manifest(self):
-        """Subclasses may overwrite this to declare a format (.gz, .tar)"""
-        return self.filename
-
-    @property
-    def prefix(self):
-        return '%s/%s_' % (self.container, self.filename)
+        return "%s%s%s" % (self.filename,
+                           self.zip_manifest,
+                           self.encrypt_manifest)
 
     @property
     def zip_cmd(self):
@@ -148,25 +124,4 @@ class BackupRunner(Strategy):
         return True
 
     def read(self, chunk_size):
-        """Wrap self.process.stdout.read to allow for segmentation."""
-        if self.end_of_segment:
-            self.segment_length = 0
-            self.segment_checksum = hashlib.md5()
-            self.end_of_segment = False
-
-        # Upload to a new file if we are starting or too large
-        if self.segment_length > (MAX_FILE_SIZE - CHUNK_SIZE):
-            self.file_number += 1
-            self.end_of_segment = True
-            return ''
-
-        chunk = self.process.stdout.read(CHUNK_SIZE)
-        if not chunk:
-            self.end_of_file = True
-            return ''
-
-        self.file_checksum.update(chunk)
-        self.segment_checksum.update(chunk)
-        self.content_length += len(chunk)
-        self.segment_length += len(chunk)
-        return chunk
+        return self.process.stdout.read(chunk_size)

@@ -37,11 +37,6 @@ class MySQLDump(base.BackupRunner):
                ' 2>/tmp/mysqldump.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
 
-    @property
-    def manifest(self):
-        manifest = '%s' % self.filename
-        return manifest + self.zip_manifest + self.encrypt_manifest
-
 
 class InnoBackupEx(base.BackupRunner):
     """Implementation of Backup Strategy for InnoBackupEx """
@@ -55,11 +50,6 @@ class InnoBackupEx(base.BackupRunner):
                ' /var/lib/mysql 2>/tmp/innobackupex.log'
                )
         return cmd + self.zip_cmd + self.encrypt_cmd
-
-    @property
-    def manifest(self):
-        manifest = '%s.xbstream' % self.filename
-        return manifest + self.zip_manifest + self.encrypt_manifest
 
     def check_process(self):
         """Check the output from innobackupex for 'completed OK!'"""
@@ -76,3 +66,7 @@ class InnoBackupEx(base.BackupRunner):
                 return False
 
         return True
+
+    @property
+    def filename(self):
+        return '%s.xbstream' % self.base_filename

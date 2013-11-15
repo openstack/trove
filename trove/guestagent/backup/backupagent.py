@@ -34,7 +34,6 @@ CONF = cfg.CONF
 RUNNER = get_backup_strategy(CONF.backup_strategy,
                              CONF.backup_namespace)
 EXTRA_OPTS = CONF.backup_runner_options.get(CONF.backup_strategy, '')
-BACKUP_CONTAINER = CONF.backup_swift_container
 
 
 class BackupAgent(object):
@@ -58,7 +57,7 @@ class BackupAgent(object):
         LOG.info("Running backup %s", backup_info['id'])
         user = ADMIN_USER_NAME
         password = get_auth_password()
-        swiftStorage = get_storage_strategy(
+        storage = get_storage_strategy(
             CONF.storage_strategy,
             CONF.storage_namespace)(context)
 
@@ -73,14 +72,12 @@ class BackupAgent(object):
                     user=user, password=password) as bkup:
             try:
                 LOG.info("Starting Backup %s", backup_info['id'])
-                success, note, checksum, location = swiftStorage.save(
-                    BACKUP_CONTAINER,
+                success, note, checksum, location = storage.save(
+                    bkup.manifest,
                     bkup)
 
                 LOG.info("Backup %s completed status: %s", backup_info['id'],
                          success)
-                LOG.info("Backup %s file size: %s", backup_info['id'],
-                         bkup.content_length)
                 LOG.info('Backup %s file swift checksum: %s',
                          backup_info['id'], checksum)
                 LOG.info('Backup %s location: %s', backup_info['id'],
