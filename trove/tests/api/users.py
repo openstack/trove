@@ -199,7 +199,6 @@ class TestUsers(object):
         # Nothing wrong with creating two users with the same name, so long
         # as their hosts are different.
         self.dbaas.users.create(instance_info.id, users)
-        hostnames = [h.replace('.', '%2e') for h in hostnames]
         for hostname in hostnames:
             self.dbaas.users.delete(instance_info.id, username,
                                     hostname=hostname)
@@ -216,7 +215,6 @@ class TestUsers(object):
                       "host": hostname, "databases": []})
         self.dbaas.users.create(instance_info.id, users)
         user_new = {"name": "testuser2"}
-        hostname = hostname.replace('.', '%2e')
         assert_raises(exceptions.BadRequest,
                       self.dbaas.users.update_attributes, instance_info.id,
                       old_name, user_new, hostname)
@@ -237,8 +235,6 @@ class TestUsers(object):
         users.append({"name": username, "password": "password",
                       "host": hostname2, "databases": []})
         self.dbaas.users.create(instance_info.id, users)
-        hostname1 = hostname1.replace('.', '%2e')
-        hostname2 = hostname2.replace('.', '%2e')
         user_new = {"host": "192.168.0.2"}
         assert_raises(exceptions.BadRequest,
                       self.dbaas.users.update_attributes, instance_info.id,
@@ -260,8 +256,6 @@ class TestUsers(object):
                       "host": hostname2, "databases": []})
         self.dbaas.users.create(instance_info.id, users)
         user_new = {"name": "testuser2", "host": "192.168.0.2"}
-        hostname1 = hostname1.replace('.', '%2e')
-        hostname2 = hostname2.replace('.', '%2e')
         assert_raises(exceptions.BadRequest,
                       self.dbaas.users.update_attributes, instance_info.id,
                       username, user_new, hostname1)
@@ -288,7 +282,6 @@ class TestUsers(object):
                       "host": hostname, "databases": []})
         self.dbaas.users.create(instance_info.id, users)
         user_new = {"host": ""}
-        hostname = hostname.replace('.', '%2e')
         assert_raises(exceptions.BadRequest,
                       self.dbaas.users.update_attributes, instance_info.id,
                       username, user_new, hostname)
@@ -412,7 +405,6 @@ class TestUsers(object):
         assert_true(users.next is not None)
         expected_marker = "%s@%s" % (users[-1].name, users[-1].host)
         expected_marker = urllib.quote(expected_marker)
-        expected_marker = expected_marker.replace('.', '%2e')
         assert_equal(marker, expected_marker)
         marker = users.next
 

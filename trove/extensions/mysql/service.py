@@ -20,6 +20,7 @@ import webob.exc
 from trove.common import exception
 from trove.common import pagination
 from trove.common import wsgi
+from trove.common.utils import correct_id_with_req
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import unquote_user_host
@@ -97,6 +98,7 @@ class UserController(wsgi.Controller):
         LOG.info(_("Deleting user for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        id = correct_id_with_req(id, req)
         username, host = unquote_user_host(id)
         user = None
         try:
@@ -119,6 +121,7 @@ class UserController(wsgi.Controller):
         LOG.info(_("Showing a user for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        id = correct_id_with_req(id, req)
         username, host = unquote_user_host(id)
         user = None
         try:
@@ -135,6 +138,7 @@ class UserController(wsgi.Controller):
         LOG.info(_("Updating user attributes for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        id = correct_id_with_req(id, req)
         username, hostname = unquote_user_host(id)
         user = None
         user_attrs = body['user']
@@ -202,6 +206,7 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
         # Make sure this user exists.
+        user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
             LOG.error(_("No such user: %(user)s " % {'user': user}))
@@ -216,6 +221,7 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("Granting user access for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
             LOG.error(_("No such user: %(user)s " % {'user': user}))
@@ -230,6 +236,7 @@ class UserAccessController(wsgi.Controller):
         LOG.info(_("Revoking user access for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
             LOG.error(_("No such user: %(user)s " % {'user': user}))

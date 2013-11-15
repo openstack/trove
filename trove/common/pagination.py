@@ -22,7 +22,7 @@ import urlparse
 def url_quote(s):
     if s is None:
         return s
-    return urllib.quote(str(s)).replace('.', '%2e')
+    return urllib.quote(str(s))
 
 
 class PaginatedDataView(object):
