@@ -489,6 +489,41 @@ mongodb_opts = [
     cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
+# PostgreSQL
+postgresql_group = cfg.OptGroup(
+    'postgresql', title='PostgreSQL options',
+    help="Oslo option group for the PostgreSQL datastore.")
+postgresql_opts = [
+    cfg.ListOpt('tcp_ports', default=["5432"],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UPD ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.StrOpt('backup_strategy', default='PgDump',
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/postgresql',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled."),
+    cfg.BoolOpt('root_on_create', default=False,
+                help='Enable the automatic creation of the root user for the '
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                "instance-create as the 'password' field."),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.postgresql_impl'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.postgresql_impl'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'postgres', 'root']),
+    cfg.ListOpt('ignore_dbs', default=['postgres']),
+]
+
 CONF = cfg.CONF
 
 CONF.register_opts(path_opts)
@@ -507,6 +542,7 @@ CONF.register_opts(redis_opts, redis_group)
 CONF.register_opts(cassandra_opts, cassandra_group)
 CONF.register_opts(couchbase_opts, couchbase_group)
 CONF.register_opts(mongodb_opts, mongodb_group)
+CONF.register_opts(postgresql_opts, postgresql_group)
 
 
 def custom_parser(parsername, parser):

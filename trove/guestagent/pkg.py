@@ -20,7 +20,7 @@ import commands
 import re
 import subprocess
 from tempfile import NamedTemporaryFile
-
+import os
 import pexpect
 import six
 
