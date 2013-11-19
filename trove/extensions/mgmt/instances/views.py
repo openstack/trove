@@ -36,10 +36,10 @@ class MgmtInstanceView(InstanceDetailView):
                 'status': server.status,
                 'tenant_id': server.tenant_id,
             }
-            if hasattr(server, 'hostId'):
-                result['instance']['server']['host'] = server.hostId
-            else:
+            if hasattr(server, 'host'):
                 result['instance']['server']['host'] = server.host
+            else:
+                result['instance']['server']['host'] = server.hostId
             if hasattr(server, 'deleted'):
                 result['instance']['server']['deleted'] = server.deleted
             if hasattr(server, 'deleted_at'):
