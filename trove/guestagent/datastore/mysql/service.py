@@ -114,6 +114,8 @@ def load_mysqld_options():
         if os.path.isfile(bin):
             mysqld_bin = bin
             break
+    else:
+        return {}
     try:
         out, err = utils.execute(mysqld_bin, "--print-defaults",
                                  run_as_root=True, root_helper="sudo")
