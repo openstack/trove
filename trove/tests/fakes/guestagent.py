@@ -207,7 +207,7 @@ class FakeGuest(object):
                 % (username, hostname))
         return self.users.get((username, hostname), None)
 
-    def prepare(self, memory_mb, databases, users, device_path=None,
+    def prepare(self, memory_mb, packages, databases, users, device_path=None,
                 mount_point=None, backup_id=None, config_contents=None,
                 root_password=None):
         from trove.instance.models import DBInstance

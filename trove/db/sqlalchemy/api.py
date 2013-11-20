@@ -35,6 +35,10 @@ def count(query, *args, **kwargs):
     return query(*args, **kwargs).count()
 
 
+def first(query, *args, **kwargs):
+    return query(*args, **kwargs).first()
+
+
 def find_all(model, **conditions):
     return _query_by(model, **conditions)
 

@@ -96,6 +96,41 @@ class DnsRecordNotFound(NotFound):
     message = _("DnsRecord with name= %(name)s not found.")
 
 
+class DatastoreNotFound(NotFound):
+
+    message = _("Datastore '%(datastore)s' cannot be found.")
+
+
+class DatastoreVersionNotFound(NotFound):
+
+    message = _("Datastore version '%(version)s' cannot be found.")
+
+
+class DatastoresNotFound(NotFound):
+
+    message = _("Datastores cannot be found.")
+
+
+class DatastoreNoVersion(TroveError):
+
+    message = _("Datastore '%(datastore)s' has no version '%(version)s'.")
+
+
+class DatastoreVersionInactive(TroveError):
+
+    message = _("Datastore version '%(version)s' is not active.")
+
+
+class DatastoreDefaultDatastoreNotFound(TroveError):
+
+    message = _("Please specify datastore.")
+
+
+class DatastoreDefaultVersionNotFound(TroveError):
+
+    message = _("Default version for datastore '%(datastore)s' not found.")
+
+
 class OverLimit(TroveError):
 
     internal_message = _("The server rejected the request due to its size or "

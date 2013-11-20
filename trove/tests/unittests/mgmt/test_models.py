@@ -24,6 +24,7 @@ from oslo.config.cfg import ConfigOpts
 from trove.backup.models import Backup
 from trove.common.context import TroveContext
 from trove.common import instance as rd_instance
+from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
@@ -31,6 +32,7 @@ from trove.instance.tasks import InstanceTasks
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.openstack.common.notifier import api as notifier
 from trove.common import remote
+from trove.tests.util import test_config
 
 
 class MockMgmtInstanceTest(TestCase):
@@ -62,11 +64,12 @@ class MockMgmtInstanceTest(TestCase):
                           name='test_name',
                           id='1',
                           flavor_id='flavor_1',
+                          datastore_version_id=
+                          test_config.dbaas_datastore_version,
                           compute_instance_id='compute_id_1',
                           server_id='server_id_1',
                           tenant_id='tenant_id_1',
-                          server_status=status,
-                          service_type='mysql')
+                          server_status=status)
 
 
 class TestNotificationTransformer(MockMgmtInstanceTest):
@@ -78,6 +81,10 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
 
         when(DatabaseModelBase).find_all(deleted=False).thenReturn(
             [db_instance])
+        stub_datastore = mock()
+        stub_datastore.datastore_id = "stub"
+        stub_datastore.manager = "mysql"
+        when(DatabaseModelBase).find_by(id=any()).thenReturn(stub_datastore)
         when(DatabaseModelBase).find_by(instance_id='1').thenReturn(
             InstanceServiceStatus(rd_instance.ServiceStatuses.BUILDING))
 
@@ -165,14 +172,17 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(payload['user_id'], Equals('test_user_id'))
         self.assertThat(payload['service_id'], Equals('123'))
 
-    def test_tranformer_invalid_service_type(self):
+    def test_tranformer_invalid_datastore_manager(self):
         status = rd_instance.ServiceStatuses.BUILDING.api_status
         db_instance = MockMgmtInstanceTest.build_db_instance(
             status, task_status=InstanceTasks.BUILDING)
-        db_instance.service_type = 'm0ng0'
 
         server = mock(Server)
         server.user_id = 'test_user_id'
+        stub_datastore = mock()
+        stub_datastore.manager = "m0ng0"
+        when(datastore_models.
+             Datastore).load(any()).thenReturn(stub_datastore)
         mgmt_instance = mgmtmodels.SimpleMgmtInstance(self.context,
                                                       db_instance,
                                                       server,

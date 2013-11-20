@@ -30,6 +30,7 @@ from trove.common import utils
 from trove.extensions.security_group.models import SecurityGroup
 from trove.db import get_db_api
 from trove.db import models as dbmodels
+from trove.datastore import models as datastore_models
 from trove.backup.models import Backup
 from trove.quota.quota import run_with_quotas
 from trove.instance.tasks import InstanceTask
@@ -121,6 +122,10 @@ class SimpleInstance(object):
         self.db_info = db_info
         self.service_status = service_status
         self.root_pass = root_password
+        self.ds_version = (datastore_models.DatastoreVersion.
+                           load(self.db_info.datastore_version_id))
+        self.ds = (datastore_models.Datastore.
+                   load(self.ds_version.datastore_id))
 
     @property
     def addresses(self):
@@ -227,8 +232,12 @@ class SimpleInstance(object):
         return self.db_info.volume_size
 
     @property
-    def service_type(self):
-        return self.db_info.service_type
+    def datastore_version(self):
+        return self.ds_version
+
+    @property
+    def datastore(self):
+        return self.ds
 
     @property
     def root_password(self):
@@ -426,8 +435,8 @@ class Instance(BuiltInstance):
     """
 
     @classmethod
-    def create(cls, context, name, flavor_id, image_id,
-               databases, users, service_type, volume_size, backup_id,
+    def create(cls, context, name, flavor_id, image_id, databases, users,
+               datastore, datastore_version, volume_size, backup_id,
                availability_zone=None):
 
         client = create_nova_client(context)
@@ -463,7 +472,8 @@ class Instance(BuiltInstance):
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,
                                         volume_size=volume_size,
-                                        service_type=service_type,
+                                        datastore_version_id=
+                                        datastore_version.id,
                                         task_status=InstanceTasks.BUILDING)
             LOG.debug(_("Tenant %(tenant)s created new "
                         "Trove instance %(db)s...") %
@@ -485,8 +495,9 @@ class Instance(BuiltInstance):
 
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,
-                                                  service_type, volume_size,
-                                                  backup_id,
+                                                  datastore.manager,
+                                                  datastore_version.packages,
+                                                  volume_size, backup_id,
                                                   availability_zone,
                                                   root_password)
 
@@ -694,7 +705,8 @@ class DBInstance(dbmodels.DatabaseModelBase):
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
-                    'volume_id', 'deleted', 'tenant_id', 'service_type']
+                    'volume_id', 'deleted', 'tenant_id',
+                    'datastore_version_id']
 
     def __init__(self, task_status, **kwargs):
         kwargs["task_id"] = task_status.code
@@ -717,12 +729,6 @@ class DBInstance(dbmodels.DatabaseModelBase):
         self.task_description = value.db_text
 
     task_status = property(get_task_status, set_task_status)
-
-
-class ServiceImage(dbmodels.DatabaseModelBase):
-    """Defines the status of the service being run."""
-
-    _data_fields = ['service_name', 'image_id']
 
 
 class InstanceServiceStatus(dbmodels.DatabaseModelBase):
@@ -758,7 +764,6 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
 def persisted_models():
     return {
         'instance': DBInstance,
-        'service_image': ServiceImage,
         'service_statuses': InstanceServiceStatus,
     }
 

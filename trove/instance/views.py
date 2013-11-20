@@ -55,6 +55,7 @@ class InstanceView(object):
             "status": self.instance.status,
             "links": self._build_links(),
             "flavor": self._build_flavor_info(),
+            "datastore": {"type": self.instance.datastore.name},
         }
         if CONF.trove_volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
@@ -87,6 +88,9 @@ class InstanceDetailView(InstanceView):
         result = super(InstanceDetailView, self).data()
         result['instance']['created'] = self.instance.created
         result['instance']['updated'] = self.instance.updated
+
+        result['instance']['datastore']['version'] = (self.instance.
+                                                      datastore_version.name)
 
         dns_support = CONF.trove_dns_support
         if dns_support:

@@ -69,14 +69,14 @@ class NotifyMixin(object):
     This adds the ability to send usage events to an Instance object.
     """
 
-    def _get_service_id(self, service_type, id_map):
-        if service_type in id_map:
-            service_type_id = id_map[service_type]
+    def _get_service_id(self, datastore_manager, id_map):
+        if datastore_manager in id_map:
+            datastore_manager_id = id_map[datastore_manager]
         else:
-            service_type_id = cfg.UNKNOWN_SERVICE_ID
-            LOG.error(_("Service ID for Type (%s) is not configured")
-                      % service_type)
-        return service_type_id
+            datastore_manager_id = cfg.UNKNOWN_SERVICE_ID
+            LOG.error("Datastore ID for Manager (%s) is not configured"
+                      % datastore_manager)
+        return datastore_manager_id
 
     def send_usage_event(self, event_type, **kwargs):
         event_type = 'trove.instance.%s' % event_type
@@ -117,7 +117,7 @@ class NotifyMixin(object):
             })
 
         payload['service_id'] = self._get_service_id(
-            self.service_type, CONF.notification_service_id)
+            self.datastore.manager, CONF.notification_service_id)
 
         # Update payload with all other kwargs
         payload.update(kwargs)
@@ -133,17 +133,17 @@ class ConfigurationMixin(object):
     Configuration related tasks for instances and resizes.
     """
 
-    def _render_config(self, service_type, flavor, instance_id):
+    def _render_config(self, datastore_manager, flavor, instance_id):
         config = template.SingleInstanceConfigTemplate(
-            service_type, flavor, instance_id)
+            datastore_manager, flavor, instance_id)
         config.render()
         return config
 
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
-                        service_type, volume_size, backup_id,
-                        availability_zone, root_password):
+                        datastore_manager, packages, volume_size,
+                        backup_id, availability_zone, root_password):
 
         LOG.debug(_("begin create_instance for id: %s") % self.id)
         security_groups = None
@@ -170,7 +170,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 flavor,
                 image_id,
                 security_groups,
-                service_type,
+                datastore_manager,
                 volume_size,
                 availability_zone)
         elif use_nova_server_volume:
@@ -178,7 +178,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 flavor['id'],
                 image_id,
                 security_groups,
-                service_type,
+                datastore_manager,
                 volume_size,
                 availability_zone)
         else:
@@ -186,15 +186,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 flavor['id'],
                 image_id,
                 security_groups,
-                service_type,
+                datastore_manager,
                 volume_size,
                 availability_zone)
 
-        config = self._render_config(service_type, flavor, self.id)
+        config = self._render_config(datastore_manager, flavor, self.id)
 
         if server:
             self._guest_prepare(server, flavor['ram'], volume_info,
-                                databases, users, backup_id,
+                                packages, databases, users, backup_id,
                                 config.config_contents, root_password)
 
         if not self.db_info.task_status.is_error:
@@ -285,15 +285,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return False
 
     def _create_server_volume(self, flavor_id, image_id, security_groups,
-                              service_type, volume_size,
+                              datastore_manager, volume_size,
                               availability_zone):
         LOG.debug(_("begin _create_server_volume for id: %s") % self.id)
         server = None
         try:
-            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id=%s\n"
-                                         "--service_type=%s\n"
+            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
+                                         "%s\n--datastore_manager=%s\n"
                                          "--tenant_id=%s\n" %
-                                         (self.id, service_type,
+                                         (self.id, datastore,
                                           self.tenant_id))}
             name = self.hostname or self.name
             volume_desc = ("mysql volume for %s" % self.id)
@@ -332,14 +332,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return server, volume_info
 
     def _create_server_volume_heat(self, flavor, image_id,
-                                   security_groups, service_type,
+                                   security_groups, datastore_manager,
                                    volume_size, availability_zone):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
         client = create_heat_client(self.context)
         novaclient = create_nova_client(self.context)
         cinderclient = create_cinder_client(self.context)
 
-        template_obj = template.load_heat_template(service_type)
+        template_obj = template.load_heat_template(datastore_manager)
         heat_template_unicode = template_obj.render()
         try:
             heat_template = heat_template_unicode.encode('ascii')
@@ -351,6 +351,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       "VolumeSize": volume_size,
                       "InstanceId": self.id,
                       "ImageId": image_id,
+                      "DatastoreManager": datastore_manager,
                       "AvailabilityZone": availability_zone}
         stack_name = 'trove-%s' % self.id
         client.stacks.create(stack_name=stack_name,
@@ -377,7 +378,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return server, volume_info
 
     def _create_server_volume_individually(self, flavor_id, image_id,
-                                           security_groups, service_type,
+                                           security_groups, datastore_manager,
                                            volume_size,
                                            availability_zone):
         LOG.debug(_("begin _create_server_volume_individually for id: %s") %
@@ -387,7 +388,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         block_device_mapping = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
-                                         service_type, block_device_mapping,
+                                         datastore_manager,
+                                         block_device_mapping,
                                          availability_zone)
             server_id = server.id
             # Save server ID.
@@ -477,17 +479,19 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return volume_info
 
     def _create_server(self, flavor_id, image_id, security_groups,
-                       service_type, block_device_mapping,
+                       datastore_manager, block_device_mapping,
                        availability_zone):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
-                                     "service_type=%s\n" "tenant_id=%s\n" %
-                                     (self.id, service_type, self.tenant_id))}
+                                     "datastore_manager=%s\n"
+                                     "tenant_id=%s\n" %
+                                     (self.id, datastore_manager,
+                                      self.tenant_id))}
         if os.path.isfile(CONF.get('guest_config')):
             with open(CONF.get('guest_config'), "r") as f:
                 files["/etc/trove-guestagent.conf"] = f.read()
         userdata = None
         cloudinit = os.path.join(CONF.get('cloudinit_location'),
-                                 "%s.cloudinit" % service_type)
+                                 "%s.cloudinit" % datastore_manager)
         if os.path.isfile(cloudinit):
             with open(cloudinit, "r") as f:
                 userdata = f.read()
@@ -503,11 +507,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return server
 
     def _guest_prepare(self, server, flavor_ram, volume_info,
-                       databases, users, backup_id=None,
+                       packages, databases, users, backup_id=None,
                        config_contents=None, root_password=None):
         LOG.info(_("Entering guest_prepare"))
         # Now wait for the response from the create to do additional work
-        self.guest.prepare(flavor_ram, databases, users,
+        self.guest.prepare(flavor_ram, packages, databases, users,
                            device_path=volume_info['device_path'],
                            mount_point=volume_info['mount_point'],
                            backup_id=backup_id,
@@ -1007,7 +1011,7 @@ class ResizeAction(ResizeActionBase):
                   % self.instance.id)
         LOG.debug(_("Repairing config."))
         try:
-            config = self._render_config(self.instance.service_type,
+            config = self._render_config(self.instance.datastore.manager,
                                          self.old_flavor, self.instance.id)
             config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
@@ -1028,7 +1032,7 @@ class ResizeAction(ResizeActionBase):
             modify_at=timeutils.isotime(self.instance.updated))
 
     def _start_mysql(self):
-        config = self._render_config(self.instance.service_type,
+        config = self._render_config(self.instance.datastore.manager,
                                      self.new_flavor, self.instance.id)
         self.instance.guest.start_db_with_conf_changes(config.config_contents)
 

@@ -64,8 +64,6 @@ common_opts = [
     cfg.IntOpt('periodic_interval', default=60),
     cfg.BoolOpt('trove_dns_support', default=False),
     cfg.StrOpt('db_api_implementation', default='trove.db.sqlalchemy.api'),
-    cfg.StrOpt('mysql_pkg', default='mysql-server-5.5'),
-    cfg.StrOpt('percona_pkg', default='percona-server-server-5.5'),
     cfg.StrOpt('dns_driver', default='trove.dns.driver.DnsDriver'),
     cfg.StrOpt('dns_instance_entry_factory',
                default='trove.dns.driver.DnsInstanceEntryFactory'),
@@ -111,13 +109,18 @@ common_opts = [
     cfg.BoolOpt('use_heat', default=False),
     cfg.StrOpt('device_path', default='/dev/vdb'),
     cfg.StrOpt('mount_point', default='/var/lib/mysql'),
-    cfg.StrOpt('service_type', default='mysql'),
+    cfg.StrOpt('default_datastore', default=None,
+               help="The default datastore id or name to use if one is not "
+               "provided by the user. If the default value is None, the field"
+               " becomes required in the instance-create request."),
+    cfg.StrOpt('datastore_manager', default=None,
+               help='manager class in guestagent, setup by taskmanager on '
+               'instance provision'),
     cfg.StrOpt('block_device_mapping', default='vdb'),
     cfg.IntOpt('server_delete_time_out', default=60),
     cfg.IntOpt('volume_time_out', default=60),
     cfg.IntOpt('heat_time_out', default=60),
     cfg.IntOpt('reboot_time_out', default=60 * 2),
-    cfg.StrOpt('service_options', default=['mysql']),
     cfg.IntOpt('dns_time_out', default=60 * 2),
     cfg.IntOpt('resize_time_out', default=60 * 10),
     cfg.IntOpt('revert_time_out', default=60 * 10),
@@ -212,10 +215,10 @@ common_opts = [
     cfg.StrOpt('guest_config',
                default='$pybasedir/etc/trove/trove-guestagent.conf.sample',
                help="Path to guestagent config file"),
-    cfg.DictOpt('service_registry_ext', default=dict(),
-                help='Extention for default service managers.'
+    cfg.DictOpt('datastore_registry_ext', default=dict(),
+                help='Extention for default datastore managers.'
                      ' Allows to use custom managers for each of'
-                     ' service type supported in trove'),
+                     ' datastore supported in trove'),
     cfg.StrOpt('template_path',
                default='/etc/trove/templates/',
                help='Path which leads to datastore templates'),

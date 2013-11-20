@@ -20,6 +20,7 @@ from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
 from trove.backup.service import BackupController
 from trove.versions import VersionsController
+from trove.datastore.service import DatastoreController
 
 
 class API(wsgi.Router):
@@ -28,6 +29,7 @@ class API(wsgi.Router):
         mapper = routes.Mapper()
         super(API, self).__init__(mapper)
         self._instance_router(mapper)
+        self._datastore_router(mapper)
         self._flavor_router(mapper)
         self._versions_router(mapper)
         self._limits_router(mapper)
@@ -36,6 +38,17 @@ class API(wsgi.Router):
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
         mapper.connect("/", controller=versions_resource, action="show")
+
+    def _datastore_router(self, mapper):
+        datastore_resource = DatastoreController().create_resource()
+        mapper.resource("datastore", "/{tenant_id}/datastores",
+                        controller=datastore_resource)
+        mapper.connect("/{tenant_id}/datastores/{datastore}/versions",
+                       controller=datastore_resource,
+                       action="version_index")
+        mapper.connect("/{tenant_id}/datastores/{datastore}/versions/{id}",
+                       controller=datastore_resource,
+                       action="version_show")
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()

@@ -15,6 +15,7 @@ import testtools
 from mock import Mock
 from testtools.matchers import Equals
 from mockito import mock, when, unstub, any, verify, never
+from trove.datastore import models as datastore_models
 from trove.taskmanager import models as taskmanager_models
 import trove.common.remote as remote
 from trove.common.instance import ServiceStatuses
@@ -138,6 +139,10 @@ class FreshInstanceTasksTest(testtools.TestCase):
             "hostname")
         when(taskmanager_models.FreshInstanceTasks).name().thenReturn(
             'name')
+        when(datastore_models.
+             DatastoreVersion).load(any()).thenReturn(mock())
+        when(datastore_models.
+             Datastore).load(any()).thenReturn(mock())
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
         taskmanager_models.CONF = mock()
         when(taskmanager_models.CONF).get(any()).thenReturn('')
@@ -152,7 +157,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
             self.guestconfig = f.name
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
-            None, None, None, None)
+            None, mock(), None, None)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()
@@ -164,11 +169,12 @@ class FreshInstanceTasksTest(testtools.TestCase):
 
     def test_create_instance_userdata(self):
         cloudinit_location = os.path.dirname(self.cloudinit)
-        service_type = os.path.splitext(os.path.basename(self.cloudinit))[0]
+        datastore_manager = os.path.splitext(os.path.basename(self.
+                                                              cloudinit))[0]
         when(taskmanager_models.CONF).get("cloudinit_location").thenReturn(
             cloudinit_location)
         server = self.freshinstancetasks._create_server(
-            None, None, None, service_type, None, None)
+            None, None, None, datastore_manager, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
     def test_create_instance_guestconfig(self):
@@ -181,23 +187,20 @@ class FreshInstanceTasksTest(testtools.TestCase):
                          self.guestconfig_content)
 
     def test_create_instance_with_az_kwarg(self):
-        service_type = 'mysql'
         server = self.freshinstancetasks._create_server(
-            None, None, None, service_type, None, availability_zone='nova')
+            None, None, None, None, None, availability_zone='nova')
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az(self):
-        service_type = 'mysql'
         server = self.freshinstancetasks._create_server(
-            None, None, None, service_type, None, 'nova')
+            None, None, None, None, None, 'nova')
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az_none(self):
-        service_type = 'mysql'
         server = self.freshinstancetasks._create_server(
-            None, None, None, service_type, None, None)
+            None, None, None, None, None, None)
 
         self.assertIsNotNone(server)
 

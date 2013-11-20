@@ -20,6 +20,7 @@ Manages packages on the Guest VM.
 """
 import commands
 import re
+from tempfile import NamedTemporaryFile
 
 import pexpect
 
@@ -35,6 +36,7 @@ LOG = logging.getLogger(__name__)
 OK = 0
 RUN_DPKG_FIRST = 1
 REINSTALL_FIRST = 2
+CONFLICT_REMOVED = 3
 
 
 class PkgAdminLockError(exception.TroveError):
@@ -61,11 +63,15 @@ class PkgScriptletError(exception.TroveError):
     pass
 
 
-class PkgTransactionCheckError(exception.TroveError):
+class PkgDownloadError(exception.TroveError):
     pass
 
 
-class PkgDownloadError(exception.TroveError):
+class PkgSignError(exception.TroveError):
+    pass
+
+
+class PkgBrokenError(exception.TroveError):
     pass
 
 
@@ -84,16 +90,29 @@ class BasePackagerMixin:
         child = pexpect.spawn(cmd, timeout=time_out)
         try:
             i = child.expect(output_expects)
+            match = child.match
             self.pexpect_wait_and_close_proc(child)
         except pexpect.TIMEOUT:
             self.pexpect_kill_proc(child)
             raise PkgTimeout("Process timeout after %i seconds." % time_out)
-        return i
+        return (i, match)
 
 
 class RedhatPackagerMixin(BasePackagerMixin):
 
-    def _install(self, package_name, time_out):
+    def _rpm_remove_nodeps(self, package_name):
+        """
+        Sometimes transaction errors happens, easy way is to remove
+        conflicted package without dependencies and hope it will replaced
+        by anoter package
+        """
+        try:
+            utils.execute("rpm", "-e", "--nodeps", package_name,
+                          run_as_root=True, root_helper="sudo")
+        except ProcessExecutionError:
+            LOG.error(_("Error removing conflict %s") % package_name)
+
+    def _install(self, packages, time_out):
         """Attempts to install a package.
 
         Returns OK if the package installs fine or a result code if a
@@ -101,27 +120,35 @@ class RedhatPackagerMixin(BasePackagerMixin):
         Raises an exception if a non-recoverable error or time out occurs.
 
         """
-        cmd = "sudo yum --color=never -y install %s" % package_name
+        cmd = "sudo yum --color=never -y install %s" % packages
         output_expects = ['\[sudo\] password for .*:',
-                          'No package %s available.' % package_name,
-                          'Transaction Check Error:',
+                          'No package (.*) available.',
+                          ('file .* from install of .* conflicts with file'
+                           ' from package (.*?)\r\n'),
+                          'Error: (.*?) conflicts with .*?\r\n',
+                          'Processing Conflict: .* conflicts (.*?)\r\n',
                           '.*scriptlet failed*',
                           'HTTP Error',
                           'No more mirrors to try.',
+                          'GPG key retrieval failed:',
                           '.*already installed and latest version',
                           'Updated:',
                           'Installed:']
-        i = self.pexpect_run(cmd, output_expects, time_out)
+        LOG.debug("Running package install command: %s" % cmd)
+        i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError("Invalid permissions.")
         elif i == 1:
-            raise PkgNotFoundError("Could not find pkg %s" % package_name)
-        elif i == 2:
-            raise PkgTransactionCheckError("Transaction Check Error")
-        elif i == 3:
+            raise PkgNotFoundError("Could not find pkg %s" % match.group(1))
+        elif i == 2 or i == 3 or i == 4:
+            self._rpm_remove_nodeps(match.group(1))
+            return CONFLICT_REMOVED
+        elif i == 5:
             raise PkgScriptletError("Package scriptlet failed")
-        elif i == 4 or i == 5:
+        elif i == 6 or i == 7:
             raise PkgDownloadError("Package download problem")
+        elif i == 8:
+            raise PkgSignError("GPG key retrieval failed")
         return OK
 
     def _remove(self, package_name, time_out):
@@ -136,18 +163,35 @@ class RedhatPackagerMixin(BasePackagerMixin):
         output_expects = ['\[sudo\] password for .*:',
                           'No Packages marked for removal',
                           'Removed:']
-        i = self.pexpect_run(cmd, output_expects, time_out)
+        i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError("Invalid permissions.")
         elif i == 1:
             raise PkgNotFoundError("Could not find pkg %s" % package_name)
         return OK
 
-    def pkg_install(self, package_name, time_out):
-        result = self._install(package_name, time_out)
+    def pkg_install(self, packages, config_opts, time_out):
+        result = self._install(packages, time_out)
         if result != OK:
-            raise PkgPackageStateError("Package %s is in a bad state."
-                                       % package_name)
+            while result == CONFLICT_REMOVED:
+                result = self._install(packages, time_out)
+            if result != OK:
+                raise PkgPackageStateError("Cannot install packages.")
+
+    def pkg_is_installed(self, packages):
+        pkg_list = packages.split()
+        cmd = "rpm -qa"
+        p = commands.getstatusoutput(cmd)
+        std_out = p[1]
+        for pkg in pkg_list:
+            found = False
+            for line in std_out.split("\n"):
+                if line.find(pkg) != -1:
+                    found = True
+                    break
+            if not found:
+                return False
+        return True
 
     def pkg_version(self, package_name):
         cmd_list = ["rpm", "-qa", "--qf", "'%{VERSION}-%{RELEASE}\n'",
@@ -185,33 +229,71 @@ class DebianPackagerMixin(BasePackagerMixin):
         except ProcessExecutionError:
             LOG.error(_("Error fixing dpkg"))
 
-    def _install(self, package_name, time_out):
-        """Attempts to install a package.
+    def _fix_package_selections(self, packages, config_opts):
+        """
+        Sometimes you have to run this command before a pkg will install.
+        This command sets package selections to configure package.
+        """
+        selections = ""
+        for package in packages:
+            m = re.match('(.+)=(.+)', package)
+            if m:
+                package_name = m.group(1)
+            else:
+                package_name = package
+            command = "sudo debconf-show %s" % package_name
+            p = commands.getstatusoutput(command)
+            std_out = p[1]
+            for line in std_out.split("\n"):
+                for selection, value in config_opts.items():
+                    m = re.match(".* (.*/%s):.*" % selection, line)
+                    if m:
+                        selections += ("%s %s string '%s'\n" %
+                                       (package_name, m.group(1), value))
+        if selections:
+            with NamedTemporaryFile(delete=False) as f:
+                fname = f.name
+                f.write(selections)
+            utils.execute("debconf-set-selections %s && dpkg --configure -a"
+                          % fname, run_as_root=True, root_helper="sudo",
+                          shell=True)
+            os.remove(fname)
+
+    def _install(self, packages, time_out):
+        """Attempts to install a packages.
 
         Returns OK if the package installs fine or a result code if a
         recoverable-error occurred.
         Raises an exception if a non-recoverable error or time out occurs.
 
         """
-        cmd = "sudo -E DEBIAN_FRONTEND=noninteractive " \
-              "apt-get -y --allow-unauthenticated install %s" % package_name
+        cmd = "sudo -E DEBIAN_FRONTEND=noninteractive apt-get -y " \
+              "--force-yes --allow-unauthenticated -o " \
+              "DPkg::options::=--force-confmiss --reinstall " \
+              "install %s" % packages
         output_expects = ['.*password*',
-                          'E: Unable to locate package %s' % package_name,
-                          "Couldn't find package % s" % package_name,
+                          'E: Unable to locate package (.*)',
+                          "Couldn't find package (.*)",
+                          "E: Version '.*' for '(.*)' was not found",
                           ("dpkg was interrupted, you must manually run "
                            "'sudo dpkg --configure -a'"),
                           "Unable to lock the administration directory",
-                          "Setting up %s*" % package_name,
+                          ("E: Unable to correct problems, you have held "
+                           "broken packages."),
+                          "Setting up (.*)",
                           "is already the newest version"]
-        i = self.pexpect_run(cmd, output_expects, time_out)
+        LOG.debug("Running package install command: %s" % cmd)
+        i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError("Invalid permissions.")
-        elif i == 1 or i == 2:
-            raise PkgNotFoundError("Could not find apt %s" % package_name)
-        elif i == 3:
-            return RUN_DPKG_FIRST
+        elif i == 1 or i == 2 or i == 3:
+            raise PkgNotFoundError("Could not find apt %s" % match.group(1))
         elif i == 4:
+            return RUN_DPKG_FIRST
+        elif i == 5:
             raise PkgAdminLockError()
+        elif i == 6:
+            raise PkgBrokenError()
         return OK
 
     def _remove(self, package_name, time_out):
@@ -232,7 +314,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                            "'sudo dpkg --configure -a'"),
                           "Unable to lock the administration directory",
                           "Removing %s*" % package_name]
-        i = self.pexpect_run(cmd, output_expects, time_out)
+        i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError("Invalid permissions.")
         elif i == 1:
@@ -245,58 +327,54 @@ class DebianPackagerMixin(BasePackagerMixin):
             raise PkgAdminLockError()
         return OK
 
-    def pkg_install(self, package_name, time_out):
-        """Installs a package."""
+    def pkg_install(self, packages, config_opts, time_out):
+        """Installs a packages."""
         try:
             utils.execute("apt-get", "update", run_as_root=True,
                           root_helper="sudo")
         except ProcessExecutionError:
             LOG.error(_("Error updating the apt sources"))
 
-        result = self._install(package_name, time_out)
+        result = self._install(packages, time_out)
         if result != OK:
             if result == RUN_DPKG_FIRST:
                 self._fix(time_out)
-            result = self._install(package_name, time_out)
+            result = self._install(packages, time_out)
             if result != OK:
-                raise PkgPackageStateError("Package %s is in a bad state."
-                                           % package_name)
+                raise PkgPackageStateError("Packages is in a bad state.")
+        # even after successful install, packages can stay unconfigured
+        # config_opts - is dict with name/value for questions asked by
+        # interactive configure script
+        self._fix_package_selections(packages, config_opts)
 
     def pkg_version(self, package_name):
-        cmd_list = ["dpkg", "-l", package_name]
-        p = commands.getstatusoutput(' '.join(cmd_list))
-        # check the command status code
-        if not p[0] == 0:
-            return None
-        # Need to capture the version string
-        # check the command output
+        p = commands.getstatusoutput("apt-cache policy %s" % package_name)
         std_out = p[1]
-        patterns = ['.*No packages found matching.*',
-                    "\w\w\s+(\S+)\s+(\S+)\s+(.*)$"]
         for line in std_out.split("\n"):
-            for p in patterns:
-                regex = re.compile(p)
-                matches = regex.match(line)
-                if matches:
-                    line = matches.group()
-                    parts = line.split()
-                    if not parts:
-                        msg = _("returned nothing")
-                        LOG.error(msg)
-                        raise exception.GuestError(msg)
-                    if len(parts) <= 2:
-                        msg = _("Unexpected output.")
-                        LOG.error(msg)
-                        raise exception.GuestError(msg)
-                    if parts[1] != package_name:
-                        msg = _("Unexpected output:[1] = %s") % str(parts[1])
-                        LOG.error(msg)
-                        raise exception.GuestError(msg)
-                    if parts[0] == 'un' or parts[2] == '<none>':
-                        return None
-                    return parts[2]
-        msg = _("version() saw unexpected output from dpkg!")
-        LOG.error(msg)
+            m = re.match("\s+Installed: (.*)", line)
+            if m:
+                version = m.group(1)
+                if version == "(none)":
+                    version = None
+                return version
+
+    def pkg_is_installed(self, packages):
+        pkg_list = packages.split()
+        for pkg in pkg_list:
+            m = re.match('(.+)=(.+)', pkg)
+            if m:
+                package_name = m.group(1)
+                package_version = m.group(2)
+            else:
+                package_name = pkg
+                package_version = None
+            installed_version = self.pkg_version(package_name)
+            if ((package_version and installed_version == package_version) or
+               (installed_version and not package_version)):
+                LOG.debug(_("Package %s already installed.") % package_name)
+            else:
+                return False
+        return True
 
     def pkg_remove(self, package_name, time_out):
         """Removes a package."""

@@ -42,6 +42,7 @@ def configure_db(options, models_mapper=None):
         models_mapper.map(_ENGINE)
     else:
         from trove.instance import models as base_models
+        from trove.datastore import models as datastores_models
         from trove.dns import models as dns_models
         from trove.extensions.mysql import models as mysql_models
         from trove.guestagent import models as agent_models
@@ -51,6 +52,7 @@ def configure_db(options, models_mapper=None):
 
         model_modules = [
             base_models,
+            datastores_models,
             dns_models,
             mysql_models,
             agent_models,

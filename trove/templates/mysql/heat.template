@@ -10,6 +10,8 @@ Parameters:
     Type: String
   ImageId:
     Type: String
+  DatastoreManager:
+    Type: String
   AvailabilityZone:
     Type: String
     Default: nova
@@ -25,7 +27,7 @@ Resources:
                 Fn::Join:
                 - ''
                 - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
-                  "\nservice_type=mysql"]
+                  "\\ndatastore_manager=", {Ref: DatastoreManager}]
               mode: '000644'
               owner: root
               group: root

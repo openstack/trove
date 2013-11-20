@@ -52,16 +52,41 @@ def initialize_trove(config_file):
     return pastedeploy.paste_deploy_app(config_file, 'trove', {})
 
 
+def datastore_init():
+    # Adds the datastore for mysql (needed to make most calls work).
+    from trove.datastore import models
+    models.DBDatastore.create(id="a00000a0-00a0-0a00-00a0-000a000000aa",
+                              name=CONFIG.dbaas_datastore, manager='mysql',
+                              default_version_id=
+                              "b00000b0-00b0-0b00-00b0-000b000000bb")
+    models.DBDatastore.create(id="e00000e0-00e0-0e00-00e0-000e000000ee",
+                              name='Test_Datastore_1', manager='manager1',
+                              default_version_id=None)
+    models.DBDatastoreVersion.create(id="b00000b0-00b0-0b00-00b0-000b000000bb",
+                                     datastore_id=
+                                     "a00000a0-00a0-0a00-00a0-000a000000aa",
+                                     name=CONFIG.dbaas_datastore_version,
+                                     image_id=
+                                     'c00000c0-00c0-0c00-00c0-000c000000cc',
+                                     packages='test packages',
+                                     active=1)
+    models.DBDatastoreVersion.create(id="d00000d0-00d0-0d00-00d0-000d000000dd",
+                                     datastore_id=
+                                     "a00000a0-00a0-0a00-00a0-000a000000aa",
+                                     name='mysql_inactive_version',
+                                     image_id=
+                                     'c00000c0-00c0-0c00-00c0-000c000000cc',
+                                     packages=None, active=0)
+
+
 def initialize_database():
     from trove.db import get_db_api
-    from trove.instance import models
     from trove.db.sqlalchemy import session
     db_api = get_db_api()
     db_api.drop_db(CONF)  # Destroys the database, if it exists.
     db_api.db_sync(CONF)
     session.configure_db(CONF)
-    # Adds the image for mysql (needed to make most calls work).
-    models.ServiceImage.create(service_name="mysql", image_id="fake")
+    datastore_init()
     db_api.configure_db(CONF)
 
 
@@ -125,6 +150,7 @@ if __name__ == "__main__":
         from trove.tests.api import instances_mysql_down
         from trove.tests.api import instances_resize
         from trove.tests.api import databases
+        from trove.tests.api import datastores
         from trove.tests.api import root
         from trove.tests.api import root_on_create
         from trove.tests.api import users

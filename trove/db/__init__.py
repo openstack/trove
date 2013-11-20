@@ -51,6 +51,10 @@ class Query(object):
         return self.db_api.count(self._query_func, self._model,
                                  **self._conditions)
 
+    def first(self):
+        return self.db_api.first(self._query_func, self._model,
+                                 **self._conditions)
+
     def __iter__(self):
         return iter(self.all())
 

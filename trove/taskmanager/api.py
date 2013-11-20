@@ -99,10 +99,10 @@ class API(proxy.RpcProxy):
         self.cast(self.context, self.make_msg("delete_backup",
                                               backup_id=backup_id))
 
-    def create_instance(self, instance_id, name, flavor, image_id,
-                        databases, users, service_type, volume_size,
-                        backup_id=None, availability_zone=None,
-                        root_password=None):
+    def create_instance(self, instance_id, name, flavor,
+                        image_id, databases, users, datastore_manager,
+                        packages, volume_size, backup_id=None,
+                        availability_zone=None, root_password=None):
         LOG.debug("Making async call to create instance %s " % instance_id)
         self.cast(self.context,
                   self.make_msg("create_instance",
@@ -111,7 +111,8 @@ class API(proxy.RpcProxy):
                                 image_id=image_id,
                                 databases=databases,
                                 users=users,
-                                service_type=service_type,
+                                datastore_manager=datastore_manager,
+                                packages=packages,
                                 volume_size=volume_size,
                                 backup_id=backup_id,
                                 availability_zone=availability_zone,

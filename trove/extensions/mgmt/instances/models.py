@@ -180,14 +180,14 @@ class NotificationTransformer(object):
             subsecond=True)
         return audit_start, audit_end
 
-    def _get_service_id(self, service_type, id_map):
-        if service_type in id_map:
-            service_type_id = id_map[service_type]
+    def _get_service_id(self, datastore_manager, id_map):
+        if datastore_manager in id_map:
+            datastore_manager_id = id_map[datastore_manager]
         else:
-            service_type_id = cfg.UNKNOWN_SERVICE_ID
-            LOG.error("Service ID for Type (%s) is not configured"
-                      % service_type)
-        return service_type_id
+            datastore_manager_id = cfg.UNKNOWN_SERVICE_ID
+            LOG.error("Datastore ID for Manager (%s) is not configured"
+                      % datastore_manager)
+        return datastore_manager_id
 
     def transform_instance(self, instance, audit_start, audit_end):
         payload = {
@@ -206,7 +206,7 @@ class NotificationTransformer(object):
             'tenant_id': instance.tenant_id
         }
         payload['service_id'] = self._get_service_id(
-            instance.service_type, CONF.notification_service_id)
+            instance.datastore.manager, CONF.notification_service_id)
         return payload
 
     def __call__(self):

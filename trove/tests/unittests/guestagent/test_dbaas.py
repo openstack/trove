@@ -39,6 +39,7 @@ from trove.common import utils
 from trove.common import instance as rd_instance
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
+from trove.guestagent import pkg
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.service import BaseDbStatus
@@ -108,11 +109,18 @@ class DbaasTest(testtools.TestCase):
 
         self.assertRaises(RuntimeError, dbaas.get_auth_password)
 
+    def test_service_discovery(self):
+        when(os.path).isfile(any()).thenReturn(True)
+        mysql_service = dbaas.operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
     def test_load_mysqld_options(self):
 
         output = "mysqld would've been started with the these args:\n"\
                  "--user=mysql --port=3306 --basedir=/usr "\
                  "--tmpdir=/tmp --skip-external-locking"
+        when(os.path).isfile(any()).thenReturn(True)
         dbaas.utils.execute = Mock(return_value=(output, None))
 
         options = dbaas.load_mysqld_options()
@@ -453,6 +461,13 @@ class MySqlAppTest(testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
         self.mySqlApp = MySqlApp(self.appStatus)
+        mysql_service = {'cmd_start': Mock(),
+                         'cmd_stop': Mock(),
+                         'cmd_enable': Mock(),
+                         'cmd_disable': Mock(),
+                         'bin': Mock()}
+        dbaas.operating_system.service_discovery = Mock(return_value=
+                                                        mysql_service)
         dbaas.time.sleep = Mock()
 
     def tearDown(self):
@@ -564,13 +579,14 @@ class MySqlAppTest(testtools.TestCase):
 
         dbaas.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-
+        self.mySqlApp._enable_mysql_on_boot = Mock()
         self.mySqlApp.start_mysql()
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_start_mysql_with_db_update(self):
 
         dbaas.utils.execute_with_timeout = Mock()
+        self.mySqlApp._enable_mysql_on_boot = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
 
         self.mySqlApp.start_mysql(True)
@@ -579,6 +595,7 @@ class MySqlAppTest(testtools.TestCase):
     def test_start_mysql_runs_forever(self):
 
         dbaas.utils.execute_with_timeout = Mock()
+        self.mySqlApp._enable_mysql_on_boot = Mock()
         self.mySqlApp.state_change_wait_time = 1
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
@@ -634,13 +651,19 @@ class MySqlAppInstallTest(MySqlAppTest):
     def test_install(self):
 
         self.mySqlApp._install_mysql = Mock()
-        self.mySqlApp.is_installed = Mock(return_value=False)
-        self.mySqlApp.install_if_needed()
-        self.assertTrue(self.mySqlApp._install_mysql.called)
+        pkg.Package.pkg_is_installed = Mock(return_value=False)
+        utils.execute_with_timeout = Mock()
+        pkg.Package.pkg_install = Mock()
+        self.mySqlApp._clear_mysql_config = Mock()
+        self.mySqlApp._create_mysql_confd_dir = Mock()
+        self.mySqlApp.start_mysql = Mock()
+        self.mySqlApp.install_if_needed(["package"])
+        self.assertTrue(pkg.Package.pkg_install.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_secure(self):
 
+        dbaas.clear_expired_password = Mock()
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         self.mySqlApp._write_mycnf = Mock()
@@ -660,17 +683,20 @@ class MySqlAppInstallTest(MySqlAppTest):
         from trove.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
-        self.mySqlApp.is_installed = Mock(return_value=False)
-        self.mySqlApp._install_mysql = Mock(
-            side_effect=pkg.PkgPackageStateError("Install error"))
+        pkg.Package.pkg_is_installed = Mock(return_value=False)
+        self.mySqlApp._clear_mysql_config = Mock()
+        self.mySqlApp._create_mysql_confd_dir = Mock()
+        pkg.Package.pkg_install = \
+            Mock(side_effect=pkg.PkgPackageStateError("Install error"))
 
         self.assertRaises(pkg.PkgPackageStateError,
-                          self.mySqlApp.install_if_needed)
+                          self.mySqlApp.install_if_needed, ["package"])
 
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_secure_write_conf_error(self):
 
+        dbaas.clear_expired_password = Mock()
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         self.mySqlApp._write_mycnf = Mock(
@@ -685,18 +711,6 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertFalse(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    def test_is_installed(self):
-
-        dbaas.packager.pkg_version = Mock(return_value=True)
-
-        self.assertTrue(self.mySqlApp.is_installed())
-
-    def test_is_installed_not(self):
-
-        dbaas.packager.pkg_version = Mock(return_value=None)
-
-        self.assertFalse(self.mySqlApp.is_installed())
 
 
 class TextClauseMatcher(matchers.Matcher):
@@ -772,8 +786,11 @@ class MySqlAppMockTest(testtools.TestCase):
         mock_status = mock()
         when(mock_status).wait_for_real_status_to_change_to(
             any(), any(), any()).thenReturn(True)
+        when(dbaas).clear_expired_password().thenReturn(None)
         app = MySqlApp(mock_status)
         when(app)._write_mycnf(any(), any()).thenReturn(True)
+        when(app).start_mysql().thenReturn(None)
+        when(app).stop_db().thenReturn(None)
         app.secure('foo')
         verify(mock_conn, never).execute(TextClauseMatcher('root'))
 
@@ -883,16 +900,16 @@ class ServiceRegistryTest(testtools.TestCase):
     def tearDown(self):
         super(ServiceRegistryTest, self).tearDown()
 
-    def test_service_registry_with_extra_manager(self):
-        service_registry_ext_test = {
+    def test_datastore_registry_with_extra_manager(self):
+        datastore_registry_ext_test = {
             'test': 'trove.guestagent.datastore.test.manager.Manager',
         }
         dbaas_sr.get_custom_managers = Mock(return_value=
-                                            service_registry_ext_test)
-        test_dict = dbaas_sr.service_registry()
+                                            datastore_registry_ext_test)
+        test_dict = dbaas_sr.datastore_registry()
         self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('test'),
-                         service_registry_ext_test.get('test', None))
+                         datastore_registry_ext_test.get('test', None))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
@@ -900,14 +917,14 @@ class ServiceRegistryTest(testtools.TestCase):
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
 
-    def test_service_registry_with_existing_manager(self):
-        service_registry_ext_test = {
+    def test_datastore_registry_with_existing_manager(self):
+        datastore_registry_ext_test = {
             'mysql': 'trove.guestagent.datastore.mysql.'
                      'manager.Manager123',
         }
         dbaas_sr.get_custom_managers = Mock(return_value=
-                                            service_registry_ext_test)
-        test_dict = dbaas_sr.service_registry()
+                                            datastore_registry_ext_test)
+        test_dict = dbaas_sr.datastore_registry()
         self.assertEqual(2, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
@@ -916,11 +933,11 @@ class ServiceRegistryTest(testtools.TestCase):
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
 
-    def test_service_registry_with_blank_dict(self):
-        service_registry_ext_test = dict()
+    def test_datastore_registry_with_blank_dict(self):
+        datastore_registry_ext_test = dict()
         dbaas_sr.get_custom_managers = Mock(return_value=
-                                            service_registry_ext_test)
-        test_dict = dbaas_sr.service_registry()
+                                            datastore_registry_ext_test)
+        test_dict = dbaas_sr.datastore_registry()
         self.assertEqual(2, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'

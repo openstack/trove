@@ -42,10 +42,10 @@ CONF = cfg.CONF
 
 
 def get_custom_managers():
-    return CONF.service_registry_ext
+    return CONF.datastore_registry_ext
 
 
-def service_registry():
+def datastore_registry():
     return dict(chain(defaults.iteritems(),
                 get_custom_managers().iteritems()))
 

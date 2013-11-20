@@ -30,10 +30,10 @@ class SingleInstanceConfigTemplate(object):
     """ This class selects a single configuration file by database type for
     rendering on the guest """
 
-    def __init__(self, datastore_type, flavor_dict, instance_id):
+    def __init__(self, datastore_manager, flavor_dict, instance_id):
         """ Constructor
 
-        :param datastore_type: The database type.
+        :param datastore_manager: The datastore manager.
         :type name: str.
         :param flavor_dict: dict containing flavor details for use in jinja.
         :type flavor_dict: dict.
@@ -42,7 +42,7 @@ class SingleInstanceConfigTemplate(object):
 
         """
         self.flavor_dict = flavor_dict
-        template_filename = "%s/config.template" % datastore_type
+        template_filename = "%s/config.template" % datastore_manager
         self.template = ENV.get_template(template_filename)
         self.instance_id = instance_id
 
@@ -66,12 +66,12 @@ class SingleInstanceConfigTemplate(object):
         return abs(hash(self.instance_id) % (2 ** 31))
 
 
-def load_heat_template(datastore_type):
-    template_filename = "%s/heat.template" % datastore_type
+def load_heat_template(datastore_manager):
+    template_filename = "%s/heat.template" % datastore_manager
     try:
         template_obj = ENV.get_template(template_filename)
         return template_obj
     except jinja2.TemplateNotFound:
-        msg = "Missing heat template for %s" % datastore_type
+        msg = "Missing heat template for %s" % datastore_manager
         LOG.error(msg)
         raise exception.TroveError(msg)
