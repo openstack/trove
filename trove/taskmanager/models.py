@@ -293,7 +293,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
                                          "%s\n--datastore_manager=%s\n"
                                          "--tenant_id=%s\n" %
-                                         (self.id, datastore,
+                                         (self.id, datastore_manager,
                                           self.tenant_id))}
             name = self.hostname or self.name
             volume_desc = ("mysql volume for %s" % self.id)
@@ -306,7 +306,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 files=files, volume=volume_ref,
                 security_groups=security_groups,
                 availability_zone=availability_zone)
-            LOG.debug(_("Created new compute instance %(server_id) "
+            LOG.debug(_("Created new compute instance %(server_id)s "
                         "for id: %(id)s") %
                       {'server_id': server.id, 'id': self.id})
 
