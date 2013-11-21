@@ -72,9 +72,7 @@ def cinder_client(context):
 
 def heat_client(context):
     endpoint = "%s/%s/" % (HEAT_URL, context.tenant)
-    client = HeatClient.Client(username=context.user,
-                               password="radmin",
-                               token=context.auth_token,
+    client = HeatClient.Client(token=context.auth_token,
                                os_no_client_auth=True,
                                endpoint=endpoint)
     return client
