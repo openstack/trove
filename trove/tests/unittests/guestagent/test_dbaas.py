@@ -765,7 +765,7 @@ class MySqlAppMockTest(testtools.TestCase):
         when(mock_status).wait_for_real_status_to_change_to(
             any(), any(), any()).thenReturn(True)
         app = MySqlApp(mock_status)
-
+        when(dbaas).clear_expired_password().thenReturn(None)
         self.assertRaises(TypeError, app.secure, None)
 
         verify(mock_conn, atleast=2).execute(any())
