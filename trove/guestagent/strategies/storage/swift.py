@@ -20,8 +20,6 @@ from trove.guestagent.strategies.storage import base
 from trove.openstack.common import log as logging
 from trove.common.remote import create_swift_client
 from trove.common import cfg
-from trove.common import utils
-from eventlet.green import subprocess
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -173,74 +171,24 @@ class SwiftStorage(base.Storage):
         filename = location.split('/')[-1]
         return storage_url, container, filename
 
-    def load(self, context, location, is_zipped, backup_checksum):
-        """Restore a backup from the input stream to the restore_location """
+    def _verify_checksum(self, etag, checksum):
+        etag_checksum = etag.strip('"')
+        if etag_checksum != checksum:
+            msg = ("Original checksum: %(original)s does not match"
+                   " the current checksum: %(current)s" %
+                   {'original': etag_checksum, 'current': checksum})
+            LOG.error(msg)
+            raise SwiftDownloadIntegrityError(msg)
+        return True
 
+    def load(self, location, backup_checksum):
+        """Restore a backup from the input stream to the restore_location"""
         storage_url, container, filename = self._explodeLocation(location)
 
-        return SwiftDownloadStream(context,
-                                   auth_token=context.auth_token,
-                                   storage_url=storage_url,
-                                   container=container,
-                                   filename=filename,
-                                   is_zipped=is_zipped,
-                                   backup_checksum=backup_checksum)
+        headers, info = self.connection.get_object(container, filename,
+                                                   resp_chunk_size=CHUNK_SIZE)
 
-
-class SwiftDownloadStream(object):
-    """Class to do the actual swift download  using the swiftclient """
-
-    cmd = ("swift --os-auth-token=%(auth_token)s "
-           "--os-storage-url=%(storage_url)s "
-           "download %(container)s %(filename)s -o -")
-
-    def __init__(self, context, **kwargs):
-        self.process = None
-        self.pid = None
-        self.cmd = self.cmd % kwargs
-        self.container = kwargs.get('container')
-        self.filename = kwargs.get('filename')
-        self.original_backup_checksum = kwargs.get('backup_checksum', None)
-        self.swift_client = create_swift_client(context)
-
-    def __enter__(self):
-        """Start up the process"""
-        self.run()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Clean up everything."""
-        if exc_type is None:
-            utils.raise_if_process_errored(self.process, DownloadError)
-
-        # Make sure to terminate the process
-        try:
-            self.process.terminate()
-        except OSError:
-            # Already stopped
-            pass
-
-    def read(self, *args, **kwargs):
-        return self.process.stdout.read(*args, **kwargs)
-
-    def run(self):
         if CONF.verify_swift_checksum_on_restore:
-            # Right before downloading swift object lets check that the current
-            # swift object checksum matches the original backup checksum
-            self._verify_checksum()
-        self._run_download_cmd()
+            self._verify_checksum(headers.get('etag', ''), backup_checksum)
 
-    def _verify_checksum(self):
-        if self.original_backup_checksum:
-            resp = self.swift_client.head_object(self.container, self.filename)
-            current_swift_checksum = resp['etag'].strip('"')
-            if current_swift_checksum != self.original_backup_checksum:
-                raise SwiftDownloadIntegrityError("Original backup checksum "
-                                                  "does not match current "
-                                                  "checksum.")
-
-    def _run_download_cmd(self):
-        self.process = subprocess.Popen(self.cmd, shell=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
-        self.pid = self.process.pid
+        return info

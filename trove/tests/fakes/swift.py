@@ -44,8 +44,13 @@ class FakeSwiftClient(object):
 
 class FakeSwiftConnection(object):
     """Logging calls instead of executing"""
+    MANIFEST_HEADER_KEY = 'X-Object-Manifest'
+    url = 'http://mockswift/v1'
+
     def __init__(self, *args, **kwargs):
-        pass
+        self.manifest_prefix = None
+        self.manifest_name = None
+        self.container_objects = {}
 
     def get_auth(self):
         return (
@@ -94,9 +99,26 @@ class FakeSwiftConnection(object):
 
     def head_object(self, container, name):
         LOG.debug("fake put_container(%s, %s)" % (container, name))
-        return {'etag': 'fake-md5-sum'}
+        checksum = md5()
+        if self.manifest_prefix and self.manifest_name == name:
+            for object_name in sorted(self.container_objects.iterkeys()):
+                object_checksum = md5(self.container_objects[object_name])
+                # The manifest file etag for a HEAD or GET is the checksum of
+                # the concatenated checksums.
+                checksum.update(object_checksum.hexdigest())
+            # this is included to test bad swift segment etags
+            if name.startswith("bad_manifest_etag_"):
+                return {'etag': '"this_is_an_intentional_bad_manifest_etag"'}
+        else:
+            if name in self.container_objects:
+                checksum.update(self.container_objects[name])
+            else:
+                return {'etag': 'fake-md5-sum'}
 
-    def get_object(self, container, name):
+        # Currently a swift HEAD object returns etag with double quotes
+        return {'etag': '"%s"' % checksum.hexdigest()}
+
+    def get_object(self, container, name, resp_chunk_size=None):
         LOG.debug("fake get_object(%s, %s)" % (container, name))
         if container == 'socket_error_on_get':
             raise socket.error(111, 'ECONNREFUSED')
@@ -121,62 +143,22 @@ class FakeSwiftConnection(object):
             fake_object_body = metadata_json
             return (fake_object_header, fake_object_body)
 
-        fake_header = None
-        fake_object_body = os.urandom(1024 * 1024)
+        fake_header = {'etag': '"fake-md5-sum"'}
+        if resp_chunk_size:
+            def _object_info():
+                length = 0
+                while length < (1024 * 1024):
+                    yield os.urandom(resp_chunk_size)
+                    length += resp_chunk_size
+            fake_object_body = _object_info()
+        else:
+            fake_object_body = os.urandom(1024 * 1024)
         return (fake_header, fake_object_body)
 
-    def put_object(self, container, name, reader):
+    def put_object(self, container, name, contents, **kwargs):
         LOG.debug("fake put_object(%s, %s)" % (container, name))
         if container == 'socket_error_on_put':
             raise socket.error(111, 'ECONNREFUSED')
-        return 'fake-md5-sum'
-
-    def delete_object(self, container, name):
-        LOG.debug("fake delete_object(%s, %s)" % (container, name))
-        if container == 'socket_error_on_delete':
-            raise socket.error(111, 'ECONNREFUSED')
-        pass
-
-
-class FakeSwiftConnectionWithRealEtag(FakeSwiftConnection):
-    """
-    Overides methods that deal with object etags/checksums so it returns
-    the actual object etag/checksum
-
-    This fake swift client is meant to only handle at most one large segmented
-    object.
-    """
-
-    MANIFEST_HEADER_KEY = 'X-Object-Manifest'
-    url = 'http://mockswift/v1'
-
-    def __init__(self, *args, **kwargs):
-        super(FakeSwiftConnectionWithRealEtag, self).__init__(args, kwargs)
-        self.manifest_prefix = None
-        self.manifest_name = None
-        self.container_objects = {}
-
-    def head_object(self, container, name):
-        checksum = md5()
-        if self.manifest_prefix and self.manifest_name == name:
-            for object_name in sorted(self.container_objects.iterkeys()):
-                object_checksum = md5(self.container_objects[object_name])
-                # The manifest file etag for a HEAD or GET is the checksum of
-                # the concatenated checksums.
-                checksum.update(object_checksum.hexdigest())
-            # this is included to test bad swift segment etags
-            if name.startswith("bad_manifest_etag_"):
-                return {'etag': '"this_is_an_intentional_bad_manifest_etag"'}
-        else:
-            if name in self.container_objects:
-                checksum.update(self.container_objects[name])
-            else:
-                return {'etag': ""}
-
-        # Currently a swift HEAD object returns etag with double quotes
-        return {'etag': '"%s"' % checksum.hexdigest()}
-
-    def put_object(self, container, name, contents, **kwargs):
         headers = kwargs.get('headers', {})
         object_checksum = md5()
         if self.MANIFEST_HEADER_KEY in headers:
@@ -205,6 +187,12 @@ class FakeSwiftConnectionWithRealEtag(FakeSwiftConnection):
             if name.startswith("bad_segment_etag_"):
                 return "this_is_an_intentional_bad_segment_etag"
         return object_checksum.hexdigest()
+
+    def delete_object(self, container, name):
+        LOG.debug("fake delete_object(%s, %s)" % (container, name))
+        if container == 'socket_error_on_delete':
+            raise socket.error(111, 'ECONNREFUSED')
+        pass
 
 
 class SwiftClientStub(object):

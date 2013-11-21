@@ -13,12 +13,11 @@
 #limitations under the License.
 
 import testtools
-from mockito import when, unstub, mock, any
+from mockito import when, unstub
 import hashlib
 
 from trove.common.context import TroveContext
 from trove.tests.fakes.swift import FakeSwiftConnection
-from trove.tests.fakes.swift import FakeSwiftConnectionWithRealEtag
 from trove.tests.unittests.backup.test_backupagent \
     import MockBackup as MockBackupRunner
 from trove.guestagent.strategies.storage.swift \
@@ -26,17 +25,6 @@ from trove.guestagent.strategies.storage.swift \
 from trove.guestagent.strategies.storage import swift
 from trove.guestagent.strategies.storage.swift import SwiftStorage
 from trove.guestagent.strategies.storage.swift import StreamReader
-
-
-class MockProcess(object):
-    """Fake swift download process"""
-
-    def __init__(self):
-        self.pid = 1
-        self.stdout = "Mock Process stdout."
-
-    def terminate(self):
-        pass
 
 
 class SwiftStorageSaveChecksumTests(testtools.TestCase):
@@ -56,7 +44,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         user = 'user'
         password = 'password'
 
-        swift_client = FakeSwiftConnectionWithRealEtag()
+        swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -85,7 +73,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         user = 'user'
         password = 'password'
 
-        swift_client = FakeSwiftConnectionWithRealEtag()
+        swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -117,7 +105,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         user = 'user'
         password = 'password'
 
-        swift_client = FakeSwiftConnectionWithRealEtag()
+        swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
         storage_strategy = SwiftStorage(context)
 
@@ -139,6 +127,36 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
                          "Incorrect swift location was returned.")
 
 
+class SwiftStorageUtils(testtools.TestCase):
+
+    def setUp(self):
+        super(SwiftStorageUtils, self).setUp()
+        context = TroveContext()
+        swift_client = FakeSwiftConnection()
+        when(swift).create_swift_client(context).thenReturn(swift_client)
+        self.swift = SwiftStorage(context)
+
+    def tearDown(self):
+        super(SwiftStorageUtils, self).tearDown()
+
+    def test_explode_location(self):
+        location = 'http://mockswift.com/v1/545433/backups/mybackup.tar'
+        url, container, filename = self.swift._explodeLocation(location)
+        self.assertEqual(url, 'http://mockswift.com/v1/545433')
+        self.assertEqual(container, 'backups')
+        self.assertEqual(filename, 'mybackup.tar')
+
+    def test_validate_checksum_good(self):
+        match = self.swift._verify_checksum('"my-good-etag"', 'my-good-etag')
+        self.assertTrue(match)
+
+    def test_verify_checksum_bad(self):
+        self.assertRaises(SwiftDownloadIntegrityError,
+                          self.swift._verify_checksum,
+                          '"THE-GOOD-THE-BAD"',
+                          'AND-THE-UGLY')
+
+
 class SwiftStorageLoad(testtools.TestCase):
     """SwiftStorage.load is used to return SwiftDownloadStream which is used
         to download a backup object from Swift
@@ -158,35 +176,14 @@ class SwiftStorageLoad(testtools.TestCase):
 
         context = TroveContext()
         location = "/backup/location/123"
-        is_zipped = False
         backup_checksum = "fake-md5-sum"
 
         swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
-        download_process = MockProcess()
-        subprocess = mock(swift.subprocess)
-        when(subprocess).Popen(any(), any(),
-                               any(), any()).thenReturn(download_process)
-        when(swift.utils).raise_if_process_errored().thenReturn(None)
 
         storage_strategy = SwiftStorage(context)
-        download_stream = storage_strategy.load(context,
-                                                location,
-                                                is_zipped,
-                                                backup_checksum)
-
-        self.assertEqual('location', download_stream.container)
-        self.assertEqual('123', download_stream.filename)
-
-        with download_stream as stream:
-            print("Testing SwiftDownloadStream context manager: %s" % stream)
-
-        self.assertIsNotNone(download_stream.process,
-                             "SwiftDownloadStream process/cmd is supposed "
-                             "to run.")
-        self.assertIsNotNone(download_stream.pid,
-                             "SwiftDownloadStream process/cmd is supposed "
-                             "to run.")
+        download_stream = storage_strategy.load(location, backup_checksum)
+        self.assertIsNotNone(download_stream)
 
     def test_run_verify_checksum_mismatch(self):
         """This tests that SwiftDownloadIntegrityError is raised and swift
@@ -196,27 +193,17 @@ class SwiftStorageLoad(testtools.TestCase):
 
         context = TroveContext()
         location = "/backup/location/123"
-        is_zipped = False
         backup_checksum = "checksum_different_then_fake_swift_etag"
 
         swift_client = FakeSwiftConnection()
         when(swift).create_swift_client(context).thenReturn(swift_client)
 
         storage_strategy = SwiftStorage(context)
-        download_stream = storage_strategy.load(context,
-                                                location,
-                                                is_zipped,
-                                                backup_checksum)
-
-        self.assertEqual('location', download_stream.container)
-        self.assertEqual('123', download_stream.filename)
 
         self.assertRaises(SwiftDownloadIntegrityError,
-                          download_stream.__enter__)
-
-        self.assertIsNone(download_stream.process,
-                          "SwiftDownloadStream process/cmd was not supposed"
-                          "to run.")
+                          storage_strategy.load,
+                          location,
+                          backup_checksum)
 
 
 class MockBackupStream(MockBackupRunner):

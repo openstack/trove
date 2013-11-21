@@ -112,7 +112,7 @@ class MockStorage(Storage):
     def __call__(self, *args, **kwargs):
         return self
 
-    def load(self, context, location, is_zipped, backup_checksum):
+    def load(self, location, backup_checksum):
         pass
 
     def save(self, filename, stream):
@@ -123,7 +123,7 @@ class MockStorage(Storage):
 
 
 class MockRestoreRunner(RestoreRunner):
-    def __init__(self, restore_stream, restore_location):
+    def __init__(self, storage, **kwargs):
         pass
 
     def __enter__(self):

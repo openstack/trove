@@ -119,17 +119,12 @@ class BackupAgent(object):
             restore_runner = self._get_restore_runner(backup_info['type'])
 
             LOG.debug("Getting Storage Strategy")
-            storage_strategy = get_storage_strategy(
+            storage = get_storage_strategy(
                 CONF.storage_strategy,
                 CONF.storage_namespace)(context)
 
-            LOG.debug("Preparing storage to download stream.")
-            download_stream = storage_strategy.load(context,
-                                                    backup_info['location'],
-                                                    restore_runner.is_zipped,
-                                                    backup_info['checksum'])
-
-            with restore_runner(restore_stream=download_stream,
+            with restore_runner(storage, location=backup_info['location'],
+                                checksum=backup_info['checksum'],
                                 restore_location=restore_location) as runner:
                 LOG.debug("Restoring instance from backup %s to %s",
                           backup_info['id'], restore_location)
