@@ -225,6 +225,9 @@ common_opts = [
     cfg.StrOpt('template_path',
                default='/etc/trove/templates/',
                help='Path which leads to datastore templates'),
+    cfg.BoolOpt('sql_query_logging', default=False,
+                help='Allow insecure logging while while '
+                     'executing queries through sqlalchemy'),
 ]
 
 CONF = cfg.CONF

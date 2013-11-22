@@ -103,7 +103,8 @@ def get_engine():
     pwd = get_auth_password()
     ENGINE = sqlalchemy.create_engine("mysql://%s:%s@localhost:3306" %
                                       (ADMIN_USER_NAME, pwd.strip()),
-                                      pool_recycle=7200, echo=True,
+                                      pool_recycle=7200,
+                                      echo=CONF.sql_query_logging,
                                       listeners=[KeepAliveConnection()])
     return ENGINE
 

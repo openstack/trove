@@ -21,6 +21,9 @@ rabbit_password=f7999d1955c5014aa32c
 sql_connection = mysql://root:e1a2c042c828d3566d0a@10.0.0.1/trove?charset=utf8
 #sql_connection = postgresql://trove:trove@10.0.0.1/trove
 
+#Allow SQLAlchemy to log all queries
+sql_query_logging = False
+
 # Period in seconds after which SQLAlchemy should reestablish its connection
 # to the database.
 #
