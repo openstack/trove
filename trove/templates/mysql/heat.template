@@ -1,7 +1,7 @@
 HeatTemplateFormatVersion: '2012-12-12'
 Description: Instance creation template for mysql
 Parameters:
-   Flavor:
+  Flavor:
     Type: String
   VolumeSize:
     Type: Number
@@ -27,7 +27,7 @@ Resources:
                 Fn::Join:
                 - ''
                 - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
-                  "\\ndatastore_manager=", {Ref: DatastoreManager}]
+                  "\ndatastore_manager=", {Ref: DatastoreManager}]
               mode: '000644'
               owner: root
               group: root
