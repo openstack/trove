@@ -30,15 +30,20 @@ ZIP = "gzip"
 UNZIP = "gzip -d -c"
 ENCRYPT = "openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
 DECRYPT = "openssl enc -d -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
-XTRA_BACKUP = "sudo innobackupex --stream=xbstream /var/lib/mysql 2>/" \
-              "tmp/innobackupex.log"
-SQLDUMP_BACKUP = "/usr/bin/mysqldump --all-databases --opt " \
-                 "--password=password -u user"
+XTRA_BACKUP_RAW = ("sudo innobackupex --stream=xbstream %(extra_opts)s"
+                   " /var/lib/mysql 2>/tmp/innobackupex.log")
+XTRA_BACKUP = XTRA_BACKUP_RAW % {'extra_opts': ''}
+XTRA_BACKUP_EXTRA_OPTS = XTRA_BACKUP_RAW % {'extra_opts': '--no-lock'}
+SQLDUMP_BACKUP_RAW = ("/usr/bin/mysqldump --all-databases %(extra_opts)s "
+                      "--opt --password=password -u user")
+SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
+SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
+                             {'extra_opts': '--events --routines --triggers'})
 XTRA_RESTORE = "sudo xbstream -x -C /var/lib/mysql"
 SQLDUMP_RESTORE = "mysql --password=password -u user"
-PREPARE = "sudo innobackupex --apply-log /var/lib/mysql " \
-          "--defaults-file=/var/lib/mysql/backup-my.cnf " \
-          "--ibbackup xtrabackup 2>/tmp/innoprepare.log"
+PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql "
+           "--defaults-file=/var/lib/mysql/backup-my.cnf "
+           "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
 CRYPTO_KEY = "default_aes_cbc_key"
 
 
@@ -47,8 +52,18 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
-        bkup = RunnerClass(12345, user="user", password="password")
+        bkup = RunnerClass(12345, user="user",
+                           password="password", extra_opts="")
         self.assertEqual(bkup.command, XTRA_BACKUP + PIPE + ZIP)
+        self.assertEqual(bkup.manifest, "12345.xbstream.gz")
+
+    def test_backup_decrypted_xtrabackup_with_extra_opts_command(self):
+        backupBase.BackupRunner.is_zipped = True
+        backupBase.BackupRunner.is_encrypted = False
+        RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
+        bkup = RunnerClass(12345, user="user",
+                           password="password", extra_opts="--no-lock")
+        self.assertEqual(bkup.command, XTRA_BACKUP_EXTRA_OPTS + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.xbstream.gz")
 
     def test_backup_encrypted_xtrabackup_command(self):
@@ -56,7 +71,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_encrypted = True
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
-        bkup = RunnerClass(12345, user="user", password="password")
+        bkup = RunnerClass(12345, user="user",
+                           password="password", extra_opts="")
         self.assertEqual(bkup.command,
                          XTRA_BACKUP + PIPE + ZIP + PIPE + ENCRYPT)
         self.assertEqual(bkup.manifest, "12345.xbstream.gz.enc")
@@ -65,8 +81,19 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_SQLDUMP_CLS)
-        bkup = RunnerClass(12345, user="user", password="password")
+        bkup = RunnerClass(12345, user="user",
+                           password="password", extra_opts="")
         self.assertEqual(bkup.command, SQLDUMP_BACKUP + PIPE + ZIP)
+        self.assertEqual(bkup.manifest, "12345.gz")
+
+    def test_backup_decrypted_mysqldump_with_extra_opts_command(self):
+        backupBase.BackupRunner.is_zipped = True
+        backupBase.BackupRunner.is_encrypted = False
+        RunnerClass = utils.import_class(BACKUP_SQLDUMP_CLS)
+        bkup = RunnerClass(12345, user="user",
+                           password="password",
+                           extra_opts="--events --routines --triggers")
+        self.assertEqual(bkup.command, SQLDUMP_BACKUP_EXTRA_OPTS + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.gz")
 
     def test_backup_encrypted_mysqldump_command(self):
@@ -74,7 +101,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_encrypted = True
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_SQLDUMP_CLS)
-        bkup = RunnerClass(12345, user="user", password="password")
+        bkup = RunnerClass(12345, user="user",
+                           password="password", extra_opts="")
         self.assertEqual(bkup.command,
                          SQLDUMP_BACKUP + PIPE + ZIP + PIPE + ENCRYPT)
         self.assertEqual(bkup.manifest, "12345.gz.enc")

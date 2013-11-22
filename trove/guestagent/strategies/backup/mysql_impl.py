@@ -30,6 +30,7 @@ class MySQLDump(base.BackupRunner):
     def cmd(self):
         cmd = ('/usr/bin/mysqldump'
                ' --all-databases'
+               ' %(extra_opts)s'
                ' --opt'
                ' --password=%(password)s'
                ' -u %(user)s')
@@ -49,7 +50,9 @@ class InnoBackupEx(base.BackupRunner):
     def cmd(self):
         cmd = ('sudo innobackupex'
                ' --stream=xbstream'
-               ' /var/lib/mysql 2>/tmp/innobackupex.log')
+               ' %(extra_opts)s'
+               ' /var/lib/mysql 2>/tmp/innobackupex.log'
+               )
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property

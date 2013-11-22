@@ -34,6 +34,7 @@ CONF = cfg.CONF
 
 RUNNER = get_backup_strategy(CONF.backup_strategy,
                              CONF.backup_namespace)
+EXTRA_OPTS = CONF.backup_runner_options.get(CONF.backup_strategy, '')
 BACKUP_CONTAINER = CONF.backup_swift_container
 
 
@@ -47,7 +48,8 @@ class BackupAgent(object):
             raise UnknownBackupType("Unknown Backup type: %s" % backup_type)
         return runner
 
-    def execute_backup(self, context, backup_info, runner=RUNNER):
+    def execute_backup(self, context, backup_info,
+                       runner=RUNNER, extra_opts=EXTRA_OPTS):
         LOG.debug("Searching for backup instance %s", backup_info['id'])
         ctxt = trove_context.TroveContext(
             user=CONF.nova_proxy_admin_user,
@@ -68,7 +70,7 @@ class BackupAgent(object):
                                 size=stats.get('used', 0.0),
                                 state=BackupState.BUILDING)
 
-        with runner(filename=backup_info['id'],
+        with runner(filename=backup_info['id'], extra_opts=extra_opts,
                     user=user, password=password) as bkup:
             try:
                 LOG.info("Starting Backup %s", backup_info['id'])
