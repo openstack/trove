@@ -169,7 +169,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             server, volume_info = self._create_server_volume_heat(
                 flavor,
                 image_id,
-                security_groups,
                 datastore_manager,
                 volume_size,
                 availability_zone)
@@ -340,7 +339,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         return server, volume_info
 
     def _create_server_volume_heat(self, flavor, image_id,
-                                   security_groups, datastore_manager,
+                                   datastore_manager,
                                    volume_size, availability_zone):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
         client = create_heat_client(self.context)
