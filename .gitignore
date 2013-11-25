@@ -15,7 +15,7 @@ dist/
 host-syslog.log
 tags
 .tox
-rdtest.log
+trovetest.log
 trove/versioninfo
 AUTHORS
 ChangeLog

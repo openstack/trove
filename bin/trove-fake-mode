@@ -54,13 +54,23 @@ CONF = cfg.CONF
 CONF.register_cli_opts(extra_opts)
 
 
+def start_fake_taskmanager():
+    topic = CONF.taskmanager_queue
+    from trove.openstack.common.rpc import service as rpc_service
+    from trove.taskmanager import manager
+    manager_impl = manager.Manager()
+    taskman_service = rpc_service.Service(None, topic=topic,
+                                          manager=manager_impl)
+    taskman_service.start()
+
+
 def run_server():
     try:
         get_db_api().configure_db(CONF)
         conf_file = CONF.find_file(CONF.api_paste_config)
         launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
                                workers=CONF.trove_api_workers)
-
+        start_fake_taskmanager()
         launcher.wait()
     except RuntimeError as error:
         import traceback
@@ -68,7 +78,7 @@ def run_server():
         sys.exit("ERROR: %s" % error)
 
 
-if __name__ == '__main__':
+def main():
     cfg.parse_args(sys.argv)
     if CONF.override_logfile:
         CONF.use_stderr = False
@@ -87,3 +97,7 @@ if __name__ == '__main__':
                 f.write(str(pid))
     else:
         run_server()
+
+
+if __name__ == '__main__':
+    main()
