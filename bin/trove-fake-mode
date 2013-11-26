@@ -72,10 +72,10 @@ def run_server():
                                workers=CONF.trove_api_workers)
         start_fake_taskmanager()
         launcher.wait()
-    except RuntimeError as error:
+    except Exception:
         import traceback
-        print traceback.format_exc()
-        sys.exit("ERROR: %s" % error)
+        print(traceback.format_exc())
+        sys.exit("ERROR Starting up")
 
 
 def main():
