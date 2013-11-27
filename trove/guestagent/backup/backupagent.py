@@ -18,7 +18,6 @@ import logging
 from trove.backup.models import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
-from trove.common import utils
 from trove.conductor import api as conductor_api
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
@@ -111,11 +110,6 @@ class BackupAgent(object):
     def execute_restore(self, context, backup_info, restore_location):
 
         try:
-            LOG.debug("Cleaning out restore location: %s", restore_location)
-            utils.execute_with_timeout("sudo", "chmod", "-R",
-                                       "0777", restore_location)
-            utils.clean_out(restore_location)
-
             LOG.debug("Getting Restore Runner of type %s", backup_info['type'])
             restore_runner = self._get_restore_runner(backup_info['type'])
 
@@ -138,9 +132,6 @@ class BackupAgent(object):
                 LOG.info("Restore from backup %s completed successfully to %s",
                          backup_info['id'], restore_location)
                 LOG.info("Restore size: %s", content_size)
-
-                utils.execute_with_timeout("sudo", "chown", "-R",
-                                           "mysql", restore_location)
 
         except Exception as e:
             LOG.error(e)
