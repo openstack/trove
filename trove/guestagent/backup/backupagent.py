@@ -48,13 +48,13 @@ class BackupAgent(object):
 
     def execute_backup(self, context, backup_info,
                        runner=RUNNER, extra_opts=EXTRA_OPTS):
-        LOG.debug("Searching for backup instance %s", backup_info['id'])
+        backup_id = backup_info['id']
         ctxt = trove_context.TroveContext(
             user=CONF.nova_proxy_admin_user,
             auth_token=CONF.nova_proxy_admin_pass)
         conductor = conductor_api.API(ctxt)
 
-        LOG.info("Running backup %s", backup_info['id'])
+        LOG.info("Running backup %s", backup_id)
         user = ADMIN_USER_NAME
         password = get_auth_password()
         storage = get_storage_strategy(
@@ -63,46 +63,54 @@ class BackupAgent(object):
 
         # Store the size of the filesystem before the backup.
         stats = get_filesystem_volume_stats(CONF.mount_point)
-        conductor.update_backup(CONF.guest_id,
-                                backup_id=backup_info['id'],
-                                size=stats.get('used', 0.0),
-                                state=BackupState.BUILDING)
+        backup = {
+            'backup_id': backup_id,
+            'size': stats.get('used', 0.0),
+            'state': BackupState.BUILDING,
+        }
+        conductor.update_backup(CONF.guest_id, **backup)
 
-        with runner(filename=backup_info['id'], extra_opts=extra_opts,
-                    user=user, password=password) as bkup:
-            try:
-                LOG.info("Starting Backup %s", backup_info['id'])
-                success, note, checksum, location = storage.save(
-                    bkup.manifest,
-                    bkup)
+        try:
+            with runner(filename=backup_id, extra_opts=extra_opts,
+                        user=user, password=password) as bkup:
+                try:
+                    LOG.info("Starting Backup %s", backup_id)
+                    success, note, checksum, location = storage.save(
+                        bkup.manifest,
+                        bkup)
 
-                LOG.info("Backup %s completed status: %s", backup_info['id'],
-                         success)
-                LOG.info('Backup %s file swift checksum: %s',
-                         backup_info['id'], checksum)
-                LOG.info('Backup %s location: %s', backup_info['id'],
-                         location)
+                    LOG.info("Backup %s completed status: %s", backup_id,
+                             success)
+                    LOG.info('Backup %s file swift checksum: %s',
+                             backup_id, checksum)
+                    LOG.info('Backup %s location: %s', backup_id,
+                             location)
 
-                if not success:
-                    raise BackupError(note)
+                    backup.update({
+                        'checksum': checksum,
+                        'location': location,
+                        'note': note,
+                        'backup_type': bkup.backup_type,
+                    })
 
-            except Exception as e:
-                LOG.error(e)
-                LOG.error("Error saving %s Backup", backup_info['id'])
-                conductor.update_backup(CONF.guest_id,
-                                        backup_id=backup_info['id'],
-                                        state=BackupState.FAILED)
-                raise
+                    if not success:
+                        raise BackupError(note)
 
-            else:
-                LOG.info("Saving %s Backup Info to model", backup_info['id'])
-                conductor.update_backup(CONF.guest_id,
-                                        backup_id=backup_info['id'],
-                                        checksum=checksum,
-                                        location=location,
-                                        note=note,
-                                        backup_type=bkup.backup_type,
-                                        state=BackupState.COMPLETED)
+                except Exception:
+                    LOG.exception("Error saving %s Backup", backup_id)
+                    backup.update({'state': BackupState.FAILED})
+                    conductor.update_backup(CONF.guest_id, **backup)
+                    raise
+
+        except Exception:
+            LOG.exception("Error running backup: %s", backup_id)
+            backup.update({'state': BackupState.FAILED})
+            conductor.update_backup(CONF.guest_id, **backup)
+            raise
+        else:
+            LOG.info("Saving %s Backup Info to model", backup_id)
+            backup.update({'state': BackupState.COMPLETED})
+            conductor.update_backup(CONF.guest_id, **backup)
 
     def execute_restore(self, context, backup_info, restore_location):
 
