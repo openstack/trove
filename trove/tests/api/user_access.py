@@ -105,6 +105,12 @@ class UserAccessBase(object):
             access = [db.name for db in access]
             asserts.assert_equal(set(access), set(databases))
 
+    def _test_ignore_access(self, users, databases, expected_response=200):
+        databases = [d for d in databases if d not in ['lost+found',
+                                                       'mysql',
+                                                       'information_schema']]
+        self._test_access(users, databases, expected_response)
+
     def _reset_access(self):
         for user in self.users:
             for database in self.databases + self.ghostdbs:
@@ -276,6 +282,16 @@ class TestUserAccessPositive(UserAccessBase):
         self._reset_access()
         self._grant_access_plural(self.users, self.databases)
         self._test_access(self.users, self.databases)
+
+    @test(depends_on=[test_no_access])
+    def test_grant_full_access_ignore_databases(self):
+        # The users are granted access to all test databases.
+        all_dbs = []
+        all_dbs.extend(self.databases)
+        all_dbs.extend(['lost+found', 'mysql', 'information_schema'])
+        self._reset_access()
+        self._grant_access_plural(self.users, self.databases)
+        self._test_ignore_access(self.users, self.databases)
 
     @test(depends_on=[test_grant_full_access])
     def test_grant_idempotence(self):

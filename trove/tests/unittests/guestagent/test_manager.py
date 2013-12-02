@@ -85,6 +85,21 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.manager.delete_user(self.context, user)
         verify(dbaas.MySqlAdmin).delete_user(user)
 
+    def test_grant_access(self):
+        username = "test_user"
+        hostname = "test_host"
+        databases = ["test_database"]
+        when(dbaas.MySqlAdmin).grant_access(username,
+                                            hostname,
+                                            databases).thenReturn(None)
+
+        self.manager.grant_access(self.context,
+                                  username,
+                                  hostname,
+                                  databases)
+
+        verify(dbaas.MySqlAdmin).grant_access(username, hostname, databases)
+
     def test_list_databases(self):
         when(dbaas.MySqlAdmin).list_databases(None, None,
                                               False).thenReturn(['database1'])

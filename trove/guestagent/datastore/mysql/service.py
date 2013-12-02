@@ -376,13 +376,20 @@ class MySqlAdmin(object):
     def grant_access(self, username, hostname, databases):
         """Grant a user permission to use a given database."""
         user = self._get_user(username, hostname)
+        mydb = models.ValidatedMySQLDatabase()
         with LocalSqlClient(get_engine()) as client:
             for database in databases:
-                g = sql_query.Grant(permissions='ALL', database=database,
-                                    user=user.name, host=user.host,
-                                    hashed=user.password)
-                t = text(str(g))
-                client.execute(t)
+                    try:
+                        mydb.name = database
+                    except ValueError:
+                        LOG.info(_(
+                            "Grant access to %s is not allowed") % database)
+
+                    g = sql_query.Grant(permissions='ALL', database=mydb.name,
+                                        user=user.name, host=user.host,
+                                        hashed=user.password)
+                    t = text(str(g))
+                    client.execute(t)
 
     def is_root_enabled(self):
         """Return True if root access is enabled; False otherwise."""
