@@ -21,23 +21,47 @@ from trove.common import apischema
 
 
 class TestBackupController(TestCase):
+
+    def setUp(self):
+        super(TestBackupController, self).setUp()
+        self.uuid = "d6338c9c-3cc8-4313-b98f-13cc0684cf15"
+        self.invalid_uuid = "ead-edsa-e23-sdf-23"
+        self.controller = BackupController()
+
     def test_validate_create_complete(self):
-        body = {"backup": {"instance": "d6338c9c-3cc8-4313-b98f-13cc0684cf15",
+        body = {"backup": {"instance": self.uuid,
                            "name": "testback-backup"}}
-        controller = BackupController()
-        schema = controller.get_schema('create', body)
+        schema = self.controller.get_schema('create', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
     def test_validate_create_invalid_uuid(self):
-        invalid_uuid = "ead-edsa-e23-sdf-23"
-        body = {"backup": {"instance": invalid_uuid,
+        body = {"backup": {"instance": self.invalid_uuid,
                            "name": "testback-backup"}}
-        controller = BackupController()
-        schema = controller.get_schema('create', body)
+        schema = self.controller.get_schema('create', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
         self.assertThat(errors[0].message,
                         Equals("'%s' does not match '%s'" %
-                               (invalid_uuid, apischema.uuid['pattern'])))
+                               (self.invalid_uuid, apischema.uuid['pattern'])))
+
+    def test_validate_create_incremental(self):
+        body = {"backup": {"instance": self.uuid,
+                           "name": "testback-backup",
+                           "parent_id": self.uuid}}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_invalid_parent_id(self):
+        body = {"backup": {"instance": self.uuid,
+                           "name": "testback-backup",
+                           "parent_id": self.invalid_uuid}}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertThat(errors[0].message,
+                        Equals("'%s' does not match '%s'" %
+                               (self.invalid_uuid, apischema.uuid['pattern'])))

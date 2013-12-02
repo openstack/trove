@@ -91,6 +91,10 @@ class BackupRunner(Strategy):
 
         return True
 
+    def metadata(self):
+        """Hook for subclasses to store metadata from the backup."""
+        return {}
+
     @property
     def filename(self):
         """Subclasses may overwrite this to declare a format (.tar)"""

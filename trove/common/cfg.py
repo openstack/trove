@@ -172,6 +172,11 @@ common_opts = [
     cfg.StrOpt('restore_namespace',
                default='trove.guestagent.strategies.restore.mysql_impl',
                help='Namespace to load restore strategies from.'),
+    cfg.DictOpt('backup_incremental_strategy',
+                default={'InnoBackupEx': 'InnoBackupExIncremental'},
+                help='Incremental Backup Runner Based off of the default'
+                ' strategy. For strategies that do not implement an'
+                ' incremental the runner will use the default full backup.'),
     cfg.BoolOpt('verify_swift_checksum_on_restore', default=True,
                 help='Enable verification of swift checksum before starting '
                 'restore; makes sure the checksum of original backup matches '

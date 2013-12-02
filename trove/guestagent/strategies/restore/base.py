@@ -18,6 +18,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _  # noqa
 from eventlet.green import subprocess
 
 LOG = logging.getLogger(__name__)
@@ -104,8 +105,11 @@ class RestoreRunner(Strategy):
         return content_length
 
     def _run_restore(self):
-        stream = self.storage.load(self.location, self.checksum)
-        self.process = subprocess.Popen(self.restore_cmd, shell=True,
+        return self._unpack(self.location, self.checksum, self.restore_cmd)
+
+    def _unpack(self, location, checksum, command):
+        stream = self.storage.load(location, checksum)
+        self.process = subprocess.Popen(command, shell=True,
                                         stdin=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
         self.pid = self.process.pid
@@ -114,7 +118,7 @@ class RestoreRunner(Strategy):
             self.process.stdin.write(chunk)
             content_length += len(chunk)
         self.process.stdin.close()
-        LOG.info("Restored %s bytes from stream." % content_length)
+        LOG.info(_("Restored %s bytes from stream.") % content_length)
 
         return content_length
 

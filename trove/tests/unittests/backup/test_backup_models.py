@@ -78,10 +78,47 @@ class BackupCreateTest(testtools.TestCase):
         self.assertEqual(self.instance_id, db_record['instance_id'])
         self.assertEqual(models.BackupState.NEW, db_record['state'])
 
+    def test_create_incremental(self):
+        instance = mock(instance_models.Instance)
+        parent = mock(models.DBBackup)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
+        when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
+            None)
+        when(api.API).create_backup(any()).thenReturn(None)
+        when(models.Backup).get_by_id(any(), any()).thenReturn(
+            parent)
+
+        incremental = models.Backup.create(self.context, self.instance_id,
+                                           BACKUP_NAME, BACKUP_DESC,
+                                           parent_id='parent_uuid')
+
+        self.created = True
+
+        db_record = models.DBBackup.find_by(id=incremental.id)
+        self.assertEqual(incremental.id, db_record['id'])
+        self.assertEqual(BACKUP_NAME, db_record['name'])
+        self.assertEqual(BACKUP_DESC, db_record['description'])
+        self.assertEqual(self.instance_id, db_record['instance_id'])
+        self.assertEqual(models.BackupState.NEW, db_record['state'])
+        self.assertEqual('parent_uuid', db_record['parent_id'])
+
     def test_create_instance_not_found(self):
         self.assertRaises(exception.NotFound, models.Backup.create,
                           self.context, self.instance_id,
                           BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_incremental_not_found(self):
+        instance = mock(instance_models.Instance)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
+        when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
+            None)
+        self.assertRaises(exception.NotFound, models.Backup.create,
+                          self.context, self.instance_id,
+                          BACKUP_NAME, BACKUP_DESC, parent_id='BAD')
 
     def test_create_instance_not_active(self):
         instance = mock(instance_models.Instance)

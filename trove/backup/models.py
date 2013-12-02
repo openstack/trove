@@ -45,7 +45,7 @@ class BackupState(object):
 class Backup(object):
 
     @classmethod
-    def create(cls, context, instance, name, description=None):
+    def create(cls, context, instance, name, description=None, parent_id=None):
         """
         create db record for Backup
         :param cls:
@@ -67,12 +67,22 @@ class Backup(object):
 
             cls.verify_swift_auth_token(context)
 
+            parent = None
+            if parent_id:
+                # Look up the parent info or fail early if not found or if
+                # the user does not have access to the parent.
+                _parent = cls.get_by_id(context, parent_id)
+                parent = {
+                    'location': _parent.location,
+                    'checksum': _parent.checksum,
+                }
             try:
                 db_info = DBBackup.create(name=name,
                                           description=description,
                                           tenant_id=context.tenant,
                                           state=BackupState.NEW,
                                           instance_id=instance_id,
+                                          parent_id=parent_id,
                                           deleted=False)
             except exception.InvalidModelError as ex:
                 LOG.exception("Unable to create Backup record:")
@@ -84,6 +94,7 @@ class Backup(object):
                            'instance_id': instance_id,
                            'backup_type': db_info.backup_type,
                            'checksum': db_info.checksum,
+                           'parent': parent,
                            }
             api.API(context).create_backup(backup_info, instance_id)
             return db_info
@@ -191,6 +202,12 @@ class Backup(object):
         :return:
         """
 
+        # Recursively delete all children and grandchildren of this backup.
+        query = DBBackup.query()
+        query = query.filter_by(parent_id=backup_id, deleted=False)
+        for child in query.all():
+            cls.delete(context, child.id)
+
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)
             if backup.is_running:
@@ -222,7 +239,7 @@ class DBBackup(DatabaseModelBase):
     _data_fields = ['id', 'name', 'description', 'location', 'backup_type',
                     'size', 'tenant_id', 'state', 'instance_id',
                     'checksum', 'backup_timestamp', 'deleted', 'created',
-                    'updated', 'deleted_at']
+                    'updated', 'deleted_at', 'parent_id']
     preserve_on_delete = True
 
     @property

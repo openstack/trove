@@ -67,6 +67,48 @@ class InnoBackupEx(base.BackupRunner):
 
         return True
 
+    def metadata(self):
+        LOG.debug('Getting metadata from backup')
+        meta = {}
+        lsn = re.compile("The latest check point \(for incremental\): '(\d+)'")
+        with open('/tmp/innobackupex.log', 'r') as backup_log:
+            output = backup_log.read()
+            match = lsn.search(output)
+            if match:
+                meta = {'lsn': match.group(1)}
+        LOG.info("Metadata for backup: %s", str(meta))
+        return meta
+
     @property
     def filename(self):
         return '%s.xbstream' % self.base_filename
+
+
+class InnoBackupExIncremental(InnoBackupEx):
+    """InnoBackupEx incremental backup."""
+
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get('lsn'):
+            raise AttributeError('lsn attribute missing, bad parent?')
+        super(InnoBackupExIncremental, self).__init__(*args, **kwargs)
+        self.parent_location = kwargs.get('parent_location')
+        self.parent_checksum = kwargs.get('parent_checksum')
+
+    @property
+    def cmd(self):
+        cmd = ('sudo innobackupex'
+               ' --stream=xbstream'
+               ' --incremental'
+               ' --incremental-lsn=%(lsn)s'
+               ' %(extra_opts)s'
+               ' /var/lib/mysql'
+               ' 2>/tmp/innobackupex.log')
+        return cmd + self.zip_cmd + self.encrypt_cmd
+
+    def metadata(self):
+        _meta = super(InnoBackupExIncremental, self).metadata()
+        _meta.update({
+            'parent_location': self.parent_location,
+            'parent_checksum': self.parent_checksum,
+        })
+        return _meta

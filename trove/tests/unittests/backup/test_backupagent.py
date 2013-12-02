@@ -13,21 +13,18 @@
 #limitations under the License.
 
 from mock import Mock
-from mockito import when, unstub, mock, any, contains
+from mockito import when, unstub, any
 from webob.exc import HTTPNotFound
 
 import hashlib
 import os
 import testtools
 
-from trove.common import utils
 from trove.common.context import TroveContext
 from trove.conductor import api as conductor_api
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
-from trove.backup.models import DBBackup
 from trove.backup.models import BackupState
-from trove.db.models import DatabaseModelBase
 from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
@@ -106,6 +103,12 @@ class MockSwift(object):
     def load(self, context, storage_url, container, filename, backup_checksum):
         pass
 
+    def load_metadata(self, location, checksum):
+        return {}
+
+    def save_metadata(self, location, metadata):
+        pass
+
 
 class MockStorage(Storage):
 
@@ -116,6 +119,12 @@ class MockStorage(Storage):
         pass
 
     def save(self, filename, stream):
+        pass
+
+    def load_metadata(self, location, checksum):
+        return {}
+
+    def save_metadata(self, location, metadata={}):
         pass
 
     def is_enabled(self):
@@ -305,7 +314,6 @@ class BackupAgentTest(testtools.TestCase):
                           context=None, backup_info=backup_info,
                           runner=MockLossyBackup)
 
-        #self.assertThat(backup.state, Is(BackupState.FAILED))
         self.assertTrue(
             conductor_api.API.update_backup.called_once_with(
                 any(),
@@ -319,19 +327,10 @@ class BackupAgentTest(testtools.TestCase):
                 transfers/downloads data and invokes the restore module
                 reports status
         """
-        backup = mock(DBBackup)
-        backup.location = "/backup/location/123"
-        backup.backup_type = 'InnoBackupEx'
-
-        when(utils).execute(contains('sudo rm -rf')).thenReturn(None)
-        when(utils).clean_out(any()).thenReturn(None)
         when(backupagent).get_storage_strategy(any(), any()).thenReturn(
             MockStorage)
-
         when(backupagent).get_restore_strategy(
             'InnoBackupEx', any()).thenReturn(MockRestoreRunner)
-        when(DatabaseModelBase).find_by(id='123').thenReturn(backup)
-        when(backup).save().thenReturn(backup)
 
         agent = backupagent.BackupAgent()
 
@@ -343,22 +342,64 @@ class BackupAgentTest(testtools.TestCase):
         agent.execute_restore(TroveContext(), bkup_info, '/var/lib/mysql')
 
     def test_restore_unknown(self):
-        backup = mock(DBBackup)
-        backup.location = "/backup/location/123"
-        backup.backup_type = 'foo'
-        when(utils).execute(contains('sudo rm -rf')).thenReturn(None)
-        when(utils).clean_out(any()).thenReturn(None)
-        when(DatabaseModelBase).find_by(id='123').thenReturn(backup)
         when(backupagent).get_restore_strategy(
             'foo', any()).thenRaise(ImportError)
 
         agent = backupagent.BackupAgent()
 
         bkup_info = {'id': '123',
-                     'location': backup.location,
-                     'type': backup.backup_type,
+                     'location': 'fake-location',
+                     'type': 'foo',
                      'checksum': 'fake-checksum',
                      }
         self.assertRaises(UnknownBackupType, agent.execute_restore,
                           context=None, backup_info=bkup_info,
                           restore_location='/var/lib/mysql')
+
+    def test_backup_incremental_metadata(self):
+        when(backupagent).get_storage_strategy(any(), any()).thenReturn(
+            MockSwift)
+        MockStorage.save_metadata = Mock()
+        when(MockSwift).load_metadata(any(), any()).thenReturn(
+            {'lsn': '54321'})
+
+        meta = {
+            'lsn': '12345',
+            'parent_location': 'fake',
+            'parent_checksum': 'md5',
+        }
+        when(mysql_impl.InnoBackupExIncremental).metadata().thenReturn(meta)
+        when(mysql_impl.InnoBackupExIncremental).check_process().thenReturn(
+            True)
+
+        agent = backupagent.BackupAgent()
+
+        bkup_info = {'id': '123',
+                     'location': 'fake-location',
+                     'type': 'InnoBackupEx',
+                     'checksum': 'fake-checksum',
+                     'parent': {'location': 'fake', 'checksum': 'md5'}
+                     }
+
+        agent.execute_backup(TroveContext(), bkup_info, '/var/lib/mysql')
+
+        self.assertTrue(MockStorage.save_metadata.called_once_with(
+                        any(),
+                        meta))
+
+    def test_backup_incremental_bad_metadata(self):
+        when(backupagent).get_storage_strategy(any(), any()).thenReturn(
+            MockSwift)
+
+        agent = backupagent.BackupAgent()
+
+        bkup_info = {'id': '123',
+                     'location': 'fake-location',
+                     'type': 'InnoBackupEx',
+                     'checksum': 'fake-checksum',
+                     'parent': {'location': 'fake', 'checksum': 'md5'}
+                     }
+
+        self.assertRaises(
+            AttributeError,
+            agent.execute_backup, TroveContext(), bkup_info, 'location')

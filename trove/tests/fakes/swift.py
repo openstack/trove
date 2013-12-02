@@ -28,6 +28,8 @@ from hashlib import md5
 
 from swiftclient import client as swift
 
+from trove.openstack.common.gettextutils import _  # noqa
+
 LOG = logging.getLogger(__name__)
 
 
@@ -38,7 +40,7 @@ class FakeSwiftClient(object):
 
     @classmethod
     def Connection(self, *args, **kargs):
-        LOG.debug("fake FakeSwiftClient Connection")
+        LOG.debug(_("fake FakeSwiftClient Connection"))
         return FakeSwiftConnection()
 
 
@@ -74,7 +76,7 @@ class FakeSwiftConnection(object):
                  'x-account-object-count': '0'}, [])
 
     def head_container(self, container):
-        LOG.debug("fake head_container(%s)" % container)
+        LOG.debug(_("fake head_container(%s)") % container)
         if container == 'missing_container':
             raise swift.ClientException('fake exception',
                                         http_status=httplib.NOT_FOUND)
@@ -86,11 +88,11 @@ class FakeSwiftConnection(object):
         pass
 
     def put_container(self, container):
-        LOG.debug("fake put_container(%s)" % container)
+        LOG.debug(_("fake put_container(%s)") % container)
         pass
 
     def get_container(self, container, **kwargs):
-        LOG.debug("fake get_container(%s)" % container)
+        LOG.debug(_("fake get_container(%s)") % container)
         fake_header = None
         fake_body = [{'name': 'backup_001'},
                      {'name': 'backup_002'},
@@ -98,7 +100,8 @@ class FakeSwiftConnection(object):
         return fake_header, fake_body
 
     def head_object(self, container, name):
-        LOG.debug("fake put_container(%s, %s)" % (container, name))
+        LOG.debug(_("fake put_container(%(container)s, %(name)s)") %
+                  {'container': container, 'name': name})
         checksum = md5()
         if self.manifest_prefix and self.manifest_name == name:
             for object_name in sorted(self.container_objects.iterkeys()):
@@ -119,7 +122,8 @@ class FakeSwiftConnection(object):
         return {'etag': '"%s"' % checksum.hexdigest()}
 
     def get_object(self, container, name, resp_chunk_size=None):
-        LOG.debug("fake get_object(%s, %s)" % (container, name))
+        LOG.debug(_("fake get_object(%(container)s, %(name)s)") %
+                  {'container': container, 'name': name})
         if container == 'socket_error_on_get':
             raise socket.error(111, 'ECONNREFUSED')
         if 'metadata' in name:
@@ -156,7 +160,8 @@ class FakeSwiftConnection(object):
         return (fake_header, fake_object_body)
 
     def put_object(self, container, name, contents, **kwargs):
-        LOG.debug("fake put_object(%s, %s)" % (container, name))
+        LOG.debug(_("fake put_object(%(container)s, %(name)s)") %
+                  {'container': container, 'name': name})
         if container == 'socket_error_on_put':
             raise socket.error(111, 'ECONNREFUSED')
         headers = kwargs.get('headers', {})
@@ -188,8 +193,13 @@ class FakeSwiftConnection(object):
                 return "this_is_an_intentional_bad_segment_etag"
         return object_checksum.hexdigest()
 
+    def post_object(self, container, name, headers={}):
+        LOG.debug(_("fake post_object(%(container)s, %(name)s, %(head)s)") %
+                  {'container': container, 'name': name, 'head': str(headers)})
+
     def delete_object(self, container, name):
-        LOG.debug("fake delete_object(%s, %s)" % (container, name))
+        LOG.debug(_("fake delete_object(%(container)s, %(name)s)") %
+                  {'container': container, 'name': name})
         if container == 'socket_error_on_delete':
             raise socket.error(111, 'ECONNREFUSED')
         pass
