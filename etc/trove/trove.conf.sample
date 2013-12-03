@@ -125,7 +125,7 @@ control_exchange = trove
 # ============ SSL configuration (and enablement) =============================
 # In order to enable SSL for the trove api server, uncomment
 # the cert_file and key_file - and of course have those files
-# accessible. The existance of those setting and files will
+# accessible. The existence of those setting and files will
 # enable SSL.
 
 [ssl]

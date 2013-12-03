@@ -291,7 +291,7 @@ class FakeServers(object):
         if block_device_mapping is not None:
             # block_device_mapping is a dictionary, where the key is the
             # device name on the compute instance and the mapping info is a
-            # set of fields in a string, seperated by colons.
+            # set of fields in a string, separated by colons.
             # For each device, find the volume, and record the mapping info
             # to another fake object and attach it to the volume
             # so that the fake API can later retrieve this.

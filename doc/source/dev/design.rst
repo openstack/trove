@@ -94,7 +94,7 @@ bus and performs the requested operation.
 Trove-conductor
 ===============
 
-Conductor is a service that runs on the host, responsible for recieving
+Conductor is a service that runs on the host, responsible for receiving
 messages from guest instances to update information on the host.
 For example, instance statuses and the current status of a backup.
 With conductor, guest instances do not need a direct connection to the
