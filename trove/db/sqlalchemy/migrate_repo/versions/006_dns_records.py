@@ -15,10 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import ForeignKey
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
-from sqlalchemy.schema import UniqueConstraint
 
 from trove.db.sqlalchemy.migrate_repo.schema import Table
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables

@@ -27,14 +27,11 @@
 """
 
 import subprocess
-import time
 
 from trove.tests.config import CONFIG as test_config
 from urllib import unquote
 
 try:
-    from eventlet import event
-    from eventlet import greenthread
     EVENT_AVAILABLE = True
 except ImportError:
     EVENT_AVAILABLE = False
@@ -47,13 +44,9 @@ from proboscis.asserts import Check
 from proboscis.asserts import fail
 from proboscis import SkipTest
 from troveclient.compat import Dbaas
-from troveclient.compat.client import TroveHTTPClient
-from trove import tests
-from troveclient.compat.xml import TroveXmlClient
 from trove.tests.util import test_config as CONFIG
 from trove.tests.util.client import TestClient as TestClient
 from trove.tests.util.users import Requirements
-from trove.common.exception import PollTimeOut
 from trove.common.utils import import_object
 from trove.common.utils import import_class
 
@@ -226,7 +219,6 @@ def iso_time(time_string):
 # TODO(dukhlov): Still required by trove integration
 # Should be removed after trove integration fix
 # https://bugs.launchpad.net/trove-integration/+bug/1228306
-from trove.common.utils import poll_until
 
 
 def mysql_connection():

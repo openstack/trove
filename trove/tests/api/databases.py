@@ -20,11 +20,8 @@ from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
-from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-from proboscis.decorators import expect_exception
 from proboscis.decorators import time_out
 
 from trove import tests

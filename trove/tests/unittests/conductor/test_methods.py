@@ -13,16 +13,12 @@
 #    under the License.
 
 import testtools
-from datetime import datetime
 from mockito import unstub
 from trove.backup import models as bkup_models
-from trove.common import context
 from trove.common import exception as t_exception
 from trove.common import instance as t_instance
-from trove.conductor import api as conductor_api
 from trove.conductor import manager as conductor_manager
 from trove.instance import models as t_models
-from trove.instance.tasks import InstanceTasks
 from trove.tests.unittests.util import util
 from uuid import uuid4
 

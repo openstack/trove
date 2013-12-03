@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import traceback
-import sys
 
 from trove.common import cfg
 from trove.openstack.common.rpc import proxy

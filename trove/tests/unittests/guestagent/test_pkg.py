@@ -20,7 +20,6 @@ from mock import Mock
 from mockito import when, any
 import pexpect
 from trove.common import utils
-from trove.common import exception
 from trove.guestagent import pkg
 import commands
 import re

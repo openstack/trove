@@ -17,7 +17,6 @@
 
 from trove.openstack.common import log as logging
 import routes
-import webob.exc
 
 from trove.common import wsgi
 

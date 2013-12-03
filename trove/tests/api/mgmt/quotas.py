@@ -8,8 +8,6 @@ from trove.tests.util import create_client
 from trove.tests.util import get_standby_instance_flavor
 from trove.tests.util.users import Requirements
 from trove.tests.config import CONFIG
-from trove.tests.util.check import AttrCheck
-from trove.tests.util.check import TypeCheck
 from troveclient.compat import exceptions
 
 

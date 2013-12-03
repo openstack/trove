@@ -15,11 +15,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import routes
-import webob.exc
 
 from trove.common import exception
-from trove.common import utils
 from trove.common import wsgi
 from trove.flavor import models
 from trove.flavor import views

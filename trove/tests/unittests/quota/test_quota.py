@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import testtools
-from mockito import mock, when, unstub, any, verify, never, times
+from mockito import mock, when, unstub, any, verify, never
 from mock import Mock
 from trove.quota.quota import DbQuotaDriver
 from trove.quota.models import Resource

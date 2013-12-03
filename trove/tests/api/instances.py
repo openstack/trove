@@ -16,11 +16,8 @@ import hashlib
 
 import os
 import re
-import string
 import time
 import unittest
-from trove.tests import util
-import urlparse
 
 
 GROUP = "dbaas.guest"
@@ -46,7 +43,6 @@ from proboscis import after_class
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_is_not_none
@@ -57,12 +53,9 @@ from trove.openstack.common import timeutils
 from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import create_nova_client
 from trove.tests.util.usage import create_usage_verifier
 from trove.tests.util import iso_time
-from trove.tests.util import process
 from trove.tests.util.users import Requirements
-from trove.tests.util import string_in_list
 from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck

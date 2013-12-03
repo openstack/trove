@@ -17,16 +17,13 @@ Extra tests to create an instance, shut down MySQL, and delete it.
 """
 
 from proboscis.decorators import time_out
-from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
-from proboscis import SkipTest
 from proboscis.asserts import *
 import time
 
 from datetime import datetime
 from troveclient.compat import exceptions
-from trove.tests import util
 from trove.tests.util import create_client
 from trove.common.utils import poll_until
 from trove.tests.util import test_config

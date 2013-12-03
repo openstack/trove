@@ -13,7 +13,7 @@
 #limitations under the License.
 
 import testtools
-from mockito import when, verify, unstub, mock, any, contains
+from mockito import when, unstub, mock, any
 from trove.common.context import TroveContext
 
 from trove.tests.fakes.swift import FakeSwiftConnection

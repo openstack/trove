@@ -17,7 +17,6 @@
 
 import urllib
 import urlparse
-from xml.dom import minidom
 
 
 def url_quote(s):

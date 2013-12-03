@@ -17,7 +17,6 @@
 #    under the License.
 
 import gettext
-import optparse
 import os
 import sys
 

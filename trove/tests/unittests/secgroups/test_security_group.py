@@ -16,14 +16,12 @@ import testtools
 import uuid
 import trove.common.remote
 from mock import Mock
-from mockito import mock, when, any, unstub
+from mockito import mock, unstub
 from trove.common import exception
 from trove.tests.fakes import nova
 from trove.extensions.security_group import models as sec_mod
 from trove.instance import models as inst_model
 from novaclient import exceptions as nova_exceptions
-
-from trove.db.models import DatabaseModelBase
 
 
 """

@@ -17,11 +17,9 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis import test
-from proboscis import SkipTest
 from proboscis.decorators import time_out
 import troveclient.compat
 from trove.common.utils import poll_until
-from trove.tests.util import test_config
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 from trove.tests.config import CONFIG

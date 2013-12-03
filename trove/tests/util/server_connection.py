@@ -14,7 +14,6 @@
 #    under the License.
 
 from trove import tests
-from trove.tests.config import CONFIG
 from trove.tests import util
 from trove.tests.util.users import Requirements
 

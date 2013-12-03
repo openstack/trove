@@ -24,7 +24,6 @@ from troveclient.v1.flavors import Flavor
 from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_raises
-from proboscis import SkipTest
 
 from trove import tests
 from trove.tests.util import create_dbaas_client

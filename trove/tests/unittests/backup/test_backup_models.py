@@ -17,7 +17,7 @@ from trove.backup import models
 from trove.tests.unittests.util import util
 from trove.common import utils, exception
 from trove.common.context import TroveContext
-from trove.instance.models import BuiltInstance, InstanceTasks, Instance
+from trove.instance.models import BuiltInstance, Instance
 from mockito import mock, when, unstub, any
 from trove.taskmanager import api
 

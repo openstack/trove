@@ -16,7 +16,6 @@
 #    under the License.
 
 import routes
-import webob.dec
 from trove.openstack.common import log as logging
 
 from trove.openstack.common import extensions

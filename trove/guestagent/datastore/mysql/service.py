@@ -2,7 +2,6 @@ import os
 import passlib.utils
 import re
 import uuid
-import time
 from datetime import date
 import sqlalchemy
 from sqlalchemy import exc

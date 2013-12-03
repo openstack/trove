@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
 
 from troveclient.compat import exceptions
 
@@ -24,13 +23,9 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-from proboscis.decorators import expect_exception
-from proboscis.decorators import time_out
 
 from trove import tests
 from trove.tests.api.users import TestUsers
-from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
 from trove.tests import util
 from trove.tests.util import test_config

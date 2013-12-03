@@ -24,7 +24,6 @@ context or provide additional information in their specific WSGI pipeline.
 
 from trove.openstack.common import context
 from trove.openstack.common import local
-from trove.common import utils
 
 
 class TroveContext(context.RequestContext):

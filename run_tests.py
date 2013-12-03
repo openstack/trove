@@ -139,29 +139,30 @@ if __name__ == "__main__":
         test_config_file = parse_args_for_test_config()
         CONFIG.load_from_file(test_config_file)
 
-        from trove.tests.api import backups
-        from trove.tests.api import header
-        from trove.tests.api import limits
-        from trove.tests.api import flavors
-        from trove.tests.api import versions
-        from trove.tests.api import instances as rd_instances
-        from trove.tests.api import instances_actions as rd_actions
-        from trove.tests.api import instances_delete
-        from trove.tests.api import instances_mysql_down
-        from trove.tests.api import instances_resize
-        from trove.tests.api import databases
-        from trove.tests.api import datastores
-        from trove.tests.api import root
-        from trove.tests.api import root_on_create
-        from trove.tests.api import users
-        from trove.tests.api import user_access
-        from trove.tests.api.mgmt import accounts
-        from trove.tests.api.mgmt import admin_required
-        from trove.tests.api.mgmt import hosts
-        from trove.tests.api.mgmt import instances as mgmt_instances
-        from trove.tests.api.mgmt import instances_actions as mgmt_actions
-        from trove.tests.api.mgmt import storage
-        from trove.tests.api.mgmt import malformed_json
+        # F401 unused imports needed for tox tests
+        from trove.tests.api import backups  # noqa
+        from trove.tests.api import header  # noqa
+        from trove.tests.api import limits  # noqa
+        from trove.tests.api import flavors  # noqa
+        from trove.tests.api import versions  # noqa
+        from trove.tests.api import instances as rd_instances  # noqa
+        from trove.tests.api import instances_actions as rd_actions  # noqa
+        from trove.tests.api import instances_delete  # noqa
+        from trove.tests.api import instances_mysql_down  # noqa
+        from trove.tests.api import instances_resize  # noqa
+        from trove.tests.api import databases  # noqa
+        from trove.tests.api import datastores  # noqa
+        from trove.tests.api import root  # noqa
+        from trove.tests.api import root_on_create  # noqa
+        from trove.tests.api import users  # noqa
+        from trove.tests.api import user_access  # noqa
+        from trove.tests.api.mgmt import accounts  # noqa
+        from trove.tests.api.mgmt import admin_required  # noqa
+        from trove.tests.api.mgmt import hosts  # noqa
+        from trove.tests.api.mgmt import instances as mgmt_instances  # noqa
+        from trove.tests.api.mgmt import instances_actions as mgmt_actions  # noqa
+        from trove.tests.api.mgmt import storage  # noqa
+        from trove.tests.api.mgmt import malformed_json  # noqa
     except Exception as e:
         print("Run tests failed: %s" % e)
         traceback.print_exc()

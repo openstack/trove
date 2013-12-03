@@ -1,6 +1,3 @@
-from trove.common import cfg
-from trove.common import exception
-from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models, views
 

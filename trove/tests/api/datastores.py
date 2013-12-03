@@ -13,17 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
 
 from nose.tools import assert_equal
-from nose.tools import assert_false
-from nose.tools import assert_true
 from troveclient.compat import exceptions
 
 from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_raises
-from proboscis import SkipTest
 
 from trove import tests
 from trove.tests.util import create_dbaas_client

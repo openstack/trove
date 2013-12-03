@@ -15,7 +15,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import Mock, MagicMock
+from mock import Mock
 from trove.versions import BaseVersion
 from trove.versions import Version
 from trove.versions import VersionDataView
@@ -23,7 +23,6 @@ from trove.versions import VersionsAPI
 from trove.versions import VersionsController
 from trove.versions import VersionsDataView
 from trove.versions import VERSIONS
-from xml.dom import minidom
 
 import testtools
 

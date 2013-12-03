@@ -18,8 +18,6 @@
 
 import datetime
 import inspect
-import re
-import signal
 import sys
 import time
 import urlparse
@@ -29,8 +27,6 @@ import shutil
 
 from eventlet import event
 from eventlet import greenthread
-from eventlet import semaphore
-from eventlet.green import subprocess
 from eventlet.timeout import Timeout
 
 from trove.common import exception

@@ -24,7 +24,6 @@ from trove.openstack.common import exception as openstack_exception
 from trove.openstack.common import processutils
 from trove.openstack.common.gettextutils import _
 
-from webob import exc
 
 ClientConnectionError = openstack_exception.ClientConnectionError
 ProcessExecutionError = processutils.ProcessExecutionError

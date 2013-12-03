@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import time
-import re
 from random import choice
 
 from troveclient.compat import exceptions

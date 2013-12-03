@@ -14,7 +14,6 @@
 
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
-from sqlalchemy.schema import UniqueConstraint
 
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime

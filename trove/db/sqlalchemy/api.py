@@ -16,14 +16,9 @@
 #    under the License.
 
 import sqlalchemy.exc
-from sqlalchemy import and_
-from sqlalchemy import or_
-from sqlalchemy.orm import aliased
 
 from trove.common import exception
-from trove.common import utils
 from trove.db.sqlalchemy import migration
-from trove.db.sqlalchemy import mappers
 from trove.db.sqlalchemy import session
 
 

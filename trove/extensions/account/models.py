@@ -20,7 +20,6 @@ from trove.openstack.common import log as logging
 from trove.common.remote import create_nova_client
 from trove.instance.models import DBInstance
 from trove.extensions.mgmt.instances.models import MgmtInstances
-from trove.common.exception import Forbidden
 
 LOG = logging.getLogger(__name__)
 

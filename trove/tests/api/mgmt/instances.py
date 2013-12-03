@@ -18,11 +18,9 @@ from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
 from proboscis.check import Check
 from proboscis import SkipTest
 
-from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util import create_client
 from trove.tests.util import create_dbaas_client

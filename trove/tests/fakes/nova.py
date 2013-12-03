@@ -16,10 +16,8 @@
 #    under the License.
 
 from novaclient import exceptions as nova_exceptions
-from novaclient.v1_1.client import Client
 from trove.common.exception import PollTimeOut
 from trove.common import instance as rd_instance
-from trove.common.utils import poll_until
 from trove.openstack.common import log as logging
 from trove.tests.fakes.common import authorize
 

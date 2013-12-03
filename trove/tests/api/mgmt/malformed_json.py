@@ -1,5 +1,5 @@
 from collections import deque
-from proboscis import test, SkipTest
+from proboscis import test
 from proboscis.asserts import *
 from proboscis import after_class
 from proboscis import before_class

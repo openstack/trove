@@ -454,7 +454,7 @@ class MySqlAppTest(testtools.TestCase):
     def setUp(self):
         super(MySqlAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
-        self.orig_time_sleep = dbaas.time.sleep
+        self.orig_time_sleep = time.sleep
         util.init_db()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
@@ -469,12 +469,12 @@ class MySqlAppTest(testtools.TestCase):
                          'bin': Mock()}
         dbaas.operating_system.service_discovery = Mock(return_value=
                                                         mysql_service)
-        dbaas.time.sleep = Mock()
+        time.sleep = Mock()
 
     def tearDown(self):
         super(MySqlAppTest, self).tearDown()
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-        dbaas.time.sleep = self.orig_time_sleep
+        time.sleep = self.orig_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
@@ -1007,7 +1007,7 @@ class BaseDbStatusTest(testtools.TestCase):
     def setUp(self):
         super(BaseDbStatusTest, self).setUp()
         util.init_db()
-        self.orig_dbaas_time_sleep = dbaas.time.sleep
+        self.orig_dbaas_time_sleep = time.sleep
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -1015,7 +1015,7 @@ class BaseDbStatusTest(testtools.TestCase):
 
     def tearDown(self):
         super(BaseDbStatusTest, self).tearDown()
-        dbaas.time.sleep = self.orig_dbaas_time_sleep
+        time.sleep = self.orig_dbaas_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
@@ -1101,7 +1101,7 @@ class BaseDbStatusTest(testtools.TestCase):
         self.baseDbStatus = BaseDbStatus()
         self.baseDbStatus._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
-        dbaas.time.sleep = Mock()
+        time.sleep = Mock()
 
         self.assertTrue(self.baseDbStatus.
                         wait_for_real_status_to_change_to
@@ -1111,7 +1111,7 @@ class BaseDbStatusTest(testtools.TestCase):
         self.baseDbStatus = BaseDbStatus()
         self.baseDbStatus._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
-        dbaas.time.sleep = Mock()
+        time.sleep = Mock()
 
         self.assertFalse(self.baseDbStatus.
                          wait_for_real_status_to_change_to
@@ -1126,7 +1126,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
         self.orig_load_mysqld_options = dbaas.load_mysqld_options
         self.orig_dbaas_os_path_exists = dbaas.os.path.exists
-        self.orig_dbaas_time_sleep = dbaas.time.sleep
+        self.orig_dbaas_time_sleep = time.sleep
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -1137,7 +1137,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         dbaas.load_mysqld_options = self.orig_load_mysqld_options
         dbaas.os.path.exists = self.orig_dbaas_os_path_exists
-        dbaas.time.sleep = self.orig_dbaas_time_sleep
+        time.sleep = self.orig_dbaas_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 

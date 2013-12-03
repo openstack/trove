@@ -18,7 +18,6 @@
 from trove.common import wsgi
 from trove.backup import views
 from trove.backup.models import Backup
-from trove.common import exception
 from trove.common import cfg
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _

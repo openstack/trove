@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import Integer

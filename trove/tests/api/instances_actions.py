@@ -33,6 +33,7 @@ from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
 from trove.tests.util.server_connection import create_server_connection
+from trove.common.utils import poll_until
 import trove.tests.util as testsutil
 from trove.tests.config import CONFIG
 from trove.tests.util import LocalSqlClient
@@ -125,7 +126,7 @@ class ActionTestBase(object):
             users = self.dbaas.users.list(instance_info.id)
             return any([user.name == MYSQL_USERNAME for user in users])
 
-        testsutil.poll_until(has_user, time_out=30)
+        poll_until(has_user, time_out=30)
         if not FAKE_MODE:
             time.sleep(5)
 
@@ -200,9 +201,9 @@ class RebootTestBase(ActionTestBase):
             return
         if not hasattr(self, "connection"):
             return
-        testsutil.poll_until(self.connection.is_connected,
-                             lambda connected: not connected,
-                             time_out=TIME_OUT_TIME)
+        poll_until(self.connection.is_connected,
+                   lambda connected: not connected,
+                   time_out=TIME_OUT_TIME)
 
     def wait_for_successful_restart(self):
         """Wait until status becomes running."""
@@ -213,7 +214,7 @@ class RebootTestBase(ActionTestBase):
             assert_equal("ACTIVE", instance.status)
             return True
 
-        testsutil.poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
+        poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
     def assert_mysql_proc_is_different(self):
         if not USE_IP:
@@ -261,7 +262,7 @@ class RebootTestBase(ActionTestBase):
             assert_true(instance.status in ("SHUTDOWN", "BLOCKED"))
             return True
 
-        testsutil.poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
+        poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
 
     def unsuccessful_restart(self):
         """Restart MySQL via the REST when it should fail, assert it does."""
@@ -413,7 +414,7 @@ class ResizeInstanceTest(ActionTestBase):
                 return False
             assert_equal("ACTIVE", instance.status)
             return True
-        testsutil.poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
+        poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
 
     @before_class
     def setup(self):
@@ -437,7 +438,7 @@ class ResizeInstanceTest(ActionTestBase):
 
         def is_active():
             return self.instance.status == 'ACTIVE'
-        testsutil.poll_until(is_active, time_out=TIME_OUT_TIME)
+        poll_until(is_active, time_out=TIME_OUT_TIME)
         assert_equal(self.instance.status, 'ACTIVE')
 
         self.get_flavor_href(
@@ -543,7 +544,7 @@ class ResizeInstanceTest(ActionTestBase):
 
         def is_active():
             return self.instance.status == 'ACTIVE'
-        testsutil.poll_until(is_active, time_out=TIME_OUT_TIME)
+        poll_until(is_active, time_out=TIME_OUT_TIME)
         assert_equal(self.instance.status, 'ACTIVE')
 
         old_flavor_href = self.get_flavor_href(
@@ -614,7 +615,7 @@ class ResizeInstanceVolume(ActionTestBase):
             else:
                 fail("Status should not be %s" % instance.status)
 
-        testsutil.poll_until(check_resize_status, sleep_time=2, time_out=300)
+        poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal(instance.volume['size'], self.new_volume_size)
 
@@ -681,7 +682,7 @@ class UpdateGuest(object):
             # The only valid thing for it to be aside from next_version is
             # old version.
             assert_equal(current_version, self.old_version)
-        testsutil.poll_until(finished, sleep_time=1, time_out=3 * 60)
+        poll_until(finished, sleep_time=1, time_out=3 * 60)
 
     @test(enabled=UPDATE_GUEST_CONF is not None,
           depends_on=[upload_update_to_repo])

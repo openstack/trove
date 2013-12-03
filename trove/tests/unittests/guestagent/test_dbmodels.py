@@ -13,7 +13,7 @@
 #    under the License.
 import testtools
 from trove.guestagent.db import models as dbmodels
-from mock import Mock, MagicMock
+from mock import MagicMock
 
 
 class MySQLDatabaseTest(testtools.TestCase):

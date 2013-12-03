@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from troveclient.compat import exceptions
 
 from nose.plugins.skip import SkipTest
 

@@ -17,11 +17,9 @@
 
 """Model classes that form the core of instance flavor functionality."""
 
-from trove import db
 
 from novaclient import exceptions as nova_exceptions
 from trove.common import exception
-from trove.common import utils
 from trove.common.models import NovaRemoteModelBase
 from trove.common.remote import create_nova_client
 

@@ -13,8 +13,7 @@
 #limitations under the License.
 
 from mock import Mock
-from mockito import when, verify, unstub, mock, any, contains
-from testtools.matchers import Equals, Is
+from mockito import when, unstub, mock, any, contains
 from webob.exc import HTTPNotFound
 
 import hashlib
@@ -28,7 +27,6 @@ from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.backup.models import DBBackup
 from trove.backup.models import BackupState
-from trove.common.exception import ModelNotFoundError
 from trove.db.models import DatabaseModelBase
 from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner

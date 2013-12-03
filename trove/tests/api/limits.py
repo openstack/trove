@@ -1,5 +1,4 @@
 from nose.tools import assert_equal
-from nose.tools import assert_false
 from nose.tools import assert_true
 
 from proboscis import before_class
