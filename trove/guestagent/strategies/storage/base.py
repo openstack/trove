@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 class Storage(Strategy):
-    """ Base class for Storage Strategy implementation """
+    """Base class for Storage Strategy implementation """
     __strategy_type__ = 'storage'
     __strategy_ns__ = 'trove.guestagent.strategies.storage'
 
@@ -32,8 +32,8 @@ class Storage(Strategy):
 
     @abc.abstractmethod
     def save(self, save_location, stream):
-        """ Persist information from the stream """
+        """Persist information from the stream """
 
     @abc.abstractmethod
     def load(self, context, location, is_zipped, backup_checksum):
-        """ Load a stream from a persisted storage location  """
+        """Load a stream from a persisted storage location  """

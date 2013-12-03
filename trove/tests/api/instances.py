@@ -834,7 +834,7 @@ class TestAfterInstanceCreatedGuestData(object):
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, "dbaas.listing"])
 class TestInstanceListing(object):
-    """ Test the listing of the instance information """
+    """Test the listing of the instance information """
 
     @before_class
     def setUp(self):
@@ -994,7 +994,7 @@ class TestCreateNotification(object):
 @test(depends_on_groups=['dbaas.api.instances.actions'],
       groups=[GROUP, tests.INSTANCES, "dbaas.diagnostics"])
 class CheckDiagnosticsAfterTests(object):
-    """ Check the diagnostics after running api commands on an instance. """
+    """Check the diagnostics after running api commands on an instance. """
     @test
     def test_check_diagnostics_on_instance_after_tests(self):
         diagnostics = dbaas_admin.diagnostics.get(instance_info.id)
@@ -1010,7 +1010,7 @@ class CheckDiagnosticsAfterTests(object):
       runs_after_groups=[GROUP_START,
                          GROUP_START_SIMPLE, GROUP_TEST, tests.INSTANCES])
 class DeleteInstance(object):
-    """ Delete the created instance """
+    """Delete the created instance """
 
     @time_out(3 * 60)
     @test

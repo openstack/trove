@@ -52,7 +52,7 @@ class UserAccessBase(object):
                  "databases": []} for name in usernames]
 
     def _grant_access_singular(self, user, databases, expected_response=202):
-        """ Grant a single user access to the databases listed.
+        """Grant a single user access to the databases listed.
             Potentially, expect an exception in the process."""
         try:
             self.dbaas.users.grant(instance_info.id, user, databases)
@@ -66,13 +66,13 @@ class UserAccessBase(object):
             assert_equal(expected_response, self.dbaas.last_http_code)
 
     def _grant_access_plural(self, users, databases, expected_response=202):
-        """ Grant each user in the list access to all the databases listed.
+        """Grant each user in the list access to all the databases listed.
             Potentially, expect an exception in the process."""
         for user in users:
             self._grant_access_singular(user, databases, expected_response)
 
     def _revoke_access_singular(self, user, database, expected_response=202):
-        """ Revoke from a user access to the given database .
+        """Revoke from a user access to the given database .
             Potentially, expect an exception in the process."""
         try:
             self.dbaas.users.revoke(instance_info.id, user, database)
@@ -83,7 +83,7 @@ class UserAccessBase(object):
             assert_equal(404, self.dbaas.last_http_code)
 
     def _revoke_access_plural(self, users, databases, expected_response=202):
-        """ Revoke from each user access to each database.
+        """Revoke from each user access to each database.
             Potentially, expect an exception in the process."""
         for user in users:
             for database in databases:
@@ -92,7 +92,7 @@ class UserAccessBase(object):
                                              expected_response)
 
     def _test_access(self, users, databases, expected_response=200):
-        """ Verify that each user in the list has access to each database in
+        """Verify that each user in the list has access to each database in
             the list."""
         for user in users:
             access = self.dbaas.users.list_access(instance_info.id, user)

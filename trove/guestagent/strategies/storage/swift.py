@@ -36,7 +36,7 @@ class SwiftDownloadIntegrityError(Exception):
 
 
 class SwiftStorage(base.Storage):
-    """ Implementation of Storage Strategy for Swift """
+    """Implementation of Storage Strategy for Swift """
     __strategy_name__ = 'swift'
 
     def __init__(self, context):
@@ -44,7 +44,7 @@ class SwiftStorage(base.Storage):
         self.connection = create_swift_client(context)
 
     def save(self, save_location, stream):
-        """ Persist information from the stream """
+        """Persist information from the stream """
 
         # Create the container (save_location) if it doesn't already exist
         self.connection.put_container(save_location)
@@ -113,7 +113,7 @@ class SwiftStorage(base.Storage):
         return storage_url, container, filename
 
     def load(self, context, location, is_zipped, backup_checksum):
-        """ Restore a backup from the input stream to the restore_location """
+        """Restore a backup from the input stream to the restore_location """
 
         storage_url, container, filename = self._explodeLocation(location)
 
@@ -127,7 +127,7 @@ class SwiftStorage(base.Storage):
 
 
 class SwiftDownloadStream(object):
-    """ Class to do the actual swift download  using the swiftclient """
+    """Class to do the actual swift download  using the swiftclient """
 
     cmd = ("swift --os-auth-token=%(auth_token)s "
            "--os-storage-url=%(storage_url)s "

@@ -36,7 +36,7 @@ class VolumeDevice(object):
         self.device_path = device_path
 
     def migrate_data(self, mysql_base):
-        """ Synchronize the data from the mysql directory to the new volume """
+        """Synchronize the data from the mysql directory to the new volume """
         # Use sudo to have access to this spot.
         utils.execute("sudo", "mkdir", "-p", TMP_MOUNT_POINT)
         self._tmp_mount(TMP_MOUNT_POINT)

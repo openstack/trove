@@ -38,7 +38,7 @@ class RootController(wsgi.Controller):
     """Controller for instance functionality"""
 
     def index(self, req, tenant_id, instance_id):
-        """ Returns True if root is enabled for the given instance;
+        """Returns True if root is enabled for the given instance;
                     False otherwise. """
         LOG.info(_("Getting root enabled for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
@@ -47,7 +47,7 @@ class RootController(wsgi.Controller):
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def create(self, req, tenant_id, instance_id):
-        """ Enable the root user for the db instance """
+        """Enable the root user for the db instance """
         LOG.info(_("Enabling root for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]

@@ -45,7 +45,7 @@ class UnknownBackupType(Exception):
 
 
 class BackupRunner(Strategy):
-    """ Base class for Backup Strategy implementations """
+    """Base class for Backup Strategy implementations """
     __strategy_type__ = 'backup_runner'
     __strategy_ns__ = 'trove.guestagent.strategies.backup'
 

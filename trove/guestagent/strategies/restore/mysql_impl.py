@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 class MySQLDump(base.RestoreRunner):
-    """ Implementation of Restore Strategy for MySQLDump """
+    """Implementation of Restore Strategy for MySQLDump """
     __strategy_name__ = 'mysqldump'
     base_restore_cmd = ('mysql '
                         '--password=%(password)s '
@@ -37,7 +37,7 @@ class MySQLDump(base.RestoreRunner):
 
 
 class InnoBackupEx(base.RestoreRunner):
-    """ Implementation of Restore Strategy for InnoBackupEx """
+    """Implementation of Restore Strategy for InnoBackupEx """
     __strategy_name__ = 'innobackupex'
     base_restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
     base_prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s'

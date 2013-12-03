@@ -145,7 +145,7 @@ class Manager(periodic_task.PeriodicTasks):
         app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
-        """ Gets the filesystem stats for the path given """
+        """Gets the filesystem stats for the path given """
         return dbaas.get_filesystem_volume_stats(fs_path)
 
     def create_backup(self, context, backup_info):

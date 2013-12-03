@@ -581,7 +581,7 @@ def resize_should_not_delete_users():
       groups=[GROUP, tests.INSTANCES],
       enabled=VOLUME_SUPPORT)
 class ResizeInstanceVolume(ActionTestBase):
-    """ Resize the volume of the instance """
+    """Resize the volume of the instance """
 
     @before_class
     def setUp(self):

@@ -532,7 +532,7 @@ class MySqlApp(object):
     TIME_OUT = 1000
 
     def __init__(self, status):
-        """ By default login with root no password for initial setup. """
+        """By default login with root no password for initial setup. """
         self.state_change_wait_time = CONF.state_change_wait_time
         self.status = status
 
@@ -549,7 +549,7 @@ class MySqlApp(object):
 
     @staticmethod
     def _generate_root_password(client):
-        """ Generate and set a random root password and forget about it. """
+        """Generate and set a random root password and forget about it. """
         localhost = "localhost"
         uu = sql_query.UpdateUser("root", host=localhost,
                                   clear=generate_random_password())

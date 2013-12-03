@@ -23,7 +23,7 @@ LOG = logging.getLogger(__name__)
 
 
 class MySQLDump(base.BackupRunner):
-    """ Implementation of Backup Strategy for MySQLDump """
+    """Implementation of Backup Strategy for MySQLDump """
     __strategy_name__ = 'mysqldump'
 
     @property
@@ -42,7 +42,7 @@ class MySQLDump(base.BackupRunner):
 
 
 class InnoBackupEx(base.BackupRunner):
-    """ Implementation of Backup Strategy for InnoBackupEx """
+    """Implementation of Backup Strategy for InnoBackupEx """
     __strategy_name__ = 'innobackupex'
 
     @property

@@ -78,7 +78,7 @@ class RestoreError(Exception):
 
 
 class RestoreRunner(Strategy):
-    """ Base class for Restore Strategy implementations """
+    """Base class for Restore Strategy implementations """
     """Restore a database from a previous backup."""
 
     __strategy_type__ = 'restore_runner'
