@@ -65,7 +65,7 @@ Install dependencies
 --------------------
 * Install required packages::
 
-    # sudo apt-get install build-essential libxslt1-dev qemu-utils mysql-client git python-dev python-pexpect python-mysqldb
+    # sudo apt-get install build-essential libxslt1-dev qemu-utils mysql-client git python-dev python-pexpect python-mysqldb libmysqlclient-dev
 
 * Some packages in Ubuntu repo are outdated, so install their latest version from sources::
 
