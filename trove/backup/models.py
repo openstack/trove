@@ -14,11 +14,13 @@
 
 """Model classes that form the core of snapshots functionality."""
 
+from sqlalchemy import desc
+from swiftclient.client import ClientException
+
 from trove.common import cfg
 from trove.common import exception
 from trove.db.models import DatabaseModelBase
 from trove.openstack.common import log as logging
-from swiftclient.client import ClientException
 from trove.taskmanager import api
 from trove.common.remote import create_swift_client
 from trove.common import utils
@@ -124,6 +126,26 @@ class Backup(object):
             raise exception.NotFound(uuid=backup_id)
 
     @classmethod
+    def _paginate(cls, context, query):
+        """Paginate the results of the base query.
+        We use limit/offset as the results need to be ordered by date
+        and not the primary key.
+        """
+        marker = int(context.marker or 0)
+        limit = int(context.limit or CONF.backups_page_size)
+        # order by 'updated DESC' to show the most recent backups first
+        query = query.order_by(desc(DBBackup.updated))
+        # Apply limit/offset
+        query = query.limit(limit)
+        query = query.offset(marker)
+        # check if we need to send a marker for the next page
+        if query.count() < limit:
+            marker = None
+        else:
+            marker += limit
+        return query.all(), marker
+
+    @classmethod
     def list(cls, context):
         """
         list all live Backups belong to given tenant
@@ -131,21 +153,23 @@ class Backup(object):
         :param context: tenant_id included
         :return:
         """
-        db_info = DBBackup.find_all(tenant_id=context.tenant,
-                                    deleted=False)
-        return db_info
+        query = DBBackup.query()
+        query = query.filter_by(tenant_id=context.tenant,
+                                deleted=False)
+        return cls._paginate(context, query)
 
     @classmethod
-    def list_for_instance(cls, instance_id):
+    def list_for_instance(cls, context, instance_id):
         """
         list all live Backups associated with given instance
         :param cls:
         :param instance_id:
         :return:
         """
-        db_info = DBBackup.find_all(instance_id=instance_id,
-                                    deleted=False)
-        return db_info
+        query = DBBackup.query()
+        query = query.filter_by(instance_id=instance_id,
+                                deleted=False)
+        return cls._paginate(context, query)
 
     @classmethod
     def fail_for_instance(cls, instance_id):

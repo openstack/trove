@@ -145,9 +145,12 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("Indexing backups for instance '%s'") %
                  id)
-
-        backups = backup_model.list_for_instance(id)
-        return wsgi.Result(backup_views.BackupViews(backups).data(), 200)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        backups, marker = backup_model.list_for_instance(context, id)
+        view = backup_views.BackupViews(backups)
+        paged = pagination.SimplePaginatedDataView(req.url, 'backups', view,
+                                                   marker)
+        return wsgi.Result(paged.data(), 200)
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
