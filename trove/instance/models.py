@@ -193,6 +193,11 @@ class SimpleInstance(object):
                                           "RESIZE"]:
             return self.db_info.server_status
 
+        # As far as Trove is concerned, Nova instances in VERIFY_RESIZE should
+        # still appear as though they are in RESIZE.
+        if self.db_info.server_status in ["VERIFY_RESIZE"]:
+            return InstanceStatus.RESIZE
+
         ### Check if there is a backup running for this instance
         if Backup.running(self.id):
             return InstanceStatus.BACKUP
