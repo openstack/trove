@@ -75,7 +75,8 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
 
     def test_swift_segment_checksum_etag_mismatch(self):
         """This tests that when etag doesn't match segment uploaded checksum
-        False is returned and None for checksum and location"""
+            False is returned and None for checksum and location
+        """
         context = TroveContext()
         # this backup_id will trigger fake swift client with calculate_etag
         # enabled to spit out a bad etag when a segment object is uploaded
@@ -106,7 +107,8 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
 
     def test_swift_checksum_etag_mismatch(self):
         """This tests that when etag doesn't match swift checksum False is
-        returned and None for checksum and location"""
+            returned and None for checksum and location
+        """
         context = TroveContext()
         # this backup_id will trigger fake swift client with calculate_etag
         # enabled to spit out a bad etag when a segment object is uploaded
@@ -138,7 +140,8 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
 
 class SwiftStorageLoad(testtools.TestCase):
     """SwiftStorage.load is used to return SwiftDownloadStream which is used
-    to download a backup object from Swift"""
+        to download a backup object from Swift
+    """
 
     def setUp(self):
         super(SwiftStorageLoad, self).setUp()
@@ -149,7 +152,8 @@ class SwiftStorageLoad(testtools.TestCase):
 
     def test_run_verify_checksum(self):
         """This tests that swift download cmd runs if original backup checksum
-        matches swift object etag"""
+            matches swift object etag
+        """
 
         context = TroveContext()
         location = "/backup/location/123"
@@ -185,8 +189,9 @@ class SwiftStorageLoad(testtools.TestCase):
 
     def test_run_verify_checksum_mismatch(self):
         """This tests that SwiftDownloadIntegrityError is raised and swift
-        download cmd does not run when original backup checksum does not match
-        swift object etag"""
+            download cmd does not run when original backup checksum
+            does not match swift object etag
+        """
 
         context = TroveContext()
         location = "/backup/location/123"

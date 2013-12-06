@@ -111,7 +111,8 @@ class API(proxy.RpcProxy):
 
     def change_passwords(self, users):
         """Make an asynchronous call to change the passwords of one or more
-           users."""
+           users.
+        """
         LOG.debug(_("Changing passwords for users on Instance %s"), self.id)
         self._cast("change_passwords", users=users)
 
@@ -166,7 +167,8 @@ class API(proxy.RpcProxy):
 
     def create_database(self, databases):
         """Make an asynchronous call to create a new database
-           within the specified container"""
+           within the specified container
+        """
         LOG.debug(_("Creating databases for Instance %s"), self.id)
         self._cast("create_database", databases=databases)
 
@@ -178,7 +180,8 @@ class API(proxy.RpcProxy):
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database
-           within the specified container"""
+           within the specified container
+        """
         LOG.debug(_("Deleting database %(database)s for "
                     "Instance %(instance_id)s") % {'database': database,
                                                    'instance_id': self.id})
@@ -186,19 +189,22 @@ class API(proxy.RpcProxy):
 
     def enable_root(self):
         """Make a synchronous call to enable the root user for
-           access from anywhere"""
+           access from anywhere
+        """
         LOG.debug(_("Enable root user for Instance %s"), self.id)
         return self._call("enable_root", AGENT_LOW_TIMEOUT)
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
-           access from anywhere"""
+           access from anywhere
+        """
         LOG.debug(_("Disable root user for Instance %s"), self.id)
         return self._call("disable_root", AGENT_LOW_TIMEOUT)
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
-           available for the container"""
+           available for the container
+        """
         LOG.debug(_("Check root access for Instance %s"), self.id)
         return self._call("is_root_enabled", AGENT_LOW_TIMEOUT)
 
@@ -239,7 +245,8 @@ class API(proxy.RpcProxy):
 
     def reset_configuration(self, configuration):
         """Ignore running state of MySQL, and just change the config file
-           to a new flavor."""
+           to a new flavor.
+        """
         LOG.debug(_("Sending the call to change MySQL conf file on the Guest "
                     "with a timeout of %s.") % AGENT_HIGH_TIMEOUT)
         self._call("reset_configuration", AGENT_HIGH_TIMEOUT,

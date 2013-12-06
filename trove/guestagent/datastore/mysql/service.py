@@ -304,7 +304,8 @@ class MySqlAdmin(object):
 
     def create_user(self, users):
         """Create users and grant them privileges for the
-           specified databases."""
+           specified databases.
+        """
         with LocalSqlClient(get_engine()) as client:
             for item in users:
                 user = models.MySQLUser()
@@ -392,7 +393,8 @@ class MySqlAdmin(object):
 
     def enable_root(self, root_password=None):
         """Enable the root user global access and/or
-           reset the root password."""
+           reset the root password.
+        """
         return MySqlRootAccess.enable_root(root_password)
 
     def report_root_enabled(self, context=None):
@@ -519,7 +521,8 @@ class MySqlAdmin(object):
 
     def list_access(self, username, hostname):
         """Show all the databases to which the user has more than
-           USAGE granted."""
+           USAGE granted.
+        """
         user = self._get_user(username, hostname)
         return user.databases
 
@@ -577,7 +580,8 @@ class MySqlApp(object):
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a secure
-           mysql server installation."""
+           mysql server installation.
+        """
         LOG.info(_("Preparing Guest as MySQL Server"))
         if not packager.pkg_is_installed(packages):
             LOG.debug(_("Installing mysql server"))
@@ -827,7 +831,8 @@ class MySqlRootAccess(object):
     @classmethod
     def enable_root(cls, root_password=None):
         """Enable the root user global access and/or
-           reset the root password."""
+           reset the root password.
+        """
         user = models.RootUser()
         user.name = "root"
         user.host = "%"

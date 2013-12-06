@@ -42,7 +42,8 @@ user = None
 
 def assert_attributes_equal(name, os_flavor, dbaas_flavor):
     """Given an attribute name and two objects,
-    ensures the attribute is equal."""
+        ensures the attribute is equal.
+    """
     assert_true(hasattr(os_flavor, name),
                 "open stack flavor did not have attribute %s" % name)
     assert_true(hasattr(dbaas_flavor, name),
