@@ -448,6 +448,25 @@ class MySqlAdminTest(testtools.TestCase):
 
         self.assertTrue("AND Marker >= '" + marker + "'" in args[0].text)
 
+    def test_get_user(self):
+        """
+        Unit tests for mySqlAdmin.get_user.
+        This test case checks if the sql query formed by the get_user method
+        is correct or not by checking with expected query.
+        """
+        username = "user1"
+        hostname = "host"
+        self.mySqlAdmin.get_user(username, hostname)
+        args, _ = dbaas.LocalSqlClient.execute.call_args
+        expected = ["SELECT User, Host",
+                    "FROM mysql.user",
+                    "WHERE Host != 'localhost' AND User = 'user1'",
+                    "ORDER BY User, Host",
+                    ]
+
+        for text in expected:
+            self.assertTrue(text in args[0].text, "%s not in query." % text)
+
 
 class MySqlAppTest(testtools.TestCase):
 

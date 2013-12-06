@@ -100,6 +100,15 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.assertThat(users, Equals(['user1']))
         verify(dbaas.MySqlAdmin).list_users(None, None, False)
 
+    def test_get_users(self):
+        username = ['user1']
+        hostname = ['host']
+        when(dbaas.MySqlAdmin).get_user(username,
+                                        hostname).thenReturn(['user1'])
+        users = self.manager.get_user(self.context, username, hostname)
+        self.assertThat(users, Equals(['user1']))
+        verify(dbaas.MySqlAdmin).get_user(username, hostname)
+
     def test_enable_root(self):
         when(dbaas.MySqlAdmin).enable_root().thenReturn('user_id_stuff')
         user_id = self.manager.enable_root(self.context)
