@@ -158,10 +158,12 @@ class BackupAgentTest(testtools.TestCase):
         """
         mysql_dump = mysql_impl.MySQLDump('abc',
                                           password='123',
-                                          user='123')
+                                          user='123',
+                                          extra_opts='')
         self.assertIsNotNone(mysql_dump.cmd)
         str_mysql_dump_cmd = ('/usr/bin/mysqldump'
                               ' --all-databases'
+                              ' %(extra_opts)s'
                               ' --opt'
                               ' --password=%(password)s'
                               ' -u %(user)s'
@@ -176,10 +178,11 @@ class BackupAgentTest(testtools.TestCase):
         """This test is for
            guestagent/strategies/backup/impl
         """
-        inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex')
+        inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex', extra_opts='')
         self.assertIsNotNone(inno_backup_ex.cmd)
         str_innobackup_cmd = ('sudo innobackupex'
                               ' --stream=xbstream'
+                              ' %(extra_opts)s'
                               ' /var/lib/mysql 2>/tmp/innobackupex.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '

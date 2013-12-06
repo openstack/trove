@@ -158,6 +158,8 @@ common_opts = [
                help='The region this service is located.'),
     cfg.StrOpt('backup_runner',
                default='trove.guestagent.backup.backup_types.InnoBackupEx'),
+    cfg.DictOpt('backup_runner_options', default={},
+                help='Additional options to be passed to the backup runner'),
     cfg.StrOpt('backup_strategy', default='InnoBackupEx',
                help='Default strategy to perform backups'),
     cfg.StrOpt('backup_namespace',
