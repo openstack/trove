@@ -20,6 +20,8 @@ from trove.guestagent.strategy import Strategy
 from trove.openstack.common import log as logging
 from trove.common import cfg, utils
 from eventlet.green import subprocess
+import os
+import signal
 
 CONF = cfg.CONF
 
@@ -80,7 +82,8 @@ class BackupRunner(Strategy):
     def run(self):
         self.process = subprocess.Popen(self.command, shell=True,
                                         stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
+                                        stderr=subprocess.PIPE,
+                                        preexec_fn=os.setsid)
         self.pid = self.process.pid
 
     def __enter__(self):
@@ -95,6 +98,11 @@ class BackupRunner(Strategy):
 
         if hasattr(self, 'process'):
             try:
+                # Send a sigterm to the session leader, so that all
+                # child processes are killed and cleaned up on terminate
+                # (Ensures zombie processes aren't left around on a FAILURE)
+                # https://bugs.launchpad.net/trove/+bug/1253850
+                os.killpg(self.process.pid, signal.SIGTERM)
                 self.process.terminate()
             except OSError:
                 # Already stopped
