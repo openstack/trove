@@ -52,7 +52,7 @@ def generate_random_password():
 
 def clear_expired_password():
     """
-    Some mysql installations generating random root password
+    Some mysql installations generate random root password
     and save it in /root/.mysql_secret, this password is
     expired and should be changed by client that supports expired passwords.
     """
@@ -92,7 +92,7 @@ def get_auth_password():
 
 
 def get_engine():
-    """Create the default engine with the updated admin user"""
+    """Create the default engine with the updated admin user."""
     #TODO(rnirmal):Based on permissions issues being resolved we may revert
     #url = URL(drivername='mysql', host='localhost',
     #          query={'read_default_file': '/etc/mysql/my.cnf'})
@@ -170,7 +170,7 @@ class MySqlAppStatus(service.BaseDbStatus):
 
 
 class LocalSqlClient(object):
-    """A sqlalchemy wrapper to manage transactions"""
+    """A sqlalchemy wrapper to manage transactions."""
 
     def __init__(self, engine, use_flush=True):
         self.engine = engine
@@ -240,7 +240,7 @@ class MySqlAdmin(object):
                 client.execute(t)
 
     def update_attributes(self, username, hostname, user_attrs):
-        """Change the attributes of one existing user."""
+        """Change the attributes of an existing user."""
         LOG.debug("Changing the user attributes")
         LOG.debug("User is %s" % username)
         user = self._get_user(username, hostname)
@@ -273,7 +273,7 @@ class MySqlAdmin(object):
                 self.grant_access(uname, host, db_access)
 
     def create_database(self, databases):
-        """Create the list of specified databases"""
+        """Create the list of specified databases."""
         with LocalSqlClient(get_engine()) as client:
             for item in databases:
                 mydb = models.ValidatedMySQLDatabase()
@@ -286,7 +286,7 @@ class MySqlAdmin(object):
 
     def create_user(self, users):
         """Create users and grant them privileges for the
-           specified databases"""
+           specified databases."""
         with LocalSqlClient(get_engine()) as client:
             for item in users:
                 user = models.MySQLUser()
@@ -307,7 +307,7 @@ class MySqlAdmin(object):
                     client.execute(t)
 
     def delete_database(self, database):
-        """Delete the specified database"""
+        """Delete the specified database."""
         with LocalSqlClient(get_engine()) as client:
             mydb = models.ValidatedMySQLDatabase()
             mydb.deserialize(database)
@@ -316,7 +316,7 @@ class MySqlAdmin(object):
             client.execute(t)
 
     def delete_user(self, user):
-        """Delete the specified users"""
+        """Delete the specified user."""
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
             mysql_user.deserialize(user)
@@ -331,7 +331,7 @@ class MySqlAdmin(object):
         return user.serialize()
 
     def _get_user(self, username, hostname):
-        """Return a single user matching the criteria"""
+        """Return a single user matching the criteria."""
         user = models.MySQLUser()
         try:
             user.name = username  # Could possibly throw a BadRequest here.
@@ -358,7 +358,7 @@ class MySqlAdmin(object):
             return user
 
     def grant_access(self, username, hostname, databases):
-        """Give a user permission to use a given database."""
+        """Grant a user permission to use a given database."""
         user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
             for database in databases:
@@ -373,15 +373,16 @@ class MySqlAdmin(object):
         return MySqlRootAccess.is_root_enabled()
 
     def enable_root(self, root_password=None):
-        """Enable the root user global access and/or reset the root password"""
+        """Enable the root user global access and/or
+           reset the root password."""
         return MySqlRootAccess.enable_root(root_password)
 
     def report_root_enabled(self, context=None):
-        """Records in the Root History that the root is enabled"""
+        """Records in the Root History that the root is enabled."""
         return MySqlRootAccess.report_root_enabled(context)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
-        """List databases the user created on this mysql instance"""
+        """List databases the user created on this mysql instance."""
         LOG.debug(_("---Listing Databases---"))
         databases = []
         with LocalSqlClient(get_engine()) as client:
@@ -427,7 +428,7 @@ class MySqlAdmin(object):
         return databases, next_marker
 
     def list_users(self, limit=None, marker=None, include_marker=False):
-        """List users that have access to the database"""
+        """List users that have access to the database."""
         '''
         SELECT
             User,
@@ -488,7 +489,7 @@ class MySqlAdmin(object):
         return users, next_marker
 
     def revoke_access(self, username, hostname, database):
-        """Give a user permission to use a given database."""
+        """Revoke a user's permission to use a given database."""
         user = self._get_user(username, hostname)
         with LocalSqlClient(get_engine()) as client:
             r = sql_query.Revoke(database=database,
@@ -513,7 +514,7 @@ class KeepAliveConnection(interfaces.PoolListener):
     """
 
     def checkout(self, dbapi_con, con_record, con_proxy):
-        """Event triggered when a connection is checked out from the pool"""
+        """Event triggered when a connection is checked out from the pool."""
         try:
             try:
                 dbapi_con.ping(False)
@@ -532,14 +533,14 @@ class MySqlApp(object):
     TIME_OUT = 1000
 
     def __init__(self, status):
-        """By default login with root no password for initial setup. """
+        """By default login with root no password for initial setup."""
         self.state_change_wait_time = CONF.state_change_wait_time
         self.status = status
 
     def _create_admin_user(self, client, password):
         """
         Create a os_admin user with a random password
-        with all privileges similar to the root user
+        with all privileges similar to the root user.
         """
         localhost = "localhost"
         g = sql_query.Grant(permissions='ALL', user=ADMIN_USER_NAME,
@@ -549,7 +550,7 @@ class MySqlApp(object):
 
     @staticmethod
     def _generate_root_password(client):
-        """Generate and set a random root password and forget about it. """
+        """Generate and set a random root password and forget about it."""
         localhost = "localhost"
         uu = sql_query.UpdateUser("root", host=localhost,
                                   clear=generate_random_password())
@@ -557,7 +558,8 @@ class MySqlApp(object):
         client.execute(t)
 
     def install_if_needed(self, packages):
-        """Prepare the guest machine with a secure mysql server installation"""
+        """Prepare the guest machine with a secure
+           mysql server installation."""
         LOG.info(_("Preparing Guest as MySQL Server"))
         if not packager.pkg_is_installed(packages):
             LOG.debug(_("Installing mysql server"))
@@ -598,7 +600,7 @@ class MySqlApp(object):
                 self._remove_remote_root_access(client)
 
     def _clear_mysql_config(self):
-        """Clear old configs, which can be incompatible with new version """
+        """Clear old configs, which can be incompatible with new version."""
         LOG.debug("Clearing old mysql config")
         random_uuid = str(uuid.uuid4())
         configs = ["/etc/my.cnf", "/etc/mysql/conf.d", "/etc/mysql/my.cnf"]
@@ -721,7 +723,7 @@ class MySqlApp(object):
         """
         Install the set of mysql my.cnf templates.
         Update the os_admin user and password to the my.cnf
-        file for direct login from localhost
+        file for direct login from localhost.
         """
         LOG.info(_("Writing my.cnf templates."))
         if admin_password is None:
@@ -758,7 +760,7 @@ class MySqlApp(object):
             # it seems mysql (percona, at least) might come back with [Fail]
             # but actually come up ok. we're looking into the timing issue on
             # parallel, but for now, we'd like to give it one more chance to
-            # come up. so regardless of the execute_with_timeout() respose,
+            # come up. so regardless of the execute_with_timeout() response,
             # we'll assume mysql comes up and check it's status for a while.
             pass
         if not self.status.wait_for_real_status_to_change_to(
@@ -806,7 +808,8 @@ class MySqlRootAccess(object):
 
     @classmethod
     def enable_root(cls, root_password=None):
-        """Enable the root user global access and/or reset the root password"""
+        """Enable the root user global access and/or
+           reset the root password."""
         user = models.RootUser()
         user.name = "root"
         user.host = "%"
