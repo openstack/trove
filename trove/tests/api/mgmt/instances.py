@@ -108,11 +108,11 @@ def mgmt_instance_get():
         #TODO(tim-simpson): Validate additional fields, assert
         # no extra fields exist.
     if api_instance.server is not None:
-        print "the real content of server: %s" % dir(api_instance.server)
-        print "the type of server: %s" % type(api_instance.server)
-        print "the real content of api_instance: %s" % dir(api_instance)
-        print "the type of api_instance: %s" % type(api_instance)
-        print hasattr(api_instance, "server")
+        print("the real content of server: %s" % dir(api_instance.server))
+        print("the type of server: %s" % type(api_instance.server))
+        print("the real content of api_instance: %s" % dir(api_instance))
+        print("the type of api_instance: %s" % type(api_instance))
+        print(hasattr(api_instance, "server"))
 
         with CollectionCheck("server", api_instance.server) as server:
             server.has_element("addresses", dict)

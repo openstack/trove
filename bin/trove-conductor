@@ -58,5 +58,5 @@ if __name__ == '__main__':
     try:
         main()
     except RuntimeError as error:
-        print traceback.format_exc()
+        print(traceback.format_exc())
         sys.exit("ERROR: %s" % error)

@@ -174,7 +174,7 @@ class SwiftStorageLoad(testtools.TestCase):
         self.assertEqual(download_stream.filename, "123")
 
         with download_stream as stream:
-            print "Testing SwiftDownloadStream context manager: %s" % stream
+            print("Testing SwiftDownloadStream context manager: %s" % stream)
 
         self.assertIsNotNone(download_stream.process,
                              "SwiftDownloadStream process/cmd is supposed "
