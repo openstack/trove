@@ -49,7 +49,6 @@ from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
 
-from trove.openstack.common import timeutils
 from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
@@ -1025,7 +1024,6 @@ class DeleteInstance(object):
         # Update the report so the logs inside the instance will be saved.
         CONFIG.get_report().update()
         dbaas.instances.delete(instance_info.id)
-        instance_info.deleted_at = timeutils.utcnow().isoformat()
 
         attempts = 0
         try:
@@ -1066,6 +1064,11 @@ class DeleteInstance(object):
 class AfterDeleteChecks(object):
     @test
     def test_instance_delete_event_sent(self):
+        deleted_at = None
+        mgmt_details = dbaas_admin.management.index(deleted=True)
+        for instance in mgmt_details:
+            if instance.id == instance_info.id:
+                deleted_at = instance.deleted_at
         expected = {
             'instance_size': instance_info.dbaas_flavor.ram,
             'tenant_id': instance_info.user.tenant_id,
@@ -1073,7 +1076,7 @@ class AfterDeleteChecks(object):
             'instance_name': instance_info.name,
             'created_at': iso_time(instance_info.initial_result.created),
             'launched_at': iso_time(instance_info.initial_result.created),
-            'deleted_at': iso_time(instance_info.deleted_at),
+            'deleted_at': iso_time(deleted_at),
         }
         instance_info.consumer.check_message(instance_info.id,
                                              'trove.instance.delete',
