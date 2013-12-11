@@ -271,6 +271,28 @@ class TestUsers(object):
                                 hostname=hostname2)
 
     @test()
+    def test_updateduser_newhost_invalid(self):
+        # Ensure invalid hostnames/usernames aren't allowed to enter the system
+        users = []
+        username = "testuser1"
+        hostname1 = "192.168.0.1"
+        users.append({"name": username, "password": "password",
+                      "host": hostname1, "databases": []})
+        self.dbaas.users.create(instance_info.id, users)
+        hostname1 = hostname1.replace('.', '%2e')
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      username, {"host": "badjuju"}, hostname1)
+        assert_equal(400, self.dbaas.last_http_code)
+
+        assert_raises(exceptions.BadRequest,
+                      self.dbaas.users.update_attributes, instance_info.id,
+                      username, {"name": " bad username   "}, hostname1)
+        assert_equal(400, self.dbaas.last_http_code)
+
+        self.dbaas.users.delete(instance_info.id, username, hostname=hostname1)
+
+    @test()
     def test_cannot_change_rootpassword(self):
         # Cannot change password for a root user
         user_new = {"password": "12345"}

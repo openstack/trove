@@ -142,12 +142,20 @@ class User(object):
                           user_attrs):
         load_and_verify(context, instance_id)
         client = create_guest_client(context, instance_id)
-        user_name = user_attrs.get('name')
-        host_name = user_attrs.get('host')
-        user = user_name or username
-        host = host_name or hostname
+
+        user_changed = user_attrs.get('name')
+        host_changed = user_attrs.get('host')
+
+        validate = guest_models.MySQLUser()
+        if host_changed:
+            validate.host = host_changed
+        if user_changed:
+            validate.name = user_changed
+
+        user = user_changed or username
+        host = host_changed or hostname
         userhost = "%s@%s" % (user, host)
-        if user_name or host_name:
+        if user_changed or host_changed:
             existing_users, _nadda = Users.load_with_client(
                 client,
                 limit=1,
