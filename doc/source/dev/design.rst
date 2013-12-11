@@ -22,7 +22,7 @@ XML to provision and manage Trove instances.
 * A REST-ful component
 * Entry point - Trove/bin/trove-api
 * Uses a WSGI launcher configured by Trove/etc/trove/api-paste.ini
-* Defines the pipeline of filters; tokenauth, ratelimit, etc.
+* Defines the pipeline of filters; authtoken, ratelimit, etc.
 * Defines the app_factory for the troveapp as
   trove.common.api:app_factory
 * The API class (a wsgi Router) wires the REST paths to the

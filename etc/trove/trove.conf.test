@@ -140,13 +140,13 @@ use = call:trove.common.wsgi:versioned_urlmap
 paste.app_factory = trove.versions:app_factory
 
 [pipeline:troveapi]
-pipeline = faultwrapper tokenauth authorization contextwrapper ratelimit extensions troveapp
+pipeline = faultwrapper authtoken authorization contextwrapper ratelimit extensions troveapp
 # pipeline = debug troveapp
 
 [filter:extensions]
 paste.filter_factory = trove.common.extensions:factory
 
-[filter:tokenauth]
+[filter:authtoken]
 paste.filter_factory = trove.tests.fakes.keystone:filter_factory
 service_protocol = http
 service_host = 127.0.0.1
