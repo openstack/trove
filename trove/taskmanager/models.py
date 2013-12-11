@@ -559,8 +559,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             server = self.nova_client.servers.get(
                 self.db_info.compute_instance_id)
             LOG.info(_("Creating dns entry..."))
-            dns_client.create_instance_entry(self.id,
-                                             get_ip_address(server.addresses))
+            ip = get_ip_address(server.addresses)
+            if not ip:
+                raise TroveError('Error creating DNS. No IP available.')
+            dns_client.create_instance_entry(self.id, ip.pop)
         else:
             LOG.debug(_("%(gt)s: DNS not enabled for instance: %(id)s") %
                       {'gt': greenthread.getcurrent(), 'id': self.id})
@@ -615,8 +617,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 dns_api = create_dns_client(self.context)
                 dns_api.delete_instance_entry(instance_id=self.db_info.id)
         except Exception as ex:
-            LOG.exception(_("Error during dns entry of instance %(id)s: %(ex)")
-                          % {'id': self.db_info.id, 'ex': ex})
+            LOG.exception(_("Error during dns entry of instance %(id)s: "
+                            "%(ex)s") % {'id': self.db_info.id, 'ex': ex})
 
             # Poll until the server is gone.
         def server_is_finished():

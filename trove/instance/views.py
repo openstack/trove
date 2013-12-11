@@ -34,6 +34,9 @@ def get_ip_address(addresses):
         if (re.search(CONF.network_label_regex, label) and
                 len(addresses[label]) > 0):
             IPs.extend([addr.get('addr') for addr in addresses[label]])
+    # Includes ip addresses that match the regexp pattern
+    if CONF.ip_regex:
+        IPs = filter_ips(IPs, CONF.ip_regex)
     return IPs
 
 
@@ -99,11 +102,7 @@ class InstanceDetailView(InstanceView):
         if CONF.add_addresses:
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
-                # Includes ip addresses that match the regexp pattern
-                if CONF.ip_regex:
-                    ip = filter_ips(ip, CONF.ip_regex)
-                if len(ip) > 0:
-                    result['instance']['ip'] = ip
+                result['instance']['ip'] = ip
 
         if (isinstance(self.instance, models.DetailInstance) and
                 self.instance.volume_used):

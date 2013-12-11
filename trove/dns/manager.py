@@ -52,7 +52,7 @@ class DnsManager(object):
         """
         entry = self.entry_factory.create_entry(instance_id)
         if entry:
-            entry.content = content[0]
+            entry.content = content
             LOG.debug("Creating entry address %s." % str(entry))
             self.driver.create_entry(entry)
         else:
