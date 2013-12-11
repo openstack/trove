@@ -113,6 +113,7 @@ class FakeServer(object):
         for volume in self.volumes:
             info_vols.append({'id': volume.id})
             volume.set_attachment(id)
+            volume.schedule_status("in-use", 1)
         self.host = FAKE_HOSTS[0]
         self.old_host = None
         setattr(self, 'OS-EXT-AZ:availability_zone', 'nova')
@@ -511,6 +512,16 @@ class FakeVolumes(object):
         def finish_detach():
             volume._current_status = "available"
         eventlet.spawn_after(1.0, finish_detach)
+
+    def attach(self, volume_id, server_id, device_path):
+        volume = self.get(volume_id)
+
+        if volume._current_status != "available":
+            raise Exception("Invalid volume status")
+
+        def finish_attach():
+            volume._current_status = "in-use"
+        eventlet.spawn_after(1.0, finish_attach)
 
 
 class FakeAccount(object):

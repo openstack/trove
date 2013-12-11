@@ -308,6 +308,15 @@ class FakeGuest(object):
             backup.save()
         eventlet.spawn_after(1.0, finish_create_backup)
 
+    def mount_volume(self, device_path=None, mount_point=None):
+        pass
+
+    def unmount_volume(self, device_path=None, mount_point=None):
+        pass
+
+    def resize_fs(self, device_path=None, mount_point=None):
+        pass
+
 
 def get_or_create(id):
     if id not in DB:

@@ -38,18 +38,19 @@ class VolumeDeviceTest(testtools.TestCase):
     def test_migrate_data(self):
         origin_execute = utils.execute
         utils.execute = Mock()
+        origin_os_path_exists = os.path.exists
+        os.path.exists = Mock()
+        fake_spawn = _setUp_fake_spawn()
 
-        origin_tmp_mount = self.volumeDevice._tmp_mount
         origin_unmount = self.volumeDevice.unmount
-        self.volumeDevice._tmp_mount = MagicMock()
         self.volumeDevice.unmount = MagicMock()
         self.volumeDevice.migrate_data('/')
+        self.assertEqual(1, fake_spawn.expect.call_count)
         self.assertEqual(1, utils.execute.call_count)
-        self.assertEqual(1, self.volumeDevice._tmp_mount.call_count)
         self.assertEqual(1, self.volumeDevice.unmount.call_count)
         utils.execute = origin_execute
-        self.volumeDevice._tmp_mount = origin_tmp_mount
         self.volumeDevice.unmount = origin_unmount
+        os.path.exists = origin_os_path_exists
 
     def test__check_device_exists(self):
         origin_execute = utils.execute
@@ -98,6 +99,8 @@ class VolumeDeviceTest(testtools.TestCase):
     def test_mount(self):
         origin_ = volume.VolumeMountPoint.mount
         volume.VolumeMountPoint.mount = Mock()
+        origin_os_path_exists = os.path.exists
+        os.path.exists = Mock()
         origin_write_to_fstab = volume.VolumeMountPoint.write_to_fstab
         volume.VolumeMountPoint.write_to_fstab = Mock()
 
@@ -106,27 +109,23 @@ class VolumeDeviceTest(testtools.TestCase):
         self.assertEqual(1, volume.VolumeMountPoint.write_to_fstab.call_count)
         volume.VolumeMountPoint.mount = origin_
         volume.VolumeMountPoint.write_to_fstab = origin_write_to_fstab
+        os.path.exists = origin_os_path_exists
 
     def test_resize_fs(self):
         origin_check_device_exists = self.volumeDevice._check_device_exists
         origin_execute = utils.execute
         utils.execute = Mock()
         self.volumeDevice._check_device_exists = MagicMock()
+        origin_os_path_exists = os.path.exists
+        os.path.exists = Mock()
 
-        self.volumeDevice.resize_fs()
+        self.volumeDevice.resize_fs('/mnt/volume')
 
         self.assertEqual(1, self.volumeDevice._check_device_exists.call_count)
-        self.assertEqual(1, utils.execute.call_count)
+        self.assertEqual(2, utils.execute.call_count)
         self.volumeDevice._check_device_exists = origin_check_device_exists
+        os.path.exists = origin_os_path_exists
         utils.execute = origin_execute
-
-    def test__tmp_mount(self):
-        origin_ = volume.VolumeMountPoint.mount
-        volume.VolumeMountPoint.mount = Mock()
-
-        self.volumeDevice._tmp_mount(Mock)
-        self.assertEqual(1, volume.VolumeMountPoint.mount.call_count)
-        volume.VolumeMountPoint.mount = origin_
 
     def test_unmount_positive(self):
         self._test_unmount()
@@ -139,7 +138,7 @@ class VolumeDeviceTest(testtools.TestCase):
         os.path.exists = MagicMock(return_value=positive)
         fake_spawn = _setUp_fake_spawn()
 
-        self.volumeDevice.unmount()
+        self.volumeDevice.unmount('/mnt/volume')
         COUNT = 1
         if not positive:
             COUNT = 0

@@ -280,3 +280,24 @@ class API(proxy.RpcProxy):
                     "for Instance %(instance_id)s") %
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
         self._cast("create_backup", backup_info=backup_info)
+
+    def mount_volume(self, device_path=None, mount_point=None):
+        """Mount the volume"""
+        LOG.debug(_("Mount volume %(mount)s on instance %(id)s") % {
+            'mount': mount_point, 'id': self.id})
+        self._call("mount_volume", AGENT_LOW_TIMEOUT,
+                   device_path=device_path, mount_point=mount_point)
+
+    def unmount_volume(self, device_path=None, mount_point=None):
+        """Unmount the volume"""
+        LOG.debug(_("Unmount volume %(device)s on instance %(id)s") % {
+            'device': device_path, 'id': self.id})
+        self._call("unmount_volume", AGENT_LOW_TIMEOUT,
+                   device_path=device_path, mount_point=mount_point)
+
+    def resize_fs(self, device_path=None, mount_point=None):
+        """Resize the filesystem"""
+        LOG.debug(_("Resize device %(device)s on instance %(id)s") % {
+            'device': device_path, 'id': self.id})
+        self._call("resize_fs", AGENT_LOW_TIMEOUT, device_path=device_path,
+                   mount_point=mount_point)

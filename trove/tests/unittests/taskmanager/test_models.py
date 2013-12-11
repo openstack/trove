@@ -15,19 +15,24 @@ import testtools
 from mock import Mock
 from testtools.matchers import Equals
 from mockito import mock, when, unstub, any, verify, never
+from cinderclient import exceptions as cinder_exceptions
 from trove.datastore import models as datastore_models
 from trove.taskmanager import models as taskmanager_models
 from trove.backup import models as backup_models
 from trove.common import remote
+from trove.common.exception import GuestError
+from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.instance import ServiceStatuses
 from trove.extensions.mysql import models as mysql_models
 from trove.instance.models import InstanceServiceStatus
+from trove.instance.models import InstanceStatus
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
 
 from trove.tests.unittests.util import util
 from trove.common import utils
+from trove.openstack.common import timeutils
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
@@ -222,6 +227,92 @@ class FreshInstanceTasksTest(testtools.TestCase):
                          ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
         self.assertEqual(fake_DBInstance.find_by().get_task_status(),
                          InstanceTasks.BUILDING_ERROR_TIMEOUT_GA)
+
+
+class ResizeVolumeTest(testtools.TestCase):
+    def setUp(self):
+        super(ResizeVolumeTest, self).setUp()
+        utils.poll_until = Mock()
+        timeutils.isotime = Mock()
+        self.instance = Mock()
+        self.old_vol_size = 1
+        self.new_vol_size = 2
+        self.action = taskmanager_models.ResizeVolumeAction(self.instance,
+                                                            self.old_vol_size,
+                                                            self.new_vol_size)
+
+    def tearDown(self):
+        super(ResizeVolumeTest, self).tearDown()
+
+    def test_resize_volume_unmount_exception(self):
+        self.instance.guest.unmount_volume = Mock(
+            side_effect=GuestError("test exception"))
+        self.assertRaises(GuestError,
+                          self.action._unmount_volume,
+                          recover_func=self.action._recover_restart)
+        self.assertEqual(1, self.instance.restart.call_count)
+        self.instance.guest.unmount_volume.side_effect = None
+        self.instance.reset_mock()
+
+    def test_resize_volume_detach_exception(self):
+        self.instance.volume_client.volumes.detach = Mock(
+            side_effect=cinder_exceptions.ClientException("test exception"))
+        self.assertRaises(cinder_exceptions.ClientException,
+                          self.action._detach_volume,
+                          recover_func=self.action._recover_mount_restart)
+        self.assertEqual(1, self.instance.guest.mount_volume.call_count)
+        self.assertEqual(1, self.instance.restart.call_count)
+        self.instance.volume_client.volumes.detach.side_effect = None
+        self.instance.reset_mock()
+
+    def test_resize_volume_extend_exception(self):
+        self.instance.volume_client.volumes.extend = Mock(
+            side_effect=cinder_exceptions.ClientException("test exception"))
+        self.assertRaises(cinder_exceptions.ClientException,
+                          self.action._extend,
+                          recover_func=self.action._recover_full)
+        attach_count = self.instance.volume_client.volumes.attach.call_count
+        self.assertEqual(1, attach_count)
+        self.assertEqual(1, self.instance.guest.mount_volume.call_count)
+        self.assertEqual(1, self.instance.restart.call_count)
+        self.instance.volume_client.volumes.extend.side_effect = None
+        self.instance.reset_mock()
+
+    def test_resize_volume_verify_extend_no_volume(self):
+        self.instance.volume_client.volumes.get = Mock(return_value=None)
+        self.assertRaises(cinder_exceptions.ClientException,
+                          self.action._verify_extend)
+        self.instance.reset_mock()
+
+    def test_resize_volume_poll_timeout(self):
+        utils.poll_until = Mock(side_effect=PollTimeOut)
+        self.assertRaises(PollTimeOut, self.action._verify_extend)
+        self.assertEqual(2, self.instance.volume_client.volumes.get.call_count)
+        utils.poll_until.side_effect = None
+        self.instance.reset_mock()
+
+    def test_resize_volume_active_server_succeeds(self):
+        server = Mock(status=InstanceStatus.ACTIVE)
+        self.instance.attach_mock(server, 'server')
+        self.action.execute()
+        self.assertEqual(1, self.instance.guest.stop_db.call_count)
+        self.assertEqual(1, self.instance.guest.unmount_volume.call_count)
+        detach_count = self.instance.volume_client.volumes.detach.call_count
+        self.assertEqual(1, detach_count)
+        extend_count = self.instance.volume_client.volumes.extend.call_count
+        self.assertEqual(1, extend_count)
+        attach_count = self.instance.volume_client.volumes.attach.call_count
+        self.assertEqual(1, attach_count)
+        self.assertEqual(1, self.instance.guest.resize_fs.call_count)
+        self.assertEqual(1, self.instance.guest.mount_volume.call_count)
+        self.assertEqual(1, self.instance.restart.call_count)
+        self.instance.reset_mock()
+
+    def test_resize_volume_server_error_fails(self):
+        server = Mock(status=InstanceStatus.ERROR)
+        self.instance.attach_mock(server, 'server')
+        self.assertRaises(TroveError, self.action.execute)
+        self.instance.reset_mock()
 
 
 class BackupTasksTest(testtools.TestCase):

@@ -37,13 +37,13 @@ class VolumeDevice(object):
 
     def migrate_data(self, mysql_base):
         """Synchronize the data from the mysql directory to the new volume """
-        self._tmp_mount(TMP_MOUNT_POINT)
+        self.mount(TMP_MOUNT_POINT, write_to_fstab=False)
         if not mysql_base[-1] == '/':
             mysql_base = "%s/" % mysql_base
         utils.execute("sudo", "rsync", "--safe-links", "--perms",
                       "--recursive", "--owner", "--group", "--xattrs",
                       "--sparse", mysql_base, TMP_MOUNT_POINT)
-        self.unmount()
+        self.unmount(TMP_MOUNT_POINT)
 
     def _check_device_exists(self):
         """Check that the device path exists.
@@ -91,31 +91,29 @@ class VolumeDevice(object):
         self._format()
         self._check_format()
 
-    def mount(self, mount_point):
+    def mount(self, mount_point, write_to_fstab=True):
         """Mounts, and writes to fstab."""
         mount_point = VolumeMountPoint(self.device_path, mount_point)
         mount_point.mount()
-        mount_point.write_to_fstab()
+        if write_to_fstab:
+            mount_point.write_to_fstab()
 
-    #TODO(tim.simpson): Are we using this?
-    def resize_fs(self):
+    def resize_fs(self, mount_point):
         """Resize the filesystem on the specified device"""
         self._check_device_exists()
         try:
+            # check if the device is mounted at mount_point before e2fsck
+            if not os.path.ismount(mount_point):
+                utils.execute("sudo", "e2fsck", "-f", "-n", self.device_path)
             utils.execute("sudo", "resize2fs", self.device_path)
         except ProcessExecutionError as err:
             LOG.error(err)
             raise GuestError("Error resizing the filesystem: %s" %
                              self.device_path)
 
-    def _tmp_mount(self, mount_point):
-        """Mounts, but doesn't save to fstab."""
-        mount_point = VolumeMountPoint(self.device_path, mount_point)
-        mount_point.mount()  # Don't save to fstab.
-
-    def unmount(self):
-        if os.path.exists(self.device_path):
-            cmd = "sudo umount %s" % self.device_path
+    def unmount(self, mount_point):
+        if os.path.exists(mount_point):
+            cmd = "sudo umount %s" % mount_point
             child = pexpect.spawn(cmd)
             child.expect(pexpect.EOF)
 
@@ -131,7 +129,7 @@ class VolumeMountPoint(object):
     def mount(self):
         if not os.path.exists(self.mount_point):
             utils.execute("sudo", "mkdir", "-p", self.mount_point)
-        LOG.debug("Adding volume. Device path:%s, mount_point:%s, "
+        LOG.debug("Mounting volume. Device path:%s, mount_point:%s, "
                   "volume_type:%s, mount options:%s" %
                   (self.device_path, self.mount_point, self.volume_fstype,
                    self.mount_options))

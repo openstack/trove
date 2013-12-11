@@ -175,3 +175,18 @@ class Manager(periodic_task.PeriodicTasks):
                             backup task, location, type, and other data.
         """
         backup.backup(context, backup_info)
+
+    def mount_volume(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.mount(mount_point, write_to_fstab=False)
+        LOG.debug(_("Mounted the volume."))
+
+    def unmount_volume(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.unmount(mount_point)
+        LOG.debug(_("Unmounted the volume."))
+
+    def resize_fs(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.resize_fs(mount_point)
+        LOG.debug(_("Resized the filesystem"))
