@@ -161,12 +161,13 @@ class BackupAgentTest(testtools.TestCase):
                                           user='123',
                                           extra_opts='')
         self.assertIsNotNone(mysql_dump.cmd)
-        str_mysql_dump_cmd = ('/usr/bin/mysqldump'
+        str_mysql_dump_cmd = ('mysqldump'
                               ' --all-databases'
                               ' %(extra_opts)s'
                               ' --opt'
                               ' --password=%(password)s'
                               ' -u %(user)s'
+                              ' 2>/tmp/mysqldump.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
                               '-pass pass:default_aes_cbc_key')

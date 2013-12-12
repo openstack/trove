@@ -34,13 +34,14 @@ XTRA_BACKUP_RAW = ("sudo innobackupex --stream=xbstream %(extra_opts)s"
                    " /var/lib/mysql 2>/tmp/innobackupex.log")
 XTRA_BACKUP = XTRA_BACKUP_RAW % {'extra_opts': ''}
 XTRA_BACKUP_EXTRA_OPTS = XTRA_BACKUP_RAW % {'extra_opts': '--no-lock'}
-SQLDUMP_BACKUP_RAW = ("/usr/bin/mysqldump --all-databases %(extra_opts)s "
-                      "--opt --password=password -u user")
+SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "
+                      "--opt --password=password -u user"
+                      " 2>/tmp/mysqldump.log")
 SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
 SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
                              {'extra_opts': '--events --routines --triggers'})
 XTRA_RESTORE = "sudo xbstream -x -C /var/lib/mysql"
-SQLDUMP_RESTORE = "mysql --password=password -u user"
+SQLDUMP_RESTORE = "sudo mysql"
 PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql "
            "--defaults-file=/var/lib/mysql/backup-my.cnf "
            "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
@@ -132,7 +133,6 @@ class GuestAgentBackupTest(testtools.TestCase):
         restr = RunnerClass(None, restore_location="/var/lib/mysql",
                             user="user", password="password")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + SQLDUMP_RESTORE)
-        self.assertIsNone(restr.prepare_cmd)
 
     def test_restore_encrypted_mysqldump_command(self):
         restoreBase.RestoreRunner.is_zipped = True
@@ -143,4 +143,3 @@ class GuestAgentBackupTest(testtools.TestCase):
                             user="user", password="password")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + SQLDUMP_RESTORE)
-        self.assertIsNone(restr.prepare_cmd)

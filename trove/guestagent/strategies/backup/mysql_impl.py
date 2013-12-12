@@ -28,12 +28,13 @@ class MySQLDump(base.BackupRunner):
 
     @property
     def cmd(self):
-        cmd = ('/usr/bin/mysqldump'
+        cmd = ('mysqldump'
                ' --all-databases'
                ' %(extra_opts)s'
                ' --opt'
                ' --password=%(password)s'
-               ' -u %(user)s')
+               ' -u %(user)s'
+               ' 2>/tmp/mysqldump.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
 
     @property
