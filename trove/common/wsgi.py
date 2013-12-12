@@ -273,7 +273,7 @@ class Request(openstack_wsgi.Request):
 
 
 class Result(object):
-    """A result whose serialization is compatable with JSON and XML.
+    """A result whose serialization is compatible with JSON and XML.
 
     This class is used by TroveResponseSerializer, which calls the
     data method to grab a JSON or XML specific dictionary which it then

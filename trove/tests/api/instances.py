@@ -1038,7 +1038,7 @@ class DeleteInstance(object):
         except exceptions.NotFound:
             pass
         except Exception as ex:
-            fail("A failure occured when trying to GET instance %s for the %d"
+            fail("A failure occurred when trying to GET instance %s for the %d"
                  " time: %s" % (str(instance_info.id), attempts, str(ex)))
 
     @time_out(30)
