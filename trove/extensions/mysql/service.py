@@ -40,7 +40,8 @@ class RootController(wsgi.Controller):
 
     def index(self, req, tenant_id, instance_id):
         """Returns True if root is enabled for the given instance;
-                    False otherwise. """
+                    False otherwise.
+        """
         LOG.info(_("Getting root enabled for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -209,7 +210,7 @@ class UserAccessController(wsgi.Controller):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            LOG.error(_("No such user: %(user)s ") % {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
@@ -224,7 +225,7 @@ class UserAccessController(wsgi.Controller):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            LOG.error(_("No such user: %(user)s ") % {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
@@ -239,7 +240,7 @@ class UserAccessController(wsgi.Controller):
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
-            LOG.error(_("No such user: %(user)s " % {'user': user}))
+            LOG.error(_("No such user: %(user)s ") % {'user': user})
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)

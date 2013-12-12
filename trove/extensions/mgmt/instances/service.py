@@ -146,7 +146,8 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def root(self, req, tenant_id, id):
         """Return the date and time root was enabled on an instance,
-        if ever."""
+            if ever.
+        """
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("Showing root history for tenant '%s'") % tenant_id)
         LOG.info(_("id : '%s'\n\n") % id)

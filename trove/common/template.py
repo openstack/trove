@@ -28,7 +28,8 @@ ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
 
 class SingleInstanceConfigTemplate(object):
     """This class selects a single configuration file by database type for
-    rendering on the guest """
+        rendering on the guest
+    """
 
     def __init__(self, datastore_manager, flavor_dict, instance_id):
         """Constructor

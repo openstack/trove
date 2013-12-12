@@ -53,7 +53,8 @@ class UserAccessBase(object):
 
     def _grant_access_singular(self, user, databases, expected_response=202):
         """Grant a single user access to the databases listed.
-            Potentially, expect an exception in the process."""
+            Potentially, expect an exception in the process.
+        """
         try:
             self.dbaas.users.grant(instance_info.id, user, databases)
         except exceptions.BadRequest:
@@ -67,13 +68,15 @@ class UserAccessBase(object):
 
     def _grant_access_plural(self, users, databases, expected_response=202):
         """Grant each user in the list access to all the databases listed.
-            Potentially, expect an exception in the process."""
+            Potentially, expect an exception in the process.
+        """
         for user in users:
             self._grant_access_singular(user, databases, expected_response)
 
     def _revoke_access_singular(self, user, database, expected_response=202):
         """Revoke from a user access to the given database .
-            Potentially, expect an exception in the process."""
+            Potentially, expect an exception in the process.
+        """
         try:
             self.dbaas.users.revoke(instance_info.id, user, database)
             assert_true(expected_response, self.dbaas.last_http_code)
@@ -84,7 +87,8 @@ class UserAccessBase(object):
 
     def _revoke_access_plural(self, users, databases, expected_response=202):
         """Revoke from each user access to each database.
-            Potentially, expect an exception in the process."""
+            Potentially, expect an exception in the process.
+        """
         for user in users:
             for database in databases:
                 self._revoke_access_singular(user,
@@ -93,7 +97,8 @@ class UserAccessBase(object):
 
     def _test_access(self, users, databases, expected_response=200):
         """Verify that each user in the list has access to each database in
-            the list."""
+            the list.
+        """
         for user in users:
             access = self.dbaas.users.list_access(instance_info.id, user)
             assert_equal(expected_response, self.dbaas.last_http_code)

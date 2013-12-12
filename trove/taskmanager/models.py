@@ -121,8 +121,8 @@ class NotifyMixin(object):
 
         # Update payload with all other kwargs
         payload.update(kwargs)
-        LOG.debug(_('Sending event: %(event_type)s, %(payload)s' %
-                    {'event_type': event_type, 'payload': payload}))
+        LOG.debug(_('Sending event: %(event_type)s, %(payload)s') %
+                  {'event_type': event_type, 'payload': payload})
         notifier.notify(self.context, publisher_id, event_type, 'INFO',
                         payload)
 
@@ -661,9 +661,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug(_("end _resize_active_volume for id: %s") %
                       self.server.id)
             LOG.exception(_("Failed to detach volume %(volume_id)s "
-                            "instance %(id)s: %(e)s" %
+                          "instance %(id)s: %(e)s") %
                           {'volume_id': self.volume_id, 'id':
-                            self.server.id, 'e': str(e)}))
+                          self.server.id, 'e': str(e)})
             self.restart()
             raise
 
