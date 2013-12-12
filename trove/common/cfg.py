@@ -232,6 +232,10 @@ common_opts = [
     cfg.BoolOpt('sql_query_logging', default=False,
                 help='Allow insecure logging while while '
                      'executing queries through sqlalchemy'),
+    cfg.ListOpt('expected_filetype_suffixes',
+                default=['atom', 'json', 'xml'],
+                help='Filetype endings not to be reattached to an id '
+                     'by the utils method correct_id_with_req.'),
 ]
 
 CONF = cfg.CONF

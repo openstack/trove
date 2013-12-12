@@ -29,6 +29,7 @@ from eventlet import event
 from eventlet import greenthread
 from eventlet.timeout import Timeout
 
+from trove.common import cfg
 from trove.common import exception
 from trove.openstack.common import importutils
 from trove.openstack.common import log as logging
@@ -37,6 +38,7 @@ from trove.openstack.common import timeutils
 from trove.openstack.common import utils as openstack_utils
 from trove.openstack.common.gettextutils import _
 
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 import_class = importutils.import_class
 import_object = importutils.import_object
@@ -289,3 +291,21 @@ def execute_with_timeout(*args, **kwargs):
             raise exception.ProcessExecutionError(msg)
     finally:
         timeout.cancel()
+
+
+def correct_id_with_req(id, request):
+    # Due to a shortcoming with the way Trove uses routes.mapper,
+    # URL entities right of the last slash that contain at least
+    # one . are routed to our service without that suffix, as
+    # it was interpreted as a filetype This method looks at the
+    # request, and if applicable, reattaches the suffix to the id.
+    routing_args = request.environ.get('wsgiorg.routing_args', [])
+    for routing_arg in routing_args:
+        try:
+            found = routing_arg.get('format', '')
+            if found and found not in CONF.expected_filetype_suffixes:
+                return "%s.%s" % (id, found)
+        except (AttributeError, KeyError):
+            # Not the relevant routing_args entry.
+            pass
+    return id
