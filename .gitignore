@@ -1,6 +1,5 @@
 vagrant/
 *.pyc
-.idea
 trove_test.sqlite
 .venv
 run_tests.log
@@ -10,7 +9,6 @@ trove/vcsversion.py
 *py*.egg
 .coverage
 cover/
-.DS_Store
 dist/
 host-syslog.log
 tags
@@ -20,11 +18,8 @@ trove/versioninfo
 AUTHORS
 ChangeLog
 trove.iml
-atlassian-ide-plugin.xml
 .testrepository
 .pid
-.project
-.pydevproject
 
 # Sphinx
 doc/build/*
