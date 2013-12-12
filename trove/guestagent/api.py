@@ -141,7 +141,7 @@ class API(proxy.RpcProxy):
                           username=username, hostname=hostname)
 
     def grant_access(self, username, hostname, databases):
-        """Give a user permission to use a given database."""
+        """Grant a user permission to use a given database."""
         return self._call("grant_access", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname,
                           databases=databases)

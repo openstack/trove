@@ -104,7 +104,7 @@ class RedhatPackagerMixin(BasePackagerMixin):
         """
         Sometimes transaction errors happens, easy way is to remove
         conflicted package without dependencies and hope it will replaced
-        by anoter package
+        by another package
         """
         try:
             utils.execute("rpm", "-e", "--nodeps", package_name,
@@ -113,11 +113,11 @@ class RedhatPackagerMixin(BasePackagerMixin):
             LOG.error(_("Error removing conflict %s") % package_name)
 
     def _install(self, packages, time_out):
-        """Attempts to install a package.
+        """Attempts to install packages.
 
-        Returns OK if the package installs fine or a result code if a
+        Returns OK if the packages are installed or a result code if a
         recoverable-error occurred.
-        Raises an exception if a non-recoverable error or time out occurs.
+        Raises an exception if a non-recoverable error or timeout occurs.
 
         """
         cmd = "sudo yum --color=never -y install %s" % packages
@@ -156,7 +156,7 @@ class RedhatPackagerMixin(BasePackagerMixin):
 
         Returns OK if the package is removed successfully or a result code if a
         recoverable-error occurs.
-        Raises an exception if a non-recoverable error or time out occurs.
+        Raises an exception if a non-recoverable error or timeout occurs.
 
         """
         cmd = "sudo yum --color=never -y remove %s" % package_name
@@ -222,7 +222,9 @@ class RedhatPackagerMixin(BasePackagerMixin):
 class DebianPackagerMixin(BasePackagerMixin):
 
     def _fix(self, time_out):
-        """Sometimes you have to run this command before a pkg will install."""
+        """Sometimes you have to run this command before a
+            package will install.
+        """
         try:
             utils.execute("dpkg", "--configure", "-a", run_as_root=True,
                           root_helper="sudo")
@@ -231,7 +233,7 @@ class DebianPackagerMixin(BasePackagerMixin):
 
     def _fix_package_selections(self, packages, config_opts):
         """
-        Sometimes you have to run this command before a pkg will install.
+        Sometimes you have to run this command before a package will install.
         This command sets package selections to configure package.
         """
         selections = ""
@@ -260,11 +262,11 @@ class DebianPackagerMixin(BasePackagerMixin):
             os.remove(fname)
 
     def _install(self, packages, time_out):
-        """Attempts to install a packages.
+        """Attempts to install packages.
 
-        Returns OK if the package installs fine or a result code if a
+        Returns OK if the packages are installed or a result code if a
         recoverable-error occurred.
-        Raises an exception if a non-recoverable error or time out occurs.
+        Raises an exception if a non-recoverable error or timeout occurs.
 
         """
         cmd = "sudo -E DEBIAN_FRONTEND=noninteractive apt-get -y " \
@@ -301,7 +303,7 @@ class DebianPackagerMixin(BasePackagerMixin):
 
         Returns OK if the package is removed successfully or a result code if a
         recoverable-error occurs.
-        Raises an exception if a non-recoverable error or time out occurs.
+        Raises an exception if a non-recoverable error or timeout occurs.
 
         """
         cmd = "sudo -E apt-get -y --allow-unauthenticated remove %s" \
@@ -328,7 +330,7 @@ class DebianPackagerMixin(BasePackagerMixin):
         return OK
 
     def pkg_install(self, packages, config_opts, time_out):
-        """Installs a packages."""
+        """Installs packages."""
         try:
             utils.execute("apt-get", "update", run_as_root=True,
                           root_helper="sudo")

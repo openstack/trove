@@ -120,7 +120,7 @@ class BaseDbStatus(object):
 
     def update(self):
         """Find and report status of DB on this machine.
-        The database is update and the status is also returned.
+        The database is updated and the status is also returned.
         """
         if self.is_installed and not self._is_restarting:
             LOG.info("Determining status of DB server...")
