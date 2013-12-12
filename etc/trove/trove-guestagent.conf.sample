@@ -28,7 +28,7 @@ trove_auth_url = http://0.0.0.0:5000/v2.0
 swift_url = http://10.0.0.1:8080/v1/AUTH_
 
 # Datastore management implementations. Format datastore:manager.impl
-# service_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager
+# datastore_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager
 
 # Root configuration
 root_grant = ALL
