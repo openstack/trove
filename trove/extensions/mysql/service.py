@@ -149,8 +149,11 @@ class UserController(wsgi.Controller):
             raise exception.BadRequest(msg=str(e))
         if not user:
             raise exception.UserNotFound(uuid=id)
-        models.User.update_attributes(context, instance_id, username, hostname,
-                                      user_attrs)
+        try:
+            models.User.update_attributes(context, instance_id, username,
+                                          hostname, user_attrs)
+        except (ValueError, AttributeError) as e:
+            raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def update_all(self, req, body, tenant_id, instance_id):
