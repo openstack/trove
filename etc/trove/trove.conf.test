@@ -14,7 +14,7 @@ default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
 
 log_file = trovetest.log
 
-use_stderr = True
+use_stderr = False
 
 # Show more verbose log output (sets INFO log level output)
 verbose = True
