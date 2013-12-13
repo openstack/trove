@@ -92,11 +92,9 @@ class InstanceDetailView(InstanceView):
         result['instance']['datastore']['version'] = (self.instance.
                                                       datastore_version.name)
 
-        dns_support = CONF.trove_dns_support
-        if dns_support:
+        if self.instance.hostname:
             result['instance']['hostname'] = self.instance.hostname
-
-        if CONF.add_addresses:
+        else:
             ip = get_ip_address(self.instance.addresses)
             if ip is not None and len(ip) > 0:
                 # Includes ip addresses that match the regexp pattern
