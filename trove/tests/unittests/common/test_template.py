@@ -71,7 +71,7 @@ class HeatTemplateLoadTest(testtools.TestCase):
         self.fException = mock.Mock(side_effect=
                                     lambda *args, **kwargs:
                                     _raise(template.jinja2.
-                                    TemplateNotFound("Test")))
+                                           TemplateNotFound("Test")))
 
         def _raise(ex):
             raise ex

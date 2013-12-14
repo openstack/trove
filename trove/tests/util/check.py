@@ -197,6 +197,7 @@ class TypeCheck(Check):
             if not match:
                 self.fail("%s attribute %s is of type %s (expected one of "
                           "the following: %s)." % (self.name, attribute_name,
-                          type(value), attribute_type))
+                                                   type(value),
+                                                   attribute_type))
             if match and additional_checks:
                 additional_checks(value)
