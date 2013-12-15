@@ -35,12 +35,6 @@ from trove.tests.api.databases import TestMysqlAccess
 GROUP = "dbaas.api.root"
 
 
-def log_in_as_root(root_password):
-    con = create_mysql_connection(instance_info.get_address(), 'root',
-                                  root_password)
-    return con
-
-
 @test(depends_on_classes=[TestMysqlAccess],
       runs_after=[TestUsers],
       groups=[tests.DBAAS_API, GROUP, tests.INSTANCES])
