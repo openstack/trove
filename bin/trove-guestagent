@@ -52,7 +52,7 @@ if __name__ == '__main__':
         get_db_api().configure_db(CONF)
         manager = dbaas.datastore_registry().get(CONF.datastore_manager)
         if not manager:
-            msg = ("Manager class not registered for datastore manager " +
+            msg = ("Manager class not registered for datastore manager %s" %
                    CONF.datastore_manager)
             raise RuntimeError(msg)
         server = rpc_service.RpcService(manager=manager, host=CONF.guest_id)
