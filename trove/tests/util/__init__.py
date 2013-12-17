@@ -284,5 +284,3 @@ class LocalSqlClient(object):
         return create_engine("mysql://%s:%s@%s:3306" %
                              (user, password, host),
                              pool_recycle=1800, echo=True)
-        self.engine = engine
-        self.use_flush = use_flush
