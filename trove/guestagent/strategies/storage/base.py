@@ -16,10 +16,6 @@
 
 import abc
 from trove.guestagent.strategy import Strategy
-from trove.openstack.common import log as logging
-
-
-LOG = logging.getLogger(__name__)
 
 
 class Storage(Strategy):
@@ -27,11 +23,12 @@ class Storage(Strategy):
     __strategy_type__ = 'storage'
     __strategy_ns__ = 'trove.guestagent.strategies.storage'
 
-    def __init__(self):
+    def __init__(self, context):
+        self.context = context
         super(Storage, self).__init__()
 
     @abc.abstractmethod
-    def save(self, save_location, stream):
+    def save(self, filename, stream):
         """Persist information from the stream """
 
     @abc.abstractmethod

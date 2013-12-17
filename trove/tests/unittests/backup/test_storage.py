@@ -14,8 +14,9 @@
 
 import testtools
 from mockito import when, unstub, mock, any
-from trove.common.context import TroveContext
+import hashlib
 
+from trove.common.context import TroveContext
 from trove.tests.fakes.swift import FakeSwiftConnection
 from trove.tests.fakes.swift import FakeSwiftConnectionWithRealEtag
 from trove.tests.unittests.backup.test_backupagent \
@@ -24,6 +25,7 @@ from trove.guestagent.strategies.storage.swift \
     import SwiftDownloadIntegrityError
 from trove.guestagent.strategies.storage import swift
 from trove.guestagent.strategies.storage.swift import SwiftStorage
+from trove.guestagent.strategies.storage.swift import StreamReader
 
 
 class MockProcess(object):
@@ -53,7 +55,6 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         backup_id = '123'
         user = 'user'
         password = 'password'
-        backup_container = 'database_backups'
 
         swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
@@ -65,12 +66,12 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
             (success,
              note,
              checksum,
-             location) = storage_strategy.save(backup_container, runner)
+             location) = storage_strategy.save(runner.manifest, runner)
 
-        self.assertEqual(success, True,
-                         "The backup should have been successful.")
+        self.assertTrue(success, "The backup should have been successful.")
         self.assertIsNotNone(note, "A note should have been returned.")
-        self.assertEqual(location, 'http://mockswift/v1/database_backups/123',
+        self.assertEqual('http://mockswift/v1/database_backups/123.gz.enc',
+                         location,
                          "Incorrect swift location was returned.")
 
     def test_swift_segment_checksum_etag_mismatch(self):
@@ -83,7 +84,6 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         backup_id = 'bad_segment_etag_123'
         user = 'user'
         password = 'password'
-        backup_container = 'database_backups'
 
         swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
@@ -95,15 +95,16 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
             (success,
              note,
              checksum,
-             location) = storage_strategy.save(backup_container, runner)
+             location) = storage_strategy.save(runner.manifest, runner)
 
-        self.assertEqual(success, False,
-                         "The backup should have failed!")
+        self.assertFalse(success, "The backup should have failed!")
         self.assertTrue(note.startswith("Error saving data to Swift!"))
         self.assertIsNone(checksum,
                           "Swift checksum should be None for failed backup.")
-        self.assertIsNone(location,
-                          "Swift location should be None for failed backup.")
+        self.assertEqual('http://mockswift/v1/database_backups/'
+                         'bad_segment_etag_123.gz.enc',
+                         location,
+                         "Incorrect swift location was returned.")
 
     def test_swift_checksum_etag_mismatch(self):
         """This tests that when etag doesn't match swift checksum False is
@@ -115,7 +116,6 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         backup_id = 'bad_manifest_etag_123'
         user = 'user'
         password = 'password'
-        backup_container = 'database_backups'
 
         swift_client = FakeSwiftConnectionWithRealEtag()
         when(swift).create_swift_client(context).thenReturn(swift_client)
@@ -127,15 +127,16 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
             (success,
              note,
              checksum,
-             location) = storage_strategy.save(backup_container, runner)
+             location) = storage_strategy.save(runner.manifest, runner)
 
-        self.assertEqual(success, False,
-                         "The backup should have failed!")
+        self.assertFalse(success, "The backup should have failed!")
         self.assertTrue(note.startswith("Error saving data to Swift!"))
         self.assertIsNone(checksum,
                           "Swift checksum should be None for failed backup.")
-        self.assertIsNone(location,
-                          "Swift location should be None for failed backup.")
+        self.assertEqual('http://mockswift/v1/database_backups/'
+                         'bad_manifest_etag_123.gz.enc',
+                         location,
+                         "Incorrect swift location was returned.")
 
 
 class SwiftStorageLoad(testtools.TestCase):
@@ -174,8 +175,8 @@ class SwiftStorageLoad(testtools.TestCase):
                                                 is_zipped,
                                                 backup_checksum)
 
-        self.assertEqual(download_stream.container, "location")
-        self.assertEqual(download_stream.filename, "123")
+        self.assertEqual('location', download_stream.container)
+        self.assertEqual('123', download_stream.filename)
 
         with download_stream as stream:
             print("Testing SwiftDownloadStream context manager: %s" % stream)
@@ -207,12 +208,73 @@ class SwiftStorageLoad(testtools.TestCase):
                                                 is_zipped,
                                                 backup_checksum)
 
-        self.assertEqual(download_stream.container, "location")
-        self.assertEqual(download_stream.filename, "123")
+        self.assertEqual('location', download_stream.container)
+        self.assertEqual('123', download_stream.filename)
 
         self.assertRaises(SwiftDownloadIntegrityError,
                           download_stream.__enter__)
 
-        self.assertEqual(download_stream.process, None,
-                         "SwiftDownloadStream process/cmd was not supposed"
-                         "to run.")
+        self.assertIsNone(download_stream.process,
+                          "SwiftDownloadStream process/cmd was not supposed"
+                          "to run.")
+
+
+class MockBackupStream(MockBackupRunner):
+
+    def read(self, chunk_size):
+        return 'X' * chunk_size
+
+
+class StreamReaderTests(testtools.TestCase):
+
+    def setUp(self):
+        super(StreamReaderTests, self).setUp()
+        self.runner = MockBackupStream(filename='123.xbstream.enc.gz',
+                                       user='user',
+                                       password='password')
+        self.stream = StreamReader(self.runner,
+                                   self.runner.manifest,
+                                   max_file_size=100)
+
+    def test_base_filename(self):
+        self.assertEqual('123', self.stream.base_filename)
+
+    def test_base_filename_no_extension(self):
+        stream_reader = StreamReader(self.runner, 'foo')
+        self.assertEqual('foo', stream_reader.base_filename)
+
+    def test_prefix(self):
+        self.assertEqual('database_backups/123_', self.stream.prefix)
+
+    def test_segment(self):
+        self.assertEqual('123_00000000', self.stream.segment)
+
+    def test_end_of_file(self):
+        self.assertFalse(self.stream.end_of_file)
+
+    def test_end_of_segment(self):
+        self.assertFalse(self.stream.end_of_segment)
+
+    def test_segment_almost_complete(self):
+        self.stream.segment_length = 98
+        results = self.stream.read(2)
+        self.assertEqual('XX', results)
+        self.assertEqual('123_00000000', self.stream.segment,
+                         "The Segment should still be the same")
+        self.assertEqual(self.stream.segment_length, 100)
+        checksum = hashlib.md5('XX')
+        checksum = checksum.hexdigest()
+        segment_checksum = self.stream.segment_checksum.hexdigest()
+        self.assertEqual(checksum, segment_checksum,
+                         "Segment checksum did not match")
+
+    def test_segment_complete(self):
+        self.stream.segment_length = 99
+        results = self.stream.read(2)
+        self.assertEqual('', results, "Results should be empty.")
+        self.assertEqual('123_00000001', self.stream.segment)
+
+    def test_stream_complete(self):
+        results = self.stream.read(0)
+        self.assertEqual('', results, "Results should be empty.")
+        self.assertTrue(self.stream.end_of_file)

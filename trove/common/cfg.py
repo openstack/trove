@@ -187,7 +187,11 @@ common_opts = [
     cfg.BoolOpt('backup_use_snet', default=False,
                 help='Send backup files over snet.'),
     cfg.IntOpt('backup_chunk_size', default=2 ** 16,
-               help='Chunk size to stream to swift container'),
+               help='Chunk size to stream to swift container.'
+               ' This should be in multiples of 128 bytes, since this is the'
+               ' size of an md5 digest block allowing the process to update'
+               ' the file checksum during streaming.'
+               ' See: http://stackoverflow.com/questions/1131220/'),
     cfg.IntOpt('backup_segment_max_size', default=2 * (1024 ** 3),
                help="Maximum size of each segment of the backup file."),
     cfg.StrOpt('remote_dns_client',
