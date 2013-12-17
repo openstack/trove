@@ -54,6 +54,13 @@ class MockBackup(BackupRunner):
         super(MockBackup, self).__init__(*args, **kwargs)
 
 
+class MockCheckProcessBackup(MockBackup):
+    """Backup runner that fails confirming the process."""
+
+    def check_process(self):
+        return False
+
+
 class MockLossyBackup(MockBackup):
     """Fake Incomplete writes to swift"""
 
@@ -246,6 +253,41 @@ class BackupAgentTest(testtools.TestCase):
                 note=any(),
                 backup_type=backup_info['type'],
                 state=BackupState.COMPLETED))
+
+    def test_execute_bad_process_backup(self):
+        agent = backupagent.BackupAgent()
+        backup_info = {'id': '123',
+                       'location': 'fake-location',
+                       'type': 'InnoBackupEx',
+                       'checksum': 'fake-checksum',
+                       }
+
+        self.assertRaises(backupagent.BackupError, agent.execute_backup,
+                          context=None, backup_info=backup_info,
+                          runner=MockCheckProcessBackup)
+
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                state=BackupState.NEW))
+
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                size=any(),
+                state=BackupState.BUILDING))
+
+        self.assertTrue(
+            conductor_api.API.update_backup.called_once_with(
+                any(),
+                backup_id=backup_info['id'],
+                checksum=any(),
+                location=any(),
+                note=any(),
+                backup_type=backup_info['type'],
+                state=BackupState.FAILED))
 
     def test_execute_lossy_backup(self):
         """This test verifies that incomplete writes to swift will fail."""
