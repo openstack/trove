@@ -46,7 +46,7 @@ common_opts = [
                 help='Whether to add IP addresses to the list operations'),
     cfg.BoolOpt('trove_volume_support',
                 default=True,
-                help='File name for the paste.deploy config for trove-api'),
+                help='Whether to provision a cinder volume for datadir'),
     cfg.ListOpt('admin_roles', default=['admin']),
     cfg.BoolOpt('update_status_on_fail', default=False,
                 help='If instance failed to become active, '
