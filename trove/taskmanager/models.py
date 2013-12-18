@@ -344,7 +344,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
         client = create_heat_client(self.context)
         novaclient = create_nova_client(self.context)
-        cinderclient = create_cinder_client(self.context)
 
         template_obj = template.load_heat_template(datastore_manager)
         heat_template_unicode = template_obj.render()
@@ -376,11 +375,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         resource = client.resources.get(stack.id, 'BaseInstance')
         server = novaclient.servers.get(resource.physical_resource_id)
 
-        resource = client.resources.get(stack.id, 'DataVolume')
-        volume = cinderclient.volumes.get(resource.physical_resource_id)
-        volume_info = self._build_volume(volume)
+        if CONF.trove_volume_support:
+            cinderclient = create_cinder_client(self.context)
+            resource = client.resources.get(stack.id, 'DataVolume')
+            volume = cinderclient.volumes.get(resource.physical_resource_id)
+            volume_info = self._build_volume(volume)
+            self.update_db(compute_instance_id=server.id, volume_id=volume.id)
+        else:
+            volume_info = self._build_volume_info(volume_size)
+            self.update_db(compute_instance_id=server_id)
 
-        self.update_db(compute_instance_id=server.id, volume_id=volume.id)
         LOG.debug(_("end _create_server_volume_heat for id: %s") % self.id)
         return server, volume_info
 
