@@ -383,7 +383,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self.update_db(compute_instance_id=server.id, volume_id=volume.id)
         else:
             volume_info = self._build_volume_info(volume_size)
-            self.update_db(compute_instance_id=server_id)
+            self.update_db(compute_instance_id=server.id)
 
         LOG.debug(_("end _create_server_volume_heat for id: %s") % self.id)
         return server, volume_info
