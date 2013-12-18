@@ -67,14 +67,15 @@ def get_filesystem_volume_stats(fs_path):
     total = stats.f_blocks * stats.f_bsize
     free = stats.f_bfree * stats.f_bsize
     # return the size in GB
-    used = to_gb(total - free)
+    used_gb = to_gb(total - free)
+    total_gb = to_gb(total)
 
     output = {
         'block_size': stats.f_bsize,
         'total_blocks': stats.f_blocks,
         'free_blocks': stats.f_bfree,
-        'total': total,
+        'total': total_gb,
         'free': free,
-        'used': used
+        'used': used_gb
     }
     return output

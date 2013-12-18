@@ -67,6 +67,7 @@ def volume_check(volume):
         check.has_element("id", basestring)
         check.has_element("size", int)
         check.has_element("used", float)
+        check.has_element("total", float)
 
 
 @test(depends_on_groups=[GROUP_START], groups=[GROUP, GROUP_TEST])
