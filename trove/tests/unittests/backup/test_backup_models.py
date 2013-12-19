@@ -12,21 +12,24 @@
 #limitations under the License.
 
 
-import testtools
-from trove.backup import models
-from trove.tests.unittests.util import util
-from trove.common import utils, exception
-from trove.common.context import TroveContext
-from trove.instance.models import BuiltInstance, Instance
+import datetime
 from mockito import mock, when, unstub, any
+import testtools
+
+from trove.backup import models
+from trove.common import context
+from trove.common import exception
+from trove.common import utils
+from trove.instance import models as instance_models
 from trove.taskmanager import api
+from trove.tests.unittests.util import util
 
 
 def _prep_conf(current_time):
     current_time = str(current_time)
-    context = TroveContext(tenant='TENANT-' + current_time)
+    _context = context.TroveContext(tenant='TENANT-' + current_time)
     instance_id = 'INSTANCE-' + current_time
-    return context, instance_id
+    return _context, instance_id
 
 BACKUP_NAME = 'WORKS'
 BACKUP_NAME_2 = 'IT-WORKS'
@@ -51,8 +54,9 @@ class BackupCreateTest(testtools.TestCase):
                 tenant_id=self.context.tenant).delete()
 
     def test_create(self):
-        instance = mock(Instance)
-        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        instance = mock(instance_models.Instance)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
         when(instance).validate_can_perform_action().thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenReturn(
             None)
@@ -80,8 +84,9 @@ class BackupCreateTest(testtools.TestCase):
                           BACKUP_NAME, BACKUP_DESC)
 
     def test_create_instance_not_active(self):
-        instance = mock(Instance)
-        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        instance = mock(instance_models.Instance)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
         when(instance).validate_can_perform_action().thenRaise(
             exception.UnprocessableEntity)
         self.assertRaises(exception.UnprocessableEntity, models.Backup.create,
@@ -89,8 +94,9 @@ class BackupCreateTest(testtools.TestCase):
                           BACKUP_NAME, BACKUP_DESC)
 
     def test_create_backup_swift_token_invalid(self):
-        instance = mock(Instance)
-        when(BuiltInstance).load(any(), any()).thenReturn(instance)
+        instance = mock(instance_models.Instance)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
         when(instance).validate_can_perform_action().thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenRaise(
             exception.SwiftAuthError)
@@ -151,8 +157,9 @@ class BackupORMTest(testtools.TestCase):
             models.DBBackup.find_by(tenant_id=self.context.tenant).delete()
 
     def test_list(self):
-        db_record = models.Backup.list(self.context)
-        self.assertEqual(1, db_record.count())
+        backups, marker = models.Backup.list(self.context)
+        self.assertIsNone(marker)
+        self.assertEqual(1, len(backups))
 
     def test_list_for_instance(self):
         models.DBBackup.create(tenant_id=self.context.tenant,
@@ -161,8 +168,10 @@ class BackupORMTest(testtools.TestCase):
                                instance_id=self.instance_id,
                                size=2.0,
                                deleted=False)
-        db_record = models.Backup.list_for_instance(self.instance_id)
-        self.assertEqual(2, db_record.count())
+        backups, marker = models.Backup.list_for_instance(self.context,
+                                                          self.instance_id)
+        self.assertIsNone(marker)
+        self.assertEqual(2, len(backups))
 
     def test_running(self):
         running = models.Backup.running(instance_id=self.instance_id)
@@ -200,8 +209,10 @@ class BackupORMTest(testtools.TestCase):
     def test_backup_delete(self):
         backup = models.DBBackup.find_by(id=self.backup.id)
         backup.delete()
-        query = models.Backup.list_for_instance(self.instance_id)
-        self.assertEqual(query.count(), 0)
+        backups, marker = models.Backup.list_for_instance(self.context,
+                                                          self.instance_id)
+        self.assertIsNone(marker)
+        self.assertEqual(0, len(backups))
 
     def test_delete(self):
         self.backup.delete()
@@ -214,3 +225,117 @@ class BackupORMTest(testtools.TestCase):
 
     def test_filename(self):
         self.assertEqual(BACKUP_FILENAME, self.backup.filename)
+
+
+class PaginationTests(testtools.TestCase):
+
+    def setUp(self):
+        super(PaginationTests, self).setUp()
+        util.init_db()
+        self.context, self.instance_id = _prep_conf(utils.utcnow())
+        # Create a bunch of backups
+        bkup_info = {
+            'tenant_id': self.context.tenant,
+            'state': BACKUP_STATE,
+            'instance_id': self.instance_id,
+            'size': 2.0,
+            'deleted': False
+        }
+        for backup in xrange(50):
+            bkup_info.update({'name': 'Backup-%s' % backup})
+            models.DBBackup.create(**bkup_info)
+
+    def tearDown(self):
+        super(PaginationTests, self).tearDown()
+        unstub()
+        query = models.DBBackup.query()
+        query.filter_by(instance_id=self.instance_id).delete()
+
+    def test_pagination_list(self):
+        # page one
+        backups, marker = models.Backup.list(self.context)
+        self.assertEqual(20, marker)
+        self.assertEqual(20, len(backups))
+        # page two
+        self.context.marker = 20
+        backups, marker = models.Backup.list(self.context)
+        self.assertEqual(40, marker)
+        self.assertEqual(20, len(backups))
+        # page three
+        self.context.marker = 40
+        backups, marker = models.Backup.list(self.context)
+        self.assertIsNone(marker)
+        self.assertEqual(10, len(backups))
+
+    def test_pagination_list_for_instance(self):
+        # page one
+        backups, marker = models.Backup.list_for_instance(self.context,
+                                                          self.instance_id)
+        self.assertEqual(20, marker)
+        self.assertEqual(20, len(backups))
+        # page two
+        self.context.marker = 20
+        backups, marker = models.Backup.list(self.context)
+        self.assertEqual(40, marker)
+        self.assertEqual(20, len(backups))
+        # page three
+        self.context.marker = 40
+        backups, marker = models.Backup.list_for_instance(self.context,
+                                                          self.instance_id)
+        self.assertIsNone(marker)
+        self.assertEqual(10, len(backups))
+
+
+class OrderingTests(testtools.TestCase):
+
+    def setUp(self):
+        super(OrderingTests, self).setUp()
+        util.init_db()
+        now = utils.utcnow()
+        self.context, self.instance_id = _prep_conf(now)
+        info = {
+            'tenant_id': self.context.tenant,
+            'state': BACKUP_STATE,
+            'instance_id': self.instance_id,
+            'size': 2.0,
+            'deleted': False
+        }
+        four = now - datetime.timedelta(days=4)
+        one = now - datetime.timedelta(days=1)
+        three = now - datetime.timedelta(days=3)
+        two = now - datetime.timedelta(days=2)
+        # Create backups out of order, save/create set the 'updated' field,
+        # so we need to use the db_api directly.
+        models.DBBackup().db_api.save(
+            models.DBBackup(name='four', updated=four,
+                            id=utils.generate_uuid(), **info))
+        models.DBBackup().db_api.save(
+            models.DBBackup(name='one', updated=one,
+                            id=utils.generate_uuid(), **info))
+        models.DBBackup().db_api.save(
+            models.DBBackup(name='three', updated=three,
+                            id=utils.generate_uuid(), **info))
+        models.DBBackup().db_api.save(
+            models.DBBackup(name='two', updated=two,
+                            id=utils.generate_uuid(), **info))
+
+    def tearDown(self):
+        super(OrderingTests, self).tearDown()
+        unstub()
+        query = models.DBBackup.query()
+        query.filter_by(instance_id=self.instance_id).delete()
+
+    def test_list(self):
+        backups, marker = models.Backup.list(self.context)
+        self.assertIsNone(marker)
+        actual = [b.name for b in backups]
+        expected = [u'one', u'two', u'three', u'four']
+        self.assertEqual(expected, actual)
+
+    def test_list_for_instance(self):
+        backups, marker = models.Backup.list_for_instance(self.context,
+                                                          self.instance_id)
+        self.assertIsNone(marker)
+        actual = [b.name for b in backups]
+        expected = [u'one', u'two', u'three', u'four']
+        self.assertEqual(expected, actual)
