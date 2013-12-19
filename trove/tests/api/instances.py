@@ -542,7 +542,7 @@ class CreateInstance(object):
         instance_name = "datastore_version_notfound"
         databases = []
         users = []
-        datastore = "Test_Mysql"
+        datastore = "mysql"
         datastore_version = "nonexistent"
         try:
             assert_raises(exceptions.NotFound,
@@ -565,7 +565,7 @@ class CreateInstance(object):
         instance_name = "datastore_version_inactive"
         databases = []
         users = []
-        datastore = "Test_Mysql"
+        datastore = "mysql"
         datastore_version = "mysql_inactive_version"
         try:
             assert_raises(exceptions.NotFound,
