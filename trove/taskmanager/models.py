@@ -29,7 +29,6 @@ from trove.common.exception import TroveError
 from trove.common.instance import ServiceStatuses
 from trove.common import instance as rd_instance
 from trove.common.remote import create_dns_client
-from trove.common.remote import create_nova_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
 from trove.extensions.security_group.models import SecurityGroup
@@ -343,10 +342,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                    volume_size, availability_zone):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
         client = create_heat_client(self.context)
-        novaclient = create_nova_client(self.context)
 
         template_obj = template.load_heat_template(datastore_manager)
-        heat_template_unicode = template_obj.render()
+        heat_template_unicode = template_obj.render(
+            volume_support=CONF.trove_volume_support)
         try:
             heat_template = heat_template_unicode.encode('ascii')
         except UnicodeEncodeError:
@@ -373,20 +372,22 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             time_out=HEAT_TIME_OUT)
 
         resource = client.resources.get(stack.id, 'BaseInstance')
-        server = novaclient.servers.get(resource.physical_resource_id)
+        instance_id = resource.physical_resource_id
 
         if CONF.trove_volume_support:
-            cinderclient = create_cinder_client(self.context)
             resource = client.resources.get(stack.id, 'DataVolume')
-            volume = cinderclient.volumes.get(resource.physical_resource_id)
-            volume_info = self._build_volume(volume)
-            self.update_db(compute_instance_id=server.id, volume_id=volume.id)
+            volume_id = resource.physical_resource_id
+            self.update_db(compute_instance_id=instance_id,
+                           volume_id=volume_id)
         else:
-            volume_info = self._build_volume_info(volume_size)
-            self.update_db(compute_instance_id=server.id)
+            self.update_db(compute_instance_id=instance_id)
+
+        device_path = CONF.device_path
+        mount_point = CONF.mount_point
+        volume_info = {'device_path': device_path, 'mount_point': mount_point}
 
         LOG.debug(_("end _create_server_volume_heat for id: %s") % self.id)
-        return server, volume_info
+        return {'id': instance_id}, volume_info
 
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, datastore_manager,
