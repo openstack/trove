@@ -67,19 +67,21 @@ class Commands(object):
             kwargs[arg] = getattr(CONF.action, arg)
         exec_method(**kwargs)
 
-    def datastore_update(self, datastore_name, manager, default_version):
+    def datastore_update(self, datastore_name, default_version):
         try:
-            datastore_models.update_datastore(datastore_name, manager,
+            datastore_models.update_datastore(datastore_name,
                                               default_version)
             print("Datastore '%s' updated." % datastore_name)
         except exception.DatastoreVersionNotFound as e:
             print(e)
 
-    def datastore_version_update(self, datastore, version_name, image_id,
-                                 packages, active):
+    def datastore_version_update(self, datastore, version_name, manager,
+                                 image_id, packages, active):
         try:
             datastore_models.update_datastore_version(datastore,
-                                                      version_name, image_id,
+                                                      version_name,
+                                                      manager,
+                                                      image_id,
                                                       packages, active)
             print("Datastore version '%s' updated." % version_name)
         except exception.DatastoreNotFound as e:
@@ -100,22 +102,27 @@ def main():
     def actions(subparser):
         parser = subparser.add_parser('db_sync')
         parser.add_argument('--repo_path')
+
         parser = subparser.add_parser('db_upgrade')
         parser.add_argument('--version')
         parser.add_argument('--repo_path')
+
         parser = subparser.add_parser('db_downgrade')
         parser.add_argument('version')
         parser.add_argument('--repo_path')
+
         parser = subparser.add_parser('datastore_update')
         parser.add_argument('datastore_name')
-        parser.add_argument('manager')
         parser.add_argument('default_version')
+
         parser = subparser.add_parser('datastore_version_update')
         parser.add_argument('datastore')
         parser.add_argument('version_name')
+        parser.add_argument('manager')
         parser.add_argument('image_id')
         parser.add_argument('packages')
         parser.add_argument('active')
+
         parser = subparser.add_parser('db_wipe')
         parser.add_argument('repo_path')
 

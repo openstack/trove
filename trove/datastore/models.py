@@ -21,8 +21,10 @@ from trove.common import exception
 from trove.common import utils
 from trove.db import models as dbmodels
 from trove.db import get_db_api
+from trove.openstack.common import log as logging
 
 
+LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 db_api = get_db_api()
 
@@ -36,13 +38,13 @@ def persisted_models():
 
 class DBDatastore(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'name', 'manager', 'default_version_id']
+    _data_fields = ['id', 'name', 'default_version_id']
 
 
 class DBDatastoreVersion(dbmodels.DatabaseModelBase):
 
-    _data_fields = ['id', 'datastore_id', 'name', 'image_id', 'packages',
-                    'active']
+    _data_fields = ['id', 'datastore_id', 'name', 'manager', 'image_id',
+                    'packages', 'active']
 
 
 class Datastore(object):
@@ -67,10 +69,6 @@ class Datastore(object):
     @property
     def name(self):
         return self.db_info.name
-
-    @property
-    def manager(self):
-        return self.db_info.manager
 
     @property
     def default_version_id(self):
@@ -130,6 +128,10 @@ class DatastoreVersion(object):
     def active(self):
         return self.db_info.active
 
+    @property
+    def manager(self):
+        return self.db_info.manager
+
 
 class DatastoreVersions(object):
 
@@ -166,7 +168,7 @@ def get_datastore_version(type=None, version=None):
     return (datastore, datastore_version)
 
 
-def update_datastore(name, manager, default_version):
+def update_datastore(name, default_version):
     db_api.configure_db(CONF)
     if default_version:
         version = DatastoreVersion.load(default_version)
@@ -180,13 +182,13 @@ def update_datastore(name, manager, default_version):
         datastore = DBDatastore()
         datastore.id = utils.generate_uuid()
         datastore.name = name
-    datastore.manager = manager
     if default_version:
         datastore.default_version_id = version.id
     db_api.save(datastore)
 
 
-def update_datastore_version(datastore, name, image_id, packages, active):
+def update_datastore_version(datastore, name, manager, image_id, packages,
+                             active):
     db_api.configure_db(CONF)
     datastore = Datastore.load(datastore)
     try:
@@ -197,6 +199,7 @@ def update_datastore_version(datastore, name, image_id, packages, active):
         version.id = utils.generate_uuid()
         version.name = name
     version.datastore_id = datastore.id
+    version.manager = manager
     version.image_id = image_id
     version.packages = packages
     version.active = active

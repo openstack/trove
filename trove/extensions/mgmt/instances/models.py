@@ -207,7 +207,7 @@ class NotificationTransformer(object):
             'tenant_id': instance.tenant_id
         }
         payload['service_id'] = self._get_service_id(
-            instance.datastore.manager, CONF.notification_service_id)
+            instance.datastore_version.manager, CONF.notification_service_id)
         return payload
 
     def __call__(self):
@@ -250,7 +250,8 @@ class NovaNotificationTransformer(NotificationTransformer):
                 instances):
             message = {
                 'instance_type': self._lookup_flavor(instance.flavor_id),
-                'user_id': instance.server.user_id}
+                'user_id': instance.server.user_id
+            }
             message.update(self.transform_instance(instance,
                                                    audit_start,
                                                    audit_end))

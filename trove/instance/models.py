@@ -509,7 +509,7 @@ class Instance(BuiltInstance):
 
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,
-                                                  datastore.manager,
+                                                  datastore_version.manager,
                                                   datastore_version.packages,
                                                   volume_size, backup_id,
                                                   availability_zone,

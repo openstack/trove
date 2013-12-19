@@ -81,10 +81,19 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
 
         when(DatabaseModelBase).find_all(deleted=False).thenReturn(
             [db_instance])
-        stub_datastore = mock()
-        stub_datastore.datastore_id = "stub"
-        stub_datastore.manager = "mysql"
-        when(DatabaseModelBase).find_by(id=any()).thenReturn(stub_datastore)
+        stub_dsv_db_info = mock(datastore_models.DBDatastoreVersion)
+        stub_dsv_db_info.id = "test_datastore_version"
+        stub_dsv_db_info.datastore_id = "mysql_test_version"
+        stub_dsv_db_info.name = "test_datastore_name"
+        stub_dsv_db_info.image_id = "test_datastore_image_id"
+        stub_dsv_db_info.packages = "test_datastore_pacakges"
+        stub_dsv_db_info.active = 1
+        stub_dsv_db_info.manager = "mysql"
+        stub_datastore_version = datastore_models.DatastoreVersion(
+            stub_dsv_db_info)
+        when(DatabaseModelBase).find_by(id=any()).thenReturn(
+            stub_datastore_version)
+
         when(DatabaseModelBase).find_by(instance_id='1').thenReturn(
             InstanceServiceStatus(rd_instance.ServiceStatuses.BUILDING))
 
@@ -141,6 +150,19 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         db_instance = MockMgmtInstanceTest.build_db_instance(
             status, task_status=InstanceTasks.BUILDING)
 
+        stub_dsv_db_info = mock(datastore_models.DBDatastoreVersion)
+        stub_dsv_db_info.id = "test_datastore_version"
+        stub_dsv_db_info.datastore_id = "mysql_test_version"
+        stub_dsv_db_info.name = "test_datastore_name"
+        stub_dsv_db_info.image_id = "test_datastore_image_id"
+        stub_dsv_db_info.packages = "test_datastore_pacakges"
+        stub_dsv_db_info.active = 1
+        stub_dsv_db_info.manager = "mysql"
+        stub_datastore_version = datastore_models.DatastoreVersion(
+            stub_dsv_db_info)
+        when(DatabaseModelBase).find_by(id=any()).thenReturn(
+            stub_datastore_version)
+
         server = mock(Server)
         server.user_id = 'test_user_id'
         mgmt_instance = mgmtmodels.SimpleMgmtInstance(self.context,
@@ -179,8 +201,14 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
 
         server = mock(Server)
         server.user_id = 'test_user_id'
+        stub_datastore_version = mock()
+        stub_datastore_version.id = "stub_datastore_version"
+        stub_datastore_version.manager = "m0ng0"
+        when(datastore_models.
+             DatastoreVersion).load(any()).thenReturn(stub_datastore_version)
+
         stub_datastore = mock()
-        stub_datastore.manager = "m0ng0"
+        stub_datastore.default_datastore_version = "stub_datastore_version"
         when(datastore_models.
              Datastore).load(any()).thenReturn(stub_datastore)
         mgmt_instance = mgmtmodels.SimpleMgmtInstance(self.context,

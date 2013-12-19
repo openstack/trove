@@ -111,7 +111,8 @@ class API(proxy.RpcProxy):
                                 image_id=image_id,
                                 databases=databases,
                                 users=users,
-                                datastore_manager=datastore_manager,
+                                datastore_manager=
+                                datastore_manager,
                                 packages=packages,
                                 volume_size=volume_size,
                                 backup_id=backup_id,

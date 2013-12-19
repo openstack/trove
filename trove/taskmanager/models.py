@@ -117,7 +117,7 @@ class NotifyMixin(object):
             })
 
         payload['service_id'] = self._get_service_id(
-            self.datastore.manager, CONF.notification_service_id)
+            self.datastore_version.manager, CONF.notification_service_id)
 
         # Update payload with all other kwargs
         payload.update(kwargs)
@@ -1015,8 +1015,11 @@ class ResizeAction(ResizeActionBase):
                   % self.instance.id)
         LOG.debug(_("Repairing config."))
         try:
-            config = self._render_config(self.instance.datastore.manager,
-                                         self.old_flavor, self.instance.id)
+            config = self._render_config(
+                self.instance.datastore_version.manager,
+                self.old_flavor,
+                self.instance.id
+            )
             config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout:
@@ -1036,7 +1039,7 @@ class ResizeAction(ResizeActionBase):
             modify_at=timeutils.isotime(self.instance.updated))
 
     def _start_mysql(self):
-        config = self._render_config(self.instance.datastore.manager,
+        config = self._render_config(self.instance.datastore_version.manager,
                                      self.new_flavor, self.instance.id)
         self.instance.guest.start_db_with_conf_changes(config.config_contents)
 
