@@ -15,6 +15,8 @@ Parameters:
   AvailabilityZone:
     Type: String
     Default: nova
+  TenantId:
+    Type: String
 Resources:
   BaseInstance:
     Type: AWS::EC2::Instance
@@ -27,7 +29,8 @@ Resources:
                 Fn::Join:
                 - ''
                 - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
-                  "\ndatastore_manager=", {Ref: DatastoreManager}]
+                  "\ndatastore_manager=", {Ref: DatastoreManager},
+                  "\ntenant_id=", {Ref: TenantId}]
               mode: '000644'
               owner: root
               group: root
