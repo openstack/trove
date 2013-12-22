@@ -14,6 +14,8 @@
 
 import traceback
 import os.path
+
+from heatclient import exc as heat_exceptions
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
@@ -57,6 +59,8 @@ REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
 HEAT_TIME_OUT = CONF.heat_time_out  # seconds.
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
+HEAT_STACK_SUCCESSFUL_STATUSES = [('CREATE', 'CREATE_COMPLETE')]
+HEAT_RESOURCE_SUCCESSFUL_STATES = [('CREATE', 'COMPLETE')]
 
 use_nova_server_volume = CONF.use_nova_server_volume
 use_heat = CONF.use_heat
@@ -340,47 +344,66 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                    datastore_manager,
                                    volume_size, availability_zone):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
-        client = create_heat_client(self.context)
-
-        template_obj = template.load_heat_template(datastore_manager)
-        heat_template_unicode = template_obj.render(
-            volume_support=CONF.trove_volume_support)
         try:
-            heat_template = heat_template_unicode.encode('ascii')
-        except UnicodeEncodeError:
-            LOG.error(_("heat template ascii encode issue"))
-            raise TroveError("heat template ascii encode issue")
+            client = create_heat_client(self.context)
 
-        parameters = {"Flavor": flavor["name"],
-                      "VolumeSize": volume_size,
-                      "InstanceId": self.id,
-                      "ImageId": image_id,
-                      "DatastoreManager": datastore_manager,
-                      "AvailabilityZone": availability_zone,
-                      "TenantId": self.tenant_id}
-        stack_name = 'trove-%s' % self.id
-        client.stacks.create(stack_name=stack_name,
-                             template=heat_template,
-                             parameters=parameters)
-        stack = client.stacks.get(stack_name)
+            template_obj = template.load_heat_template(datastore_manager)
+            heat_template_unicode = template_obj.render(
+                volume_support=CONF.trove_volume_support)
+            try:
+                heat_template = heat_template_unicode.encode('ascii')
+            except UnicodeEncodeError:
+                LOG.error(_("heat template ascii encode issue"))
+                raise TroveError("heat template ascii encode issue")
 
-        utils.poll_until(
-            lambda: client.stacks.get(stack_name),
-            lambda stack: stack.stack_status in ['CREATE_COMPLETE',
-                                                 'CREATE_FAILED'],
-            sleep_time=2,
-            time_out=HEAT_TIME_OUT)
+            parameters = {"Flavor": flavor["name"],
+                          "VolumeSize": volume_size,
+                          "InstanceId": self.id,
+                          "ImageId": image_id,
+                          "DatastoreManager": datastore_manager,
+                          "AvailabilityZone": availability_zone,
+                          "TenantId": self.tenant_id}
+            stack_name = 'trove-%s' % self.id
+            client.stacks.create(stack_name=stack_name,
+                                 template=heat_template,
+                                 parameters=parameters)
+            stack = client.stacks.get(stack_name)
+            try:
+                utils.poll_until(
+                    lambda: client.stacks.get(stack_name),
+                    lambda stack: stack.stack_status in ['CREATE_COMPLETE',
+                                                         'CREATE_FAILED'],
+                    sleep_time=USAGE_SLEEP_TIME,
+                    time_out=HEAT_TIME_OUT)
+            except PollTimeOut:
+                LOG.error(_("Timeout during stack status tracing"))
+                raise TroveError("Timeout occured in tracking stack status")
 
-        resource = client.resources.get(stack.id, 'BaseInstance')
-        instance_id = resource.physical_resource_id
+            stack = client.stacks.get(stack_name)
+            if ((stack.action, stack.stack_status)
+                    not in HEAT_STACK_SUCCESSFUL_STATUSES):
+                raise TroveError("Heat Stack Create Failed.")
 
-        if CONF.trove_volume_support:
-            resource = client.resources.get(stack.id, 'DataVolume')
-            volume_id = resource.physical_resource_id
-            self.update_db(compute_instance_id=instance_id,
-                           volume_id=volume_id)
-        else:
-            self.update_db(compute_instance_id=instance_id)
+            resource = client.resources.get(stack.id, 'BaseInstance')
+            if resource.state not in HEAT_RESOURCE_SUCCESSFUL_STATES:
+                raise TroveError("Heat Resource Provisioning Failed.")
+            instance_id = resource.physical_resource_id
+
+            if CONF.trove_volume_support:
+                resource = client.resources.get(stack.id, 'DataVolume')
+                if resource.state not in HEAT_RESOURCE_SUCCESSFUL_STATES:
+                    raise TroveError("Heat Resource Provisioning Failed.")
+                volume_id = resource.physical_resource_id
+                self.update_db(compute_instance_id=instance_id,
+                               volume_id=volume_id)
+            else:
+                self.update_db(compute_instance_id=instance_id)
+
+        except (TroveError, heat_exceptions.HTTPNotFound) as e:
+            msg = _("Error during creating stack for instance %s") % self.id
+            LOG.debug(msg)
+            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
+            self._log_and_raise(e, msg, err)
 
         device_path = CONF.device_path
         mount_point = CONF.mount_point
