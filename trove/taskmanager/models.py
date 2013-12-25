@@ -147,7 +147,7 @@ class ConfigurationMixin(object):
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
-                        backup_id, availability_zone, root_password):
+                        backup_id, availability_zone, root_password, nics):
 
         LOG.debug(_("begin create_instance for id: %s") % self.id)
         security_groups = None
@@ -175,7 +175,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 image_id,
                 datastore_manager,
                 volume_size,
-                availability_zone)
+                availability_zone,
+                nics)
         elif use_nova_server_volume:
             volume_info = self._create_server_volume(
                 flavor['id'],
@@ -183,7 +184,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 security_groups,
                 datastore_manager,
                 volume_size,
-                availability_zone)
+                availability_zone,
+                nics)
         else:
             volume_info = self._create_server_volume_individually(
                 flavor['id'],
@@ -191,7 +193,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 security_groups,
                 datastore_manager,
                 volume_size,
-                availability_zone)
+                availability_zone,
+                nics)
 
         config = self._render_config(datastore_manager, flavor, self.id)
 
@@ -302,7 +305,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume(self, flavor_id, image_id, security_groups,
                               datastore_manager, volume_size,
-                              availability_zone):
+                              availability_zone, nics):
         LOG.debug(_("begin _create_server_volume for id: %s") % self.id)
         server = None
         try:
@@ -321,7 +324,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 name, image_id, flavor_id,
                 files=files, volume=volume_ref,
                 security_groups=security_groups,
-                availability_zone=availability_zone)
+                availability_zone=availability_zone, nics=nics)
             LOG.debug(_("Created new compute instance %(server_id)s "
                         "for id: %(id)s") %
                       {'server_id': server.id, 'id': self.id})
@@ -349,14 +352,16 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume_heat(self, flavor, image_id,
                                    datastore_manager,
-                                   volume_size, availability_zone):
+                                   volume_size, availability_zone, nics):
         LOG.debug(_("begin _create_server_volume_heat for id: %s") % self.id)
         try:
             client = create_heat_client(self.context)
 
+            ifaces, ports = self._build_heat_nics(nics)
             template_obj = template.load_heat_template(datastore_manager)
             heat_template_unicode = template_obj.render(
-                volume_support=CONF.trove_volume_support)
+                volume_support=CONF.trove_volume_support,
+                ifaces=ifaces, ports=ports)
             try:
                 heat_template = heat_template_unicode.encode('utf-8')
             except UnicodeEncodeError:
@@ -422,7 +427,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, datastore_manager,
                                            volume_size,
-                                           availability_zone):
+                                           availability_zone, nics):
         LOG.debug(_("begin _create_server_volume_individually for id: %s") %
                   self.id)
         server = None
@@ -432,7 +437,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             server = self._create_server(flavor_id, image_id, security_groups,
                                          datastore_manager,
                                          block_device_mapping,
-                                         availability_zone)
+                                         availability_zone, nics)
             server_id = server.id
             # Save server ID.
             self.update_db(compute_instance_id=server_id)
@@ -522,7 +527,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server(self, flavor_id, image_id, security_groups,
                        datastore_manager, block_device_mapping,
-                       availability_zone):
+                       availability_zone, nics):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "datastore_manager=%s\n"
                                      "tenant_id=%s\n" %
@@ -542,7 +547,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         server = self.nova_client.servers.create(
             name, image_id, flavor_id, files=files, userdata=userdata,
             security_groups=security_groups, block_device_mapping=bdmap,
-            availability_zone=availability_zone)
+            availability_zone=availability_zone, nics=nics)
         LOG.debug(_("Created new compute instance %(server_id)s "
                     "for id: %(id)s") %
                   {'server_id': server.id, 'id': self.id})
@@ -615,6 +620,27 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 self.context
             )
         return [security_group["name"]]
+
+    def _build_heat_nics(self, nics):
+        ifaces = []
+        ports = []
+        if nics:
+            for idx, nic in enumerate(nics):
+                iface_id = nic.get('port-id')
+                if iface_id:
+                    ifaces.append(iface_id)
+                    continue
+                net_id = nic.get('net-id')
+                if net_id:
+                    port = {}
+                    port['name'] = "Port%s" % idx
+                    port['net_id'] = net_id
+                    fixed_ip = nic.get('v4-fixed-ip')
+                    if fixed_ip:
+                        port['fixed_ip'] = fixed_ip
+                    ports.append(port)
+                    ifaces.append("{Ref: Port%s}" % idx)
+        return ifaces, ports
 
 
 class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):

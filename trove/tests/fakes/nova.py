@@ -260,7 +260,7 @@ class FakeServers(object):
 
     def create(self, name, image_id, flavor_ref, files=None, userdata=None,
                block_device_mapping=None, volume=None, security_groups=None,
-               availability_zone=None):
+               availability_zone=None, nics=None):
         id = "FAKE_%s" % uuid.uuid4()
         if volume:
             volume = self.volumes.create(volume['size'], volume['name'],

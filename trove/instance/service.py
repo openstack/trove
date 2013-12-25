@@ -215,11 +215,16 @@ class InstanceController(wsgi.Controller):
         else:
             availability_zone = None
 
+        if 'nics' in body['instance']:
+            nics = body['instance']['nics']
+        else:
+            nics = None
+
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           datastore, datastore_version,
                                           volume_size, backup_id,
-                                          availability_zone)
+                                          availability_zone, nics)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

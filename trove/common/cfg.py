@@ -238,6 +238,11 @@ common_opts = [
                 default=['atom', 'json', 'xml'],
                 help='Filetype endings not to be reattached to an id '
                      'by the utils method correct_id_with_req.'),
+    cfg.ListOpt('default_neutron_networks',
+                default=[],
+                help='List of network IDs which should be attached'
+                     ' to instance when networks are not specified'
+                     ' in API call.'),
 ]
 
 CONF = cfg.CONF

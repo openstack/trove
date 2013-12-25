@@ -102,7 +102,7 @@ class API(proxy.RpcProxy):
     def create_instance(self, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id=None,
-                        availability_zone=None, root_password=None):
+                        availability_zone=None, root_password=None, nics=None):
         LOG.debug("Making async call to create instance %s " % instance_id)
         self.cast(self.context,
                   self.make_msg("create_instance",
@@ -117,4 +117,4 @@ class API(proxy.RpcProxy):
                                 volume_size=volume_size,
                                 backup_id=backup_id,
                                 availability_zone=availability_zone,
-                                root_password=root_password))
+                                root_password=root_password, nics=nics))

@@ -85,6 +85,12 @@ volume = {
     }
 }
 
+nics = {
+    "type": "array",
+    "items": {
+        "type": "object",
+    }
+}
 
 databases_ref_list = {
     "type": "array",
@@ -199,7 +205,8 @@ instance = {
                             "type": non_empty_string,
                             "version": non_empty_string
                         }
-                    }
+                    },
+                    "nics": nics
                 }
             }
         }
