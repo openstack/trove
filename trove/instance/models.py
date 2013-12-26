@@ -37,7 +37,6 @@ from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.openstack.common import log as logging
-from trove.openstack.common import uuidutils
 from trove.openstack.common.gettextutils import _
 
 
@@ -506,7 +505,7 @@ class Instance(BuiltInstance):
 
             root_password = None
             if CONF.root_on_create and not backup_id:
-                root_password = uuidutils.generate_uuid()
+                root_password = utils.generate_random_password()
 
             task_api.API(context).create_instance(db_info.id, name, flavor,
                                                   image_id, databases, users,

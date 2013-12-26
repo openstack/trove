@@ -28,6 +28,7 @@ import shutil
 from eventlet import event
 from eventlet import greenthread
 from eventlet.timeout import Timeout
+from passlib import utils as passlib_utils
 
 from trove.common import cfg
 from trove.common import exception
@@ -309,3 +310,7 @@ def correct_id_with_req(id, request):
             # Not the relevant routing_args entry.
             pass
     return id
+
+
+def generate_random_password(password_length=CONF.default_password_length):
+    return passlib_utils.generate_password(size=password_length)

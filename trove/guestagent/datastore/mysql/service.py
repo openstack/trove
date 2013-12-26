@@ -17,7 +17,6 @@
 #
 
 import os
-import passlib.utils
 import re
 import uuid
 from datetime import date
@@ -62,10 +61,6 @@ MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 
 # Create a package impl
 packager = pkg.Package()
-
-
-def generate_random_password():
-    return passlib.utils.generate_password(size=CONF.default_password_length)
 
 
 def clear_expired_password():
@@ -574,7 +569,7 @@ class MySqlApp(object):
         """Generate and set a random root password and forget about it."""
         localhost = "localhost"
         uu = sql_query.UpdateUser("root", host=localhost,
-                                  clear=generate_random_password())
+                                  clear=utils.generate_random_password())
         t = text(str(uu))
         client.execute(t)
 
@@ -600,7 +595,7 @@ class MySqlApp(object):
 
     def secure(self, config_contents):
         LOG.info(_("Generating admin password..."))
-        admin_password = generate_random_password()
+        admin_password = utils.generate_random_password()
         clear_expired_password()
         engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
                                           echo=True)
@@ -835,7 +830,7 @@ class MySqlRootAccess(object):
         user = models.RootUser()
         user.name = "root"
         user.host = "%"
-        user.password = root_password or generate_random_password()
+        user.password = root_password or utils.generate_random_password()
         with LocalSqlClient(get_engine()) as client:
             print(client)
             try:
