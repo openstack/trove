@@ -65,7 +65,7 @@ class MockMgmtInstanceTest(TestCase):
                           id='1',
                           flavor_id='flavor_1',
                           datastore_version_id=
-                          test_config.dbaas_datastore_version,
+                          test_config.dbaas_datastore_version_id,
                           compute_instance_id='compute_id_1',
                           server_id='server_id_1',
                           tenant_id='tenant_id_1',
@@ -205,7 +205,11 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         stub_datastore_version.id = "stub_datastore_version"
         stub_datastore_version.manager = "m0ng0"
         when(datastore_models.
-             DatastoreVersion).load(any()).thenReturn(stub_datastore_version)
+             DatastoreVersion).load(any(), any()).thenReturn(
+                 stub_datastore_version)
+        when(datastore_models.
+             DatastoreVersion).load_by_uuid(any()).thenReturn(
+                 stub_datastore_version)
 
         stub_datastore = mock()
         stub_datastore.default_datastore_version = "stub_datastore_version"

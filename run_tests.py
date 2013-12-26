@@ -74,17 +74,17 @@ def datastore_init():
     # Adds the datastore for mysql (needed to make most calls work).
     from trove.datastore import models
 
-    models.DBDatastore.create(id="a00000a0-00a0-0a00-00a0-000a000000aa",
+    models.DBDatastore.create(id=CONFIG.dbaas_datastore_id,
                               name=CONFIG.dbaas_datastore,
                               default_version_id=
-                              "b00000b0-00b0-0b00-00b0-000b000000bb")
+                              CONFIG.dbaas_datastore_version_id)
     models.DBDatastore.create(id="e00000e0-00e0-0e00-00e0-000e000000ee",
                               name='Test_Datastore_1',
                               default_version_id=None)
 
-    models.DBDatastoreVersion.create(id="b00000b0-00b0-0b00-00b0-000b000000bb",
+    models.DBDatastoreVersion.create(id=CONFIG.dbaas_datastore_version_id,
                                      datastore_id=
-                                     "a00000a0-00a0-0a00-00a0-000a000000aa",
+                                     CONFIG.dbaas_datastore_id,
                                      name=CONFIG.dbaas_datastore_version,
                                      manager="mysql",
                                      image_id=
@@ -93,7 +93,7 @@ def datastore_init():
                                      active=1)
     models.DBDatastoreVersion.create(id="d00000d0-00d0-0d00-00d0-000d000000dd",
                                      datastore_id=
-                                     "a00000a0-00a0-0a00-00a0-000a000000aa",
+                                     CONFIG.dbaas_datastore_id,
                                      name='mysql_inactive_version',
                                      manager="mysql",
                                      image_id=

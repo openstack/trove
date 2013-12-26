@@ -32,7 +32,7 @@ class FakeDBInstance(object):
     def __init__(self):
         self.id = None
         self.deleted = False
-        self.datastore_version_id = test_config.dbaas_datastore_version
+        self.datastore_version_id = test_config.dbaas_datastore_version_id
         self.server_status = "ACTIVE"
         self.task_status = FakeInstanceTask()
 

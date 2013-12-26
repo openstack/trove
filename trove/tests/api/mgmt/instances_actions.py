@@ -52,7 +52,7 @@ class MgmtInstanceBase(object):
         self.db_info = DBInstance.create(
             name="instance",
             flavor_id=1,
-            datastore_version_id=test_config.dbaas_datastore_version,
+            datastore_version_id=test_config.dbaas_datastore_version_id,
             tenant_id=self.tenant_id,
             volume_size=None,
             task_status=InstanceTasks.NONE)

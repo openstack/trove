@@ -95,14 +95,25 @@ class DatastoreVersion(object):
         self.db_info = db_info
 
     @classmethod
-    def load(cls, id_or_name):
+    def load(cls, datastore, id_or_name):
         try:
-            return cls(DBDatastoreVersion.find_by(id=id_or_name))
+            return cls(DBDatastoreVersion.find_by(datastore_id=datastore.id,
+                                                  id=id_or_name))
         except exception.ModelNotFoundError:
-            try:
-                return cls(DBDatastoreVersion.find_by(name=id_or_name))
-            except exception.ModelNotFoundError:
+            versions = DBDatastoreVersion.find_all(datastore_id=datastore.id,
+                                                   name=id_or_name)
+            if versions.count() == 0:
                 raise exception.DatastoreVersionNotFound(version=id_or_name)
+            if versions.count() > 1:
+                raise exception.NoUniqueMatch(name=id_or_name)
+            return cls(versions.first())
+
+    @classmethod
+    def load_by_uuid(cls, uuid):
+        try:
+            return cls(DBDatastoreVersion.find_by(id=uuid))
+        except exception.ModelNotFoundError:
+            raise exception.DatastoreVersionNotFound(version=uuid)
 
     @property
     def id(self):
@@ -139,10 +150,14 @@ class DatastoreVersions(object):
         self.db_info = db_info
 
     @classmethod
-    def load(cls, id_or_name, active=True):
+    def load(cls, id_or_name, only_active=True):
         datastore = Datastore.load(id_or_name)
-        return cls(DBDatastoreVersion.find_all(datastore_id=datastore.id,
-                                               active=active))
+        if only_active:
+            versions = DBDatastoreVersion.find_all(datastore_id=datastore.id,
+                                                   active=True)
+        else:
+            versions = DBDatastoreVersion.find_all(datastore_id=datastore.id)
+        return cls(versions)
 
     def __iter__(self):
         for item in self.db_info:
@@ -158,7 +173,7 @@ def get_datastore_version(type=None, version=None):
     if not version:
         raise exception.DatastoreDefaultVersionNotFound(datastore=
                                                         datastore.name)
-    datastore_version = DatastoreVersion.load(version)
+    datastore_version = DatastoreVersion.load(datastore, version)
     if datastore_version.datastore_id != datastore.id:
         raise exception.DatastoreNoVersion(datastore=datastore.name,
                                            version=datastore_version.name)
@@ -170,13 +185,14 @@ def get_datastore_version(type=None, version=None):
 
 def update_datastore(name, default_version):
     db_api.configure_db(CONF)
-    if default_version:
-        version = DatastoreVersion.load(default_version)
-        if not version.active:
-            raise exception.DatastoreVersionInactive(version=
-                                                     version.name)
     try:
         datastore = DBDatastore.find_by(name=name)
+        if default_version:
+            version = DatastoreVersion.load(datastore, default_version)
+            if not version.active:
+                raise exception.DatastoreVersionInactive(version=
+                                                         version.name)
+            datastore.default_version_id = version.id
     except exception.ModelNotFoundError:
         # Create a new one
         datastore = DBDatastore()
@@ -192,13 +208,14 @@ def update_datastore_version(datastore, name, manager, image_id, packages,
     db_api.configure_db(CONF)
     datastore = Datastore.load(datastore)
     try:
-        version = DBDatastoreVersion.find_by(name=name)
+        version = DBDatastoreVersion.find_by(datastore_id=datastore.id,
+                                             name=name)
     except exception.ModelNotFoundError:
         # Create a new one
         version = DBDatastoreVersion()
         version.id = utils.generate_uuid()
         version.name = name
-    version.datastore_id = datastore.id
+        version.datastore_id = datastore.id
     version.manager = manager
     version.image_id = image_id
     version.packages = packages

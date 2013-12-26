@@ -49,6 +49,9 @@ class API(wsgi.Router):
         mapper.connect("/{tenant_id}/datastores/{datastore}/versions/{id}",
                        controller=datastore_resource,
                        action="version_show")
+        mapper.connect("/{tenant_id}/datastores/versions/{uuid}",
+                       controller=datastore_resource,
+                       action="version_show_by_uuid")
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()

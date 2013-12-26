@@ -16,6 +16,7 @@
 #    under the License.
 #
 
+from trove.common import wsgi
 from trove.common.views import create_links
 
 
@@ -31,6 +32,9 @@ class DatastoreView(object):
             "name": self.datastore.name,
             "links": self._build_links(),
         }
+        default_version = self.datastore.default_version_id
+        if default_version:
+            datastore_dict["default_version"] = default_version
 
         return {"datastore": datastore_dict}
 
@@ -61,14 +65,20 @@ class DatastoreVersionView(object):
     def __init__(self, datastore_version, req=None):
         self.datastore_version = datastore_version
         self.req = req
+        self.context = req.environ[wsgi.CONTEXT_KEY]
 
     def data(self):
         datastore_version_dict = {
             "id": self.datastore_version.id,
             "name": self.datastore_version.name,
+            "datastore": self.datastore_version.datastore_id,
             "links": self._build_links(),
         }
-
+        if self.context.is_admin:
+            datastore_version_dict['active'] = self.datastore_version.active
+            datastore_version_dict['packages'] = (self.datastore_version.
+                                                  packages)
+            datastore_version_dict['image'] = self.datastore_version.image_id
         return {"version": datastore_version_dict}
 
     def _build_links(self):

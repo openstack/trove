@@ -34,13 +34,23 @@ class DatastoreController(wsgi.Controller):
                            200)
 
     def version_show(self, req, tenant_id, datastore, id):
-        datastore, datastore_version = models.get_datastore_version(datastore,
-                                                                    id)
+        datastore = models.Datastore.load(datastore)
+        datastore_version = models.DatastoreVersion.load(datastore, id)
+        return wsgi.Result(views.DatastoreVersionView(datastore_version,
+                                                      req).data(), 200)
+
+    def version_show_by_uuid(self, req, tenant_id, uuid):
+        datastore_version = models.DatastoreVersion.load_by_uuid(uuid)
         return wsgi.Result(views.DatastoreVersionView(datastore_version,
                                                       req).data(), 200)
 
     def version_index(self, req, tenant_id, datastore):
-        datastore_versions = models.DatastoreVersions.load(datastore)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        only_active = True
+        if context.is_admin:
+            only_active = False
+        datastore_versions = models.DatastoreVersions.load(datastore,
+                                                           only_active)
         return wsgi.Result(views.
                            DatastoreVersionsView(datastore_versions,
                                                  req).data(), 200)
