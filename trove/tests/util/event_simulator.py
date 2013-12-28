@@ -21,6 +21,10 @@ Simulates time itself to make the fake mode tests run even faster.
 """
 
 
+from trove.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
+
 pending_events = []
 sleep_entrance_count = 0
 
