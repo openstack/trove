@@ -350,8 +350,10 @@ class MySqlAdmin(object):
         try:
             user.name = username  # Could possibly throw a BadRequest here.
         except exceptions.ValueError as ve:
-            raise exception.BadRequest("Username %s is not valid: %s"
-                                       % (username, ve.message))
+            raise exception.BadRequest(_("Username %(user)s is not valid"
+                                         ": %(reason)s") %
+                                       {'user': username, 'reason': ve.message}
+                                       )
         with LocalSqlClient(get_engine()) as client:
             q = sql_query.Query()
             q.columns = ['User', 'Host', 'Password']
