@@ -18,7 +18,7 @@ import time
 from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
-from proboscis.asserts import *
+from proboscis import asserts
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 
@@ -185,8 +185,8 @@ def create_user():
         except BadRequest:
             pass  # Ignore this if the user already exists.
         helper.connection.connect()
-        assert_true(helper.connection.is_connected(),
-                    "Test user must be able to connect to MySQL.")
+        asserts.assert_true(helper.connection.is_connected(),
+                            "Test user must be able to connect to MySQL.")
 
 
 class RebootTestBase(ActionTestBase):
@@ -211,7 +211,7 @@ class RebootTestBase(ActionTestBase):
             instance = self.instance
             if instance.status == "REBOOT":
                 return False
-            assert_equal("ACTIVE", instance.status)
+            asserts.assert_equal("ACTIVE", instance.status)
             return True
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
@@ -220,8 +220,8 @@ class RebootTestBase(ActionTestBase):
         if not USE_IP:
             return
         new_proc_id = self.find_mysql_proc_on_instance()
-        assert_not_equal(new_proc_id, self.proc_id,
-                         "MySQL process ID should be different!")
+        asserts.assert_not_equal(new_proc_id, self.proc_id,
+                                 "MySQL process ID should be different!")
 
     def successful_restart(self):
         """Restart MySQL via the REST API successfully."""
@@ -259,7 +259,7 @@ class RebootTestBase(ActionTestBase):
             # The reason we check for BLOCKED as well as SHUTDOWN is because
             # Upstart might try to bring mysql back up after the borked
             # connection and the guest status can be either
-            assert_true(instance.status in ("SHUTDOWN", "BLOCKED"))
+            asserts.assert_true(instance.status in ("SHUTDOWN", "BLOCKED"))
             return True
 
         poll_until(is_finished_rebooting, time_out=TIME_OUT_TIME)
@@ -285,7 +285,7 @@ class RestartTests(RebootTestBase):
 
     def call_reboot(self):
         self.instance.restart()
-        assert_equal(202, self.dbaas.last_http_code)
+        asserts.assert_equal(202, self.dbaas.last_http_code)
 
     @before_class
     def test_set_up(self):
@@ -368,8 +368,8 @@ class RebootTests(RebootTestBase):
     @before_class
     def test_set_up(self):
         self.set_up()
-        assert_true(hasattr(self, 'dbaas'))
-        assert_true(self.dbaas is not None)
+        asserts.assert_true(hasattr(self, 'dbaas'))
+        asserts.assert_true(self.dbaas is not None)
 
     @test
     def test_ensure_mysql_is_running(self):
@@ -412,7 +412,7 @@ class ResizeInstanceTest(ActionTestBase):
             instance = self.instance
             if instance.status == "RESIZE":
                 return False
-            assert_equal("ACTIVE", instance.status)
+            asserts.assert_equal("ACTIVE", instance.status)
             return True
         poll_until(is_finished_resizing, time_out=TIME_OUT_TIME)
 
@@ -421,14 +421,14 @@ class ResizeInstanceTest(ActionTestBase):
         self.set_up()
         if USE_IP:
             self.connection.connect()
-            assert_true(self.connection.is_connected(),
-                        "Should be able to connect before resize.")
+            asserts.assert_true(self.connection.is_connected(),
+                                "Should be able to connect before resize.")
         self.user_was_deleted = False
 
     @test
     def test_instance_resize_same_size_should_fail(self):
-        assert_raises(BadRequest, self.dbaas.instances.resize_instance,
-                      self.instance_id, self.flavor_id)
+        asserts.assert_raises(BadRequest, self.dbaas.instances.resize_instance,
+                              self.instance_id, self.flavor_id)
 
     @test(enabled=VOLUME_SUPPORT)
     def test_instance_resize_to_ephemeral_in_volume_support_should_fail(self):
@@ -439,20 +439,21 @@ class ResizeInstanceTest(ActionTestBase):
         def is_active():
             return self.instance.status == 'ACTIVE'
         poll_until(is_active, time_out=TIME_OUT_TIME)
-        assert_equal(self.instance.status, 'ACTIVE')
+        asserts.assert_equal(self.instance.status, 'ACTIVE')
 
         self.get_flavor_href(
             flavor_id=self.expected_old_flavor_id)
-        assert_raises(HTTPNotImplemented, self.dbaas.instances.resize_instance,
-                      self.instance_id, flavors[0].id)
+        asserts.assert_raises(HTTPNotImplemented,
+                              self.dbaas.instances.resize_instance,
+                              self.instance_id, flavors[0].id)
 
     @test(enabled=EPHEMERAL_SUPPORT)
     def test_instance_resize_to_non_ephemeral_flavor_should_fail(self):
         flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
                                         'm1-small')
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
-        assert_raises(BadRequest, self.dbaas.instances.resize_instance,
-                      self.instance_id, flavors[0].id)
+        asserts.assert_raises(BadRequest, self.dbaas.instances.resize_instance,
+                              self.instance_id, flavors[0].id)
 
     def obtain_flavor_ids(self):
         old_id = self.instance.flavor['id']
@@ -466,15 +467,18 @@ class ResizeInstanceTest(ActionTestBase):
             flavor_name = CONFIG.values.get('instance_bigger_flavor_name',
                                             'm1.small')
         flavors = self.dbaas.find_flavors_by_name(flavor_name)
-        assert_equal(len(flavors), 1, "Number of flavors with name '%s' "
-                     "found was '%d'." % (flavor_name, len(flavors)))
+        asserts.assert_equal(len(flavors), 1,
+                             "Number of flavors with name '%s' "
+                             "found was '%d'." % (flavor_name,
+                                                  len(flavors)))
         flavor = flavors[0]
         self.old_dbaas_flavor = instance_info.dbaas_flavor
         instance_info.dbaas_flavor = flavor
-        assert_true(flavor is not None, "Flavor '%s' not found!" % flavor_name)
+        asserts.assert_true(flavor is not None,
+                            "Flavor '%s' not found!" % flavor_name)
         flavor_href = self.dbaas.find_flavor_self_href(flavor)
-        assert_true(flavor_href is not None,
-                    "Flavor href '%s' not found!" % flavor_name)
+        asserts.assert_true(flavor_href is not None,
+                            "Flavor href '%s' not found!" % flavor_name)
         self.expected_new_flavor_id = flavor.id
 
     @test(depends_on=[test_instance_resize_same_size_should_fail])
@@ -484,7 +488,7 @@ class ResizeInstanceTest(ActionTestBase):
         self.dbaas.instances.resize_instance(
             self.instance_id,
             self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
-        assert_equal(202, self.dbaas.last_http_code)
+        asserts.assert_equal(202, self.dbaas.last_http_code)
 
         #(WARNING) IF THE RESIZE IS WAY TOO FAST THIS WILL FAIL
         assert_unprocessable(
@@ -535,7 +539,7 @@ class ResizeInstanceTest(ActionTestBase):
     def test_instance_has_new_flavor_after_resize(self):
         actual = self.get_flavor_href(self.instance.flavor['id'])
         expected = self.get_flavor_href(flavor_id=self.expected_new_flavor_id)
-        assert_equal(actual, expected)
+        asserts.assert_equal(actual, expected)
 
     @test(depends_on=[test_instance_has_new_flavor_after_resize])
     @time_out(TIME_OUT_TIME)
@@ -545,18 +549,18 @@ class ResizeInstanceTest(ActionTestBase):
         def is_active():
             return self.instance.status == 'ACTIVE'
         poll_until(is_active, time_out=TIME_OUT_TIME)
-        assert_equal(self.instance.status, 'ACTIVE')
+        asserts.assert_equal(self.instance.status, 'ACTIVE')
 
         old_flavor_href = self.get_flavor_href(
             flavor_id=self.expected_old_flavor_id)
 
         self.dbaas.instances.resize_instance(self.instance_id, old_flavor_href)
-        assert_equal(202, self.dbaas.last_http_code)
+        asserts.assert_equal(202, self.dbaas.last_http_code)
         self.old_dbaas_flavor = instance_info.dbaas_flavor
         instance_info.dbaas_flavor = expected_dbaas_flavor
         self.wait_for_resize()
-        assert_equal(str(self.instance.flavor['id']),
-                     str(self.expected_old_flavor_id))
+        asserts.assert_equal(str(self.instance.flavor['id']),
+                             str(self.expected_old_flavor_id))
 
     @test(depends_on=[test_resize_down],
           groups=["dbaas.usage"])
@@ -617,7 +621,7 @@ class ResizeInstanceVolume(ActionTestBase):
 
         poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
-        assert_equal(instance.volume['size'], self.new_volume_size)
+        asserts.assert_equal(instance.volume['size'], self.new_volume_size)
 
     @test(depends_on=[test_volume_resize_success], groups=["dbaas.usage"])
     def test_resize_volume_usage_event_sent(self):
@@ -663,7 +667,7 @@ class UpdateGuest(object):
         """Make sure we have the old version before proceeding."""
         self.old_version = self.get_version()
         self.next_version = UPDATE_GUEST_CONF["next-version"]
-        assert_not_equal(self.old_version, self.next_version)
+        asserts.assert_not_equal(self.old_version, self.next_version)
 
     @test(enabled=UPDATE_GUEST_CONF is not None)
     def upload_update_to_repo(self):

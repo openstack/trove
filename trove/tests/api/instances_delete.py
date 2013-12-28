@@ -20,7 +20,7 @@ import time
 
 from proboscis import before_class
 from proboscis import test
-from proboscis.asserts import *
+from proboscis import asserts
 from proboscis.decorators import time_out
 
 from troveclient.compat import exceptions
@@ -74,12 +74,12 @@ class TestBase(object):
         instance = self.dbaas.instances.get(instance_id)
         instance.delete()
         if assert_deleted:
-            assert_true(self.is_instance_deleted(instance_id))
+            asserts.assert_true(self.is_instance_deleted(instance_id))
 
     def delete_errored_instance(self, instance_id):
         self.wait_for_instance_status(instance_id, 'ERROR')
         status, desc = self.get_task_info(instance_id)
-        assert_equal(status, "ERROR")
+        asserts.assert_equal(status, "ERROR")
         self.delete_instance(instance_id)
 
 
@@ -130,13 +130,15 @@ class ErroredInstanceDelete(TestBase):
         self.wait_for_instance_status(id, 'ACTIVE')
         self.wait_for_instance_task_status(id, 'No tasks for the instance.')
         instance = self.dbaas.management.show(id)
-        assert_equal(instance.status, "ACTIVE")
-        assert_equal(instance.task_description, 'No tasks for the instance.')
+        asserts.assert_equal(instance.status, "ACTIVE")
+        asserts.assert_equal(instance.task_description,
+                             'No tasks for the instance.')
         # Try to delete the instance. This fails the first time due to how
         # the test fake  is setup.
         self.delete_instance(id, assert_deleted=False)
         instance = self.dbaas.management.show(id)
-        assert_equal(instance.status, "SHUTDOWN")
-        assert_equal(instance.task_description, "Deleting the instance.")
+        asserts.assert_equal(instance.status, "SHUTDOWN")
+        asserts.assert_equal(instance.task_description,
+                             "Deleting the instance.")
         # Try a second time. This will succeed.
         self.delete_instance(id)
