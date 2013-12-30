@@ -18,9 +18,9 @@
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common import utils
 from trove.db import models as dbmodels
 from trove.db import get_db_api
-from trove.openstack.common import uuidutils
 
 
 CONF = cfg.CONF
@@ -178,7 +178,7 @@ def update_datastore(name, manager, default_version):
     except exception.ModelNotFoundError:
         # Create a new one
         datastore = DBDatastore()
-        datastore.id = uuidutils.generate_uuid()
+        datastore.id = utils.generate_uuid()
         datastore.name = name
     datastore.manager = manager
     if default_version:
@@ -194,7 +194,7 @@ def update_datastore_version(datastore, name, image_id, packages, active):
     except exception.ModelNotFoundError:
         # Create a new one
         version = DBDatastoreVersion()
-        version.id = uuidutils.generate_uuid()
+        version.id = utils.generate_uuid()
         version.name = name
     version.datastore_id = datastore.id
     version.image_id = image_id
