@@ -165,14 +165,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                             "instance: %s") % self.id)
 
         if use_heat:
-            server, volume_info = self._create_server_volume_heat(
+            volume_info = self._create_server_volume_heat(
                 flavor,
                 image_id,
                 datastore_manager,
                 volume_size,
                 availability_zone)
         elif use_nova_server_volume:
-            server, volume_info = self._create_server_volume(
+            volume_info = self._create_server_volume(
                 flavor['id'],
                 image_id,
                 security_groups,
@@ -180,7 +180,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_size,
                 availability_zone)
         else:
-            server, volume_info = self._create_server_volume_individually(
+            volume_info = self._create_server_volume_individually(
                 flavor['id'],
                 image_id,
                 security_groups,
@@ -190,18 +190,17 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         config = self._render_config(datastore_manager, flavor, self.id)
 
-        if server:
-            backup_info = None
-            if backup_id is not None:
+        backup_info = None
+        if backup_id is not None:
                 backup = bkup_models.Backup.get_by_id(self.context, backup_id)
                 backup_info = {'id': backup_id,
                                'location': backup.location,
                                'type': backup.backup_type,
                                'checksum': backup.checksum,
                                }
-            self._guest_prepare(server, flavor['ram'], volume_info,
-                                packages, databases, users, backup_info,
-                                config.config_contents, root_password)
+        self._guest_prepare(flavor['ram'], volume_info,
+                            packages, databases, users, backup_info,
+                            config.config_contents, root_password)
 
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
@@ -335,7 +334,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         mount_point = CONF.mount_point
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
         LOG.debug(_("end _create_server_volume for id: %s") % self.id)
-        return server, volume_info
+        return volume_info
 
     def _create_server_volume_heat(self, flavor, image_id,
                                    datastore_manager,
@@ -387,7 +386,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
 
         LOG.debug(_("end _create_server_volume_heat for id: %s") % self.id)
-        return {'id': instance_id}, volume_info
+        return volume_info
 
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, datastore_manager,
@@ -412,7 +411,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self._log_and_raise(e, msg, err)
         LOG.debug(_("end _create_server_volume_individually for id: %s") %
                   self.id)
-        return server, volume_info
+        return volume_info
 
     def _build_volume_info(self, volume_size=None):
         volume_info = None
@@ -518,7 +517,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                   {'server_id': server.id, 'id': self.id})
         return server
 
-    def _guest_prepare(self, server, flavor_ram, volume_info,
+    def _guest_prepare(self, flavor_ram, volume_info,
                        packages, databases, users, backup_info=None,
                        config_contents=None, root_password=None):
         LOG.info(_("Entering guest_prepare"))
