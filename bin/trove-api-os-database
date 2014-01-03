@@ -57,7 +57,7 @@ FLAGS = flags.FLAGS
 FLAGS.register_opts(trove_opts)
 
 
-if __name__ == '__main__':
+def main():
     utils.default_flagfile()
     flags.FLAGS(sys.argv)
     logging.setup()
@@ -66,3 +66,7 @@ if __name__ == '__main__':
     server = service.WSGIService(SERVICE_NAME, loader=loader)
     service.serve(server)
     service.wait()
+
+
+if __name__ == '__main__':
+    main()

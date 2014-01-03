@@ -37,7 +37,7 @@ from trove.openstack.common import service as openstack_service
 CONF = cfg.CONF
 
 
-def main():
+def launch_services():
     get_db_api().configure_db(CONF)
     manager = 'trove.conductor.manager.Manager'
     topic = CONF.conductor_queue
@@ -47,7 +47,7 @@ def main():
     launcher.wait()
 
 
-if __name__ == '__main__':
+def main():
     cfg.parse_args(sys.argv)
     logging.setup(None)
 
@@ -56,7 +56,11 @@ if __name__ == '__main__':
     if not debug_utils.enabled():
         eventlet.monkey_patch(thread=True)
     try:
-        main()
+        launch_services()
     except RuntimeError as error:
         print(traceback.format_exc())
         sys.exit("ERROR: %s" % error)
+
+
+if __name__ == '__main__':
+    main()
