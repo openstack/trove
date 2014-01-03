@@ -44,7 +44,7 @@ class VolumeDeviceTest(testtools.TestCase):
         self.volumeDevice._tmp_mount = MagicMock()
         self.volumeDevice.unmount = MagicMock()
         self.volumeDevice.migrate_data('/')
-        self.assertEqual(2, utils.execute.call_count)
+        self.assertEqual(1, utils.execute.call_count)
         self.assertEqual(1, self.volumeDevice._tmp_mount.call_count)
         self.assertEqual(1, self.volumeDevice.unmount.call_count)
         utils.execute = origin_execute
