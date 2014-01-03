@@ -708,7 +708,6 @@ class MySqlApp(object):
 
     def _write_temp_mycnf_with_admin_account(self, original_file_path,
                                              temp_file_path, password):
-        utils.execute_with_timeout("sudo", "chmod", "0711", MYSQL_BASE_DIR)
         mycnf_file = open(original_file_path, 'r')
         tmp_file = open(temp_file_path, 'w')
         for line in mycnf_file:
