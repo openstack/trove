@@ -97,6 +97,7 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
         super(DetailedMgmtInstance, self).__init__(*args, **kwargs)
         self.volume = None
         self.volume_used = None
+        self.volume_total = None
         self.root_history = None
 
     @classmethod

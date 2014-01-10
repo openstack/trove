@@ -259,6 +259,7 @@ class DetailInstance(SimpleInstance):
     def __init__(self, context, db_info, service_status):
         super(DetailInstance, self).__init__(context, db_info, service_status)
         self._volume_used = None
+        self._volume_total = None
 
     @property
     def volume_used(self):
@@ -267,6 +268,14 @@ class DetailInstance(SimpleInstance):
     @volume_used.setter
     def volume_used(self, value):
         self._volume_used = value
+
+    @property
+    def volume_total(self):
+        return self._volume_total
+
+    @volume_total.setter
+    def volume_total(self, value):
+        self._volume_total = value
 
 
 def get_db_info(context, id):
@@ -332,6 +341,7 @@ def load_guest_info(instance, context, id):
         try:
             volume_info = guest.get_volume_info()
             instance.volume_used = volume_info['used']
+            instance.volume_total = volume_info['total']
         except Exception as e:
             LOG.error(e)
     return instance

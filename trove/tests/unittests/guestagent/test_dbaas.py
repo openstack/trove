@@ -905,7 +905,7 @@ class InterrogatorTest(testtools.TestCase):
         self.assertEqual(result['block_size'], 4096)
         self.assertEqual(result['total_blocks'], 1048576)
         self.assertEqual(result['free_blocks'], 524288)
-        self.assertEqual(result['total'], 4294967296)
+        self.assertEqual(result['total'], 4.0)
         self.assertEqual(result['free'], 2147483648)
         self.assertEqual(result['used'], 2.0)
 

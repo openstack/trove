@@ -259,8 +259,8 @@ class FakeGuest(object):
         self._set_status('SHUTDOWN')
 
     def get_volume_info(self):
-        """Return used volume information in GB."""
-        return {'used': 0.16}
+        """Return used and total volume filesystem information in GB."""
+        return {'used': 0.16, 'total': 4.0}
 
     def grant_access(self, username, hostname, databases):
         """Add a database to a users's grant list."""

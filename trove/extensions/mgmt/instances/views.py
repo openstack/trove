@@ -86,6 +86,7 @@ class MgmtInstanceDetailView(MgmtInstanceView):
                 "size": volume.size,
                 "status": volume.status,
                 "used": self.instance.volume_used or None,
+                "total": self.instance.volume_total or None,
             }
         else:
             result['instance']['volume'] = None
