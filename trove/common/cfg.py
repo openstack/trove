@@ -210,8 +210,8 @@ common_opts = [
     cfg.StrOpt('exists_notification_transformer',
                help='Transformer for exists notifications'),
     cfg.IntOpt('exists_notification_ticks', default=360,
-               help='Number of report_intevals to wait between pushing events '
-                    '(see report_interval)'),
+               help='Number of report_intervals to wait between pushing '
+                    'events (see report_interval)'),
     cfg.DictOpt('notification_service_id', default={},
                 help='Unique ID to tag notification events'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
