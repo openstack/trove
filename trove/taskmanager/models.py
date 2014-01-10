@@ -358,7 +358,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       "InstanceId": self.id,
                       "ImageId": image_id,
                       "DatastoreManager": datastore_manager,
-                      "AvailabilityZone": availability_zone}
+                      "AvailabilityZone": availability_zone,
+                      "TenantId": self.tenant_id}
         stack_name = 'trove-%s' % self.id
         client.stacks.create(stack_name=stack_name,
                              template=heat_template,
