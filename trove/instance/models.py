@@ -321,7 +321,7 @@ def load_instance(cls, context, id, needs_server=False):
                                                 id)
 
     service_status = InstanceServiceStatus.find_by(instance_id=id)
-    LOG.info("service status=%s" % service_status)
+    LOG.info("service status=%s" % service_status.status)
     return cls(context, db_info, server, service_status)
 
 
@@ -329,7 +329,7 @@ def load_instance_with_guest(cls, context, id):
     db_info = get_db_info(context, id)
     load_simple_instance_server_status(context, db_info)
     service_status = InstanceServiceStatus.find_by(instance_id=id)
-    LOG.info("service status=%s" % service_status)
+    LOG.info("service status=%s" % service_status.status)
     instance = cls(context, db_info, service_status)
     load_guest_info(instance, context, id)
     return instance
