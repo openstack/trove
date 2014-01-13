@@ -19,7 +19,7 @@ Extra tests to create an instance, shut down MySQL, and delete it.
 from proboscis.decorators import time_out
 from proboscis import before_class
 from proboscis import test
-from proboscis.asserts import *
+from proboscis import asserts
 import time
 
 from datetime import datetime
@@ -56,7 +56,7 @@ class TestBase(object):
         # Get the resize to flavor.
         flavors2 = self.client.find_flavors_by_name(flavor2_name)
         self.new_flavor_id = flavors2[0].id
-        assert_not_equal(self.flavor_id, self.new_flavor_id)
+        asserts.assert_not_equal(self.flavor_id, self.new_flavor_id)
 
     def _wait_for_active(self):
         poll_until(lambda: self.client.instances.get(self.id),
@@ -115,7 +115,7 @@ class TestBase(object):
         while True:
             try:
                 instance = self.client.instances.get(self.id)
-                assert_equal("SHUTDOWN", instance.status)
+                asserts.assert_equal("SHUTDOWN", instance.status)
             except exceptions.NotFound:
                 break
             time.sleep(0.25)

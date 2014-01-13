@@ -19,7 +19,10 @@
 Standard openstack.common.rpc.impl_fake with nonblocking cast
 """
 
-from trove.openstack.common.rpc.impl_fake import *
+import eventlet
+
+from trove.openstack.common.rpc.impl_fake import cast
+from trove.openstack.common.rpc.impl_fake import create_connection
 
 
 original_cast = cast
@@ -30,3 +33,7 @@ def non_blocking_cast(*args, **kwargs):
 
 
 cast = non_blocking_cast
+
+
+# Asserting create_connection, workaround for pep8-F401 for unused import.
+assert create_connection

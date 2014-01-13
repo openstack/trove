@@ -18,7 +18,7 @@
 
 from mockito import mock, when, unstub
 import testtools
-from testtools.matchers import *
+from testtools import matchers
 
 import swiftclient.client
 
@@ -59,18 +59,19 @@ class TestRemote(testtools.TestCase):
         # interact
         conn = swiftclient.client.Connection()
         account_info = conn.get_account()
-        self.assertThat(account_info, Not(Is(None)))
-        self.assertThat(len(account_info), Is(2))
-        self.assertThat(account_info, IsInstance(tuple))
-        self.assertThat(account_info[0], IsInstance(dict))
+        self.assertThat(account_info, matchers.Not(matchers.Is(None)))
+        self.assertThat(len(account_info), matchers.Is(2))
+        self.assertThat(account_info, matchers.IsInstance(tuple))
+        self.assertThat(account_info[0], matchers.IsInstance(dict))
         self.assertThat(account_info[0],
-                        KeysEqual('content-length', 'accept-ranges',
-                                  'x-timestamp', 'x-trans-id', 'date',
-                                  'x-account-bytes-used',
-                                  'x-account-container-count', 'content-type',
-                                  'x-account-object-count'))
-        self.assertThat(account_info[1], IsInstance(list))
-        self.assertThat(len(account_info[1]), Is(0))
+                        matchers.KeysEqual('content-length', 'accept-ranges',
+                                           'x-timestamp', 'x-trans-id', 'date',
+                                           'x-account-bytes-used',
+                                           'x-account-container-count',
+                                           'content-type',
+                                           'x-account-object-count'))
+        self.assertThat(account_info[1], matchers.IsInstance(list))
+        self.assertThat(len(account_info[1]), matchers.Is(0))
 
     def test_one_container(self):
         """
@@ -86,29 +87,27 @@ class TestRemote(testtools.TestCase):
         conn.get_auth()
         conn.put_container(cont_name)
         # get headers plus container metadata
-        self.assertThat(len(conn.get_account()), Is(2))
+        self.assertThat(len(conn.get_account()), matchers.Is(2))
         # verify container details
         account_containers = conn.get_account()[1]
-        self.assertThat(len(account_containers), Is(1))
+        self.assertThat(len(account_containers), matchers.Is(1))
         self.assertThat(account_containers[0],
-                        KeysEqual('count', 'bytes', 'name'))
-        self.assertThat(account_containers[0]['name'], Is(cont_name))
+                        matchers.KeysEqual('count', 'bytes', 'name'))
+        self.assertThat(account_containers[0]['name'], matchers.Is(cont_name))
         # get container details
         cont_info = conn.get_container(cont_name)
         self.assertIsNotNone(cont_info)
-        self.assertThat(cont_info[0], KeysEqual('content-length',
-                                                "x-container-object-count",
-                                                'accept-ranges',
-                                                'x-container-bytes-used',
-                                                'x-timestamp', 'x-trans-id',
-                                                'date', 'content-type'))
-        self.assertThat(len(cont_info[1]), Equals(0))
+        self.assertThat(cont_info[0], matchers.KeysEqual('content-length',
+                        'x-container-object-count', 'accept-ranges',
+                        'x-container-bytes-used', 'x-timestamp',
+                        'x-trans-id', 'date', 'content-type'))
+        self.assertThat(len(cont_info[1]), matchers.Equals(0))
         # remove container
         swift_stub.without_container(cont_name)
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.get_container(cont_name)
             # ensure there are no more containers in account
-        self.assertThat(len(conn.get_account()[1]), Is(0))
+        self.assertThat(len(conn.get_account()[1]), matchers.Is(0))
 
     def test_one_object(self):
         swift_stub = SwiftClientStub()
@@ -121,19 +120,22 @@ class TestRemote(testtools.TestCase):
         cont_info = conn.get_container('bob')
         self.assertIsNotNone(cont_info)
         self.assertThat(cont_info[0],
-                        KeysEqual('content-length', 'x-container-object-count',
-                                  'accept-ranges', 'x-container-bytes-used',
-                                  'x-timestamp', 'x-trans-id', 'date',
-                                  'content-type'))
+                        matchers.KeysEqual('content-length',
+                                           'x-container-object-count',
+                                           'accept-ranges',
+                                           'x-container-bytes-used',
+                                           'x-timestamp', 'x-trans-id', 'date',
+                                           'content-type'))
         cont_objects = cont_info[1]
-        self.assertThat(len(cont_objects), Equals(1))
+        self.assertThat(len(cont_objects), matchers.Equals(1))
         obj_1 = cont_objects[0]
-        self.assertThat(obj_1, Equals(
+        self.assertThat(obj_1, matchers.Equals(
             {'bytes': 13, 'last_modified': '2013-03-15T22:10:49.361950',
              'hash': 'ccc55aefbf92aa66f42b638802c5e7f6', 'name': 'test',
              'content_type': 'application/octet-stream'}))
         # test object api - not much to do here
-        self.assertThat(conn.get_object('bob', 'test')[1], Is('test_contents'))
+        self.assertThat(conn.get_object('bob', 'test')[1],
+                        matchers.Is('test_contents'))
 
         # test remove object
         swift_stub.without_object('bob', 'test')
@@ -141,7 +143,7 @@ class TestRemote(testtools.TestCase):
         conn.delete_object('bob', 'test')
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.delete_object('bob', 'test')
-        self.assertThat(len(conn.get_container('bob')[1]), Is(0))
+        self.assertThat(len(conn.get_container('bob')[1]), matchers.Is(0))
 
     def test_two_objects(self):
         swift_stub = SwiftClientStub()
@@ -157,30 +159,33 @@ class TestRemote(testtools.TestCase):
         cont_info = conn.get_container('bob')
         self.assertIsNotNone(cont_info)
         self.assertThat(cont_info[0],
-                        KeysEqual('content-length', 'x-container-object-count',
-                                  'accept-ranges', 'x-container-bytes-used',
-                                  'x-timestamp', 'x-trans-id', 'date',
-                                  'content-type'))
-        self.assertThat(len(cont_info[1]), Equals(2))
-        self.assertThat(cont_info[1][0], Equals(
+                        matchers.KeysEqual('content-length',
+                                           'x-container-object-count',
+                                           'accept-ranges',
+                                           'x-container-bytes-used',
+                                           'x-timestamp', 'x-trans-id', 'date',
+                                           'content-type'))
+        self.assertThat(len(cont_info[1]), matchers.Equals(2))
+        self.assertThat(cont_info[1][0], matchers.Equals(
             {'bytes': 13, 'last_modified': '2013-03-15T22:10:49.361950',
              'hash': 'ccc55aefbf92aa66f42b638802c5e7f6', 'name': 'test',
              'content_type': 'application/octet-stream'}))
-        self.assertThat(conn.get_object('bob', 'test')[1], Is('test_contents'))
+        self.assertThat(conn.get_object('bob', 'test')[1],
+                        matchers.Is('test_contents'))
         self.assertThat(conn.get_object('bob', 'test2')[1],
-                        Is('test_contents2'))
+                        matchers.Is('test_contents2'))
 
         swift_stub.without_object('bob', 'test')
         conn.delete_object('bob', 'test')
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.delete_object('bob', 'test')
-        self.assertThat(len(conn.get_container('bob')[1]), Is(1))
+        self.assertThat(len(conn.get_container('bob')[1]), matchers.Is(1))
 
         swift_stub.without_container('bob')
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.get_container('bob')
 
-        self.assertThat(len(conn.get_account()), Is(2))
+        self.assertThat(len(conn.get_account()), matchers.Is(2))
 
     def test_nonexisting_container(self):
         """
@@ -212,9 +217,9 @@ class TestRemote(testtools.TestCase):
 
         conn.put_object('new-container', 'new-object', 'new-object-contents')
         obj_resp = conn.get_object('new-container', 'new-object')
-        self.assertThat(obj_resp, Not(Is(None)))
-        self.assertThat(len(obj_resp), Is(2))
-        self.assertThat(obj_resp[1], Is('new-object-contents'))
+        self.assertThat(obj_resp, matchers.Not(matchers.Is(None)))
+        self.assertThat(len(obj_resp), matchers.Is(2))
+        self.assertThat(obj_resp[1], matchers.Is('new-object-contents'))
 
         # set expected behavior - trivial here since it is the intended
         # behavior however keep in mind this is just to support testing of
@@ -225,8 +230,9 @@ class TestRemote(testtools.TestCase):
         conn.put_object('new-container', 'new-object',
                         'updated-object-contents')
         obj_resp = conn.get_object('new-container', 'new-object')
-        self.assertThat(obj_resp, Not(Is(None)))
-        self.assertThat(len(obj_resp), Is(2))
-        self.assertThat(obj_resp[1], Is('updated-object-contents'))
+        self.assertThat(obj_resp, matchers.Not(matchers.Is(None)))
+        self.assertThat(len(obj_resp), matchers.Is(2))
+        self.assertThat(obj_resp[1], matchers.Is('updated-object-contents'))
         # ensure object count has not increased
-        self.assertThat(len(conn.get_container('new-container')[1]), Is(1))
+        self.assertThat(len(conn.get_container('new-container')[1]),
+                        matchers.Is(1))
