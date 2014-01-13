@@ -668,7 +668,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.exception(_("Failed to detach volume %(volume_id)s "
                           "instance %(id)s: %(e)s") %
                           {'volume_id': self.volume_id, 'id':
-                          self.server.id, 'e': str(e)})
+                           self.server.id, 'e': str(e)})
             self.restart()
             raise
 

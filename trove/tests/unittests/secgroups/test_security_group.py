@@ -136,7 +136,7 @@ class SecurityGroupDeleteTest(testtools.TestCase):
         fException = Mock(side_effect=
                           lambda *args, **kwargs:
                           self._raise(nova_exceptions.
-                          ClientException('TEST')))
+                                      ClientException('TEST')))
         i_id = uuid.uuid4()
 
         class new_fake_RemoteSecGrAssoc(object):
