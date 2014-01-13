@@ -63,7 +63,7 @@ class SqlAlchemyConnection(object):
         try:
             self.engine = self._init_engine(user, password, host)
         except OperationalError as oe:
-            if self._exception_is_permissions_issue(oe.message):
+            if self._exception_is_permissions_issue(str(oe)):
                 raise MySqlPermissionsFailure(oe)
             else:
                 raise MySqlConnectionFailure(oe)
@@ -82,7 +82,7 @@ class SqlAlchemyConnection(object):
         try:
             self.conn = self.engine.connect()
         except OperationalError as oe:
-            if self._exception_is_permissions_issue(oe.message):
+            if self._exception_is_permissions_issue(str(oe)):
                 raise MySqlPermissionsFailure(oe)
             else:
                 raise MySqlConnectionFailure(oe)
