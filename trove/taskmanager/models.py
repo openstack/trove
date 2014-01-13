@@ -590,14 +590,6 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
     Performs the various asynchronous instance related tasks.
     """
 
-    def get_volume_mountpoint(self):
-        volume = create_cinder_client(self.context).volumes.get(volume_id)
-        mountpoint = volume.attachments[0]['device']
-        if mountpoint[0] is not "/":
-            return "/%s" % mountpoint
-        else:
-            return mountpoint
-
     def _delete_resources(self, deleted_at):
         LOG.debug(_("begin _delete_resources for id: %s") % self.id)
         server_id = self.db_info.compute_instance_id
