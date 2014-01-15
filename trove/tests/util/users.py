@@ -67,13 +67,9 @@ class ServiceUser(object):
             raise ValueError("'is_admin' must be specified for a user.")
 
     def __str__(self):
-        return "{ user_name=%s, tenant_id=%s, reqs=%s, tests=%d }" % (
-            self.auth_user, self.tenant_id, self.requirements, self.test_count)
-        self.auth_key = auth_key
-        self.tenant = tenant
-        self.tenant_id = tenant_id
-        self.requirements = requirements
-        self.test_count = 0
+        return ("{ user_name=%s, tenant=%s, tenant_id=%s, reqs=%s, tests=%d }"
+                % (self.auth_user, self.tenant, self.tenant_id,
+                   self.requirements, self.test_count))
 
 
 class Users(object):
