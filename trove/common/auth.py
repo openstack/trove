@@ -61,9 +61,10 @@ class TenantBasedAuth(object):
         match_for_tenant = self.tenant_scoped_url.match(request.path_info)
         if (match_for_tenant and
                 tenant_id == match_for_tenant.group('tenant_id')):
-            LOG.debug(_("Authorized tenant '%(tenant_id)s' request: "
+            LOG.debug(logging.mask_password(
+                      _("Authorized tenant '%(tenant_id)s' request: "
                         "%(request)s") %
-                      {'tenant_id': tenant_id, 'request': request})
+                      {'tenant_id': tenant_id, 'request': request}))
             return True
         msg = _("User with tenant id %s cannot access this resource")
         LOG.debug(msg % tenant_id)

@@ -179,8 +179,8 @@ class InstanceController(wsgi.Controller):
     def create(self, req, body, tenant_id):
         # TODO(hub-cap): turn this into middleware
         LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("body : '%s'\n\n") % body)
+        LOG.info(logging.mask_password(_("req : '%s'\n\n") % req))
+        LOG.info(logging.mask_password(_("body : '%s'\n\n") % body))
         context = req.environ[wsgi.CONTEXT_KEY]
         datastore_args = body['instance'].get('datastore', {})
         datastore, datastore_version = (
