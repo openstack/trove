@@ -151,7 +151,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # orchestration is disabled, create a security group.
         #
         # Heat based orchestration handles security group(resource)
-        # in the template defination.
+        # in the template definition.
         if CONF.trove_security_groups_support and not use_heat:
             try:
                 security_groups = self._create_secgroup()
