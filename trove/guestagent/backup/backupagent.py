@@ -19,6 +19,7 @@ from trove.backup.models import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
 from trove.conductor import api as conductor_api
+from trove.guestagent.common import timeutils
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
 from trove.guestagent.datastore.mysql.service import get_auth_password
@@ -68,7 +69,9 @@ class BackupAgent(object):
             'size': stats.get('used', 0.0),
             'state': BackupState.BUILDING,
         }
-        conductor.update_backup(CONF.guest_id, **backup)
+        conductor.update_backup(CONF.guest_id,
+                                sent=timeutils.float_utcnow(),
+                                **backup)
 
         try:
             with runner(filename=backup_id, extra_opts=extra_opts,
@@ -99,18 +102,24 @@ class BackupAgent(object):
                 except Exception:
                     LOG.exception("Error saving %s Backup", backup_id)
                     backup.update({'state': BackupState.FAILED})
-                    conductor.update_backup(CONF.guest_id, **backup)
+                    conductor.update_backup(CONF.guest_id,
+                                            sent=timeutils.float_utcnow(),
+                                            **backup)
                     raise
 
         except Exception:
             LOG.exception("Error running backup: %s", backup_id)
             backup.update({'state': BackupState.FAILED})
-            conductor.update_backup(CONF.guest_id, **backup)
+            conductor.update_backup(CONF.guest_id,
+                                    sent=timeutils.float_utcnow(),
+                                    **backup)
             raise
         else:
             LOG.info("Saving %s Backup Info to model", backup_id)
             backup.update({'state': BackupState.COMPLETED})
-            conductor.update_backup(CONF.guest_id, **backup)
+            conductor.update_backup(CONF.guest_id,
+                                    sent=timeutils.float_utcnow(),
+                                    **backup)
 
     def execute_restore(self, context, backup_info, restore_location):
 
