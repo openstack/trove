@@ -46,6 +46,7 @@ Resources:
           - ["#!/bin/bash -v\n",
               "/opt/aws/bin/cfn-init\n",
               "sudo service trove-guest start\n"]
+{% if volume_support %}
   DataVolume:
     Type: AWS::EC2::Volume
     Properties:
@@ -59,6 +60,7 @@ Resources:
       InstanceId: {Ref: BaseInstance}
       VolumeId: {Ref: DataVolume}
       Device: /dev/vdb
+{% endif %}
   MySqlDbaasSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
