@@ -560,13 +560,13 @@ class Instance(BuiltInstance):
             self.validate_can_perform_action()
             LOG.info("Resizing volume of instance %s..." % self.id)
             if not self.volume_size:
-                raise exception.BadRequest("Instance %s has no volume."
+                raise exception.BadRequest(_("Instance %s has no volume.")
                                            % self.id)
             old_size = self.volume_size
             if int(new_size) <= old_size:
-                msg = ("The new volume 'size' must be larger than the current "
-                       "volume size of '%s'")
-                raise exception.BadRequest(msg % old_size)
+                raise exception.BadRequest(_("The new volume 'size' must be "
+                                             "larger than the current volume "
+                                             "size of '%s'") % old_size)
             # Set the task to Resizing before sending off to the taskmanager
             self.update_db(task_status=InstanceTasks.RESIZING)
             task_api.API(self.context).resize_volume(new_size, self.id)
