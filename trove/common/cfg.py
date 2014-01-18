@@ -98,16 +98,16 @@ common_opts = [
     cfg.IntOpt('volume_format_timeout', default=120),
     cfg.StrOpt('mount_options', default='defaults,noatime'),
     cfg.IntOpt('max_instances_per_user', default=5,
-               help='default maximum number of instances per tenant'),
+               help='Default maximum number of instances per tenant'),
     cfg.IntOpt('max_accepted_volume_size', default=5,
-               help='default maximum volume size for an instance'),
+               help='Default maximum volume size for an instance'),
     cfg.IntOpt('max_volumes_per_user', default=20,
-               help='default maximum for total volume used by a tenant'),
+               help='Default maximum for total volume used by a tenant'),
     cfg.IntOpt('max_backups_per_user', default=50,
-               help='default maximum number of backups created by a tenant'),
+               help='Default maximum number of backups created by a tenant'),
     cfg.StrOpt('quota_driver',
                default='trove.quota.quota.DbQuotaDriver',
-               help='default driver to use for quota checks'),
+               help='Default driver to use for quota checks'),
     cfg.StrOpt('taskmanager_queue', default='taskmanager'),
     cfg.StrOpt('conductor_queue', default='trove-conductor'),
     cfg.IntOpt('trove_conductor_workers', default=1),
@@ -132,9 +132,9 @@ common_opts = [
     cfg.IntOpt('revert_time_out', default=60 * 10),
     cfg.BoolOpt('root_on_create', default=False,
                 help='Enable the automatic creation of the root user for the '
-                ' service during instance-create. The generated password for '
-                ' the root user is immediately returned in the response of '
-                " instance-create as the 'password' field."),
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                "instance-create as the 'password' field."),
     cfg.ListOpt('root_grant', default=['ALL']),
     cfg.BoolOpt('root_grant_option', default=True),
     cfg.IntOpt('default_password_length', default=36),
@@ -171,8 +171,8 @@ common_opts = [
                help='Namespace to load restore strategies from'),
     cfg.BoolOpt('verify_swift_checksum_on_restore', default=True,
                 help='Enable verification of swift checksum before starting '
-                ' restore; makes sure the checksum of original backup matches '
-                ' checksum of the swift backup file.'),
+                'restore; makes sure the checksum of original backup matches '
+                'checksum of the swift backup file.'),
     cfg.StrOpt('storage_strategy', default='SwiftStorage',
                help="Default strategy to store backups"),
     cfg.StrOpt('storage_namespace',
@@ -184,7 +184,7 @@ common_opts = [
     cfg.BoolOpt('backup_use_openssl_encryption', default=True,
                 help='Encrypt backups using openssl.'),
     cfg.StrOpt('backup_aes_cbc_key', default='default_aes_cbc_key',
-               help='default openssl aes_cbc key.'),
+               help='Default openssl aes_cbc key.'),
     cfg.BoolOpt('backup_use_snet', default=False,
                 help='Send backup files over snet.'),
     cfg.IntOpt('backup_chunk_size', default=2 ** 16,
@@ -235,7 +235,7 @@ common_opts = [
                default='/etc/trove/templates/',
                help='Path which leads to datastore templates'),
     cfg.BoolOpt('sql_query_logging', default=False,
-                help='Allow insecure logging while while '
+                help='Allow insecure logging while '
                      'executing queries through sqlalchemy'),
     cfg.ListOpt('expected_filetype_suffixes',
                 default=['atom', 'json', 'xml'],
