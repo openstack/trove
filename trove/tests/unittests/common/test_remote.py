@@ -25,6 +25,8 @@ import swiftclient.client
 from trove.tests.fakes.swift import SwiftClientStub
 from trove.common.context import TroveContext
 from trove.common import remote
+from trove.common import exception
+from trove.common import cfg
 
 
 class TestRemote(testtools.TestCase):
@@ -43,7 +45,11 @@ class TestRemote(testtools.TestCase):
         mock_resp = MagicMock()
         swiftclient.client.Connection.get_container = MagicMock(
             return_value=["text", mock_resp])
-        client = remote.create_swift_client(TroveContext(tenant='123'))
+        service_catalog = [{'endpoints': [{'publicURL': 'example.com'}],
+                            'type': 'object-store'}]
+        client = remote.create_swift_client(TroveContext(
+            tenant='123',
+            service_catalog=service_catalog))
         headers, container = client.get_container('bob')
         self.assertIs(headers, "text")
         self.assertIs(container, mock_resp)
@@ -235,3 +241,400 @@ class TestRemote(testtools.TestCase):
         # ensure object count has not increased
         self.assertThat(len(conn.get_container('new-container')[1]),
                         matchers.Is(1))
+
+
+class TestCreateCinderClient(testtools.TestCase):
+    def setUp(self):
+        super(TestCreateCinderClient, self).setUp()
+        self.volumev2_public_url = 'http://publicURL/v2'
+        self.volume_public_url_region_two = 'http://publicURL-r2/v1'
+        self.service_catalog = [
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': self.volumev2_public_url,
+                    }
+                ],
+                'type': 'volumev2'
+            },
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': 'http://publicURL-r1/v1',
+                    },
+                    {
+                        'region': 'RegionTwo',
+                        'publicURL': self.volume_public_url_region_two,
+                    }
+                ],
+                'type': 'volume'
+            }
+        ]
+
+    def tearDown(self):
+        super(TestCreateCinderClient, self).tearDown()
+        cfg.CONF.clear_override('cinder_url')
+        cfg.CONF.clear_override('cinder_service_type')
+        cfg.CONF.clear_override('os_region_name')
+
+    def test_create_with_no_conf_no_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          remote.create_cinder_client,
+                          TroveContext())
+
+    def test_create_with_conf_override(self):
+        cinder_url_from_conf = 'http://example.com'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('cinder_url', cinder_url_from_conf)
+
+        client = remote.create_cinder_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s/%s' % (cinder_url_from_conf, tenant_from_ctx),
+                         client.client.management_url)
+
+    def test_create_with_conf_override_trailing_slash(self):
+        cinder_url_from_conf = 'http://example.com/'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('cinder_url', cinder_url_from_conf)
+        client = remote.create_cinder_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s%s' % (cinder_url_from_conf, tenant_from_ctx),
+                         client.client.management_url)
+
+    def test_create_with_catalog_and_default_service_type(self):
+        client = remote.create_cinder_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.volumev2_public_url,
+                         client.client.management_url)
+
+    def test_create_with_catalog_all_opts(self):
+        cfg.CONF.set_override('cinder_service_type', 'volume')
+        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        client = remote.create_cinder_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.volume_public_url_region_two,
+                         client.client.management_url)
+
+
+class TestCreateNovaClient(testtools.TestCase):
+    def setUp(self):
+        super(TestCreateNovaClient, self).setUp()
+        self.compute_public_url = 'http://publicURL/v2'
+        self.computev3_public_url_region_two = 'http://publicURL-r2/v3'
+        self.service_catalog = [
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': self.compute_public_url,
+                    }
+                ],
+                'type': 'compute'
+            },
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': 'http://publicURL-r1/v1',
+                    },
+                    {
+                        'region': 'RegionTwo',
+                        'publicURL': self.computev3_public_url_region_two,
+                    }
+                ],
+                'type': 'computev3'
+            }
+        ]
+
+    def tearDown(self):
+        super(TestCreateNovaClient, self).tearDown()
+        cfg.CONF.clear_override('nova_compute_url')
+        cfg.CONF.clear_override('nova_compute_service_type')
+        cfg.CONF.clear_override('os_region_name')
+
+    def test_create_with_no_conf_no_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          remote.create_nova_client,
+                          TroveContext())
+
+    def test_create_with_conf_override(self):
+        nova_url_from_conf = 'http://example.com'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf)
+
+        client = remote.create_nova_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s/%s' % (nova_url_from_conf, tenant_from_ctx),
+                         client.client.management_url)
+
+    def test_create_with_conf_override_trailing_slash(self):
+        nova_url_from_conf = 'http://example.com/'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf)
+        client = remote.create_nova_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s%s' % (nova_url_from_conf, tenant_from_ctx),
+                         client.client.management_url)
+
+    def test_create_with_catalog_and_default_service_type(self):
+        client = remote.create_nova_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.compute_public_url,
+                         client.client.management_url)
+
+    def test_create_with_catalog_all_opts(self):
+        cfg.CONF.set_override('nova_compute_service_type', 'computev3')
+        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        client = remote.create_nova_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.computev3_public_url_region_two,
+                         client.client.management_url)
+
+
+class TestCreateHeatClient(testtools.TestCase):
+    def setUp(self):
+        super(TestCreateHeatClient, self).setUp()
+        self.heat_public_url = 'http://publicURL/v2'
+        self.heatv3_public_url_region_two = 'http://publicURL-r2/v3'
+        self.service_catalog = [
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': self.heat_public_url,
+                    }
+                ],
+                'type': 'orchestration'
+            },
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': 'http://publicURL-r1/v1',
+                    },
+                    {
+                        'region': 'RegionTwo',
+                        'publicURL': self.heatv3_public_url_region_two,
+                    }
+                ],
+                'type': 'orchestrationv3'
+            }
+        ]
+
+    def tearDown(self):
+        super(TestCreateHeatClient, self).tearDown()
+        cfg.CONF.clear_override('heat_url')
+        cfg.CONF.clear_override('heat_service_type')
+        cfg.CONF.clear_override('os_region_name')
+
+    def test_create_with_no_conf_no_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          remote.create_heat_client,
+                          TroveContext())
+
+    def test_create_with_conf_override(self):
+        heat_url_from_conf = 'http://example.com'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('heat_url', heat_url_from_conf)
+
+        client = remote.create_heat_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s/%s' % (heat_url_from_conf, tenant_from_ctx),
+                         client.http_client.endpoint)
+
+    def test_create_with_conf_override_trailing_slash(self):
+        heat_url_from_conf = 'http://example.com/'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('heat_url', heat_url_from_conf)
+        client = remote.create_heat_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s%s' % (heat_url_from_conf, tenant_from_ctx),
+                         client.http_client.endpoint)
+
+    def test_create_with_catalog_and_default_service_type(self):
+        client = remote.create_heat_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.heat_public_url,
+                         client.http_client.endpoint)
+
+    def test_create_with_catalog_all_opts(self):
+        cfg.CONF.set_override('heat_service_type', 'orchestrationv3')
+        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        client = remote.create_heat_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.heatv3_public_url_region_two,
+                         client.http_client.endpoint)
+
+
+class TestCreateSwiftClient(testtools.TestCase):
+    def setUp(self):
+        super(TestCreateSwiftClient, self).setUp()
+        self.swift_public_url = 'http://publicURL/v2'
+        self.swiftv3_public_url_region_two = 'http://publicURL-r2/v3'
+        self.service_catalog = [
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': self.swift_public_url,
+                    }
+                ],
+                'type': 'object-store'
+            },
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': 'http://publicURL-r1/v1',
+                    },
+                    {
+                        'region': 'RegionTwo',
+                        'publicURL': self.swiftv3_public_url_region_two,
+                    }
+                ],
+                'type': 'object-storev3'
+            }
+        ]
+
+    def tearDown(self):
+        super(TestCreateSwiftClient, self).tearDown()
+        cfg.CONF.clear_override('swift_url')
+        cfg.CONF.clear_override('swift_service_type')
+        cfg.CONF.clear_override('os_region_name')
+
+    def test_create_with_no_conf_no_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          remote.create_swift_client,
+                          TroveContext())
+
+    def test_create_with_conf_override(self):
+        swift_url_from_conf = 'http://example.com/AUTH_'
+        tenant_from_ctx = 'abc'
+        cfg.CONF.set_override('swift_url', swift_url_from_conf)
+
+        client = remote.create_swift_client(
+            TroveContext(tenant=tenant_from_ctx))
+        self.assertEqual('%s%s' % (swift_url_from_conf, tenant_from_ctx),
+                         client.url)
+
+    def test_create_with_catalog_and_default_service_type(self):
+        client = remote.create_swift_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.swift_public_url,
+                         client.url)
+
+    def test_create_with_catalog_all_opts(self):
+        cfg.CONF.set_override('swift_service_type', 'object-storev3')
+        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        client = remote.create_swift_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertEqual(self.swiftv3_public_url_region_two,
+                         client.url)
+
+
+class TestEndpoints(testtools.TestCase):
+    """
+    Copied from glance/tests/unit/test_auth.py.
+    """
+    def setUp(self):
+        super(TestEndpoints, self).setUp()
+
+        self.service_catalog = [
+            {
+                'endpoint_links': [],
+                'endpoints': [
+                    {
+                        'adminURL': 'http://localhost:8080/',
+                        'region': 'RegionOne',
+                        'internalURL': 'http://internalURL/',
+                        'publicURL': 'http://publicURL/',
+                    },
+                    {
+                        'adminURL': 'http://localhost:8081/',
+                        'region': 'RegionTwo',
+                        'internalURL': 'http://internalURL2/',
+                        'publicURL': 'http://publicURL2/',
+                    },
+                ],
+                'type': 'object-store',
+                'name': 'Object Storage Service',
+            }
+        ]
+
+    def test_get_endpoint_empty_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          remote.get_endpoint,
+                          None)
+
+    def test_get_endpoint_with_custom_server_type(self):
+        endpoint = remote.get_endpoint(self.service_catalog,
+                                       service_type='object-store',
+                                       endpoint_region='RegionOne')
+        self.assertEqual('http://publicURL/', endpoint)
+
+    def test_get_endpoint_with_custom_endpoint_type(self):
+        endpoint = remote.get_endpoint(self.service_catalog,
+                                       service_type='object-store',
+                                       endpoint_type='internalURL',
+                                       endpoint_region='RegionOne')
+        self.assertEqual('http://internalURL/', endpoint)
+
+    def test_get_endpoint_raises_with_ambiguous_endpoint_region(self):
+        self.assertRaises(exception.RegionAmbiguity,
+                          remote.get_endpoint,
+                          self.service_catalog,
+                          service_type='object-store')
+
+    def test_get_endpoint_raises_with_invalid_service_type(self):
+        self.assertRaises(exception.NoServiceEndpoint,
+                          remote.get_endpoint,
+                          self.service_catalog,
+                          service_type='foo')
+
+    def test_get_endpoint_raises_with_invalid_endpoint_type(self):
+        self.assertRaises(exception.NoServiceEndpoint,
+                          remote.get_endpoint,
+                          self.service_catalog,
+                          service_type='object-store',
+                          endpoint_type='foo',
+                          endpoint_region='RegionOne')
+
+    def test_get_endpoint_raises_with_invalid_endpoint_region(self):
+        self.assertRaises(exception.NoServiceEndpoint,
+                          remote.get_endpoint,
+                          self.service_catalog,
+                          service_type='object-store',
+                          endpoint_region='foo',
+                          endpoint_type='internalURL')
+
+    def test_get_endpoint_ignores_missing_type(self):
+        service_catalog = [
+            {
+                'name': 'Other Service',
+            },
+            {
+                'endpoint_links': [],
+                'endpoints': [
+                    {
+                        'adminURL': 'http://localhost:8080/',
+                        'region': 'RegionOne',
+                        'internalURL': 'http://internalURL/',
+                        'publicURL': 'http://publicURL/',
+                    },
+                    {
+                        'adminURL': 'http://localhost:8081/',
+                        'region': 'RegionTwo',
+                        'internalURL': 'http://internalURL2/',
+                        'publicURL': 'http://publicURL2/',
+                    },
+                ],
+                'type': 'object-store',
+                'name': 'Object Storage Service',
+            }
+        ]
+        endpoint = remote.get_endpoint(service_catalog,
+                                       service_type='object-store',
+                                       endpoint_region='RegionOne')
+        self.assertEqual('http://publicURL/', endpoint)

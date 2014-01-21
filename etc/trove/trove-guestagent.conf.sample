@@ -48,7 +48,15 @@ nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
 nova_proxy_admin_tenant_name = admin
 trove_auth_url = http://0.0.0.0:5000/v2.0
-swift_url = http://10.0.0.1:8080/v1/AUTH_
+#swift_url = http://10.0.0.1:8080/v1/AUTH_
+
+# swift_url can be fetched from Keystone. To fetch from Keystone, comment
+# out swift_url and optionally uncomment the lines below.
+
+# Region name of this node. Used when searching catalog. Default value is None.
+#os_region_name = RegionOne
+# Service type to use when searching catalog.
+#swift_service_type = object-store
 
 # Datastore management implementations. Format datastore:manager.impl
 # datastore_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager

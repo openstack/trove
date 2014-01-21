@@ -72,7 +72,7 @@ nova_proxy_admin_tenant_name = admin
 trove_auth_url = http://0.0.0.0:5000/v2.0
 
 nova_region_name = RegionOne
-nova_service_type = compute
+nova_compute_service_type = compute
 nova_service_name = Compute Service
 
 # Config option for showing the IP address that nova doles out
