@@ -25,8 +25,6 @@ import uuid
 import webob
 import webob.dec
 import webob.exc
-from lxml import etree
-from xml.dom import minidom
 
 from trove.common import context as rd_context
 from trove.common import exception
@@ -45,8 +43,6 @@ Router = openstack_wsgi.Router
 Debug = openstack_wsgi.Debug
 Middleware = openstack_wsgi.Middleware
 JSONDictSerializer = openstack_wsgi.JSONDictSerializer
-XMLDictSerializer = openstack_wsgi.XMLDictSerializer
-XMLDeserializer = openstack_wsgi.XMLDeserializer
 RequestDeserializer = openstack_wsgi.RequestDeserializer
 
 CONF = cfg.CONF
@@ -57,68 +53,7 @@ eventlet.patcher.monkey_patch(all=False, socket=True)
 
 LOG = logging.getLogger('trove.common.wsgi')
 
-XMLNS = 'http://docs.openstack.org/database/api/v1.0'
-CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
-CUSTOM_SERIALIZER_METADATA = {
-    'instance': {
-        'status': '',
-        'hostname': '',
-        'id': '',
-        'name': '',
-        'created': '',
-        'updated': '',
-        'host': '',
-        'server_id': '',
-        #mgmt/instance
-        'local_id': '',
-        'task_description': '',
-        'deleted': '',
-        'deleted_at': '',
-        'tenant_id': '',
-    },
-    'volume': {
-        'size': '',
-        'used': '',
-        #mgmt/instance
-        'id': '',
-    },
-    'configuration': {
-        'id': '',
-        'name': '',
-        'description': '',
-        'datastore_version_id': ''
-    },
-    'flavor': {'id': '', 'ram': '', 'name': ''},
-    'link': {'href': '', 'rel': ''},
-    'database': {'name': ''},
-    'user': {'name': '', 'password': '', 'host': ''},
-    'account': {'id': ''},
-    'security_group': {'id': '', 'name': '', 'description': '', 'user': '',
-                       'tenant_id': ''},
-    'security_group_rule': {'id': '', 'group_id': '', 'protocol': '',
-                            'from_port': '', 'to_port': '', 'cidr': ''},
-    'security_group_instance_association': {'id': '', 'security_group_id': '',
-                                            'instance_id': ''},
-    # mgmt/host
-    'host': {'instanceCount': '', 'name': '', 'usedRAM': '', 'totalRAM': '',
-             'percentUsed': ''},
-    # mgmt/storage
-    'capacity': {'available': '', 'total': ''},
-    'provision': {'available': '', 'total': '', 'percent': ''},
-    'device': {'used': '', 'name': '', 'type': ''},
-    # mgmt/account
-    'account': {'id': '', 'num_instances': ''},
-    # mgmt/quotas
-    'quotas': {'instances': '', 'volumes': '', 'backups': ''},
-    #mgmt/instance
-    'guest_status': {'state_description': ''},
-    #mgmt/instance/diagnostics
-    'diagnostics': {'vmHwm': '', 'vmPeak': '', 'vmSize': '', 'threads': '',
-                    'version': '', 'vmRss': '', 'fdSize': ''},
-    #mgmt/instance/root
-    'root_history': {'enabled': '', 'id': '', 'user': ''},
-
-}
+CONF = cfg.CONF
 
 
 def versioned_urlmap(*args, **kwargs):
@@ -248,14 +183,12 @@ class Request(openstack_wsgi.Request):
 
         if len(parts) > 1:
             format = parts[1]
-            if format in ['json', 'xml']:
+            if format in ['json']:
                 return 'application/{0}'.format(parts[1])
 
         ctypes = {
             'application/vnd.openstack.trove+json': "application/json",
-            'application/vnd.openstack.trove+xml': "application/xml",
             'application/json': "application/json",
-            'application/xml': "application/xml",
         }
         bm = self.accept.best_match(ctypes.keys())
 
@@ -279,13 +212,7 @@ class Request(openstack_wsgi.Request):
 
 
 class Result(object):
-    """A result whose serialization is compatible with JSON and XML.
-
-    This class is used by TroveResponseSerializer, which calls the
-    data method to grab a JSON or XML specific dictionary which it then
-    passes on to be serialized.
-
-    """
+    """A result whose serialization is compatible with JSON."""
 
     def __init__(self, data, status=200):
         self._data = data
@@ -293,15 +220,10 @@ class Result(object):
 
     def data(self, serialization_type):
         """Return an appropriate serialized type for the body.
-
-        In both cases a dictionary is returned. With JSON it maps directly,
-        while with XML the dictionary is expected to have a single key value
-        which becomes the root element.
-
+           serialization_type is not used presently, but may be
+           in the future, so it stays.
         """
-        if (serialization_type == "application/xml" and
-                hasattr(self._data, "data_for_xml")):
-            return self._data.data_for_xml()
+
         if hasattr(self._data, "data_for_json"):
             return self._data.data_for_json()
         return self._data
@@ -472,118 +394,15 @@ class Controller(object):
                 raise exception.BadRequest(message=error_msg)
 
     def create_resource(self):
-        serializer = TroveResponseSerializer(
-            body_serializers={'application/xml': TroveXMLDictSerializer()})
         return Resource(
             self,
-            TroveRequestDeserializer(),
-            serializer,
+            RequestDeserializer(),
+            TroveResponseSerializer(),
             self.exception_map)
 
     def _extract_limits(self, params):
         return dict([(key, params[key]) for key in params.keys()
                      if key in ["limit", "marker"]])
-
-
-class TroveRequestDeserializer(RequestDeserializer):
-    """Break up a Request object into more useful pieces."""
-
-    def __init__(self, body_deserializers=None, headers_deserializer=None,
-                 supported_content_types=None):
-        super(TroveRequestDeserializer, self).__init__(
-            body_deserializers,
-            headers_deserializer,
-            supported_content_types)
-
-        self.body_deserializers['application/xml'] = TroveXMLDeserializer()
-
-
-class TroveXMLDeserializer(XMLDeserializer):
-    def __init__(self, metadata=None):
-        """
-        :param metadata: information needed to deserialize xml into
-                         a dictionary.
-        """
-        metadata = metadata or {}
-        metadata['plurals'] = CUSTOM_PLURALS_METADATA
-        super(TroveXMLDeserializer, self).__init__(metadata)
-
-    def default(self, datastring):
-        # Sanitize the newlines
-        # hub-cap: This feels wrong but minidom keeps the newlines
-        # and spaces as childNodes which is expected behavior.
-        return {'body': self._from_xml(re.sub(r'((?<=>)\s+)*\n*(\s+(?=<))*',
-                                              '', datastring))}
-
-    def _from_xml_node(self, node, listnames):
-        """Convert a minidom node to a simple Python type.
-
-           Overridden from openstack deserializer to skip xmlns attributes and
-           remove certain unicode characters
-
-        :param listnames: list of XML node names whose subnodes should
-                          be considered list items.
-
-        """
-
-        if len(node.childNodes) == 1 and node.childNodes[0].nodeType == 3:
-            return node.childNodes[0].nodeValue
-        elif node.nodeName in listnames:
-            return [self._from_xml_node(n, listnames) for n in node.childNodes]
-        else:
-            result = dict()
-            for attr in node.attributes.keys():
-                if attr == 'xmlns':
-                    continue
-                result[attr] = node.attributes[attr].nodeValue
-            for child in node.childNodes:
-                if child.nodeType != node.TEXT_NODE:
-                    result[child.nodeName] = self._from_xml_node(child,
-                                                                 listnames)
-            return result
-
-
-class TroveXMLDictSerializer(openstack_wsgi.XMLDictSerializer):
-    def __init__(self, metadata=None, xmlns=None):
-        super(TroveXMLDictSerializer, self).__init__(metadata, XMLNS)
-
-    def default(self, data):
-        # We expect data to be a dictionary containing a single key as the XML
-        # root, or two keys, the later being "links."
-        # We expect data to contain a single key which is the XML root,
-        has_links = False
-        root_key = None
-        for key in data:
-            if key == "links":
-                has_links = True
-            elif root_key is None:
-                root_key = key
-            else:
-                msg = "Xml issue: multiple root keys found in dict!: %s" % data
-                LOG.error(msg)
-                raise RuntimeError(msg)
-        if root_key is None:
-            msg = "Missing root key in dict: %s" % data
-            LOG.error(msg)
-            raise RuntimeError(msg)
-        doc = minidom.Document()
-        node = self._to_xml_node(doc, self.metadata, root_key, data[root_key])
-        if has_links:
-            # Create a links element, and mix it into the node element.
-            links_node = self._to_xml_node(doc, self.metadata,
-                                           'links', data['links'])
-            node.appendChild(links_node)
-        return self.to_xml_string(node)
-
-    def _to_xml_node(self, doc, metadata, nodename, data):
-        metadata['attributes'] = CUSTOM_SERIALIZER_METADATA
-        if hasattr(data, "to_xml"):
-            return data.to_xml()
-        return super(TroveXMLDictSerializer, self)._to_xml_node(
-            doc,
-            metadata,
-            nodename,
-            data)
 
 
 class TroveResponseSerializer(openstack_wsgi.ResponseSerializer):
@@ -669,11 +488,8 @@ class Fault(webob.exc.HTTPException):
         else:
             fault_data[fault_name]['message'] = self.wrapped_exc.explanation
 
-        # 'code' is an attribute on the fault tag itself
-        metadata = {'attributes': {fault_name: 'code'}}
         content_type = req.best_match_content_type()
         serializer = {
-            'application/xml': openstack_wsgi.XMLDictSerializer(metadata),
             'application/json': openstack_wsgi.JSONDictSerializer(),
         }[content_type]
 
@@ -779,11 +595,8 @@ class OverLimitFault(webob.exc.HTTPException):
         error format.
         """
         content_type = request.best_match_content_type()
-        metadata = {"attributes": {"overLimit": ["code", "retryAfter"]}}
 
-        xml_serializer = XMLDictSerializer(metadata, XMLNS)
-        serializer = {'application/xml': xml_serializer,
-                      'application/json': JSONDictSerializer(),
+        serializer = {'application/json': JSONDictSerializer(),
                       }[content_type]
 
         content = serializer.serialize(self.content)
@@ -821,108 +634,3 @@ class JSONDictSerializer(DictSerializer):
 
     def default(self, data):
         return jsonutils.dumps(data)
-
-
-class XMLDictSerializer(DictSerializer):
-    def __init__(self, metadata=None, xmlns=None):
-        """
-        :param metadata: information needed to deserialize xml into
-                         a dictionary.
-        :param xmlns: XML namespace to include with serialized xml
-        """
-        super(XMLDictSerializer, self).__init__()
-        self.metadata = metadata or {}
-        self.xmlns = xmlns
-
-    def default(self, data):
-        # We expect data to contain a single key which is the XML root.
-        root_key = data.keys()[0]
-        doc = minidom.Document()
-        node = self._to_xml_node(doc, self.metadata, root_key, data[root_key])
-
-        return self.to_xml_string(node)
-
-    def to_xml_string(self, node, has_atom=False):
-        self._add_xmlns(node, has_atom)
-        return node.toxml('UTF-8')
-
-    #NOTE (ameade): the has_atom should be removed after all of the
-    # xml serializers and view builders have been updated to the current
-    # spec that required all responses include the xmlns:atom, the has_atom
-    # flag is to prevent current tests from breaking
-    def _add_xmlns(self, node, has_atom=False):
-        if self.xmlns is not None:
-            node.setAttribute('xmlns', self.xmlns)
-        if has_atom:
-            node.setAttribute('xmlns:atom', "http://www.w3.org/2005/Atom")
-
-    def _to_xml_node(self, doc, metadata, nodename, data):
-        """Recursive method to convert data members to XML nodes."""
-        result = doc.createElement(nodename)
-
-        # Set the xml namespace if one is specified
-        # TODO(justinsb): We could also use prefixes on the keys
-        xmlns = metadata.get('xmlns', None)
-        if xmlns:
-            result.setAttribute('xmlns', xmlns)
-
-        #TODO(bcwaldon): accomplish this without a type-check
-        if isinstance(data, list):
-            collections = metadata.get('list_collections', {})
-            if nodename in collections:
-                metadata = collections[nodename]
-                for item in data:
-                    node = doc.createElement(metadata['item_name'])
-                    node.setAttribute(metadata['item_key'], str(item))
-                    result.appendChild(node)
-                return result
-            singular = metadata.get('plurals', {}).get(nodename, None)
-            if singular is None:
-                if nodename.endswith('s'):
-                    singular = nodename[:-1]
-                else:
-                    singular = 'item'
-            for item in data:
-                node = self._to_xml_node(doc, metadata, singular, item)
-                result.appendChild(node)
-        #TODO(bcwaldon): accomplish this without a type-check
-        elif isinstance(data, dict):
-            collections = metadata.get('dict_collections', {})
-            if nodename in collections:
-                metadata = collections[nodename]
-                for k, v in data.items():
-                    node = doc.createElement(metadata['item_name'])
-                    node.setAttribute(metadata['item_key'], str(k))
-                    text = doc.createTextNode(str(v))
-                    node.appendChild(text)
-                    result.appendChild(node)
-                return result
-            attrs = metadata.get('attributes', {}).get(nodename, {})
-            for k, v in data.items():
-                if k in attrs:
-                    result.setAttribute(k, str(v))
-                else:
-                    if k == "deleted":
-                        v = str(bool(v))
-                    node = self._to_xml_node(doc, metadata, k, v)
-                    result.appendChild(node)
-        else:
-            # Type is atom
-            node = doc.createTextNode(str(data))
-            result.appendChild(node)
-        return result
-
-    def _create_link_nodes(self, xml_doc, links):
-        link_nodes = []
-        for link in links:
-            link_node = xml_doc.createElement('atom:link')
-            link_node.setAttribute('rel', link['rel'])
-            link_node.setAttribute('href', link['href'])
-            if 'type' in link:
-                link_node.setAttribute('type', link['type'])
-            link_nodes.append(link_node)
-        return link_nodes
-
-    def _to_xml(self, root):
-        """Convert the xml object to an xml string."""
-        return etree.tostring(root, encoding='UTF-8', xml_declaration=True)

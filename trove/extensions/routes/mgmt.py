@@ -16,7 +16,6 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
-from trove.common import wsgi
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.quota.service import QuotaController
@@ -46,14 +45,9 @@ class Mgmt(extensions.ExtensionsDescriptor):
 
     def get_resources(self):
         resources = []
-        serializer = wsgi.TroveResponseSerializer(
-            body_serializers={'application/xml':
-                              wsgi.TroveXMLDictSerializer()})
         instances = extensions.ResourceExtension(
             '{tenant_id}/mgmt/instances',
             MgmtInstanceController(),
-            deserializer=wsgi.TroveRequestDeserializer(),
-            serializer=serializer,
             member_actions={'root': 'GET',
                             'diagnostics': 'GET',
                             'hwinfo': 'GET',
@@ -63,24 +57,18 @@ class Mgmt(extensions.ExtensionsDescriptor):
         hosts = extensions.ResourceExtension(
             '{tenant_id}/mgmt/hosts',
             HostController(),
-            deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer,
             member_actions={})
         resources.append(hosts)
 
         quota = extensions.ResourceExtension(
             '{tenant_id}/mgmt/quotas',
             QuotaController(),
-            deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer,
             member_actions={})
         resources.append(quota)
 
         storage = extensions.ResourceExtension(
             '{tenant_id}/mgmt/storage',
             StorageController(),
-            deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer,
             member_actions={})
         resources.append(storage)
 
@@ -89,8 +77,6 @@ class Mgmt(extensions.ExtensionsDescriptor):
             hostservice.HostInstanceController(),
             parent={'member_name': 'host',
                     'collection_name': '{tenant_id}/mgmt/hosts'},
-            deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer,
             collection_actions={'action': 'POST'})
         resources.append(host_instances)
 

@@ -19,7 +19,6 @@ Tests dealing with HTTP rate-limiting.
 
 import httplib
 import StringIO
-from xml.dom import minidom
 from trove.quota.models import Quota
 import testtools
 import webob
@@ -230,30 +229,6 @@ class LimitMiddlewareTest(BaseLimitTestSuite):
         self.assertTrue("retryAfter" in body["overLimit"])
         retryAfter = body["overLimit"]["retryAfter"]
         self.assertEqual(retryAfter, "60")
-
-    def test_limited_request_xml(self):
-        # Test a rate-limited (413) response as XML.
-        request = webob.Request.blank("/")
-        response = request.get_response(self.app)
-        self.assertEqual(200, response.status_int)
-
-        request = webob.Request.blank("/")
-        request.accept = "application/xml"
-        response = request.get_response(self.app)
-        self.assertEqual(response.status_int, 413)
-
-        root = minidom.parseString(response.body).childNodes[0]
-        expected = "Only 1 GET request(s) can be made to * every minute."
-
-        self.assertNotEqual(root.attributes.getNamedItem("retryAfter"), None)
-        retryAfter = root.attributes.getNamedItem("retryAfter").value
-        self.assertEqual(retryAfter, "60")
-
-        details = root.getElementsByTagName("details")
-        self.assertEqual(details.length, 1)
-
-        value = details.item(0).firstChild.data.strip()
-        self.assertEqual(value, expected)
 
 
 class LimitTest(BaseLimitTestSuite):

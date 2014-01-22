@@ -125,12 +125,6 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         assert_equal(out, None)
 
     @test
-    def mgmt_restart_task_returns_xml(self):
-        resp = self.reset_task_status()
-        out = resp.data("application/xml")
-        assert_equal(out, None)
-
-    @test
     def mgmt_restart_task_changes_status_to_none(self):
         self._change_task_status_to(InstanceTasks.BUILDING)
         self.reset_task_status()

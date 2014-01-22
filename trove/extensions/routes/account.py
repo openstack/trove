@@ -16,7 +16,6 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
-from trove.common import wsgi
 from trove.extensions.account import service
 
 
@@ -42,14 +41,9 @@ class Account(extensions.ExtensionsDescriptor):
 
     def get_resources(self):
         resources = []
-        serializer = wsgi.TroveResponseSerializer(
-            body_serializers={'application/xml':
-                              wsgi.TroveXMLDictSerializer()})
         resource = extensions.ResourceExtension(
             '{tenant_id}/mgmt/accounts',
-            service.AccountController(),
-            deserializer=wsgi.RequestDeserializer(),
-            serializer=serializer)
+            service.AccountController())
         resources.append(resource)
 
         return resources

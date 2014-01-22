@@ -17,13 +17,11 @@
 #
 
 from proboscis import test
-from proboscis import asserts
 from proboscis import SkipTest
 from functools import wraps
 
 from troveclient.compat.client import TroveHTTPClient
 from trove.tests.api.versions import Versions
-from troveclient.compat import exceptions
 
 
 @test(groups=['dbaas.api.headers'])
@@ -52,9 +50,5 @@ def must_work_with_blank_accept_headers():
         # run versions to make sure the API still returns JSON even though the
         # header type is blank
         versions.test_list_versions_index()
-        # now change headers to XML to make sure the test fails
-        morph_content_type_to('application/xml')
-        asserts.assert_raises(exceptions.ResponseFormatError,
-                              versions.test_list_versions_index)
     finally:
         client.client.morph_request = original_morph_request

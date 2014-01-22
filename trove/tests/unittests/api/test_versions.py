@@ -60,35 +60,6 @@ class VersionsControllerTest(testtools.TestCase):
         self.assertEqual('2012-08-01T00:00:00Z', json_data['updated'],
                          'Version updated value is incorrect')
 
-    def test_index_xml(self):
-        request = Mock()
-        result = self.controller.index(request)
-        self.assertIsNotNone(result, 'Result was None')
-
-        id = VERSIONS['1.0']['id']
-        status = VERSIONS['1.0']['status']
-        base_url = BASE_URL
-        updated = VERSIONS['1.0']['updated']
-        version = Version(id, status, base_url, updated)
-
-        result._data = Mock()
-        result._data.data_for_xml = lambda: {'versions': [version]}
-
-        xml_data = result.data("application/xml")
-        self.assertIsNotNone(xml_data, 'Result xml_data was None')
-
-        versions = xml_data['versions']
-        self.assertIsNotNone(versions, "Versions was None")
-        self.assertTrue(len(versions) == 1, "Versions length was != 1")
-        v = versions[0]
-
-        self.assertEqual('v1.0', v.id,
-                         'Version id is incorrect')
-        self.assertEqual('CURRENT', v.status,
-                         'Version status is incorrect')
-        self.assertEqual('2012-08-01T00:00:00Z', v.updated,
-                         'Version updated value is incorrect')
-
     def test_show_json(self):
         request = Mock()
         request.url_version = '1.0'
@@ -106,23 +77,6 @@ class VersionsControllerTest(testtools.TestCase):
         self.assertEqual('2012-08-01T00:00:00Z', version['updated'],
                          "Version updated was not '2012-08-01T00:00:00Z'")
         self.assertEqual('v1.0', version['id'], "Version id was not 'v1.0'")
-
-    def test_show_xml(self):
-        request = Mock()
-        request.url_version = '1.0'
-        result = self.controller.show(request)
-        self.assertIsNotNone(result,
-                             'Result was None')
-        xml_data = result.data("application/xml")
-        self.assertIsNotNone(xml_data, "XML data was None")
-
-        version = xml_data.get('version', None)
-        self.assertIsNotNone(version, "Version was None")
-        self.assertEqual('CURRENT', version.status,
-                         "Version status was not 'CURRENT'")
-        self.assertEqual('2012-08-01T00:00:00Z', version.updated,
-                         "Version updated was not '2012-08-01T00:00:00Z'")
-        self.assertEqual('v1.0', version.id, "Version id was not 'v1.0'")
 
 
 class BaseVersionTestCase(testtools.TestCase):
@@ -157,28 +111,6 @@ class BaseVersionTestCase(testtools.TestCase):
         self.assertIsNotNone(url, 'Url was None')
         self.assertEqual('http://localhost/v1.0/', url,
                          "Base Version url is incorrect")
-
-    def test_to_xml(self):
-        xml = self.base_version.to_xml()
-        self.assertIsNotNone(xml, 'XML was None')
-
-        self.assertEqual('v1.0', xml.getAttribute('id'),
-                         "XML Version is not v1.0")
-        self.assertEqual('CURRENT', xml.getAttribute('status'),
-                         "XML status was not 'CURRENT'")
-        self.assertEqual('2012-08-01T00:00:00Z', xml.getAttribute('updated'),
-                         "XML updated value was not 2012-08-01T00:00:00Z")
-
-        links = xml.getElementsByTagName("link")
-        self.assertIsNotNone(links, "XML links element was None")
-
-        link = links[0]
-        self.assertIsNotNone(link, "XML link element was None")
-
-        self.assertEqual('http://localhost/v1.0/', link.getAttribute("href"),
-                         "XML link href is not 'http://localhost/v1.0/'")
-        self.assertEqual('self', link.getAttribute("rel"),
-                         "XML link rel is not self")
 
 
 class VersionTestCase(testtools.TestCase):
@@ -244,19 +176,6 @@ class VersionDataViewTestCase(testtools.TestCase):
         self.assertEqual('v1.0', data['id'],
                          "Data status was not 'v1.0'")
 
-    def test_data_for_xml(self):
-        xml_data = self.version_data_view.data_for_xml()
-        self.assertIsNotNone(xml_data, "XML data is None")
-        self.assertTrue(type(xml_data) is dict,
-                        "XML version data is not a dict")
-        self.assertIsNotNone(xml_data.get('version', None),
-                             "Dict xml_data has no key 'version'")
-        version = xml_data['version']
-        self.assertIsNotNone(version, "Version was None")
-
-        self.assertEqual(self.version.id, version.id,
-                         "Version ids are not equal")
-
 
 class VersionsDataViewTestCase(testtools.TestCase):
 
@@ -299,18 +218,6 @@ class VersionsDataViewTestCase(testtools.TestCase):
         d2 = versions.pop()
         self.assertEqual(d1['id'], d2['id'],
                          "Version ids are not equal")
-
-    def test_data_for_xml(self):
-        xml_data = self.versions_data_view.data_for_xml()
-        self.assertIsNotNone(xml_data, "XML data was None")
-        self.assertTrue(type(xml_data) is dict, "XML data was not a dict")
-        versions = xml_data.get('versions', None)
-        self.assertIsNotNone(versions, "Versions is None")
-        self.assertTrue(type(versions) is list, "Versions is not a list")
-        self.assertTrue(len(versions) == 1, "Versions length != 1")
-
-        v = versions[0]
-        self.assertEqual(v.id, self.version.id)
 
 
 class VersionAPITestCase(testtools.TestCase):

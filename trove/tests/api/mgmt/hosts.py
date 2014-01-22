@@ -26,7 +26,6 @@ from trove.tests.api.instances import CreateInstance
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
-from trove.tests.util import skip_if_xml
 from trove.tests import DBAAS_API
 from trove.tests import PRE_INSTANCES
 from trove.tests import INSTANCES
@@ -186,8 +185,6 @@ class HostsMgmtCommands(object):
 
     @test
     def test_update_hosts(self):
-        # FIXME: (rmyers) Update hosts is broken in xml
-        skip_if_xml()
         ids = self._get_ids()
         assert_not_equal(ids, [], "No active instances found")
         before_versions = {}

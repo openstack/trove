@@ -28,8 +28,6 @@
 from proboscis import asserts
 
 from trove.tests.config import CONFIG
-from troveclient.compat.xml import TroveXmlClient
-from trove.openstack.common import processutils
 
 
 def add_report_event_to(home, name):
@@ -104,30 +102,3 @@ class TestClient(object):
 
     def __getattr__(self, item):
         return getattr(self.real_client, item)
-
-
-def call_xmllint(name, body):
-    try:
-        with open(CONFIG.xml_temp_file, 'w') as file:
-            file.write(body)
-
-        #if CONFIG.get('xml_xsd', None):
-        args = [CONFIG.xml_temp_file]
-        if CONFIG.get('xml_xsd', None):
-            args += ["--schema", CONFIG.xml_xsd]
-        processutils.execute(CONFIG.xmllint_bin, *args,
-                             check_exit_code=0, shell=False)
-    except processutils.ProcessExecutionError as pe:
-        fail("Error validating XML! %s" % pe)
-
-
-class XmlLintClient(TroveXmlClient):
-
-    content_type = 'xml'
-
-    def http_log(self, args, kwargs, resp, body):
-        #self.pretty_log(args, kwargs, resp, body)
-        if kwargs.get('body', None):
-            call_xmllint("request", kwargs['body'])
-        if body:
-            call_xmllint("response", body)

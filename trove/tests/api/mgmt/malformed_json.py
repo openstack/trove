@@ -21,14 +21,12 @@ from proboscis import test
 from proboscis import asserts
 from proboscis import after_class
 from proboscis import before_class
-import troveclient.compat
 from trove.tests.config import CONFIG
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
 
 from trove.tests.util.users import Requirements
 from trove.tests.util import create_dbaas_client
-import trove.tests.util as tests_utils
 from trove.common.utils import poll_until
 
 
@@ -66,21 +64,18 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s,"
                                  " exception %s" % (httpCode, e))
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                databases = "u'foo'"
-                users = "u'bar'"
-                asserts.assert_equal(e.message,
-                                     "Validation error: "
-                                     "instance['databases'] %s is not of type"
-                                     " 'array'; instance['users'] %s is not of"
-                                     " type 'array'; instance['volume'] 3 is "
-                                     "not of type 'object'"
-                                     % (databases, users))
+            databases = "u'foo'"
+            users = "u'bar'"
+            asserts.assert_equal(e.message,
+                                 "Validation error: "
+                                 "instance['databases'] %s is not of type"
+                                 " 'array'; instance['users'] %s is not of"
+                                 " type 'array'; instance['volume'] 3 is "
+                                 "not of type 'object'"
+                                 % (databases, users))
 
     @test
     def test_bad_database_data(self):
-        tests_utils.skip_if_xml()
         _bad_db_data = "{foo}"
         try:
             self.dbaas.databases.create(self.instance.id, _bad_db_data)
@@ -90,9 +85,7 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create database failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                _bad_db_data = "u'{foo}'"
+            _bad_db_data = "u'{foo}'"
             asserts.assert_equal(e.message,
                                  "Validation error: "
                                  "databases %s is not of type 'array'" %
@@ -194,16 +187,14 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Change usr/passwd failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                password = "u''"
-                asserts.assert_equal(e.message,
-                                     "Validation error: users[0] 'password' is"
-                                     " a required property; "
-                                     "users[0]['name'] %s is too short; "
-                                     "users[0]['name'] %s does not match "
-                                     "'^.*[0-9a-zA-Z]+.*$'"
-                                     % (password, password))
+            password = "u''"
+            asserts.assert_equal(e.message,
+                                 "Validation error: users[0] 'password' is"
+                                 " a required property; "
+                                 "users[0]['name'] %s is too short; "
+                                 "users[0]['name'] %s does not match "
+                                 "'^.*[0-9a-zA-Z]+.*$'"
+                                 % (password, password))
 
     @test
     def test_bad_grant_user_access(self):
@@ -250,7 +241,6 @@ class MalformedJson(object):
 
     @test
     def test_bad_body_flavorid_create_instance(self):
-        tests_utils.skip_if_xml()
 
         flavorId = ["?"]
         try:
@@ -263,23 +253,19 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                flavorId = [u'?']
-                asserts.assert_equal(e.message,
-                                     "Validation error: "
-                                     "instance['flavorRef'] %s is not valid "
-                                     "under any of the given schemas; %s is "
-                                     "not of type 'string'; %s is not of type"
-                                     " 'string'; %s is not of type 'integer'; "
-                                     "instance['volume'] 2 is not of"
-                                     " type 'object'" %
-                                     (flavorId, flavorId, flavorId, flavorId))
+            flavorId = [u'?']
+            asserts.assert_equal(e.message,
+                                 "Validation error: "
+                                 "instance['flavorRef'] %s is not valid "
+                                 "under any of the given schemas; %s is "
+                                 "not of type 'string'; %s is not of type"
+                                 " 'string'; %s is not of type 'integer'; "
+                                 "instance['volume'] 2 is not of"
+                                 " type 'object'" %
+                                 (flavorId, flavorId, flavorId, flavorId))
 
     @test
     def test_bad_body_datastore_create_instance(self):
-        tests_utils.skip_if_xml()
 
         datastore = "*"
         datastore_version = "*"
@@ -294,17 +280,14 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                asserts.assert_equal(e.message,
-                                     "Validation error: "
-                                     "instance['datastore']['type']"
-                                     " u'%s' does not match"
-                                     " '^.*[0-9a-zA-Z]+.*$'; "
-                                     "instance['datastore']['version'] u'%s' "
-                                     "does not match '^.*[0-9a-zA-Z]+.*$'" %
-                                     (datastore, datastore_version))
+            asserts.assert_equal(e.message,
+                                 "Validation error: "
+                                 "instance['datastore']['type']"
+                                 " u'%s' does not match"
+                                 " '^.*[0-9a-zA-Z]+.*$'; "
+                                 "instance['datastore']['version'] u'%s' "
+                                 "does not match '^.*[0-9a-zA-Z]+.*$'" %
+                                 (datastore, datastore_version))
 
     @test
     def test_bad_body_volsize_create_instance(self):
@@ -319,10 +302,8 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            if not isinstance(self.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                volsize = "u'h3ll0'"
-                asserts.assert_equal(e.message,
-                                     "Validation error: "
-                                     "instance['volume'] %s is not of "
-                                     "type 'object'" % volsize)
+            volsize = "u'h3ll0'"
+            asserts.assert_equal(e.message,
+                                 "Validation error: "
+                                 "instance['volume'] %s is not of "
+                                 "type 'object'" % volsize)

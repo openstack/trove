@@ -24,9 +24,21 @@ from trove.common import wsgi
 LOG = logging.getLogger(__name__)
 
 ExtensionsDescriptor = extensions.ExtensionDescriptor
-ResourceExtension = extensions.ResourceExtension
 
 CONF = cfg.CONF
+
+
+class ResourceExtension(extensions.ResourceExtension):
+    def __init__(self, collection, controller, parent=None,
+                 collection_actions=None, member_actions=None,
+                 deserializer=None, serializer=None):
+        super(ResourceExtension, self).__init__(
+            collection, controller,
+            parent=parent,
+            collection_actions=collection_actions,
+            member_actions=member_actions,
+            deserializer=wsgi.RequestDeserializer(),
+            serializer=wsgi.TroveResponseSerializer())
 
 
 class TroveExtensionMiddleware(extensions.ExtensionMiddleware):
