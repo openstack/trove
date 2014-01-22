@@ -120,6 +120,10 @@ class InstanceTestInfo(object):
         mgmt_instance = self.dbaas_admin.management.show(self.id)
         return mgmt_instance.server["local_id"]
 
+    def get_volume_filesystem_size(self):
+        mgmt_instance = self.dbaas_admin.management.show(self.id)
+        return mgmt_instance.volume["total"]
+
 
 # The two variables are used below by tests which depend on an instance
 # existing.

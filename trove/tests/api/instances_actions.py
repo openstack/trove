@@ -592,6 +592,7 @@ class ResizeInstanceVolume(ActionTestBase):
         self.set_up()
         self.old_volume_size = int(instance_info.volume['size'])
         self.new_volume_size = self.old_volume_size + 1
+        self.old_volume_fs_size = instance_info.get_volume_filesystem_size()
 
         # Create some databases to check they still exist after the resize
         self.expected_dbs = ['salmon', 'halibut']
@@ -622,6 +623,21 @@ class ResizeInstanceVolume(ActionTestBase):
         poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
         asserts.assert_equal(instance.volume['size'], self.new_volume_size)
+
+    @test(depends_on=[test_volume_resize_success])
+    def test_volume_filesystem_resize_success(self):
+        # The get_volume_filesystem_size is a mgmt call through the guestagent
+        # and the volume resize occurs through the fake nova-volume.
+        # Currently the guestagent fakes don't have access to the nova fakes so
+        # it doesn't know that a volume resize happened and to what size so
+        # we can't fake the filesystem size.
+        if FAKE_MODE:
+            raise SkipTest("Cannot run this in fake mode.")
+        new_volume_fs_size = instance_info.get_volume_filesystem_size()
+        asserts.assert_true(self.old_volume_fs_size < new_volume_fs_size)
+        # The total filesystem size is not going to be exactly the same size of
+        # cinder volume but it should round to it. (e.g. round(1.9) == 2)
+        asserts.assert_equal(round(new_volume_fs_size), self.new_volume_size)
 
     @test(depends_on=[test_volume_resize_success], groups=["dbaas.usage"])
     def test_resize_volume_usage_event_sent(self):
