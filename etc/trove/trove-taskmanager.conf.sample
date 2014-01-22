@@ -88,6 +88,10 @@ agent_call_high_timeout = 150
 # Whether to use nova's contrib api for create server with volume
 use_nova_server_volume = False
 
+# Config option for filtering the IP address that DNS uses
+network_label_regex = ^private$
+#ip_regex = ^(15.|123.)
+
 # Datastore templates
 template_path = /etc/trove/templates/
 
