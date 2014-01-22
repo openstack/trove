@@ -130,6 +130,12 @@ class DatastoreDefaultVersionNotFound(TroveError):
     message = _("Default version for datastore '%(datastore)s' not found.")
 
 
+class NoUniqueMatch(TroveError):
+
+    message = _("Multiple matches found for '%(name)s', i"
+                "use an UUID to be more specific.")
+
+
 class OverLimit(TroveError):
 
     internal_message = _("The server rejected the request due to its size or "

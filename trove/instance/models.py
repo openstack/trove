@@ -122,7 +122,7 @@ class SimpleInstance(object):
         self.service_status = service_status
         self.root_pass = root_password
         self.ds_version = (datastore_models.DatastoreVersion.
-                           load(self.db_info.datastore_version_id))
+                           load_by_uuid(self.db_info.datastore_version_id))
         self.ds = (datastore_models.Datastore.
                    load(self.ds_version.datastore_id))
 

@@ -140,7 +140,9 @@ class FreshInstanceTasksTest(testtools.TestCase):
         when(taskmanager_models.FreshInstanceTasks).name().thenReturn(
             'name')
         when(datastore_models.
-             DatastoreVersion).load(any()).thenReturn(mock())
+             DatastoreVersion).load(any(), any()).thenReturn(mock())
+        when(datastore_models.
+             DatastoreVersion).load_by_uuid(any()).thenReturn(mock())
         when(datastore_models.
              Datastore).load(any()).thenReturn(mock())
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
