@@ -351,7 +351,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             heat_template_unicode = template_obj.render(
                 volume_support=CONF.trove_volume_support)
             try:
-                heat_template = heat_template_unicode.encode('ascii')
+                heat_template = heat_template_unicode.encode('utf-8')
             except UnicodeEncodeError:
                 LOG.error(_("heat template ascii encode issue"))
                 raise TroveError("heat template ascii encode issue")
