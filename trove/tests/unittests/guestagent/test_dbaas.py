@@ -31,7 +31,6 @@ import testtools
 from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
-
 from trove.extensions.mysql.models import RootHistory
 import trove
 from trove.common.context import TroveContext
@@ -44,6 +43,9 @@ from trove.guestagent import pkg
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.service import BaseDbStatus
+from trove.guestagent.datastore.redis import service as rservice
+from trove.guestagent.datastore.redis.service import RedisApp
+from trove.guestagent.datastore.redis import system as RedisSystem
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 from trove.guestagent.datastore.mysql.service import MySqlApp
@@ -931,7 +933,7 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(3, len(test_dict))
+        self.assertEqual(4, len(test_dict))
         self.assertEqual(test_dict.get('test'),
                          datastore_registry_ext_test.get('test', None))
         self.assertEqual(test_dict.get('mysql'),
@@ -939,6 +941,9 @@ class ServiceRegistryTest(testtools.TestCase):
                          'manager.Manager')
         self.assertEqual(test_dict.get('percona'),
                          'trove.guestagent.datastore.mysql.'
+                         'manager.Manager')
+        self.assertEqual(test_dict.get('redis'),
+                         'trove.guestagent.datastore.redis.'
                          'manager.Manager')
 
     def test_datastore_registry_with_existing_manager(self):
@@ -949,26 +954,30 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(2, len(test_dict))
+        self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager123')
         self.assertEqual(test_dict.get('percona'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('redis'),
+                         'trove.guestagent.datastore.redis.manager.Manager')
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(2, len(test_dict))
+        self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('percona'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('redis'),
+                         'trove.guestagent.datastore.redis.manager.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -1194,3 +1203,186 @@ class MySqlAppStatusTest(testtools.TestCase):
         status = self.mySqlAppStatus._get_actual_db_status()
 
         self.assertEqual(rd_instance.ServiceStatuses.BLOCKED, status)
+
+
+class TestRedisApp(testtools.TestCase):
+
+    def setUp(self):
+        super(TestRedisApp, self).setUp()
+        self.FAKE_ID = 1000
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.app = RedisApp(self.appStatus)
+        self.orig_os_path_isfile = os.path.isfile
+        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
+        utils.execute_with_timeout = Mock()
+        rservice.utils.execute_with_timeout = Mock()
+
+    def tearDown(self):
+        super(TestRedisApp, self).tearDown()
+        self.app = None
+        os.path.isfile = self.orig_os_path_isfile
+        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
+        rservice.utils.execute_with_timeout = \
+            self.orig_utils_execute_with_timeout
+        unstub()
+
+    def test_install_if_needed_installed(self):
+        when(pkg.Package).pkg_is_installed(any()).thenReturn(True)
+        when(RedisApp)._install_redis('bar').thenReturn(None)
+        self.app.install_if_needed('bar')
+        verify(pkg.Package).pkg_is_installed('bar')
+        verify(RedisApp, times=0)._install_redis('bar')
+
+    def test_install_if_needed_not_installed(self):
+        when(pkg.Package).pkg_is_installed(any()).thenReturn(False)
+        when(RedisApp)._install_redis('asdf').thenReturn(None)
+        self.app.install_if_needed('asdf')
+        verify(pkg.Package).pkg_is_installed('asdf')
+        verify(RedisApp)._install_redis('asdf')
+
+    def test_install_redis(self):
+        when(utils).execute_with_timeout(any())
+        when(pkg.Package).pkg_install('redis', {}, 1200).thenReturn(None)
+        when(RedisApp).start_redis().thenReturn(None)
+        self.app._install_redis('redis')
+        verify(utils).execute_with_timeout(any())
+        verify(pkg.Package).pkg_install('redis', {}, 1200)
+        verify(RedisApp).start_redis()
+
+    def test_enable_redis_on_boot_without_upstart(self):
+        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(False)
+        when(utils).execute_with_timeout('sudo ' +
+                                         RedisSystem.REDIS_CMD_ENABLE,
+                                         shell=True).thenReturn(None)
+        self.app._enable_redis_on_boot()
+        verify(os.path).isfile(RedisSystem.REDIS_INIT)
+        verify(utils).execute_with_timeout('sudo ' +
+                                           RedisSystem.REDIS_CMD_ENABLE,
+                                           shell=True)
+
+    def test_enable_redis_on_boot_with_upstart(self):
+        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(True)
+        when(utils).execute_with_timeout("sudo sed -i '/^manual$/d' " +
+                                         RedisSystem.REDIS_INIT,
+                                         shell=True).thenReturn(None)
+        self.app._enable_redis_on_boot()
+        verify(os.path).isfile(RedisSystem.REDIS_INIT)
+        verify(utils).execute_with_timeout("sudo sed -i '/^manual$/d' " +
+                                           RedisSystem.REDIS_INIT,
+                                           shell=True)
+
+    def test_disable_redis_on_boot_with_upstart(self):
+        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(True)
+        when(utils).execute_with_timeout('echo',
+                                         "'manual'",
+                                         '>>',
+                                         RedisSystem.REDIS_INIT,
+                                         run_as_root=True,
+                                         root_helper='sudo').thenReturn(None)
+        self.app._disable_redis_on_boot()
+        verify(os.path).isfile(RedisSystem.REDIS_INIT)
+        verify(utils).execute_with_timeout('echo',
+                                           "'manual'",
+                                           '>>',
+                                           RedisSystem.REDIS_INIT,
+                                           run_as_root=True,
+                                           root_helper='sudo')
+
+    def test_disable_redis_on_boot_without_upstart(self):
+        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(False)
+        when(utils).execute_with_timeout('sudo ' +
+                                         RedisSystem.REDIS_CMD_DISABLE,
+                                         shell=True).thenReturn(None)
+        self.app._disable_redis_on_boot()
+        verify(os.path).isfile(RedisSystem.REDIS_INIT)
+        verify(utils).execute_with_timeout('sudo ' +
+                                           RedisSystem.REDIS_CMD_DISABLE,
+                                           shell=True)
+
+    def test_stop_db_without_fail(self):
+        mock_status = mock()
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(), any(), any()).thenReturn(True)
+        app = RedisApp(mock_status, state_change_wait_time=0)
+        when(RedisApp)._disable_redis_on_boot().thenReturn(None)
+        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_STOP,
+                                         shell=True).thenReturn(None)
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(),
+            any(),
+            any()).thenReturn(True)
+        app.stop_db(do_not_start_on_reboot=True)
+        verify(RedisApp)._disable_redis_on_boot()
+        verify(utils).execute_with_timeout('sudo ' +
+                                           RedisSystem.REDIS_CMD_STOP,
+                                           shell=True)
+        verify(mock_status).wait_for_real_status_to_change_to(
+            any(),
+            any(),
+            any())
+
+    def test_stop_db_with_failure(self):
+        mock_status = mock()
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(), any(), any()).thenReturn(True)
+        app = RedisApp(mock_status, state_change_wait_time=0)
+        when(RedisApp)._disable_redis_on_boot().thenReturn(None)
+        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_STOP,
+                                         shell=True).thenReturn(None)
+        when(mock_status).wait_for_real_status_to_change_to(
+            any(),
+            any(),
+            any()).thenReturn(False)
+        app.stop_db(do_not_start_on_reboot=True)
+        verify(RedisApp)._disable_redis_on_boot()
+        verify(utils).execute_with_timeout('sudo ' +
+                                           RedisSystem.REDIS_CMD_STOP,
+                                           shell=True)
+        verify(mock_status).wait_for_real_status_to_change_to(
+            any(),
+            any(),
+            any())
+        verify(mock_status).end_install_or_restart()
+
+    def test_restart(self):
+        mock_status = mock()
+        app = RedisApp(mock_status, state_change_wait_time=0)
+        when(mock_status).begin_restart().thenReturn(None)
+        when(RedisApp).stop_db().thenReturn(None)
+        when(RedisApp).start_redis().thenReturn(None)
+        when(mock_status).end_install_or_restart().thenReturn(None)
+        app.restart()
+        verify(mock_status).begin_restart()
+        verify(RedisApp).stop_db()
+        verify(RedisApp).start_redis()
+        verify(mock_status).end_install_or_restart()
+
+    def test_start_redis(self):
+        mock_status = mock()
+        app = RedisApp(mock_status, state_change_wait_time=0)
+        when(RedisApp)._enable_redis_on_boot().thenReturn(None)
+        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_START,
+                                         shell=True).thenReturn(None)
+        when(mock_status).wait_for_real_status_to_change_to(any(),
+                                                            any(),
+                                                            any()).thenReturn(
+                                                                None)
+        when(utils).execute_with_timeout('pkill', '-9',
+                                         'redis-server',
+                                         run_as_root=True,
+                                         root_helper='sudo').thenReturn(None)
+        when(mock_status).end_install_or_restart().thenReturn(None)
+        app.start_redis()
+        verify(RedisApp)._enable_redis_on_boot()
+        verify(utils).execute_with_timeout('sudo ' +
+                                           RedisSystem.REDIS_CMD_START,
+                                           shell=True)
+        verify(mock_status).wait_for_real_status_to_change_to(any(),
+                                                              any(),
+                                                              any())
+        verify(utils).execute_with_timeout('pkill', '-9',
+                                           'redis-server',
+                                           run_as_root=True,
+                                           root_helper='sudo')
+        verify(mock_status).end_install_or_restart()
