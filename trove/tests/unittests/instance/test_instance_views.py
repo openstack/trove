@@ -13,10 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from mock import Mock
 from testtools import TestCase
 from trove.common import cfg
 from trove.instance.views import get_ip_address
 from trove.instance.views import filter_ips
+from trove.instance.views import InstanceView
+from trove.instance.views import InstanceDetailView
 
 CONF = cfg.CONF
 
@@ -68,3 +71,50 @@ class InstanceViewsTest(TestCase):
         self.assertTrue(len(ip) == 2)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
+
+
+class InstanceDetailViewTest(TestCase):
+
+    def setUp(self):
+        super(InstanceDetailViewTest, self).setUp()
+        self.build_links_method = InstanceView._build_links
+        self.build_flavor_links_method = InstanceView._build_flavor_links
+        InstanceView._build_links = Mock()
+        InstanceView._build_flavor_links = Mock()
+        self.instance = Mock()
+        self.instance.created = 'Yesterday'
+        self.instance.updated = 'Now'
+        self.instance.datastore_version = Mock()
+        self.instance.datastore_version.name = 'mysql_test_version'
+        self.instance.hostname = 'test.trove.com'
+        self.ip = "1.2.3.4"
+        self.instance.addresses = {"private": [{"addr": self.ip}]}
+        self.instance.volume_used = '3'
+        self.instance.root_password = 'iloveyou'
+
+    def tearDown(self):
+        super(InstanceDetailViewTest, self).tearDown()
+        InstanceView._build_links = self.build_links_method
+        InstanceView._build_flavor_links = self.build_flavor_links_method
+
+    def test_data_hostname(self):
+        view = InstanceDetailView(self.instance, Mock())
+        result = view.data()
+        self.assertEqual(self.instance.created, result['instance']['created'])
+        self.assertEqual(self.instance.updated, result['instance']['updated'])
+        self.assertEqual(self.instance.datastore_version.name,
+                         result['instance']['datastore']['version'])
+        self.assertEqual(self.instance.hostname,
+                         result['instance']['hostname'])
+        self.assertNotIn('ip', result['instance'])
+
+    def test_data_ip(self):
+        self.instance.hostname = None
+        view = InstanceDetailView(self.instance, Mock())
+        result = view.data()
+        self.assertEqual(self.instance.created, result['instance']['created'])
+        self.assertEqual(self.instance.updated, result['instance']['updated'])
+        self.assertEqual(self.instance.datastore_version.name,
+                         result['instance']['datastore']['version'])
+        self.assertNotIn('hostname', result['instance'])
+        self.assertEqual([self.ip], result['instance']['ip'])
