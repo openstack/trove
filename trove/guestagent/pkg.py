@@ -347,7 +347,8 @@ class DebianPackagerMixin(BasePackagerMixin):
         # even after successful install, packages can stay unconfigured
         # config_opts - is dict with name/value for questions asked by
         # interactive configure script
-        self._fix_package_selections(packages, config_opts)
+        if config_opts:
+            self._fix_package_selections(packages, config_opts)
 
     def pkg_version(self, package_name):
         p = commands.getstatusoutput("apt-cache policy %s" % package_name)

@@ -85,5 +85,7 @@ class HeatTemplateLoadTest(testtools.TestCase):
                           'mysql-blah')
 
     def test_heat_template_load_success(self):
-        htmpl = template.load_heat_template('mysql')
-        self.assertNotEqual(None, htmpl)
+        mysql_tmpl = template.load_heat_template('mysql')
+        cassandra_tmpl = template.load_heat_template('cassandra')
+        self.assertIsNotNone(mysql_tmpl)
+        self.assertIsNotNone(cassandra_tmpl)

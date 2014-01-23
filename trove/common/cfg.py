@@ -215,7 +215,10 @@ common_opts = [
     cfg.IntOpt('exists_notification_ticks', default=360,
                help='Number of report_intervals to wait between pushing '
                     'events (see report_interval).'),
-    cfg.DictOpt('notification_service_id', default={},
+    cfg.DictOpt('notification_service_id',
+                default={'mysql': '2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b',
+                         'redis': 'b216ffc5-1947-456c-a4cf-70f94c05f7d0',
+                         'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed'},
                 help='Unique ID to tag notification events.'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
                help="Admin username used to connect to Nova.", secret=True),
