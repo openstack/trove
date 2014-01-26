@@ -31,12 +31,13 @@ class InstanceViewsTest(TestCase):
         self.addresses = {"private": [{"addr": "123.123.123.123"}],
                           "internal": [{"addr": "10.123.123.123"}],
                           "public": [{"addr": "15.123.123.123"}]}
-        self.orig_conf = CONF.network_label_regex
+        self.orig_label_regex = CONF.network_label_regex
+        self.orig_ip_regex = CONF.ip_regex
 
     def tearDown(self):
         super(InstanceViewsTest, self).tearDown()
-        CONF.network_label_regex = self.orig_conf
-        CONF.ip_start = None
+        CONF.network_label_regex = self.orig_label_regex
+        CONF.ip_regex = self.orig_ip_regex
 
     def test_one_network_label_exact(self):
         CONF.network_label_regex = '^internal$'
