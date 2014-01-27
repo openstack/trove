@@ -37,6 +37,8 @@ BACKUP_DESC = 'test description'
 
 backup_info = None
 restore_instance_id = None
+backup_count_prior_to_create = 0
+backup_count_for_instance_prior_to_create = 0
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
@@ -72,6 +74,13 @@ class CreateBackups(object):
     @test
     def test_backup_create_instance(self):
         """test create backup for a given instance"""
+        # Necessary to test that the count increases.
+        global backup_count_prior_to_create
+        backup_count_prior_to_create = len(instance_info.dbaas.backups.list())
+        global backup_count_for_instance_prior_to_create
+        backup_count_for_instance_prior_to_create = len(
+            instance_info.dbaas.instances.backups(instance_info.id))
+
         result = instance_info.dbaas.backups.create(BACKUP_NAME,
                                                     instance_info.id,
                                                     BACKUP_DESC)
@@ -79,7 +88,7 @@ class CreateBackups(object):
         assert_equal(BACKUP_DESC, result.description)
         assert_equal(instance_info.id, result.instance_id)
         assert_equal('NEW', result.status)
-        instance = instance_info.dbaas.instances.list()[0]
+        instance = instance_info.dbaas.instances.get(instance_info.id)
         assert_equal('BACKUP', instance.status)
         global backup_info
         backup_info = result
@@ -140,7 +149,7 @@ class ListBackups(object):
     def test_backup_list(self):
         """test list backups"""
         result = instance_info.dbaas.backups.list()
-        assert_equal(1, len(result))
+        assert_equal(backup_count_prior_to_create + 1, len(result))
         backup = result[0]
         assert_equal(BACKUP_NAME, backup.name)
         assert_equal(BACKUP_DESC, backup.description)
@@ -152,7 +161,8 @@ class ListBackups(object):
     def test_backup_list_for_instance(self):
         """test backup list for instance"""
         result = instance_info.dbaas.instances.backups(instance_info.id)
-        assert_equal(1, len(result))
+        assert_equal(backup_count_for_instance_prior_to_create + 1,
+                     len(result))
         backup = result[0]
         assert_equal(BACKUP_NAME, backup.name)
         assert_equal(BACKUP_DESC, backup.description)
