@@ -177,6 +177,20 @@ def create_nova_client(user, service_type=None):
     return TestClient(openstack)
 
 
+def dns_checker(mgmt_instance):
+    """Given a MGMT instance, ensures DNS provisioning worked.
+
+    Uses a helper class which, given a mgmt instance (returned by the mgmt
+    API) can confirm that the DNS record provisioned correctly.
+    """
+    skip_if_xml()  # The mgmt instance won't look the same, so skip this.
+    if CONFIG.values.get('trove_dns_checker') is not None:
+        checker = import_class(CONFIG.trove_dns_checker)
+        checker()(mgmt_instance)
+    else:
+        raise SkipTest("Can't access DNS system to check if DNS provisioned.")
+
+
 def process(cmd):
     process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)

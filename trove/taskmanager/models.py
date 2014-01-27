@@ -43,7 +43,6 @@ from trove.instance.models import FreshInstance
 from trove.instance.tasks import InstanceTasks
 from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
-from trove.instance.views import get_ip_address
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common.notifier import api as notifier
@@ -586,11 +585,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                              sleep_time=1, time_out=DNS_TIME_OUT)
             server = self.nova_client.servers.get(
                 self.db_info.compute_instance_id)
+            self.db_info.addresses = server.addresses
             LOG.info(_("Creating dns entry..."))
-            ip = get_ip_address(server.addresses)
+            ip = self.dns_ip_address
             if not ip:
                 raise TroveError('Error creating DNS. No IP available.')
-            dns_client.create_instance_entry(self.id, ip.pop)
+            dns_client.create_instance_entry(self.id, ip)
         else:
             LOG.debug(_("%(gt)s: DNS not enabled for instance: %(id)s") %
                       {'gt': greenthread.getcurrent(), 'id': self.id})

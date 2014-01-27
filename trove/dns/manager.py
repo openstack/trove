@@ -52,9 +52,8 @@ class DnsManager(object):
         """
         entry = self.entry_factory.create_entry(instance_id)
         if entry:
-            entry.content = content
             LOG.debug("Creating entry address %s." % str(entry))
-            self.driver.create_entry(entry)
+            self.driver.create_entry(entry, content)
         else:
             LOG.debug("Entry address not found for instance %s" % instance_id)
 

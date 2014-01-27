@@ -180,11 +180,16 @@ class AllAccounts(object):
 
 
 @test(groups=["fake.%s.broken" % GROUP],
-      depends_on_groups=["services.initialize"])
+      depends_on_groups=["services.initialize"],
+      runs_after_groups=["dbaas.guest.shutdown"])
 class AccountWithBrokenInstance(object):
 
     @before_class
-    def setUp(self):
+    def setUpACCR(self):
+        from trove.taskmanager.models import CONF
+        self.old_dns_support = CONF.trove_dns_support
+        CONF.trove_dns_support = False
+
         self.user = test_config.users.find_user(Requirements(is_admin=True))
         self.client = create_dbaas_client(self.user)
         self.name = 'test_SERVER_ERROR'
@@ -224,3 +229,8 @@ class AccountWithBrokenInstance(object):
     @after_class
     def tear_down(self):
         self.client.instances.delete(self.response.id)
+
+    @after_class
+    def restore_dns(self):
+        from trove.taskmanager.models import CONF
+        CONF.trove_dns_support = self.old_dns_support
