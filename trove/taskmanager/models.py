@@ -61,7 +61,7 @@ HEAT_TIME_OUT = CONF.heat_time_out  # seconds.
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 HEAT_STACK_SUCCESSFUL_STATUSES = [('CREATE', 'CREATE_COMPLETE')]
-HEAT_RESOURCE_SUCCESSFUL_STATES = [('CREATE', 'COMPLETE')]
+HEAT_RESOURCE_SUCCESSFUL_STATE = 'CREATE_COMPLETE'
 
 use_nova_server_volume = CONF.use_nova_server_volume
 use_heat = CONF.use_heat
@@ -379,7 +379,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             client.stacks.create(stack_name=stack_name,
                                  template=heat_template,
                                  parameters=parameters)
-            stack = client.stacks.get(stack_name)
             try:
                 utils.poll_until(
                     lambda: client.stacks.get(stack_name),
@@ -397,13 +396,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 raise TroveError("Heat Stack Create Failed.")
 
             resource = client.resources.get(stack.id, 'BaseInstance')
-            if resource.state not in HEAT_RESOURCE_SUCCESSFUL_STATES:
+            if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
                 raise TroveError("Heat Resource Provisioning Failed.")
             instance_id = resource.physical_resource_id
 
             if CONF.trove_volume_support:
                 resource = client.resources.get(stack.id, 'DataVolume')
-                if resource.state not in HEAT_RESOURCE_SUCCESSFUL_STATES:
+                if resource.resource_status != HEAT_RESOURCE_SUCCESSFUL_STATE:
                     raise TroveError("Heat Resource Provisioning Failed.")
                 volume_id = resource.physical_resource_id
                 self.update_db(compute_instance_id=instance_id,
