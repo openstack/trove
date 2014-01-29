@@ -31,9 +31,6 @@ import testtools
 from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
-from trove.extensions.mysql.models import RootHistory
-import trove
-from trove.common.context import TroveContext
 from trove.common import utils
 from trove.common import instance as rd_instance
 from trove.conductor import api as conductor_api
@@ -865,19 +862,6 @@ class MySqlRootStatusTest(testtools.TestCase):
     def test_enable_root_failed(self):
         when(models.MySQLUser)._is_valid_user_name(any()).thenReturn(False)
         self.assertRaises(ValueError, MySqlAdmin().enable_root)
-
-    def test_report_root_enabled(self):
-        mock_db_api = mock()
-        when(trove.extensions.mysql.models).get_db_api().thenReturn(
-            mock_db_api)
-        when(mock_db_api).find_by(any(), id=None).thenReturn(None)
-        root_history = RootHistory('x', 'root')
-        when(mock_db_api).save(any(RootHistory)).thenReturn(root_history)
-        # invocation
-        history = MySqlRootAccess.report_root_enabled(TroveContext())
-        # verification
-        self.assertThat(history, Is(root_history))
-        verify(mock_db_api).save(any(RootHistory))
 
 
 class MockStats:

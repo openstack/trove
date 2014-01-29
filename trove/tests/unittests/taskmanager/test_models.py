@@ -19,11 +19,15 @@ from trove.datastore import models as datastore_models
 from trove.taskmanager import models as taskmanager_models
 from trove.backup import models as backup_models
 from trove.common import remote
+from trove.common.exception import TroveError
 from trove.common.instance import ServiceStatuses
+from trove.extensions.mysql import models as mysql_models
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
-from trove.common.exception import TroveError
+
+from trove.tests.unittests.util import util
+from trove.common import utils
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
@@ -334,3 +338,28 @@ class NotifyMixinTest(testtools.TestCase):
         transformer = taskmanager_models.NotifyMixin()
         self.assertThat(transformer._get_service_id('m0ng0', id_map),
                         Equals('unknown-service-id-error'))
+
+
+class RootReportTest(testtools.TestCase):
+
+    def setUp(self):
+        super(RootReportTest, self).setUp()
+        util.init_db()
+
+    def tearDown(self):
+        super(RootReportTest, self).tearDown()
+
+    def test_report_root_first_time(self):
+        report = mysql_models.RootHistory.create(
+            None, utils.generate_uuid(), 'root')
+        self.assertIsNotNone(report)
+
+    def test_report_root_double_create(self):
+        uuid = utils.generate_uuid()
+        history = mysql_models.RootHistory(uuid, 'root').save()
+        mysql_models.RootHistory.load = Mock(return_value=history)
+        report = mysql_models.RootHistory.create(
+            None, uuid, 'root')
+        self.assertTrue(mysql_models.RootHistory.load.called)
+        self.assertEqual(history.user, report.user)
+        self.assertEqual(history.id, report.id)

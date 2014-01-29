@@ -195,8 +195,6 @@ class GuestAgentManagerTest(testtools.TestCase):
         when(dbaas.MySqlAdmin).is_root_enabled().thenReturn(is_root_enabled)
         when(dbaas.MySqlAdmin).create_user().thenReturn(None)
         when(dbaas.MySqlAdmin).create_database().thenReturn(None)
-        when(dbaas.MySqlAdmin).report_root_enabled(self.context).thenReturn(
-            None)
 
         when(os.path).exists(any()).thenReturn(True)
         # invocation
@@ -222,10 +220,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         verify(dbaas.MySqlApp).secure(any())
         verify(dbaas.MySqlAdmin, never).create_database()
         verify(dbaas.MySqlAdmin, never).create_user()
-        times_report = 1 if is_root_enabled else 0
         verify(dbaas.MySqlApp).secure_root(secure_remote_root=any())
-        verify(dbaas.MySqlAdmin, times=times_report).report_root_enabled(
-            self.context)
 
 
 class RedisGuestAgentManagerTest(testtools.TestCase):

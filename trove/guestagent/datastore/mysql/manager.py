@@ -133,10 +133,8 @@ class Manager(periodic_task.PeriodicTasks):
         if root_password and not backup_info:
             app.secure_root(secure_remote_root=True)
             MySqlAdmin().enable_root(root_password)
-            MySqlAdmin().report_root_enabled(context)
         elif enable_root_on_restore:
             app.secure_root(secure_remote_root=False)
-            MySqlAdmin().report_root_enabled(context)
         else:
             app.secure_root(secure_remote_root=True)
 

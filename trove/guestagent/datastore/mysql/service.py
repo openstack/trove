@@ -36,7 +36,6 @@ from trove.guestagent import pkg
 from trove.guestagent.datastore import service
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
-from trove.extensions.mysql.models import RootHistory
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -400,10 +399,6 @@ class MySqlAdmin(object):
            reset the root password.
         """
         return MySqlRootAccess.enable_root(root_password)
-
-    def report_root_enabled(self, context=None):
-        """Records in the Root History that the root is enabled."""
-        return MySqlRootAccess.report_root_enabled(context)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance."""
@@ -869,7 +864,3 @@ class MySqlRootAccess(object):
             t = text(str(g))
             client.execute(t)
             return user.serialize()
-
-    @classmethod
-    def report_root_enabled(cls, context):
-        return RootHistory.create(context, CONF.guest_id, 'root')

@@ -33,6 +33,7 @@ from trove.common import instance as rd_instance
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
+from trove.extensions.mysql import models as mysql_models
 from trove.extensions.security_group.models import SecurityGroup
 from trove.extensions.security_group.models import SecurityGroupRule
 from swiftclient.client import ClientException
@@ -206,6 +207,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                             packages, databases, users, backup_info,
                             config.config_contents, root_password)
 
+        if root_password:
+            self.report_root_enabled()
+
         if not self.db_info.task_status.is_error:
             self.update_db(task_status=inst_models.InstanceTasks.NONE)
 
@@ -240,6 +244,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.exception(_("Error during create-event call."))
 
         LOG.debug(_("end create_instance for id: %s") % self.id)
+
+    def report_root_enabled(self):
+        mysql_models.RootHistory.create(self.context, self.id, 'root')
 
     def update_statuses_on_time_out(self):
 
