@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2010 United States Government as represented by the
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
@@ -24,17 +22,19 @@ import traceback
 from oslo.config import cfg
 import six
 
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.openstack.common.gettextutils import _
 from trove.openstack.common import importutils
 from trove.openstack.common import jsonutils
 from trove.openstack.common import local
 from trove.openstack.common import log as logging
+from trove.openstack.common import versionutils
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
+_RPC_ENVELOPE_VERSION = '2.0'
 '''RPC Envelope Version.
 
 This version number applies to the top level structure of messages sent out.
@@ -47,7 +47,7 @@ This version number applies to the message envelope that is used in the
 serialization done inside the rpc layer.  See serialize_msg() and
 deserialize_msg().
 
-The current message format (version 2.0) is very simple.  It is:
+The current message format (version 2.0) is very simple.  It is::
 
     {
         'oslo.version': <RPC Envelope Version as a String>,
@@ -65,7 +65,6 @@ We will JSON encode the application message payload.  The message envelope,
 which includes the JSON encoded application message body, will be passed down
 to the messaging libraries as a dict.
 '''
-_RPC_ENVELOPE_VERSION = '2.0'
 
 _VERSION_KEY = 'oslo.version'
 _MESSAGE_KEY = 'oslo.message'
@@ -87,7 +86,7 @@ class RPCException(Exception):
                 # kwargs doesn't match a variable in the message
                 # log the issue and the kwargs
                 LOG.exception(_('Exception in string format operation'))
-                for name, value in kwargs.iteritems():
+                for name, value in six.iteritems(kwargs):
                     LOG.error("%s: %s" % (name, value))
                 # at least get the core message out if something happened
                 message = self.msg_fmt
@@ -265,11 +264,15 @@ def _safe_log(log_func, msg, msg_data):
 
     def _fix_passwords(d):
         """Sanitizes the password fields in the dictionary."""
-        for k in d.iterkeys():
+        for k in six.iterkeys(d):
             if k.lower().find('password') != -1:
                 d[k] = '<SANITIZED>'
             elif k.lower() in SANITIZE:
                 d[k] = '<SANITIZED>'
+            elif isinstance(d[k], list):
+                for e in d[k]:
+                    if isinstance(e, dict):
+                        _fix_passwords(e)
             elif isinstance(d[k], dict):
                 _fix_passwords(d[k])
         return d
@@ -441,19 +444,15 @@ def client_exceptions(*exceptions):
     return outer
 
 
+# TODO(sirp): we should deprecate this in favor of
+# using `versionutils.is_compatible` directly
 def version_is_compatible(imp_version, version):
     """Determine whether versions are compatible.
 
     :param imp_version: The version implemented
     :param version: The version requested by an incoming message.
     """
-    version_parts = version.split('.')
-    imp_version_parts = imp_version.split('.')
-    if int(version_parts[0]) != int(imp_version_parts[0]):  # Major
-        return False
-    if int(version_parts[1]) > int(imp_version_parts[1]):  # Minor
-        return False
-    return True
+    return versionutils.is_compatible(version, imp_version)
 
 
 def serialize_msg(raw_msg):
