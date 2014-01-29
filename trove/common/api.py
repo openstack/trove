@@ -37,7 +37,10 @@ class API(wsgi.Router):
 
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
-        mapper.connect("/", controller=versions_resource, action="show")
+        mapper.connect("/",
+                       controller=versions_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
 
     def _datastore_router(self, mapper):
         datastore_resource = DatastoreController().create_resource()
@@ -55,25 +58,71 @@ class API(wsgi.Router):
 
     def _instance_router(self, mapper):
         instance_resource = InstanceController().create_resource()
-        path = "/{tenant_id}/instances"
-        mapper.resource("instance", path, controller=instance_resource,
-                        member={'action': 'POST', 'backups': 'GET'})
+        mapper.connect("/{tenant_id}/instances",
+                       controller=instance_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances",
+                       controller=instance_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/instances/{id}",
+                       controller=instance_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances/{id}/action",
+                       controller=instance_resource,
+                       action="action",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/instances/{id}",
+                       controller=instance_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
+        mapper.connect("/{tenant_id}/instances/{id}/backups",
+                       controller=instance_resource,
+                       action="backups",
+                       conditions={'method': ['GET']})
 
     def _flavor_router(self, mapper):
         flavor_resource = FlavorController().create_resource()
-        path = "/{tenant_id}/flavors"
-        mapper.resource("flavor", path, controller=flavor_resource)
+        mapper.connect("/{tenant_id}/flavors",
+                       controller=flavor_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/flavors/{id}",
+                       controller=flavor_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
 
     def _limits_router(self, mapper):
         limits_resource = LimitsController().create_resource()
-        path = "/{tenant_id}/limits"
-        mapper.resource("limits", path, controller=limits_resource)
+        mapper.connect("/{tenant_id}/limits",
+                       controller=limits_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
 
     def _backups_router(self, mapper):
         backups_resource = BackupController().create_resource()
-        path = "/{tenant_id}/backups"
-        mapper.resource("backups", path, controller=backups_resource,
-                        member={'action': 'POST'})
+        mapper.connect("/{tenant_id}/backups",
+                       controller=backups_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/backups",
+                       controller=backups_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/backups/{id}",
+                       controller=backups_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/backups/{id}",
+                       controller=backups_resource,
+                       action="action",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/backups/{id}",
+                       controller=backups_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
 
 
 def app_factory(global_conf, **local_conf):
