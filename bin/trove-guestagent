@@ -38,7 +38,6 @@ from trove.common.rpc import service as rpc_service
 from oslo.config import cfg as openstack_cfg
 from trove.openstack.common import log as logging
 from trove.openstack.common import service as openstack_service
-from trove.db import get_db_api
 
 CONF = cfg.CONF
 CONF.register_opts([openstack_cfg.StrOpt('guest_id')])
@@ -50,7 +49,6 @@ def main():
     logging.setup(None)
 
     try:
-        get_db_api().configure_db(CONF)
         manager = dbaas.datastore_registry().get(CONF.datastore_manager)
         if not manager:
             msg = ("Manager class not registered for datastore manager %s" %
