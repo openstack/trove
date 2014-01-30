@@ -54,8 +54,10 @@ trove_volume_support = True
 block_device_mapping = vdb
 device_path = /dev/vdb
 mount_point = /var/lib/mysql
+# Maximum volume size for an instance
 max_accepted_volume_size = 10
 max_instances_per_user = 5
+# Maximum volume capacity (in GB) spanning across all trove volumes per tenant
 max_volumes_per_user = 100
 max_backups_per_user = 5
 volume_time_out=30

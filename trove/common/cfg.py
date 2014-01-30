@@ -99,7 +99,8 @@ common_opts = [
     cfg.IntOpt('max_accepted_volume_size', default=5,
                help='Default maximum volume size for an instance.'),
     cfg.IntOpt('max_volumes_per_user', default=20,
-               help='Default maximum for total volume used by a tenant.'),
+               help='Default maximum volume capacity (in GB) spanning across '
+                    'all trove volumes per tenant'),
     cfg.IntOpt('max_backups_per_user', default=50,
                help='Default maximum number of backups created by a tenant.'),
     cfg.StrOpt('quota_driver',
