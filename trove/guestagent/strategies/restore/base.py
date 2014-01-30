@@ -59,8 +59,10 @@ class RestoreRunner(Strategy):
     is_encrypted = BACKUP_USE_OPENSSL
     decrypt_key = BACKUP_DECRYPT_KEY
 
-    def __init__(self, restore_stream, **kwargs):
-        self.restore_stream = restore_stream
+    def __init__(self, storage, **kwargs):
+        self.storage = storage
+        self.location = kwargs.pop('location')
+        self.checksum = kwargs.pop('checksum')
         self.restore_location = kwargs.get('restore_location',
                                            '/var/lib/mysql')
         self.restore_cmd = (self.decrypt_cmd +
@@ -102,20 +104,17 @@ class RestoreRunner(Strategy):
         return content_length
 
     def _run_restore(self):
-        with self.restore_stream as stream:
-            self.process = subprocess.Popen(self.restore_cmd, shell=True,
-                                            stdin=subprocess.PIPE,
-                                            stderr=subprocess.PIPE)
-            self.pid = self.process.pid
-            content_length = 0
-            chunk = stream.read(CHUNK_SIZE)
-            while chunk:
-                self.process.stdin.write(chunk)
-                content_length += len(chunk)
-                chunk = stream.read(CHUNK_SIZE)
-            self.process.stdin.close()
-            LOG.info("Restored %s bytes from swift via xbstream."
-                     % content_length)
+        stream = self.storage.load(self.location, self.checksum)
+        self.process = subprocess.Popen(self.restore_cmd, shell=True,
+                                        stdin=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+        self.pid = self.process.pid
+        content_length = 0
+        for chunk in stream:
+            self.process.stdin.write(chunk)
+            content_length += len(chunk)
+        self.process.stdin.close()
+        LOG.info("Restored %s bytes from stream." % content_length)
 
         return content_length
 

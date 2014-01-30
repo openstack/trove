@@ -112,7 +112,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_XTRA_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql")
+        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+                            location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + XTRA_RESTORE)
         self.assertEqual(restr.prepare_cmd, PREPARE)
 
@@ -121,7 +122,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_XTRA_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql")
+        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+                            location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + XTRA_RESTORE)
         self.assertEqual(restr.prepare_cmd, PREPARE)
@@ -131,6 +133,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
         restr = RunnerClass(None, restore_location="/var/lib/mysql",
+                            location="filename", checksum="md5",
                             user="user", password="password")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + SQLDUMP_RESTORE)
 
@@ -140,6 +143,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
         restr = RunnerClass(None, restore_location="/var/lib/mysql",
+                            location="filename", checksum="md5",
                             user="user", password="password")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + SQLDUMP_RESTORE)
