@@ -110,3 +110,45 @@ class Datastores(object):
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Datastore version '%s' cannot be found." % NAME)
+
+    @test
+    def test_datastore_get_by_uuid(self):
+        datastore = self.rd_client.datastores.get(
+            test_config.dbaas_datastore_id)
+        with TypeCheck('Datastore', datastore) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("links", list)
+        assert_equal(datastore.id, test_config.dbaas_datastore_id)
+
+    @test
+    def test_datastore_version_list_by_uuid(self):
+        versions = self.rd_client.datastore_versions.list(
+            test_config.dbaas_datastore_id)
+        for version in versions:
+            with TypeCheck('DatastoreVersion', version) as check:
+                check.has_field("id", basestring)
+                check.has_field("name", basestring)
+                check.has_field("links", list)
+
+    @test
+    def test_datastore_version_get_by_uuid(self):
+        version = self.rd_client.datastore_versions.get(
+            test_config.dbaas_datastore_id,
+            test_config.dbaas_datastore_version)
+        with TypeCheck('DatastoreVersion', version) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("datastore", basestring)
+            check.has_field("links", list)
+        assert_equal(version.name, test_config.dbaas_datastore_version)
+
+    @test
+    def test_datastore_version_invalid_uuid(self):
+        try:
+            self.rd_client.datastore_versions.get_by_uuid(
+                test_config.dbaas_datastore_version)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore version '%s' cannot be found." %
+                         test_config.dbaas_datastore_version)
