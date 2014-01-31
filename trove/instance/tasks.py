@@ -62,6 +62,9 @@ class InstanceTask(object):
     def __str__(self):
         return "(%d %s %s)" % (self._code, self._action, self._db_text)
 
+    def __repr__(self):
+        return "InstanceTask.%s (%s)" % (self._action, self._db_text)
+
 
 class InstanceTasks(object):
     NONE = InstanceTask(0x01, 'NONE', 'No tasks for the instance.')

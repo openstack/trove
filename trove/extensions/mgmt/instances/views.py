@@ -46,7 +46,7 @@ class MgmtInstanceView(InstanceDetailView):
                 result['instance']['server']['local_id'] = server.local_id
 
         try:
-            service_status = self.instance.service_status.status.api_status
+            service_status = self.instance.datastore_status.status.api_status
         except AttributeError:
             service_status = None
         result['instance']['service_status'] = service_status
@@ -88,7 +88,7 @@ class MgmtInstanceDetailView(MgmtInstanceView):
             }
         else:
             result['instance']['volume'] = None
-        description = self.instance.service_status.status.description
+        description = self.instance.datastore_status.status.description
         result['instance']['guest_status'] = {"state_description": description}
         return result
 

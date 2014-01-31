@@ -65,9 +65,9 @@ def load_mgmt_instance(cls, context, id):
 
 
 class SimpleMgmtInstance(imodels.BaseInstance):
-    def __init__(self, context, db_info, server, service_status):
+    def __init__(self, context, db_info, server, datastore_status):
         super(SimpleMgmtInstance, self).__init__(context, db_info, server,
-                                                 service_status)
+                                                 datastore_status)
 
     @property
     def status(self):
