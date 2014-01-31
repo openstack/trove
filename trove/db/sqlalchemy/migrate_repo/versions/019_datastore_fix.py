@@ -14,15 +14,74 @@
 
 from sqlalchemy.schema import MetaData
 from sqlalchemy.sql.expression import select
+from sqlalchemy.sql.expression import insert
+from sqlalchemy.sql.expression import update
+from sqlalchemy.sql.expression import delete
 from trove.common import cfg
-from trove.datastore.models import DBDatastore
-from trove.datastore.models import DBDatastoreVersion
-from trove.db.sqlalchemy import session
 from trove.db.sqlalchemy.migrate_repo.schema import Table
-from trove.instance.models import DBInstance
 
 CONF = cfg.CONF
+LEGACY_IMAGE_ID = "00000000-0000-0000-0000-000000000000"
+LEGACY_DATASTORE_ID = "10000000-0000-0000-0000-000000000001"
+LEGACY_VERSION_ID = "20000000-0000-0000-0000-000000000002"
 meta = MetaData()
+
+
+def create_legacy_version(datastores_table,
+                          datastore_versions_table,
+                          image_id):
+    insert(
+        table=datastores_table,
+        values=dict(id=LEGACY_DATASTORE_ID, name="Legacy MySQL")
+    ).execute()
+
+    insert(
+        table=datastore_versions_table,
+        values=dict(id=LEGACY_VERSION_ID,
+                    datastore_id=LEGACY_DATASTORE_ID,
+                    name="Unknown Legacy Version",
+                    image_id=image_id,
+                    packages="",
+                    active=False,
+                    manager="mysql")
+    ).execute()
+
+    return LEGACY_VERSION_ID
+
+
+def find_image(service_name):
+    image_table = Table('service_images', meta, autoload=True)
+    image = select(
+        columns=["id", "image_id", "service_name"],
+        from_obj=image_table,
+        whereclause="service_name='%s'" % service_name,
+        limit=1
+    ).execute().fetchone()
+
+    if image:
+        return image.id
+    return LEGACY_IMAGE_ID
+
+
+def has_instances_wo_datastore_version(instances_table):
+    instance = select(
+        columns=["id"],
+        from_obj=instances_table,
+        whereclause="datastore_version_id is NULL",
+        limit=1
+    ).execute().fetchone()
+
+    return instance is not None
+
+
+def find_all_instances_wo_datastore_version(instances_table):
+    instances = select(
+        columns=["id"],
+        from_obj=instances_table,
+        whereclause="datastore_version_id is NULL"
+    ).execute()
+
+    return instances
 
 
 def upgrade(migrate_engine):
@@ -30,37 +89,26 @@ def upgrade(migrate_engine):
 
     instance_table = Table('instances', meta, autoload=True)
 
-    session.configure_db(CONF)
+    if has_instances_wo_datastore_version:
+        instances = find_all_instances_wo_datastore_version(instance_table)
+        image_id = find_image("mysql")
 
-    instances = DBInstance.find_all(datastore_version_id=None)
-    if instances.count() > 0:
-        datastore = DBDatastore.get_by(manager="mysql")
-        datastore = datastore or DBDatastore.create(
-            name="Legacy MySQL",
-            manager="mysql",
-        )
+        datastores_table = Table('datastores',
+                                 meta,
+                                 autoload=True)
+        datastore_versions_table = Table('datastore_versions',
+                                         meta,
+                                         autoload=True)
 
-        image_table = Table('service_images', meta, autoload=True)
-        image = select(
-            columns=["id", "image_id", "service_name"],
-            from_obj=image_table,
-            whereclause="service_name='mysql'",
-            limit=1
-        ).execute().fetchone()
-
-        image_id = "00000000-0000-0000-0000-000000000000"
-        if image:
-            image_id = image.image_id
-
-        version = DBDatastoreVersion.create(
-            datastore_id=datastore.id,
-            name="Unknown Legacy Version",
-            image_id=image_id,
-            active=False,
-        )
-
+        version_id = create_legacy_version(datastores_table,
+                                           datastore_versions_table,
+                                           image_id)
         for instance in instances:
-            instance.update_db(datastore_version_id=version.id)
+            update(
+                table=instance_table,
+                whereclause="id='%s'" % instance.id,
+                values=dict(datastore_version_id=version_id)
+            ).execute()
 
     instance_table.c.datastore_version_id.alter(nullable=False)
 
@@ -69,4 +117,27 @@ def downgrade(migrate_engine):
     meta.bind = migrate_engine
 
     instance_table = Table('instances', meta, autoload=True)
+
     instance_table.c.datastore_version_id.alter(nullable=True)
+
+    update(
+        table=instance_table,
+        whereclause="datastore_version_id='%s'" % LEGACY_VERSION_ID,
+        values=dict(datastore_version_id=None)
+    ).execute()
+
+    datastores_table = Table('datastores',
+                             meta,
+                             autoload=True)
+    datastore_versions_table = Table('datastore_versions',
+                                     meta,
+                                     autoload=True)
+
+    delete(
+        table=datastore_versions_table,
+        whereclause="id='%s'" % LEGACY_VERSION_ID
+    ).execute()
+    delete(
+        table=datastores_table,
+        whereclause="id='%s'" % LEGACY_DATASTORE_ID
+    ).execute()
