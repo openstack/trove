@@ -17,21 +17,14 @@ from mockito import unstub
 from trove.backup import models as bkup_models
 from trove.common import exception as t_exception
 from trove.common import instance as t_instance
+from trove.common import utils
 from trove.conductor import manager as conductor_manager
 from trove.instance import models as t_models
 from trove.tests.unittests.util import util
-from uuid import uuid4
 
 
 # See LP bug #1255178
 OLD_DBB_SAVE = bkup_models.DBBackup.save
-
-
-def generate_uuid(length=16):
-    uuid = []
-    while len(''.join(uuid)) < length:
-        uuid.append(str(uuid4()))
-    return (''.join(uuid))[:length]
 
 
 class ConductorMethodTests(testtools.TestCase):
@@ -41,14 +34,14 @@ class ConductorMethodTests(testtools.TestCase):
         super(ConductorMethodTests, self).setUp()
         util.init_db()
         self.cond_mgr = conductor_manager.Manager()
-        self.instance_id = generate_uuid()
+        self.instance_id = utils.generate_uuid()
 
     def tearDown(self):
         super(ConductorMethodTests, self).tearDown()
         unstub()
 
     def _create_iss(self):
-        new_id = generate_uuid()
+        new_id = utils.generate_uuid()
         iss = t_models.InstanceServiceStatus(
             id=new_id,
             instance_id=self.instance_id,
@@ -60,12 +53,12 @@ class ConductorMethodTests(testtools.TestCase):
         return t_models.InstanceServiceStatus.find_by(id=id)
 
     def _create_backup(self, name='fake backup'):
-        new_id = generate_uuid()
+        new_id = utils.generate_uuid()
         backup = bkup_models.DBBackup.create(
             id=new_id,
             name=name,
             description='This is a fake backup object.',
-            tenant_id=generate_uuid(),
+            tenant_id=utils.generate_uuid(),
             state=bkup_models.BackupState.NEW,
             instance_id=self.instance_id)
         backup.save()
@@ -77,7 +70,7 @@ class ConductorMethodTests(testtools.TestCase):
     # --- Tests for heartbeat ---
 
     def test_heartbeat_instance_not_found(self):
-        new_id = generate_uuid()
+        new_id = utils.generate_uuid()
         self.assertRaises(t_exception.ModelNotFoundError,
                           self.cond_mgr.heartbeat, None, new_id, {})
 
@@ -114,13 +107,13 @@ class ConductorMethodTests(testtools.TestCase):
     # --- Tests for update_backup ---
 
     def test_backup_not_found(self):
-        new_bkup_id = generate_uuid()
+        new_bkup_id = utils.generate_uuid()
         self.assertRaises(t_exception.ModelNotFoundError,
                           self.cond_mgr.update_backup,
                           None, self.instance_id, new_bkup_id)
 
     def test_backup_instance_id_nomatch(self):
-        new_iid = generate_uuid()
+        new_iid = utils.generate_uuid()
         bkup_id = self._create_backup('nomatch')
         old_name = self._get_backup(bkup_id).name
         self.cond_mgr.update_backup(None, new_iid, bkup_id,
