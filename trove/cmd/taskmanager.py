@@ -16,8 +16,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import gettext
-import os
 import sys
 
 import eventlet
@@ -32,21 +30,11 @@ from trove.common import debug_utils
 # after debug_utils setting up
 eventlet.monkey_patch(all=True, thread=False)
 
-gettext.install('trove', unicode=1)
-
-# If ../trove/__init__.py exists, add ../ to Python search path, so that
-# it will override what happens to be installed in /usr/(local/)lib/python...
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-                                                os.pardir,
-                                                os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
-
 CONF = cfg.CONF
 CONF.register_opts([openstack_cfg.StrOpt('taskmanager_manager')])
 
 
-def main():
+def startup(topic):
     cfg.parse_args(sys.argv)
     logging.setup(None)
 
@@ -60,16 +48,16 @@ def main():
     from trove.openstack.common import service as openstack_service
     from trove.db import get_db_api
 
-    try:
-        get_db_api().configure_db(CONF)
-        server = rpc_service.RpcService(manager=CONF.taskmanager_manager)
-        launcher = openstack_service.launch(server)
-        launcher.wait()
-    except RuntimeError as error:
-        import traceback
-        print(traceback.format_exc())
-        sys.exit("ERROR: %s" % error)
+    get_db_api().configure_db(CONF)
+    server = rpc_service.RpcService(manager=CONF.taskmanager_manager,
+                                    topic=topic)
+    launcher = openstack_service.launch(server)
+    launcher.wait()
 
 
-if __name__ == '__main__':
-    main()
+def main():
+    startup(None)
+
+
+def mgmt_main():
+    startup("mgmt-taskmanager")

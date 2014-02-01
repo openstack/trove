@@ -18,20 +18,11 @@
 
 import gettext
 import inspect
-import os
 import sys
 
 
 gettext.install('trove', unicode=1)
 
-
-# If ../trove/__init__.py exists, add ../ to Python search path, so that
-# it will override what happens to be installed in /usr/(local/)lib/python...
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-                                                os.pardir,
-                                                os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
 
 from trove.common import cfg
 from trove.common import exception
@@ -140,7 +131,3 @@ def main():
     except Exception:
         print(_("Command failed, please check log for more info"))
         raise
-
-
-if __name__ == '__main__':
-    main()
