@@ -451,7 +451,7 @@ class Instance(BuiltInstance):
     @classmethod
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
-               availability_zone=None):
+               availability_zone=None, nics=None):
 
         client = create_nova_client(context)
         try:
@@ -480,6 +480,11 @@ class Instance(BuiltInstance):
                     verify_checksum=CONF.verify_swift_checksum_on_restore):
                 raise exception.BackupFileNotFound(
                     location=backup_info.location)
+
+        if not nics and CONF.default_neutron_networks:
+            nics = []
+            for net_id in CONF.default_neutron_networks:
+                nics.append({"net-id": net_id})
 
         def _create_resources():
 
@@ -513,7 +518,7 @@ class Instance(BuiltInstance):
                                                   datastore_version.packages,
                                                   volume_size, backup_id,
                                                   availability_zone,
-                                                  root_password)
+                                                  root_password, nics)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password)

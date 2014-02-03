@@ -48,7 +48,8 @@ class fake_Server:
 
 class fake_ServerManager:
     def create(self, name, image_id, flavor_id, files, userdata,
-               security_groups, block_device_mapping, availability_zone=None):
+               security_groups, block_device_mapping, availability_zone=None,
+               nics=None):
         server = fake_Server()
         server.id = "server_id"
         server.name = name
@@ -59,6 +60,7 @@ class fake_ServerManager:
         server.security_groups = security_groups
         server.block_device_mapping = block_device_mapping
         server.availability_zone = availability_zone
+        server.nics = nics
         return server
 
 
@@ -180,33 +182,33 @@ class FreshInstanceTasksTest(testtools.TestCase):
         when(taskmanager_models.CONF).get("cloudinit_location").thenReturn(
             cloudinit_location)
         server = self.freshinstancetasks._create_server(
-            None, None, None, datastore_manager, None, None)
+            None, None, None, datastore_manager, None, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
     def test_create_instance_guestconfig(self):
         when(taskmanager_models.CONF).get("guest_config").thenReturn(
             self.guestconfig)
         server = self.freshinstancetasks._create_server(
-            None, None, None, "test", None, None)
+            None, None, None, "test", None, None, None)
         self.assertTrue('/etc/trove-guestagent.conf' in server.files)
         self.assertEqual(server.files['/etc/trove-guestagent.conf'],
                          self.guestconfig_content)
 
     def test_create_instance_with_az_kwarg(self):
         server = self.freshinstancetasks._create_server(
-            None, None, None, None, None, availability_zone='nova')
+            None, None, None, None, None, availability_zone='nova', nics=None)
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az(self):
         server = self.freshinstancetasks._create_server(
-            None, None, None, None, None, 'nova')
+            None, None, None, None, None, 'nova', None)
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az_none(self):
         server = self.freshinstancetasks._create_server(
-            None, None, None, None, None, None)
+            None, None, None, None, None, None, None)
 
         self.assertIsNotNone(server)
 

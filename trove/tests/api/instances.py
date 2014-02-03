@@ -387,6 +387,15 @@ class CreateInstance(object):
                       None, databases, availability_zone="NOOP")
         assert_equal(400, dbaas.last_http_code)
 
+    @test(enabled=not FAKE)
+    def test_create_with_bad_nics(self):
+        instance_name = "instance-failure-with-bad-nics"
+        databases = []
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      None, databases, nics="BAD")
+        assert_equal(400, dbaas.last_http_code)
+
     @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_empty_volume(self):
         instance_name = "instance-failure-with-no-volume-size"
