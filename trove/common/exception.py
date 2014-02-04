@@ -327,6 +327,13 @@ class SecurityGroupRuleDeletionError(TroveError):
     message = _("Failed to delete Security Group Rule.")
 
 
+class MalformedSecurityGroupRuleError(TroveError):
+
+    message = _("Error creating security group rules."
+                " Malformed port(s). Port(s) is not integer."
+                " FromPort = %(from)s greater than ToPort = %(to)s")
+
+
 class BackupNotCompleteError(TroveError):
 
     message = _("Unable to create instance because backup %(backup_id)s is "
