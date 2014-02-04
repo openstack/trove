@@ -15,33 +15,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import re
 from trove.openstack.common import log as logging
 from trove.common import cfg
 from trove.common.views import create_links
 from trove.instance import models
 
 LOG = logging.getLogger(__name__)
-
 CONF = cfg.CONF
-
-
-def get_ip_address(addresses):
-    if addresses is None:
-        return None
-    IPs = []
-    for label in addresses:
-        if (re.search(CONF.network_label_regex, label) and
-                len(addresses[label]) > 0):
-            IPs.extend([addr.get('addr') for addr in addresses[label]])
-    # Includes ip addresses that match the regexp pattern
-    if CONF.ip_regex:
-        IPs = filter_ips(IPs, CONF.ip_regex)
-    return IPs
-
-
-def filter_ips(ips, regex):
-    return [ip for ip in ips if re.search(regex, ip)]
 
 
 class InstanceView(object):
@@ -98,7 +78,7 @@ class InstanceDetailView(InstanceView):
         if self.instance.hostname:
             result['instance']['hostname'] = self.instance.hostname
         else:
-            ip = get_ip_address(self.instance.addresses)
+            ip = self.instance.get_visible_ip_addresses()
             if ip is not None and len(ip) > 0:
                 result['instance']['ip'] = ip
 

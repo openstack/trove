@@ -18,11 +18,13 @@
 
 import time
 
+from proboscis import after_class
 from proboscis import before_class
 from proboscis import test
 from proboscis import asserts
 from proboscis.decorators import time_out
 
+from trove.common import cfg
 from troveclient.compat import exceptions
 from trove.tests.util import create_dbaas_client
 from trove.common.utils import poll_until
@@ -30,6 +32,8 @@ from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
+
+CONF = cfg.CONF
 
 
 class TestBase(object):
@@ -51,12 +55,12 @@ class TestBase(object):
     def wait_for_instance_status(self, instance_id, status="ACTIVE"):
         poll_until(lambda: self.dbaas.instances.get(instance_id),
                    lambda instance: instance.status == status,
-                   time_out=10)
+                   time_out=3, sleep_time=1)
 
     def wait_for_instance_task_status(self, instance_id, description):
         poll_until(lambda: self.dbaas.management.show(instance_id),
                    lambda instance: instance.task_description == description,
-                   time_out=10)
+                   time_out=3, sleep_time=1)
 
     def is_instance_deleted(self, instance_id):
         while True:
@@ -83,7 +87,7 @@ class TestBase(object):
         self.delete_instance(instance_id)
 
 
-@test(runs_after_groups=["services.initialize"],
+@test(runs_after_groups=["services.initialize", "dbaas.guest.shutdown"],
       groups=['dbaas.api.instances.delete'])
 class ErroredInstanceDelete(TestBase):
     """
@@ -92,8 +96,12 @@ class ErroredInstanceDelete(TestBase):
     """
 
     @before_class
-    def set_up(self):
+    def set_up_err(self):
         """Create some flawed instances."""
+        from trove.taskmanager.models import CONF
+        self.old_dns_support = CONF.trove_dns_support
+        CONF.trove_dns_support = False
+
         super(ErroredInstanceDelete, self).set_up()
         # Create an instance that fails during server prov.
         self.server_error = self.create_instance('test_SERVER_ERROR')
@@ -107,6 +115,11 @@ class ErroredInstanceDelete(TestBase):
         #self.dns_error = self.create_instance('test_DNS_ERROR')
         # Create an instance that fails while it's been deleted the first time.
         self.delete_error = self.create_instance('test_ERROR_ON_DELETE')
+
+    @after_class(always_run=True)
+    def clean_up(self):
+        from trove.taskmanager.models import CONF
+        CONF.trove_dns_support = self.old_dns_support
 
     @test
     @time_out(30)

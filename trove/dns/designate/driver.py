@@ -75,7 +75,7 @@ class DesignateDriver(driver.DnsDriver):
         self.default_dns_zone = DesignateDnsZone(id=DNS_DOMAIN_ID,
                                                  name=DNS_DOMAIN_NAME)
 
-    def create_entry(self, entry):
+    def create_entry(self, entry, content):
         """Creates the entry in the driver at the given dns zone."""
         dns_zone = entry.dns_zone or self.default_dns_zone
         if not dns_zone.id:
@@ -86,7 +86,7 @@ class DesignateDriver(driver.DnsDriver):
         # Record name has to end with a '.' by dns standard
         record = Record(name=entry.name + '.',
                         type=entry.type,
-                        data=entry.content,
+                        data=content,
                         ttl=entry.ttl,
                         priority=entry.priority)
         client.records.create(dns_zone.id, record)
@@ -137,10 +137,10 @@ class DesignateDriver(driver.DnsDriver):
 class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
     """Defines how instance DNS entries are created for instances."""
 
-    def create_entry(self, instance):
+    def create_entry(self, instance_id):
         zone = DesignateDnsZone(id=DNS_DOMAIN_ID, name=DNS_DOMAIN_NAME)
         # Constructing the hostname by hashing the instance ID.
-        name = base64.b32encode(hashlib.md5(instance).digest())[:11]
+        name = base64.b32encode(hashlib.md5(instance_id).digest())[:11]
         hostname = ("%s.%s" % (name, zone.name))
         #Removing the leading dot if present
         if hostname.endswith('.'):

@@ -17,6 +17,7 @@
 
 """Model classes that form the core of instances functionality."""
 
+import re
 from datetime import datetime
 from novaclient import exceptions as nova_exceptions
 from trove.common import cfg
@@ -42,6 +43,11 @@ from trove.openstack.common.gettextutils import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+
+
+def filter_ips(ips, regex):
+    """Filter out IPs not matching regex."""
+    return [ip for ip in ips if re.search(regex, ip)]
 
 
 def load_server(context, instance_id, server_id):
@@ -116,25 +122,44 @@ class SimpleInstance(object):
 
     """
 
-    def __init__(self, context, db_info, service_status, root_password=None):
+    def __init__(self, context, db_info, service_status, root_password=None,
+                 ds_version=None, ds=None):
         self.context = context
         self.db_info = db_info
         self.service_status = service_status
         self.root_pass = root_password
-        self.ds_version = (datastore_models.DatastoreVersion.
-                           load_by_uuid(self.db_info.datastore_version_id))
-        self.ds = (datastore_models.Datastore.
-                   load(self.ds_version.datastore_id))
+        if ds_version is None:
+            self.ds_version = (datastore_models.DatastoreVersion.
+                               load_by_uuid(self.db_info.datastore_version_id))
+        if ds is None:
+            self.ds = (datastore_models.Datastore.
+                       load(self.ds_version.datastore_id))
 
     @property
     def addresses(self):
-        #TODO(tim.simpson): Review whether we should keep this... its a mess.
+        #TODO(tim.simpson): This code attaches two parts of the Nova server to
+        #                   db_info: "status" and "addresses". The idea
+        #                   originally was to listen to events to update this
+        #                   data and store it in the Trove database.
+        #                   However, it may have been unwise as a year and a
+        #                   half later we still have to load the server anyway
+        #                   and this makes the code confusing.
         if hasattr(self.db_info, 'addresses'):
             return self.db_info.addresses
+        else:
+            return None
 
     @property
     def created(self):
         return self.db_info.created
+
+    @property
+    def dns_ip_address(self):
+        """Returns the IP address to be used with DNS."""
+        ips = self.get_visible_ip_addresses()
+        if ips is None or len(ips) < 1:
+            return None
+        return ips[0]
 
     @property
     def flavor_id(self):
@@ -144,6 +169,21 @@ class SimpleInstance(object):
     @property
     def hostname(self):
         return self.db_info.hostname
+
+    def get_visible_ip_addresses(self):
+        """Returns IPs that will be visible to the user."""
+        if self.addresses is None:
+            return None
+        IPs = []
+        for label in self.addresses:
+            if (re.search(CONF.network_label_regex, label) and
+                    len(self.addresses[label]) > 0):
+                IPs.extend([addr.get('addr')
+                            for addr in self.addresses[label]])
+        # Includes ip addresses that match the regexp pattern
+        if CONF.ip_regex:
+            IPs = filter_ips(IPs, CONF.ip_regex)
+        return IPs
 
     @property
     def id(self):

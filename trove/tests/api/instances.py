@@ -12,7 +12,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import hashlib
 
 import os
 import re
@@ -53,6 +52,7 @@ from trove import tests
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.usage import create_usage_verifier
+from trove.tests.util import dns_checker
 from trove.tests.util import iso_time
 from trove.tests.util.users import Requirements
 from trove.common.utils import poll_until
@@ -114,7 +114,10 @@ class InstanceTestInfo(object):
 
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
-        return result.ip[0]
+        if not hasattr(result, 'hostname'):
+            return result.ip[0]
+        else:
+            return result.server['addresses']
 
     def get_local_id(self):
         mgmt_instance = self.dbaas_admin.management.show(self.id)
@@ -821,6 +824,19 @@ class TestGuestProcess(object):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
+      groups=[GROUP, GROUP_TEST, "dbaas.dns"])
+class DnsTests(object):
+
+    @test
+    def test_dns_entries_are_found(self):
+        """Talk to DNS system to ensure entries were created."""
+        print("Instance name=%s" % instance_info.name)
+        client = instance_info.dbaas_admin
+        mgmt_instance = client.mgmt.instances.show(instance_info.id)
+        dns_checker(mgmt_instance)
+
+
+@test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP, GROUP_TEST, "dbaas.guest.start.test"])
 class TestAfterInstanceCreatedGuestData(object):
     """
@@ -895,14 +911,6 @@ class TestInstanceListing(object):
             check.datastore()
             check.links(instance_dict['links'])
             check.used_volume()
-
-    @test(enabled=CONFIG.trove_dns_support)
-    def test_instance_hostname(self):
-        instance = dbaas.instances.get(instance_info.id)
-        assert_equal(200, dbaas.last_http_code)
-        hostname_prefix = ("%s" % (hashlib.sha1(instance.id).hexdigest()))
-        instance_hostname_prefix = instance.hostname.split('.')[0]
-        assert_equal(hostname_prefix, instance_hostname_prefix)
 
     @test
     def test_get_instance_status(self):

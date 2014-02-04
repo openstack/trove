@@ -9,6 +9,12 @@ remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
 # Fake out the RPC implementation
 rpc_backend = trove.common.rpc.impl_fake
 
+# Fake out DNS.
+trove_dns_support = True
+dns_driver = trove.tests.fakes.dns.FakeDnsDriver
+dns_instance_entry_factory = trove.tests.fakes.dns.FakeDnsInstanceEntryFactory
+
+
 # This will remove some of the verbose logging when trying to diagnose tox issues
 default_log_levels=routes.middleware=ERROR,trove.common.auth=WARN
 

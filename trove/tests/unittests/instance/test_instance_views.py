@@ -16,8 +16,6 @@
 from mock import Mock
 from testtools import TestCase
 from trove.common import cfg
-from trove.instance.views import get_ip_address
-from trove.instance.views import filter_ips
 from trove.instance.views import InstanceView
 from trove.instance.views import InstanceDetailView
 
@@ -39,40 +37,6 @@ class InstanceViewsTest(TestCase):
         CONF.network_label_regex = self.orig_label_regex
         CONF.ip_regex = self.orig_ip_regex
 
-    def test_one_network_label_exact(self):
-        CONF.network_label_regex = '^internal$'
-        ip = get_ip_address(self.addresses)
-        self.assertEqual(['10.123.123.123'], ip)
-
-    def test_one_network_label(self):
-        CONF.network_label_regex = 'public'
-        ip = get_ip_address(self.addresses)
-        self.assertEqual(['15.123.123.123'], ip)
-
-    def test_two_network_labels(self):
-        CONF.network_label_regex = '^(private|public)$'
-        ip = get_ip_address(self.addresses)
-        self.assertTrue(len(ip) == 2)
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
-
-    def test_all_network_labels(self):
-        CONF.network_label_regex = '.*'
-        ip = get_ip_address(self.addresses)
-        self.assertTrue(len(ip) == 3)
-        self.assertTrue('10.123.123.123' in ip)
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
-
-    def test_filter_ips(self):
-        CONF.network_label_regex = '.*'
-        CONF.ip_regex = '^(15.|123.)'
-        ip = get_ip_address(self.addresses)
-        ip = filter_ips(ip, CONF.ip_regex)
-        self.assertTrue(len(ip) == 2)
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
-
 
 class InstanceDetailViewTest(TestCase):
 
@@ -92,6 +56,7 @@ class InstanceDetailViewTest(TestCase):
         self.instance.addresses = {"private": [{"addr": self.ip}]}
         self.instance.volume_used = '3'
         self.instance.root_password = 'iloveyou'
+        self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
 
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
