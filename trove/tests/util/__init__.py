@@ -231,7 +231,7 @@ def mysql_connection():
 
 class MySqlConnection(object):
 
-    def assert_fails(self, user_name, password, ip):
+    def assert_fails(self, ip, user_name, password):
         from trove.tests.util import mysql
         try:
             with mysql.create_mysql_connection(ip, user_name, password):

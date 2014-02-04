@@ -48,13 +48,13 @@ class TestMysqlAccess(object):
     def test_mysql_admin(self):
         """Ensure we aren't allowed access with os_admin and wrong password."""
         util.mysql_connection().assert_fails(
-            "os_admin", "asdfd-asdf234", instance_info.get_address())
+            instance_info.get_address(), "os_admin", "asdfd-asdf234")
 
     @test
     def test_mysql_root(self):
         """Ensure we aren't allowed access with root and wrong password."""
         util.mysql_connection().assert_fails(
-            "root", "dsfgnear", instance_info.get_address())
+            instance_info.get_address(), "root", "dsfgnear")
 
 
 @test(depends_on_groups=[GROUP_START],

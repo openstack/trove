@@ -145,9 +145,9 @@ class TestUserAccessPasswordChange(UserAccessBase):
 
         conn = util.mysql_connection()
         if success:
-            conn.create(username, password, instance_info.get_address())
+            conn.create(instance_info.get_address(), username, password)
         else:
-            conn.assert_fails(username, password, instance_info.get_address())
+            conn.assert_fails(instance_info.get_address(), username, password)
 
     def _pick_a_user(self):
         users = self._user_list_from_names(self.users)
