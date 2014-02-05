@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # vim: tabstop=4 shiftwidth=4 softtabstop=4
 
-# Copyright 2013 Rackspace Hosting
+# Copyright 2011 OpenStack Foundation
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -17,10 +17,9 @@
 #    under the License.
 
 import eventlet
-eventlet.monkey_patch(all=True, thread=False)
+eventlet.monkey_patch()
 
 import gettext
-import traceback
 import sys
 
 
@@ -28,39 +27,26 @@ gettext.install('trove', unicode=1)
 
 
 from trove.common import cfg
-from trove.common import debug_utils
 from trove.common.rpc import service as rpc_service
-from trove.db import get_db_api
+from oslo.config import cfg as openstack_cfg
 from trove.openstack.common import log as logging
 from trove.openstack.common import service as openstack_service
 
+
 CONF = cfg.CONF
-
-
-def launch_services():
-    get_db_api().configure_db(CONF)
-    manager = 'trove.conductor.manager.Manager'
-    topic = CONF.conductor_queue
-    server = rpc_service.RpcService(manager=manager, topic=topic)
-    launcher = openstack_service.launch(server,
-                                        workers=CONF.trove_conductor_workers)
-    launcher.wait()
+CONF.register_opts([openstack_cfg.StrOpt('guest_id')])
 
 
 def main():
     cfg.parse_args(sys.argv)
+    from trove.guestagent import dbaas
     logging.setup(None)
 
-    debug_utils.setup()
-
-    if not debug_utils.enabled():
-        eventlet.monkey_patch(thread=True)
-    try:
-        launch_services()
-    except RuntimeError as error:
-        print(traceback.format_exc())
-        sys.exit("ERROR: %s" % error)
-
-
-if __name__ == '__main__':
-    main()
+    manager = dbaas.datastore_registry().get(CONF.datastore_manager)
+    if not manager:
+        msg = ("Manager class not registered for datastore manager %s" %
+               CONF.datastore_manager)
+        raise RuntimeError(msg)
+    server = rpc_service.RpcService(manager=manager, host=CONF.guest_id)
+    launcher = openstack_service.launch(server)
+    launcher.wait()

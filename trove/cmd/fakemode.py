@@ -17,20 +17,11 @@
 #    under the License.
 
 import gettext
-import os
 import sys
 
 
 gettext.install('trove', unicode=1)
 
-
-# If ../trove/__init__.py exists, add ../ to Python search path, so that
-# it will override what happens to be installed in /usr/(local/)lib/python...
-possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
-                                                os.pardir,
-                                                os.pardir))
-if os.path.exists(os.path.join(possible_topdir, 'trove', '__init__.py')):
-    sys.path.insert(0, possible_topdir)
 
 from trove.common import cfg
 from oslo.config import cfg as openstack_cfg
@@ -64,17 +55,12 @@ def start_fake_taskmanager():
 
 
 def run_server():
-    try:
-        get_db_api().configure_db(CONF)
-        conf_file = CONF.find_file(CONF.api_paste_config)
-        launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
-                               workers=CONF.trove_api_workers)
-        start_fake_taskmanager()
-        launcher.wait()
-    except Exception:
-        import traceback
-        print(traceback.format_exc())
-        sys.exit("ERROR Starting up")
+    get_db_api().configure_db(CONF)
+    conf_file = CONF.find_file(CONF.api_paste_config)
+    launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
+                           workers=CONF.trove_api_workers)
+    start_fake_taskmanager()
+    launcher.wait()
 
 
 def main():
@@ -96,7 +82,3 @@ def main():
                 f.write(str(pid))
     else:
         run_server()
-
-
-if __name__ == '__main__':
-    main()
