@@ -22,6 +22,7 @@ from trove.common import cfg
 from trove.common import context
 from trove.common import instance as rd_instance
 from trove.conductor import api as conductor_api
+from trove.guestagent.common import timeutils
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
 
@@ -114,7 +115,9 @@ class BaseDbStatus(object):
         heartbeat = {
             'service_status': status.description,
         }
-        conductor_api.API(ctxt).heartbeat(CONF.guest_id, heartbeat)
+        conductor_api.API(ctxt).heartbeat(CONF.guest_id,
+                                          heartbeat,
+                                          sent=timeutils.float_utcnow())
         LOG.debug("Successfully cast set_status.")
         self.status = status
 

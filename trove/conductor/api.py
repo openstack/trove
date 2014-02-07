@@ -16,6 +16,7 @@
 from trove.common import cfg
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _
 
 
 CONF = cfg.CONF
@@ -34,17 +35,20 @@ class API(proxy.RpcProxy):
         """Create the routing key for conductor."""
         return CONF.conductor_queue
 
-    def heartbeat(self, instance_id, payload):
-        LOG.debug("Making async call to cast heartbeat for instance: %s"
+    def heartbeat(self, instance_id, payload, sent=None):
+        LOG.debug(_("Making async call to cast heartbeat for instance: %s")
                   % instance_id)
         self.cast(self.context, self.make_msg("heartbeat",
                                               instance_id=instance_id,
+                                              sent=sent,
                                               payload=payload))
 
-    def update_backup(self, instance_id, backup_id, **backup_fields):
-        LOG.debug("Making async call to cast update_backup for instance: %s"
+    def update_backup(self, instance_id, backup_id, sent=None,
+                      **backup_fields):
+        LOG.debug(_("Making async call to cast update_backup for instance: %s")
                   % instance_id)
         self.cast(self.context, self.make_msg("update_backup",
                                               instance_id=instance_id,
                                               backup_id=backup_id,
+                                              sent=sent,
                                               **backup_fields))

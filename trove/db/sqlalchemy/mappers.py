@@ -59,6 +59,8 @@ def map(engine, models):
                Table('configurations', meta, autoload=True))
     orm.mapper(models['configuration_parameters'],
                Table('configuration_parameters', meta, autoload=True))
+    orm.mapper(models['conductor_lastseen'],
+               Table('conductor_lastseen', meta, autoload=True))
 
 
 def mapping_exists(model):

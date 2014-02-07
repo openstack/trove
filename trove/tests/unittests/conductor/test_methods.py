@@ -16,9 +16,10 @@ import testtools
 from mockito import unstub
 from trove.backup import models as bkup_models
 from trove.common import exception as t_exception
-from trove.common import instance as t_instance
 from trove.common import utils
+from trove.common.instance import ServiceStatuses
 from trove.conductor import manager as conductor_manager
+from trove.guestagent.common import timeutils
 from trove.instance import models as t_models
 from trove.tests.unittests.util import util
 
@@ -45,7 +46,7 @@ class ConductorMethodTests(testtools.TestCase):
         iss = t_models.InstanceServiceStatus(
             id=new_id,
             instance_id=self.instance_id,
-            status=t_instance.ServiceStatuses.NEW)
+            status=ServiceStatuses.NEW)
         iss.save()
         return new_id
 
@@ -99,10 +100,10 @@ class ConductorMethodTests(testtools.TestCase):
 
     def test_heartbeat_instance_status_changed(self):
         iss_id = self._create_iss()
-        payload = {'service_status': 'building'}
+        payload = {'service_status': ServiceStatuses.BUILDING.description}
         self.cond_mgr.heartbeat(None, self.instance_id, payload)
         iss = self._get_iss(iss_id)
-        self.assertEqual(t_instance.ServiceStatuses.BUILDING, iss.status)
+        self.assertEqual(ServiceStatuses.BUILDING, iss.status)
 
     # --- Tests for update_backup ---
 
@@ -135,3 +136,57 @@ class ConductorMethodTests(testtools.TestCase):
                                     name=new_name)
         bkup = self._get_backup(bkup_id)
         self.assertEqual(new_name, bkup.name)
+
+    # --- Tests for discarding old messages ---
+
+    def test_heartbeat_newer_timestamp_accepted(self):
+        new_p = {'service_status': ServiceStatuses.NEW.description}
+        build_p = {'service_status': ServiceStatuses.BUILDING.description}
+        iss_id = self._create_iss()
+        iss = self._get_iss(iss_id)
+        now = timeutils.float_utcnow()
+        future = now + 60
+        self.cond_mgr.heartbeat(None, self.instance_id, new_p, sent=now)
+        self.cond_mgr.heartbeat(None, self.instance_id, build_p, sent=future)
+        iss = self._get_iss(iss_id)
+        self.assertEqual(ServiceStatuses.BUILDING, iss.status)
+
+    def test_heartbeat_older_timestamp_discarded(self):
+        new_p = {'service_status': ServiceStatuses.NEW.description}
+        build_p = {'service_status': ServiceStatuses.BUILDING.description}
+        iss_id = self._create_iss()
+        iss = self._get_iss(iss_id)
+        now = timeutils.float_utcnow()
+        past = now - 60
+        self.cond_mgr.heartbeat(None, self.instance_id, new_p, sent=past)
+        self.cond_mgr.heartbeat(None, self.instance_id, build_p, sent=past)
+        iss = self._get_iss(iss_id)
+        self.assertEqual(ServiceStatuses.NEW, iss.status)
+
+    def test_backup_newer_timestamp_accepted(self):
+        old_name = "oldname"
+        new_name = "renamed"
+        bkup_id = self._create_backup(old_name)
+        bkup = self._get_backup(bkup_id)
+        now = timeutils.float_utcnow()
+        future = now + 60
+        self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
+                                    sent=now, name=old_name)
+        self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
+                                    sent=future, name=new_name)
+        bkup = self._get_backup(bkup_id)
+        self.assertEqual(new_name, bkup.name)
+
+    def test_backup_older_timestamp_discarded(self):
+        old_name = "oldname"
+        new_name = "renamed"
+        bkup_id = self._create_backup(old_name)
+        bkup = self._get_backup(bkup_id)
+        now = timeutils.float_utcnow()
+        past = now - 60
+        self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
+                                    sent=now, name=old_name)
+        self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
+                                    sent=past, name=new_name)
+        bkup = self._get_backup(bkup_id)
+        self.assertEqual(old_name, bkup.name)

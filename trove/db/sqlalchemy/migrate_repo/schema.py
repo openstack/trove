@@ -24,24 +24,44 @@ import sqlalchemy.types
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 
 
-String = lambda length: sqlalchemy.types.String(length=length)
+class String(sqlalchemy.types.String):
+    def __init__(self, length, *args, **kwargs):
+        super(String, self).__init__(*args, length=length, **kwargs)
 
 
-Text = lambda: sqlalchemy.types.Text(length=None)
+class Text(sqlalchemy.types.Text):
+    def __init__(self, length=None, *args, **kwargs):
+        super(Text, self).__init__(*args, length=length, **kwargs)
 
 
-Boolean = lambda: sqlalchemy.types.Boolean(create_constraint=True, name=None)
+class Boolean(sqlalchemy.types.Boolean):
+    def __init__(self, create_constraint=True, name=None, *args, **kwargs):
+        super(Boolean, self).__init__(*args,
+                                      create_constraint=create_constraint,
+                                      name=name,
+                                      **kwargs)
 
 
-DateTime = lambda: sqlalchemy.types.DateTime(timezone=False)
+class DateTime(sqlalchemy.types.DateTime):
+    def __init__(self, timezone=False, *args, **kwargs):
+        super(DateTime, self).__init__(*args,
+                                       timezone=timezone,
+                                       **kwargs)
 
 
-Integer = lambda: sqlalchemy.types.Integer()
+class Integer(sqlalchemy.types.Integer):
+    def __init__(self, *args, **kwargs):
+        super(Integer, self).__init__(*args, **kwargs)
 
 
-BigInteger = lambda: sqlalchemy.types.BigInteger()
+class BigInteger(sqlalchemy.types.BigInteger):
+    def __init__(self, *args, **kwargs):
+        super(BigInteger, self).__init__(*args, **kwargs)
 
-Float = lambda: sqlalchemy.types.Float()
+
+class Float(sqlalchemy.types.Float):
+    def __init__(self, *args, **kwargs):
+        super(Float, self).__init__(*args, **kwargs)
 
 
 def create_tables(tables):
