@@ -14,46 +14,7 @@
 #    under the License.
 
 import io
-import json
-from trove.common import cfg
-from trove.common import exception
-from trove.common import utils
-from trove.openstack.common import log as logging
 from six.moves import configparser
-
-
-LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
-ENV = utils.ENV
-
-
-def _get_item(key, dictList):
-    for item in dictList:
-        if key == item.get('name'):
-            return item
-
-
-def do_configs_require_restart(overrides, datastore_manager='mysql'):
-    rules = get_validation_rules(datastore_manager=datastore_manager)
-    LOG.debug("overrides: %s" % overrides)
-    LOG.debug("rules?: %s" % rules)
-    for key in overrides.keys():
-        rule = _get_item(key, rules['configuration-parameters'])
-        if rule.get('restart_required'):
-            LOG.debug("rule requires restart: %s" % rule)
-            return True
-    return False
-
-
-def get_validation_rules(datastore_manager='mysql'):
-    try:
-        config_location = ("%s/validation-rules.json" % datastore_manager)
-        template = ENV.get_template(config_location)
-        return json.loads(template.render())
-    except Exception:
-        msg = "This operation is not supported by this datastore at this time."
-        LOG.exception(msg)
-        raise exception.UnprocessableEntity(message=msg)
 
 
 class MySQLConfParser(object):

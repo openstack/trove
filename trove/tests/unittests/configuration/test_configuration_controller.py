@@ -17,6 +17,7 @@
 import jsonschema
 from testtools import TestCase
 from trove.configuration.service import ConfigurationsController
+from trove.extensions.mgmt.configuration import service
 from trove.common import configurations
 
 
@@ -124,3 +125,80 @@ class TestConfigurationController(TestCase):
         self.assertIsNotNone(schema)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
+
+
+class TestConfigurationsParameterController(TestCase):
+    def setUp(self):
+        super(TestConfigurationsParameterController, self).setUp()
+        self.controller = service.ConfigurationsParameterController()
+
+    def test_validate_create_configuration_param(self):
+        body = {
+            'configuration-parameter': {
+                'name': 'test',
+                'restart_required': 1,
+                'data_type': 'string',
+                'min_size': '0',
+                'max_size': '255'
+            }
+        }
+        schema = self.controller.get_schema('create', body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertTrue(validator.is_valid(body))
+
+    def test_validate_create_invalid_restart_required(self):
+        body = {
+            'configuration-parameter': {
+                'name': 'test',
+                'restart_required': 5,
+                'data_type': 'string',
+                'min_size': 0,
+                'max_size': 255
+            }
+        }
+        schema = self.controller.get_schema('create', body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        self.assertIn("5 is greater than the maximum of 1", error_messages)
+        self.assertIn("0 is not of type 'string'", error_messages)
+        self.assertIn("255 is not of type 'string'", error_messages)
+
+    def test_validate_create_invalid_restart_required_2(self):
+        body = {
+            'configuration-parameter': {
+                'name': 'test',
+                'restart_required': -1,
+                'data_type': 'string',
+                'min_size': '0',
+                'max_size': '255'
+            }
+        }
+        schema = self.controller.get_schema('create', body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        self.assertIn("-1 is less than the minimum of 0", error_messages)
+
+    def test_validate_create_invalid_restart_required_3(self):
+        body = {
+            'configuration-parameter': {
+                'name': 'test',
+                'restart_required': 'yes',
+                'data_type': 'string',
+                'min_size': '0',
+                'max_size': '255'
+            }
+        }
+        schema = self.controller.get_schema('create', body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        self.assertIn("'yes' is not of type 'integer'", error_messages)

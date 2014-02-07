@@ -24,6 +24,31 @@ url_ref = {
                '|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 }
 
+boolean_string = {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 1
+}
+
+configuration_data_types = {
+    "type": "string",
+    "minLength": 1,
+    "pattern": "integer|string"
+}
+
+configuration_integer_size = {
+    "type": "string",
+    "maxLength": 40,
+    "pattern": "[0-9]+"
+}
+
+configuration_non_empty_string = {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 128,
+    "pattern": "^.*[0-9a-zA-Z]+.*$"
+}
+
 flavorref = {
     'oneOf': [
         url_ref,
@@ -500,6 +525,45 @@ configuration = {
             }
         }
     }
+}
+
+mgmt_configuration = {
+    "create": {
+        "name": "configuration_parameter:create",
+        "type": "object",
+        "required": ["configuration-parameter"],
+        "properties": {
+            "configuration-parameter": {
+                "type": "object",
+                "required": ["name", "restart_required", "data_type"],
+                "properties": {
+                    "name": configuration_non_empty_string,
+                    "data_type": configuration_data_types,
+                    "restart_required": boolean_string,
+                    "max_size": configuration_integer_size,
+                    "min_size": configuration_integer_size,
+                }
+            }
+        }
+    },
+    "update": {
+        "name": "configuration_parameter:update",
+        "type": "object",
+        "required": ["configuration-parameter"],
+        "properties": {
+            "configuration-parameter": {
+                "type": "object",
+                "required": ["name", "restart_required", "data_type"],
+                "properties": {
+                    "name": configuration_non_empty_string,
+                    "data_type": configuration_data_types,
+                    "restart_required": boolean_string,
+                    "max_size": configuration_integer_size,
+                    "min_size": configuration_integer_size,
+                }
+            }
+        }
+    },
 }
 
 account = {
