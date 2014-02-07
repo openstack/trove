@@ -1,0 +1,12 @@
+[mysqld]
+{% for key, value in overrides.iteritems() -%}
+{%- if value == True -%}
+{{key}} = 1
+{%- elif value == False -%}
+{{key}} = 0
+{%- elif value == "" -%}
+{{key}}
+{%- else -%}
+{{key}}={{value}}
+{%- endif %}
+{% endfor %}
