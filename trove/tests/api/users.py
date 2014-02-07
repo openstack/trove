@@ -443,8 +443,8 @@ class TestUsers(object):
 
     def _check_connection(self, username, password):
         if not FAKE:
-            util.mysql_connection().assert_fails(username, password,
-                                                 instance_info.get_address())
+            util.mysql_connection().assert_fails(instance_info.get_address(),
+                                                 username, password)
         # Also determine the db is gone via API.
         result = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
