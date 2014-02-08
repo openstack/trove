@@ -110,5 +110,5 @@ def add_options(parser):
         metavar="CONNECTION",
         default=None,
         help="A valid SQLAlchemy connection string for the "
-             "registry database. Default: %default")
+             "registry database. Default: %(default)s.")
     parser.add_option_group(group)

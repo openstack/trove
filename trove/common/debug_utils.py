@@ -35,17 +35,17 @@ pydev_debug_opts = [
                help="Enable or disable pydev remote debugging. "
                     "If value is 'auto' tries to connect to remote "
                     "debugger server, but in case of error "
-                    "continue running with disabled debugging"),
+                    "continues running with debugging disabled."),
 
     cfg.StrOpt("pydev_debug_host",
-               help="pydev debug server host (localhost by default)"),
+               help="Pydev debug server host (localhost by default)."),
 
     cfg.IntOpt("pydev_debug_port",
-               help="pydev debug server port (5678 by default)"),
+               help="Pydev debug server port (5678 by default)."),
 
     cfg.StrOpt("pydev_path",
-               help="defines path to pydevd library, used if pydevd is "
-                    "not found in python sys.path")
+               help="Set path to pydevd library, used if pydevd is "
+                    "not found in python sys.path.")
 ]
 
 CONF.register_opts(pydev_debug_opts)
