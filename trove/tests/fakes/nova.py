@@ -281,6 +281,15 @@ class FakeServers(object):
         self.db[id] = server
         if name.endswith('SERVER_ERROR'):
             raise nova_exceptions.ClientException("Fake server create error.")
+
+        if availability_zone == 'BAD_ZONE':
+            raise nova_exceptions.ClientException("The requested availability "
+                                                  "zone is not available.")
+
+        if nics is not None and nics.port_id == 'UNKNOWN':
+            raise nova_exceptions.ClientException("The requested availability "
+                                                  "zone is not available.")
+
         server.schedule_status("ACTIVE", 1)
         LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
         return server

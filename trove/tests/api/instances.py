@@ -28,6 +28,7 @@ GROUP_USERS = "dbaas.api.users"
 GROUP_ROOT = "dbaas.api.root"
 GROUP_DATABASES = "dbaas.api.databases"
 GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
+GROUP_CREATE_INSTANCE_FAILURE = "dbaas.api.failures"
 
 from datetime import datetime
 from time import sleep
@@ -59,6 +60,7 @@ from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
 from trove.tests.util import test_config
+from trove.tests.util import skip_if_xml
 
 FAKE = test_config.values['fake_mode']
 
@@ -73,6 +75,7 @@ class InstanceTestInfo(object):
         self.dbaas_flavor_href = None  # The flavor of the instance.
         self.dbaas_datastore = None  # The datastore id
         self.dbaas_datastore_version = None  # The datastore version id
+        self.dbaas_inactive_datastore_version = None  # The DS inactive id
         self.id = None  # The ID of the instance in the database.
         self.local_id = None
         self.address = None
@@ -307,98 +310,71 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
 
 @test(depends_on_classes=[InstanceSetup],
-      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
+      groups=[GROUP, GROUP_CREATE_INSTANCE_FAILURE],
       runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
-class CreateInstance(object):
-    """Test to create a Database Instance
+class CreateInstanceFail(object):
 
-    If the call returns without raising an exception this test passes.
+    def instance_in_error(self, instance_id):
+        def check_if_error():
+            instance = dbaas.instances.get(instance_id)
+            if instance.status == "ERROR":
+                return True
+            else:
+                # The status should still be BUILD
+                assert_equal("BUILD", instance.status)
+                return False
+        return check_if_error
 
-    """
-
-    @test
-    def test_create(self):
-        databases = []
-        databases.append({"name": "firstdb", "character_set": "latin2",
-                          "collate": "latin2_general_ci"})
-        databases.append({"name": "db2"})
-        instance_info.databases = databases
-        users = []
-        users.append({"name": "lite", "password": "litepass",
-                      "databases": [{"name": "firstdb"}]})
-        instance_info.users = users
-        instance_info.dbaas_datastore = CONFIG.dbaas_datastore
-        if VOLUME_SUPPORT:
-            instance_info.volume = {'size': 1}
-        else:
-            instance_info.volume = None
-
-        if create_new_instance():
-            instance_info.initial_result = dbaas.instances.create(
-                instance_info.name,
-                instance_info.dbaas_flavor_href,
-                instance_info.volume,
-                databases,
-                users,
-                availability_zone="nova",
-                datastore=instance_info.dbaas_datastore,
-                datastore_version=instance_info.dbaas_datastore_version)
-            assert_equal(200, dbaas.last_http_code)
-        else:
-            id = existing_instance()
-            instance_info.initial_result = dbaas.instances.get(id)
-
-        result = instance_info.initial_result
-        instance_info.id = result.id
-        instance_info.dbaas_datastore_version = result.datastore['version']
-
-        report = CONFIG.get_report()
-        report.log("Instance UUID = %s" % instance_info.id)
-        if create_new_instance():
-            assert_equal("BUILD", instance_info.initial_result.status)
-
-        else:
-            report.log("Test was invoked with TESTS_USE_INSTANCE_ID=%s, so no "
-                       "instance was actually created." % id)
-
-        # Check these attrs only are returned in create response
-        expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
-                          'name', 'status', 'updated', 'datastore']
-        if ROOT_ON_CREATE:
-            expected_attrs.append('password')
-        if VOLUME_SUPPORT:
-            expected_attrs.append('volume')
-        if CONFIG.trove_dns_support:
-            expected_attrs.append('hostname')
-
-        with CheckInstance(result._info) as check:
-            if create_new_instance():
-                check.attrs_exist(result._info, expected_attrs,
-                                  msg="Create response")
-            # Don't CheckInstance if the instance already exists.
-            check.flavor()
-            check.datastore()
-            check.links(result._info['links'])
-            if VOLUME_SUPPORT:
-                check.volume()
+    def delete_async(self, instance_id):
+        dbaas.instances.delete(instance_id)
+        while True:
+            try:
+                dbaas.instances.get(instance_id)
+            except exceptions.NotFound:
+                return True
+            time.sleep(1)
 
     @test
+    @time_out(30)
     def test_create_with_bad_availability_zone(self):
         instance_name = "instance-failure-with-bad-ephemeral"
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
         databases = []
-        assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                      instance_name, instance_info.dbaas_flavor_href,
-                      None, databases, availability_zone="NOOP")
-        assert_equal(400, dbaas.last_http_code)
+        result = dbaas.instances.create(instance_name,
+                                        instance_info.dbaas_flavor_href,
+                                        volume, databases,
+                                        availability_zone="BAD_ZONE")
 
-    @test(enabled=not FAKE)
+        poll_until(self.instance_in_error(result.id))
+        instance = dbaas.instances.get(result.id)
+        assert_equal("ERROR", instance.status)
+
+        self.delete_async(result.id)
+
+    @test
     def test_create_with_bad_nics(self):
+        # FIXME: (steve-leon) Remove this once xml is yanked out
+        skip_if_xml()
         instance_name = "instance-failure-with-bad-nics"
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
         databases = []
-        assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                      instance_name, instance_info.dbaas_flavor_href,
-                      None, databases, nics="BAD")
-        assert_equal(400, dbaas.last_http_code)
+        bad_nic = [{"port-id": "UNKNOWN", "net-id": "1234",
+                    "v4-fixed-ip": "1.2.3.4"}]
+        result = dbaas.instances.create(instance_name,
+                                        instance_info.dbaas_flavor_href,
+                                        volume, databases, nics=bad_nic)
+
+        poll_until(self.instance_in_error(result.id))
+        instance = dbaas.instances.get(result.id)
+        assert_equal("ERROR", instance.status)
+
+        self.delete_async(result.id)
 
     @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_empty_volume(self):
@@ -559,7 +535,7 @@ class CreateInstance(object):
         instance_name = "datastore_version_notfound"
         databases = []
         users = []
-        datastore = "mysql"
+        datastore = CONFIG.dbaas_datastore
         datastore_version = "nonexistent"
         try:
             assert_raises(exceptions.NotFound,
@@ -582,8 +558,8 @@ class CreateInstance(object):
         instance_name = "datastore_version_inactive"
         databases = []
         users = []
-        datastore = "mysql"
-        datastore_version = "mysql_inactive_version"
+        datastore = CONFIG.dbaas_datastore
+        datastore_version = CONFIG.dbaas_inactive_datastore_version
         try:
             assert_raises(exceptions.NotFound,
                           dbaas.instances.create, instance_name,
@@ -618,6 +594,85 @@ def assert_unprocessable(func, *args):
                          if x.name in self.secGroupName]
         assert_is_not_none(securityGroup[0])
         assert_not_equal(len(securityGroup[0].rules), 0)
+
+
+@test(depends_on_classes=[InstanceSetup],
+      run_after_class=[CreateInstanceFail],
+      groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
+      runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
+class CreateInstance(object):
+
+    """Test to create a Database Instance
+
+    If the call returns without raising an exception this test passes.
+
+    """
+
+    @test
+    def test_create(self):
+        databases = []
+        databases.append({"name": "firstdb", "character_set": "latin2",
+                          "collate": "latin2_general_ci"})
+        databases.append({"name": "db2"})
+        instance_info.databases = databases
+        users = []
+        users.append({"name": "lite", "password": "litepass",
+                      "databases": [{"name": "firstdb"}]})
+        instance_info.users = users
+        instance_info.dbaas_datastore = CONFIG.dbaas_datastore
+        if VOLUME_SUPPORT:
+            instance_info.volume = {'size': 1}
+        else:
+            instance_info.volume = None
+
+        if create_new_instance():
+            instance_info.initial_result = dbaas.instances.create(
+                instance_info.name,
+                instance_info.dbaas_flavor_href,
+                instance_info.volume,
+                databases,
+                users,
+                availability_zone="nova",
+                datastore=instance_info.dbaas_datastore,
+                datastore_version=instance_info.dbaas_datastore_version)
+            assert_equal(200, dbaas.last_http_code)
+        else:
+            id = existing_instance()
+            instance_info.initial_result = dbaas.instances.get(id)
+
+        result = instance_info.initial_result
+        instance_info.id = result.id
+        instance_info.dbaas_datastore_version = result.datastore['version']
+
+        report = CONFIG.get_report()
+        report.log("Instance UUID = %s" % instance_info.id)
+        if create_new_instance():
+            assert_equal("BUILD", instance_info.initial_result.status)
+
+        else:
+            report.log("Test was invoked with TESTS_USE_INSTANCE_ID=%s, so no "
+                       "instance was actually created." % id)
+
+        # Check these attrs only are returned in create response
+        expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
+                          'name', 'status', 'updated', 'datastore']
+        if ROOT_ON_CREATE:
+            expected_attrs.append('password')
+        if VOLUME_SUPPORT:
+            expected_attrs.append('volume')
+        if CONFIG.trove_dns_support:
+            expected_attrs.append('hostname')
+
+        with CheckInstance(result._info) as check:
+            if create_new_instance():
+                check.attrs_exist(result._info, expected_attrs,
+                                  msg="Create response")
+            # Don't CheckInstance if the instance already exists.
+            check.flavor()
+            check.datastore()
+            check.links(result._info['links'])
+            if VOLUME_SUPPORT:
+                check.volume()
 
 
 @test(depends_on_classes=[CreateInstance],
