@@ -15,7 +15,6 @@
 from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import exception
-from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatus
 from trove.conductor.models import LastSeen
 from trove.instance import models as t_models
@@ -32,10 +31,6 @@ class Manager(periodic_task.PeriodicTasks):
 
     def __init__(self):
         super(Manager, self).__init__()
-        self.admin_context = TroveContext(
-            user=CONF.nova_proxy_admin_user,
-            auth_token=CONF.nova_proxy_admin_pass,
-            tenant=CONF.nova_proxy_admin_tenant_name)
 
     def _message_too_old(self, instance_id, method_name, sent):
         fields = {
