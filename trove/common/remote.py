@@ -46,7 +46,7 @@ def nova_client(context):
     client = Client(context.user, context.auth_token,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
-    client.client.management_url = "%s/%s/" % (COMPUTE_URL, context.tenant)
+    client.client.management_url = "%s/%s" % (COMPUTE_URL, context.tenant)
 
     return client
 
@@ -66,12 +66,12 @@ def cinder_client(context):
                                  project_id=context.tenant,
                                  auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
-    client.client.management_url = "%s/%s/" % (VOLUME_URL, context.tenant)
+    client.client.management_url = "%s/%s" % (VOLUME_URL, context.tenant)
     return client
 
 
 def heat_client(context):
-    endpoint = "%s/%s/" % (HEAT_URL, context.tenant)
+    endpoint = "%s/%s" % (HEAT_URL, context.tenant)
     client = HeatClient.Client(token=context.auth_token,
                                os_no_client_auth=True,
                                endpoint=endpoint)
