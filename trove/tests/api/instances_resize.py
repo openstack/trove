@@ -178,6 +178,8 @@ class ResizeTests(ResizeTestBase):
         self.instance.service_status = rd_instance.ServiceStatuses.SHUTDOWN
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2,
+                         time_out=120).AndRaise(PollTimeOut)
         self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
@@ -190,6 +192,7 @@ class ResizeTests(ResizeTestBase):
         self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.server.status = "SHUTDOWN"
         self.instance.server.confirm_resize()
 
@@ -236,4 +239,5 @@ class MigrateTests(ResizeTestBase):
         self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self._start_mysql()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance.server.confirm_resize()
