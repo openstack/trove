@@ -384,7 +384,7 @@ class MySqlAdmin(object):
                     try:
                         mydb.name = database
                     except ValueError:
-                        LOG.info(_(
+                        raise exception.BadRequest(_(
                             "Grant access to %s is not allowed") % database)
 
                     g = sql_query.Grant(permissions='ALL', database=mydb.name,
