@@ -21,6 +21,7 @@ import re
 from tempfile import NamedTemporaryFile
 
 import pexpect
+import six
 
 from trove.common import exception
 from trove.common import utils
@@ -405,6 +406,6 @@ class BasePackage(type):
         return super(BasePackage, meta).__new__(meta, name, bases, dct)
 
 
+@six.add_metaclass(BasePackage)
 class Package(object):
-
-    __metaclass__ = BasePackage
+    pass

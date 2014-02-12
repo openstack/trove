@@ -15,6 +15,9 @@
 #
 
 import abc
+
+import six
+
 from trove.common import utils
 from trove.openstack.common import log as logging
 
@@ -22,8 +25,8 @@ from trove.openstack.common import log as logging
 LOG = logging.getLogger(__name__)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class Strategy(object):
-    __metaclass__ = abc.ABCMeta
 
     __strategy_ns__ = None
 
