@@ -34,3 +34,11 @@ class Storage(Strategy):
     @abc.abstractmethod
     def load(self, location, backup_checksum):
         """Load a stream from a persisted storage location  """
+
+    @abc.abstractmethod
+    def load_metadata(self, location, backup_checksum):
+        """Load metadata for a persisted object."""
+
+    @abc.abstractmethod
+    def save_metadata(self, location, metadata={}):
+        """Save metadata for a persisted object."""

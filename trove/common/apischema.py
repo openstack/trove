@@ -354,7 +354,8 @@ backup = {
                 "properties": {
                     "description": non_empty_string,
                     "instance": uuid,
-                    "name": non_empty_string
+                    "name": non_empty_string,
+                    "parent_id": uuid
                 }
             }
         }

@@ -31,7 +31,8 @@ class BackupView(object):
             "created": self.backup.created,
             "updated": self.backup.updated,
             "size": self.backup.size,
-            "status": self.backup.state
+            "status": self.backup.state,
+            "parent_id": self.backup.parent_id,
         }
         }
 

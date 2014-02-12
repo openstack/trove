@@ -13,7 +13,8 @@
 #limitations under the License.
 
 import testtools
-from mockito import when, unstub
+from mock import Mock
+from mockito import when, unstub, any
 import hashlib
 
 from trove.common.context import TroveContext
@@ -265,3 +266,58 @@ class StreamReaderTests(testtools.TestCase):
         results = self.stream.read(0)
         self.assertEqual('', results, "Results should be empty.")
         self.assertTrue(self.stream.end_of_file)
+
+
+class SwiftMetadataTests(testtools.TestCase):
+
+    def setUp(self):
+        super(SwiftMetadataTests, self).setUp()
+        self.swift_client = FakeSwiftConnection()
+        self.context = TroveContext()
+        when(swift).create_swift_client(self.context).thenReturn(
+            self.swift_client)
+        self.swift = SwiftStorage(self.context)
+
+    def tearDown(self):
+        super(SwiftMetadataTests, self).tearDown()
+        unstub()
+
+    def test__get_attr(self):
+        normal_header = self.swift._get_attr('content-type')
+        self.assertEqual('content_type', normal_header)
+        meta_header = self.swift._get_attr('x-object-meta-foo')
+        self.assertEqual('foo', meta_header)
+        meta_header_two = self.swift._get_attr('x-object-meta-foo-bar')
+        self.assertEqual('foo_bar', meta_header_two)
+
+    def test__set_attr(self):
+        meta_header = self.swift._set_attr('foo')
+        self.assertEqual('X-Object-Meta-foo', meta_header)
+        meta_header_two = self.swift._set_attr('foo_bar')
+        self.assertEqual('X-Object-Meta-foo-bar', meta_header_two)
+
+    def test_load_metadata(self):
+        location = 'http://mockswift.com/v1/545433/backups/mybackup.tar'
+        headers = {
+            'etag': '"fake-md5-sum"',
+            'x-object-meta-lsn': '1234567'
+        }
+        when(self.swift_client).head_object(any(), any()).thenReturn(
+            headers)
+
+        metadata = self.swift.load_metadata(location, 'fake-md5-sum')
+        self.assertEqual({'lsn': '1234567'}, metadata)
+
+    def test_save_metadata(self):
+        location = 'http://mockswift.com/v1/545433/backups/mybackup.tar'
+        metadata = {'lsn': '1234567'}
+        self.swift_client.post_object = Mock()
+
+        self.swift.save_metadata(location, metadata=metadata)
+
+        headers = {
+            'X-Object-Meta-lsn': '1234567',
+            'X-Object-Manifest': None
+        }
+        self.swift_client.post_object.assert_called_with(
+            'backups', 'mybackup.tar', headers=headers)

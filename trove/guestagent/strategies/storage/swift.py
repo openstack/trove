@@ -18,6 +18,7 @@ import hashlib
 
 from trove.guestagent.strategies.storage import base
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _  # noqa
 from trove.common.remote import create_swift_client
 from trove.common import cfg
 
@@ -192,3 +193,44 @@ class SwiftStorage(base.Storage):
             self._verify_checksum(headers.get('etag', ''), backup_checksum)
 
         return info
+
+    def _get_attr(self, original):
+        """Get a friendly name from an object header key"""
+        key = original.replace('-', '_')
+        key = key.replace('x_object_meta_', '')
+        return key
+
+    def _set_attr(self, original):
+        """Return a swift friendly header key"""
+        key = original.replace('_', '-')
+        return 'X-Object-Meta-%s' % key
+
+    def load_metadata(self, location, backup_checksum):
+        """Load metadata from swift."""
+
+        storage_url, container, filename = self._explodeLocation(location)
+
+        headers = self.connection.head_object(container, filename)
+
+        if CONF.verify_swift_checksum_on_restore:
+            self._verify_checksum(headers.get('etag', ''), backup_checksum)
+
+        _meta = {}
+        for key, value in headers.iteritems():
+            if key.startswith('x-object-meta'):
+                _meta[self._get_attr(key)] = value
+
+        return _meta
+
+    def save_metadata(self, location, metadata={}):
+        """Save metadata to a swift object."""
+
+        storage_url, container, filename = self._explodeLocation(location)
+
+        _headers = self.connection.head_object(container, filename)
+        headers = {'X-Object-Manifest': _headers.get('x-object-manifest')}
+        for key, value in metadata.iteritems():
+            headers[self._set_attr(key)] = value
+
+        LOG.info(_("Writing metadata: %s"), str(headers))
+        self.connection.post_object(container, filename, headers=headers)
