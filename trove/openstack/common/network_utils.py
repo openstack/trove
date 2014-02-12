@@ -19,7 +19,7 @@
 Network-related utilities and helper functions.
 """
 
-import urlparse
+import six.moves.urllib.parse as urlparse
 
 
 def parse_host_port(address, default_port=None):

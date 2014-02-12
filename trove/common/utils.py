@@ -21,7 +21,7 @@ import inspect
 import jinja2
 import sys
 import time
-import urlparse
+import six.moves.urllib.parse as urlparse
 import uuid
 import os
 import shutil

@@ -17,7 +17,7 @@
 Records interface.
 """
 
-import urlparse
+import six.moves.urllib.parse as urlparse
 
 from novaclient import base
 from rsdns.client.future import FutureResource
