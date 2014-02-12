@@ -1181,13 +1181,12 @@ class ResizeActionBase(ConfigurationMixin):
 
     def _assert_mysql_is_ok(self):
         # Tell the guest to turn on MySQL, and ensure the status becomes
-        # ACTIVE.
+        # RUNNING.
         self._start_mysql()
-        # The guest should do this for us... but sometimes it walks funny.
-        self.instance._refresh_compute_service_status()
-        if self.instance.service_status != rd_instance.ServiceStatuses.RUNNING:
-            raise Exception("Migration failed! Service status was %s."
-                            % self.instance.service_status)
+        utils.poll_until(
+            self._datastore_is_online,
+            sleep_time=2,
+            time_out=RESIZE_TIME_OUT)
 
     def _assert_processes_are_ok(self):
         """Checks the procs; if anything is wrong, reverts the operation."""
@@ -1201,6 +1200,11 @@ class ResizeActionBase(ConfigurationMixin):
         LOG.debug(_("Instance %s calling Compute confirm resize...")
                   % self.instance.id)
         self.instance.server.confirm_resize()
+
+    def _datastore_is_online(self):
+        self.instance._refresh_compute_service_status()
+        return (self.instance.service_status ==
+                rd_instance.ServiceStatuses.RUNNING)
 
     def _revert_nova_action(self):
         LOG.debug(_("Instance %s calling Compute revert resize...")
