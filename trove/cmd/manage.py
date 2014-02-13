@@ -77,10 +77,10 @@ class Commands(object):
         except exception.DatastoreNotFound as e:
             print(e)
 
-    def db_wipe(self, repo_path):
+    def db_recreate(self, repo_path):
         """Drops the database and recreates it."""
         self.db_api.drop_db(CONF)
-        self.db_sync()
+        self.db_sync(repo_path)
 
     def params_of(self, command_name):
         if Commands.has(command_name):
@@ -113,7 +113,11 @@ def main():
         parser.add_argument('packages')
         parser.add_argument('active')
 
-        parser = subparser.add_parser('db_wipe')
+        parser = subparser.add_parser(
+            'db_recreate', description='Drop the database and recreate it')
+        parser.add_argument(
+            '--repo_path', help='SQLAlchemy Migrate repository path')
+        parser = subparser.add_parser('db_recreate')
         parser.add_argument('repo_path')
 
     cfg.custom_parser('action', actions)
