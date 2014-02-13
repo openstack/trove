@@ -31,6 +31,7 @@ import testtools
 from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
+from trove.common.exception import ProcessExecutionError
 from trove.common import utils
 from trove.common import instance as rd_instance
 from trove.conductor import api as conductor_api
@@ -43,6 +44,7 @@ from trove.guestagent.datastore.service import BaseDbStatus
 from trove.guestagent.datastore.redis import service as rservice
 from trove.guestagent.datastore.redis.service import RedisApp
 from trove.guestagent.datastore.redis import system as RedisSystem
+from trove.guestagent.datastore.cassandra import service as cass_service
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 from trove.guestagent.datastore.mysql.service import MySqlApp
@@ -134,7 +136,6 @@ class DbaasTest(testtools.TestCase):
 
     def test_load_mysqld_options_error(self):
 
-        from trove.common.exception import ProcessExecutionError
         dbaas.utils.execute = Mock(side_effect=ProcessExecutionError())
 
         self.assertFalse(dbaas.load_mysqld_options())
@@ -543,7 +544,9 @@ class MySqlAppTest(testtools.TestCase):
 
         self.mySqlApp.stop_db(True)
         self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-            self.FAKE_ID, {'service_status': 'shutdown'}))
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.SHUTDOWN.description}))
 
     def test_stop_mysql_error(self):
 
@@ -564,7 +567,9 @@ class MySqlAppTest(testtools.TestCase):
         self.assertTrue(self.mySqlApp.stop_db.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
         self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-            self.FAKE_ID, {'service_status': 'running'}))
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.RUNNING.description}))
 
     def test_restart_mysql_wont_start_up(self):
 
@@ -581,7 +586,6 @@ class MySqlAppTest(testtools.TestCase):
 
     def test_wipe_ib_logfiles_no_file(self):
 
-        from trove.common.exception import ProcessExecutionError
         processexecerror = ProcessExecutionError('No such file or directory')
         dbaas.utils.execute_with_timeout = Mock(side_effect=processexecerror)
 
@@ -589,7 +593,6 @@ class MySqlAppTest(testtools.TestCase):
 
     def test_wipe_ib_logfiles_error(self):
 
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         dbaas.utils.execute_with_timeout = mocked
 
@@ -612,7 +615,9 @@ class MySqlAppTest(testtools.TestCase):
 
         self.mySqlApp.start_mysql(update_db=True)
         self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-            self.FAKE_ID, {'service_status': 'running'}))
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.RUNNING.description}))
 
     def test_start_mysql_runs_forever(self):
 
@@ -623,12 +628,13 @@ class MySqlAppTest(testtools.TestCase):
 
         self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
         self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-            self.FAKE_ID, {'service_status': 'shutdown'}))
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.SHUTDOWN.description}))
 
     def test_start_mysql_error(self):
 
         self.mySqlApp._enable_mysql_on_boot = Mock()
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         dbaas.utils.execute_with_timeout = mocked
 
@@ -924,7 +930,6 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(4, len(test_dict))
         self.assertEqual(test_dict.get('test'),
                          datastore_registry_ext_test.get('test', None))
         self.assertEqual(test_dict.get('mysql'),
@@ -936,6 +941,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('redis'),
                          'trove.guestagent.datastore.redis.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('cassandra'),
+                         'trove.guestagent.datastore.cassandra.'
+                         'manager.Manager')
 
     def test_datastore_registry_with_existing_manager(self):
         datastore_registry_ext_test = {
@@ -945,7 +953,6 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager123')
@@ -954,13 +961,15 @@ class ServiceRegistryTest(testtools.TestCase):
                          'manager.Manager')
         self.assertEqual(test_dict.get('redis'),
                          'trove.guestagent.datastore.redis.manager.Manager')
+        self.assertEqual(test_dict.get('cassandra'),
+                         'trove.guestagent.datastore.cassandra.'
+                         'manager.Manager')
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(3, len(test_dict))
         self.assertEqual(test_dict.get('mysql'),
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
@@ -969,6 +978,9 @@ class ServiceRegistryTest(testtools.TestCase):
                          'manager.Manager')
         self.assertEqual(test_dict.get('redis'),
                          'trove.guestagent.datastore.redis.manager.Manager')
+        self.assertEqual(test_dict.get('cassandra'),
+                         'trove.guestagent.datastore.cassandra.'
+                         'manager.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -1171,7 +1183,6 @@ class MySqlAppStatusTest(testtools.TestCase):
 
     def test_get_actual_db_status_error_shutdown(self):
 
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError())
         dbaas.utils.execute_with_timeout = mocked
         dbaas.load_mysqld_options = Mock()
@@ -1184,7 +1195,6 @@ class MySqlAppStatusTest(testtools.TestCase):
 
     def test_get_actual_db_status_error_crashed(self):
 
-        from trove.common.exception import ProcessExecutionError
         dbaas.utils.execute_with_timeout = MagicMock(
             side_effect=[ProcessExecutionError(), ("some output", None)])
         dbaas.load_mysqld_options = Mock()
@@ -1377,3 +1387,143 @@ class TestRedisApp(testtools.TestCase):
                                            run_as_root=True,
                                            root_helper='sudo')
         verify(mock_status).end_install_or_restart()
+
+
+class CassandraDBAppTest(testtools.TestCase):
+
+    def setUp(self):
+        super(CassandraDBAppTest, self).setUp()
+        self.utils_execute_with_timeout = (cass_service .
+                                           utils.execute_with_timeout)
+        self.sleep = time.sleep
+        self.pkg_version = cass_service.packager.pkg_version
+        self.pkg = cass_service.packager
+        util.init_db()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.cassandra = cass_service.CassandraApp(self.appStatus)
+
+    def tearDown(self):
+
+        super(CassandraDBAppTest, self).tearDown()
+        cass_service.utils.execute_with_timeout = (self.
+                                                   utils_execute_with_timeout)
+        time.sleep = self.sleep
+        cass_service.packager.pkg_version = self.pkg_version
+        cass_service.packager = self.pkg
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+
+    def assert_reported_status(self, expected_status):
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
+        self.assertEqual(expected_status, service_status.status)
+
+    def test_stop_db(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.cassandra.stop_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_stop_db_with_db_update(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.cassandra.stop_db(True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.SHUTDOWN.description}))
+
+    def test_stop_db_error(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.cassandra.state_change_wait_time = 1
+        self.assertRaises(RuntimeError, self.cassandra.stop_db)
+
+    def test_restart(self):
+
+        self.cassandra.stop_db = Mock()
+        self.cassandra.start_db = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+
+        self.cassandra.restart()
+
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.RUNNING.description}))
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_cassandra(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+
+        self.cassandra.start_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_cassandra_runs_forever(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        (self.cassandra.status.
+         wait_for_real_status_to_change_to) = Mock(return_value=False)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.assertRaises(RuntimeError, self.cassandra.stop_db)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.SHUTDOWN.description}))
+
+    def test_start_db_with_db_update(self):
+
+        cass_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.RUNNING)
+
+        self.cassandra.start_db(True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.RUNNING.description}))
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_cassandra_error(self):
+        self.cassandra._enable_db_on_boot = Mock()
+        self.cassandra.state_change_wait_time = 1
+        cass_service.utils.execute_with_timeout = Mock(
+            side_effect=ProcessExecutionError('Error'))
+
+        self.assertRaises(RuntimeError, self.cassandra.start_db)
+
+    def test_install(self):
+
+        self.cassandra._install_db = Mock()
+        self.pkg.pkg_is_installed = Mock(return_value=False)
+        self.cassandra.install_if_needed(['cassandra'])
+        self.assertTrue(self.cassandra._install_db.called)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_install_install_error(self):
+
+        from trove.guestagent import pkg
+        self.cassandra.start_db = Mock()
+        self.cassandra.stop_db = Mock()
+        self.pkg.pkg_is_installed = Mock(return_value=False)
+        self.cassandra._install_db = Mock(
+            side_effect=pkg.PkgPackageStateError("Install error"))
+
+        self.assertRaises(pkg.PkgPackageStateError,
+                          self.cassandra.install_if_needed,
+                          ['cassandra=1.2.10'])
+
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)

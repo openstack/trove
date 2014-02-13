@@ -15,6 +15,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
+import fcntl
+import struct
+import socket
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'
@@ -68,3 +71,20 @@ def service_discovery(service_candidates):
             result['cmd_disable'] = "sudo systemctl disable %s" % service
             break
     return result
+
+
+#Uses the Linux SIOCGIFADDR ioctl to find the IP address associated
+# with a network interface, given the name of that interface,
+# e.g. "eth0". The address is returned as a string containing a dotted quad.
+def get_ip_address(ifname='eth0'):
+    """
+    Retrieves IP address which assigned to given network interface
+
+    @parameter ifname network interface (ethX, wlanX, etc.)
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    return socket.inet_ntoa(fcntl.ioctl(
+        s.fileno(),
+        0x8915,  # SIOCGIFADDR
+        struct.pack('256s', ifname[:15])
+    )[20:24])
