@@ -38,7 +38,8 @@ class InstanceView(object):
             "status": self.instance.status,
             "links": self._build_links(),
             "flavor": self._build_flavor_info(),
-            "datastore": {"type": self.instance.datastore.name},
+            "datastore": {"type": self.instance.datastore.name,
+                          "version": self.instance.datastore_version.name},
         }
         if CONF.trove_volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
