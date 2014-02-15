@@ -30,6 +30,9 @@ GROUP_DATABASES = "dbaas.api.databases"
 GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 GROUP_CREATE_INSTANCE_FAILURE = "dbaas.api.failures"
 
+TIMEOUT_INSTANCE_CREATE = 60 * 32
+TIMEOUT_INSTANCE_DELETE = 120
+
 from datetime import datetime
 from time import sleep
 
@@ -739,7 +742,7 @@ class WaitForGuestInstallationToFinish(object):
     """
 
     @test
-    @time_out(60 * 32)
+    @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_instance_created(self):
         # This version just checks the REST API status.
         def result_is_active():
