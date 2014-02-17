@@ -18,12 +18,13 @@ Tests dealing with HTTP rate-limiting.
 """
 
 import httplib
-import StringIO
 from trove.quota.models import Quota
 import testtools
 import webob
 
 from mock import Mock, MagicMock
+import six
+
 from trove.common import limits
 from trove.common.limits import Limit
 from trove.limits import views
@@ -559,7 +560,7 @@ class FakeHttplibSocket(object):
 
     def __init__(self, response_string):
         """Initialize new `FakeHttplibSocket`."""
-        self._buffer = StringIO.StringIO(response_string)
+        self._buffer = six.StringIO(response_string)
 
     def makefile(self, _mode, _other):
         """Returns the socket's internal buffer."""
