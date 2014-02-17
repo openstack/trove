@@ -157,7 +157,7 @@ class MockStats:
 class BackupAgentTest(testtools.TestCase):
     def setUp(self):
         super(BackupAgentTest, self).setUp()
-        when(backupagent).get_auth_password().thenReturn('secret')
+        when(mysql_impl).get_auth_password().thenReturn('123')
         when(backupagent).get_storage_strategy(any(), any()).thenReturn(
             MockSwift)
         when(os).statvfs(any()).thenReturn(MockStats)
@@ -170,17 +170,15 @@ class BackupAgentTest(testtools.TestCase):
         """This test is for
            guestagent/strategies/backup/impl
         """
-        mysql_dump = mysql_impl.MySQLDump('abc',
-                                          password='123',
-                                          user='123',
-                                          extra_opts='')
+        mysql_dump = mysql_impl.MySQLDump(
+            'abc', extra_opts='')
         self.assertIsNotNone(mysql_dump.cmd)
         str_mysql_dump_cmd = ('mysqldump'
                               ' --all-databases'
                               ' %(extra_opts)s'
                               ' --opt'
-                              ' --password=%(password)s'
-                              ' -u %(user)s'
+                              ' --password=123'
+                              ' -u os_admin'
                               ' 2>/tmp/mysqldump.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
@@ -300,7 +298,6 @@ class BackupAgentTest(testtools.TestCase):
 
     def test_execute_lossy_backup(self):
         """This test verifies that incomplete writes to swift will fail."""
-        when(backupagent).get_auth_password().thenReturn('secret')
         when(MockSwift).save(any(), any()).thenReturn((False, 'Error', 'y',
                                                        'z'))
         agent = backupagent.BackupAgent()

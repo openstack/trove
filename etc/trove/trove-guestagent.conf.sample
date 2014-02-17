@@ -56,7 +56,6 @@ ignore_users = os_admin
 ignore_dbs = lost+found, mysql, information_schema
 
 # Strategy information for backups
-backup_strategy = InnoBackupEx
 backup_namespace = trove.guestagent.strategies.backup.mysql_impl
 # Additional commandline options to be passed to the backup runner (by strategy). For example:
 # backup_runner_options = InnoBackupEx:--no-lock,  MySQLDump:--events --routines --triggers

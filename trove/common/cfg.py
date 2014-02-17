@@ -265,6 +265,39 @@ CONF.register_opts(path_opts)
 CONF.register_opts(common_opts)
 
 
+# Mysql
+mysql_group = cfg.OptGroup(
+    'mysql', title='MySQL options',
+    help="Oslo option group designed for MySQL datastore")
+mysql_opts = [
+    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+               help='Default strategy to perform backups.'),
+]
+# Cassandra
+cassandra_group = cfg.OptGroup(
+    'cassandra', title='Cassandra options',
+    help="Oslo option group designed for Cassandra datastore")
+cassandra_opts = [
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
+]
+# Redis
+redis_group = cfg.OptGroup(
+    'redis', title='Redis options',
+    help="Oslo option group designed for Redis datastore")
+redis_opts = [
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
+]
+
+CONF.register_group(mysql_group)
+CONF.register_group(cassandra_group)
+CONF.register_group(redis_group)
+CONF.register_opts(mysql_opts, mysql_group)
+CONF.register_opts(cassandra_opts, cassandra_group)
+CONF.register_opts(redis_opts, redis_group)
+
+
 def custom_parser(parsername, parser):
     CONF.register_cli_opt(cfg.SubCommandOpt(parsername, handler=parser))
 

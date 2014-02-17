@@ -21,8 +21,6 @@ from trove.common import context as trove_context
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import timeutils
 from trove.guestagent.dbaas import get_filesystem_volume_stats
-from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
-from trove.guestagent.datastore.mysql.service import get_auth_password
 from trove.guestagent.strategies.backup.base import BackupError
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage import get_storage_strategy
@@ -33,13 +31,20 @@ from trove.openstack.common.gettextutils import _  # noqa
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-RUNNER = get_backup_strategy(CONF.backup_strategy,
-                             CONF.backup_namespace)
-EXTRA_OPTS = CONF.backup_runner_options.get(CONF.backup_strategy, '')
+MANAGER = CONF.datastore_manager
+# If datastore manager is not mentioned in guest
+# configuration file, would be used mysql as datastore_manager by the default
+STRATEGY = CONF.get('mysql' if not MANAGER else MANAGER).backup_strategy
+NAMESPACE = CONF.backup_namespace
+
+RUNNER = get_backup_strategy(STRATEGY, NAMESPACE)
+EXTRA_OPTS = CONF.backup_runner_options.get(STRATEGY, '')
+
 # Try to get the incremental strategy or return the default 'backup_strategy'
-INCREMENTAL = CONF.backup_incremental_strategy.get(CONF.backup_strategy,
-                                                   CONF.backup_strategy)
-INCREMENTAL_RUNNER = get_backup_strategy(INCREMENTAL, CONF.backup_namespace)
+INCREMENTAL = CONF.backup_incremental_strategy.get(STRATEGY,
+                                                   STRATEGY)
+
+INCREMENTAL_RUNNER = get_backup_strategy(INCREMENTAL, NAMESPACE)
 
 
 class BackupAgent(object):
@@ -61,8 +66,6 @@ class BackupAgent(object):
         conductor = conductor_api.API(ctxt)
 
         LOG.info(_("Running backup %(id)s") % backup_info)
-        user = ADMIN_USER_NAME
-        password = get_auth_password()
         storage = get_storage_strategy(
             CONF.storage_strategy,
             CONF.storage_namespace)(context)
@@ -95,7 +98,6 @@ class BackupAgent(object):
 
         try:
             with runner(filename=backup_id, extra_opts=extra_opts,
-                        user=user, password=password,
                         **parent_metadata) as bkup:
                 try:
                     LOG.info(_("Starting Backup %s"), backup_id)

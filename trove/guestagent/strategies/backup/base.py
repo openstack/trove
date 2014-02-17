@@ -66,7 +66,9 @@ class BackupRunner(Strategy):
 
     def __enter__(self):
         """Start up the process"""
+        self._run_pre_backup()
         self.run()
+        self._run_post_backup()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -129,3 +131,9 @@ class BackupRunner(Strategy):
 
     def read(self, chunk_size):
         return self.process.stdout.read(chunk_size)
+
+    def _run_pre_backup(self):
+        pass
+
+    def _run_post_backup(self):
+        pass

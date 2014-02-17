@@ -12,9 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import testtools
+import mock
+
 import trove.guestagent.strategies.backup.base as backupBase
 import trove.guestagent.strategies.restore.base as restoreBase
-import testtools
+
+from trove.guestagent.strategies.backup import mysql_impl
 from trove.common import utils
 
 BACKUP_XTRA_CLS = ("trove.guestagent.strategies.backup."
@@ -42,7 +46,7 @@ XTRA_BACKUP_INCR = ('sudo innobackupex --stream=xbstream'
                     ' --incremental --incremental-lsn=%(lsn)s'
                     ' %(extra_opts)s /var/lib/mysql 2>/tmp/innobackupex.log')
 SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "
-                      "--opt --password=password -u user"
+                      "--opt --password=password -u os_admin"
                       " 2>/tmp/mysqldump.log")
 SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
 SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
@@ -62,12 +66,22 @@ CRYPTO_KEY = "default_aes_cbc_key"
 
 
 class GuestAgentBackupTest(testtools.TestCase):
+
+    def setUp(self):
+        super(GuestAgentBackupTest, self).setUp()
+        self.orig = mysql_impl.get_auth_password
+        mysql_impl.get_auth_password = mock.Mock(
+            return_value='password')
+
+    def tearDown(self):
+        super(GuestAgentBackupTest, self).tearDown()
+        mysql_impl.get_auth_password = self.orig
+
     def test_backup_decrypted_xtrabackup_command(self):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
-        bkup = RunnerClass(12345, user="user",
-                           password="password", extra_opts="")
+        bkup = RunnerClass(12345, extra_opts="")
         self.assertEqual(bkup.command, XTRA_BACKUP + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.xbstream.gz")
 
@@ -75,8 +89,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
-        bkup = RunnerClass(12345, user="user",
-                           password="password", extra_opts="--no-lock")
+        bkup = RunnerClass(12345, extra_opts="--no-lock")
         self.assertEqual(bkup.command, XTRA_BACKUP_EXTRA_OPTS + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.xbstream.gz")
 
@@ -85,8 +98,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_encrypted = True
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_XTRA_CLS)
-        bkup = RunnerClass(12345, user="user",
-                           password="password", extra_opts="")
+        bkup = RunnerClass(12345, extra_opts="")
         self.assertEqual(bkup.command,
                          XTRA_BACKUP + PIPE + ZIP + PIPE + ENCRYPT)
         self.assertEqual(bkup.manifest, "12345.xbstream.gz.enc")
@@ -96,11 +108,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_XTRA_INCR_CLS)
         opts = {'lsn': '54321', 'extra_opts': ''}
-
         expected = (XTRA_BACKUP_INCR % opts) + PIPE + ZIP
-
-        bkup = RunnerClass(12345, user="user", password="password",
-                           extra_opts="", lsn="54321")
+        bkup = RunnerClass(12345, extra_opts="", lsn="54321")
         self.assertEqual(expected, bkup.command)
         self.assertEqual("12345.xbstream.gz", bkup.manifest)
 
@@ -109,11 +118,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_XTRA_INCR_CLS)
         opts = {'lsn': '54321', 'extra_opts': '--no-lock'}
-
         expected = (XTRA_BACKUP_INCR % opts) + PIPE + ZIP
-
-        bkup = RunnerClass(12345, user="user", password="password",
-                           extra_opts="--no-lock", lsn="54321")
+        bkup = RunnerClass(12345, extra_opts="--no-lock", lsn="54321")
         self.assertEqual(expected, bkup.command)
         self.assertEqual("12345.xbstream.gz", bkup.manifest)
 
@@ -123,12 +129,8 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_XTRA_INCR_CLS)
         opts = {'lsn': '54321', 'extra_opts': ''}
-
         expected = (XTRA_BACKUP_INCR % opts) + PIPE + ZIP + PIPE + ENCRYPT
-
-        bkup = RunnerClass(12345, user="user", password="password",
-                           extra_opts="", lsn="54321")
-
+        bkup = RunnerClass(12345, extra_opts="", lsn="54321")
         self.assertEqual(expected, bkup.command)
         self.assertEqual("12345.xbstream.gz.enc", bkup.manifest)
 
@@ -136,8 +138,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_SQLDUMP_CLS)
-        bkup = RunnerClass(12345, user="user",
-                           password="password", extra_opts="")
+        bkup = RunnerClass(12345, extra_opts="")
         self.assertEqual(bkup.command, SQLDUMP_BACKUP + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.gz")
 
@@ -145,9 +146,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         backupBase.BackupRunner.is_zipped = True
         backupBase.BackupRunner.is_encrypted = False
         RunnerClass = utils.import_class(BACKUP_SQLDUMP_CLS)
-        bkup = RunnerClass(12345, user="user",
-                           password="password",
-                           extra_opts="--events --routines --triggers")
+        bkup = RunnerClass(12345, extra_opts="--events --routines --triggers")
         self.assertEqual(bkup.command, SQLDUMP_BACKUP_EXTRA_OPTS + PIPE + ZIP)
         self.assertEqual(bkup.manifest, "12345.gz")
 
@@ -233,8 +232,7 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
         restr = RunnerClass(None, restore_location="/var/lib/mysql",
-                            location="filename", checksum="md5",
-                            user="user", password="password")
+                            location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + SQLDUMP_RESTORE)
 
     def test_restore_encrypted_mysqldump_command(self):
@@ -243,7 +241,6 @@ class GuestAgentBackupTest(testtools.TestCase):
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
         restr = RunnerClass(None, restore_location="/var/lib/mysql",
-                            location="filename", checksum="md5",
-                            user="user", password="password")
+                            location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + SQLDUMP_RESTORE)
