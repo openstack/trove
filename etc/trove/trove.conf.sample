@@ -14,8 +14,33 @@ bind_port = 8779
 # Number of child processes to run
 #trove_api_workers=5
 
-# AMQP Connection info
+# The RabbitMQ broker address where a single node is used.
+# (string value)
+#rabbit_host=localhost
+
+# The RabbitMQ broker port where a single node is used.
+# (integer value)
+#rabbit_port=5672
+
+# RabbitMQ HA cluster host:port pairs. (list value)
+#rabbit_hosts=$rabbit_host:$rabbit_port
+
+# Connect over SSL for RabbitMQ. (boolean value)
+#rabbit_use_ssl=false
+
+# The RabbitMQ userid. (string value)
+#rabbit_userid=guest
+
+# The RabbitMQ password. (string value)
 rabbit_password=f7999d1955c5014aa32c
+
+# The RabbitMQ virtual host. (string value)
+#rabbit_virtual_host=/
+
+# RabbitMQ topic used for OpenStack notifications. (list value)
+#rabbit_notification_topic = ['notifications']
+
+rpc_backend = trove.openstack.common.rpc.impl_kombu
 
 # SQLAlchemy connection string for the reference implementation
 # registry server. Any valid SQLAlchemy connection string is fine.
@@ -107,14 +132,6 @@ api_paste_config = api-paste.ini
 
 
 # ============ notifer queue kombu connection options ========================
-
-notifier_queue_hostname = localhost
-notifier_queue_userid = guest
-notifier_queue_password = guest
-notifier_queue_ssl = False
-notifier_queue_port = 5672
-notifier_queue_virtual_host = /
-notifier_queue_transport = memory
 
 control_exchange = trove
 

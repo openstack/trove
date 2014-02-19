@@ -11,8 +11,31 @@ bind_host = 0.0.0.0
 # Port the bind the API server to
 bind_port = 8778
 
-# AMQP Connection info
+# The RabbitMQ broker address where a single node is used.
+# (string value)
+rabbit_host=10.0.0.1
+
+# The RabbitMQ broker port where a single node is used.
+# (integer value)
+#rabbit_port=5672
+
+# RabbitMQ HA cluster host:port pairs. (list value)
+#rabbit_hosts=$rabbit_host:$rabbit_port
+
+# Connect over SSL for RabbitMQ. (boolean value)
+#rabbit_use_ssl=false
+
+# The RabbitMQ userid. (string value)
+#rabbit_userid=guest
+
+# The RabbitMQ password. (string value)
 rabbit_password=f7999d1955c5014aa32c
+
+# The RabbitMQ virtual host. (string value)
+#rabbit_virtual_host=/
+
+# RabbitMQ topic used for OpenStack notifications. (list value)
+#rabbit_notification_topic = ['notifications']
 
 # Path to the extensions
 api_extensions_path = trove/extensions/routes
@@ -42,10 +65,6 @@ root_grant_option = True
 
 # For communicating with trove-conductor
 control_exchange = trove
-
-# ============ kombu connection options ========================
-
-rabbit_host=10.0.0.1
 
 # ============ Logging information =============================
 log_dir = /tmp/
