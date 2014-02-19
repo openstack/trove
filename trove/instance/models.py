@@ -162,9 +162,8 @@ class SimpleInstance(object):
     def dns_ip_address(self):
         """Returns the IP address to be used with DNS."""
         ips = self.get_visible_ip_addresses()
-        if ips is None or len(ips) < 1:
-            return None
-        return ips[0]
+        if ips:
+            return ips[0]
 
     @property
     def flavor_id(self):
