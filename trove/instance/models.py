@@ -829,12 +829,12 @@ class Instances(object):
 
                 #volumes = find_volumes(server.id)
                 status = InstanceServiceStatus.find_by(instance_id=db.id)
-                LOG.info(_("Server api_status(%s)") %
-                         status.status.api_status)
                 if not status.status:  # This should never happen.
                     LOG.error(_("Server status could not be read for "
                                 "instance id(%s)") % db.id)
                     continue
+                LOG.info(_("Server api_status(%s)") %
+                         status.status.api_status)
             except exception.ModelNotFoundError:
                 LOG.error(_("Server status could not be read for "
                             "instance id(%s)") % db.id)
