@@ -187,19 +187,18 @@ def update_datastore(name, default_version):
     db_api.configure_db(CONF)
     try:
         datastore = DBDatastore.find_by(name=name)
-        if default_version:
-            version = DatastoreVersion.load(datastore, default_version)
-            if not version.active:
-                raise exception.DatastoreVersionInactive(version=
-                                                         version.name)
-            datastore.default_version_id = version.id
     except exception.ModelNotFoundError:
         # Create a new one
         datastore = DBDatastore()
         datastore.id = utils.generate_uuid()
         datastore.name = name
+
     if default_version:
+        version = DatastoreVersion.load(datastore, default_version)
+        if not version.active:
+            raise exception.DatastoreVersionInactive(version=version.name)
         datastore.default_version_id = version.id
+
     db_api.save(datastore)
 
 
