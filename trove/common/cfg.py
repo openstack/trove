@@ -36,7 +36,7 @@ LOG = logging.getLogger(__name__)
 common_opts = [
     cfg.StrOpt('sql_connection',
                default='sqlite:///trove_test.sqlite',
-               help='SQL Connection',
+               help='SQL Connection.',
                secret=True),
     cfg.IntOpt('sql_idle_timeout', default=3600),
     cfg.BoolOpt('sql_query_log', default=False),
@@ -51,10 +51,10 @@ common_opts = [
                 help='Whether to provision a cinder volume for datadir.'),
     cfg.ListOpt('admin_roles', default=['admin']),
     cfg.BoolOpt('update_status_on_fail', default=False,
-                help='If instance failed to become active, '
+                help='If instance fails to become active, '
                      'taskmanager updates statuses, '
                      'service status = FAILED_TIMEOUT_GUESTAGENT, '
-                     'instance task status = BUILDING_ERROR_TIMEOUT_GA'),
+                     'instance task status = BUILDING_ERROR_TIMEOUT_GA.'),
     cfg.StrOpt('nova_compute_url', default='http://localhost:8774/v2'),
     cfg.StrOpt('cinder_url', default='http://localhost:8776/v2'),
     cfg.StrOpt('heat_url', default='http://localhost:8004/v1'),
@@ -121,8 +121,8 @@ common_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/mysql'),
     cfg.StrOpt('default_datastore', default=None,
                help="The default datastore id or name to use if one is not "
-               "provided by the user. If the default value is None, the field"
-               " becomes required in the instance-create request."),
+               "provided by the user. If the default value is None, the field "
+               "becomes required in the instance-create request."),
     cfg.StrOpt('datastore_manager', default=None,
                help='Manager class in guestagent, setup by taskmanager on '
                'instance provision.'),
@@ -191,9 +191,9 @@ common_opts = [
     cfg.BoolOpt('backup_use_gzip_compression', default=True,
                 help='Compress backups using gzip.'),
     cfg.BoolOpt('backup_use_openssl_encryption', default=True,
-                help='Encrypt backups using openssl.'),
+                help='Encrypt backups using OpenSSL.'),
     cfg.StrOpt('backup_aes_cbc_key', default='default_aes_cbc_key',
-               help='Default openssl aes_cbc key.'),
+               help='Default OpenSSL aes_cbc key.'),
     cfg.BoolOpt('backup_use_snet', default=False,
                 help='Send backup files over snet.'),
     cfg.IntOpt('backup_chunk_size', default=2 ** 16,
@@ -217,7 +217,7 @@ common_opts = [
     cfg.StrOpt('remote_swift_client',
                default='trove.common.remote.swift_client'),
     cfg.StrOpt('exists_notification_transformer',
-               help='Transformer for exists notifications'),
+               help='Transformer for exists notifications.'),
     cfg.IntOpt('exists_notification_ticks', default=360,
                help='Number of report_intervals to wait between pushing '
                     'events (see report_interval).'),
@@ -227,11 +227,11 @@ common_opts = [
                          'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed'},
                 help='Unique ID to tag notification events.'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
-               help="Admin username used to connect to Nova.", secret=True),
+               help="Admin username used to connect to nova.", secret=True),
     cfg.StrOpt('nova_proxy_admin_pass', default='',
-               help="Admin password used to connect to Nova,", secret=True),
+               help="Admin password used to connect to nova,", secret=True),
     cfg.StrOpt('nova_proxy_admin_tenant_name', default='',
-               help="Admin tenant used to connect to Nova.", secret=True),
+               help="Admin tenant used to connect to nova.", secret=True),
     cfg.StrOpt('network_label_regex', default='^private$'),
     cfg.StrOpt('ip_regex', default=None),
     cfg.StrOpt('cloudinit_location', default='/etc/trove/cloudinit',
@@ -248,7 +248,7 @@ common_opts = [
                help='Path which leads to datastore templates.'),
     cfg.BoolOpt('sql_query_logging', default=False,
                 help='Allow insecure logging while '
-                     'executing queries through sqlalchemy.'),
+                     'executing queries through SQLAlchemy.'),
     cfg.ListOpt('expected_filetype_suffixes',
                 default=['atom', 'json', 'xml'],
                 help='Filetype endings not to be reattached to an id '
