@@ -83,6 +83,7 @@ class ResizeTestBase(TestCase):
 
     def _stop_db(self, reboot=True):
         self.guest.stop_db(do_not_start_on_reboot=reboot)
+        self.instance.service_status = rd_instance.ServiceStatuses.SHUTDOWN
 
     def _server_changes_to(self, new_status, new_flavor_id):
         def change():
@@ -136,6 +137,7 @@ class ResizeTests(ResizeTestBase):
         self.server.resize(NEW_FLAVOR_ID)
 
         self.mock.StubOutWithMock(utils, 'poll_until')
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
             .AndRaise(PollTimeOut)
 
@@ -143,6 +145,7 @@ class ResizeTests(ResizeTestBase):
         self._stop_db()
         self.server.resize(NEW_FLAVOR_ID)
         self._server_changes_to("VERIFY_RESIZE", OLD_FLAVOR_ID)
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance.guest.reset_configuration(mox.IgnoreArg())
         self.instance.server.revert_resize()
         self._server_changes_to("ACTIVE", OLD_FLAVOR_ID)
@@ -162,6 +165,7 @@ class ResizeTests(ResizeTestBase):
     def test_guest_is_not_okay(self):
         self._stop_db()
         self._nova_resizes_successfully()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
@@ -174,6 +178,7 @@ class ResizeTests(ResizeTestBase):
     def test_mysql_is_not_okay(self):
         self._stop_db()
         self._nova_resizes_successfully()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.SHUTDOWN
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
@@ -188,6 +193,7 @@ class ResizeTests(ResizeTestBase):
     def test_confirm_resize_fails(self):
         self._stop_db()
         self._nova_resizes_successfully()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
@@ -199,6 +205,7 @@ class ResizeTests(ResizeTestBase):
     def test_revert_nova_fails(self):
         self._stop_db()
         self._nova_resizes_successfully()
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.PAUSED
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)\
@@ -235,6 +242,7 @@ class MigrateTests(ResizeTestBase):
         self._stop_db()
         self.server.migrate(force_host=None)
         self._server_changes_to("VERIFY_RESIZE", NEW_FLAVOR_ID)
+        utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
         self.instance._set_service_status_to_paused()
         self.instance.service_status = rd_instance.ServiceStatuses.RUNNING
         utils.poll_until(mox.IgnoreArg(), sleep_time=2, time_out=120)
