@@ -1188,6 +1188,15 @@ class ResizeActionBase(ConfigurationMixin):
             sleep_time=2,
             time_out=RESIZE_TIME_OUT)
 
+    def _assert_mysql_is_off(self):
+        # Tell the guest to turn off MySQL, and ensure the status becomes
+        # SHUTDOWN.
+        self.instance.guest.stop_db(do_not_start_on_reboot=True)
+        utils.poll_until(
+            self._datastore_is_offline,
+            sleep_time=2,
+            time_out=RESIZE_TIME_OUT)
+
     def _assert_processes_are_ok(self):
         """Checks the procs; if anything is wrong, reverts the operation."""
         # Tell the guest to turn back on, and make sure it can start.
@@ -1206,6 +1215,11 @@ class ResizeActionBase(ConfigurationMixin):
         return (self.instance.service_status ==
                 rd_instance.ServiceStatuses.RUNNING)
 
+    def _datastore_is_offline(self):
+        self.instance._refresh_compute_service_status()
+        return (self.instance.service_status ==
+                rd_instance.ServiceStatuses.SHUTDOWN)
+
     def _revert_nova_action(self):
         LOG.debug(_("Instance %s calling Compute revert resize...")
                   % self.instance.id)
@@ -1216,7 +1230,7 @@ class ResizeActionBase(ConfigurationMixin):
         try:
             LOG.debug(_("Instance %s calling stop_db...")
                       % self.instance.id)
-            self.instance.guest.stop_db(do_not_start_on_reboot=True)
+            self._assert_mysql_is_off()
             self._perform_nova_action()
         finally:
             self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
