@@ -12,7 +12,7 @@ datadir = /var/lib/mysql
 ####tmpdir = /tmp
 tmpdir = /var/tmp
 pid_file = /var/run/mysqld/mysqld.pid
-skip-external-locking
+skip-external-locking = 1
 key_buffer_size = {{ 50 * flavor['ram']//512 }}M
 max_allowed_packet = {{ 1 * flavor['ram']//512 }}M
 thread_stack = 192K
@@ -45,8 +45,8 @@ local-infile = 0
 server_id = {{server_id}}
 
 [mysqldump]
-quick
-quote-names
+quick = 1
+quote-names = 1
 max_allowed_packet = 16M
 
 [isamchk]

@@ -1,0 +1,224 @@
+{
+    "configuration-parameters": [
+        {
+            "name": "innodb_file_per_table",
+            "restart_required": true,
+            "max": 1,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "autocommit",
+            "restart_required": false,
+            "max": 1,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "local_infile",
+            "restart_required": false,
+            "max": 1,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "key_buffer_size",
+            "restart_required": false,
+            "max": 4294967296,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "connect_timeout",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "join_buffer_size",
+            "restart_required": false,
+            "max": 4294967296,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "sort_buffer_size",
+            "restart_required": false,
+            "max": 18446744073709547520,
+            "min": 32768,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_buffer_pool_size",
+            "restart_required": true,
+            "max": 68719476736,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_flush_log_at_trx_commit",
+            "restart_required": false,
+            "max": 2,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_log_buffer_size",
+            "restart_required": true,
+            "max": 4294967296,
+            "min": 1048576,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_open_files",
+            "restart_required": true,
+            "max": 4294967296,
+            "min": 10,
+            "type": "integer"
+        },
+        {
+            "name": "innodb_thread_concurrency",
+            "restart_required": false,
+            "max": 1000,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "sync_binlog",
+            "restart_required": false,
+            "max": 18446744073709547520,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "auto_increment_increment",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "auto_increment_offset",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "bulk_insert_buffer_size",
+            "restart_required": false,
+            "max": 18446744073709547520,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "expire_logs_days",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "interactive_timeout",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "max_allowed_packet",
+            "restart_required": false,
+            "max": 1073741824,
+            "min": 1024,
+            "type": "integer"
+        },
+        {
+            "name": "max_connect_errors",
+            "restart_required": false,
+            "max": 18446744073709547520,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "max_connections",
+            "restart_required": false,
+            "max": 65535,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "myisam_sort_buffer_size",
+            "restart_required": false,
+            "max": 18446744073709547520,
+            "min": 4,
+            "type": "integer"
+        },
+        {
+            "name": "max_user_connections",
+            "restart_required": false,
+            "max": 100000,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "server_id",
+            "restart_required": true,
+            "max": 100000,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "wait_timeout",
+            "restart_required": false,
+            "max": 31536000,
+            "min": 1,
+            "type": "integer"
+        },
+        {
+            "name": "character_set_client",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "character_set_connection",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "character_set_database",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "character_set_filesystem",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "character_set_results",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "character_set_server",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "collation_connection",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "collation_database",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "collation_server",
+            "restart_required": false,
+            "type": "string"
+        }
+    ]
+}
