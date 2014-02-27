@@ -447,11 +447,6 @@ class PkgRPMRemoveTestCase(testtools.TestCase):
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
-    def test_success_remove(self):
-        # test
-        pexpect.spawn.expect = Mock(return_value=2)
-        self.assertTrue(self.pkg.pkg_remove(self.pkgName, 5000) is None)
-
     def test_timeout_error(self):
         # test timeout error
         pexpect.spawn.expect = Mock(side_effect=pexpect.

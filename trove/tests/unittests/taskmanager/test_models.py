@@ -316,6 +316,11 @@ class ResizeVolumeTest(testtools.TestCase):
                                                             self.old_vol_size,
                                                             self.new_vol_size)
 
+        class FakeGroup():
+            def __init__(self):
+                self.mount_point = 'var/lib/mysql'
+        taskmanager_models.CONF.get = Mock(return_value=FakeGroup())
+
     def tearDown(self):
         super(ResizeVolumeTest, self).tearDown()
 

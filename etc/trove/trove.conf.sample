@@ -59,7 +59,6 @@ network_label_regex = ^private$
 trove_volume_support = True
 block_device_mapping = vdb
 device_path = /dev/vdb
-mount_point = /var/lib/mysql
 # Maximum volume size for an instance
 max_accepted_volume_size = 10
 max_instances_per_user = 5

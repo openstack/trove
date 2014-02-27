@@ -58,8 +58,13 @@ class CassandraApp(object):
         utils.execute_with_timeout(system.DISABLE_CASSANDRA_ON_BOOT,
                                    shell=True)
 
-    def init_storage_structure(self):
-        utils.execute_with_timeout(system.INIT_FS, shell=True)
+    def init_storage_structure(self, mount_point):
+        try:
+            cmd = system.INIT_FS % mount_point
+            utils.execute_with_timeout(cmd, shell=True)
+        except exception.ProcessExecutionError as e:
+            LOG.error(_("Error while initiating storage structure."))
+            LOG.error(e)
 
     def start_db(self, update_db=False):
         self._enable_db_on_boot()

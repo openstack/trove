@@ -116,7 +116,6 @@ common_opts = [
     cfg.BoolOpt('use_nova_server_volume', default=False),
     cfg.BoolOpt('use_heat', default=False),
     cfg.StrOpt('device_path', default='/dev/vdb'),
-    cfg.StrOpt('mount_point', default='/var/lib/mysql'),
     cfg.StrOpt('default_datastore', default=None,
                help="The default datastore id or name to use if one is not "
                "provided by the user. If the default value is None, the field "
@@ -276,7 +275,10 @@ mysql_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
     cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.')
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/mysql',
+               help="Filesystem path for mounting "
+                    "volumes if volume support is enabled"),
 ]
 
 # Percona
@@ -293,7 +295,10 @@ percona_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
     cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.')
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/mysql',
+               help="Filesystem path for mounting "
+                    "volumes if volume support is enabled"),
 ]
 
 # Redis
@@ -309,6 +314,11 @@ redis_opts = [
                 help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/redis',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled"),
 ]
 
 # Cassandra
@@ -326,6 +336,9 @@ cassandra_opts = [
                      'if trove_security_groups_support is True)'),
     cfg.StrOpt('backup_strategy', default=None,
                help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/cassandra',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled"),
 ]
 
 #Couchbase
@@ -345,6 +358,9 @@ couchbase_opts = [
                      'if trove_security_groups_support is True)'),
     cfg.StrOpt('backup_strategy', default=None,
                help='Default strategy to perform backups.'),
+    cfg.StrOpt('mount_point', default='/var/lib/couchbase',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled"),
 ]
 
 CONF = cfg.CONF

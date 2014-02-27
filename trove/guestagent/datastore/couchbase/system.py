@@ -12,10 +12,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from trove.common import cfg
+CONF = cfg.CONF
 
 TIME_OUT = 1200
 COUCHBASE_CONF_DIR = '/etc/couchbase'
-COUCHBASE_MOUNT_POINT = '/var/lib/couchbase'
 SERVICE_CANDIDATES = ["couchbase-server"]
 cmd_couchbase_status = ('sudo /opt/couchbase/bin/couchbase-cli server-info '
                         '-c %(IP)s:8091 -u Administrator -p password')
@@ -28,7 +29,7 @@ cmd_cluster_init = ('sudo /opt/couchbase/bin/couchbase-cli cluster-init '
                     '--cluster-init-port=8091')
 cmd_kill = 'sudo pkill -9 couchbase-server'
 cmd_own_data_dir = ('sudo chown couchbase:couchbase %s' %
-                    COUCHBASE_MOUNT_POINT)
+                    CONF.get('couchbase').mount_point)
 cmd_rm_old_data_dir = 'sudo rm -rf /opt/couchbase/var/lib/couchbase/data'
 """ For optimal couchbase operations, swappiness of vm should be set to 0.
 Reference link: http://docs.couchbase.com/couchbase-manual-2

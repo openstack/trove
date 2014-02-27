@@ -86,7 +86,9 @@ class BackupAgent(object):
             })
 
         # Store the size of the filesystem before the backup.
-        stats = get_filesystem_volume_stats(CONF.mount_point)
+        mount_point = CONF.get('mysql' if not CONF.datastore_manager
+                               else CONF.datastore_manager).mount_point
+        stats = get_filesystem_volume_stats(mount_point)
         backup = {
             'backup_id': backup_id,
             'size': stats.get('used', 0.0),

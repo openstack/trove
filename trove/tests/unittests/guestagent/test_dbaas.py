@@ -25,7 +25,6 @@ from mockito import verify
 from mockito import contains
 from mockito import never
 from mockito import matchers
-from mockito import inorder, verifyNoMoreInteractions
 import sqlalchemy
 import testtools
 from testtools.matchers import Is
@@ -791,25 +790,6 @@ class MySqlAppMockTest(testtools.TestCase):
     def tearDown(self):
         super(MySqlAppMockTest, self).tearDown()
         unstub()
-
-    def test_secure_with_mycnf_error(self):
-        mock_conn = mock_sql_connection()
-        when(mock_conn).execute(any()).thenReturn(None)
-        when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
-            None)
-        # skip writing the file for now
-        when(os.path).isfile(any()).thenReturn(False)
-        mock_status = mock()
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(), any(), any()).thenReturn(True)
-        app = MySqlApp(mock_status)
-        when(dbaas).clear_expired_password().thenReturn(None)
-        self.assertRaises(TypeError, app.secure, None, None)
-
-        verify(mock_conn, atleast=2).execute(any())
-        inorder.verify(mock_status).wait_for_real_status_to_change_to(
-            rd_instance.ServiceStatuses.SHUTDOWN, any(), any())
-        verifyNoMoreInteractions(mock_status)
 
     def test_secure_keep_root(self):
         mock_conn = mock_sql_connection()

@@ -369,7 +369,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self._log_and_raise(e, msg, err)
 
         device_path = CONF.device_path
-        mount_point = CONF.mount_point
+        mount_point = CONF.get(datastore_manager).mount_point
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
         LOG.debug(_("end _create_server_volume for id: %s") % self.id)
         return volume_info
@@ -441,7 +441,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self._log_and_raise(e, msg, err)
 
         device_path = CONF.device_path
-        mount_point = CONF.mount_point
+        mount_point = CONF.get(datastore_manager).mount_point
         volume_info = {'device_path': device_path, 'mount_point': mount_point}
 
         LOG.debug(_("end _create_server_volume_heat for id: %s") % self.id)
@@ -454,7 +454,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug(_("begin _create_server_volume_individually for id: %s") %
                   self.id)
         server = None
-        volume_info = self._build_volume_info(volume_size)
+        volume_info = self._build_volume_info(datastore_manager,
+                                              volume_size=volume_size)
         block_device_mapping = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
@@ -472,24 +473,26 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                   self.id)
         return volume_info
 
-    def _build_volume_info(self, volume_size=None):
+    def _build_volume_info(self, datastore_manager, volume_size=None):
         volume_info = None
         volume_support = CONF.trove_volume_support
         LOG.debug(_("trove volume support = %s") % volume_support)
         if volume_support:
             try:
-                volume_info = self._create_volume(volume_size)
+                volume_info = self._create_volume(
+                    volume_size, datastore_manager)
             except Exception as e:
                 msg = _("Error provisioning volume for instance: %s") % self.id
                 err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
                 self._log_and_raise(e, msg, err)
         else:
             LOG.debug(_("device_path = %s") % CONF.device_path)
-            LOG.debug(_("mount_point = %s") % CONF.mount_point)
+            LOG.debug(_("mount_point = %s") %
+                      CONF.get(datastore_manager).mount_point)
             volume_info = {
                 'block_device': None,
                 'device_path': CONF.device_path,
-                'mount_point': CONF.mount_point,
+                'mount_point': CONF.get(datastore_manager).mount_point,
                 'volumes': None,
             }
         return volume_info
@@ -501,7 +504,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         self.update_db(task_status=task_status)
         raise TroveError(message=message)
 
-    def _create_volume(self, volume_size):
+    def _create_volume(self, volume_size, datastore_manager):
         LOG.info("Entering create_volume")
         LOG.debug(_("begin _create_volume for id: %s") % self.id)
         volume_client = create_cinder_client(self.context)
@@ -522,9 +525,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if v_ref.status in ['error']:
             raise VolumeCreationFailure()
         LOG.debug(_("end _create_volume for id: %s") % self.id)
-        return self._build_volume(v_ref)
+        return self._build_volume(v_ref, datastore_manager)
 
-    def _build_volume(self, v_ref):
+    def _build_volume(self, v_ref, datastore_manager):
         LOG.debug(_("Created volume %s") % v_ref)
         # The mapping is in the format:
         # <id>:[<type>]:[<size(GB)>]:[<delete_on_terminate>]
@@ -538,7 +541,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("volume = %s" % created_volumes)
 
         device_path = CONF.device_path
-        mount_point = CONF.mount_point
+        mount_point = CONF.get(datastore_manager).mount_point
         LOG.debug(_("device_path = %s") % device_path)
         LOG.debug(_("mount_point = %s") % mount_point)
 
@@ -979,6 +982,11 @@ class ResizeVolumeAction(ConfigurationMixin):
         self.old_size = int(old_size)
         self.new_size = int(new_size)
 
+    def get_mount_point(self):
+        mount_point = CONF.get(
+            self.instance.datastore_version.manager).mount_point
+        return mount_point
+
     def _fail(self, orig_func):
         LOG.exception(_("%(func)s encountered an error when attempting to "
                       "resize the volume for instance %(id)s. Setting service "
@@ -1023,8 +1031,9 @@ class ResizeVolumeAction(ConfigurationMixin):
     def _unmount_volume(self):
         LOG.debug(_("Unmounting the volume on instance %(id)s") % {
                   'id': self.instance.id})
+        mount_point = self.get_mount_point()
         self.instance.guest.unmount_volume(device_path=CONF.device_path,
-                                           mount_point=CONF.mount_point)
+                                           mount_point=mount_point)
         LOG.debug(_("Successfully unmounted the volume %(vol_id)s for "
                   "instance %(id)s") % {'vol_id': self.instance.volume_id,
                   'id': self.instance.id})
@@ -1073,8 +1082,9 @@ class ResizeVolumeAction(ConfigurationMixin):
     def _resize_fs(self):
         LOG.debug(_("Resizing the filesystem for instance %(id)s") % {
                   'id': self.instance.id})
+        mount_point = self.get_mount_point()
         self.instance.guest.resize_fs(device_path=CONF.device_path,
-                                      mount_point=CONF.mount_point)
+                                      mount_point=mount_point)
         LOG.debug(_("Successfully resized volume %(vol_id)s filesystem for "
                   "instance %(id)s") % {'vol_id': self.instance.volume_id,
                   'id': self.instance.id})
@@ -1083,8 +1093,9 @@ class ResizeVolumeAction(ConfigurationMixin):
     def _mount_volume(self):
         LOG.debug(_("Mount the volume on instance %(id)s") % {
                   'id': self.instance.id})
+        mount_point = self.get_mount_point()
         self.instance.guest.mount_volume(device_path=CONF.device_path,
-                                         mount_point=CONF.mount_point)
+                                         mount_point=mount_point)
         LOG.debug(_("Successfully mounted the volume %(vol_id)s on instance "
                   "%(id)s") % {'vol_id': self.instance.volume_id,
                   'id': self.instance.id})

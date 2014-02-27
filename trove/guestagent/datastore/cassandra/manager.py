@@ -19,7 +19,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import volume
 from trove.guestagent.datastore.cassandra import service
-from trove.guestagent.datastore.cassandra import system
 from trove.openstack.common import periodic_task
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -30,6 +29,7 @@ LOG = logging.getLogger(__name__)
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 ERROR_MSG = _("Not supported")
+MANAGER = CONF.datastore_manager
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -48,8 +48,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def get_filesystem_stats(self, context, fs_path):
         """Gets the filesystem stats for the path given. """
-        return dbaas.get_filesystem_volume_stats(
-            system.CASSANDRA_MOUNT_POINT)
+        mount_point = CONF.get(
+            'mysql' if not MANAGER else MANAGER).mount_point
+        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def start_db_with_conf_changes(self, context, config_contents):
         self.app.start_db_with_conf_changes(config_contents)
@@ -67,7 +68,7 @@ class Manager(periodic_task.PeriodicTasks):
         self.appStatus.begin_install()
         LOG.info("Installing cassandra")
         self.app.install_if_needed(packages)
-        self.app.init_storage_structure()
+        self.app.init_storage_structure(mount_point)
         if config_contents:
             LOG.info(_("Config processing"))
             self.app.write_config(config_contents)
@@ -75,11 +76,11 @@ class Manager(periodic_task.PeriodicTasks):
         if device_path:
             device = volume.VolumeDevice(device_path)
             device.format()
-            if os.path.exists(system.CASSANDRA_MOUNT_POINT):
+            if os.path.exists(mount_point):
                 #rsync exiting data
-                device.migrate_data(system.CASSANDRA_MOUNT_POINT)
+                device.migrate_data(mount_point)
             #mount the volume
-            device.mount(system.CASSANDRA_MOUNT_POINT)
+            device.mount(mount_point)
             LOG.debug(_("Mounting new volume."))
             self.app.restart()
 

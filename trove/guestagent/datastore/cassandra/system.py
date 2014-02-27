@@ -20,13 +20,11 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 CASSANDRA_DATA_DIR = "/var/lib/cassandra/data"
-CASSANDRA_MOUNT_POINT = "/var/lib/cassandra"
 CASSANDRA_CONF = "/etc/cassandra/cassandra.yaml"
 CASSANDRA_TEMP_CONF = "/tmp/cassandra.yaml"
 CASSANDRA_TEMP_DIR = "/tmp/cassandra"
 
-INIT_FS = "sudo mkdir -p %s" % CASSANDRA_MOUNT_POINT
-
+INIT_FS = "sudo mkdir -p %s"
 ENABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra enable"
 DISABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra disable"
 

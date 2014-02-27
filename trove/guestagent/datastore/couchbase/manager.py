@@ -17,7 +17,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import dbaas
 from trove.guestagent import volume
-from trove.guestagent.datastore.couchbase import system
 from trove.guestagent.datastore.couchbase import service
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
@@ -27,6 +26,7 @@ from trove.openstack.common.gettextutils import _
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 ERROR_MSG = _("Not supported")
+MANAGER = CONF.datastore_manager
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -64,7 +64,7 @@ class Manager(periodic_task.PeriodicTasks):
         if device_path:
             device = volume.VolumeDevice(device_path)
             device.format()
-            device.mount(system.COUCHBASE_MOUNT_POINT)
+            device.mount(mount_point)
             LOG.debug(_('Mounted the volume.'))
         self.app.install_if_needed(packages)
         LOG.info(_('Securing couchbase now.'))
@@ -91,10 +91,10 @@ class Manager(periodic_task.PeriodicTasks):
         self.app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
-        """
-        Gets file system stats from the provided fs_path.
-        """
-        return dbaas.get_filesystem_volume_stats(system.COUCHBASE_MOUNT_POINT)
+        """Gets the filesystem stats for the path given. """
+        mount_point = CONF.get(
+            'mysql' if not MANAGER else MANAGER).mount_point
+        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def update_attributes(self, context, username, hostname, user_attrs):
         raise exception.TroveError(ERROR_MSG)

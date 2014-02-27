@@ -32,6 +32,7 @@ from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+MANAGER = CONF.datastore_manager
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -116,16 +117,16 @@ class Manager(periodic_task.PeriodicTasks):
             app.stop_db()
             device = volume.VolumeDevice(device_path)
             device.format()
-            if os.path.exists(CONF.mount_point):
+            if os.path.exists(mount_point):
                 #rsync exiting data
-                device.migrate_data(CONF.mount_point)
+                device.migrate_data(mount_point)
             #mount the volume
             device.mount(mount_point)
             LOG.debug(_("Mounted the volume."))
             app.start_mysql()
         if backup_info:
             self._perform_restore(backup_info, context,
-                                  CONF.mount_point, app)
+                                  mount_point, app)
         LOG.info(_("Securing mysql now."))
         app.secure(config_contents, overrides)
         enable_root_on_restore = (backup_info and
@@ -161,8 +162,10 @@ class Manager(periodic_task.PeriodicTasks):
         app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
-        """Gets the filesystem stats for the path given """
-        return dbaas.get_filesystem_volume_stats(fs_path)
+        """Gets the filesystem stats for the path given. """
+        mount_point = CONF.get(
+            'mysql' if not MANAGER else MANAGER).mount_point
+        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
         """

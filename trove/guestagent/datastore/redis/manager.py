@@ -18,7 +18,6 @@ from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.redis.service import RedisAppStatus
 from trove.guestagent.datastore.redis.service import RedisApp
-from trove.guestagent.datastore.redis import system
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import periodic_task
@@ -26,6 +25,7 @@ from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+MANAGER = CONF.datastore_manager
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -77,7 +77,7 @@ class Manager(periodic_task.PeriodicTasks):
         if device_path:
             device = volume.VolumeDevice(device_path)
             device.format()
-            device.mount(system.REDIS_BASE_DIR)
+            device.mount(mount_point)
             LOG.debug(_('Mounted the volume.'))
         app.install_if_needed(packages)
         LOG.info(_('Securing redis now.'))
@@ -111,10 +111,10 @@ class Manager(periodic_task.PeriodicTasks):
         app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
-        """
-        Gets file system stats from the provided fs_path.
-        """
-        return dbaas.get_filesystem_volume_stats(fs_path)
+        """Gets the filesystem stats for the path given. """
+        mount_point = CONF.get(
+            'mysql' if not MANAGER else MANAGER).mount_point
+        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
         """

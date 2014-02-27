@@ -84,7 +84,6 @@ trove_volume_support = True
 nova_volume_service_type = volume
 nova_volume_service_name = Volume Service
 device_path = /dev/vdb
-mount_point = /var/lib/mysql
 max_accepted_volume_size = 25
 max_instances_per_user = 55
 max_volumes_per_user = 100
@@ -180,4 +179,3 @@ paste.app_factory = trove.common.api:app_factory
 #Add this filter to log request and response for debugging
 [filter:debug]
 paste.filter_factory = trove.common.wsgi:Debug
-
