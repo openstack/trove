@@ -25,7 +25,7 @@ from oslo.config import cfg as openstack_cfg
 from trove.openstack.common import log as logging
 from trove.common import debug_utils
 
-# Apply whole eventlet.mankey_patch excluding 'thread' module.
+# Apply whole eventlet.monkey_patch excluding 'thread' module.
 # Decision for 'thread' module patching will be made
 # after debug_utils setting up
 eventlet.monkey_patch(all=True, thread=False)

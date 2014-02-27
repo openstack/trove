@@ -23,6 +23,7 @@ gettext.install('trove', unicode=1)
 
 
 from trove.common import cfg
+from trove.common import debug_utils
 from trove.openstack.common import log as logging
 from trove.common import wsgi
 from trove.db import get_db_api
@@ -34,6 +35,8 @@ CONF = cfg.CONF
 def main():
     cfg.parse_args(sys.argv)
     logging.setup(None)
+
+    debug_utils.setup()
 
     get_db_api().configure_db(CONF)
     conf_file = CONF.find_file(CONF.api_paste_config)
