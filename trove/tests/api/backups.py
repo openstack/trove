@@ -28,6 +28,8 @@ from trove.tests.config import CONFIG
 from troveclient.compat import exceptions
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
+from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import assert_unprocessable
 from trove import tests
 
@@ -36,6 +38,8 @@ GROUP = "dbaas.api.backups"
 BACKUP_NAME = 'backup_test'
 BACKUP_DESC = 'test description'
 
+TIMEOUT_BACKUP_CREATE = 60 * 30
+TIMEOUT_BACKUP_DELETE = 120
 
 backup_info = None
 incremental_info = None
@@ -131,7 +135,7 @@ class WaitForBackupCreateToFinish(object):
     """
 
     @test
-    @time_out(60 * 30)
+    @time_out(TIMEOUT_BACKUP_CREATE)
     def test_backup_created(self):
         # This version just checks the REST API status.
         def result_is_active():
@@ -225,7 +229,7 @@ class IncrementalBackups(object):
                 assert_not_equal("FAILED", backup.status)
                 return False
 
-        poll_until(result_is_active, time_out=60 * 30)
+        poll_until(result_is_active, time_out=TIMEOUT_BACKUP_CREATE)
         assert_equal(backup_info.id, incremental_info.parent_id)
 
 
@@ -271,7 +275,8 @@ class WaitForRestoreToFinish(object):
                     assert_equal(instance.volume.get('used', None), None)
                 return False
 
-        poll_until(result_is_active, time_out=60 * 32, sleep_time=10)
+        poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_CREATE,
+                   sleep_time=10)
 
 
 @test(depends_on_classes=[RestoreUsingBackup, WaitForRestoreToFinish],
@@ -305,7 +310,7 @@ class DeleteRestoreInstance(object):
             except exceptions.NotFound:
                 return True
 
-        poll_until(instance_is_gone, time_out=120)
+        poll_until(instance_is_gone, time_out=TIMEOUT_INSTANCE_DELETE)
         assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
                       restore_instance_id)
 
@@ -346,7 +351,7 @@ class DeleteBackups(object):
             except exceptions.NotFound:
                 return True
 
-        poll_until(backup_is_gone, time_out=120)
+        poll_until(backup_is_gone, time_out=TIMEOUT_BACKUP_DELETE)
 
     @test(runs_after=[test_backup_delete])
     def test_incremental_deleted(self):

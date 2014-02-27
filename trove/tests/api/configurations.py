@@ -27,6 +27,8 @@ from trove.common.utils import poll_until
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import InstanceTestInfo
 from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
+from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
@@ -454,7 +456,7 @@ class StartInstanceWithConfiguration(object):
 class WaitForConfigurationInstanceToFinish(object):
 
     @test
-    @time_out(60 * 7)
+    @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_instance_with_configuration_active(self):
         # wait for the instance to become active
         if test_config.auth_strategy == "fake":
@@ -587,7 +589,7 @@ class DeleteConfigurations(object):
         poll_until(result_is_active)
 
     @test(depends_on=[test_delete_unassigned_configuration])
-    @time_out(120)
+    @time_out(TIMEOUT_INSTANCE_DELETE)
     def test_delete_configuration_instance(self):
         # test that we can delete the instance even though there is a
         # configuration applied to the instance
