@@ -28,7 +28,6 @@ from trove.quota.quota import run_with_quotas
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-SWIFT_CONTAINER = CONF.backup_swift_container
 
 
 class BackupState(object):

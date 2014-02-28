@@ -106,13 +106,6 @@ def load_simple_instance_server_status(context, db_info):
             db_info.addresses = {}
 
 
-# If the compute server is in any of these states we can't perform any
-# actions (delete, resize, etc).
-SERVER_INVALID_ACTION_STATUSES = ["BUILD", "REBOOT", "REBUILD", "RESIZE"]
-
-# Statuses in which an instance can have an action performed.
-VALID_ACTION_STATUSES = ["ACTIVE"]
-
 # Invalid states to contact the agent
 AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE"]
 
