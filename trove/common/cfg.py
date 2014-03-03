@@ -275,6 +275,25 @@ mysql_opts = [
                 help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
+    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+               help='Default strategy to perform backups.')
+]
+
+# Percona
+percona_group = cfg.OptGroup(
+    'percona', title='Percona options',
+    help="Oslo option group designed for Percona datastore")
+percona_opts = [
+    cfg.ListOpt('tcp_ports', default=["3306"],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+               help='Default strategy to perform backups.')
 ]
 
 # Redis
@@ -305,6 +324,8 @@ cassandra_opts = [
                 help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
 ]
 
 #Couchbase
@@ -322,6 +343,8 @@ couchbase_opts = [
                 help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
 ]
 
 CONF = cfg.CONF
@@ -330,47 +353,16 @@ CONF.register_opts(path_opts)
 CONF.register_opts(common_opts)
 
 CONF.register_group(mysql_group)
+CONF.register_group(percona_group)
 CONF.register_group(redis_group)
 CONF.register_group(cassandra_group)
 CONF.register_group(couchbase_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
+CONF.register_opts(percona_opts, percona_group)
 CONF.register_opts(redis_opts, redis_group)
 CONF.register_opts(cassandra_opts, cassandra_group)
 CONF.register_opts(couchbase_opts, couchbase_group)
-
-
-# Mysql
-mysql_group = cfg.OptGroup(
-    'mysql', title='MySQL options',
-    help="Oslo option group designed for MySQL datastore")
-mysql_opts = [
-    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.'),
-]
-# Cassandra
-cassandra_group = cfg.OptGroup(
-    'cassandra', title='Cassandra options',
-    help="Oslo option group designed for Cassandra datastore")
-cassandra_opts = [
-    cfg.StrOpt('backup_strategy', default=None,
-               help='Default strategy to perform backups.'),
-]
-# Redis
-redis_group = cfg.OptGroup(
-    'redis', title='Redis options',
-    help="Oslo option group designed for Redis datastore")
-redis_opts = [
-    cfg.StrOpt('backup_strategy', default=None,
-               help='Default strategy to perform backups.'),
-]
-
-CONF.register_group(mysql_group)
-CONF.register_group(cassandra_group)
-CONF.register_group(redis_group)
-CONF.register_opts(mysql_opts, mysql_group)
-CONF.register_opts(cassandra_opts, cassandra_group)
-CONF.register_opts(redis_opts, redis_group)
 
 
 def custom_parser(parsername, parser):
