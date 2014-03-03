@@ -38,6 +38,7 @@ from trove.conductor import api as conductor_api
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent import pkg
+from trove.guestagent.common import operating_system
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.service import BaseDbStatus
@@ -50,6 +51,7 @@ from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import KeepAliveConnection
+from trove.guestagent.datastore.couchbase import service as couchservice
 from trove.guestagent.db import models
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
@@ -944,6 +946,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('cassandra'),
                          'trove.guestagent.datastore.cassandra.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('couchbase'),
+                         'trove.guestagent.datastore.couchbase.manager'
+                         '.Manager')
 
     def test_datastore_registry_with_existing_manager(self):
         datastore_registry_ext_test = {
@@ -964,6 +969,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('cassandra'),
                          'trove.guestagent.datastore.cassandra.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('couchbase'),
+                         'trove.guestagent.datastore.couchbase.manager'
+                         '.Manager')
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -981,6 +989,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('cassandra'),
                          'trove.guestagent.datastore.cassandra.'
                          'manager.Manager')
+        self.assertEqual(test_dict.get('couchbase'),
+                         'trove.guestagent.datastore.couchbase.manager'
+                         '.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -1526,4 +1537,107 @@ class CassandraDBAppTest(testtools.TestCase):
                           self.cassandra.install_if_needed,
                           ['cassandra=1.2.10'])
 
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+
+class CouchbaseAppTest(testtools.TestCase):
+
+    def fake_couchbase_service_discovery(self, candidates):
+        return {
+            'cmd_start': 'start',
+            'cmd_stop': 'stop',
+            'cmd_enable': 'enable',
+            'cmd_disable': 'disable'
+        }
+
+    def setUp(self):
+        super(CouchbaseAppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = (
+            couchservice.utils.execute_with_timeout)
+        self.orig_time_sleep = time.sleep
+        time.sleep = Mock()
+        self.orig_service_discovery = operating_system.service_discovery
+        operating_system.service_discovery = (
+            self.fake_couchbase_service_discovery)
+        operating_system.get_ip_address = Mock()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.couchbaseApp = couchservice.CouchbaseApp(self.appStatus)
+        dbaas.CONF.guest_id = self.FAKE_ID
+
+    def tearDown(self):
+        super(CouchbaseAppTest, self).tearDown()
+        couchservice.utils.execute_with_timeout = (
+            self.orig_utils_execute_with_timeout)
+        operating_system.service_discovery = self.orig_service_discovery
+        time.sleep = self.orig_time_sleep
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        dbaas.CONF.guest_id = None
+
+    def assert_reported_status(self, expected_status):
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
+        self.assertEqual(expected_status, service_status.status)
+
+    def test_stop_db(self):
+        couchservice.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.couchbaseApp.stop_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_stop_db_error(self):
+        couchservice.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchbaseApp.state_change_wait_time = 1
+
+        self.assertRaises(RuntimeError, self.couchbaseApp.stop_db)
+
+    def test_restart(self):
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchbaseApp.stop_db = Mock()
+        self.couchbaseApp.start_db = Mock()
+
+        self.couchbaseApp.restart()
+
+        self.assertTrue(self.couchbaseApp.stop_db.called)
+        self.assertTrue(self.couchbaseApp.start_db.called)
+        self.assertTrue(conductor_api.API.heartbeat.called)
+
+    def test_start_db(self):
+        couchservice.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchbaseApp._enable_db_on_boot = Mock()
+
+        self.couchbaseApp.start_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_db_error(self):
+        from trove.common.exception import ProcessExecutionError
+        mocked = Mock(side_effect=ProcessExecutionError('Error'))
+        couchservice.utils.execute_with_timeout = mocked
+        self.couchbaseApp._enable_db_on_boot = Mock()
+
+        self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
+
+    def test_start_db_runs_forever(self):
+        couchservice.utils.execute_with_timeout = Mock()
+        self.couchbaseApp._enable_db_on_boot = Mock()
+        self.couchbaseApp.state_change_wait_time = 1
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
+        self.assertTrue(conductor_api.API.heartbeat.called)
+
+    def test_install_when_couchbase_installed(self):
+        self.couchbaseApp.initial_setup = Mock()
+        couchservice.packager.pkg_is_installed = Mock(return_value=True)
+        couchservice.utils.execute_with_timeout = Mock()
+
+        self.couchbaseApp.install_if_needed(["package"])
+        self.assertTrue(couchservice.packager.pkg_is_installed.called)
+        self.assertTrue(self.couchbaseApp.initial_setup.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)

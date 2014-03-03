@@ -36,6 +36,7 @@ defaults = {
     'percona': 'trove.guestagent.datastore.mysql.manager.Manager',
     'redis': 'trove.guestagent.datastore.redis.manager.Manager',
     'cassandra': 'trove.guestagent.datastore.cassandra.manager.Manager',
+    'couchbase': 'trove.guestagent.datastore.couchbase.manager.Manager',
 }
 CONF = cfg.CONF
 
