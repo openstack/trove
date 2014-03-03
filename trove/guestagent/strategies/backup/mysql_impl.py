@@ -1,5 +1,6 @@
-# Copyright 2013 Hewlett-Packard Development Company, L.P.
-# All Rights Reserved.
+#    Copyright 2013 Hewlett-Packard Development Company, L.P.
+#    Copyright 2014 Mirantis Inc.
+#    All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -16,6 +17,8 @@
 
 import re
 
+from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
+from trove.guestagent.datastore.mysql.service import get_auth_password
 from trove.guestagent.strategies.backup import base
 from trove.openstack.common import log as logging
 
@@ -28,13 +31,15 @@ class MySQLDump(base.BackupRunner):
 
     @property
     def cmd(self):
+        user_and_pass = (
+            ' --password=%(password)s -u %(user)s '
+            '2>/tmp/mysqldump.log' %
+            {'password': get_auth_password(),
+             'user': ADMIN_USER_NAME})
         cmd = ('mysqldump'
                ' --all-databases'
                ' %(extra_opts)s'
-               ' --opt'
-               ' --password=%(password)s'
-               ' -u %(user)s'
-               ' 2>/tmp/mysqldump.log')
+               ' --opt' + user_and_pass)
         return cmd + self.zip_cmd + self.encrypt_cmd
 
 
