@@ -146,3 +146,6 @@ tcp_ports = 6379
 
 [cassandra]
 tcp_ports = 7000, 7001, 9042, 9160
+
+[couchbase]
+tcp_ports = 8091, 8092, 4369, 11209-11211, 21100-21199

@@ -266,7 +266,7 @@ mysql_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
     cfg.ListOpt('udp_ports', default=[],
-                help='List of TCP ports and/or port ranges to open'
+                help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
 ]
@@ -281,7 +281,7 @@ redis_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
     cfg.ListOpt('udp_ports', default=[],
-                help='List of TCP ports and/or port ranges to open'
+                help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
 ]
@@ -296,7 +296,24 @@ cassandra_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
     cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+]
+
+#Couchbase
+couchbase_group = cfg.OptGroup(
+    'couchbase', title='Couchbase options',
+    help="Oslo option group designed for Couchbase datastore")
+couchbase_opts = [
+    cfg.ListOpt('tcp_ports',
+                default=["8091", "8092", "4369", "11209-11211",
+                         "21100-21199"],
                 help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True)'),
 ]
@@ -309,10 +326,12 @@ CONF.register_opts(common_opts)
 CONF.register_group(mysql_group)
 CONF.register_group(redis_group)
 CONF.register_group(cassandra_group)
+CONF.register_group(couchbase_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(redis_opts, redis_group)
 CONF.register_opts(cassandra_opts, cassandra_group)
+CONF.register_opts(couchbase_opts, couchbase_group)
 
 
 # Mysql
