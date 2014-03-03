@@ -66,7 +66,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None):
+                config_contents=None, root_password=None, overrides=None):
         """
         This is called when the trove instance first comes online.
         It is the first rpc message passed from the task manager.
@@ -121,4 +121,25 @@ class Manager(periodic_task.PeriodicTasks):
         This will eventually create a backup. Right now
         it does nothing.
         """
+        raise NotImplemented()
+
+    def mount_volume(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.mount(mount_point, write_to_fstab=False)
+        LOG.debug(_("Mounted the volume."))
+
+    def unmount_volume(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.unmount(mount_point)
+        LOG.debug(_("Unmounted the volume."))
+
+    def resize_fs(self, context, device_path=None, mount_point=None):
+        device = volume.VolumeDevice(device_path)
+        device.resize_fs(mount_point)
+        LOG.debug(_("Resized the filesystem"))
+
+    def update_overrides(self, context, overrides, remove=False):
+        raise NotImplemented()
+
+    def apply_overrides(self, context, overrides):
         raise NotImplemented()
