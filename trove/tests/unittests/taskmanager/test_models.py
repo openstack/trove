@@ -23,6 +23,7 @@ from trove.common import remote
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
+from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.instance import ServiceStatuses
 from trove.extensions.mysql import models as mysql_models
 from trove.instance.models import InstanceServiceStatus
@@ -36,6 +37,14 @@ from trove.openstack.common import timeutils
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
+import uuid
+
+
+class FakeOptGroup(object):
+    def __init__(self, tcp_ports=['3306', '3301-3307'],
+                 udp_ports=[]):
+        self.tcp_ports = tcp_ports
+        self.udp_ports = udp_ports
 
 
 class fake_Server:
@@ -158,7 +167,6 @@ class FreshInstanceTasksTest(testtools.TestCase):
              Datastore).load(any()).thenReturn(mock())
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
         taskmanager_models.CONF = mock()
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
         self.orig_ISS_find_by = InstanceServiceStatus.find_by
         self.orig_DBI_find_by = DBInstance.find_by
         self.userdata = "hello moto"
@@ -181,6 +189,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
         unstub()
 
     def test_create_instance_userdata(self):
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         cloudinit_location = os.path.dirname(self.cloudinit)
         datastore_manager = os.path.splitext(os.path.basename(self.
                                                               cloudinit))[0]
@@ -191,6 +200,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
         self.assertEqual(server.userdata, self.userdata)
 
     def test_create_instance_guestconfig(self):
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         when(taskmanager_models.CONF).get("guest_config").thenReturn(
             self.guestconfig)
         server = self.freshinstancetasks._create_server(
@@ -200,18 +210,21 @@ class FreshInstanceTasksTest(testtools.TestCase):
                          self.guestconfig_content)
 
     def test_create_instance_with_az_kwarg(self):
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, availability_zone='nova', nics=None)
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az(self):
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, 'nova', None)
 
         self.assertIsNotNone(server)
 
     def test_create_instance_with_az_none(self):
+        when(taskmanager_models.CONF).get(any()).thenReturn('')
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, None, None)
 
@@ -227,6 +240,68 @@ class FreshInstanceTasksTest(testtools.TestCase):
                          ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
         self.assertEqual(fake_DBInstance.find_by().get_task_status(),
                          InstanceTasks.BUILDING_ERROR_TIMEOUT_GA)
+
+    def test_create_sg_rules_success(self):
+        datastore_manager = 'mysql'
+        taskmanager_models.SecurityGroup.create_for_instance = (
+            Mock(return_value={'id': uuid.uuid4(),
+                               'name': uuid.uuid4()}))
+        taskmanager_models.CONF.get = Mock(return_value=FakeOptGroup())
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        self.freshinstancetasks._create_secgroup(datastore_manager)
+        self.assertEqual(2, taskmanager_models.SecurityGroupRule.
+                         create_sec_group_rule.call_count)
+
+    def test_create_sg_rules_format_exception_raised(self):
+        datastore_manager = 'mysql'
+        taskmanager_models.SecurityGroup.create_for_instance = (
+            Mock(return_value={'id': uuid.uuid4(),
+                               'name': uuid.uuid4()}))
+        taskmanager_models.CONF.get = Mock(
+            return_value=FakeOptGroup(tcp_ports=['3306', '-3306']))
+        self.freshinstancetasks.update_db = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        self.assertRaises(MalformedSecurityGroupRuleError,
+                          self.freshinstancetasks._create_secgroup,
+                          datastore_manager)
+
+    def test_create_sg_rules_greater_than_exception_raised(self):
+        datastore_manager = 'mysql'
+        taskmanager_models.SecurityGroup.create_for_instance = (
+            Mock(return_value={'id': uuid.uuid4(),
+                               'name': uuid.uuid4()}))
+        taskmanager_models.CONF.get = Mock(
+            return_value=FakeOptGroup(tcp_ports=['3306', '33060-3306']))
+        self.freshinstancetasks.update_db = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        self.assertRaises(MalformedSecurityGroupRuleError,
+                          self.freshinstancetasks._create_secgroup,
+                          datastore_manager)
+
+    def test_create_sg_rules_success_with_duplicated_port_or_range(self):
+        datastore_manager = 'mysql'
+        taskmanager_models.SecurityGroup.create_for_instance = (
+            Mock(return_value={'id': uuid.uuid4(),
+                               'name': uuid.uuid4()}))
+        taskmanager_models.CONF.get = Mock(
+            return_value=FakeOptGroup(
+                tcp_ports=['3306', '3306', '3306-3307', '3306-3307']))
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        self.freshinstancetasks.update_db = Mock()
+        self.freshinstancetasks._create_secgroup(datastore_manager)
+        self.assertEqual(2, taskmanager_models.SecurityGroupRule.
+                         create_sec_group_rule.call_count)
+
+    def test_create_sg_rules_exception_with_malformed_ports_or_range(self):
+        datastore_manager = 'mysql'
+        taskmanager_models.SecurityGroup.create_for_instance = (
+            Mock(return_value={'id': uuid.uuid4(), 'name': uuid.uuid4()}))
+        taskmanager_models.CONF.get = Mock(
+            return_value=FakeOptGroup(tcp_ports=['A', 'B-C']))
+        self.freshinstancetasks.update_db = Mock()
+        self.assertRaises(MalformedSecurityGroupRuleError,
+                          self.freshinstancetasks._create_secgroup,
+                          datastore_manager)
 
 
 class ResizeVolumeTest(testtools.TestCase):

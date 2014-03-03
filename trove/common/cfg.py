@@ -147,10 +147,7 @@ common_opts = [
     cfg.BoolOpt('hostname_require_ipv4', default=True,
                 help="Require user hostnames to be IPv4 addresses."),
     cfg.BoolOpt('trove_security_groups_support', default=True),
-    cfg.BoolOpt('trove_security_groups_rules_support', default=True),
     cfg.StrOpt('trove_security_group_name_prefix', default='SecGroup'),
-    cfg.StrOpt('trove_security_group_rule_protocol', default='tcp'),
-    cfg.IntOpt('trove_security_group_rule_port', default=3306),
     cfg.StrOpt('trove_security_group_rule_cidr', default='0.0.0.0/0'),
     cfg.IntOpt('trove_api_workers', default=None),
     cfg.IntOpt('usage_sleep_time', default=1,
@@ -257,10 +254,65 @@ common_opts = [
                      ' to instance when networks are not specified'
                      ' in API call.'),
 ]
+# Datastore specific option groups
+
+# Mysql
+mysql_group = cfg.OptGroup(
+    'mysql', title='MySQL options',
+    help="Oslo option group designed for MySQL datastore")
+mysql_opts = [
+    cfg.ListOpt('tcp_ports', default=["3306"],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+]
+
+# Redis
+redis_group = cfg.OptGroup(
+    'redis', title='Redis options',
+    help="Oslo option group designed for Redis datastore")
+redis_opts = [
+    cfg.ListOpt('tcp_ports', default=["6379"],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+]
+
+# Cassandra
+cassandra_group = cfg.OptGroup(
+    'cassandra', title='Cassandra options',
+    help="Oslo option group designed for Cassandra datastore")
+cassandra_opts = [
+    cfg.ListOpt('tcp_ports', default=["7000", "7001", "9042", "9160"],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of TCP ports and/or port ranges to open'
+                     ' in the security group (only applicable '
+                     'if trove_security_groups_support is True)'),
+]
 
 CONF = cfg.CONF
+
 CONF.register_opts(path_opts)
 CONF.register_opts(common_opts)
+
+CONF.register_group(mysql_group)
+CONF.register_group(redis_group)
+CONF.register_group(cassandra_group)
+
+CONF.register_opts(mysql_opts, mysql_group)
+CONF.register_opts(redis_opts, redis_group)
+CONF.register_opts(cassandra_opts, cassandra_group)
 
 
 def custom_parser(parsername, parser):

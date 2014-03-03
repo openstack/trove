@@ -31,6 +31,7 @@ from trove.common.exception import GuestTimeout
 from trove.common.exception import PollTimeOut
 from trove.common.exception import VolumeCreationFailure
 from trove.common.exception import TroveError
+from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.instance import ServiceStatuses
 from trove.common import instance as rd_instance
 from trove.common.remote import create_dns_client
@@ -177,7 +178,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # in the template definition.
         if CONF.trove_security_groups_support and not use_heat:
             try:
-                security_groups = self._create_secgroup()
+                security_groups = self._create_secgroup(datastore_manager)
             except Exception as e:
                 msg = (_("Error creating security group for instance: %s") %
                        self.id)
@@ -632,19 +633,49 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug(_("%(gt)s: DNS not enabled for instance: %(id)s") %
                       {'gt': greenthread.getcurrent(), 'id': self.id})
 
-    def _create_secgroup(self):
+    def _create_secgroup(self, datastore_manager):
         security_group = SecurityGroup.create_for_instance(self.id,
                                                            self.context)
-        if CONF.trove_security_groups_rules_support:
-            SecurityGroupRule.create_sec_group_rule(
-                security_group,
-                CONF.trove_security_group_rule_protocol,
-                CONF.trove_security_group_rule_port,
-                CONF.trove_security_group_rule_port,
-                CONF.trove_security_group_rule_cidr,
-                self.context
-            )
+        tcp_ports = CONF.get(datastore_manager).tcp_ports
+        udp_ports = CONF.get(datastore_manager).udp_ports
+        self._create_rules(security_group, tcp_ports, 'tcp')
+        self._create_rules(security_group, udp_ports, 'udp')
         return [security_group["name"]]
+
+    def _create_rules(self, s_group, ports, protocol):
+        err = inst_models.InstanceTasks.BUILDING_ERROR_SEC_GROUP
+        err_msg = _("Error creating security group rules."
+                    " Invalid port format. "
+                    "FromPort = %(from)s, ToPort = %(to)s")
+
+        def set_error_and_raise(port_or_range):
+            from_port, to_port = port_or_range
+            self.update_db(task_status=err)
+            msg = err_msg % {'from': from_port, 'to': to_port}
+            raise MalformedSecurityGroupRuleError(message=msg)
+
+        def _gen_ports(portstr):
+            from_port, sep, to_port = portstr.partition('-')
+            if not (to_port and from_port):
+                if not sep:
+                    to_port = from_port
+            try:
+                if int(from_port) > int(to_port):
+                    set_error_and_raise([from_port, to_port])
+            except ValueError:
+                set_error_and_raise([from_port, to_port])
+            return from_port, to_port
+
+        for port_or_range in set(ports):
+
+            from_, to_ = _gen_ports(port_or_range)
+            try:
+                SecurityGroupRule.create_sec_group_rule(
+                    s_group, protocol, int(from_), int(to_),
+                    CONF.trove_security_group_rule_cidr,
+                    self.context)
+            except TroveError:
+                set_error_and_raise([from_, to_])
 
     def _build_heat_nics(self, nics):
         ifaces = []

@@ -75,9 +75,6 @@ dns_service_type = dns
 
 # Trove Security Groups for Instances
 trove_security_groups_support = True
-trove_security_groups_rules_support = False
-trove_security_group_rule_protocol = tcp
-trove_security_group_rule_port = 3306
 trove_security_group_rule_cidr = 0.0.0.0/0
 
 # Guest related conf
@@ -131,3 +128,21 @@ pydev_debug = disabled
 # ================= Guestagent related ========================
 #guest_config = $pybasedir/etc/trove/trove-guestagent.conf.sample
 #cloudinit_location = /etc/trove/cloudinit
+
+# ================= Security groups related ========================
+# Each future datastore implementation should implement
+# its own oslo group with defined in it:
+# - tcp_ports; upd_ports;
+
+[mysql]
+# Format (single port or port range): A, B-C
+# where C greater than B
+tcp_ports = 3306
+
+[redis]
+# Format (single port or port range): A, B-C
+# where C greater than B
+tcp_ports = 6379
+
+[cassandra]
+tcp_ports = 7000, 7001, 9042, 9160
