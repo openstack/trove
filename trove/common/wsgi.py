@@ -49,11 +49,13 @@ XMLDictSerializer = openstack_wsgi.XMLDictSerializer
 XMLDeserializer = openstack_wsgi.XMLDeserializer
 RequestDeserializer = openstack_wsgi.RequestDeserializer
 
+CONF = cfg.CONF
+# Raise the default from 8192 to accommodate large tokens
+eventlet.wsgi.MAX_HEADER_LINE = CONF.max_header_line
+
 eventlet.patcher.monkey_patch(all=False, socket=True)
 
 LOG = logging.getLogger('trove.common.wsgi')
-
-CONF = cfg.CONF
 
 XMLNS = 'http://docs.openstack.org/database/api/v1.0'
 CUSTOM_PLURALS_METADATA = {'databases': '', 'users': ''}
