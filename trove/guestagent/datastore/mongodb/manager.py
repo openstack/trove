@@ -29,7 +29,7 @@ from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-ERROR_MSG = _("Not supported")
+MANAGER = CONF.datastore_manager
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -93,54 +93,70 @@ class Manager(periodic_task.PeriodicTasks):
         return dbaas.get_filesystem_volume_stats(system.MONGODB_MOUNT_POINT)
 
     def change_passwords(self, context, users):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='change_passwords', datastore=MANAGER)
 
     def update_attributes(self, context, username, hostname, user_attrs):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='update_attributes', datastore=MANAGER)
 
     def create_database(self, context, databases):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_database', datastore=MANAGER)
 
     def create_user(self, context, users):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_user', datastore=MANAGER)
 
     def delete_database(self, context, database):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='delete_database', datastore=MANAGER)
 
     def delete_user(self, context, user):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='delete_user', datastore=MANAGER)
 
     def get_user(self, context, username, hostname):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_user', datastore=MANAGER)
 
     def grant_access(self, context, username, hostname, databases):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='grant_access', datastore=MANAGER)
 
     def revoke_access(self, context, username, hostname, database):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='revoke_access', datastore=MANAGER)
 
     def list_access(self, context, username, hostname):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_access', datastore=MANAGER)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_databases', datastore=MANAGER)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_users', datastore=MANAGER)
 
     def enable_root(self, context):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root', datastore=MANAGER)
 
     def is_root_enabled(self, context):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='is_root_enabled', datastore=MANAGER)
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='_perform_restore', datastore=MANAGER)
 
     def create_backup(self, context, backup_info):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_backup', datastore=MANAGER)
 
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
@@ -158,7 +174,9 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug(_("Resized the filesystem"))
 
     def update_overrides(self, context, overrides, remove=False):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='update_overrides', datastore=MANAGER)
 
     def apply_overrides(self, context, overrides):
-        raise exception.TroveError(ERROR_MSG)
+        raise exception.DatastoreOperationNotSupported(
+            operation='apply_overrides', datastore=MANAGER)

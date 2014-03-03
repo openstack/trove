@@ -128,6 +128,12 @@ class DatastoreDefaultVersionNotFound(TroveError):
     message = _("Default version for datastore '%(datastore)s' not found.")
 
 
+class DatastoreOperationNotSupported(TroveError):
+
+    message = _("The '%(operation)s' operation is not supported for "
+                "the '%(datastore)s' datastore.")
+
+
 class NoUniqueMatch(TroveError):
 
     message = _("Multiple matches found for '%(name)s', i"
@@ -367,7 +373,6 @@ class DatabaseInitialUserDuplicateError(TroveError):
 
 
 class RestoreBackupIntegrityError(TroveError):
-
     message = _("Current Swift object checksum does not match original "
                 "checksum for backup %(backup_id)s.")
 

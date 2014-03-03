@@ -14,6 +14,7 @@
 #    under the License.
 
 from trove.common import cfg
+from trove.common import exception
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.redis.service import RedisAppStatus
@@ -47,7 +48,8 @@ class Manager(periodic_task.PeriodicTasks):
         Changes the redis instance password,
         it is currently not not implemented.
         """
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='change_passwords', datastore=MANAGER)
 
     def reset_configuration(self, context, configuration):
         """
@@ -62,7 +64,8 @@ class Manager(periodic_task.PeriodicTasks):
         Perform a restore on this instance,
         currently it is not implemented.
         """
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='_perform_restore', datastore=MANAGER)
 
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
@@ -99,7 +102,8 @@ class Manager(periodic_task.PeriodicTasks):
         Start this redis instance with new conf changes.
         Right now this does nothing.
         """
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='start_db_with_conf_changes', datastore=MANAGER)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
         """
@@ -121,7 +125,8 @@ class Manager(periodic_task.PeriodicTasks):
         This will eventually create a backup. Right now
         it does nothing.
         """
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_backup', datastore=MANAGER)
 
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
@@ -139,7 +144,63 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug(_("Resized the filesystem"))
 
     def update_overrides(self, context, overrides, remove=False):
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='update_overrides', datastore=MANAGER)
 
     def apply_overrides(self, context, overrides):
-        raise NotImplemented()
+        raise exception.DatastoreOperationNotSupported(
+            operation='apply_overrides', datastore=MANAGER)
+
+    def update_attributes(self, context, username, hostname, user_attrs):
+        raise exception.DatastoreOperationNotSupported(
+            operation='update_attributes', datastore=MANAGER)
+
+    def create_database(self, context, databases):
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_database', datastore=MANAGER)
+
+    def create_user(self, context, users):
+        raise exception.DatastoreOperationNotSupported(
+            operation='create_user', datastore=MANAGER)
+
+    def delete_database(self, context, database):
+        raise exception.DatastoreOperationNotSupported(
+            operation='delete_database', datastore=MANAGER)
+
+    def delete_user(self, context, user):
+        raise exception.DatastoreOperationNotSupported(
+            operation='delete_user', datastore=MANAGER)
+
+    def get_user(self, context, username, hostname):
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_user', datastore=MANAGER)
+
+    def grant_access(self, context, username, hostname, databases):
+        raise exception.DatastoreOperationNotSupported(
+            operation='grant_access', datastore=MANAGER)
+
+    def revoke_access(self, context, username, hostname, database):
+        raise exception.DatastoreOperationNotSupported(
+            operation='revoke_access', datastore=MANAGER)
+
+    def list_access(self, context, username, hostname):
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_access', datastore=MANAGER)
+
+    def list_databases(self, context, limit=None, marker=None,
+                       include_marker=False):
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_databases', datastore=MANAGER)
+
+    def list_users(self, context, limit=None, marker=None,
+                   include_marker=False):
+        raise exception.DatastoreOperationNotSupported(
+            operation='list_users', datastore=MANAGER)
+
+    def enable_root(self, context):
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root', datastore=MANAGER)
+
+    def is_root_enabled(self, context):
+        raise exception.DatastoreOperationNotSupported(
+            operation='is_root_enabled', datastore=MANAGER)

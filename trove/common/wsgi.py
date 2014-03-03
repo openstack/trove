@@ -428,7 +428,8 @@ class Controller(object):
         ],
         webob.exc.HTTPNotImplemented: [
             exception.VolumeNotSupported,
-            exception.LocalStorageNotSupported
+            exception.LocalStorageNotSupported,
+            exception.DatastoreOperationNotSupported
         ],
     }
 
