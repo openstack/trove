@@ -1,0 +1,204 @@
+New Trove Installation Guide - proposal
+
+Scenario
+The Openstack Havana environment has a Keystone service accepting only HTTPS connection.
+The VM running Trove starts with a freshly Ubuntu 12.04.04 server.
+
+Base configuration
+On the VM that will host the trove service, execute a base configuration like the other Openstack services(http://docs.openstack.org/trunk/install-guide/install/apt/content/ch_basics.html) installing only the NTP protocol and set the password for Trove.
+
+Install dependencies
+Loggin as root user and execute the following commands:
+
+•	Install required packages:
+
+# apt-get install build-essential libxslt1-dev qemu-utils mysql-client git python-dev python-pexpect python-mysqldb libmysqlclient-dev
+
+•	Some packages in Ubuntu repo are outdated, so install their latest version from sources:
+
+# cd ~
+# wget https://pypi.python.org/packages/source/s/setuptools/setuptools-0.9.8.tar.gz
+# tar xfvz setuptools-0.9.8.tar.gz
+# cd setuptools-0.9.8
+# python setup.py install
+
+# cd ~
+# wget https://pypi.python.org/packages/source/p/pip/pip-1.4.1.tar.gz
+# tar xfvz pip-1.4.1.tar.gz
+# cd pip-1.4.1
+# python setup.py install
+
+# cd ~
+
+Obtain Trove
+•	Get Trove’s sources from git:
+# git clone https://github.com/openstack/trove.git
+# git clone https://github.com/openstack/python-troveclient.git
+
+Install Trove
+
+•	First install required python packages:
+# cd ~/trove
+# pip install -r requirements.txt
+
+•	Install Trove itself:
+# python setup.py develop
+•	Install Trove CLI:
+# cd ~/python-troveclient
+# python setup.py develop
+# cd ~
+
+•	We’ll need glance client as well:
+# pip install python-glanceclient
+
+Prepare OpenStack
+•	Create a tenant ‘trove’ and user ‘trove’ with password ‘trove’ to be used with Trove.
+Create tenant
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>  \
+           --os-tenant-name <OpenStackAdminTenant> \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+           tenant-create --name trove
+
+Creazione user:
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>  \
+           --os-tenant-name <OpenStackAdminTenant> \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+           user-create --name trove --pass trove --tenant trove
+
+Role, admin and user association:
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>   \ 
+           --os-tenant-name <OpenStackAdminTenant>  \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+           user-role-add --user trove --tenant trove --role admin
+
+## Adding the user trove to the tenant service (see the redstack function of devstack):
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>   \ 
+           --os-tenant-name <OpenStackAdminTenant>  \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+           user-role-add --user trove --tenant service --role admin
+
+
+•	Create service trove:
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> \ 
+           --os-tenant-name <OpenStackAdminTenant> \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+           service-create --name trove --type database
+
+•	Create endpoint that points to trove. Pay attention to the use of quotes (‘):
+# keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> \
+           --os-tenant-name <OpenStackAdminTenant> \
+           --os-auth-url http://<KeystoneIp>:35357/v2.0 endpoint-create \
+           --service-id trove_service_id   \
+           --publicurl 'http://IP_trove:8779/v1.0/$(tenant_id)s'   \
+           --adminurl 'http://IP_trove:8779/v1.0/$(tenant_id)s'    \
+           --internalurl 'http://IP_trove:8779/v1.0/$(tenant_id)s'
+ 
+Prepare Trove configuration files
+There are several configuration files for Trove:
+•	api-paste.ini and trove.conf.sample – for trove-api
+•	trove-taskmanager.conf.sample – for trove-taskmanager
+•	trove-guestagent.conf.sample – for trove-guestagent
+•	<service_type>.cloudinit – cloudinit scripts for different service types. For now only ‘mysql’ and ‘percona’ are recognized as valid service types. NOTE: file names must exactly follow the pattern, e.g. ‘mysql.cloudinit’
+Samples of the above are available in $TROVE/trove/etc/trove/ as *.conf.sample files.
+If a vanilla Ubuntu image used as a source image for Trove instances, then it is cloudinit script’s responsibility to install and run Trove guestagent in the instance.
+As an alternative one may consider creating a custom image with pre-installed and pre-configured Trove in it.
+
+
+•	Edit the trove.conf.sample and trove-taskmanager.conf.sample files, adding the Rabbist Hostname for AMQP:
+
+# AMQP Connection info
+rabbit_password = PASSWORD_RABBIT
+rabbit_host = HOST_RABBIT
+
+•	Edit the api-paste.ini  file in order to set the CA path:
+[filter:authtoken]
+# signing_dir is configurable, but the default behavior of the authtoken
+# middleware should be sufficient.  It will create a temporary directory
+# in the home directory for the user the trove process is running as.
+signing_dir = path_to_signing_dir (i.e. /root/trove/etc/trove)
+
+•	I have also edited all the trove configuration files inserting those rows that I have found in the Devstack’s Trove installation (see the redstack function of devstack).
+
+•	In order to validate CA_file.pem of Keystone (SSL_504 error), I have modified:
+
+o	the https://github.com/openstack/trove/blob/master/trove/common/remote.py file in the rows 45 and 65, adding the cacert="/path/to/your/file.pem" ad last parameter in the .Client() function.
+o	the /usr/local/lib/python2.7/dist-packages/keystoneclient/middleware/auth_token.py
+in the rows 720 and 725:
+720: print('#####self.ssl_ca_file', self.ssl_ca_file) 
+725: kwargs['verify'] = '/root/INFN-CA-2006.pem' 
+
+Prepare image
+
+•	As the source image for trove instances, we will use a cloudinit-enabled vanilla Ubuntu image:
+# wget http://cloud-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
+
+•	Convert the downloaded image into uncompressed qcow2:
+# qemu-img convert -O qcow2 precise-server-cloudimg-amd64-disk1.img precise.qcow2
+
+•	Upload the converted image into Glance (using the Horizon interface):
+# glance --os-username trove --os-password trove --os-tenant-name trove \
+         --os-auth-url http://<KeystoneIp>:35357/v2.0 \
+         image-create --name ubuntu_mysql --public --container-format ovf 
+          --disk-format qcow2 
+          --owner trove < precise.qcow2
+
+Prepare database
+•	Create DB. In the VM in which I have create the Trove’s database (see the Havana’s services configuration):
+
+# mysql -u root -p
+mysql> CREATE DATABASE trove;
+mysql> GRANT ALL PRIVILEGES ON trove.* TO trove@'localhost' \
+IDENTIFIED BY 'TROVE_DBPASS';
+mysql> GRANT ALL PRIVILEGES ON trove.* TO trove@'%' \
+IDENTIFIED BY 'TROVE_DBPASS';
+
+•	Inizialize the database (see the redstack function of devstack):
+trove-manage --config-file=<PathToTroveConf> db_sync
+
+• Access to Trove’s database and insert the following rows (see the redstack function of devstack):
+INSERT INTO datastores VALUES ('a00000a0-00a0-0a00-00a0-000a000000aa', 'mysql', 'b00000b0-00b0-0b00-00b0-000b000000bb'); 
+
+INSERT INTO datastores values ('e00000e0-00e0-0e00-00e0-000e000000ee', 'Test_Datastore_1', '');
+
+INSERT INTO datastore_versions VALUES ('b00000b0-00b0-0b00-00b0-000b000000bb', 
+  'a00000a0-00a0-0a00-00a0-000a000000aa', 'mysql-5.5', 'c00000c0-00c0-0c00-00c0-000c000000cc', 'mysql-server-5.5', 1, 'mysql'); 
+
+INSERT INTO datastore_versions VALUES ('d00000d0-00d0-0d00-00d0-000d000000dd', 'a00000a0-00a0-0a00-00a0-000a000000aa',
+ 'mysql_inactive_version', '', '', 0, 'manager1');
+
+•	Setup trove to use the uploaded image:
+
+Retrive id_image from nova:
+# nova --os-username trove --os-password trove --os-tenant-name trove --os-auth-url http://keystone_IP:5000/v2.0 image-list | awk '/ubuntu_mysql/ {print $2}'
+
+Update  datastore (see the redstack function of devstack):
+# trove-manage --config-file=<PathToTroveConf> datastore_version_update mysql mysql-5.5 mysql image_id mysql-server-5.5 1
+
+update datastores and datastore_versions (see the redstack function of devstack):
+
+# trove-manage --config-file=<PathToTroveConf> datastore_version_update mysql mysql_inactive_version manager1 image_id "" 0
+
+# trove-manage --config-file=<PathToTroveConf> datastore_update mysql "" 
+
+# trove-manage --config-file=<PathToTroveConf> datastore_update mysql mysql-5.5
+
+# trove-manage --config-file=<PathToTroveConf> datastore_update Test_Datastore_1 "" 
+
+Run Trove
+Run the following commands:
+# trove-api --config-file=<PathToTroveConf> &
+
+# trove-taskmanager --config-file=<PathToTroveTaskmanager> &
+
+# trove-conductor --config-file=<PathToTroveConductor> &
+
+Errors
+In the trove-taskmanager.log I can see these errors:
+
+http://paste.openstack.org/show/72087/
+
+In the trove-api.log I can see:
+http://paste.openstack.org/show/72088/
+
+Suggestions on errors and guide
+
