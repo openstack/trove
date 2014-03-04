@@ -1,0 +1,93 @@
+HeatTemplateFormatVersion: '2012-12-12'
+Description: Instance creation template for mongodb
+Parameters:
+  Flavor:
+    Type: String
+  VolumeSize:
+    Type: Number
+    Default : '1'
+  InstanceId:
+    Type: String
+  ImageId:
+    Type: String
+  DatastoreManager:
+    Type: String
+  AvailabilityZone:
+    Type: String
+    Default: nova
+  TenantId:
+    Type: String
+Resources:
+{% for port in ports %}
+  {{ port.name }}:
+    Type: OS::Neutron::Port
+    Properties:
+      network_id: "{{ port.net_id }}"
+      security_groups: [{Ref: DBaaSSG}]
+      {% if port.fixed_ip %}
+      fixed_ips: [{"ip_address": "{{ port.fixed_ip }}"}]
+      {% endif %}
+{% endfor %}
+  BaseInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /etc/guest_info:
+              content:
+                Fn::Join:
+                - ''
+                - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
+                  "\ndatastore_manager=", {Ref: DatastoreManager},
+                  "\ntenant_id=", {Ref: TenantId}]
+              mode: '000644'
+              owner: root
+              group: root
+    Properties:
+      ImageId: {Ref: ImageId}
+      InstanceType: {Ref: Flavor}
+      AvailabilityZone: {Ref: AvailabilityZone}
+      {% if ifaces %}
+      NetworkInterfaces: [{{ ifaces|join(', ') }}]
+      {% else %}
+      SecurityGroups: [{Ref: DBaaSSG}]
+      {% endif %}
+      UserData:
+        Fn::Base64:
+          Fn::Join:
+          - ''
+          - ["#!/bin/bash -v\n",
+              "/opt/aws/bin/cfn-init\n",
+              "sudo service trove-guest start\n"]
+{% if volume_support %}
+  DataVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      Size: {Ref: VolumeSize}
+      AvailabilityZone: {Ref: AvailabilityZone}
+      Tags:
+      - {Key: Usage, Value: Test}
+  MountPoint:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      VolumeId: {Ref: DataVolume}
+      Device: /dev/vdb
+{% endif %}
+  DBaaSSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default Security group for MongoDB
+      SecurityGroupIngress:
+      - IpProtocol: "tcp"
+        FromPort: "27017"
+        ToPort: "27017"
+        CidrIp: "0.0.0.0/0"
+  DatabaseIPAddress:
+    Type: AWS::EC2::EIP
+  DatabaseIPAssoc :
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: {Ref: BaseInstance}
+      EIP: {Ref: DatabaseIPAddress}
