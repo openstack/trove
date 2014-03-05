@@ -37,6 +37,7 @@ defaults = {
     'redis': 'trove.guestagent.datastore.redis.manager.Manager',
     'cassandra': 'trove.guestagent.datastore.cassandra.manager.Manager',
     'couchbase': 'trove.guestagent.datastore.couchbase.manager.Manager',
+    'mongodb': 'trove.guestagent.datastore.mongodb.manager.Manager',
 }
 CONF = cfg.CONF
 

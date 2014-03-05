@@ -12,7 +12,6 @@
 
 
 import testtools
-import mock
 import re
 
 from trove.common import template
@@ -68,13 +67,6 @@ class HeatTemplateLoadTest(testtools.TestCase):
 
     def setUp(self):
         super(HeatTemplateLoadTest, self).setUp()
-        self.fException = mock.Mock(side_effect=
-                                    lambda *args, **kwargs:
-                                    _raise(template.jinja2.
-                                           TemplateNotFound("Test")))
-
-        def _raise(ex):
-            raise ex
 
     def tearDown(self):
         super(HeatTemplateLoadTest, self).tearDown()
@@ -86,6 +78,11 @@ class HeatTemplateLoadTest(testtools.TestCase):
 
     def test_heat_template_load_success(self):
         mysql_tmpl = template.load_heat_template('mysql')
+        #TODO(denis_makogon): use it when redis template would be added
+        #redis_tmplt = template.load_heat_template('redis')
         cassandra_tmpl = template.load_heat_template('cassandra')
+        mongo_tmpl = template.load_heat_template('mongodb')
         self.assertIsNotNone(mysql_tmpl)
         self.assertIsNotNone(cassandra_tmpl)
+        self.assertIsNotNone(mongo_tmpl)
+        # self.assertIsNotNone(redis_tmpl)

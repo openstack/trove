@@ -51,6 +51,8 @@ from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import KeepAliveConnection
 from trove.guestagent.datastore.couchbase import service as couchservice
+from trove.guestagent.datastore.mongodb import service as mongo_service
+from trove.guestagent.datastore.mongodb import system as mongo_system
 from trove.guestagent.db import models
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
@@ -71,7 +73,7 @@ FAKE_USER = [{"_name": "random", "_password": "guesswhat",
 conductor_api.API.heartbeat = Mock()
 
 
-class FakeAppStatus(MySqlAppStatus):
+class FakeAppStatus(BaseDbStatus):
 
     def __init__(self, id, status):
         self.id = id
@@ -929,6 +931,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchbase'),
                          'trove.guestagent.datastore.couchbase.manager'
                          '.Manager')
+        self.assertEqual('trove.guestagent.datastore.mongodb.'
+                         'manager.Manager',
+                         test_dict.get('mongodb'))
 
     def test_datastore_registry_with_existing_manager(self):
         datastore_registry_ext_test = {
@@ -952,6 +957,8 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchbase'),
                          'trove.guestagent.datastore.couchbase.manager'
                          '.Manager')
+        self.assertEqual('trove.guestagent.datastore.mongodb.manager.Manager',
+                         test_dict.get('mongodb'))
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -972,6 +979,8 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchbase'),
                          'trove.guestagent.datastore.couchbase.manager'
                          '.Manager')
+        self.assertEqual('trove.guestagent.datastore.mongodb.manager.Manager',
+                         test_dict.get('mongodb'))
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -1620,4 +1629,152 @@ class CouchbaseAppTest(testtools.TestCase):
         self.couchbaseApp.install_if_needed(["package"])
         self.assertTrue(couchservice.packager.pkg_is_installed.called)
         self.assertTrue(self.couchbaseApp.initial_setup.called)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+
+class MongoDBAppTest(testtools.TestCase):
+
+    def fake_mongodb_service_discovery(self, candidates):
+        return {
+            'cmd_start': 'start',
+            'cmd_stop': 'stop',
+            'cmd_enable': 'enable',
+            'cmd_disable': 'disable'
+        }
+
+    def setUp(self):
+        super(MongoDBAppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = (mongo_service.
+                                                utils.execute_with_timeout)
+        self.orig_time_sleep = time.sleep
+        self.orig_packager = mongo_system.PACKAGER
+        self.orig_service_discovery = operating_system.service_discovery
+
+        operating_system.service_discovery = (
+            self.fake_mongodb_service_discovery)
+        util.init_db()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.mongoDbApp = mongo_service.MongoDBApp(self.appStatus)
+        time.sleep = Mock()
+
+    def tearDown(self):
+        super(MongoDBAppTest, self).tearDown()
+        mongo_service.utils.execute_with_timeout = (
+            self.orig_utils_execute_with_timeout)
+        time.sleep = self.orig_time_sleep
+        mongo_system.PACKAGER = self.orig_packager
+        operating_system.service_discovery = self.orig_service_discovery
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+
+    def assert_reported_status(self, expected_status):
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
+        self.assertEqual(expected_status, service_status.status)
+
+    def test_stopdb(self):
+        mongo_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.mongoDbApp.stop_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_stop_db_with_db_update(self):
+
+        mongo_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.mongoDbApp.stop_db(True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'shutdown'}))
+
+    def test_stop_db_error(self):
+
+        mongo_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.mongoDbApp.state_change_wait_time = 1
+        self.assertRaises(RuntimeError, self.mongoDbApp.stop_db)
+
+    def test_restart(self):
+
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.mongoDbApp.stop_db = Mock()
+        self.mongoDbApp.start_db = Mock()
+
+        self.mongoDbApp.restart()
+
+        self.assertTrue(self.mongoDbApp.stop_db.called)
+        self.assertTrue(self.mongoDbApp.start_db.called)
+
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'shutdown'}))
+
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'running'}))
+
+    def test_start_db(self):
+
+        mongo_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+
+        self.mongoDbApp.start_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_db_with_update(self):
+
+        mongo_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+
+        self.mongoDbApp.start_db(True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'running'}))
+
+    def test_start_db_runs_forever(self):
+
+        mongo_service.utils.execute_with_timeout = Mock(
+            return_value=["ubuntu 17036  0.0  0.1 618960 "
+                          "29232 pts/8    Sl+  Jan29   0:07 mongod", ""])
+        self.mongoDbApp.state_change_wait_time = 1
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.assertRaises(RuntimeError, self.mongoDbApp.start_db)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID, {'service_status': 'shutdown'}))
+
+    def test_start_db_error(self):
+
+        self.mongoDbApp._enable_db_on_boot = Mock()
+        from trove.common.exception import ProcessExecutionError
+        mocked = Mock(side_effect=ProcessExecutionError('Error'))
+        mongo_service.utils.execute_with_timeout = mocked
+
+        self.assertRaises(RuntimeError, self.mongoDbApp.start_db)
+
+    def test_start_db_with_conf_changes_db_is_running(self):
+
+        self.mongoDbApp.start_db = Mock()
+
+        self.appStatus.status = rd_instance.ServiceStatuses.RUNNING
+        self.assertRaises(RuntimeError,
+                          self.mongoDbApp.start_db_with_conf_changes,
+                          Mock())
+
+    def test_install_when_db_installed(self):
+        packager_mock = mock()
+        when(packager_mock).pkg_is_installed(any()).thenReturn(True)
+        mongo_system.PACKAGER = packager_mock
+        self.mongoDbApp.install_if_needed(['package'])
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_install_when_db_not_installed(self):
+        packager_mock = mock()
+        when(packager_mock).pkg_is_installed(any()).thenReturn(False)
+        mongo_system.PACKAGER = packager_mock
+        self.mongoDbApp.install_if_needed(['package'])
+        verify(packager_mock).pkg_install(any(), {}, any())
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
