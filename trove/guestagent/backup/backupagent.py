@@ -161,16 +161,16 @@ class BackupAgent(object):
                 CONF.storage_strategy,
                 CONF.storage_namespace)(context)
 
-            with restore_runner(storage, location=backup_info['location'],
-                                checksum=backup_info['checksum'],
-                                restore_location=restore_location) as runner:
-                backup_info['restore_location'] = restore_location
-                LOG.debug(_("Restoring instance from backup %(id)s to "
-                            "%(restore_location)s") % backup_info)
-                content_size = runner.restore()
-                LOG.info(_("Restore from backup %(id)s completed successfully "
-                           "to %(restore_location)s") % backup_info)
-                LOG.info(_("Restore size: %s") % content_size)
+            runner = restore_runner(storage, location=backup_info['location'],
+                                    checksum=backup_info['checksum'],
+                                    restore_location=restore_location)
+            backup_info['restore_location'] = restore_location
+            LOG.debug(_("Restoring instance from backup %(id)s to "
+                        "%(restore_location)s") % backup_info)
+            content_size = runner.restore()
+            LOG.info(_("Restore from backup %(id)s completed successfully "
+                       "to %(restore_location)s") % backup_info)
+            LOG.info(_("Restore size: %s") % content_size)
 
         except Exception as e:
             LOG.error(e)

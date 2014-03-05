@@ -71,25 +71,6 @@ class RestoreRunner(Strategy):
                             (self.base_restore_cmd % kwargs))
         super(RestoreRunner, self).__init__()
 
-    def __enter__(self):
-        """Return the runner"""
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Clean up everything."""
-        if exc_type is not None:
-            return False
-
-        if hasattr(self, 'process'):
-            try:
-                self.process.terminate()
-            except OSError:
-                # Already stopped
-                pass
-            utils.raise_if_process_errored(self.process, RestoreError)
-
-        return True
-
     def pre_restore(self):
         """Hook that is called before the restore command"""
         pass
@@ -109,15 +90,15 @@ class RestoreRunner(Strategy):
 
     def _unpack(self, location, checksum, command):
         stream = self.storage.load(location, checksum)
-        self.process = subprocess.Popen(command, shell=True,
-                                        stdin=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
-        self.pid = self.process.pid
+        process = subprocess.Popen(command, shell=True,
+                                   stdin=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
         content_length = 0
         for chunk in stream:
-            self.process.stdin.write(chunk)
+            process.stdin.write(chunk)
             content_length += len(chunk)
-        self.process.stdin.close()
+        process.stdin.close()
+        utils.raise_if_process_errored(process, RestoreError)
         LOG.info(_("Restored %s bytes from stream.") % content_length)
 
         return content_length
