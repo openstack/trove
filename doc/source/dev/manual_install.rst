@@ -1,8 +1,8 @@
 .. _manual_install:
 
-=========================
-Manual Trove Installation
-=========================
+===================================
+Manual Trove Installation - Grizzly
+===================================
 
 Objectives
 ==========
@@ -143,17 +143,27 @@ Prepare OpenStack
 These values are not required to all be 'trove'; you can instead choose your own values for the name,
 tenant, and password::
 
+    Create a tenant:
+
     # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
         --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
         tenant-create --name trove
 
+    Create a user:
     # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
         --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
         user-create --name trove --pass trove --tenant trove
 
+    Add role to user in the tenant:
     # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
         --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
         user-role-add --name trove --tenant trove --role admin
+        
+    Adding the user trove to the tenant service (see the redstack function of devstack):
+    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> 
+           --os-tenant-name <OpenStackAdminTenant>
+           --os-auth-url http://<KeystoneIp>:35357/v2.0
+           user-role-add --user trove --tenant service --role admin
 
 * Create service for trove::
 
@@ -165,7 +175,8 @@ tenant, and password::
 
     # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
         --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        endpoint-create --service trove --region RegionOne
+        endpoint-create --service trove --region regionOne
+        --service-id trove_service_id
         --publicurl 'http://localhost:8779/v1.0/$(tenant_id)s'
         --adminurl 'http://localhost:8779/v1.0/$(tenant_id)s'
         --internalurl 'http://localhost:8779/v1.0/$(tenant_id)s'
@@ -210,15 +221,59 @@ Prepare image
 ----------------
 Prepare database
 ----------------
+* Create the database:
+In the VM in which you want to host the Trove’s database::
+
+        # mysql -u root -p
+    
+        mysql> CREATE DATABASE trove;
+    
+        mysql> GRANT ALL PRIVILEGES ON trove.* TO trove@'localhost' \
+        IDENTIFIED BY 'TROVE_DBPASS';
+    
+        mysql> GRANT ALL PRIVILEGES ON trove.* TO trove@'%' \
+        IDENTIFIED BY 'TROVE_DBPASS';
+    
 * Initialize the database::
 
-    # trove-manage --config-file=<PathToTroveConf> db_wipe trove_test.sqlite mysql fake
+    # trove-manage --config-file=<PathToTroveConf> db_wipe mysql 
+    
+    As an alternative, you can use:
+    
+    # trove-manage --config-file=<PathToTroveConf> db_sync 
+    
+* Access to Trove’s database and insert the following rows (see the redstack function of devstack)::
+   
+    mysql> INSERT INTO datastores VALUES ('a00000a0-00a0-0a00-00a0-000a000000aa', 'mysql', 
+    'b00000b0-00b0-0b00-00b0-000b000000bb'); 
 
-* Setup trove to use the uploaded image. Enter the following in a single line, note quotes (') and backquotes(`)::
+    mysql> INSERT INTO datastores values ('e00000e0-00e0-0e00-00e0-000e000000ee', 'Test_Datastore_1', '');
 
-    # trove-manage --config-file=<PathToTroveConf> image_update mysql
-        `nova --os-username trove --os-password trove --os-tenant-name trove
-        --os-auth-url http://<KeystoneIp>:5000/v2.0 image-list | awk '/trove-image/ {print $2}'`
+    mysql> INSERT INTO datastore_versions VALUES ('b00000b0-00b0-0b00-00b0-000b000000bb', 
+    'a00000a0-00a0-0a00-00a0-000a000000aa', 'mysql-5.5', 'c00000c0-00c0-0c00-00c0-000c000000cc', 
+    'mysql-server-5.5', 1, 'mysql'); 
+
+    mysql> INSERT INTO datastore_versions VALUES ('d00000d0-00d0-0d00-00d0-000d000000dd', 
+    'a00000a0-00a0-0a00-00a0-000a000000aa', 'mysql_inactive_version', '', '', 0, 'manager1');
+
+* Setup trove to use the uploaded image::
+
+    Retrieve the image_id from nova:
+    
+    # nova --os-username trove --os-password trove --os-tenant-name trove 
+             --os-auth-url http://keystone_IP:5000/v2.0 image-list | awk '/ubuntu_mysql/ {print $2}'
+             
+    Update  datastore (see the redstack function of devstack)::
+
+	# trove-manage --config-file=<PathToTroveConf> datastore_update mysql "" 
+
+	# trove-manage --config-file=<PathToTroveConf> datastore_version_update mysql mysql-5.5 mysql image_id mysql-server-5.5 1
+
+	# trove-manage --config-file=<PathToTroveConf> datastore_version_update mysql mysql_inactive_version manager1 image_id "" 0
+
+	# trove-manage --config-file=<PathToTroveConf> datastore_update mysql mysql-5.5
+
+	# trove-manage --config-file=<PathToTroveConf> datastore_update Test_Datastore_1 "" 
 
 ---------
 Run Trove
@@ -230,7 +285,11 @@ Run Trove
 * Run trove-taskmanager::
 
     # trove-taskmanager --config-file=<PathToTroveTaskmanagerConf> &
+    
+* Run trove-conductor::
 
+    # trove-conductor --config-file=<PathToTroveConductor> &
+    
 * Try executing a trove command, like get-instance. You must first issue an "auth login" to obtain an API key.::
 
     # trove-cli --username=trove --apikey=trove --tenant=trove --auth_url=http://<KeystoneIp>:35357/v2.0/tokens auth login
