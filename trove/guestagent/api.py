@@ -299,7 +299,7 @@ class API(proxy.RpcProxy):
         """Resize the filesystem"""
         LOG.debug(_("Resize device %(device)s on instance %(id)s") % {
             'device': device_path, 'id': self.id})
-        self._call("resize_fs", AGENT_LOW_TIMEOUT, device_path=device_path,
+        self._call("resize_fs", AGENT_HIGH_TIMEOUT, device_path=device_path,
                    mount_point=mount_point)
 
     def update_overrides(self, overrides, remove=False):
