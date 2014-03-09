@@ -17,4 +17,5 @@
 
 from migrate.versioning.shell import main
 
-main(debug='False', repository='.')
+if __name__ == "__main__":
+    main(debug='False', repository='.')
