@@ -19,6 +19,7 @@
 import re
 from datetime import datetime
 from novaclient import exceptions as nova_exceptions
+from oslo.config.cfg import NoSuchOptError
 from trove.common import cfg
 from trove.common import exception
 from trove.common import template
@@ -500,6 +501,17 @@ class Instance(BuiltInstance):
     """
 
     @classmethod
+    def get_root_on_create(cls, datastore_manager):
+        try:
+            root_on_create = CONF.get(datastore_manager).root_on_create
+            return root_on_create
+        except NoSuchOptError:
+            LOG.debug(_("root_on_create not configured for %s"
+                        " hence defaulting the value to False")
+                      % datastore_manager)
+            return False
+
+    @classmethod
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None, configuration_id=None):
@@ -567,7 +579,8 @@ class Instance(BuiltInstance):
                 db_info.save()
 
             root_password = None
-            if CONF.root_on_create and not backup_id:
+            if cls.get_root_on_create(
+                    datastore_version.manager) and not backup_id:
                 root_password = utils.generate_random_password()
 
             task_api.API(context).create_instance(db_info.id, name, flavor,

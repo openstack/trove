@@ -17,6 +17,7 @@ from testtools import TestCase
 from trove.common import cfg
 from trove.instance.models import filter_ips
 from trove.instance.models import DBInstance
+from trove.instance.models import Instance
 from trove.instance.models import SimpleInstance
 from trove.instance.tasks import InstanceTasks
 
@@ -41,6 +42,10 @@ class SimpleInstanceTest(TestCase):
         CONF.network_label_regex = self.orig_conf
         CONF.ip_start = None
         CONF.ip_regex = self.orig_ip_regex
+
+    def test_get_root_on_create(self):
+        root_on_create_val = Instance.get_root_on_create('redis')
+        self.assertFalse(root_on_create_val)
 
     def test_filter_ips(self):
         CONF.network_label_regex = '.*'
