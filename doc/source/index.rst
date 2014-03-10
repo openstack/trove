@@ -5,7 +5,7 @@ Welcome to Trove's developer documentation!
 Introduction
 ============
 
-Trove is Database as a Service for Openstack. It's designed to run
+Trove is Database as a Service for OpenStack. It's designed to run
 entirely on OpenStack, with the goal of allowing users to quickly and
 easily utilize the features of a relational database without the
 burden of handling complex administrative tasks. Cloud users and
