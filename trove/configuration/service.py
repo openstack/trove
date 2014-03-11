@@ -198,7 +198,7 @@ class ConfigurationsController(wsgi.Controller):
                 raise exception.UnprocessableEntity(message=msg)
 
             # integer min/max checking
-            if isinstance(v, int):
+            if isinstance(v, int) and not isinstance(v, bool):
                 try:
                     min_value = int(rule.get('min'))
                 except ValueError:
