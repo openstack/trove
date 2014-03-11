@@ -10,7 +10,7 @@ function run() {
     .tox/py26/bin/python $@
 }
 run bin/trove-manage \
-    --config-file=etc/trove/trove.conf.test db_wipe \
+    --config-file=etc/trove/trove.conf.test db_recreate \
     trove_test.sqlite mysql fake
 run bin/trove-fake-mode \
     --fork --config-file=etc/trove/trove.conf.test \

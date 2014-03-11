@@ -212,7 +212,7 @@ Prepare database
 ----------------
 * Initialize the database::
 
-    # trove-manage --config-file=<PathToTroveConf> db_wipe trove_test.sqlite mysql fake
+    # trove-manage --config-file=<PathToTroveConf> db_recreate trove_test.sqlite mysql fake
 
 * Setup trove to use the uploaded image. Enter the following in a single line, note quotes (') and backquotes(`)::
 
