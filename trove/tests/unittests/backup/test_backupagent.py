@@ -50,6 +50,9 @@ class MockBackup(BackupRunner):
         self.cmd = 'echo %s' % self.data
         super(MockBackup, self).__init__(*args, **kwargs)
 
+    def cmd(self):
+        return self.cmd
+
 
 class MockCheckProcessBackup(MockBackup):
     """Backup runner that fails confirming the process."""
