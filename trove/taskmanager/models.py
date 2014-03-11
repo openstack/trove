@@ -63,7 +63,6 @@ RESIZE_TIME_OUT = CONF.resize_time_out  # seconds.
 REVERT_TIME_OUT = CONF.revert_time_out  # seconds.
 HEAT_TIME_OUT = CONF.heat_time_out  # seconds.
 USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
-USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 HEAT_STACK_SUCCESSFUL_STATUSES = [('CREATE', 'CREATE_COMPLETE')]
 HEAT_RESOURCE_SUCCESSFUL_STATE = 'CREATE_COMPLETE'
 
@@ -258,9 +257,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # record to avoid over billing a customer for an instance that
         # fails to build properly.
         try:
+            usage_timeout = CONF.get(datastore_manager).usage_timeout
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
-                             time_out=USAGE_TIMEOUT)
+                             time_out=usage_timeout)
             self.send_usage_event('create', instance_size=flavor['ram'])
         except PollTimeOut:
             LOG.error(_("Timeout for service changing to active. "
