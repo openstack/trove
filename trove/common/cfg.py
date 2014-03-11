@@ -261,11 +261,6 @@ common_opts = [
                     'Keystone v3 API with big service catalogs'),
 ]
 
-CONF = cfg.CONF
-
-CONF.register_opts(path_opts)
-CONF.register_opts(common_opts)
-
 # Datastore specific option groups
 
 # Mysql
