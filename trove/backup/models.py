@@ -45,6 +45,17 @@ class BackupState(object):
 class Backup(object):
 
     @classmethod
+    def validate_can_perform_action(cls, instance, operation):
+        """
+        Raises exception if backup strategy is not supported
+        """
+        datastore_cfg = CONF.get(instance.datastore_version.manager)
+        if not datastore_cfg or not (
+                datastore_cfg.get('backup_strategy', None)):
+            raise exception.DatastoreOperationNotSupported(
+                operation=operation, datastore=instance.datastore.name)
+
+    @classmethod
     def create(cls, context, instance, name, description=None, parent_id=None):
         """
         create db record for Backup
@@ -64,7 +75,8 @@ class Backup(object):
             from trove.instance.models import Instance
             instance_model = Instance.load(context, instance_id)
             instance_model.validate_can_perform_action()
-
+            cls.validate_can_perform_action(
+                instance_model, 'backup_create')
             cls.verify_swift_auth_token(context)
 
             parent = None

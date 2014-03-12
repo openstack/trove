@@ -58,6 +58,8 @@ class BackupCreateTest(testtools.TestCase):
         when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
             instance)
         when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).validate_can_perform_action(
+            any(), any()).thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenReturn(
             None)
         when(api.API).create_backup(any()).thenReturn(None)
@@ -84,6 +86,8 @@ class BackupCreateTest(testtools.TestCase):
         when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
             instance)
         when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).validate_can_perform_action(
+            any(), any()).thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenReturn(
             None)
         when(api.API).create_backup(any()).thenReturn(None)
@@ -114,6 +118,8 @@ class BackupCreateTest(testtools.TestCase):
         when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
             instance)
         when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).validate_can_perform_action(
+            any(), any()).thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenReturn(
             None)
         self.assertRaises(exception.NotFound, models.Backup.create,
@@ -135,9 +141,23 @@ class BackupCreateTest(testtools.TestCase):
         when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
             instance)
         when(instance).validate_can_perform_action().thenReturn(None)
+        when(models.Backup).validate_can_perform_action(
+            any(), any()).thenReturn(None)
         when(models.Backup).verify_swift_auth_token(any()).thenRaise(
             exception.SwiftAuthError)
         self.assertRaises(exception.SwiftAuthError, models.Backup.create,
+                          self.context, self.instance_id,
+                          BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_backup_datastore_operation_not_supported(self):
+        instance = mock(instance_models.Instance)
+        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
+            instance)
+        when(models.Backup).validate_can_perform_action(
+            any(), any()).thenRaise(
+                exception.DatastoreOperationNotSupported)
+        self.assertRaises(exception.DatastoreOperationNotSupported,
+                          models.Backup.create,
                           self.context, self.instance_id,
                           BACKUP_NAME, BACKUP_DESC)
 
