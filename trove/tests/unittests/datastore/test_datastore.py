@@ -13,16 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from testtools import TestCase
 from trove.datastore import models as datastore_models
-from trove.common.exception import DatastoreDefaultDatastoreNotFound
+from trove.datastore.models import Datastore
+from trove.tests.unittests.datastore.base import TestDatastoreBase
+from trove.common import exception
 
 
-class TestDatastore(TestCase):
-    def setUp(self):
-        super(TestDatastore, self).setUp()
+class TestDatastore(TestDatastoreBase):
 
     def test_create_failure_with_datastore_default_notfound(self):
         self.assertRaises(
-            DatastoreDefaultDatastoreNotFound,
+            exception.DatastoreDefaultDatastoreNotFound,
             datastore_models.get_datastore_version)
+
+    def test_load_datastore(self):
+        datastore = Datastore.load(self.ds_name)
+        self.assertEqual(datastore.name, self.ds_name)
