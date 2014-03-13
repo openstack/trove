@@ -144,10 +144,8 @@ common_opts = [
     cfg.StrOpt('trove_security_group_name_prefix', default='SecGroup'),
     cfg.StrOpt('trove_security_group_rule_cidr', default='0.0.0.0/0'),
     cfg.IntOpt('trove_api_workers', default=None),
-    cfg.IntOpt('usage_sleep_time', default=1,
+    cfg.IntOpt('usage_sleep_time', default=5,
                help='Time to sleep during the check active guest.'),
-    cfg.IntOpt('usage_timeout', default=300,
-               help='Timeout to wait for a guest to become active.'),
     cfg.StrOpt('region', default='LOCAL_DEV',
                help='The region this service is located.'),
     cfg.StrOpt('backup_runner',
@@ -281,6 +279,8 @@ mysql_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
+    cfg.IntOpt('usage_timeout', default=400,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 # Percona
@@ -306,6 +306,8 @@ percona_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
+    cfg.IntOpt('usage_timeout', default=450,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 # Redis
@@ -326,6 +328,8 @@ redis_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/redis',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled"),
+    cfg.IntOpt('usage_timeout', default=450,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 # Cassandra
@@ -346,6 +350,8 @@ cassandra_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/cassandra',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled"),
+    cfg.IntOpt('usage_timeout', default=600,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 #Couchbase
@@ -368,6 +374,8 @@ couchbase_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/couchbase',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled"),
+    cfg.IntOpt('usage_timeout', default=450,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 # MongoDB
@@ -388,6 +396,8 @@ mongodb_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/mongodb',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled"),
+    cfg.IntOpt('usage_timeout', default=450,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 CONF = cfg.CONF

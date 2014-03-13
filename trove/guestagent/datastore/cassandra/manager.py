@@ -26,8 +26,6 @@ from trove.guestagent import dbaas
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
-USAGE_TIMEOUT = CONF.usage_timeout  # seconds.
 ERROR_MSG = _("Not supported")
 MANAGER = CONF.datastore_manager
 
