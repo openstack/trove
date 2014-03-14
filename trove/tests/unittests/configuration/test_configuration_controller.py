@@ -17,6 +17,30 @@
 import jsonschema
 from testtools import TestCase
 from trove.configuration.service import ConfigurationsController
+from trove.common import configurations
+
+
+class TestConfigurationParser(TestCase):
+    def setUp(self):
+        super(TestConfigurationParser, self).setUp()
+
+    def test_parse_my_cnf_correctly(self):
+        config = """
+        [mysqld]
+        pid-file = /var/run/mysqld/mysqld.pid
+        connect_timeout = 15
+        # we need to test no value params
+        skip-external-locking
+        ;another comment
+        !includedir /etc/mysql/conf.d/
+        """
+        cfg_parser = configurations.MySQLConfParser(config)
+        parsed = cfg_parser.parse()
+        d_parsed = dict(parsed)
+        self.assertIsNotNone(d_parsed)
+        self.assertEqual(d_parsed["pid-file"], "/var/run/mysqld/mysqld.pid")
+        self.assertEqual(d_parsed["connect_timeout"], '15')
+        self.assertEqual(d_parsed["skip-external-locking"], '1')
 
 
 class TestConfigurationController(TestCase):

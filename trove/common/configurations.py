@@ -76,8 +76,14 @@ class MySQLConfParser(object):
                 continue
             elif line_clean.startswith('!'):
                 continue
-            elif line_clean.startswith(':'):
+            elif line_clean.startswith(';'):
                 continue
+            # python 2.6 configparser doesnt like params without values
+            elif line_clean.startswith('[') and line_clean.endswith(']'):
+                ret.append(line_clean)
+            elif line_clean and "=" not in line_clean:
+                LOG.debug("fixing line without '=' in it: %s" % line_clean)
+                ret.append(line_clean + " = 1")
             else:
                 ret.append(line_clean)
         rendered = "\n".join(ret)
