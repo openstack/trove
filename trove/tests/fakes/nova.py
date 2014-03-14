@@ -522,7 +522,7 @@ class FakeVolumes(object):
             volume.size = new_size
         eventlet.spawn_after(1.0, finish_resize)
 
-    def detach(self, volume_id):
+    def delete_server_volume(self, server_id, volume_id):
         volume = self.get(volume_id)
 
         if volume._current_status != 'in-use':
@@ -534,7 +534,7 @@ class FakeVolumes(object):
             volume._current_status = "available"
         eventlet.spawn_after(1.0, finish_detach)
 
-    def attach(self, volume_id, server_id, device_path):
+    def create_server_volume(self, server_id, volume_id, device_path):
         volume = self.get(volume_id)
 
         if volume._current_status != "available":
