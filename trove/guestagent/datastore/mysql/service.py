@@ -516,8 +516,7 @@ class MySqlAdmin(object):
         with LocalSqlClient(get_engine()) as client:
             r = sql_query.Revoke(database=database,
                                  user=user.name,
-                                 host=user.host,
-                                 hashed=user.password)
+                                 host=user.host)
             t = text(str(r))
             client.execute(t)
 
