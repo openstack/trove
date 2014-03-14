@@ -32,6 +32,10 @@ def first(query, *args, **kwargs):
     return query(*args, **kwargs).first()
 
 
+def join(query, model, *args):
+    return query(model).join(*args)
+
+
 def find_all(model, **conditions):
     return _query_by(model, **conditions)
 

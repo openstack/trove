@@ -81,8 +81,12 @@ class Datastores(object):
         self.db_info = db_info
 
     @classmethod
-    def load(cls):
-        return cls(DBDatastore.find_all())
+    def load(cls, only_active=True):
+        datastores = DBDatastore.find_all()
+        if only_active:
+            datastores = datastores.join(DBDatastoreVersion).filter(
+                DBDatastoreVersion.active == 1)
+        return cls(datastores)
 
     def __iter__(self):
         for item in self.db_info:
@@ -137,7 +141,7 @@ class DatastoreVersion(object):
 
     @property
     def active(self):
-        return self.db_info.active
+        return (True if self.db_info.active else False)
 
     @property
     def manager(self):

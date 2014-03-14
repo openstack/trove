@@ -78,7 +78,7 @@ def datastore_init():
                               name=CONFIG.dbaas_datastore,
                               default_version_id=
                               CONFIG.dbaas_datastore_version_id)
-    models.DBDatastore.create(id="e00000e0-00e0-0e00-00e0-000e000000ee",
+    models.DBDatastore.create(id=CONFIG.dbaas_datastore_id_no_versions,
                               name='Test_Datastore_1',
                               default_version_id=None)
 
