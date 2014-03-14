@@ -88,7 +88,6 @@ class NotifyMixin(object):
     def send_usage_event(self, event_type, **kwargs):
         event_type = 'trove.instance.%s' % event_type
         publisher_id = CONF.host
-
         # Grab the instance size from the kwargs or from the nova client
         instance_size = kwargs.pop('instance_size', None)
         flavor = self.nova_client.flavors.get(self.flavor_id)
@@ -237,7 +236,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self.report_root_enabled()
 
         if not self.db_info.task_status.is_error:
-            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+            self.reset_task_status()
 
         # when DNS is supported, we attempt to add this after the
         # instance is prepared.  Otherwise, if DNS fails, instances
@@ -331,7 +330,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               datastore_manager, volume_size,
                               availability_zone, nics):
         LOG.debug(_("begin _create_server_volume for id: %s") % self.id)
-        server = None
         try:
             files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
                                          "%s\n--datastore_manager=%s\n"
@@ -612,10 +610,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 if server.addresses != {}:
                     return True
                 elif (server.addresses == {} and
-                        server.status != InstanceStatus.ERROR):
+                      server.status != InstanceStatus.ERROR):
                     return False
                 elif (server.addresses == {} and
-                        server.status == InstanceStatus.ERROR):
+                      server.status == InstanceStatus.ERROR):
                     LOG.error(_("Instance IP not available, "
                                 "instance (%(instance)s): "
                                 "server had status (%(status)s).") %
@@ -736,7 +734,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         def server_is_finished():
             try:
                 server = self.nova_client.servers.get(server_id)
-                if server.status not in ['SHUTDOWN', 'ACTIVE']:
+                if not self.server_status_matches(['SHUTDOWN', 'ACTIVE'],
+                                                  server=server):
                     LOG.error(_("Server %(server_id)s got into ERROR status "
                                 "during delete of instance %(instance_id)s!") %
                               {'server_id': server.id, 'instance_id': self.id})
@@ -754,6 +753,12 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                               deleted_at=timeutils.isotime(deleted_at),
                               server=old_server)
         LOG.debug(_("end _delete_resources for id: %s") % self.id)
+
+    def server_status_matches(self, expected_status, server=None):
+        if not server:
+            server = self.server
+        return server.status.upper() in (
+            status.upper() for status in expected_status)
 
     def resize_volume(self, new_size):
         LOG.debug(_("begin resize_volume for instance: %s") % self.id)
@@ -785,8 +790,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             reboot_time_out = CONF.reboot_time_out
 
             def update_server_info():
-                self._refresh_compute_server_info()
-                return self.server.status == 'ACTIVE'
+                self.refresh_compute_server_info()
+                return self.server_status_matches(['ACTIVE'])
 
             utils.poll_until(
                 update_server_info,
@@ -795,25 +800,26 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
             # Set the status to PAUSED. The guest agent will reset the status
             # when the reboot completes and MySQL is running.
-            self._set_service_status_to_paused()
+            self.set_datastore_status_to_paused()
             LOG.debug(_("Successfully rebooted instance %s") % self.id)
         except Exception as e:
             LOG.error(_("Failed to reboot instance %(id)s: %(e)s") %
                       {'id': self.id, 'e': str(e)})
         finally:
             LOG.debug(_("Rebooting FINALLY  %s") % self.id)
-            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+            self.reset_task_status()
 
     def restart(self):
-        LOG.debug(_("Restarting MySQL on instance %s ") % self.id)
+        LOG.debug(_("Restarting datastore on instance %s ") % self.id)
         try:
             self.guest.restart()
-            LOG.debug(_("Restarting MySQL successful  %s ") % self.id)
+            LOG.debug(_("Restarting datastore successful  %s ") % self.id)
         except GuestError:
-            LOG.error(_("Failure to restart MySQL for instance %s.") % self.id)
+            LOG.error(_("Failure to restart datastore for instance %s.") %
+                      self.id)
         finally:
-            LOG.debug(_("Restarting FINALLY  %s ") % self.id)
-            self.update_db(task_status=inst_models.InstanceTasks.NONE)
+            LOG.debug(_("Restarting complete on instance  %s ") % self.id)
+            self.reset_task_status()
 
     def update_overrides(self, overrides, remove=False):
         LOG.debug(_("Updating configuration overrides on instance %s")
@@ -895,20 +901,27 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         self.update_overrides(overrides, remove=True)
         self.update_db(configuration_id=None)
 
-    def _refresh_compute_server_info(self):
+    def refresh_compute_server_info(self):
         """Refreshes the compute server field."""
         server = self.nova_client.servers.get(self.server.id)
         self.server = server
 
-    def _refresh_compute_service_status(self):
-        """Refreshes the service status info for an instance."""
-        service = InstanceServiceStatus.find_by(instance_id=self.id)
-        self.service_status = service.get_status()
+    def _refresh_datastore_status(self):
+        """
+        Gets the latest instance service status from datastore and updates
+        the reference on this BuiltInstanceTask reference
+        """
+        self.datastore_status = InstanceServiceStatus.find_by(
+            instance_id=self.id)
 
-    def _set_service_status_to_paused(self):
-        status = InstanceServiceStatus.find_by(instance_id=self.id)
-        status.set_status(rd_instance.ServiceStatuses.PAUSED)
-        status.save()
+    def set_datastore_status_to_paused(self):
+        """
+        Updates the InstanceServiceStatus for this BuiltInstance to PAUSED.
+        This does not change the reference for this BuiltInstanceTask
+        """
+        datastore_status = InstanceServiceStatus.find_by(instance_id=self.id)
+        datastore_status.status = rd_instance.ServiceStatuses.PAUSED
+        datastore_status.save()
 
 
 class BackupTasks(object):
@@ -1177,7 +1190,7 @@ class ResizeVolumeAction(ConfigurationMixin):
 
         if self.instance.server.status == InstanceStatus.ACTIVE:
             self._resize_active_volume()
-            self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
+            self.instance.reset_task_status()
             # send usage event for size reported by cinder
             volume = self.instance.volume_client.volumes.get(
                 self.instance.volume_id)
@@ -1189,7 +1202,7 @@ class ResizeVolumeAction(ConfigurationMixin):
                                            modify_at=modified_time,
                                            volume_size=volume.size)
         else:
-            self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
+            self.instance.reset_task_status()
             msg = _("Volume resize failed for instance %(id)s. The instance "
                     "must be in state %(state)s not %(inst_state)s.") % {
                         'id': self.instance.id,
@@ -1202,11 +1215,16 @@ class ResizeActionBase(ConfigurationMixin):
     """Base class for executing a resize action."""
 
     def __init__(self, instance):
+        """
+        Creates a new resize action for a given instance
+        :param instance: reference to existing instance that will be resized
+        :type instance: trove.taskmanager.models.BuiltInstanceTasks
+        """
         self.instance = instance
 
     def _assert_guest_is_ok(self):
         # The guest will never set the status to PAUSED.
-        self.instance._set_service_status_to_paused()
+        self.instance.set_datastore_status_to_paused()
         # Now we wait until it sets it to anything at all,
         # so we know it's alive.
         utils.poll_until(
@@ -1216,21 +1234,23 @@ class ResizeActionBase(ConfigurationMixin):
 
     def _assert_nova_status_is_ok(self):
         # Make sure Nova thinks things went well.
-        if self.instance.server.status != "VERIFY_RESIZE":
-            msg = "Migration failed! status=%s and not %s" % \
-                (self.instance.server.status, 'VERIFY_RESIZE')
+        if not self.instance.server_status_matches(["VERIFY_RESIZE"]):
+            msg = "Migration failed! status=%(act_status)s and " \
+                  "not %(exp_status)s" % {
+                      "act_status": self.instance.server.status,
+                      "exp_status": 'VERIFY_RESIZE'}
             raise TroveError(msg)
 
-    def _assert_mysql_is_ok(self):
-        # Tell the guest to turn on MySQL, and ensure the status becomes
+    def _assert_datastore_is_ok(self):
+        # Tell the guest to turn on datastore, and ensure the status becomes
         # RUNNING.
-        self._start_mysql()
+        self._start_datastore()
         utils.poll_until(
             self._datastore_is_online,
             sleep_time=2,
             time_out=RESIZE_TIME_OUT)
 
-    def _assert_mysql_is_off(self):
+    def _assert_datastore_is_offline(self):
         # Tell the guest to turn off MySQL, and ensure the status becomes
         # SHUTDOWN.
         self.instance.guest.stop_db(do_not_start_on_reboot=True)
@@ -1243,9 +1263,9 @@ class ResizeActionBase(ConfigurationMixin):
         """Checks the procs; if anything is wrong, reverts the operation."""
         # Tell the guest to turn back on, and make sure it can start.
         self._assert_guest_is_ok()
-        LOG.debug(_("Nova guest is fine."))
-        self._assert_mysql_is_ok()
-        LOG.debug(_("Mysql is good, too."))
+        LOG.debug(_("Nova guest is ok."))
+        self._assert_datastore_is_ok()
+        LOG.debug(_("Datastore is ok."))
 
     def _confirm_nova_action(self):
         LOG.debug(_("Instance %s calling Compute confirm resize...")
@@ -1253,14 +1273,13 @@ class ResizeActionBase(ConfigurationMixin):
         self.instance.server.confirm_resize()
 
     def _datastore_is_online(self):
-        self.instance._refresh_compute_service_status()
-        return (self.instance.service_status ==
-                rd_instance.ServiceStatuses.RUNNING)
+        self.instance._refresh_datastore_status()
+        return self.instance.is_datastore_running
 
     def _datastore_is_offline(self):
-        self.instance._refresh_compute_service_status()
-        return (self.instance.service_status ==
-                rd_instance.ServiceStatuses.SHUTDOWN)
+        self.instance._refresh_datastore_status()
+        return (self.instance.datastore_status_matches(
+                rd_instance.ServiceStatuses.SHUTDOWN))
 
     def _revert_nova_action(self):
         LOG.debug(_("Instance %s calling Compute revert resize...")
@@ -1272,15 +1291,15 @@ class ResizeActionBase(ConfigurationMixin):
         try:
             LOG.debug(_("Instance %s calling stop_db...")
                       % self.instance.id)
-            self._assert_mysql_is_off()
+            self._assert_datastore_is_offline()
             self._perform_nova_action()
         finally:
-            self.instance.update_db(task_status=inst_models.InstanceTasks.NONE)
+            self.instance.reset_task_status()
 
     def _guest_is_awake(self):
-        self.instance._refresh_compute_service_status()
-        return (self.instance.service_status !=
-                rd_instance.ServiceStatuses.PAUSED)
+        self.instance._refresh_datastore_status()
+        return not self.instance.datastore_status_matches(
+            rd_instance.ServiceStatuses.PAUSED)
 
     def _perform_nova_action(self):
         """Calls Nova to resize or migrate an instance, and confirms."""
@@ -1310,11 +1329,11 @@ class ResizeActionBase(ConfigurationMixin):
                 self._revert_nova_action()
                 self._wait_for_revert_nova_action()
 
-            if self.instance.server.status == 'ACTIVE':
-                LOG.error(_("Restarting MySQL."))
+            if self.instance.server_status_matches(['ACTIVE']):
+                LOG.error(_("Restarting datastore."))
                 self.instance.guest.restart()
             else:
-                LOG.error(_("Can not restart MySQL because "
+                LOG.error(_("Cannot restart datastore because "
                             "Nova server status is not ACTIVE"))
 
             LOG.error(_("Error resizing instance %s.") % self.instance.id)
@@ -1328,8 +1347,8 @@ class ResizeActionBase(ConfigurationMixin):
     def _wait_for_nova_action(self):
         # Wait for the flavor to change.
         def update_server_info():
-            self.instance._refresh_compute_server_info()
-            return self.instance.server.status != 'RESIZE'
+            self.instance.refresh_compute_server_info()
+            return not self.instance.server_status_matches(['RESIZE'])
 
         utils.poll_until(
             update_server_info,
@@ -1339,8 +1358,8 @@ class ResizeActionBase(ConfigurationMixin):
     def _wait_for_revert_nova_action(self):
         # Wait for the server to return to ACTIVE after revert.
         def update_server_info():
-            self.instance._refresh_compute_server_info()
-            return self.instance.server.status == 'ACTIVE'
+            self.instance.refresh_compute_server_info()
+            return self.instance.server_status_matches(['ACTIVE'])
 
         utils.poll_until(
             update_server_info,
@@ -1350,7 +1369,12 @@ class ResizeActionBase(ConfigurationMixin):
 
 class ResizeAction(ResizeActionBase):
     def __init__(self, instance, old_flavor, new_flavor):
-        self.instance = instance
+        """
+        :type instance: trove.taskmanager.models.BuiltInstanceTasks
+        :type old_flavor: dict
+        :type new_flavor: dict
+        """
+        super(ResizeAction, self).__init__(instance)
         self.old_flavor = old_flavor
         self.new_flavor = new_flavor
         self.new_flavor_id = new_flavor['id']
@@ -1391,9 +1415,10 @@ class ResizeAction(ResizeActionBase):
             old_instance_size=self.old_flavor['ram'],
             instance_size=self.new_flavor['ram'],
             launched_at=timeutils.isotime(self.instance.updated),
-            modify_at=timeutils.isotime(self.instance.updated))
+            modify_at=timeutils.isotime(self.instance.updated),
+            server=self.instance.server)
 
-    def _start_mysql(self):
+    def _start_datastore(self):
         config = self._render_config(self.instance.datastore_version.manager,
                                      self.new_flavor, self.instance.id)
         self.instance.guest.start_db_with_conf_changes(config.config_contents)
@@ -1401,6 +1426,7 @@ class ResizeAction(ResizeActionBase):
 
 class MigrateAction(ResizeActionBase):
     def __init__(self, instance, host=None):
+        super(MigrateAction, self).__init__(instance)
         self.instance = instance
         self.host = host
 
@@ -1419,5 +1445,5 @@ class MigrateAction(ResizeActionBase):
                   {'hostname': self.instance.hostname,
                    'id': self.instance.id})
 
-    def _start_mysql(self):
+    def _start_datastore(self):
         self.instance.guest.restart()

@@ -38,7 +38,7 @@ def persisted_models():
 def load_and_verify(context, instance_id):
     # Load InstanceServiceStatus to verify if its running
     instance = base_models.Instance.load(context, instance_id)
-    if not instance.is_sql_running:
+    if not instance.is_datastore_running:
         raise exception.UnprocessableEntity(
             "Instance %s is not ready." % instance.id)
     else:

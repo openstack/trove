@@ -11,13 +11,22 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import datetime
+
 import testtools
 from mock import Mock
-from testtools.matchers import Equals
+from testtools.matchers import Equals, Is
 from mockito import mock, when, unstub, any, verify, never
 from cinderclient import exceptions as cinder_exceptions
+import novaclient.v1_1.servers
+import novaclient.v1_1.flavors
+import cinderclient.v2.client as cinderclient
+import trove.backup.models
+import trove.common.context
 from trove.datastore import models as datastore_models
+import trove.db.models
 from trove.taskmanager import models as taskmanager_models
+import trove.guestagent.api
 from trove.backup import models as backup_models
 from trove.common import remote
 from trove.common.exception import GuestError
@@ -37,7 +46,11 @@ from trove.openstack.common import timeutils
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
+import trove.common.template as template
 import uuid
+
+INST_ID = 'dbinst-id-1'
+VOLUME_ID = 'volume-id-1'
 
 
 class FakeOptGroup(object):
@@ -393,6 +406,137 @@ class ResizeVolumeTest(testtools.TestCase):
         self.instance.attach_mock(server, 'server')
         self.assertRaises(TroveError, self.action.execute)
         self.instance.reset_mock()
+
+
+class BuiltInstanceTasksTest(testtools.TestCase):
+
+    def stub_inst_service_status(self, status_id, statuses):
+        answers = []
+        for i, status in enumerate(statuses):
+            inst_svc_status = InstanceServiceStatus(status,
+                                                    id="%s-%s" % (status_id,
+                                                                  i))
+            when(inst_svc_status).save().thenReturn(None)
+            answers.append(inst_svc_status)
+
+        when(trove.db.models.DatabaseModelBase).find_by(
+            instance_id=any()).thenReturn(*answers)
+
+    def _stub_volume_client(self):
+        self.instance_task._volume_client = mock(cinderclient.Client)
+        stub_volume_mgr = mock(cinderclient.volumes.VolumeManager)
+        self.instance_task.volume_client.volumes = stub_volume_mgr
+        stub_volume = cinderclient.volumes.Volume(stub_volume_mgr,
+                                                  {'status': 'available'},
+                                                  True)
+        when(stub_volume_mgr).extend(VOLUME_ID, 2).thenReturn(None)
+        stub_new_volume = cinderclient.volumes.Volume(
+            stub_volume_mgr, {'status': 'available', 'size': 2}, True)
+        when(stub_volume_mgr).get(any()).thenReturn(
+            stub_volume).thenReturn(stub_new_volume)
+        when(stub_volume_mgr).attach(any(), VOLUME_ID).thenReturn(None)
+
+    def setUp(self):
+        super(BuiltInstanceTasksTest, self).setUp()
+        self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
+        stub_nova_server = mock(novaclient.v1_1.servers.Server)
+        db_instance = DBInstance(InstanceTasks.NONE,
+                                 id=INST_ID,
+                                 name='resize-inst-name',
+                                 datastore_version_id='1',
+                                 datastore_id='id-1',
+                                 flavor_id='6',
+                                 manager='mysql',
+                                 created=datetime.datetime.utcnow(),
+                                 updated=datetime.datetime.utcnow(),
+                                 compute_instance_id='computeinst-id-1',
+                                 tenant_id='testresize-tenant-id',
+                                 volume_size='1',
+                                 volume_id=VOLUME_ID)
+        # this is used during the final check of whether the resize successful
+        db_instance.server_status = 'ACTIVE'
+        self.db_instance = db_instance
+        when(datastore_models.DatastoreVersion).load_by_uuid(any()).thenReturn(
+            datastore_models.DatastoreVersion(db_instance))
+        when(datastore_models.Datastore).load('id-1').thenReturn(
+            datastore_models.Datastore(db_instance))
+
+        self.instance_task = taskmanager_models.BuiltInstanceTasks(
+            trove.common.context.TroveContext(),
+            db_instance,
+            stub_nova_server,
+            InstanceServiceStatus(ServiceStatuses.RUNNING,
+                                  id='inst-stat-id-0'))
+
+        self.instance_task._guest = mock(trove.guestagent.api.API)
+        self.instance_task._nova_client = mock(novaclient.v1_1.Client)
+        self.stub_server_mgr = mock(novaclient.v1_1.servers.ServerManager)
+        self.stub_running_server = mock(novaclient.v1_1.servers.Server)
+        self.stub_running_server.status = 'ACTIVE'
+        self.stub_running_server.flavor = {'id': 6, 'ram': 512}
+        self.stub_verifying_server = mock(novaclient.v1_1.servers.Server)
+        self.stub_verifying_server.status = 'VERIFY_RESIZE'
+        self.stub_verifying_server.flavor = {'id': 8, 'ram': 768}
+        when(self.stub_server_mgr).get(any()).thenReturn(
+            self.stub_verifying_server)
+        self.instance_task._nova_client.servers = self.stub_server_mgr
+        stub_flavor_manager = mock(novaclient.v1_1.flavors.FlavorManager)
+        self.instance_task._nova_client.flavors = stub_flavor_manager
+
+        nova_flavor = novaclient.v1_1.flavors.Flavor(stub_flavor_manager,
+                                                     self.new_flavor,
+                                                     True)
+        when(stub_flavor_manager).get(any()).thenReturn(nova_flavor)
+
+        self.stub_inst_service_status('inst_stat-id',
+                                      [ServiceStatuses.SHUTDOWN,
+                                       ServiceStatuses.RUNNING,
+                                       ServiceStatuses.RUNNING])
+
+        when(template).SingleInstanceConfigTemplate(
+            any(), any(), any()).thenReturn(
+                mock(template.SingleInstanceConfigTemplate))
+
+        when(trove.db.models.DatabaseModelBase).find_by(
+            id=any(), deleted=False).thenReturn(db_instance)
+        when(db_instance).save().thenReturn(None)
+
+        when(trove.backup.models.Backup).running(any()).thenReturn(None)
+
+        if 'volume' in self._testMethodName:
+            self._stub_volume_client()
+
+    def tearDown(self):
+        super(BuiltInstanceTasksTest, self).tearDown()
+        unstub()
+
+    def test_resize_flavor(self):
+        orig_server = self.instance_task.server
+        self.instance_task.resize_flavor({'id': 1, 'ram': 512},
+                                         self.new_flavor)
+        # verify
+        self.assertIsNot(self.instance_task.server, orig_server)
+        verify(self.instance_task._guest).stop_db(do_not_start_on_reboot=True)
+        verify(orig_server).resize(self.new_flavor['id'])
+        self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
+        verify(self.stub_server_mgr, times=1).get(any())
+        self.assertThat(self.db_instance.flavor_id, Is(self.new_flavor['id']))
+
+    def test_resize_flavor_resize_failure(self):
+        orig_server = self.instance_task.server
+        self.stub_verifying_server.status = 'ERROR'
+        when(self.instance_task._nova_client.servers).get(any()).thenReturn(
+            self.stub_verifying_server)
+        # execute
+        self.assertRaises(TroveError, self.instance_task.resize_flavor,
+                          {'id': 1, 'ram': 512}, self.new_flavor)
+        # verify
+        verify(self.stub_server_mgr, times=1).get(any())
+        self.assertIs(self.instance_task.server, self.stub_verifying_server)
+        verify(self.instance_task._guest).stop_db(do_not_start_on_reboot=True)
+        verify(orig_server).resize(self.new_flavor['id'])
+        self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
+        self.assertThat(self.db_instance.flavor_id, Is('6'))
 
 
 class BackupTasksTest(testtools.TestCase):

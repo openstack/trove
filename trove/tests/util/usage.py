@@ -15,11 +15,13 @@
 
 from collections import defaultdict
 
+import trove.openstack.common.log as logging
 from trove.common import utils
 from trove.tests.config import CONFIG
 import proboscis.asserts as asserts
 from proboscis.dependencies import SkipTest
 
+LOG = logging.getLogger(__name__)
 MESSAGE_QUEUE = defaultdict(list)
 
 
@@ -70,9 +72,12 @@ class FakeVerifier(object):
 
 def notify(context, message):
     """Simple test notify function which saves the messages to global list."""
-    print('Received Usage Notification: %s' % message)
+    LOG.debug(_('Received Usage Notification: %s') % message)
     payload = message.get('payload', None)
     payload['event_type'] = message['event_type']
     resource_id = payload['instance_id']
     global MESSAGE_QUEUE
     MESSAGE_QUEUE[resource_id].append(payload)
+    LOG.debug(_('Message Queue for %(id)s now has %(msg_count)d messages') %
+              {'id': resource_id,
+               'msg_count': len(MESSAGE_QUEUE[resource_id])})
