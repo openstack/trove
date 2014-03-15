@@ -189,7 +189,7 @@ class DesignateInstanceEntryFactoryTest(testtools.TestCase):
         driver.DNS_DOMAIN_NAME = 'trove.com'
         driver.DNS_TTL = 3600
         hashed_id = base64.b32encode(hashlib.md5(instance_id).digest())
-        hashed_id_concat = hashed_id[:11]
+        hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" % (hashed_id_concat, driver.DNS_DOMAIN_NAME))
         factory = driver.DesignateInstanceEntryFactory()
         entry = factory.create_entry(instance_id)
@@ -206,7 +206,7 @@ class DesignateInstanceEntryFactoryTest(testtools.TestCase):
         driver.DNS_DOMAIN_NAME = 'trove.com.'
         driver.DNS_TTL = 3600
         hashed_id = base64.b32encode(hashlib.md5(instance_id).digest())
-        hashed_id_concat = hashed_id[:11]
+        hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" %
                         (hashed_id_concat, driver.DNS_DOMAIN_NAME))[:-1]
         factory = driver.DesignateInstanceEntryFactory()
