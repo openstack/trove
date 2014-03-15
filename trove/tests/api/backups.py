@@ -19,7 +19,6 @@ from proboscis.asserts import assert_true
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
-import troveclient.compat
 from trove.common.utils import poll_until
 from trove.common.utils import generate_uuid
 from trove.tests.util import create_dbaas_client
@@ -63,15 +62,13 @@ class CreateBackups(object):
         except exceptions.BadRequest as e:
             resp, body = instance_info.dbaas.client.last_response
             assert_equal(resp.status, 400)
-            if not isinstance(instance_info.dbaas.client,
-                              troveclient.compat.xml.TroveXmlClient):
-                assert_equal(e.message,
-                             "Validation error: "
-                             "backup['instance'] u'%s' does not match "
-                             "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
-                             "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
-                             "([0-9a-fA-F]){12}$'" %
-                             invalid_inst_id)
+            assert_equal(e.message,
+                         "Validation error: "
+                         "backup['instance'] u'%s' does not match "
+                         "'^([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-"
+                         "([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-"
+                         "([0-9a-fA-F]){12}$'" %
+                         invalid_inst_id)
 
     @test
     def test_backup_create_instance_not_found(self):

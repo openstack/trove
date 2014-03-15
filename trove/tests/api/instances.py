@@ -63,7 +63,6 @@ from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
 from trove.tests.util import test_config
-from trove.tests.util import skip_if_xml
 
 FAKE = test_config.values['fake_mode']
 
@@ -359,8 +358,6 @@ class CreateInstanceFail(object):
 
     @test
     def test_create_with_bad_nics(self):
-        # FIXME: (steve-leon) Remove this once xml is yanked out
-        skip_if_xml()
         instance_name = "instance-failure-with-bad-nics"
         if VOLUME_SUPPORT:
             volume = {'size': 1}

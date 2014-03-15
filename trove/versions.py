@@ -15,7 +15,6 @@
 
 import os
 import routes
-from xml.dom import minidom
 
 from trove.common import wsgi
 
@@ -74,20 +73,6 @@ class BaseVersion(object):
             return url + "/"
         return url
 
-    def to_xml(self):
-        doc = minidom.Document()
-        version_elem = doc.createElement("version")
-        version_elem.setAttribute("id", self.id)
-        version_elem.setAttribute("status", self.status)
-        version_elem.setAttribute("updated", self.updated)
-        links_elem = doc.createElement("links")
-        link_elem = doc.createElement("link")
-        link_elem.setAttribute("href", self.url())
-        link_elem.setAttribute("rel", "self")
-        links_elem.appendChild(link_elem)
-        version_elem.appendChild(links_elem)
-        return version_elem
-
 
 class Version(BaseVersion):
 
@@ -105,9 +90,6 @@ class VersionDataView(object):
     def data_for_json(self):
         return {'version': self.version.data()}
 
-    def data_for_xml(self):
-        return {'version': self.version}
-
 
 class VersionsDataView(object):
 
@@ -116,9 +98,6 @@ class VersionsDataView(object):
 
     def data_for_json(self):
         return {'versions': [version.data() for version in self.versions]}
-
-    def data_for_xml(self):
-        return {'versions': self.versions}
 
 
 class VersionsAPI(wsgi.Router):

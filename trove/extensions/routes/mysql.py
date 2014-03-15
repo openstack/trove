@@ -16,7 +16,6 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
-from trove.common import wsgi
 from trove.extensions.mysql import service
 
 
@@ -42,17 +41,12 @@ class Mysql(extensions.ExtensionsDescriptor):
 
     def get_resources(self):
         resources = []
-        serializer = wsgi.TroveResponseSerializer(
-            body_serializers={'application/xml':
-                              wsgi.TroveXMLDictSerializer()})
 
         resource = extensions.ResourceExtension(
             'databases',
             service.SchemaController(),
             parent={'member_name': 'instance',
-                    'collection_name': '{tenant_id}/instances'},
-            deserializer=wsgi.TroveRequestDeserializer(),
-            serializer=serializer)
+                    'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
 
         resource = extensions.ResourceExtension(
@@ -60,9 +54,6 @@ class Mysql(extensions.ExtensionsDescriptor):
             service.UserController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'},
-            # deserializer=extensions.ExtensionsXMLSerializer()
-            deserializer=wsgi.TroveRequestDeserializer(),
-            serializer=serializer,
             member_actions={'update': 'PUT'},
             collection_actions={'update_all': 'PUT'})
         resources.append(resource)
@@ -73,8 +64,6 @@ class Mysql(extensions.ExtensionsDescriptor):
             service.UserAccessController(),
             parent={'member_name': 'user',
                     'collection_name': collection_url},
-            deserializer=wsgi.TroveRequestDeserializer(),
-            serializer=serializer,
             collection_actions={'update': 'PUT'})
         resources.append(resource)
 
@@ -82,9 +71,7 @@ class Mysql(extensions.ExtensionsDescriptor):
             'root',
             service.RootController(),
             parent={'member_name': 'instance',
-                    'collection_name': '{tenant_id}/instances'},
-            deserializer=wsgi.TroveRequestDeserializer(),
-            serializer=serializer)
+                    'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
 
         return resources

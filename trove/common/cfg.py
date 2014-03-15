@@ -239,7 +239,7 @@ common_opts = [
                 help='Allow insecure logging while '
                      'executing queries through SQLAlchemy.'),
     cfg.ListOpt('expected_filetype_suffixes',
-                default=['atom', 'json', 'xml'],
+                default=['json'],
                 help='Filetype endings not to be reattached to an id '
                      'by the utils method correct_id_with_req.'),
     cfg.ListOpt('default_neutron_networks',

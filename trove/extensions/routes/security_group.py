@@ -17,7 +17,6 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
-from trove.common import wsgi
 from trove.common import cfg
 from trove.extensions.security_group import service
 
@@ -49,23 +48,16 @@ security groups and manage security group rules."
 
     def get_resources(self):
         resources = []
-        serializer = wsgi.TroveResponseSerializer(
-            body_serializers={'application/xml':
-                              wsgi.TroveXMLDictSerializer()})
 
         if CONF.trove_security_groups_support:
             security_groups = extensions.ResourceExtension(
                 '{tenant_id}/security-groups',
-                service.SecurityGroupController(),
-                deserializer=wsgi.TroveRequestDeserializer(),
-                serializer=serializer)
+                service.SecurityGroupController())
             resources.append(security_groups)
 
             security_group_rules = extensions.ResourceExtension(
                 '{tenant_id}/security-group-rules',
-                service.SecurityGroupRuleController(),
-                deserializer=wsgi.TroveRequestDeserializer(),
-                serializer=serializer)
+                service.SecurityGroupRuleController())
             resources.append(security_group_rules)
 
         return resources

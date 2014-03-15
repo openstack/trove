@@ -183,12 +183,6 @@ class TestInstanceController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
-    def test_validate_resize_instance_int_xml(self):
-        body = {"resize": {"flavorRef": "2"}}
-        schema = self.controller.get_schema('action', body)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertTrue(validator.is_valid(body))
-
     def test_validate_resize_instance_empty_url(self):
         body = {"resize": {"flavorRef": ""}}
         schema = self.controller.get_schema('action', body)
