@@ -26,6 +26,7 @@ from trove.guestagent import models as agent_models
 from trove.openstack.common import rpc
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import proxy
+from trove.openstack.common.rpc import common
 from trove.openstack.common.gettextutils import _
 
 CONF = cfg.CONF
@@ -53,6 +54,9 @@ class API(proxy.RpcProxy):
 
             LOG.debug("Result is %s" % result)
             return result
+        except common.RemoteError as r:
+            LOG.error(r)
+            raise exception.GuestError(original_message=r.value)
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
@@ -68,6 +72,9 @@ class API(proxy.RpcProxy):
             self.cast(self.context, self.make_msg(method_name, **kwargs),
                       topic=kwargs.get('topic'),
                       version=kwargs.get('version'))
+        except common.RemoteError as r:
+            LOG.error(r)
+            raise exception.GuestError(original_message=r.value)
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
@@ -77,6 +84,9 @@ class API(proxy.RpcProxy):
         try:
             conn = rpc.create_connection(new=True)
             conn.create_consumer(self._get_routing_key(), None, fanout=False)
+        except common.RemoteError as r:
+            LOG.error(r)
+            raise exception.GuestError(original_message=r.value)
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
