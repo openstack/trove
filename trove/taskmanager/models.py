@@ -1294,7 +1294,9 @@ class ResizeActionBase(ConfigurationMixin):
             self._assert_datastore_is_offline()
             self._perform_nova_action()
         finally:
-            self.instance.reset_task_status()
+            if self.instance.db_info.task_status != (
+                    inst_models.InstanceTasks.NONE):
+                self.instance.reset_task_status()
 
     def _guest_is_awake(self):
         self.instance._refresh_datastore_status()
@@ -1409,7 +1411,8 @@ class ResizeAction(ResizeActionBase):
     def _record_action_success(self):
         LOG.debug(_("Updating instance %(id)s to flavor_id %(flavor_id)s.")
                   % {'id': self.instance.id, 'flavor_id': self.new_flavor_id})
-        self.instance.update_db(flavor_id=self.new_flavor_id)
+        self.instance.update_db(flavor_id=self.new_flavor_id,
+                                task_status=inst_models.InstanceTasks.NONE)
         self.instance.send_usage_event(
             'modify_flavor',
             old_instance_size=self.old_flavor['ram'],
