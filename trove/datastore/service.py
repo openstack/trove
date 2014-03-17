@@ -28,7 +28,11 @@ class DatastoreController(wsgi.Controller):
                            DatastoreView(datastore, req).data(), 200)
 
     def index(self, req, tenant_id):
-        datastores = models.Datastores.load()
+        context = req.environ[wsgi.CONTEXT_KEY]
+        only_active = True
+        if context.is_admin:
+            only_active = False
+        datastores = models.Datastores.load(only_active)
         return wsgi.Result(views.
                            DatastoresView(datastores, req).data(),
                            200)

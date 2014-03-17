@@ -53,6 +53,9 @@ class Query(object):
         return self.db_api.first(self._query_func, self._model,
                                  **self._conditions)
 
+    def join(self, *args):
+        return self.db_api.join(self._query_func, self._model, *args)
+
     def __iter__(self):
         return iter(self.all())
 

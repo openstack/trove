@@ -20,6 +20,7 @@ from troveclient.compat import exceptions
 from proboscis import before_class
 from proboscis import test
 from proboscis.asserts import assert_raises
+from proboscis.asserts import assert_true
 
 from trove import tests
 from trove.tests.util import create_dbaas_client
@@ -39,7 +40,10 @@ class Datastores(object):
     def setUp(self):
         rd_user = test_config.users.find_user(
             Requirements(is_admin=False, services=["trove"]))
+        rd_admin = test_config.users.find_user(
+            Requirements(is_admin=True, services=["trove"]))
         self.rd_client = create_dbaas_client(rd_user)
+        self.rd_admin = create_dbaas_client(rd_admin)
 
     @test
     def test_datastore_list_attrs(self):
@@ -152,3 +156,17 @@ class Datastores(object):
             assert_equal(e.message,
                          "Datastore version '%s' cannot be found." %
                          test_config.dbaas_datastore_version)
+
+    @test
+    def test_datastore_with_no_active_versions_is_hidden(self):
+        datastores = self.rd_client.datastores.list()
+        id_list = [datastore.id for datastore in datastores]
+        id_no_versions = test_config.dbaas_datastore_id_no_versions
+        assert_true(id_no_versions not in id_list)
+
+    @test
+    def test_datastore_with_no_active_versions_is_visible_for_admin(self):
+        datastores = self.rd_admin.datastores.list()
+        id_list = [datastore.id for datastore in datastores]
+        id_no_versions = test_config.dbaas_datastore_id_no_versions
+        assert_true(id_no_versions in id_list)
