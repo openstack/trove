@@ -34,6 +34,7 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
         self.origin_mount = volume.VolumeDevice.mount
+        self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_db = mongo_service.MongoDBApp.stop_db
         self.origin_start_db = mongo_service.MongoDBApp.start_db
 
@@ -44,6 +45,7 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
         volume.VolumeDevice.mount = self.origin_mount
+        volume.VolumeDevice.mount_points = self.origin_mount_points
         mongo_service.MongoDBApp.stop_db = self.origin_stop_db
         mongo_service.MongoDBApp.start_db = self.origin_start_db
 
@@ -73,6 +75,7 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = MagicMock(return_value=None)
         volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
         volume.VolumeDevice.mount = MagicMock(return_value=None)
+        volume.VolumeDevice.mount_points = MagicMock(return_value=[])
 
         mock_app.stop_db = MagicMock(return_value=None)
         mock_app.start_db = MagicMock(return_value=None)

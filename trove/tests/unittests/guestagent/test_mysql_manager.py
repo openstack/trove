@@ -36,6 +36,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
         self.origin_mount = volume.VolumeDevice.mount
+        self.origin_unmount = volume.VolumeDevice.unmount
+        self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_mysql = dbaas.MySqlApp.stop_db
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
         self.origin_pkg_is_installed = pkg.Package.pkg_is_installed
@@ -48,6 +50,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
         volume.VolumeDevice.mount = self.origin_mount
+        volume.VolumeDevice.unmount = self.origin_unmount
+        volume.VolumeDevice.mount_points = self.origin_mount_points
         dbaas.MySqlApp.stop_db = self.origin_stop_mysql
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
         pkg.Package.pkg_is_installed = self.origin_pkg_is_installed
@@ -142,6 +146,9 @@ class GuestAgentManagerTest(testtools.TestCase):
     def test_prepare_device_path_false(self):
         self._prepare_dynamic(device_path=None)
 
+    def test_prepare_device_path_mounted(self):
+        self._prepare_dynamic(is_mounted=True)
+
     def test_prepare_mysql_not_installed(self):
         self._prepare_dynamic(is_mysql_installed=False)
 
@@ -154,7 +161,7 @@ class GuestAgentManagerTest(testtools.TestCase):
 
     def _prepare_dynamic(self, device_path='/dev/vdb', is_mysql_installed=True,
                          backup_id=None, is_root_enabled=False,
-                         overrides=None):
+                         overrides=None, is_mounted=False):
         # covering all outcomes is starting to cause trouble here
         COUNT = 1 if device_path else 0
         backup_info = None
@@ -173,6 +180,11 @@ class GuestAgentManagerTest(testtools.TestCase):
         VolumeDevice.format = MagicMock(return_value=None)
         VolumeDevice.migrate_data = MagicMock(return_value=None)
         VolumeDevice.mount = MagicMock(return_value=None)
+        mount_points = []
+        if is_mounted:
+            mount_points = ['/mnt']
+        VolumeDevice.mount_points = MagicMock(return_value=mount_points)
+        VolumeDevice.unmount = MagicMock(return_value=None)
         dbaas.MySqlApp.stop_db = MagicMock(return_value=None)
         dbaas.MySqlApp.start_mysql = MagicMock(return_value=None)
         dbaas.MySqlApp.install_if_needed = MagicMock(return_value=None)
@@ -203,7 +215,12 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         self.assertEqual(VolumeDevice.format.call_count, COUNT)
         self.assertEqual(VolumeDevice.migrate_data.call_count, COUNT)
+        self.assertEqual(VolumeDevice.mount_points.call_count, COUNT)
         self.assertEqual(dbaas.MySqlApp.stop_db.call_count, COUNT)
+        if is_mounted:
+            self.assertEqual(VolumeDevice.unmount.call_count, 1)
+        else:
+            self.assertEqual(VolumeDevice.unmount.call_count, 0)
         if backup_info:
             backup.restore.assert_any_call(self.context,
                                            backup_info,

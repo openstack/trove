@@ -47,6 +47,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
         self.origin_mount = volume.VolumeDevice.mount
+        self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_db = cass_service.CassandraApp.stop_db
         self.origin_start_db = cass_service.CassandraApp.start_db
         self.origin_install_db = cass_service.CassandraApp._install_db
@@ -62,6 +63,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
         volume.VolumeDevice.mount = self.origin_mount
+        volume.VolumeDevice.mount_points = self.origin_mount_points
         cass_service.CassandraApp.stop_db = self.origin_stop_db
         cass_service.CassandraApp.start_db = self.origin_start_db
         cass_service.CassandraApp._install_db = self.origin_install_db
@@ -117,6 +119,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.format = MagicMock(return_value=None)
         volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
         volume.VolumeDevice.mount = MagicMock(return_value=None)
+        volume.VolumeDevice.mount_points = MagicMock(return_value=[])
 
         # invocation
         self.manager.prepare(context=self.context, packages=packages,

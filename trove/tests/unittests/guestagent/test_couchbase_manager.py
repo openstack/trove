@@ -31,6 +31,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         self.origin_CouchbaseAppStatus = couch_service.CouchbaseAppStatus
         self.origin_format = volume.VolumeDevice.format
         self.origin_mount = volume.VolumeDevice.mount
+        self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_db = couch_service.CouchbaseApp.stop_db
         self.origin_start_db = couch_service.CouchbaseApp.start_db
         self.origin_restart = couch_service.CouchbaseApp.restart
@@ -44,6 +45,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         couch_service.CouchbaseAppStatus = self.origin_CouchbaseAppStatus
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.mount = self.origin_mount
+        volume.VolumeDevice.mount_points = self.origin_mount_points
         couch_service.CouchbaseApp.stop_db = self.origin_stop_db
         couch_service.CouchbaseApp.start_db = self.origin_start_db
         couch_service.CouchbaseApp.restart = self.origin_restart
@@ -68,6 +70,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         mock_status.begin_install = MagicMock(return_value=None)
         volume.VolumeDevice.format = MagicMock(return_value=None)
         volume.VolumeDevice.mount = MagicMock(return_value=None)
+        volume.VolumeDevice.mount_points = MagicMock(return_value=[])
         couch_service.CouchbaseApp.install_if_needed = MagicMock(
             return_value=None)
         couch_service.CouchbaseApp.complete_install_or_restart = MagicMock(

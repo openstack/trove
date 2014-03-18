@@ -64,6 +64,8 @@ class Manager(periodic_task.PeriodicTasks):
         self.appStatus.begin_install()
         if device_path:
             device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
             device.format()
             device.mount(mount_point)
             LOG.debug(_('Mounted the volume.'))

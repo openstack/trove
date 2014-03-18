@@ -116,6 +116,8 @@ class Manager(periodic_task.PeriodicTasks):
             #stop and do not update database
             app.stop_db()
             device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
             device.format()
             if os.path.exists(mount_point):
                 #rsync exiting data
