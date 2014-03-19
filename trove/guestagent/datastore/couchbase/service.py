@@ -14,6 +14,8 @@
 #    under the License.
 
 import json
+import pexpect
+import os
 
 from trove.common import cfg
 from trove.common import exception
@@ -23,8 +25,10 @@ from trove.guestagent import pkg
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import service
 from trove.guestagent.datastore.couchbase import system
+from trove.guestagent.db import models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -62,15 +66,18 @@ class CouchbaseApp(object):
         try:
             LOG.info(_('Couchbase Server change data dir path'))
             utils.execute_with_timeout(system.cmd_own_data_dir, shell=True)
+            pwd = CouchbaseRootAccess.get_password()
             utils.execute_with_timeout(
                 (system.cmd_node_init
                  % {'data_path': mount_point,
-                    'IP': self.ip_address}), shell=True)
+                    'IP': self.ip_address,
+                    'PWD': pwd}), shell=True)
             utils.execute_with_timeout(
                 system.cmd_rm_old_data_dir, shell=True)
             LOG.info(_('Couchbase Server initialize cluster'))
             utils.execute_with_timeout(
-                (system.cmd_cluster_init % {'IP': self.ip_address}),
+                (system.cmd_cluster_init
+                 % {'IP': self.ip_address, 'PWD': pwd}),
                 shell=True)
             utils.execute_with_timeout(system.cmd_set_swappiness, shell=True)
             utils.execute_with_timeout(system.cmd_update_sysctl_conf,
@@ -189,6 +196,9 @@ class CouchbaseApp(object):
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start Couchbase Server")
 
+    def enable_root(self, root_password=None):
+        return CouchbaseRootAccess.enable_root(root_password)
+
 
 class CouchbaseAppStatus(service.BaseDbStatus):
     """
@@ -197,9 +207,10 @@ class CouchbaseAppStatus(service.BaseDbStatus):
     def _get_actual_db_status(self):
         self.ip_address = operating_system.get_ip_address()
         try:
+            pwd = CouchbaseRootAccess.get_password()
             out, err = utils.execute_with_timeout(
                 (system.cmd_couchbase_status %
-                 {'IP': self.ip_address}),
+                 {'IP': self.ip_address, 'PWD': pwd}),
                 shell=True)
             server_stats = json.loads(out)
             if not err and server_stats["clusterMembership"] == "active":
@@ -209,3 +220,55 @@ class CouchbaseAppStatus(service.BaseDbStatus):
         except exception.ProcessExecutionError as e:
             LOG.error(_("Process execution %s ") % e)
             return rd_instance.ServiceStatuses.SHUTDOWN
+
+
+class CouchbaseRootAccess(object):
+
+    @classmethod
+    def enable_root(cls, root_password=None):
+        user = models.RootUser()
+        user.name = "root"
+        user.host = "%"
+        user.password = root_password or utils.generate_random_password()
+
+        if root_password:
+            CouchbaseRootAccess().write_password_to_file(root_password)
+        else:
+            CouchbaseRootAccess().set_password(user.password)
+        return user.serialize()
+
+    def set_password(self, root_password):
+        self.ip_address = operating_system.get_ip_address()
+        child = pexpect.spawn(system.cmd_reset_pwd % {'IP': self.ip_address})
+        try:
+            child.expect('.*password.*')
+            child.sendline(root_password)
+            child.expect('.*(yes/no).*')
+            child.sendline('yes')
+            child.expect('.*successfully.*')
+        except pexpect.TIMEOUT:
+            child.delayafterclose = 1
+            child.delayafterterminate = 1
+            child.close(force=True)
+
+        self.write_password_to_file(root_password)
+
+    def write_password_to_file(self, root_password):
+        utils.execute_with_timeout('mkdir',
+                                   '-p',
+                                   system.COUCHBASE_CONF_DIR,
+                                   run_as_root=True,
+                                   root_helper='sudo')
+        utils.execute_with_timeout("sudo sh -c 'echo " +
+                                   root_password +
+                                   ' > ' +
+                                   system.pwd_file + "'",
+                                   shell=True)
+
+    @staticmethod
+    def get_password():
+        pwd = "password"
+        if os.path.exists(system.pwd_file):
+            with open(system.pwd_file) as file:
+                pwd = file.readline().strip()
+        return pwd

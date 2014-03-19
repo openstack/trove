@@ -13,11 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.couchbase import service
+from trove.guestagent.datastore.couchbase import system
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
 from trove.openstack.common.gettextutils import _
@@ -67,6 +70,8 @@ class Manager(periodic_task.PeriodicTasks):
             device.format()
             device.mount(mount_point)
             LOG.debug(_('Mounted the volume.'))
+        if root_password:
+            self.app.enable_root(root_password)
         self.app.install_if_needed(packages)
         LOG.info(_('Securing couchbase now.'))
         self.app.complete_install_or_restart()
@@ -145,12 +150,10 @@ class Manager(periodic_task.PeriodicTasks):
             operation='list_users', datastore=MANAGER)
 
     def enable_root(self, context):
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=MANAGER)
+        return self.app.enable_root()
 
     def is_root_enabled(self, context):
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=MANAGER)
+        return os.path.exists(system.pwd_file)
 
     def _perform_restore(self, backup_info, context, restore_location, app):
         raise exception.DatastoreOperationNotSupported(

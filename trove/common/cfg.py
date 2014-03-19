@@ -377,6 +377,11 @@ couchbase_opts = [
                "volumes if volume support is enabled."),
     cfg.IntOpt('usage_timeout', default=450,
                help='Timeout to wait for a guest to become active.'),
+    cfg.BoolOpt('root_on_create', default=True,
+                help='Enable the automatic creation of the root user for the '
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                "instance-create as the 'password' field."),
 ]
 
 # MongoDB
