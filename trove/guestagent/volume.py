@@ -13,14 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
 import os
 import pexpect
+from tempfile import NamedTemporaryFile
 
 from trove.common import cfg
 from trove.common import utils
 from trove.common.exception import GuestError
 from trove.common.exception import ProcessExecutionError
+from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _
 
 TMP_MOUNT_POINT = "/mnt/volume"
 
@@ -141,11 +143,11 @@ class VolumeMountPoint(object):
         fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
                       (self.device_path, self.mount_point, self.volume_fstype,
                        self.mount_options))
-        LOG.debug("Writing new line to fstab:%s" % fstab_line)
-        utils.execute("sudo", "cp", "/etc/fstab", "/etc/fstab.orig")
-        utils.execute("sudo", "cp", "/etc/fstab", "/tmp/newfstab")
-        utils.execute("sudo", "chmod", "666", "/tmp/newfstab")
-        with open("/tmp/newfstab", 'a') as new_fstab:
-            new_fstab.write("\n" + fstab_line)
-        utils.execute("sudo", "chmod", "640", "/tmp/newfstab")
-        utils.execute("sudo", "mv", "/tmp/newfstab", "/etc/fstab")
+        LOG.debug(_("Writing new line to fstab:%s") % fstab_line)
+        with open('/etc/fstab', "r") as fstab:
+            fstab_content = fstab.read()
+        with NamedTemporaryFile(delete=False) as tempfstab:
+            tempfstab.write(fstab_content + fstab_line)
+        utils.execute("sudo", "install", "-o", "root", "-g", "root", "-m",
+                      "644", tempfstab.name, "/etc/fstab")
+        utils.execute("sudo", "rm", tempfstab.name)
