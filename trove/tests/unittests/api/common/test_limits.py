@@ -34,6 +34,7 @@ from trove.quota.quota import QUOTAS
 TEST_LIMITS = [
     Limit("GET", "/delayed", "^/delayed", 1, limits.PER_MINUTE),
     Limit("POST", "*", ".*", 7, limits.PER_MINUTE),
+    Limit("POST", "/mgmt", "^/mgmt", 3, limits.PER_MINUTE),
     Limit("PUT", "*", "", 10, limits.PER_MINUTE),
 ]
 
@@ -378,7 +379,7 @@ class LimiterTest(BaseLimitTestSuite):
     def test_delay_PUT(self):
         """
         Ensure the 11th PUT will result in a delay of 6.0 seconds until
-        the next request will be granced.
+        the next request will be granted.
         """
         expected = [None] * 10 + [6.0]
         results = list(self._check(11, "PUT", "/anything"))
@@ -388,7 +389,7 @@ class LimiterTest(BaseLimitTestSuite):
     def test_delay_POST(self):
         """
         Ensure the 8th POST will result in a delay of 6.0 seconds until
-        the next request will be granced.
+        the next request will be granted.
         """
         expected = [None] * 7
         results = list(self._check(7, "POST", "/anything"))
@@ -398,10 +399,23 @@ class LimiterTest(BaseLimitTestSuite):
         results = self._check_sum(1, "POST", "/anything")
         self.assertAlmostEqual(expected, results, 8)
 
+    def test_delay_POST_mgmt(self):
+        """
+        Ensure the 4th mgmt POST will result in a delay of 6.0 seconds until
+        the next request will be granted.
+        """
+        expected = [None] * 3
+        results = list(self._check(3, "POST", "/mgmt"))
+        self.assertEqual(expected, results)
+
+        expected = 60.0 / 3.0
+        results = self._check_sum(1, "POST", "/mgmt")
+        self.assertAlmostEqual(expected, results, 4)
+
     def test_delay_GET(self):
         # Ensure the 11th GET will result in NO delay.
         expected = [None] * 11
-        results = list(self._check(11, "GET", "/anything"))
+        results = list(self._check(11, "GET", "/mgmt"))
 
         self.assertEqual(expected, results)
 

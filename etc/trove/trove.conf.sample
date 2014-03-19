@@ -97,6 +97,7 @@ http_get_rate = 200
 http_post_rate = 200
 http_put_rate = 200
 http_delete_rate = 200
+http_mgmt_post_rate = 200
 
 # Trove DNS
 trove_dns_support = False

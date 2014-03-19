@@ -152,6 +152,7 @@ DEFAULT_LIMITS = [
     Limit("PUT", "*", ".*", CONF.http_put_rate, PER_MINUTE),
     Limit("DELETE", "*", ".*", CONF.http_delete_rate, PER_MINUTE),
     Limit("GET", "*", ".*", CONF.http_get_rate, PER_MINUTE),
+    Limit("POST", "*/mgmt", "^/mgmt", CONF.http_mgmt_post_rate, PER_MINUTE),
 ]
 
 
