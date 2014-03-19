@@ -38,6 +38,7 @@ from sqlalchemy import create_engine
 
 from troveclient.compat import exceptions
 
+from proboscis.asserts import assert_true
 from proboscis.asserts import Check
 from proboscis.asserts import fail
 from proboscis import SkipTest
@@ -221,6 +222,14 @@ def iso_time(time_string):
     except ValueError:
         pass
     return '%sZ' % ts
+
+
+def assert_contains(exception_message, substrings):
+    for substring in substrings:
+        assert_true(substring in exception_message,
+                    message="'%s' not in '%s'"
+                    % (substring, exception_message))
+
 
 # TODO(dukhlov): Still required by trove integration
 # Should be removed after trove integration fix

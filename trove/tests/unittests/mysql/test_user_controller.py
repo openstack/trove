@@ -16,7 +16,7 @@
 import jsonschema
 
 from testtools import TestCase
-from testtools.matchers import Is, Equals
+from testtools.matchers import Is
 from trove.extensions.mysql.service import UserController
 from trove.extensions.mysql.service import UserAccessController
 from trove.extensions.mysql.service import SchemaController
@@ -59,11 +59,12 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertThat(errors[0].message, Equals("'' is too short"))
-        self.assertThat(errors[1].message,
-                        Equals("'' does not match '^.*[0-9a-zA-Z]+.*$'"))
-        self.assertThat(errors[0].path.pop(), Equals("password"))
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
+        self.assertIn("password", error_paths)
 
     def test_validate_create_no_password(self):
         body = {"users": [{"name": "joe"}]}
@@ -71,9 +72,9 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
         self.assertThat(len(errors), Is(1))
-        self.assertThat(errors[0].message,
-                        Equals("'password' is a required property"))
+        self.assertIn("'password' is a required property", error_messages)
 
     def test_validate_create_short_name(self):
         body = {"users": [{"name": ""}]}
@@ -81,13 +82,13 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(3))
-        self.assertThat(errors[0].message,
-                        Equals("'password' is a required property"))
-        self.assertThat(errors[1].message, Equals("'' is too short"))
-        self.assertThat(errors[2].message,
-                        Equals("'' does not match '^.*[0-9a-zA-Z]+.*$'"))
-        self.assertThat(errors[1].path.pop(), Equals("name"))
+        self.assertIn("'password' is a required property", error_messages)
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
+        self.assertIn("name", error_paths)
 
     def test_validate_create_complete_db_empty(self):
         body = {"users": [{"databases": [], "name": "joe", "password": "123"}]}
@@ -104,9 +105,9 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
         self.assertThat(len(errors), Is(1))
-        self.assertThat(errors[0].message,
-                        Equals("'name' is a required property"))
+        self.assertIn("'name' is a required property", error_messages)
 
     def test_validate_create_bogus_attr(self):
         body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
@@ -152,10 +153,10 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
         self.assertThat(len(errors), Is(1))
-        self.assertThat(errors[0].message,
-                        Equals(("'192.%.1.1' does not match "
-                                "'^[%]?[\\\\w(-).]*[%]?$'")))
+        self.assertIn("'192.%.1.1' does not match '^[%]?[\\\\w(-).]*[%]?$'",
+                      error_messages)
 
     def test_validate_create_host_wildcard_suffix(self):
         body = {"users": [{"databases": [{"name": "x"}], "name": "joe",
@@ -181,11 +182,12 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertThat(errors[0].message, Equals("'' is too short"))
-        self.assertThat(errors[1].message,
-                        Equals("'' does not match '^.*[0-9a-zA-Z]+.*$'"))
-        self.assertThat(errors[0].path.pop(), Equals("password"))
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
+        self.assertIn("password", error_paths)
 
     def test_validate_update_user_complete(self):
         body = {"users": [{"name": "joe", "password": "",
@@ -194,11 +196,12 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertThat(errors[0].message, Equals("'' is too short"))
-        self.assertThat(errors[1].message, Equals(
-            "'' does not match '^.*[0-9a-zA-Z]+.*$'"))
-        self.assertThat(errors[0].path.pop(), Equals("password"))
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
+        self.assertIn("password", error_paths)
 
     def test_validate_update_user_with_db_short_password(self):
         body = {"users": [{"name": "joe", "password": "",
@@ -207,9 +210,11 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(2))
-        self.assertThat(errors[0].message, Equals("'' is too short"))
-        self.assertThat(errors[0].path.pop(), Equals("password"))
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("password", error_paths)
 
     def test_validate_update_no_password(self):
         body = {"users": [{"name": "joe"}]}
@@ -217,9 +222,9 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
         self.assertThat(len(errors), Is(1))
-        self.assertThat(errors[0].message,
-                        Equals("'password' is a required property"))
+        self.assertIn("'password' is a required property", error_messages)
 
     def test_validate_update_database_complete(self):
         body = {"databases": [{"name": "test1"}, {"name": "test2"}]}
@@ -243,13 +248,13 @@ class TestUserController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
         self.assertThat(len(errors), Is(3))
-        self.assertThat(errors[0].message,
-                        Equals("'password' is a required property"))
-        self.assertThat(errors[1].message, Equals("'' is too short"))
-        self.assertThat(errors[2].message,
-                        Equals("'' does not match '^.*[0-9a-zA-Z]+.*$'"))
-        self.assertThat(errors[1].path.pop(), Equals("name"))
+        self.assertIn("'password' is a required property", error_messages)
+        self.assertIn("'' is too short", error_messages)
+        self.assertIn("'' does not match '^.*[0-9a-zA-Z]+.*$'", error_messages)
+        self.assertIn("name", error_paths)
 
     def test_get_update_user_attributes(self):
         body = {'user': {'name': 'test'}}

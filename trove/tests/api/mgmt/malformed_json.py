@@ -26,6 +26,7 @@ from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
 
 from trove.tests.util.users import Requirements
+from trove.tests.util import assert_contains
 from trove.tests.util import create_dbaas_client
 from trove.common.utils import poll_until
 
@@ -66,13 +67,12 @@ class MalformedJson(object):
                                  " exception %s" % (httpCode, e))
             databases = "u'foo'"
             users = "u'bar'"
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "instance['databases'] %s is not of type"
-                                 " 'array'; instance['users'] %s is not of"
-                                 " type 'array'; instance['volume'] 3 is "
-                                 "not of type 'object'"
-                                 % (databases, users))
+            assert_contains(
+                e.message,
+                ["Validation error:",
+                 "instance['databases'] %s is not of type 'array'" % databases,
+                 "instance['users'] %s is not of type 'array'" % users,
+                 "instance['volume'] 3 is not of type 'object'"])
 
     @test
     def test_bad_database_data(self):
@@ -113,11 +113,12 @@ class MalformedJson(object):
                                  "Create user failed with code %s, "
                                  "exception %s" % (httpCode, e))
             err_1 = format_path(deque(('users', 0)))
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "%(err_1)s 'name' is a required property; "
-                                 "%(err_1)s 'password' is a required property"
-                                 % {'err_1': err_1})
+            assert_contains(
+                e.message,
+                ["Validation error:",
+                 "%(err_1)s 'name' is a required property" % {'err_1': err_1},
+                 "%(err_1)s 'password' is a required property"
+                 % {'err_1': err_1}])
 
     @test
     def test_bad_resize_instance_data(self):
@@ -158,13 +159,13 @@ class MalformedJson(object):
                                  "Resize instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
             data = "u'bad data'"
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "resize['volume']['size'] %s "
-                                 "is not valid under any of the given schemas;"
-                                 " %s is not of type 'integer'; "
-                                 "%s does not match '[0-9]+'" %
-                                 (data, data, data))
+            assert_contains(
+                e.message,
+                ["Validation error:",
+                 "resize['volume']['size'] %s is not valid under "
+                 "any of the given schemas" % data,
+                 "%s is not of type 'integer'" % data,
+                 "%s does not match '[0-9]+'" % data])
 
     @test
     def test_bad_change_user_password(self):
@@ -188,13 +189,13 @@ class MalformedJson(object):
                                  "Change usr/passwd failed with code %s, "
                                  "exception %s" % (httpCode, e))
             password = "u''"
-            asserts.assert_equal(e.message,
-                                 "Validation error: users[0] 'password' is"
-                                 " a required property; "
-                                 "users[0]['name'] %s is too short; "
-                                 "users[0]['name'] %s does not match "
-                                 "'^.*[0-9a-zA-Z]+.*$'"
-                                 % (password, password))
+            assert_contains(
+                e.message,
+                ["Validation error: users[0] 'password' "
+                 "is a required property",
+                 "users[0]['name'] %s is too short" % password,
+                 "users[0]['name'] %s does not match "
+                 "'^.*[0-9a-zA-Z]+.*$'" % password])
 
     @test
     def test_bad_grant_user_access(self):
@@ -254,15 +255,15 @@ class MalformedJson(object):
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
             flavorId = [u'?']
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "instance['flavorRef'] %s is not valid "
-                                 "under any of the given schemas; %s is "
-                                 "not of type 'string'; %s is not of type"
-                                 " 'string'; %s is not of type 'integer'; "
-                                 "instance['volume'] 2 is not of"
-                                 " type 'object'" %
-                                 (flavorId, flavorId, flavorId, flavorId))
+            assert_contains(
+                e.message,
+                ["Validation error:",
+                 "instance['flavorRef'] %s is not valid "
+                 "under any of the given schemas" % flavorId,
+                 "%s is not of type 'string'" % flavorId,
+                 "%s is not of type 'string'" % flavorId,
+                 "%s is not of type 'integer'" % flavorId,
+                 "instance['volume'] 2 is not of type 'object'"])
 
     @test
     def test_bad_body_datastore_create_instance(self):
@@ -280,14 +281,14 @@ class MalformedJson(object):
             asserts.assert_equal(httpCode, 400,
                                  "Create instance failed with code %s, "
                                  "exception %s" % (httpCode, e))
-            asserts.assert_equal(e.message,
-                                 "Validation error: "
-                                 "instance['datastore']['type']"
-                                 " u'%s' does not match"
-                                 " '^.*[0-9a-zA-Z]+.*$'; "
-                                 "instance['datastore']['version'] u'%s' "
-                                 "does not match '^.*[0-9a-zA-Z]+.*$'" %
-                                 (datastore, datastore_version))
+            assert_contains(
+                e.message,
+                ["Validation error:",
+                 "instance['datastore']['type']"
+                 " u'%s' does not match"
+                 " '^.*[0-9a-zA-Z]+.*$'" % datastore,
+                 "instance['datastore']['version'] u'%s' "
+                 "does not match '^.*[0-9a-zA-Z]+.*$'" % datastore_version])
 
     @test
     def test_bad_body_volsize_create_instance(self):

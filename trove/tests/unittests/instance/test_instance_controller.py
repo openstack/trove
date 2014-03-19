@@ -54,7 +54,7 @@ class TestInstanceController(TestCase):
         self.assertThat(len(errors), Is(len(msg)))
         i = 0
         while i < len(msg):
-            self.assertThat(errors[i].message, Equals(msg[i]))
+            self.assertIn(errors[i].message, msg)
             if path:
                 self.assertThat(path, Equals(properties[i]))
             else:

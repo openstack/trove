@@ -92,8 +92,8 @@ class TestConfigurationController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        self.assertEqual(errors[0].message,
-                         "'' is not of type 'object'")
+        error_messages = [error.message for error in errors]
+        self.assertIn("'' is not of type 'object'", error_messages)
 
     def test_validate_create_invalid_name_param(self):
         body = {
@@ -111,8 +111,8 @@ class TestConfigurationController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        self.assertEqual(errors[0].message,
-                         "'' is too short")
+        error_messages = [error.message for error in errors]
+        self.assertIn("'' is too short", error_messages)
 
     def test_validate_edit_configuration(self):
         body = {
