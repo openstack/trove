@@ -22,14 +22,24 @@ from trove.db.sqlalchemy.migrate_repo.schema import Table
 def upgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
-    instances = Table('instances', meta, autoload=True)
-    #modify column
-    instances.c.flavor_id.alter(type=Integer())
+    # pgsql <= 8.3 was lax about char->other casting but this was tightened up
+    # in 8.4+. We now have to specify the USING clause for the cast to succeed.
+    # NB: The generated sqlalchemy query doesn't support this, so this override
+    # is needed.
+    if migrate_engine.name == 'postgresql':
+        migrate_engine.execute('ALTER TABLE instances ALTER COLUMN flavor_id '
+                               'TYPE INTEGER USING flavor_id::integer')
+    else:
+        instances = Table('instances', meta, autoload=True)
+        #modify column
+        instances.c.flavor_id.alter(type=Integer())
 
 
 def downgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
+    # int->char casts in pgsql still work fine without any USING clause,
+    #  so downgrade is not affected.
     # modify column:
     instances = Table('instances', meta, autoload=True)
     instances.c.flavor_id.alter(type=String(36))
