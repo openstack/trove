@@ -29,7 +29,7 @@ ENABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra enable"
 DISABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra disable"
 
 # cassandra binary stored at /usr/sbin/
-START_CASSANDRA = "sudo /usr/sbin/cassandra"
+START_CASSANDRA = "sudo service cassandra start"
 STOP_CASSANDRA = "sudo killall java 2> /dev/null || true"
 
 CASSANDRA_STATUS = """echo "use system;" > /tmp/check; cqlsh -f /tmp/check"""
