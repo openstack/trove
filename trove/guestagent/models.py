@@ -36,7 +36,8 @@ def persisted_models():
 class AgentHeartBeat(dbmodels.DatabaseModelBase):
     """Defines the state of a Guest Agent."""
 
-    _data_fields = ['instance_id', 'updated_at']
+    _data_fields = ['instance_id', 'updated_at', 'guest_agent_version',
+                    'deleted', 'deleted_at']
     _table_name = 'agent_heartbeats'
 
     def __init__(self, **kwargs):
@@ -57,6 +58,32 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
         LOG.debug("Saving %(name)s: %(dict)s" %
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
+
+    @classmethod
+    def find_all_by_version(cls, guest_agent_version, deleted=0):
+        if guest_agent_version is None:
+            raise exception.ModelNotFoundError()
+
+        heartbeats = cls.find_all(guest_agent_version=guest_agent_version,
+                                  deleted=deleted)
+
+        if heartbeats is None or heartbeats.count() == 0:
+            raise exception.ModelNotFoundError(
+                guest_agent_version=guest_agent_version)
+
+        return heartbeats
+
+    @classmethod
+    def find_by_instance_id(cls, instance_id):
+        if instance_id is None:
+            raise exception.ModelNotFoundError(instance_id=instance_id)
+
+        try:
+            return cls.find_by(instance_id=instance_id)
+
+        except exception.NotFound as e:
+            LOG.error(e.message)
+            raise exception.ModelNotFoundError(instance_id=instance_id)
 
     @staticmethod
     def is_active(agent):
