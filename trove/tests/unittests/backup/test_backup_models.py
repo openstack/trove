@@ -13,7 +13,7 @@
 
 
 import datetime
-from mockito import mock, when, unstub, any
+from mock import MagicMock, patch
 import testtools
 
 from trove.backup import models
@@ -48,65 +48,76 @@ class BackupCreateTest(testtools.TestCase):
 
     def tearDown(self):
         super(BackupCreateTest, self).tearDown()
-        unstub()
         if self.created:
             models.DBBackup.find_by(
                 tenant_id=self.context.tenant).delete()
 
     def test_create(self):
-        instance = mock(instance_models.Instance)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(instance).validate_can_perform_action().thenReturn(None)
-        when(models.Backup).validate_can_perform_action(
-            any(), any()).thenReturn(None)
-        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
-            None)
-        when(api.API).create_backup(any()).thenReturn(None)
+        instance = MagicMock()
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            with patch.object(models.Backup, 'validate_can_perform_action',
+                              return_value=None):
+                with patch.object(models.Backup, 'verify_swift_auth_token',
+                                  return_value=None):
+                    api.API.create_backup = MagicMock(return_value=None)
+                    bu = models.Backup.create(self.context, self.instance_id,
+                                              BACKUP_NAME, BACKUP_DESC)
+                    self.created = True
 
-        bu = models.Backup.create(self.context, self.instance_id,
-                                  BACKUP_NAME, BACKUP_DESC)
-        self.created = True
+                    self.assertEqual(BACKUP_NAME, bu.name)
+                    self.assertEqual(BACKUP_DESC, bu.description)
+                    self.assertEqual(self.instance_id, bu.instance_id)
+                    self.assertEqual(models.BackupState.NEW, bu.state)
 
-        self.assertEqual(BACKUP_NAME, bu.name)
-        self.assertEqual(BACKUP_DESC, bu.description)
-        self.assertEqual(self.instance_id, bu.instance_id)
-        self.assertEqual(models.BackupState.NEW, bu.state)
-
-        db_record = models.DBBackup.find_by(id=bu.id)
-        self.assertEqual(bu.id, db_record['id'])
-        self.assertEqual(BACKUP_NAME, db_record['name'])
-        self.assertEqual(BACKUP_DESC, db_record['description'])
-        self.assertEqual(self.instance_id, db_record['instance_id'])
-        self.assertEqual(models.BackupState.NEW, db_record['state'])
+                    db_record = models.DBBackup.find_by(id=bu.id)
+                    self.assertEqual(bu.id, db_record['id'])
+                    self.assertEqual(BACKUP_NAME, db_record['name'])
+                    self.assertEqual(BACKUP_DESC, db_record['description'])
+                    self.assertEqual(self.instance_id,
+                                     db_record['instance_id'])
+                    self.assertEqual(models.BackupState.NEW,
+                                     db_record['state'])
 
     def test_create_incremental(self):
-        instance = mock(instance_models.Instance)
-        parent = mock(models.DBBackup)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(instance).validate_can_perform_action().thenReturn(None)
-        when(models.Backup).validate_can_perform_action(
-            any(), any()).thenReturn(None)
-        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
-            None)
-        when(api.API).create_backup(any()).thenReturn(None)
-        when(models.Backup).get_by_id(any(), any()).thenReturn(
-            parent)
+        instance = MagicMock()
+        parent = MagicMock(spec=models.DBBackup)
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            with patch.object(models.Backup, 'validate_can_perform_action',
+                              return_value=None):
+                with patch.object(models.Backup, 'verify_swift_auth_token',
+                                  return_value=None):
+                    api.API.create_backup = MagicMock(return_value=None)
+                    with patch.object(models.Backup, 'get_by_id',
+                                      return_value=parent):
 
-        incremental = models.Backup.create(self.context, self.instance_id,
-                                           BACKUP_NAME, BACKUP_DESC,
-                                           parent_id='parent_uuid')
+                        incremental = models.Backup.create(
+                            self.context,
+                            self.instance_id,
+                            BACKUP_NAME,
+                            BACKUP_DESC,
+                            parent_id='parent_uuid')
 
-        self.created = True
+                        self.created = True
 
-        db_record = models.DBBackup.find_by(id=incremental.id)
-        self.assertEqual(incremental.id, db_record['id'])
-        self.assertEqual(BACKUP_NAME, db_record['name'])
-        self.assertEqual(BACKUP_DESC, db_record['description'])
-        self.assertEqual(self.instance_id, db_record['instance_id'])
-        self.assertEqual(models.BackupState.NEW, db_record['state'])
-        self.assertEqual('parent_uuid', db_record['parent_id'])
+                        db_record = models.DBBackup.find_by(id=incremental.id)
+                        self.assertEqual(incremental.id,
+                                         db_record['id'])
+                        self.assertEqual(BACKUP_NAME,
+                                         db_record['name'])
+                        self.assertEqual(BACKUP_DESC,
+                                         db_record['description'])
+                        self.assertEqual(self.instance_id,
+                                         db_record['instance_id'])
+                        self.assertEqual(models.BackupState.NEW,
+                                         db_record['state'])
+                        self.assertEqual('parent_uuid',
+                                         db_record['parent_id'])
 
     def test_create_instance_not_found(self):
         self.assertRaises(exception.NotFound, models.Backup.create,
@@ -114,52 +125,60 @@ class BackupCreateTest(testtools.TestCase):
                           BACKUP_NAME, BACKUP_DESC)
 
     def test_create_incremental_not_found(self):
-        instance = mock(instance_models.Instance)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(instance).validate_can_perform_action().thenReturn(None)
-        when(models.Backup).validate_can_perform_action(
-            any(), any()).thenReturn(None)
-        when(models.Backup).verify_swift_auth_token(any()).thenReturn(
-            None)
-        self.assertRaises(exception.NotFound, models.Backup.create,
-                          self.context, self.instance_id,
-                          BACKUP_NAME, BACKUP_DESC, parent_id='BAD')
+        instance = MagicMock()
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            with patch.object(models.Backup, 'validate_can_perform_action',
+                              return_value=None):
+                with patch.object(models.Backup, 'verify_swift_auth_token',
+                                  return_value=None):
+                    self.assertRaises(exception.NotFound, models.Backup.create,
+                                      self.context, self.instance_id,
+                                      BACKUP_NAME, BACKUP_DESC,
+                                      parent_id='BAD')
 
     def test_create_instance_not_active(self):
-        instance = mock(instance_models.Instance)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(instance).validate_can_perform_action().thenRaise(
-            exception.UnprocessableEntity)
-        self.assertRaises(exception.UnprocessableEntity, models.Backup.create,
-                          self.context, self.instance_id,
-                          BACKUP_NAME, BACKUP_DESC)
+        instance = MagicMock()
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                side_effect=exception.UnprocessableEntity)
+            self.assertRaises(exception.UnprocessableEntity,
+                              models.Backup.create,
+                              self.context, self.instance_id,
+                              BACKUP_NAME, BACKUP_DESC)
 
     def test_create_backup_swift_token_invalid(self):
-        instance = mock(instance_models.Instance)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(instance).validate_can_perform_action().thenReturn(None)
-        when(models.Backup).validate_can_perform_action(
-            any(), any()).thenReturn(None)
-        when(models.Backup).verify_swift_auth_token(any()).thenRaise(
-            exception.SwiftAuthError)
-        self.assertRaises(exception.SwiftAuthError, models.Backup.create,
-                          self.context, self.instance_id,
-                          BACKUP_NAME, BACKUP_DESC)
+        instance = MagicMock()
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            with patch.object(models.Backup, 'validate_can_perform_action',
+                              return_value=None):
+                with patch.object(models.Backup, 'verify_swift_auth_token',
+                                  side_effect=exception.SwiftAuthError):
+                    self.assertRaises(exception.SwiftAuthError,
+                                      models.Backup.create,
+                                      self.context, self.instance_id,
+                                      BACKUP_NAME, BACKUP_DESC)
 
     def test_create_backup_datastore_operation_not_supported(self):
-        instance = mock(instance_models.Instance)
-        when(instance_models.BuiltInstance).load(any(), any()).thenReturn(
-            instance)
-        when(models.Backup).validate_can_perform_action(
-            any(), any()).thenRaise(
-                exception.DatastoreOperationNotSupported)
-        self.assertRaises(exception.DatastoreOperationNotSupported,
-                          models.Backup.create,
-                          self.context, self.instance_id,
-                          BACKUP_NAME, BACKUP_DESC)
+        instance = MagicMock()
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance):
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            with patch.object(
+                models.Backup, 'validate_can_perform_action',
+                side_effect=exception.DatastoreOperationNotSupported
+            ):
+                self.assertRaises(exception.DatastoreOperationNotSupported,
+                                  models.Backup.create,
+                                  self.context, self.instance_id,
+                                  BACKUP_NAME, BACKUP_DESC)
 
 
 class BackupDeleteTest(testtools.TestCase):
@@ -170,27 +189,27 @@ class BackupDeleteTest(testtools.TestCase):
 
     def tearDown(self):
         super(BackupDeleteTest, self).tearDown()
-        unstub()
 
     def test_delete_backup_not_found(self):
         self.assertRaises(exception.NotFound, models.Backup.delete,
                           self.context, 'backup-id')
 
     def test_delete_backup_is_running(self):
-        backup = mock()
+        backup = MagicMock()
         backup.is_running = True
-        when(models.Backup).get_by_id(any(), any()).thenReturn(backup)
-        self.assertRaises(exception.UnprocessableEntity,
-                          models.Backup.delete, self.context, 'backup_id')
+        with patch.object(models.Backup, 'get_by_id', return_value=backup):
+            self.assertRaises(exception.UnprocessableEntity,
+                              models.Backup.delete, self.context, 'backup_id')
 
     def test_delete_backup_swift_token_invalid(self):
-        backup = mock()
+        backup = MagicMock()
         backup.is_running = False
-        when(models.Backup).get_by_id(any(), any()).thenReturn(backup)
-        when(models.Backup).verify_swift_auth_token(any()).thenRaise(
-            exception.SwiftAuthError)
-        self.assertRaises(exception.SwiftAuthError, models.Backup.delete,
-                          self.context, 'backup_id')
+        with patch.object(models.Backup, 'get_by_id', return_value=backup):
+            with patch.object(models.Backup, 'verify_swift_auth_token',
+                              side_effect=exception.SwiftAuthError):
+                self.assertRaises(exception.SwiftAuthError,
+                                  models.Backup.delete,
+                                  self.context, 'backup_id')
 
 
 class BackupORMTest(testtools.TestCase):
@@ -209,7 +228,6 @@ class BackupORMTest(testtools.TestCase):
 
     def tearDown(self):
         super(BackupORMTest, self).tearDown()
-        unstub()
         if not self.deleted:
             models.DBBackup.find_by(tenant_id=self.context.tenant).delete()
 
@@ -304,7 +322,6 @@ class PaginationTests(testtools.TestCase):
 
     def tearDown(self):
         super(PaginationTests, self).tearDown()
-        unstub()
         query = models.DBBackup.query()
         query.filter_by(instance_id=self.instance_id).delete()
 
@@ -378,7 +395,6 @@ class OrderingTests(testtools.TestCase):
 
     def tearDown(self):
         super(OrderingTests, self).tearDown()
-        unstub()
         query = models.DBBackup.query()
         query.filter_by(instance_id=self.instance_id).delete()
 

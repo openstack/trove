@@ -15,7 +15,7 @@
 import os
 
 import testtools
-from mockito import verify, when, unstub, any, mock
+from mock import MagicMock
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent.datastore.mongodb import service as mongo_service
@@ -46,12 +46,11 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount = self.origin_mount
         mongo_service.MongoDBApp.stop_db = self.origin_stop_db
         mongo_service.MongoDBApp.start_db = self.origin_start_db
-        unstub()
 
     def test_update_status(self):
-        self.manager.status = mock()
+        self.manager.status = MagicMock()
         self.manager.update_status(self.context)
-        verify(self.manager.status).update()
+        self.manager.status.update.assert_any_call()
 
     def test_prepare_from_backup(self):
         self._prepare_dynamic(backup_id='backup_id_123abc')
@@ -65,20 +64,20 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
                        'type': 'MongoDBDump',
                        'checksum': 'fake-checksum'} if backup_id else None
 
-        mock_status = mock()
+        mock_status = MagicMock()
+        mock_app = MagicMock()
         self.manager.status = mock_status
-        when(mock_status).begin_install().thenReturn(None)
-
-        when(VolumeDevice).format().thenReturn(None)
-        when(VolumeDevice).migrate_data(any()).thenReturn(None)
-        when(VolumeDevice).mount().thenReturn(None)
-
-        mock_app = mock()
         self.manager.app = mock_app
-        when(mock_app).stop_db().thenReturn(None)
-        when(mock_app).start_db().thenReturn(None)
-        when(mock_app).clear_storage().thenReturn(None)
-        when(os.path).exists(any()).thenReturn(is_db_installed)
+
+        mock_status.begin_install = MagicMock(return_value=None)
+        volume.VolumeDevice.format = MagicMock(return_value=None)
+        volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
+        volume.VolumeDevice.mount = MagicMock(return_value=None)
+
+        mock_app.stop_db = MagicMock(return_value=None)
+        mock_app.start_db = MagicMock(return_value=None)
+        mock_app.clear_storage = MagicMock(return_value=None)
+        os.path.exists = MagicMock(return_value=is_db_installed)
 
         # invocation
         self.manager.prepare(context=self.context, databases=None,
@@ -87,9 +86,10 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
                              device_path=device_path,
                              mount_point='/var/lib/mongodb',
                              backup_info=backup_info)
+
         # verification/assertion
-        verify(mock_status).begin_install()
-        verify(VolumeDevice).format()
-        verify(mock_app).stop_db()
-        verify(VolumeDevice).migrate_data(any())
-        verify(mock_app).install_if_needed(any())
+        mock_status.begin_install.assert_any_call()
+        mock_app.install_if_needed.assert_any_call(['package'])
+        mock_app.stop_db.assert_any_call()
+        VolumeDevice.format.assert_any_call()
+        VolumeDevice.migrate_data.assert_any_call('/var/lib/mongodb')

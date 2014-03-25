@@ -13,7 +13,6 @@
 #    under the License.
 
 import testtools
-from mockito import unstub
 from trove.backup import models as bkup_models
 from trove.common import exception as t_exception
 from trove.common import utils
@@ -39,7 +38,6 @@ class ConductorMethodTests(testtools.TestCase):
 
     def tearDown(self):
         super(ConductorMethodTests, self).tearDown()
-        unstub()
 
     def _create_iss(self):
         new_id = utils.generate_uuid()

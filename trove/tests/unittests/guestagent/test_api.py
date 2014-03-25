@@ -11,21 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from mockito import when
-from mockito import any
-from mockito import verify
-from mockito import unstub
-from mockito import mock
-from mockito import verifyZeroInteractions
-from mockito import never
-import mockito.matchers
+import mock
 import testtools
 from testtools.matchers import KeysEqual, Is
-from trove.guestagent import models as agent_models
-import trove.db.models as db_models
+
+import trove.common.context as context
 from trove.common import exception
 from trove.guestagent import api
 import trove.openstack.common.rpc as rpc
+import trove.common.rpc as trove_rpc
 
 
 def _mock_call_pwd_change(cmd, users=None):
@@ -47,23 +41,12 @@ def _mock_call(cmd, timerout, username=None, hostname=None,
 class ApiTest(testtools.TestCase):
     def setUp(self):
         super(ApiTest, self).setUp()
-        self.guest = api.API('mock_content', 0)
+        self.context = context.TroveContext()
+        self.guest = api.API(self.context, 0)
         self.guest._cast = _mock_call_pwd_change
         self.guest._call = _mock_call
         self.FAKE_ID = 'instance-id-x23d2d'
-        self.api = api.API(mock(), self.FAKE_ID)
-        when(rpc).call(any(), any(), any(), any(int)).thenRaise(
-            ValueError('Unexpected Rpc Invocation'))
-        when(rpc).cast(any(), any(), any()).thenRaise(
-            ValueError('Unexpected Rpc Invocation'))
-
-    def tearDown(self):
-        super(ApiTest, self).tearDown()
-        unstub()
-
-    def test_delete_queue(self):
-        self.skipTest("find out if this delete_queue function is needed "
-                      "anymore, Bug#1097482")
+        self.api = api.API(self.context, self.FAKE_ID)
 
     def test_change_passwords(self):
         self.assertIsNone(self.guest.change_passwords("dummy"))
@@ -85,285 +68,311 @@ class ApiTest(testtools.TestCase):
         self.assertEqual('guestagent.' + self.FAKE_ID,
                          self.api._get_routing_key())
 
-    def test_check_for_heartbeat_positive(self):
-        when(db_models.DatabaseModelBase).find_by(
-            instance_id=any()).thenReturn('agent')
-        when(agent_models.AgentHeartBeat).is_active('agent').thenReturn(True)
+    @mock.patch('trove.guestagent.models.AgentHeartBeat')
+    def test_check_for_heartbeat_positive(self, mock_agent):
         self.assertTrue(self.api._check_for_hearbeat())
 
-    def test_check_for_heartbeat_exception(self):
+    @mock.patch('trove.guestagent.models.AgentHeartBeat')
+    def test_check_for_heartbeat_exception(self, mock_agent):
         # TODO(juice): maybe it would be ok to extend the test to validate
         # the is_active method on the heartbeat
-        when(db_models.DatabaseModelBase).find_by(instance_id=any()).thenRaise(
-            exception.ModelNotFoundError)
-        when(agent_models.AgentHeartBeat).is_active(any()).thenReturn(None)
-
+        mock_agent.find_by.side_effect = exception.ModelNotFoundError("Uh Oh!")
+        # execute
         self.assertRaises(exception.GuestTimeout, self.api._check_for_hearbeat)
+        # validate
+        self.assertEqual(mock_agent.is_active.call_count, 0)
 
-        verify(agent_models.AgentHeartBeat, times=0).is_active(any())
-
-    def test_check_for_heartbeat_negative(self):
+    @mock.patch('trove.guestagent.models.AgentHeartBeat')
+    def test_check_for_heartbeat_negative(self, mock_agent):
         # TODO(juice): maybe it would be ok to extend the test to validate
         # the is_active method on the heartbeat
-        when(db_models.DatabaseModelBase).find_by(
-            instance_id=any()).thenReturn('agent')
-        when(agent_models.AgentHeartBeat).is_active(any()).thenReturn(False)
+        mock_agent.is_active.return_value = False
         self.assertRaises(exception.GuestTimeout, self.api._check_for_hearbeat)
+
+    def test_delete_queue(self):
+        trove_rpc.delete_queue = mock.Mock()
+        # execute
+        self.api.delete_queue()
+        # verify
+        trove_rpc.delete_queue.assert_called_with(self.context, mock.ANY)
 
     def test_create_user(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('create_user', 'users')
-        self._mock_rpc_cast(exp_msg)
         self.api.create_user('test_user')
-        self._verify_rpc_cast(exp_msg)
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_rpc_cast_exception(self):
+        rpc.cast = mock.Mock(side_effect=IOError('host down'))
         exp_msg = RpcMsgMatcher('create_user', 'users')
-        when(rpc).cast(any(), any(), exp_msg).thenRaise(IOError('host down'))
-
+        # execute
         with testtools.ExpectedException(exception.GuestError, '.* host down'):
             self.api.create_user('test_user')
-
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_list_users(self):
+        exp_resp = ['user1', 'user2', 'user3']
+        rpc.call = mock.Mock(return_value=exp_resp)
         exp_msg = RpcMsgMatcher('list_users', 'limit', 'marker',
                                 'include_marker')
-        exp_resp = ['user1', 'user2', 'user3']
-        self._mock_rpc_call(exp_msg, exp_resp)
+        # execute
         act_resp = self.api.list_users()
+        # verify
         self.assertThat(act_resp, Is(exp_resp))
-        self._verify_rpc_call(exp_msg)
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_rpc_call_exception(self):
+        rpc.call = mock.Mock(side_effect=IOError('host_down'))
         exp_msg = RpcMsgMatcher('list_users', 'limit', 'marker',
                                 'include_marker')
-        when(rpc).call(any(), any(), exp_msg, any(int)).thenRaise(
-            IOError('host down'))
-
+        # execute
         with testtools.ExpectedException(exception.GuestError,
                                          'An error occurred.*'):
             self.api.list_users()
-
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_delete_user(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('delete_user', 'user')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.delete_user('test_user')
-        self._mock_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_create_database(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('create_database', 'databases')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.create_database(['db1', 'db2', 'db3'])
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_list_databases(self):
+        exp_resp = ['db1', 'db2', 'db3']
+        rpc.call = mock.Mock(return_value=exp_resp)
         exp_msg = RpcMsgMatcher('list_databases', 'limit', 'marker',
                                 'include_marker')
-        exp_resp = ['db1', 'db2', 'db3']
-        self._mock_rpc_call(exp_msg, exp_resp)
+        # execute
         resp = self.api.list_databases(limit=1, marker=2,
                                        include_marker=False)
+        # verify
         self.assertThat(resp, Is(exp_resp))
-        self._verify_rpc_call(exp_msg)
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_delete_database(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('delete_database', 'database')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.delete_database('test_database_name')
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_enable_root(self):
+        rpc.call = mock.Mock(return_value=True)
         exp_msg = RpcMsgMatcher('enable_root')
-        self._mock_rpc_call(exp_msg, True)
+        # execute
         self.assertThat(self.api.enable_root(), Is(True))
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_disable_root(self):
+        rpc.call = mock.Mock(return_value=True)
         exp_msg = RpcMsgMatcher('disable_root')
-        self._mock_rpc_call(exp_msg, True)
+        # execute
         self.assertThat(self.api.disable_root(), Is(True))
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_is_root_enabled(self):
+        rpc.call = mock.Mock(return_value=False)
         exp_msg = RpcMsgMatcher('is_root_enabled')
-        self._mock_rpc_call(exp_msg, False)
+        # execute
         self.assertThat(self.api.is_root_enabled(), Is(False))
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_get_hwinfo(self):
+        rpc.call = mock.Mock(return_value='[blah]')
         exp_msg = RpcMsgMatcher('get_hwinfo')
-        self._mock_rpc_call(exp_msg)
-        self.api.get_hwinfo()
-        self._verify_rpc_call(exp_msg)
+        # execute
+        self.assertThat(self.api.get_hwinfo(), Is('[blah]'))
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_get_diagnostics(self):
+        rpc.call = mock.Mock(spec=rpc, return_value='[all good]')
         exp_msg = RpcMsgMatcher('get_diagnostics')
-        self._mock_rpc_call(exp_msg)
-        self.api.get_diagnostics()
-        self._verify_rpc_call(exp_msg)
+        # execute
+        self.assertThat(self.api.get_diagnostics(), Is('[all good]'))
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_restart(self):
+        rpc.call = mock.Mock()
         exp_msg = RpcMsgMatcher('restart')
-        self._mock_rpc_call(exp_msg)
+        # execute
         self.api.restart()
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_start_db_with_conf_changes(self):
+        rpc.call = mock.Mock()
         exp_msg = RpcMsgMatcher('start_db_with_conf_changes',
                                 'config_contents')
-        self._mock_rpc_call(exp_msg)
+        # execute
         self.api.start_db_with_conf_changes(None)
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_stop_db(self):
+        rpc.call = mock.Mock()
         exp_msg = RpcMsgMatcher('stop_db', 'do_not_start_on_reboot')
-        self._mock_rpc_call(exp_msg)
+        # execute
         self.api.stop_db(do_not_start_on_reboot=False)
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_get_volume_info(self):
         fake_resp = {'fake': 'resp'}
+        rpc.call = mock.Mock(return_value=fake_resp)
         exp_msg = RpcMsgMatcher('get_filesystem_stats', 'fs_path')
-        self._mock_rpc_call(exp_msg, fake_resp)
+        # execute
         self.assertThat(self.api.get_volume_info(), Is(fake_resp))
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_update_guest(self):
+        rpc.call = mock.Mock()
         exp_msg = RpcMsgMatcher('update_guest')
-        self._mock_rpc_call(exp_msg)
+        # execute
         self.api.update_guest()
-        self._verify_rpc_call(exp_msg)
+        # verify
+        self._verify_rpc_call(exp_msg, rpc.call)
 
     def test_create_backup(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('create_backup', 'backup_info')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.create_backup({'id': '123'})
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_update_overrides(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('update_overrides', 'overrides', 'remove')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.update_overrides('123')
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_apply_overrides(self):
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('apply_overrides', 'overrides')
-        self._mock_rpc_cast(exp_msg)
+        # execute
         self.api.apply_overrides('123')
-        self._verify_rpc_cast(exp_msg)
+        # verify
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def _verify_rpc_connection_and_cast(self, rpc, mock_conn, exp_msg):
-        verify(rpc).create_connection(new=True)
-        verify(mock_conn).create_consumer(self.api._get_routing_key(), None,
-                                          fanout=False)
-        verify(rpc).cast(any(), any(), exp_msg)
+        rpc.create_connection.assert_called_with(new=True)
+        mock_conn.create_consumer.assert_called_with(
+            self.api._get_routing_key(), None, fanout=False)
+        rpc.cast.assert_called_with(mock.ANY, mock.ANY, exp_msg)
 
     def test_prepare(self):
-        mock_conn = mock()
-        when(rpc).create_connection(new=True).thenReturn(mock_conn)
-        when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
+        mock_conn = mock.Mock()
+        rpc.create_connection = mock.Mock(return_value=mock_conn)
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
                                 'databases', 'users', 'device_path',
                                 'mount_point', 'backup_info',
                                 'config_contents', 'root_password',
                                 'overrides')
-        when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
-
+        # execute
         self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                          '/mnt/opt', 'bkup-1232', 'cont', '1-2-3-4',
                          'override')
-
+        # verify
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
     def test_prepare_with_backup(self):
-        mock_conn = mock()
-        when(rpc).create_connection(new=True).thenReturn(mock_conn)
-        when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
+        mock_conn = mock.Mock()
+        rpc.create_connection = mock.Mock(return_value=mock_conn)
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
                                 'databases', 'users', 'device_path',
                                 'mount_point', 'backup_info',
                                 'config_contents', 'root_password',
                                 'overrides')
-        when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
         bkup = {'id': 'backup_id_123'}
-
+        # execute
         self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                          '/mnt/opt', bkup, 'cont', '1-2-3-4',
                          'overrides')
+        # verify
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
     def test_upgrade(self):
-        mock_conn = mock()
-        when(rpc).create_connection(new=True).thenReturn(mock_conn)
-        when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
+        mock_conn = mock.Mock()
+        rpc.create_connection = mock.Mock(return_value=mock_conn)
+        rpc.cast = mock.Mock()
         exp_msg = RpcMsgMatcher('upgrade')
-        when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
-
+        # execute
         self.api.upgrade()
-
+        # verify
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
     def test_rpc_cast_with_consumer_exception(self):
-        mock_conn = mock()
-        when(rpc).create_connection(new=True).thenRaise(IOError('host down'))
-        exp_msg = RpcMsgMatcher('prepare', 'memory_mb', 'packages',
-                                'databases', 'users', 'device_path',
-                                'mount_point')
-
+        mock_conn = mock.Mock()
+        rpc.create_connection = mock.Mock(side_effect=IOError('host down'))
+        rpc.cast = mock.Mock()
+        # execute
         with testtools.ExpectedException(exception.GuestError, '.* host down'):
             self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                              '/mnt/opt')
+        # verify
+        rpc.create_connection.assert_called_with(new=True)
+        self.assertThat(mock_conn.call_count, Is(0))
+        self.assertThat(rpc.cast.call_count, Is(0))
 
-        verify(rpc).create_connection(new=True)
-        verifyZeroInteractions(mock_conn)
-        verify(rpc, never).cast(any(), any(), exp_msg)
+    def _verify_rpc_call(self, exp_msg, mock_call=None):
+        mock_call.assert_called_with(self.context, mock.ANY, exp_msg,
+                                     mock.ANY)
 
-    def _mock_rpc_call(self, exp_msg, resp=None):
-        rpc.common = mock()
-        when(rpc).call(any(), any(), exp_msg, any(int)).thenReturn(resp)
-
-    def _verify_rpc_call(self, exp_msg):
-        verify(rpc).call(any(), any(), exp_msg, any(int))
-
-    def _mock_rpc_cast(self, exp_msg):
-        when(rpc).cast(any(), any(), exp_msg).thenReturn(None)
-
-    def _verify_rpc_cast(self, exp_msg):
-        verify(rpc).cast(any(), any(), exp_msg)
+    def _verify_rpc_cast(self, exp_msg, mock_cast=None):
+        mock_cast.assert_called_with(mock.ANY,
+                                     mock.ANY, exp_msg)
 
 
 class CastWithConsumerTest(testtools.TestCase):
     def setUp(self):
         super(CastWithConsumerTest, self).setUp()
-        self.api = api.API(mock(), 'instance-id-x23d2d')
+        self.context = context.TroveContext()
+        self.api = api.API(self.context, 'instance-id-x23d2d')
 
-    def tearDown(self):
-        super(CastWithConsumerTest, self).tearDown()
-        unstub()
-
-    def test__cast_with_consumer(self):
-        mock_conn = mock()
-        when(rpc).create_connection(new=True).thenReturn(mock_conn)
-        when(mock_conn).create_consumer(any(), any(), any()).thenReturn(None)
-        when(rpc).cast(any(), any(), any()).thenReturn(None)
-
+    def test_cast_with_consumer(self):
+        mock_conn = mock.Mock()
+        rpc.create_connection = mock.Mock(return_value=mock_conn)
+        rpc.cast = mock.Mock()
+        # execute
         self.api._cast_with_consumer('fake_method_name', fake_param=1)
+        # verify
+        rpc.create_connection.assert_called_with(new=True)
+        mock_conn.create_consumer.assert_called_with(mock.ANY, None,
+                                                     fanout=False)
+        rpc.cast.assert_called_with(self.context, mock.ANY, mock.ANY)
 
-        verify(rpc).create_connection(new=True)
-        verify(mock_conn).create_consumer(any(), None, fanout=False)
-        verify(rpc).cast(any(), any(), any())
 
-
-class RpcMsgMatcher(mockito.matchers.Matcher):
+class RpcMsgMatcher(object):
     def __init__(self, method, *args_dict):
         self.wanted_method = method
         self.wanted_dict = KeysEqual('version', 'method', 'args', 'namespace')
         args_dict = args_dict or [{}]
         self.args_dict = KeysEqual(*args_dict)
 
-    def matches(self, arg):
+    def __eq__(self, arg):
         if self.wanted_method != arg['method']:
             raise Exception("Method does not match: %s != %s" %
                             (self.wanted_method, arg['method']))

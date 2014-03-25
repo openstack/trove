@@ -14,8 +14,7 @@
 #    under the License.
 
 import testtools
-from mock import Mock
-from mockito import when, any
+from mock import Mock, MagicMock
 import pexpect
 from trove.common import utils
 from trove.guestagent import pkg
@@ -58,15 +57,12 @@ class PkgDEBInstallTestCase(testtools.TestCase):
 
     def test_pkg_is_instaled_yes(self):
         packages = "package1=1.0 package2"
-        when(self.pkg).pkg_version("package1").thenReturn("1.0")
-        when(self.pkg).pkg_version("package2").thenReturn("2.0")
+        self.pkg.pkg_version = MagicMock(side_effect=["1.0", "2.0"])
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
     def test_pkg_is_instaled_no(self):
         packages = "package1=1.0 package2 package3=3.1"
-        when(self.pkg).pkg_version("package1").thenReturn("1.0")
-        when(self.pkg).pkg_version("package2").thenReturn("2.0")
-        when(self.pkg).pkg_version("package3").thenReturn("3.0")
+        self.pkg.pkg_version = MagicMock(side_effect=["1.0", "2.0", "3.0"])
         self.assertFalse(self.pkg.pkg_is_installed(packages))
 
     def test_success_install(self):
@@ -311,13 +307,14 @@ class PkgRPMInstallTestCase(testtools.TestCase):
 
     def test_pkg_is_instaled_yes(self):
         packages = "package1=1.0 package2"
-        when(commands).getstatusoutput(any()).thenReturn({1: "package1=1.0\n"
-                                                             "package2=2.0"})
+        commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
+                                                           "package2=2.0"})
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
     def test_pkg_is_instaled_no(self):
         packages = "package1=1.0 package2 package3=3.0"
-        when(commands).getstatusoutput({1: "package1=1.0\npackage2=2.0"})
+        commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
+                                                           "package2=2.0"})
         self.assertFalse(self.pkg.pkg_is_installed(packages))
 
     def test_permission_error(self):

@@ -13,8 +13,7 @@
 #limitations under the License.
 
 import testtools
-from mock import Mock
-from mockito import when, unstub, any
+from mock import Mock, MagicMock, patch
 import hashlib
 
 from trove.common.context import TroveContext
@@ -36,7 +35,6 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
 
     def tearDown(self):
         super(SwiftStorageSaveChecksumTests, self).tearDown()
-        unstub()
 
     def test_swift_checksum_save(self):
         """This tests that SwiftStorage.save returns the swift checksum"""
@@ -46,16 +44,17 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
 
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
-        storage_strategy = SwiftStorage(context)
+        with patch.object(swift, 'create_swift_client',
+                          return_value=swift_client):
+            storage_strategy = SwiftStorage(context)
 
-        with MockBackupRunner(filename=backup_id,
-                              user=user,
-                              password=password) as runner:
-            (success,
-             note,
-             checksum,
-             location) = storage_strategy.save(runner.manifest, runner)
+            with MockBackupRunner(filename=backup_id,
+                                  user=user,
+                                  password=password) as runner:
+                (success,
+                 note,
+                 checksum,
+                 location) = storage_strategy.save(runner.manifest, runner)
 
         self.assertTrue(success, "The backup should have been successful.")
         self.assertIsNotNone(note, "A note should have been returned.")
@@ -75,16 +74,17 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
 
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
-        storage_strategy = SwiftStorage(context)
+        with patch.object(swift, 'create_swift_client',
+                          return_value=swift_client):
+            storage_strategy = SwiftStorage(context)
 
-        with MockBackupRunner(filename=backup_id,
-                              user=user,
-                              password=password) as runner:
-            (success,
-             note,
-             checksum,
-             location) = storage_strategy.save(runner.manifest, runner)
+            with MockBackupRunner(filename=backup_id,
+                                  user=user,
+                                  password=password) as runner:
+                (success,
+                 note,
+                 checksum,
+                 location) = storage_strategy.save(runner.manifest, runner)
 
         self.assertFalse(success, "The backup should have failed!")
         self.assertTrue(note.startswith("Error saving data to Swift!"))
@@ -107,16 +107,17 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         password = 'password'
 
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
-        storage_strategy = SwiftStorage(context)
+        with patch.object(swift, 'create_swift_client',
+                          return_value=swift_client):
+            storage_strategy = SwiftStorage(context)
 
-        with MockBackupRunner(filename=backup_id,
-                              user=user,
-                              password=password) as runner:
-            (success,
-             note,
-             checksum,
-             location) = storage_strategy.save(runner.manifest, runner)
+            with MockBackupRunner(filename=backup_id,
+                                  user=user,
+                                  password=password) as runner:
+                (success,
+                 note,
+                 checksum,
+                 location) = storage_strategy.save(runner.manifest, runner)
 
         self.assertFalse(success, "The backup should have failed!")
         self.assertTrue(note.startswith("Error saving data to Swift!"))
@@ -134,7 +135,7 @@ class SwiftStorageUtils(testtools.TestCase):
         super(SwiftStorageUtils, self).setUp()
         context = TroveContext()
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
+        swift.create_swift_client = MagicMock(return_value=swift_client)
         self.swift = SwiftStorage(context)
 
     def tearDown(self):
@@ -168,7 +169,6 @@ class SwiftStorageLoad(testtools.TestCase):
 
     def tearDown(self):
         super(SwiftStorageLoad, self).tearDown()
-        unstub()
 
     def test_run_verify_checksum(self):
         """This tests that swift download cmd runs if original backup checksum
@@ -180,10 +180,11 @@ class SwiftStorageLoad(testtools.TestCase):
         backup_checksum = "fake-md5-sum"
 
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
+        with patch.object(swift, 'create_swift_client',
+                          return_value=swift_client):
 
-        storage_strategy = SwiftStorage(context)
-        download_stream = storage_strategy.load(location, backup_checksum)
+            storage_strategy = SwiftStorage(context)
+            download_stream = storage_strategy.load(location, backup_checksum)
         self.assertIsNotNone(download_stream)
 
     def test_run_verify_checksum_mismatch(self):
@@ -197,9 +198,9 @@ class SwiftStorageLoad(testtools.TestCase):
         backup_checksum = "checksum_different_then_fake_swift_etag"
 
         swift_client = FakeSwiftConnection()
-        when(swift).create_swift_client(context).thenReturn(swift_client)
-
-        storage_strategy = SwiftStorage(context)
+        with patch.object(swift, 'create_swift_client',
+                          return_value=swift_client):
+            storage_strategy = SwiftStorage(context)
 
         self.assertRaises(SwiftDownloadIntegrityError,
                           storage_strategy.load,
@@ -274,13 +275,11 @@ class SwiftMetadataTests(testtools.TestCase):
         super(SwiftMetadataTests, self).setUp()
         self.swift_client = FakeSwiftConnection()
         self.context = TroveContext()
-        when(swift).create_swift_client(self.context).thenReturn(
-            self.swift_client)
+        swift.create_swift_client = MagicMock(return_value=self.swift_client)
         self.swift = SwiftStorage(self.context)
 
     def tearDown(self):
         super(SwiftMetadataTests, self).tearDown()
-        unstub()
 
     def test__get_attr(self):
         normal_header = self.swift._get_attr('content-type')
@@ -302,10 +301,9 @@ class SwiftMetadataTests(testtools.TestCase):
             'etag': '"fake-md5-sum"',
             'x-object-meta-lsn': '1234567'
         }
-        when(self.swift_client).head_object(any(), any()).thenReturn(
-            headers)
-
-        metadata = self.swift.load_metadata(location, 'fake-md5-sum')
+        with patch.object(self.swift_client, 'head_object',
+                          return_value=headers):
+            metadata = self.swift.load_metadata(location, 'fake-md5-sum')
         self.assertEqual({'lsn': '1234567'}, metadata)
 
     def test_save_metadata(self):

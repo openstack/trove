@@ -12,8 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import testtools
-from mockito import mock, when, unstub, any, verify, never
-from mock import Mock
+from mock import Mock, MagicMock, patch
 from trove.quota.quota import DbQuotaDriver
 from trove.quota.models import Resource
 from trove.quota.models import Quota
@@ -82,17 +81,16 @@ class QuotaControllerTest(testtools.TestCase):
 
     def setUp(self):
         super(QuotaControllerTest, self).setUp()
-        context = mock()
+        context = MagicMock()
         context.is_admin = True
-        req = mock()
-        req.environ = mock()
-        when(req.environ).get(any()).thenReturn(context)
+        req = MagicMock()
+        req.environ = MagicMock()
+        req.environ.get = MagicMock(return_value=context)
         self.req = req
         self.controller = QuotaController()
 
     def tearDown(self):
         super(QuotaControllerTest, self).tearDown()
-        unstub()
 
     def test_update_unknown_resource(self):
         body = {'quotas': {'unknown_resource': 5}}
@@ -101,47 +99,46 @@ class QuotaControllerTest(testtools.TestCase):
                           FAKE_TENANT1, FAKE_TENANT2)
 
     def test_update_resource_no_value(self):
-        quota = mock(Quota)
-        when(DatabaseModelBase).find_by(tenant_id=FAKE_TENANT2,
-                                        resource='instances').thenReturn(quota)
-        body = {'quotas': {'instances': None}}
-        result = self.controller.update(self.req, body, FAKE_TENANT1,
-                                        FAKE_TENANT2)
-        verify(quota, never).save()
-        self.assertEqual(200, result.status)
+        quota = MagicMock(spec=Quota)
+        with patch.object(DatabaseModelBase, 'find_by', return_value=quota):
+            body = {'quotas': {'instances': None}}
+            result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                            FAKE_TENANT2)
+            self.assertEqual(quota.save.call_count, 0)
+            self.assertEqual(200, result.status)
 
     def test_update_resource_instance(self):
-        instance_quota = mock(Quota)
-        when(DatabaseModelBase).find_by(
-            tenant_id=FAKE_TENANT2,
-            resource='instances').thenReturn(instance_quota)
-        body = {'quotas': {'instances': 2}}
-        result = self.controller.update(self.req, body, FAKE_TENANT1,
-                                        FAKE_TENANT2)
-        verify(instance_quota, times=1).save()
-        self.assertTrue('instances' in result._data['quotas'])
-        self.assertEqual(200, result.status)
-        self.assertEqual(2, result._data['quotas']['instances'])
+        instance_quota = MagicMock(spec=Quota)
+        with patch.object(DatabaseModelBase, 'find_by',
+                          return_value=instance_quota):
+            body = {'quotas': {'instances': 2}}
+            result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                            FAKE_TENANT2)
+            self.assertEqual(instance_quota.save.call_count, 1)
+            self.assertTrue('instances' in result._data['quotas'])
+            self.assertEqual(200, result.status)
+            self.assertEqual(2, result._data['quotas']['instances'])
 
     @testtools.skipIf(not CONF.trove_volume_support,
                       'Volume support is not enabled')
     def test_update_resource_volume(self):
-        instance_quota = mock(Quota)
-        when(DatabaseModelBase).find_by(
-            tenant_id=FAKE_TENANT2,
-            resource='instances').thenReturn(instance_quota)
-        volume_quota = mock(Quota)
-        when(DatabaseModelBase).find_by(
-            tenant_id=FAKE_TENANT2,
-            resource='volumes').thenReturn(volume_quota)
-        body = {'quotas': {'instances': None, 'volumes': 10}}
-        result = self.controller.update(self.req, body, FAKE_TENANT1,
-                                        FAKE_TENANT2)
-        verify(instance_quota, never).save()
-        self.assertFalse('instances' in result._data['quotas'])
-        verify(volume_quota, times=1).save()
-        self.assertEqual(200, result.status)
-        self.assertEqual(10, result._data['quotas']['volumes'])
+        instance_quota = MagicMock(spec=Quota)
+        volume_quota = MagicMock(spec=Quota)
+
+        def side_effect_func(*args, **kwargs):
+            return (instance_quota if kwargs['resource'] == 'instances'
+                    else volume_quota)
+
+        with patch.object(DatabaseModelBase, 'find_by',
+                          side_effect=side_effect_func):
+            body = {'quotas': {'instances': None, 'volumes': 10}}
+            result = self.controller.update(self.req, body, FAKE_TENANT1,
+                                            FAKE_TENANT2)
+            self.assertEqual(instance_quota.save.call_count, 0)
+            self.assertFalse('instances' in result._data['quotas'])
+            self.assertEqual(volume_quota.save.call_count, 1)
+            self.assertEqual(200, result.status)
+            self.assertEqual(10, result._data['quotas']['volumes'])
 
 
 class DbQuotaDriverTest(testtools.TestCase):
@@ -336,8 +333,12 @@ class DbQuotaDriverTest(testtools.TestCase):
                                   in_use=0,
                                   reserved=0)]
 
+        def side_effect_func(*args, **kwargs):
+            return (FAKE_QUOTAS[0] if kwargs['resource'] == 'instances'
+                    else FAKE_QUOTAS[1])
+
         self.mock_usage_result.all = Mock(return_value=[])
-        QuotaUsage.create = Mock(side_effect=FAKE_QUOTAS)
+        QuotaUsage.create = Mock(side_effect=side_effect_func)
 
         usages = self.driver.get_all_quota_usages_by_tenant(FAKE_TENANT1,
                                                             resources.keys())

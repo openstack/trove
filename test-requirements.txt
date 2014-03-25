@@ -18,4 +18,3 @@ mox>=0.5.3
 testtools>=0.9.32
 discover
 testrepository>=0.0.17
-mockito

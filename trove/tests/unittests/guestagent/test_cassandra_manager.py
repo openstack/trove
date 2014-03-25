@@ -15,15 +15,14 @@
 import os
 
 import testtools
-from mock import Mock
-from mockito import verify, when, unstub, any, mock
+from mock import MagicMock
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import volume
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.cassandra import service as cass_service
 from trove.guestagent.datastore.cassandra import manager as cass_manager
-from trove.guestagent import pkg
+from trove.guestagent import pkg as pkg
 
 
 class GuestAgentCassandraDBManagerTest(testtools.TestCase):
@@ -38,7 +37,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
             def save(self):
                 pass
 
-        cass_service.CassandraAppStatus.set_status = Mock(
+        cass_service.CassandraAppStatus.set_status = MagicMock(
             return_value=FakeInstanceServiceStatus())
         self.context = TroveContext()
         self.manager = cass_manager.Manager()
@@ -69,13 +68,12 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         operating_system.get_ip_address = self.original_get_ip
         cass_service.CassandraApp.make_host_reachable = (
             self.orig_make_host_reachable)
-        unstub()
 
     def test_update_status(self):
-        mock_status = mock()
+        mock_status = MagicMock()
         self.manager.appStatus = mock_status
         self.manager.update_status(self.context)
-        verify(mock_status).update()
+        mock_status.update.assert_any_call()
 
     def test_prepare_pkg(self):
         self._prepare_dynamic(['cassandra'])
@@ -91,7 +89,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
                               is_db_installed=True)
 
     def _prepare_dynamic(self, packages,
-                         config_content=any(), device_path='/dev/vdb',
+                         config_content='MockContent', device_path='/dev/vdb',
                          is_db_installed=True, backup_id=None,
                          is_root_enabled=False,
                          overrides=None):
@@ -103,25 +101,22 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
                            'checksum': 'fake-checksum',
                            }
 
-        mock_status = mock()
+        mock_status = MagicMock()
+        mock_app = MagicMock()
         self.manager.appStatus = mock_status
-        when(mock_status).begin_install().thenReturn(None)
-
-        mock_app = mock()
         self.manager.app = mock_app
 
-        when(mock_app).install_if_needed(packages).thenReturn(None)
-        (when(pkg.Package).pkg_is_installed(any()).
-         thenReturn(is_db_installed))
-        when(mock_app).init_storage_structure(any()).thenReturn(None)
-        when(mock_app).write_config(config_content).thenReturn(None)
-        when(mock_app).make_host_reachable().thenReturn(None)
-        when(mock_app).restart().thenReturn(None)
-        when(os.path).exists(any()).thenReturn(True)
-
-        when(volume.VolumeDevice).format().thenReturn(None)
-        when(volume.VolumeDevice).migrate_data(any()).thenReturn(None)
-        when(volume.VolumeDevice).mount().thenReturn(None)
+        mock_status.begin_install = MagicMock(return_value=None)
+        mock_app.install_if_needed = MagicMock(return_value=None)
+        pkg.Package.pkg_is_installed = MagicMock(return_value=is_db_installed)
+        mock_app.init_storage_structure = MagicMock(return_value=None)
+        mock_app.write_config = MagicMock(return_value=None)
+        mock_app.make_host_reachable = MagicMock(return_value=None)
+        mock_app.restart = MagicMock(return_value=None)
+        os.path.exists = MagicMock(return_value=True)
+        volume.VolumeDevice.format = MagicMock(return_value=None)
+        volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
+        volume.VolumeDevice.mount = MagicMock(return_value=None)
 
         # invocation
         self.manager.prepare(context=self.context, packages=packages,
@@ -132,9 +127,10 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
                              mount_point="/var/lib/cassandra",
                              backup_info=backup_info,
                              overrides=None)
+
         # verification/assertion
-        verify(mock_status).begin_install()
-        verify(mock_app).install_if_needed(packages)
-        verify(mock_app).init_storage_structure(any())
-        verify(mock_app).make_host_reachable()
-        verify(mock_app).restart()
+        mock_status.begin_install.assert_any_call()
+        mock_app.install_if_needed.assert_any_call(packages)
+        mock_app.init_storage_structure.assert_any_call('/var/lib/cassandra')
+        mock_app.make_host_reachable.assert_any_call()
+        mock_app.restart.assert_any_call()

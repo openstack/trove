@@ -17,14 +17,8 @@ from uuid import uuid4
 import time
 from mock import Mock
 from mock import MagicMock
-from mockito import mock
-from mockito import when
-from mockito import any
-from mockito import unstub
-from mockito import verify
-from mockito import contains
-from mockito import never
-from mockito import matchers
+from mock import patch
+from mock import ANY
 import sqlalchemy
 import testtools
 from testtools.matchers import Is
@@ -115,8 +109,8 @@ class DbaasTest(testtools.TestCase):
         self.assertRaises(RuntimeError, dbaas.get_auth_password)
 
     def test_service_discovery(self):
-        when(os.path).isfile(any()).thenReturn(True)
-        mysql_service = dbaas.operating_system.service_discovery(["mysql"])
+        with patch.object(os.path, 'isfile', return_value=True):
+            mysql_service = dbaas.operating_system.service_discovery(["mysql"])
         self.assertIsNotNone(mysql_service['cmd_start'])
         self.assertIsNotNone(mysql_service['cmd_enable'])
 
@@ -125,10 +119,10 @@ class DbaasTest(testtools.TestCase):
         output = "mysqld would've been started with the these args:\n"\
                  "--user=mysql --port=3306 --basedir=/usr "\
                  "--tmpdir=/tmp --skip-external-locking"
-        when(os.path).isfile(any()).thenReturn(True)
-        dbaas.utils.execute = Mock(return_value=(output, None))
 
-        options = dbaas.load_mysqld_options()
+        with patch.object(os.path, 'isfile', return_value=True):
+            dbaas.utils.execute = Mock(return_value=(output, None))
+            options = dbaas.load_mysqld_options()
 
         self.assertEqual(5, len(options))
         self.assertEqual(options["user"], "mysql")
@@ -164,18 +158,16 @@ class MySqlAdminMockTest(testtools.TestCase):
 
     def tearDown(self):
         super(MySqlAdminMockTest, self).tearDown()
-        unstub()
 
     def test_list_databases(self):
-        mock_conn = mock_admin_sql_connection()
+        mock_conn = mock_sql_connection()
 
-        when(mock_conn).execute(
-            TextClauseMatcher('schema_name as name')).thenReturn(
-                ResultSetStub([('db1', 'utf8', 'utf8_bin'),
-                               ('db2', 'utf8', 'utf8_bin'),
-                               ('db3', 'utf8', 'utf8_bin')]))
-
-        databases, next_marker = MySqlAdmin().list_databases(limit=10)
+        with patch.object(mock_conn, 'execute',
+                          return_value=ResultSetStub(
+                [('db1', 'utf8', 'utf8_bin'),
+                 ('db2', 'utf8', 'utf8_bin'),
+                 ('db3', 'utf8', 'utf8_bin')])):
+            databases, next_marker = MySqlAdmin().list_databases(limit=10)
 
         self.assertThat(next_marker, Is(None))
         self.assertThat(len(databases), Is(3))
@@ -681,11 +673,13 @@ class MySqlAppInstallTest(MySqlAppTest):
         super(MySqlAppInstallTest, self).setUp()
         self.orig_create_engine = sqlalchemy.create_engine
         self.orig_pkg_version = dbaas.packager.pkg_version
+        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
 
     def tearDown(self):
         super(MySqlAppInstallTest, self).tearDown()
         sqlalchemy.create_engine = self.orig_create_engine
         dbaas.packager.pkg_version = self.orig_pkg_version
+        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
 
     def test_install(self):
 
@@ -752,113 +746,103 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
 
-class TextClauseMatcher(matchers.Matcher):
+class TextClauseMatcher(object):
     def __init__(self, text):
-        self.contains = contains(text)
+        self.text = text
 
     def __repr__(self):
-        return "TextClause(%s)" % self.contains.sub
+        return "TextClause(%s)" % self.text
 
-    def matches(self, arg):
+    def __eq__(self, arg):
         print("Matching %s" % arg.text)
-        return self.contains.matches(arg.text)
+        return self.text in arg.text
 
 
 def mock_sql_connection():
-    mock_engine = mock()
-    when(sqlalchemy).create_engine("mysql://root:@localhost:3306",
-                                   echo=True).thenReturn(mock_engine)
-    mock_conn = mock()
-    when(dbaas.LocalSqlClient).__enter__().thenReturn(mock_conn)
-    when(dbaas.LocalSqlClient).__exit__(any(), any(), any()).thenReturn(None)
-    return mock_conn
-
-
-def mock_admin_sql_connection():
-    when(utils).execute_with_timeout("sudo", "awk", any(), any()).thenReturn(
-        ['fake_password', None])
-    mock_engine = mock()
-    when(sqlalchemy).create_engine("mysql://root:@localhost:3306",
-                                   pool_recycle=any(), echo=True,
-                                   listeners=[any()]).thenReturn(mock_engine)
-    mock_conn = mock()
-    when(dbaas.LocalSqlClient).__enter__().thenReturn(mock_conn)
-    when(dbaas.LocalSqlClient).__exit__(any(), any(), any()).thenReturn(None)
+    utils.execute_with_timeout = MagicMock(return_value=['fake_password',
+                                                         None])
+    mock_engine = MagicMock()
+    sqlalchemy.create_engine = MagicMock(return_value=mock_engine)
+    mock_conn = MagicMock()
+    dbaas.LocalSqlClient.__enter__ = MagicMock(return_value=mock_conn)
+    dbaas.LocalSqlClient.__exit__ = MagicMock(return_value=None)
     return mock_conn
 
 
 class MySqlAppMockTest(testtools.TestCase):
 
+    def setUp(self):
+        super(MySqlAppMockTest, self).setUp()
+        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
+
     def tearDown(self):
         super(MySqlAppMockTest, self).tearDown()
-        unstub()
+        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
 
     def test_secure_keep_root(self):
         mock_conn = mock_sql_connection()
 
-        when(mock_conn).execute(any()).thenReturn(None)
-        when(utils).execute_with_timeout("sudo", any(str), "stop").thenReturn(
-            None)
-        # skip writing the file for now
-        when(os.path).isfile(any()).thenReturn(False)
-        when(utils).execute_with_timeout(
-            "sudo", "chmod", any(), any()).thenReturn(None)
-        mock_status = mock()
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(), any(), any()).thenReturn(True)
-        when(dbaas).clear_expired_password().thenReturn(None)
-        app = MySqlApp(mock_status)
-        when(app)._write_mycnf(any(), any()).thenReturn(True)
-        when(app).start_mysql().thenReturn(None)
-        when(app).stop_db().thenReturn(None)
-        app.secure('foo', None)
-        verify(mock_conn, never).execute(TextClauseMatcher('root'))
+        with patch.object(mock_conn, 'execute', return_value=None):
+            utils.execute_with_timeout = MagicMock(return_value=None)
+            # skip writing the file for now
+            with patch.object(os.path, 'isfile', return_value=False):
+                mock_status = MagicMock()
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=True)
+                dbaas.clear_expired_password = MagicMock(return_value=None)
+                app = MySqlApp(mock_status)
+                app._write_mycnf = MagicMock(return_value=True)
+                app.start_mysql = MagicMock(return_value=None)
+                app.stop_db = MagicMock(return_value=None)
+                app.secure('foo', None)
+                self.assertTrue(mock_conn.execute.called)
 
 
 class MySqlRootStatusTest(testtools.TestCase):
 
+    def setUp(self):
+        super(MySqlRootStatusTest, self).setUp()
+        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
+
     def tearDown(self):
         super(MySqlRootStatusTest, self).tearDown()
-        unstub()
+        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
 
     def test_root_is_enabled(self):
-        mock_conn = mock_admin_sql_connection()
+        mock_conn = mock_sql_connection()
 
-        mock_rs = mock()
+        mock_rs = MagicMock()
         mock_rs.rowcount = 1
-        when(mock_conn).execute(
-            TextClauseMatcher(
-                "User = 'root' AND Host != 'localhost'")).thenReturn(mock_rs)
-
-        self.assertThat(MySqlRootAccess().is_root_enabled(), Is(True))
+        with patch.object(mock_conn, 'execute', return_value=mock_rs):
+            self.assertThat(MySqlRootAccess().is_root_enabled(), Is(True))
 
     def test_root_is_not_enabled(self):
-        mock_conn = mock_admin_sql_connection()
+        mock_conn = mock_sql_connection()
 
-        mock_rs = mock()
+        mock_rs = MagicMock()
         mock_rs.rowcount = 0
-        when(mock_conn).execute(
-            TextClauseMatcher(
-                "User = 'root' AND Host != 'localhost'")).thenReturn(mock_rs)
-
-        self.assertThat(MySqlRootAccess.is_root_enabled(), Equals(False))
+        with patch.object(mock_conn, 'execute', return_value=mock_rs):
+            self.assertThat(MySqlRootAccess.is_root_enabled(), Equals(False))
 
     def test_enable_root(self):
-        mock_conn = mock_admin_sql_connection()
-        when(mock_conn).execute(any()).thenReturn(None)
-        # invocation
-        user_ser = MySqlRootAccess.enable_root()
-        # verification
-        self.assertThat(user_ser, Not(Is(None)))
-        verify(mock_conn).execute(TextClauseMatcher('CREATE USER'),
-                                  user='root', host='%')
-        verify(mock_conn).execute(TextClauseMatcher(
-            'GRANT ALL PRIVILEGES ON *.*'))
-        verify(mock_conn).execute(TextClauseMatcher('UPDATE mysql.user'))
+        mock_conn = mock_sql_connection()
+
+        with patch.object(mock_conn, 'execute', return_value=None):
+            # invocation
+            user_ser = MySqlRootAccess.enable_root()
+            # verification
+            self.assertThat(user_ser, Not(Is(None)))
+            mock_conn.execute.assert_any_call(TextClauseMatcher('CREATE USER'),
+                                              user='root', host='%')
+            mock_conn.execute.assert_any_call(TextClauseMatcher(
+                'GRANT ALL PRIVILEGES ON *.*'))
+            mock_conn.execute.assert_any_call(TextClauseMatcher(
+                'UPDATE mysql.user'))
 
     def test_enable_root_failed(self):
-        when(models.MySQLUser)._is_valid_user_name(any()).thenReturn(False)
-        self.assertRaises(ValueError, MySqlAdmin().enable_root)
+        with patch.object(models.MySQLUser, '_is_valid_user_name',
+                          return_value=False):
+            self.assertRaises(ValueError, MySqlAdmin().enable_root)
 
 
 class MockStats:
@@ -871,7 +855,6 @@ class InterrogatorTest(testtools.TestCase):
 
     def tearDown(self):
         super(InterrogatorTest, self).tearDown()
-        unstub()
 
     def test_to_gb(self):
         result = to_gb(123456789)
@@ -882,8 +865,8 @@ class InterrogatorTest(testtools.TestCase):
         self.assertEqual(result, 0.0)
 
     def test_get_filesystem_volume_stats(self):
-        when(os).statvfs(any()).thenReturn(MockStats)
-        result = get_filesystem_volume_stats('/some/path/')
+        with patch.object(os, 'statvfs', return_value=MockStats):
+            result = get_filesystem_volume_stats('/some/path/')
 
         self.assertEqual(result['block_size'], 4096)
         self.assertEqual(result['total_blocks'], 1048576)
@@ -893,10 +876,10 @@ class InterrogatorTest(testtools.TestCase):
         self.assertEqual(result['used'], 2.0)
 
     def test_get_filesystem_volume_stats_error(self):
-        when(os).statvfs(any()).thenRaise(OSError)
-        self.assertRaises(
-            RuntimeError,
-            get_filesystem_volume_stats, '/nonexistent/path')
+        with patch.object(os, 'statvfs', side_effect=OSError):
+            self.assertRaises(
+                RuntimeError,
+                get_filesystem_volume_stats, '/nonexistent/path')
 
 
 class ServiceRegistryTest(testtools.TestCase):
@@ -1226,175 +1209,161 @@ class TestRedisApp(testtools.TestCase):
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         rservice.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
-        unstub()
 
     def test_install_if_needed_installed(self):
-        when(pkg.Package).pkg_is_installed(any()).thenReturn(True)
-        when(RedisApp)._install_redis('bar').thenReturn(None)
-        self.app.install_if_needed('bar')
-        verify(pkg.Package).pkg_is_installed('bar')
-        verify(RedisApp, times=0)._install_redis('bar')
+        with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):
+            with patch.object(RedisApp, '_install_redis', return_value=None):
+                self.app.install_if_needed('bar')
+                pkg.Package.pkg_is_installed.assert_any_call('bar')
+                self.assertEqual(RedisApp._install_redis.call_count, 0)
 
     def test_install_if_needed_not_installed(self):
-        when(pkg.Package).pkg_is_installed(any()).thenReturn(False)
-        when(RedisApp)._install_redis('asdf').thenReturn(None)
-        self.app.install_if_needed('asdf')
-        verify(pkg.Package).pkg_is_installed('asdf')
-        verify(RedisApp)._install_redis('asdf')
+        with patch.object(pkg.Package, 'pkg_is_installed', return_value=False):
+            with patch.object(RedisApp, '_install_redis', return_value=None):
+                self.app.install_if_needed('asdf')
+                pkg.Package.pkg_is_installed.assert_any_call('asdf')
+                RedisApp._install_redis.assert_any_call('asdf')
 
     def test_install_redis(self):
-        when(utils).execute_with_timeout(any())
-        when(pkg.Package).pkg_install('redis', {}, 1200).thenReturn(None)
-        when(RedisApp).start_redis().thenReturn(None)
-        self.app._install_redis('redis')
-        verify(utils).execute_with_timeout(any())
-        verify(pkg.Package).pkg_install('redis', {}, 1200)
-        verify(RedisApp).start_redis()
+        with patch.object(utils, 'execute_with_timeout'):
+            with patch.object(pkg.Package, 'pkg_install', return_value=None):
+                with patch.object(RedisApp, 'start_redis', return_value=None):
+                    self.app._install_redis('redis')
+                    pkg.Package.pkg_install.assert_any_call('redis', {}, 1200)
+                    RedisApp.start_redis.assert_any_call()
+                    self.assertTrue(utils.execute_with_timeout.called)
 
     def test_enable_redis_on_boot_without_upstart(self):
-        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(False)
-        when(utils).execute_with_timeout('sudo ' +
-                                         RedisSystem.REDIS_CMD_ENABLE,
-                                         shell=True).thenReturn(None)
-        self.app._enable_redis_on_boot()
-        verify(os.path).isfile(RedisSystem.REDIS_INIT)
-        verify(utils).execute_with_timeout('sudo ' +
-                                           RedisSystem.REDIS_CMD_ENABLE,
-                                           shell=True)
+        with patch.object(os.path, 'isfile', return_value=False):
+            with patch.object(utils, 'execute_with_timeout',
+                              return_value=None):
+                self.app._enable_redis_on_boot()
+                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                utils.execute_with_timeout.assert_any_call(
+                    'sudo ' + RedisSystem.REDIS_CMD_ENABLE,
+                    shell=True)
 
     def test_enable_redis_on_boot_with_upstart(self):
-        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(True)
-        when(utils).execute_with_timeout("sudo sed -i '/^manual$/d' " +
-                                         RedisSystem.REDIS_INIT,
-                                         shell=True).thenReturn(None)
-        self.app._enable_redis_on_boot()
-        verify(os.path).isfile(RedisSystem.REDIS_INIT)
-        verify(utils).execute_with_timeout("sudo sed -i '/^manual$/d' " +
-                                           RedisSystem.REDIS_INIT,
-                                           shell=True)
+        with patch.object(os.path, 'isfile', return_value=True):
+            with patch.object(utils, 'execute_with_timeout',
+                              return_value=None):
+                self.app._enable_redis_on_boot()
+                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                utils.execute_with_timeout.assert_any_call(
+                    "sudo sed -i '/^manual$/d' " + RedisSystem.REDIS_INIT,
+                    shell=True)
 
     def test_disable_redis_on_boot_with_upstart(self):
-        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(True)
-        when(utils).execute_with_timeout('echo',
-                                         "'manual'",
-                                         '>>',
-                                         RedisSystem.REDIS_INIT,
-                                         run_as_root=True,
-                                         root_helper='sudo').thenReturn(None)
-        self.app._disable_redis_on_boot()
-        verify(os.path).isfile(RedisSystem.REDIS_INIT)
-        verify(utils).execute_with_timeout('echo',
-                                           "'manual'",
-                                           '>>',
-                                           RedisSystem.REDIS_INIT,
-                                           run_as_root=True,
-                                           root_helper='sudo')
+        with patch.object(os.path, 'isfile', return_value=True):
+            with patch.object(utils, 'execute_with_timeout',
+                              return_value=None):
+                self.app._disable_redis_on_boot()
+                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                utils.execute_with_timeout.assert_any_call(
+                    'echo',
+                    "'manual'",
+                    '>>',
+                    RedisSystem.REDIS_INIT,
+                    run_as_root=True,
+                    root_helper='sudo')
 
     def test_disable_redis_on_boot_without_upstart(self):
-        when(os.path).isfile(RedisSystem.REDIS_INIT).thenReturn(False)
-        when(utils).execute_with_timeout('sudo ' +
-                                         RedisSystem.REDIS_CMD_DISABLE,
-                                         shell=True).thenReturn(None)
-        self.app._disable_redis_on_boot()
-        verify(os.path).isfile(RedisSystem.REDIS_INIT)
-        verify(utils).execute_with_timeout('sudo ' +
-                                           RedisSystem.REDIS_CMD_DISABLE,
-                                           shell=True)
+        with patch.object(os.path, 'isfile', return_value=False):
+            with patch.object(utils, 'execute_with_timeout',
+                              return_value=None):
+                self.app._disable_redis_on_boot()
+                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                utils.execute_with_timeout.assert_any_call(
+                    'sudo ' + RedisSystem.REDIS_CMD_DISABLE,
+                    shell=True)
 
     def test_stop_db_without_fail(self):
-        mock_status = mock()
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(), any(), any()).thenReturn(True)
+        mock_status = MagicMock()
+        mock_status.wait_for_real_status_to_change_to = MagicMock(
+            return_value=True)
         app = RedisApp(mock_status, state_change_wait_time=0)
-        when(RedisApp)._disable_redis_on_boot().thenReturn(None)
-        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_STOP,
-                                         shell=True).thenReturn(None)
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(),
-            any(),
-            any()).thenReturn(True)
-        app.stop_db(do_not_start_on_reboot=True)
-        verify(RedisApp)._disable_redis_on_boot()
-        verify(utils).execute_with_timeout('sudo ' +
-                                           RedisSystem.REDIS_CMD_STOP,
-                                           shell=True)
-        verify(mock_status).wait_for_real_status_to_change_to(
-            any(),
-            any(),
-            any())
+        RedisApp._disable_redis_on_boot = MagicMock(
+            return_value=None)
+
+        with patch.object(utils, 'execute_with_timeout', return_value=None):
+            mock_status.wait_for_real_status_to_change_to = MagicMock(
+                return_value=True)
+            app.stop_db(do_not_start_on_reboot=True)
+
+            utils.execute_with_timeout.assert_any_call(
+                'sudo ' + RedisSystem.REDIS_CMD_STOP,
+                shell=True)
+            self.assertTrue(RedisApp._disable_redis_on_boot.called)
+            self.assertTrue(
+                mock_status.wait_for_real_status_to_change_to.called)
 
     def test_stop_db_with_failure(self):
-        mock_status = mock()
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(), any(), any()).thenReturn(True)
+        mock_status = MagicMock()
+        mock_status.wait_for_real_status_to_change_to = MagicMock(
+            return_value=True)
         app = RedisApp(mock_status, state_change_wait_time=0)
-        when(RedisApp)._disable_redis_on_boot().thenReturn(None)
-        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_STOP,
-                                         shell=True).thenReturn(None)
-        when(mock_status).wait_for_real_status_to_change_to(
-            any(),
-            any(),
-            any()).thenReturn(False)
-        app.stop_db(do_not_start_on_reboot=True)
-        verify(RedisApp)._disable_redis_on_boot()
-        verify(utils).execute_with_timeout('sudo ' +
-                                           RedisSystem.REDIS_CMD_STOP,
-                                           shell=True)
-        verify(mock_status).wait_for_real_status_to_change_to(
-            any(),
-            any(),
-            any())
-        verify(mock_status).end_install_or_restart()
+        RedisApp._disable_redis_on_boot = MagicMock(
+            return_value=None)
+
+        with patch.object(utils, 'execute_with_timeout', return_value=None):
+            mock_status.wait_for_real_status_to_change_to = MagicMock(
+                return_value=False)
+            app.stop_db(do_not_start_on_reboot=True)
+
+            utils.execute_with_timeout.assert_any_call(
+                'sudo ' + RedisSystem.REDIS_CMD_STOP,
+                shell=True)
+            self.assertTrue(RedisApp._disable_redis_on_boot.called)
+            self.assertTrue(mock_status.end_install_or_restart.called)
+            self.assertTrue(
+                mock_status.wait_for_real_status_to_change_to.called)
 
     def test_restart(self):
-        mock_status = mock()
+        mock_status = MagicMock()
         app = RedisApp(mock_status, state_change_wait_time=0)
-        when(mock_status).begin_restart().thenReturn(None)
-        when(RedisApp).stop_db().thenReturn(None)
-        when(RedisApp).start_redis().thenReturn(None)
-        when(mock_status).end_install_or_restart().thenReturn(None)
-        app.restart()
-        verify(mock_status).begin_restart()
-        verify(RedisApp).stop_db()
-        verify(RedisApp).start_redis()
-        verify(mock_status).end_install_or_restart()
+        mock_status.begin_restart = MagicMock(return_value=None)
+        with patch.object(RedisApp, 'stop_db', return_value=None):
+            with patch.object(RedisApp, 'start_redis', return_value=None):
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+                app.restart()
+                mock_status.begin_restart.assert_any_call()
+                RedisApp.stop_db.assert_any_call()
+                RedisApp.start_redis.assert_any_call()
+                mock_status.end_install_or_restart.assert_any_call()
 
     def test_start_redis(self):
-        mock_status = mock()
+        mock_status = MagicMock()
         app = RedisApp(mock_status, state_change_wait_time=0)
-        when(RedisApp)._enable_redis_on_boot().thenReturn(None)
-        when(utils).execute_with_timeout('sudo ' + RedisSystem.REDIS_CMD_START,
-                                         shell=True).thenReturn(None)
-        when(mock_status).wait_for_real_status_to_change_to(any(),
-                                                            any(),
-                                                            any()).thenReturn(
-                                                                None)
-        when(utils).execute_with_timeout('pkill', '-9',
-                                         'redis-server',
-                                         run_as_root=True,
-                                         root_helper='sudo').thenReturn(None)
-        when(mock_status).end_install_or_restart().thenReturn(None)
-        app.start_redis()
-        verify(RedisApp)._enable_redis_on_boot()
-        verify(utils).execute_with_timeout('sudo ' +
-                                           RedisSystem.REDIS_CMD_START,
-                                           shell=True)
-        verify(mock_status).wait_for_real_status_to_change_to(any(),
-                                                              any(),
-                                                              any())
-        verify(utils).execute_with_timeout('pkill', '-9',
-                                           'redis-server',
-                                           run_as_root=True,
-                                           root_helper='sudo')
-        verify(mock_status).end_install_or_restart()
+        with patch.object(RedisApp, '_enable_redis_on_boot',
+                          return_value=None):
+            with patch.object(utils, 'execute_with_timeout',
+                              return_value=None):
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=None)
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+                app.start_redis()
+
+                utils.execute_with_timeout.assert_any_call(
+                    'sudo ' + RedisSystem.REDIS_CMD_START,
+                    shell=True)
+                utils.execute_with_timeout.assert_any_call('pkill', '-9',
+                                                           'redis-server',
+                                                           run_as_root=True,
+                                                           root_helper='sudo')
+                self.assertTrue(RedisApp._enable_redis_on_boot.called)
+                self.assertTrue(mock_status.end_install_or_restart.called)
+                self.assertTrue(
+                    mock_status.wait_for_real_status_to_change_to.callled)
 
 
 class CassandraDBAppTest(testtools.TestCase):
 
     def setUp(self):
         super(CassandraDBAppTest, self).setUp()
-        self.utils_execute_with_timeout = (cass_service .
-                                           utils.execute_with_timeout)
+        self.utils_execute_with_timeout = (
+            cass_service.utils.execute_with_timeout)
         self.sleep = time.sleep
         self.pkg_version = cass_service.packager.pkg_version
         self.pkg = cass_service.packager
@@ -1765,16 +1734,16 @@ class MongoDBAppTest(testtools.TestCase):
                           Mock())
 
     def test_install_when_db_installed(self):
-        packager_mock = mock()
-        when(packager_mock).pkg_is_installed(any()).thenReturn(True)
+        packager_mock = MagicMock()
+        packager_mock.pkg_is_installed = MagicMock(return_value=True)
         mongo_system.PACKAGER = packager_mock
         self.mongoDbApp.install_if_needed(['package'])
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_install_when_db_not_installed(self):
-        packager_mock = mock()
-        when(packager_mock).pkg_is_installed(any()).thenReturn(False)
+        packager_mock = MagicMock()
+        packager_mock.pkg_is_installed = MagicMock(return_value=False)
         mongo_system.PACKAGER = packager_mock
         self.mongoDbApp.install_if_needed(['package'])
-        verify(packager_mock).pkg_install(any(), {}, any())
+        packager_mock.pkg_install.assert_any_call(ANY, {}, ANY)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)

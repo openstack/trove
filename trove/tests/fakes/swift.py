@@ -1,10 +1,3 @@
-import uuid
-import logging
-from mockito import when, any
-import swiftclient.client as swift_client
-import swiftclient
-
-
 # Copyright (C) 2012 Hewlett-Packard Development Company, L.P.
 # All Rights Reserved.
 #
@@ -24,7 +17,12 @@ import httplib
 import json
 import os
 import socket
+import uuid
+import logging
+import swiftclient.client as swift_client
+import swiftclient
 from hashlib import md5
+from mock import MagicMock
 
 from swiftclient import client as swift
 
@@ -260,10 +258,6 @@ class SwiftClientStub(object):
 
     def __init__(self):
         self._connection = swift_client.Connection()
-        # simulate getting an unknown container
-        when(swift_client.Connection).get_container(any()).thenRaise(
-            swiftclient.ClientException('Resource Not Found', http_status=404))
-
         self._containers = {}
         self._containers_list = []
         self._objects = {}
@@ -302,7 +296,7 @@ class SwiftClientStub(object):
                      'content-type': 'application/json; charset=utf-8',
                      'x-account-object-count': '0'}, self._containers_list)
 
-        when(swift_client.Connection).get_auth().thenReturn((
+        swift_client.Connection.get_auth = MagicMock(return_value=(
             u"http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
             u'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
             u'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
@@ -312,7 +306,8 @@ class SwiftClientStub(object):
             u'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
             u'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
         )
-        when(swift_client.Connection).get_account().thenReturn(account_resp())
+        swift_client.Connection.get_account = MagicMock(
+            return_value=account_resp())
         return self
 
     def _create_container(self, container_name):
@@ -356,12 +351,19 @@ class SwiftClientStub(object):
                     self._objects[container])
 
         # if this is called multiple times then nothing happens
-        when(swift_client.Connection).put_container(container_name).thenReturn(
-            None)
+        swift_client.Connection.put_container = MagicMock(return_value=None)
+
+        def side_effect_func(*args, **kwargs):
+            if args[0] in self._containers:
+                return container_resp(args[0])
+            else:
+                raise swiftclient.ClientException('Resource Not Found',
+                                                  http_status=404)
+
         self._create_container(container_name)
         # return container headers
-        when(swift_client.Connection).get_container(container_name).thenReturn(
-            container_resp(container_name))
+        swift_client.Connection.get_container = MagicMock(
+            side_effect=side_effect_func)
 
         return self
 
@@ -384,12 +386,6 @@ class SwiftClientStub(object):
         """
         # first ensure container
         self._ensure_container_exists(container)
-        # allow one call to get container and then throw exceptions (may need
-        # to be revised
-        when(swift_client.Connection).delete_container(container).thenRaise(
-            swiftclient.ClientException("Resource Not Found", http_status=404))
-        when(swift_client.Connection).get_container(container).thenRaise(
-            swiftclient.ClientException("Resource Not Found", http_status=404))
         self._delete_container(container)
         return self
 
@@ -415,24 +411,35 @@ class SwiftClientStub(object):
         :param contents: the contents of the object
         """
 
-        self._connection.get_container(container)
-        when(swift_client.Connection).put_object(container, name,
-                                                 contents).thenReturn(
-                                                     uuid.uuid1())
-        when(swift_client.Connection).get_object(container, name).thenReturn(
-            ({'content-length': len(contents), 'accept-ranges': 'bytes',
-              'last-modified': 'Mon, 10 Mar 2013 01:06:34 GMT',
-              'etag': 'eb15a6874ce265e2c3eb1b4891567bab',
-              'x-timestamp': '1363568794.67584',
-              'x-trans-id': 'txef3aaf26c897420c8e77c9750ce6a501',
-              'date': 'Mon, 10 Mar 2013 05:35:14 GMT',
-              'content-type': 'application/octet-stream'}, contents)
-        )
+        swift_client.Connection.put_object = MagicMock(
+            return_value=uuid.uuid1())
+
+        def side_effect_func(*args, **kwargs):
+            if (args[0] in self._containers and
+                args[1] in map(lambda x: x['name'],
+                               self._objects[args[0]])):
+                return (
+                    {'content-length': len(contents), 'accept-ranges': 'bytes',
+                     'last-modified': 'Mon, 10 Mar 2013 01:06:34 GMT',
+                     'etag': 'eb15a6874ce265e2c3eb1b4891567bab',
+                     'x-timestamp': '1363568794.67584',
+                     'x-trans-id': 'txef3aaf26c897420c8e77c9750ce6a501',
+                     'date': 'Mon, 10 Mar 2013 05:35:14 GMT',
+                     'content-type': 'application/octet-stream'},
+                    [obj for obj in self._objects[args[0]]
+                     if obj['name'] == args[1]][0]['contents'])
+            else:
+                raise swiftclient.ClientException('Resource Not Found',
+                                                  http_status=404)
+
+        swift_client.Connection.get_object = MagicMock(
+            side_effect=side_effect_func)
+
         self._remove_object(name, self._objects[container])
         self._objects[container].append(
             {'bytes': 13, 'last_modified': '2013-03-15T22:10:49.361950',
              'hash': 'ccc55aefbf92aa66f42b638802c5e7f6', 'name': name,
-             'content_type': 'application/octet-stream'})
+             'content_type': 'application/octet-stream', 'contents': contents})
         return self
 
     def without_object(self, container, name):
@@ -455,13 +462,18 @@ class SwiftClientStub(object):
         """
         self._ensure_container_exists(container)
         self._ensure_object_exists(container, name)
-        # throw exception if someone calls get object
-        when(swift_client.Connection).get_object(container, name).thenRaise(
-            swiftclient.ClientException('Resource Not found', http_status=404))
-        when(swift_client.Connection).delete_object(
-            container, name).thenReturn(None).thenRaise(
-                swiftclient.ClientException('Resource Not Found',
-                                            http_status=404))
+
+        def side_effect_func(*args, **kwargs):
+            if not [obj for obj in self._objects[args[0]]
+                    if obj['name'] == [args[1]]]:
+                raise swiftclient.ClientException('Resource Not found',
+                                                  http_status=404)
+            else:
+                return None
+
+        swift_client.Connection.delete_object = MagicMock(
+            side_effect=side_effect_func)
+
         self._remove_object(name, self._objects[container])
         return self
 

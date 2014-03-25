@@ -16,7 +16,6 @@ import testtools
 import uuid
 import trove.common.remote
 from mock import Mock
-from mockito import mock, unstub
 from trove.common import exception
 from trove.tests.fakes import nova
 from trove.extensions.security_group import models as sec_mod
@@ -103,8 +102,8 @@ class SecurityGroupDeleteTest(testtools.TestCase):
 
     def setUp(self):
         super(SecurityGroupDeleteTest, self).setUp()
-        inst_model.CONF = mock()
-        self.context = mock()
+        inst_model.CONF = Mock()
+        self.context = Mock()
         self. original_find_by = (sec_mod.
                                   SecurityGroupInstanceAssociation.
                                   find_by)
@@ -119,7 +118,6 @@ class SecurityGroupDeleteTest(testtools.TestCase):
          find_by) = self.original_find_by
         (sec_mod.SecurityGroupInstanceAssociation.
          delete) = self.original_delete
-        unstub()
 
     def _raise(self, ex):
         raise ex

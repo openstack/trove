@@ -13,7 +13,7 @@
 #    under the License.
 
 import testtools
-from mockito import verify, when, unstub, any, mock
+from mock import MagicMock
 from trove.common.context import TroveContext
 from trove.guestagent.datastore.redis.manager import Manager as RedisManager
 import trove.guestagent.datastore.redis.service as redis_service
@@ -29,9 +29,17 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         self.manager = RedisManager()
         self.packages = 'redis-server'
         self.origin_RedisAppStatus = redis_service.RedisAppStatus
-        self.origin_stop_redis = redis_service.RedisApp.stop_db
         self.origin_start_redis = redis_service.RedisApp.start_redis
+        self.origin_stop_redis = redis_service.RedisApp.stop_db
         self.origin_install_redis = redis_service.RedisApp._install_redis
+        self.origin_write_config = redis_service.RedisApp.write_config
+        self.origin_install_if_needed = \
+            redis_service.RedisApp.install_if_needed
+        self.origin_complete_install_or_restart = \
+            redis_service.RedisApp.complete_install_or_restart
+        self.origin_format = VolumeDevice.format
+        self.origin_mount = VolumeDevice.mount
+        self.origin_restore = backup.restore
 
     def tearDown(self):
         super(RedisGuestAgentManagerTest, self).tearDown()
@@ -39,14 +47,22 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisApp.stop_db = self.origin_stop_redis
         redis_service.RedisApp.start_redis = self.origin_start_redis
         redis_service.RedisApp._install_redis = self.origin_install_redis
-        unstub()
+        redis_service.RedisApp.write_config = self.origin_write_config
+        redis_service.RedisApp.install_if_needed = \
+            self.origin_install_if_needed
+        redis_service.RedisApp.complete_install_or_restart = \
+            self.origin_complete_install_or_restart
+        VolumeDevice.format = self.origin_format
+        VolumeDevice.mount = self.origin_mount
+        backup.restore = self.origin_restore
 
     def test_update_status(self):
-        mock_status = mock()
-        when(redis_service.RedisAppStatus).get().thenReturn(mock_status)
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
         self.manager.update_status(self.context)
-        verify(redis_service.RedisAppStatus).get()
-        verify(mock_status).update()
+        redis_service.RedisAppStatus.get.assert_any_call()
+        mock_status.update.assert_any_call()
 
     def test_prepare_redis_not_installed(self):
         self._prepare_dynamic(is_redis_installed=False)
@@ -56,42 +72,46 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
                          mount_point='var/lib/redis'):
 
         # covering all outcomes is starting to cause trouble here
-        mock_status = mock()
-        when(redis_service.RedisAppStatus).get().thenReturn(mock_status)
-        when(mock_status).begin_install().thenReturn(None)
-        when(VolumeDevice).format().thenReturn(None)
-        when(VolumeDevice).mount().thenReturn(None)
-        when(redis_service.RedisApp).start_redis().thenReturn(None)
-        when(redis_service.RedisApp).install_if_needed().thenReturn(None)
-        when(backup).restore(self.context, backup_info).thenReturn(None)
-        when(redis_service.RedisApp).write_config(any()).thenReturn(None)
-        when(redis_service.RedisApp).complete_install_or_restart(
-            any()).thenReturn(None)
+        mock_status = MagicMock()
+        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
+        redis_service.RedisApp.start_redis = MagicMock(return_value=None)
+        redis_service.RedisApp.install_if_needed = MagicMock(return_value=None)
+        redis_service.RedisApp.write_config = MagicMock(return_value=None)
+        redis_service.RedisApp.complete_install_or_restart = MagicMock(
+            return_value=None)
+        mock_status.begin_install = MagicMock(return_value=None)
+        VolumeDevice.format = MagicMock(return_value=None)
+        VolumeDevice.mount = MagicMock(return_value=None)
+        backup.restore = MagicMock(return_value=None)
+
         self.manager.prepare(self.context, self.packages,
                              None, '2048',
                              None, device_path=device_path,
                              mount_point='/var/lib/redis',
                              backup_info=backup_info)
-        verify(redis_service.RedisAppStatus, times=2).get()
-        verify(mock_status).begin_install()
-        verify(VolumeDevice).format()
-        verify(redis_service.RedisApp).install_if_needed(self.packages)
-        verify(redis_service.RedisApp).write_config(None)
-        verify(redis_service.RedisApp).complete_install_or_restart()
+
+        self.assertEqual(redis_service.RedisAppStatus.get.call_count, 2)
+        mock_status.begin_install.assert_any_call()
+        VolumeDevice.format.assert_any_call()
+        redis_service.RedisApp.install_if_needed.assert_any_call(self.packages)
+        redis_service.RedisApp.write_config.assert_any_call(None)
+        redis_service.RedisApp.complete_install_or_restart.assert_any_call()
 
     def test_restart(self):
-        mock_status = mock()
-        when(redis_service.RedisAppStatus).get().thenReturn(mock_status)
-        when(redis_service.RedisApp).restart().thenReturn(None)
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
+        redis_service.RedisApp.restart = MagicMock(return_value=None)
         self.manager.restart(self.context)
-        verify(redis_service.RedisAppStatus).get()
-        verify(redis_service.RedisApp).restart()
+        redis_service.RedisAppStatus.get.assert_any_call()
+        redis_service.RedisApp.restart.assert_any_call()
 
     def test_stop_db(self):
-        mock_status = mock()
-        when(redis_service.RedisAppStatus).get().thenReturn(mock_status)
-        when(redis_service.RedisApp).stop_db(do_not_start_on_reboot=
-                                             False).thenReturn(None)
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
+        redis_service.RedisApp.stop_db = MagicMock(return_value=None)
         self.manager.stop_db(self.context)
-        verify(redis_service.RedisAppStatus).get()
-        verify(redis_service.RedisApp).stop_db(do_not_start_on_reboot=False)
+        redis_service.RedisAppStatus.get.assert_any_call()
+        redis_service.RedisApp.stop_db.assert_any_call(
+            do_not_start_on_reboot=False)

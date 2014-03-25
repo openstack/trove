@@ -14,9 +14,8 @@
 import datetime
 
 import testtools
-from mock import Mock
+from mock import Mock, MagicMock, patch
 from testtools.matchers import Equals, Is
-from mockito import mock, when, unstub, any, verify, never
 from cinderclient import exceptions as cinder_exceptions
 import novaclient.v1_1.servers
 import novaclient.v1_1.flavors
@@ -102,6 +101,7 @@ class fake_InstanceServiceStatus(object):
 
     def __init__(self):
         self.deleted = False
+        self.status = None
         pass
 
     def set_status(self, status):
@@ -163,23 +163,25 @@ class fake_DBInstance(object):
 class FreshInstanceTasksTest(testtools.TestCase):
     def setUp(self):
         super(FreshInstanceTasksTest, self).setUp()
+        mock_instance = patch('trove.instance.models.FreshInstance')
+        mock_instance.start()
+        self.addCleanup(mock_instance.stop)
+        mock_instance.id = Mock(return_value='instance_id')
+        mock_instance.tenant_id = Mock(return_value="tenant_id")
+        mock_instance.hostname = Mock(return_value="hostname")
+        mock_instance.name = Mock(return_value='name')
+        mock_instance.nova_client = Mock(
+            return_value=fake_nova_client())
+        mock_datastore_v = patch(
+            'trove.datastore.models.DatastoreVersion')
+        mock_datastore_v.start()
+        self.addCleanup(mock_datastore_v.stop)
+        mock_datastore = patch(
+            'trove.datastore.models.Datastore')
+        mock_datastore.start()
+        self.addCleanup(mock_datastore.stop)
 
-        when(taskmanager_models.FreshInstanceTasks).id().thenReturn(
-            "instance_id")
-        when(taskmanager_models.FreshInstanceTasks).tenant_id().thenReturn(
-            "tenant_id")
-        when(taskmanager_models.FreshInstanceTasks).hostname().thenReturn(
-            "hostname")
-        when(taskmanager_models.FreshInstanceTasks).name().thenReturn(
-            'name')
-        when(datastore_models.
-             DatastoreVersion).load(any(), any()).thenReturn(mock())
-        when(datastore_models.
-             DatastoreVersion).load_by_uuid(any()).thenReturn(mock())
-        when(datastore_models.
-             Datastore).load(any()).thenReturn(mock())
         taskmanager_models.FreshInstanceTasks.nova_client = fake_nova_client()
-        taskmanager_models.CONF = mock()
         self.orig_ISS_find_by = InstanceServiceStatus.find_by
         self.orig_DBI_find_by = DBInstance.find_by
         self.userdata = "hello moto"
@@ -191,7 +193,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
             self.guestconfig = f.name
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
-            None, mock(), None, None)
+            None, Mock(), None, None)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()
@@ -199,55 +201,74 @@ class FreshInstanceTasksTest(testtools.TestCase):
         os.remove(self.guestconfig)
         InstanceServiceStatus.find_by = self.orig_ISS_find_by
         DBInstance.find_by = self.orig_DBI_find_by
-        unstub()
 
-    def test_create_instance_userdata(self):
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_userdata(self, mock_conf):
         cloudinit_location = os.path.dirname(self.cloudinit)
         datastore_manager = os.path.splitext(os.path.basename(self.
                                                               cloudinit))[0]
-        when(taskmanager_models.CONF).get("cloudinit_location").thenReturn(
-            cloudinit_location)
+
+        def fake_conf_getter(*args, **kwargs):
+            if args[0] == 'cloudinit_location':
+                return cloudinit_location
+            else:
+                return ''
+        mock_conf.get.side_effect = fake_conf_getter
+
         server = self.freshinstancetasks._create_server(
             None, None, None, datastore_manager, None, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
-    def test_create_instance_guestconfig(self):
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
-        when(taskmanager_models.CONF).get("guest_config").thenReturn(
-            self.guestconfig)
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_guestconfig(self, mock_conf):
+        def fake_conf_getter(*args, **kwargs):
+            if args[0] == 'guest_config':
+                return self.guestconfig
+            else:
+                return ''
+        mock_conf.get.side_effect = fake_conf_getter
+        # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, "test", None, None, None)
+        # verify
         self.assertTrue('/etc/trove-guestagent.conf' in server.files)
         self.assertEqual(server.files['/etc/trove-guestagent.conf'],
                          self.guestconfig_content)
 
-    def test_create_instance_with_az_kwarg(self):
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_with_az_kwarg(self, mock_conf):
+        mock_conf.get.return_value = ''
+        # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, availability_zone='nova', nics=None)
-
+        # verify
         self.assertIsNotNone(server)
 
-    def test_create_instance_with_az(self):
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_with_az(self, mock_conf):
+        mock_conf.get.return_value = ''
+        # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, 'nova', None)
-
+        # verify
         self.assertIsNotNone(server)
 
-    def test_create_instance_with_az_none(self):
-        when(taskmanager_models.CONF).get(any()).thenReturn('')
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_with_az_none(self, mock_conf):
+        mock_conf.get.return_value = ''
+        # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, None, None)
-
+        # verify
         self.assertIsNotNone(server)
 
-    def test_update_status_of_intance_failure(self):
-
+    @patch('trove.taskmanager.models.CONF')
+    def test_update_status_of_intance_failure(self, mock_conf):
+        mock_conf.get.return_value = ''
         InstanceServiceStatus.find_by = Mock(
             return_value=fake_InstanceServiceStatus.find_by())
-        DBInstance.find_by = Mock(return_value=fake_DBInstance.find_by())
+        DBInstance.find_by = Mock(
+            return_value=fake_DBInstance.find_by())
         self.freshinstancetasks.update_statuses_on_time_out()
         self.assertEqual(fake_InstanceServiceStatus.find_by().get_status(),
                          ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
@@ -260,7 +281,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
             Mock(return_value={'id': uuid.uuid4(),
                                'name': uuid.uuid4()}))
         taskmanager_models.CONF.get = Mock(return_value=FakeOptGroup())
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
+            Mock())
         self.freshinstancetasks._create_secgroup(datastore_manager)
         self.assertEqual(2, taskmanager_models.SecurityGroupRule.
                          create_sec_group_rule.call_count)
@@ -273,7 +295,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         taskmanager_models.CONF.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['3306', '-3306']))
         self.freshinstancetasks.update_db = Mock()
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
+            Mock())
         self.assertRaises(MalformedSecurityGroupRuleError,
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
@@ -286,7 +309,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         taskmanager_models.CONF.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['3306', '33060-3306']))
         self.freshinstancetasks.update_db = Mock()
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
+            Mock())
         self.assertRaises(MalformedSecurityGroupRuleError,
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
@@ -299,7 +323,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         taskmanager_models.CONF.get = Mock(
             return_value=FakeOptGroup(
                 tcp_ports=['3306', '3306', '3306-3307', '3306-3307']))
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = Mock()
+        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
+            Mock())
         self.freshinstancetasks.update_db = Mock()
         self.freshinstancetasks._create_secgroup(datastore_manager)
         self.assertEqual(2, taskmanager_models.SecurityGroupRule.
@@ -308,7 +333,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
     def test_create_sg_rules_exception_with_malformed_ports_or_range(self):
         datastore_manager = 'mysql'
         taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(), 'name': uuid.uuid4()}))
+            Mock(return_value={'id': uuid.uuid4(),
+                               'name': uuid.uuid4()}))
         taskmanager_models.CONF.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['A', 'B-C']))
         self.freshinstancetasks.update_db = Mock()
@@ -372,7 +398,8 @@ class ResizeVolumeTest(testtools.TestCase):
         self.instance.reset_mock()
 
     def test_resize_volume_verify_extend_no_volume(self):
-        self.instance.volume_client.volumes.get = Mock(return_value=None)
+        self.instance.volume_client.volumes.get = Mock(
+            return_value=None)
         self.assertRaises(cinder_exceptions.ClientException,
                           self.action._verify_extend)
         self.instance.reset_mock()
@@ -410,36 +437,30 @@ class ResizeVolumeTest(testtools.TestCase):
 
 class BuiltInstanceTasksTest(testtools.TestCase):
 
-    def stub_inst_service_status(self, status_id, statuses):
+    def get_inst_service_status(self, status_id, statuses):
         answers = []
         for i, status in enumerate(statuses):
             inst_svc_status = InstanceServiceStatus(status,
                                                     id="%s-%s" % (status_id,
                                                                   i))
-            when(inst_svc_status).save().thenReturn(None)
+            inst_svc_status.save = MagicMock(return_value=None)
             answers.append(inst_svc_status)
-
-        when(trove.db.models.DatabaseModelBase).find_by(
-            instance_id=any()).thenReturn(*answers)
+        return answers
 
     def _stub_volume_client(self):
-        self.instance_task._volume_client = mock(cinderclient.Client)
-        stub_volume_mgr = mock(cinderclient.volumes.VolumeManager)
+        self.instance_task._volume_client = MagicMock(spec=cinderclient.Client)
+        stub_volume_mgr = MagicMock(spec=cinderclient.volumes.VolumeManager)
         self.instance_task.volume_client.volumes = stub_volume_mgr
-        stub_volume = cinderclient.volumes.Volume(stub_volume_mgr,
-                                                  {'status': 'available'},
-                                                  True)
-        when(stub_volume_mgr).extend(VOLUME_ID, 2).thenReturn(None)
+        stub_volume_mgr.extend = MagicMock(return_value=None)
         stub_new_volume = cinderclient.volumes.Volume(
             stub_volume_mgr, {'status': 'available', 'size': 2}, True)
-        when(stub_volume_mgr).get(any()).thenReturn(
-            stub_volume).thenReturn(stub_new_volume)
-        when(stub_volume_mgr).attach(any(), VOLUME_ID).thenReturn(None)
+        stub_volume_mgr.get = MagicMock(return_value=stub_new_volume)
+        stub_volume_mgr.attach = MagicMock(return_value=None)
 
     def setUp(self):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
-        stub_nova_server = mock(novaclient.v1_1.servers.Server)
+        stub_nova_server = MagicMock()
         db_instance = DBInstance(InstanceTasks.NONE,
                                  id=INST_ID,
                                  name='resize-inst-name',
@@ -453,13 +474,14 @@ class BuiltInstanceTasksTest(testtools.TestCase):
                                  tenant_id='testresize-tenant-id',
                                  volume_size='1',
                                  volume_id=VOLUME_ID)
+
         # this is used during the final check of whether the resize successful
         db_instance.server_status = 'ACTIVE'
         self.db_instance = db_instance
-        when(datastore_models.DatastoreVersion).load_by_uuid(any()).thenReturn(
-            datastore_models.DatastoreVersion(db_instance))
-        when(datastore_models.Datastore).load('id-1').thenReturn(
-            datastore_models.Datastore(db_instance))
+        datastore_models.DatastoreVersion.load_by_uuid = MagicMock(
+            return_value=datastore_models.DatastoreVersion(db_instance))
+        datastore_models.Datastore.load = MagicMock(
+            return_value=datastore_models.Datastore(db_instance))
 
         self.instance_task = taskmanager_models.BuiltInstanceTasks(
             trove.common.context.TroveContext(),
@@ -468,47 +490,59 @@ class BuiltInstanceTasksTest(testtools.TestCase):
             InstanceServiceStatus(ServiceStatuses.RUNNING,
                                   id='inst-stat-id-0'))
 
-        self.instance_task._guest = mock(trove.guestagent.api.API)
-        self.instance_task._nova_client = mock(novaclient.v1_1.Client)
-        self.stub_server_mgr = mock(novaclient.v1_1.servers.ServerManager)
-        self.stub_running_server = mock(novaclient.v1_1.servers.Server)
+        self.instance_task._guest = MagicMock(spec=trove.guestagent.api.API)
+        self.instance_task._nova_client = MagicMock(
+            spec=novaclient.v1_1.Client)
+        self.stub_server_mgr = MagicMock(
+            spec=novaclient.v1_1.servers.ServerManager)
+        self.stub_running_server = MagicMock(
+            spec=novaclient.v1_1.servers.Server)
         self.stub_running_server.status = 'ACTIVE'
         self.stub_running_server.flavor = {'id': 6, 'ram': 512}
-        self.stub_verifying_server = mock(novaclient.v1_1.servers.Server)
+        self.stub_verifying_server = MagicMock(
+            spec=novaclient.v1_1.servers.Server)
         self.stub_verifying_server.status = 'VERIFY_RESIZE'
         self.stub_verifying_server.flavor = {'id': 8, 'ram': 768}
-        when(self.stub_server_mgr).get(any()).thenReturn(
-            self.stub_verifying_server)
+        self.stub_server_mgr.get = MagicMock(
+            return_value=self.stub_verifying_server)
         self.instance_task._nova_client.servers = self.stub_server_mgr
-        stub_flavor_manager = mock(novaclient.v1_1.flavors.FlavorManager)
+        stub_flavor_manager = MagicMock(
+            spec=novaclient.v1_1.flavors.FlavorManager)
         self.instance_task._nova_client.flavors = stub_flavor_manager
 
         nova_flavor = novaclient.v1_1.flavors.Flavor(stub_flavor_manager,
                                                      self.new_flavor,
                                                      True)
-        when(stub_flavor_manager).get(any()).thenReturn(nova_flavor)
+        stub_flavor_manager.get = MagicMock(return_value=nova_flavor)
 
-        self.stub_inst_service_status('inst_stat-id',
-                                      [ServiceStatuses.SHUTDOWN,
-                                       ServiceStatuses.RUNNING,
-                                       ServiceStatuses.RUNNING])
+        answers = (status for status in
+                   self.get_inst_service_status('inst_stat-id',
+                                                [ServiceStatuses.SHUTDOWN,
+                                                 ServiceStatuses.RUNNING,
+                                                 ServiceStatuses.RUNNING,
+                                                 ServiceStatuses.RUNNING]))
 
-        when(template).SingleInstanceConfigTemplate(
-            any(), any(), any()).thenReturn(
-                mock(template.SingleInstanceConfigTemplate))
+        def side_effect_func(*args, **kwargs):
+            if 'instance_id' in kwargs:
+                return answers.next()
+            elif ('id' in kwargs and 'deleted' in kwargs
+                  and not kwargs['deleted']):
+                return db_instance
+            else:
+                return MagicMock()
+        trove.db.models.DatabaseModelBase.find_by = MagicMock(
+            side_effect=side_effect_func)
 
-        when(trove.db.models.DatabaseModelBase).find_by(
-            id=any(), deleted=False).thenReturn(db_instance)
-        when(db_instance).save().thenReturn(None)
-
-        when(trove.backup.models.Backup).running(any()).thenReturn(None)
+        template.SingleInstanceConfigTemplate = MagicMock(
+            spec=template.SingleInstanceConfigTemplate)
+        db_instance.save = MagicMock(return_value=None)
+        trove.backup.models.Backup.running = MagicMock(return_value=None)
 
         if 'volume' in self._testMethodName:
             self._stub_volume_client()
 
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
-        unstub()
 
     def test_resize_flavor(self):
         orig_server = self.instance_task.server
@@ -516,27 +550,31 @@ class BuiltInstanceTasksTest(testtools.TestCase):
                                          self.new_flavor)
         # verify
         self.assertIsNot(self.instance_task.server, orig_server)
-        verify(self.instance_task._guest).stop_db(do_not_start_on_reboot=True)
-        verify(orig_server).resize(self.new_flavor['id'])
+        self.instance_task._guest.stop_db.assert_any_call(
+            do_not_start_on_reboot=True)
+        orig_server.resize.assert_any_call(self.new_flavor['id'])
         self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
-        verify(self.stub_server_mgr, times=1).get(any())
+        self.assertEqual(self.stub_server_mgr.get.call_count, 1)
         self.assertThat(self.db_instance.flavor_id, Is(self.new_flavor['id']))
 
     def test_resize_flavor_resize_failure(self):
         orig_server = self.instance_task.server
         self.stub_verifying_server.status = 'ERROR'
-        when(self.instance_task._nova_client.servers).get(any()).thenReturn(
-            self.stub_verifying_server)
-        # execute
-        self.assertRaises(TroveError, self.instance_task.resize_flavor,
-                          {'id': 1, 'ram': 512}, self.new_flavor)
-        # verify
-        verify(self.stub_server_mgr, times=1).get(any())
-        self.assertIs(self.instance_task.server, self.stub_verifying_server)
-        verify(self.instance_task._guest).stop_db(do_not_start_on_reboot=True)
-        verify(orig_server).resize(self.new_flavor['id'])
-        self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
-        self.assertThat(self.db_instance.flavor_id, Is('6'))
+        with patch.object(self.instance_task._nova_client.servers, 'get',
+                          return_value=self.stub_verifying_server):
+            # execute
+            self.assertRaises(TroveError, self.instance_task.resize_flavor,
+                              {'id': 1, 'ram': 512}, self.new_flavor)
+            # verify
+            self.assertTrue(self.stub_server_mgr.get.called)
+            self.assertIs(self.instance_task.server,
+                          self.stub_verifying_server)
+            self.instance_task._guest.stop_db.assert_any_call(
+                do_not_start_on_reboot=True)
+            orig_server.resize.assert_any_call(self.new_flavor['id'])
+            self.assertThat(self.db_instance.task_status,
+                            Is(InstanceTasks.NONE))
+            self.assertThat(self.db_instance.flavor_id, Is('6'))
 
 
 class BackupTasksTest(testtools.TestCase):
@@ -556,62 +594,58 @@ class BackupTasksTest(testtools.TestCase):
                                   [{'name': 'first'},
                                    {'name': 'second'},
                                    {'name': 'third'}])
-        when(backup_models.Backup).delete(any()).thenReturn(None)
-        when(backup_models.Backup).get_by_id(
-            any(), self.backup.id).thenReturn(self.backup)
-        when(backup_models.DBBackup).save(any()).thenReturn(self.backup)
-        when(self.backup).delete(any()).thenReturn(None)
-        self.swift_client = mock()
-        when(remote).create_swift_client(
-            any()).thenReturn(self.swift_client)
-        when(self.swift_client).head_container(
-            any()).thenRaise(ClientException("foo"))
-        when(self.swift_client).head_object(
-            any(), any()).thenRaise(ClientException("foo"))
-        when(self.swift_client).get_container(any()).thenReturn(
-            self.container_content)
-        when(self.swift_client).delete_object(any(), any()).thenReturn(None)
-        when(self.swift_client).delete_container(any()).thenReturn(None)
+        backup_models.Backup.delete = MagicMock(return_value=None)
+        backup_models.Backup.get_by_id = MagicMock(return_value=self.backup)
+        backup_models.DBBackup.save = MagicMock(return_value=self.backup)
+        self.backup.delete = MagicMock(return_value=None)
+        self.swift_client = MagicMock()
+        remote.create_swift_client = MagicMock(return_value=self.swift_client)
+
+        self.swift_client.head_container = MagicMock(
+            side_effect=ClientException("foo"))
+        self.swift_client.head_object = MagicMock(
+            side_effect=ClientException("foo"))
+        self.swift_client.get_container = MagicMock(
+            return_value=self.container_content)
+        self.swift_client.delete_object = MagicMock(return_value=None)
+        self.swift_client.delete_container = MagicMock(return_value=None)
 
     def tearDown(self):
         super(BackupTasksTest, self).tearDown()
-        unstub()
 
     def test_delete_backup_nolocation(self):
         self.backup.location = ''
         taskmanager_models.BackupTasks.delete_backup('dummy context',
                                                      self.backup.id)
-        verify(self.backup).delete()
+        self.backup.delete.assert_any_call()
 
     def test_delete_backup_fail_delete_manifest(self):
-        filename = self.backup.location[self.backup.location.rfind("/") + 1:]
-        when(self.swift_client).delete_object(
-            any(),
-            filename).thenRaise(ClientException("foo"))
-        when(self.swift_client).head_object(any(), any()).thenReturn({})
-        self.assertRaises(
-            TroveError,
-            taskmanager_models.BackupTasks.delete_backup,
-            'dummy context', self.backup.id)
-        verify(backup_models.Backup, never).delete(self.backup.id)
-        self.assertEqual(
-            backup_models.BackupState.DELETE_FAILED,
-            self.backup.state,
-            "backup should be in DELETE_FAILED status")
+        with patch.object(self.swift_client, 'delete_object',
+                          side_effect=ClientException("foo")):
+            with patch.object(self.swift_client, 'head_object',
+                              return_value={}):
+                self.assertRaises(
+                    TroveError,
+                    taskmanager_models.BackupTasks.delete_backup,
+                    'dummy context', self.backup.id)
+                self.assertFalse(backup_models.Backup.delete.called)
+                self.assertEqual(
+                    backup_models.BackupState.DELETE_FAILED,
+                    self.backup.state,
+                    "backup should be in DELETE_FAILED status")
 
     def test_delete_backup_fail_delete_segment(self):
-        when(self.swift_client).delete_object(
-            any(),
-            'second').thenRaise(ClientException("foo"))
-        self.assertRaises(
-            TroveError,
-            taskmanager_models.BackupTasks.delete_backup,
-            'dummy context', self.backup.id)
-        verify(backup_models.Backup, never).delete(self.backup.id)
-        self.assertEqual(
-            backup_models.BackupState.DELETE_FAILED,
-            self.backup.state,
-            "backup should be in DELETE_FAILED status")
+        with patch.object(self.swift_client, 'delete_object',
+                          side_effect=ClientException("foo")):
+            self.assertRaises(
+                TroveError,
+                taskmanager_models.BackupTasks.delete_backup,
+                'dummy context', self.backup.id)
+            self.assertFalse(backup_models.Backup.delete.called)
+            self.assertEqual(
+                backup_models.BackupState.DELETE_FAILED,
+                self.backup.state,
+                "backup should be in DELETE_FAILED status")
 
     def test_parse_manifest(self):
         manifest = 'container/prefix'

@@ -23,7 +23,7 @@ from trove.quota.models import Quota
 import testtools
 import webob
 
-from mockito import when, mock, any
+from mock import Mock, MagicMock
 from trove.common import limits
 from trove.common.limits import Limit
 from trove.limits import views
@@ -55,9 +55,10 @@ class LimitsControllerTest(BaseLimitTestSuite):
     def test_limit_index_empty(self):
         limit_controller = LimitsController()
 
-        req = mock()
+        req = MagicMock()
         req.environ = {}
-        when(QUOTAS).get_all_quotas_by_tenant(any()).thenReturn({})
+
+        QUOTAS.get_all_quotas_by_tenant = MagicMock(return_value={})
 
         view = limit_controller.index(req, "test_tenant_id")
         expected = {'limits': [{'verb': 'ABSOLUTE'}]}
@@ -118,10 +119,11 @@ class LimitsControllerTest(BaseLimitTestSuite):
                                        resource="volumes",
                                        hard_limit=55)}
 
-        req = mock()
+        req = MagicMock()
         req.environ = {"trove.limits": limits}
 
-        when(QUOTAS).get_all_quotas_by_tenant(tenant_id).thenReturn(abs_limits)
+        QUOTAS.get_all_quotas_by_tenant = MagicMock(return_value=abs_limits)
+
         view = limit_controller.index(req, tenant_id)
 
         expected = {
@@ -239,7 +241,8 @@ class LimitTest(BaseLimitTestSuite):
     def test_GET_no_delay(self):
         # Test a limit handles 1 GET per second.
         limit = Limit("GET", "*", ".*", 1, 1)
-        when(limit)._get_time().thenReturn(0.0)
+
+        limit._get_time = MagicMock(return_value=0.0)
         delay = limit("GET", "/anything")
         self.assertEqual(None, delay)
         self.assertEqual(0, limit.next_request)
@@ -248,7 +251,7 @@ class LimitTest(BaseLimitTestSuite):
     def test_GET_delay(self):
         # Test two calls to 1 GET per second limit.
         limit = Limit("GET", "*", ".*", 1, 1)
-        when(limit)._get_time().thenReturn(0.0)
+        limit._get_time = MagicMock(return_value=0.0)
 
         delay = limit("GET", "/anything")
         self.assertEqual(None, delay)
@@ -258,7 +261,7 @@ class LimitTest(BaseLimitTestSuite):
         self.assertEqual(1, limit.next_request)
         self.assertEqual(0, limit.last_request)
 
-        when(limit)._get_time().thenReturn(4.0)
+        limit._get_time = MagicMock(return_value=4.0)
 
         delay = limit("GET", "/anything")
         self.assertEqual(None, delay)
@@ -337,17 +340,16 @@ class LimiterTest(BaseLimitTestSuite):
     Tests for the in-memory `limits.Limiter` class.
     """
 
-    def update_limits(self, delay):
-        for l in TEST_LIMITS:
-            when(l)._get_time().thenReturn(delay)
+    def update_limits(self, delay, limit_list):
+        for ln in limit_list:
+            ln._get_time = Mock(return_value=delay)
 
     def setUp(self):
         """Run before each test."""
         super(LimiterTest, self).setUp()
         userlimits = {'user:user3': ''}
 
-        self.update_limits(0.0)
-
+        self.update_limits(0.0, TEST_LIMITS)
         self.limiter = limits.Limiter(TEST_LIMITS, **userlimits)
 
     def _check(self, num, verb, url, username=None):
@@ -413,7 +415,7 @@ class LimiterTest(BaseLimitTestSuite):
         self.assertEqual(expected, results)
 
         # Advance time
-        self.update_limits(6.0)
+        self.update_limits(6.0, self.limiter.levels[None])
 
         expected = [None, 6.0]
         results = list(self._check(2, "PUT", "/anything"))
@@ -425,7 +427,7 @@ class LimiterTest(BaseLimitTestSuite):
         results = list(self._check(20, "PUT", "/anything"))
         self.assertEqual(expected, results)
 
-        self.update_limits(1.0)
+        self.update_limits(1.0, self.limiter.levels[None])
 
         expected = [5.0] * 10
         results = list(self._check(10, "PUT", "/anything"))
@@ -438,7 +440,7 @@ class LimiterTest(BaseLimitTestSuite):
     def test_multiple_users(self):
         # Tests involving multiple users.
         # User1
-        self.update_limits(0.0)
+        self.update_limits(0.0, self.limiter.levels["user1"])
         expected = [None] * 10 + [6.0] * 10
         results = list(self._check(20, "PUT", "/anything", "user1"))
         self.assertEqual(expected, results)
@@ -453,15 +455,14 @@ class LimiterTest(BaseLimitTestSuite):
         results = list(self._check(20, "PUT", "/anything", "user3"))
         self.assertEqual(expected, results)
 
-        self.update_limits(1.0)
         # User1 again
+        self.update_limits(1.0, self.limiter.levels["user1"])
         expected = [5.0] * 10
         results = list(self._check(10, "PUT", "/anything", "user1"))
         self.assertEqual(expected, results)
 
-        self.update_limits(2.0)
-
-        # User1 again
+        # User2 again
+        self.update_limits(2.0, self.limiter.levels["user2"])
         expected = [4.0] * 5
         results = list(self._check(5, "PUT", "/anything", "user2"))
         self.assertEqual(expected, results)

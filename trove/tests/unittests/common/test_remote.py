@@ -16,7 +16,7 @@
 #    under the License.
 #
 
-from mockito import mock, when, unstub
+from mock import MagicMock
 import testtools
 from testtools import matchers
 
@@ -33,17 +33,16 @@ class TestRemote(testtools.TestCase):
 
     def tearDown(self):
         super(TestRemote, self).tearDown()
-        unstub()
 
     def test_creation(self):
-        when(swiftclient.client.Connection).get_auth().thenReturn(None)
+        swiftclient.client.Connection.get_auth = MagicMock(return_value=None)
         conn = swiftclient.client.Connection()
         self.assertIsNone(conn.get_auth())
 
     def test_create_swift_client(self):
-        mock_resp = mock(dict)
-        when(swiftclient.client.Connection).get_container('bob').thenReturn(
-            ["text", mock_resp])
+        mock_resp = MagicMock()
+        swiftclient.client.Connection.get_container = MagicMock(
+            return_value=["text", mock_resp])
         client = remote.create_swift_client(TroveContext(tenant='123'))
         headers, container = client.get_container('bob')
         self.assertIs(headers, "text")
@@ -132,7 +131,8 @@ class TestRemote(testtools.TestCase):
         self.assertThat(obj_1, matchers.Equals(
             {'bytes': 13, 'last_modified': '2013-03-15T22:10:49.361950',
              'hash': 'ccc55aefbf92aa66f42b638802c5e7f6', 'name': 'test',
-             'content_type': 'application/octet-stream'}))
+             'content_type': 'application/octet-stream',
+             'contents': 'test_contents'}))
         # test object api - not much to do here
         self.assertThat(conn.get_object('bob', 'test')[1],
                         matchers.Is('test_contents'))
@@ -140,7 +140,6 @@ class TestRemote(testtools.TestCase):
         # test remove object
         swift_stub.without_object('bob', 'test')
         # interact
-        conn.delete_object('bob', 'test')
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.delete_object('bob', 'test')
         self.assertThat(len(conn.get_container('bob')[1]), matchers.Is(0))
@@ -169,14 +168,14 @@ class TestRemote(testtools.TestCase):
         self.assertThat(cont_info[1][0], matchers.Equals(
             {'bytes': 13, 'last_modified': '2013-03-15T22:10:49.361950',
              'hash': 'ccc55aefbf92aa66f42b638802c5e7f6', 'name': 'test',
-             'content_type': 'application/octet-stream'}))
+             'content_type': 'application/octet-stream',
+             'contents': 'test_contents'}))
         self.assertThat(conn.get_object('bob', 'test')[1],
                         matchers.Is('test_contents'))
         self.assertThat(conn.get_object('bob', 'test2')[1],
                         matchers.Is('test_contents2'))
 
         swift_stub.without_object('bob', 'test')
-        conn.delete_object('bob', 'test')
         with testtools.ExpectedException(swiftclient.ClientException):
             conn.delete_object('bob', 'test')
         self.assertThat(len(conn.get_container('bob')[1]), matchers.Is(1))
