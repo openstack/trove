@@ -369,8 +369,8 @@ class BackupAgentTest(testtools.TestCase):
             'parent_checksum': 'md5',
         }
         when(mysql_impl.InnoBackupExIncremental).metadata().thenReturn(meta)
-        when(mysql_impl.InnoBackupExIncremental).check_process().thenReturn(
-            True)
+        when(mysql_impl.InnoBackupExIncremental).run().thenReturn(True)
+        when(mysql_impl.InnoBackupExIncremental).__exit__().thenReturn(True)
 
         agent = backupagent.BackupAgent()
 
