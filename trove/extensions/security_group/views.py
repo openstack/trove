@@ -90,8 +90,8 @@ class SecurityGroupsView(object):
         groups_data = []
 
         for secgroup in self.secgroups:
-            rules = \
-                self.rules[secgroup['id']] if self.rules is not None else None
+            rules = (self.rules[secgroup['id']]
+                     if self.rules is not None else None)
             groups_data.append(SecurityGroupView(secgroup,
                                                  rules,
                                                  self.request,
@@ -102,22 +102,25 @@ class SecurityGroupsView(object):
 
 class SecurityGroupRulesView(object):
 
-    def __init__(self, rule, req, tenant_id):
-        self.rule = rule
+    def __init__(self, rules, req, tenant_id):
+        self.rules = rules
         self.request = req
         self.tenant_id = tenant_id
 
     def _build_create(self):
-        return {"security_group_rule":
-                {"id": str(self.rule['id']),
-                 "security_group_id": self.rule['group_id'],
-                 "protocol": self.rule['protocol'],
-                 "from_port": self.rule['from_port'],
-                 "to_port": self.rule['to_port'],
-                 "cidr": self.rule['cidr'],
-                 "created": self.rule['created']
-                 }
-                }
+        views = []
+        for rule in self.rules:
+            to_append = {
+                "id": rule.id,
+                "security_group_id": rule.group_id,
+                "protocol": rule.protocol,
+                "from_port": rule.from_port,
+                "to_port": rule.to_port,
+                "cidr": rule.cidr,
+                "created": rule.created
+            }
+            views.append(to_append)
+        return {"security_group_rule": views}
 
     def create(self):
         return self._build_create()
