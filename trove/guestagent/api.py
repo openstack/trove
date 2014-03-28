@@ -267,10 +267,13 @@ class API(proxy.RpcProxy):
         self._call("stop_db", AGENT_HIGH_TIMEOUT,
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
-    def upgrade(self):
+    def upgrade(self, instance_version, location, metadata=None):
         """Make an asynchronous call to self upgrade the guest agent."""
         LOG.debug("Sending an upgrade call to nova-guest")
-        self._cast_with_consumer("upgrade")
+        self._cast("upgrade",
+                   instance_version=instance_version,
+                   location=location,
+                   metadata=metadata)
 
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container."""

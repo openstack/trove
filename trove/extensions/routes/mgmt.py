@@ -21,7 +21,7 @@ from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.quota.service import QuotaController
 from trove.extensions.mgmt.host.instance import service as hostservice
 from trove.extensions.mgmt.volume.service import StorageController
-
+from trove.extensions.mgmt.upgrade.service import UpgradeController
 
 LOG = logging.getLogger(__name__)
 
@@ -79,5 +79,11 @@ class Mgmt(extensions.ExtensionsDescriptor):
                     'collection_name': '{tenant_id}/mgmt/hosts'},
             collection_actions={'action': 'POST'})
         resources.append(host_instances)
+
+        upgrade = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/instances/{instance_id}/upgrade',
+            UpgradeController(),
+            member_actions={})
+        resources.append(upgrade)
 
         return resources

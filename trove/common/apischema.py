@@ -436,3 +436,23 @@ account = {
         }
     }
 }
+
+upgrade = {
+    "create": {
+        "type": "object",
+        "required": ["upgrade"],
+        "additionalProperties": True,
+        "properties": {
+            "upgrade": {
+                "type": "object",
+                "required": [],
+                "additionalProperties": True,
+                "properties": {
+                    "instance_version": non_empty_string,
+                    "location": non_empty_string,
+                    "metadata": {}
+                }
+            }
+        }
+    }
+}
