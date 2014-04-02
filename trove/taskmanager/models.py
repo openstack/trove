@@ -635,8 +635,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                       {'gt': greenthread.getcurrent(), 'id': self.id})
 
     def _create_secgroup(self, datastore_manager):
-        security_group = SecurityGroup.create_for_instance(self.id,
-                                                           self.context)
+        security_group = SecurityGroup.create_for_instance(
+            self.id, self.context)
         tcp_ports = CONF.get(datastore_manager).tcp_ports
         udp_ports = CONF.get(datastore_manager).udp_ports
         self._create_rules(security_group, tcp_ports, 'tcp')
@@ -655,27 +655,15 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             msg = err_msg % {'from': from_port, 'to': to_port}
             raise MalformedSecurityGroupRuleError(message=msg)
 
-        def _gen_ports(portstr):
-            from_port, sep, to_port = portstr.partition('-')
-            if not (to_port and from_port):
-                if not sep:
-                    to_port = from_port
-            try:
-                if int(from_port) > int(to_port):
-                    set_error_and_raise([from_port, to_port])
-            except ValueError:
-                set_error_and_raise([from_port, to_port])
-            return from_port, to_port
-
         for port_or_range in set(ports):
-
-            from_, to_ = _gen_ports(port_or_range)
             try:
+                from_, to_ = (None, None)
+                from_, to_ = utils.gen_ports(port_or_range)
+                cidr = CONF.trove_security_group_rule_cidr
                 SecurityGroupRule.create_sec_group_rule(
                     s_group, protocol, int(from_), int(to_),
-                    CONF.trove_security_group_rule_cidr,
-                    self.context)
-            except TroveError:
+                    cidr, self.context)
+            except (ValueError, TroveError):
                 set_error_and_raise([from_, to_])
 
     def _build_heat_nics(self, nics):
