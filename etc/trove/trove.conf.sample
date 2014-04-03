@@ -140,22 +140,12 @@ control_exchange = trove
 #ca_file = /path/to/ca_file
 
 [mysql]
-
 root_on_create = False
-
-# ================= Security groups related ========================
-# Each future datastore implementation should implement
-# its own oslo group with defined in it:
-# - tcp_ports; upd_ports;
-
-[mysql]
 # Format (single port or port range): A, B-C
 # where C greater than B
 tcp_ports = 3306
 
 [redis]
-# Format (single port or port range): A, B-C
-# where C greater than B
 tcp_ports = 6379
 
 [cassandra]
