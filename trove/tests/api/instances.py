@@ -982,7 +982,8 @@ class TestInstanceListing(object):
         else:
             assert_true(isinstance(instance_info.volume['size'], float))
         if create_new_instance():
-            assert_true(0.12 < instance.volume['used'] < 0.25)
+            assert_true(0.0 < instance.volume['used']
+                        < instance.volume['size'])
 
     @test(enabled=EPHEMERAL_SUPPORT)
     def test_ephemeral_mount(self):
