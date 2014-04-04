@@ -815,9 +815,9 @@ class Instance(BuiltInstance):
     def unassign_configuration(self):
         LOG.debug(_("Unassigning the configuration from the instance %s")
                   % self.id)
-        LOG.debug(_("Unassigning the configuration id %s")
-                  % self.configuration.id)
         if self.configuration and self.configuration.id:
+            LOG.debug(_("Unassigning the configuration id %s")
+                      % self.configuration.id)
             flavor = self.get_flavor()
             config_id = self.configuration.id
             task_api.API(self.context).unassign_configuration(self.id,
