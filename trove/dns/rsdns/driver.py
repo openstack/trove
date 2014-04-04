@@ -33,7 +33,6 @@ from trove.dns.driver import DnsEntry
 
 CONF = cfg.CONF
 
-DNS_HOSTNAME = CONF.dns_hostname
 DNS_ACCOUNT_ID = CONF.dns_account_id
 DNS_AUTH_URL = CONF.dns_auth_url
 DNS_DOMAIN_NAME = CONF.dns_domain_name
