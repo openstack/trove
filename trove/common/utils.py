@@ -271,7 +271,7 @@ def get_id_from_href(href):
 
 
 def execute_with_timeout(*args, **kwargs):
-    time = kwargs.get('timeout', 30)
+    time = kwargs.pop('timeout', 30)
 
     def cb_timeout():
         msg = (_("Time out after waiting"
