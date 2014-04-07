@@ -150,7 +150,7 @@ def main():
 
         parser = subparser.add_parser(
             'db_recreate', description='Drop the database and recreate it.')
-        parser.add_argument('repo_path', help=repo_path_help)
+        parser.add_argument('--repo_path', help=repo_path_help)
 
         parser = subparser.add_parser(
             'db_load_datastore_config_parameters',
