@@ -337,8 +337,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                          (self.id, datastore_manager,
                                           self.tenant_id))}
             name = self.hostname or self.name
-            volume_desc = ("mysql volume for %s" % self.id)
-            volume_name = ("mysql-%s" % self.id)
+            volume_desc = ("datastore volume for %s" % self.id)
+            volume_name = ("datastore-%s" % self.id)
             volume_ref = {'size': volume_size, 'name': volume_name,
                           'description': volume_desc}
 
@@ -506,9 +506,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.info("Entering create_volume")
         LOG.debug(_("begin _create_volume for id: %s") % self.id)
         volume_client = create_cinder_client(self.context)
-        volume_desc = ("mysql volume for %s" % self.id)
+        volume_desc = ("datastore volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
-            volume_size, name="mysql-%s" % self.id, description=volume_desc)
+            volume_size, name="datastore-%s" % self.id,
+            description=volume_desc)
 
         # Record the volume ID in case something goes wrong.
         self.update_db(volume_id=volume_ref.id)
