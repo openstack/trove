@@ -806,7 +806,6 @@ def get_client_data(context):
     if context not in CLIENT_DATA:
         nova_client = FakeClient(context)
         volume_client = FakeClient(context)
-        nova_client.volumes = volume_client
         volume_client.servers = nova_client
         CLIENT_DATA[context] = {
             'nova': nova_client,
