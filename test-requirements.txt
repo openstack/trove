@@ -4,6 +4,7 @@ pyflakes>=0.7.2,<0.7.4
 flake8==2.0
 hacking>=0.8.0,<0.9
 sphinx>=1.1.2,<1.2
+oslosphinx
 
 coverage>=3.6
 nose
