@@ -1,7 +1,6 @@
 pbr>=0.6,<1.0
 SQLAlchemy>=0.7.8,<=0.9.99
 eventlet>=0.13.0
-extras
 kombu>=2.4.8
 Routes>=1.12.3
 WebOb>=1.2.3
