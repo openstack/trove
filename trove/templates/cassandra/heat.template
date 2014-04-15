@@ -18,6 +18,16 @@ Parameters:
   TenantId:
     Type: String
 Resources:
+{% for port in ports %}
+  {{ port.name }}:
+    Type: OS::Neutron::Port
+    Properties:
+      network_id: "{{ port.net_id }}"
+      security_groups: [{Ref: CassandraDbaasSG}]
+      {% if port.fixed_ip %}
+      fixed_ips: [{"ip_address": "{{ port.fixed_ip }}"}]
+      {% endif %}
+{% endfor %}
   BaseInstance:
     Type: AWS::EC2::Instance
     Metadata:
