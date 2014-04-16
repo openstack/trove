@@ -28,9 +28,9 @@ INIT_FS = "sudo mkdir -p %s"
 ENABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra enable"
 DISABLE_CASSANDRA_ON_BOOT = "sudo update-rc.d cassandra disable"
 
-# cassandra binary stored at /usr/sbin/
+# Use service command to start and stop cassandra
 START_CASSANDRA = "sudo service cassandra start"
-STOP_CASSANDRA = "sudo killall java 2> /dev/null || true"
+STOP_CASSANDRA = "sudo service cassandra stop"
 
 CASSANDRA_STATUS = """echo "use system;" > /tmp/check; cqlsh -f /tmp/check"""
 
