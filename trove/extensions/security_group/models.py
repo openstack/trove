@@ -17,15 +17,13 @@
 """
 Model classes for Security Groups and Security Group Rules on instances.
 """
-import trove.common.remote
 from trove.common import cfg
 from trove.common import exception
 from trove.db.models import DatabaseModelBase
-from trove.common.models import NovaRemoteModelBase
+from trove.common.models import NetworkRemoteModelBase
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 
-from novaclient import exceptions as nova_exceptions
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -207,7 +205,7 @@ class SecurityGroupInstanceAssociation(DatabaseModelBase):
         return association.instance_id
 
 
-class RemoteSecurityGroup(NovaRemoteModelBase):
+class RemoteSecurityGroup(NetworkRemoteModelBase):
 
     _data_fields = ['id', 'name', 'description', 'rules']
 
@@ -216,65 +214,37 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
             msg = "Security Group does not have id defined!"
             raise exception.InvalidModelError(msg)
         elif security_group is None:
-            try:
-                client = trove.common.remote.create_nova_client(context)
-                self._data_object = client.security_groups.get(id)
-            except nova_exceptions.NotFound as e:
-                raise exception.NotFound(id=id)
-            except nova_exceptions.ClientException as e:
-                raise exception.TroveError(str(e))
+            driver = self.get_driver(context)
+            self._data_object = driver.get_sec_group_by_id(group_id=id)
         else:
             self._data_object = security_group
 
     @classmethod
     def create(cls, name, description, context):
         """Creates a new Security Group."""
-        client = trove.common.remote.create_nova_client(context)
-        try:
-            sec_group = client.security_groups.create(name=name,
-                                                      description=description)
-        except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to create remote security group')
-            raise exception.SecurityGroupCreationError(str(e))
-
+        driver = cls.get_driver(context)
+        sec_group = driver.create_security_group(
+            name=name, description=description)
         return RemoteSecurityGroup(security_group=sec_group)
 
     @classmethod
     def delete(cls, sec_group_id, context):
-        client = trove.common.remote.create_nova_client(context)
-
-        try:
-            client.security_groups.delete(sec_group_id)
-        except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to delete remote security group')
-            raise exception.SecurityGroupDeletionError(str(e))
+        """Deletes a Security Group."""
+        driver = cls.get_driver(context)
+        driver.delete_security_group(sec_group_id)
 
     @classmethod
     def add_rule(cls, sec_group_id, protocol, from_port,
                  to_port, cidr, context):
+        """Adds a new rule to an existing security group."""
+        driver = cls.get_driver(context)
+        sec_group_rule = driver.add_security_group_rule(
+            sec_group_id, protocol, from_port, to_port, cidr)
 
-        client = trove.common.remote.create_nova_client(context)
-
-        try:
-            sec_group_rule = client.security_group_rules.create(
-                parent_group_id=sec_group_id,
-                ip_protocol=protocol,
-                from_port=from_port,
-                to_port=to_port,
-                cidr=cidr)
-
-            return sec_group_rule.id
-        except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to add rule to remote security group')
-            raise exception.SecurityGroupRuleCreationError(str(e))
+        return sec_group_rule.id
 
     @classmethod
     def delete_rule(cls, sec_group_rule_id, context):
-        client = trove.common.remote.create_nova_client(context)
-
-        try:
-            client.security_group_rules.delete(sec_group_rule_id)
-
-        except nova_exceptions.ClientException as e:
-            LOG.exception('Failed to delete rule to remote security group')
-            raise exception.SecurityGroupRuleDeletionError(str(e))
+        """Deletes a rule from an existing security group."""
+        driver = cls.get_driver(context)
+        driver.delete_security_group_rule(sec_group_rule_id)

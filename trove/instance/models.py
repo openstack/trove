@@ -48,9 +48,12 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
-def filter_ips(ips, regex):
-    """Filter out IPs not matching regex."""
-    return [ip for ip in ips if re.search(regex, ip)]
+def filter_ips(ips, white_list_regex, black_list_regex):
+    """Return IPs matching white_list_regex and
+       Filter out IPs matching black_list_regex.
+    """
+    return [ip for ip in ips if re.search(white_list_regex, ip)
+            and not re.search(black_list_regex, ip)]
 
 
 def load_server(context, instance_id, server_id):
@@ -204,8 +207,8 @@ class SimpleInstance(object):
                 IPs.extend([addr.get('addr')
                             for addr in self.addresses[label]])
         # Includes ip addresses that match the regexp pattern
-        if CONF.ip_regex:
-            IPs = filter_ips(IPs, CONF.ip_regex)
+        if CONF.ip_regex and CONF.black_list_regex:
+            IPs = filter_ips(IPs, CONF.ip_regex, CONF.black_list_regex)
         return IPs
 
     @property
@@ -640,10 +643,11 @@ class Instance(BuiltInstance):
                     datastore1=backup_info.datastore.name,
                     datastore2=datastore.name)
 
-        if not nics and CONF.default_neutron_networks:
+        if not nics:
             nics = []
-            for net_id in CONF.default_neutron_networks:
-                nics.append({"net-id": net_id})
+        if CONF.default_neutron_networks:
+            nics = [{"net-id": net_id}
+                    for net_id in CONF.default_neutron_networks] + nics
 
         def _create_resources():
 

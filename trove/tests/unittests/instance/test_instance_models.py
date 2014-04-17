@@ -40,30 +40,35 @@ class SimpleInstanceTest(TestCase):
                              "public": [{"addr": "15.123.123.123"}]}
         self.orig_conf = CONF.network_label_regex
         self.orig_ip_regex = CONF.ip_regex
+        self.orig_black_list_regex = CONF.black_list_regex
 
     def tearDown(self):
         super(SimpleInstanceTest, self).tearDown()
         CONF.network_label_regex = self.orig_conf
         CONF.ip_start = None
-        CONF.ip_regex = self.orig_ip_regex
 
     def test_get_root_on_create(self):
         root_on_create_val = Instance.get_root_on_create('redis')
         self.assertFalse(root_on_create_val)
 
-    def test_filter_ips(self):
+    def test_filter_ips_white_list(self):
         CONF.network_label_regex = '.*'
         CONF.ip_regex = '^(15.|123.)'
+        CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = filter_ips(ip, CONF.ip_regex)
+        ip = filter_ips(ip, CONF.ip_regex, CONF.black_list_regex)
         self.assertTrue(len(ip) == 2)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
 
-    def test_one_network_label_exact(self):
-        CONF.network_label_regex = '^internal$'
+    def test_filter_ips_black_list(self):
+        CONF.network_label_regex = '.*'
+        CONF.ip_regex = '.*'
+        CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        self.assertEqual(['10.123.123.123'], ip)
+        ip = filter_ips(ip, CONF.ip_regex, CONF.black_list_regex)
+        self.assertTrue(len(ip) == 2)
+        self.assertTrue('10.123.123.123' not in ip)
 
     def test_one_network_label(self):
         CONF.network_label_regex = 'public'

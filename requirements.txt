@@ -17,6 +17,7 @@ python-cinderclient>=1.0.7
 python-keystoneclient>=0.9.0
 python-swiftclient>=2.0.2
 python-designateclient>=1.0.0
+python-neutronclient>=2.3.5,<3
 iso8601>=0.1.9
 jsonschema>=2.0.0,<3.0.0
 Jinja2
