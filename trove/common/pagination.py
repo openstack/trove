@@ -14,7 +14,7 @@
 #    under the License.
 
 import urllib
-import urlparse
+import six.moves.urllib.parse as urlparse
 
 
 def url_quote(s):
