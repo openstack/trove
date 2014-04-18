@@ -110,10 +110,9 @@ class Manager(periodic_task.PeriodicTasks):
     def start_db_with_conf_changes(self, context, config_contents):
         """
         Start this redis instance with new conf changes.
-        Right now this does nothing.
         """
-        raise exception.DatastoreOperationNotSupported(
-            operation='start_db_with_conf_changes', datastore=MANAGER)
+        app = RedisApp(RedisAppStatus.get())
+        app.start_db_with_conf_changes(config_contents)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
         """

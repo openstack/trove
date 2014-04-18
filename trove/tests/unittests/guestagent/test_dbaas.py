@@ -1238,48 +1238,52 @@ class TestRedisApp(testtools.TestCase):
                     self.assertTrue(utils.execute_with_timeout.called)
 
     def test_enable_redis_on_boot_without_upstart(self):
-        with patch.object(os.path, 'isfile', return_value=False):
+        cmd = '123'
+        with patch.object(operating_system, 'service_discovery',
+                          return_value={'cmd_enable': cmd}):
             with patch.object(utils, 'execute_with_timeout',
                               return_value=None):
                 self.app._enable_redis_on_boot()
-                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                operating_system.service_discovery.assert_any_call(
+                    RedisSystem.SERVICE_CANDIDATES)
                 utils.execute_with_timeout.assert_any_call(
-                    'sudo ' + RedisSystem.REDIS_CMD_ENABLE,
-                    shell=True)
+                    cmd, shell=True)
 
     def test_enable_redis_on_boot_with_upstart(self):
-        with patch.object(os.path, 'isfile', return_value=True):
+        cmd = '123'
+        with patch.object(operating_system, 'service_discovery',
+                          return_value={'cmd_enable': cmd}):
             with patch.object(utils, 'execute_with_timeout',
                               return_value=None):
                 self.app._enable_redis_on_boot()
-                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                operating_system.service_discovery.assert_any_call(
+                    RedisSystem.SERVICE_CANDIDATES)
                 utils.execute_with_timeout.assert_any_call(
-                    "sudo sed -i '/^manual$/d' " + RedisSystem.REDIS_INIT,
-                    shell=True)
+                    cmd, shell=True)
 
     def test_disable_redis_on_boot_with_upstart(self):
-        with patch.object(os.path, 'isfile', return_value=True):
+        cmd = '123'
+        with patch.object(operating_system, 'service_discovery',
+                          return_value={'cmd_disable': cmd}):
             with patch.object(utils, 'execute_with_timeout',
                               return_value=None):
                 self.app._disable_redis_on_boot()
-                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                operating_system.service_discovery.assert_any_call(
+                    RedisSystem.SERVICE_CANDIDATES)
                 utils.execute_with_timeout.assert_any_call(
-                    'echo',
-                    "'manual'",
-                    '>>',
-                    RedisSystem.REDIS_INIT,
-                    run_as_root=True,
-                    root_helper='sudo')
+                    cmd, shell=True)
 
     def test_disable_redis_on_boot_without_upstart(self):
-        with patch.object(os.path, 'isfile', return_value=False):
+        cmd = '123'
+        with patch.object(operating_system, 'service_discovery',
+                          return_value={'cmd_disable': cmd}):
             with patch.object(utils, 'execute_with_timeout',
                               return_value=None):
                 self.app._disable_redis_on_boot()
-                os.path.isfile.assert_any_call(RedisSystem.REDIS_INIT)
+                operating_system.service_discovery.assert_any_call(
+                    RedisSystem.SERVICE_CANDIDATES)
                 utils.execute_with_timeout.assert_any_call(
-                    'sudo ' + RedisSystem.REDIS_CMD_DISABLE,
-                    shell=True)
+                    cmd, shell=True)
 
     def test_stop_db_without_fail(self):
         mock_status = MagicMock()
