@@ -259,6 +259,15 @@ class AfterConfigurationsCreation(object):
         assert_equal(resp.status, 202)
 
     @test(depends_on=[test_assign_configuration_to_valid_instance])
+    def test_assign_configuration_to_instance_with_config(self):
+        # test assigning a configuration to an instance that
+        # already has an assigned configuration
+        config_id = configuration_info.id
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.modify, instance_info.id,
+                      configuration=config_id)
+
+    @test(depends_on=[test_assign_configuration_to_valid_instance])
     @time_out(10)
     def test_get_configuration_details_from_instance_validation(self):
         # validate that the configuraiton was applied correctly to the instance
@@ -530,8 +539,18 @@ class DeleteConfigurations(object):
         poll_until(result_has_no_configuration)
         inst_info = configuration_instance
         poll_until(result_has_no_configuration)
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal('RESTART_REQUIRED', instance.status)
 
     @test(depends_on=[test_unassign_configuration_from_instances])
+    def test_assign_in_wrong_state(self):
+        # test assigning a config to an instance in RESTART state
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.modify,
+                      configuration_instance.id,
+                      configuration=configuration_info.id)
+
+    @test(depends_on=[test_assign_in_wrong_state])
     def test_no_instances_on_configuration(self):
         # test there is no configuration on the instance after unassigning
         result = instance_info.dbaas.configurations.get(configuration_info.id)
