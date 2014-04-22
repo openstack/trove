@@ -55,14 +55,24 @@ class Datastores(object):
                 check.has_field("links", list)
 
     @test
-    def test_datastore_get_attrs(self):
-        datastore = self.rd_client.datastores.get(test_config.
-                                                  dbaas_datastore)
-        with TypeCheck('Datastore', datastore) as check:
+    def test_datastore_get(self):
+        # Test get by name
+        datastore_by_name = self.rd_client.datastores.get(
+            test_config.dbaas_datastore)
+        with TypeCheck('Datastore', datastore_by_name) as check:
             check.has_field("id", basestring)
             check.has_field("name", basestring)
             check.has_field("links", list)
-        assert_equal(datastore.name, test_config.dbaas_datastore)
+        assert_equal(datastore_by_name.name, test_config.dbaas_datastore)
+
+        # test get by id
+        datastore_by_id = self.rd_client.datastores.get(
+            datastore_by_name.id)
+        with TypeCheck('Datastore', datastore_by_id) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("links", list)
+        assert_equal(datastore_by_id.id, datastore_by_name.id)
 
     @test
     def test_datastore_not_found(self):
@@ -72,90 +82,6 @@ class Datastores(object):
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Datastore '%s' cannot be found." % NAME)
-
-    @test
-    def test_datastore_version_list_attrs(self):
-        versions = self.rd_client.datastore_versions.list(test_config.
-                                                          dbaas_datastore)
-        for version in versions:
-            with TypeCheck('DatastoreVersion', version) as check:
-                check.has_field("id", basestring)
-                check.has_field("name", basestring)
-                check.has_field("links", list)
-
-    @test
-    def test_datastore_version_get_attrs(self):
-        version = self.rd_client.datastore_versions.get(
-            test_config.dbaas_datastore, test_config.dbaas_datastore_version)
-        with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
-            check.has_field("links", list)
-        assert_equal(version.name, test_config.dbaas_datastore_version)
-
-    @test
-    def test_datastore_version_get_by_uuid_attrs(self):
-        version = self.rd_client.datastore_versions.get_by_uuid(
-            test_config.dbaas_datastore_version_id)
-        with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
-            check.has_field("links", list)
-        assert_equal(version.name, test_config.dbaas_datastore_version)
-
-    @test
-    def test_datastore_version_not_found(self):
-        try:
-            assert_raises(exceptions.NotFound,
-                          self.rd_client.datastore_versions.get,
-                          test_config.dbaas_datastore, NAME)
-        except exceptions.BadRequest as e:
-            assert_equal(e.message,
-                         "Datastore version '%s' cannot be found." % NAME)
-
-    @test
-    def test_datastore_get_by_uuid(self):
-        datastore = self.rd_client.datastores.get(
-            test_config.dbaas_datastore_id)
-        with TypeCheck('Datastore', datastore) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("links", list)
-        assert_equal(datastore.id, test_config.dbaas_datastore_id)
-
-    @test
-    def test_datastore_version_list_by_uuid(self):
-        versions = self.rd_client.datastore_versions.list(
-            test_config.dbaas_datastore_id)
-        for version in versions:
-            with TypeCheck('DatastoreVersion', version) as check:
-                check.has_field("id", basestring)
-                check.has_field("name", basestring)
-                check.has_field("links", list)
-
-    @test
-    def test_datastore_version_get_by_uuid(self):
-        version = self.rd_client.datastore_versions.get(
-            test_config.dbaas_datastore_id,
-            test_config.dbaas_datastore_version)
-        with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
-            check.has_field("links", list)
-        assert_equal(version.name, test_config.dbaas_datastore_version)
-
-    @test
-    def test_datastore_version_invalid_uuid(self):
-        try:
-            self.rd_client.datastore_versions.get_by_uuid(
-                test_config.dbaas_datastore_version)
-        except exceptions.BadRequest as e:
-            assert_equal(e.message,
-                         "Datastore version '%s' cannot be found." %
-                         test_config.dbaas_datastore_version)
 
     @test
     def test_datastore_with_no_active_versions_is_hidden(self):
@@ -170,3 +96,91 @@ class Datastores(object):
         id_list = [datastore.id for datastore in datastores]
         id_no_versions = test_config.dbaas_datastore_id_no_versions
         assert_true(id_no_versions in id_list)
+
+
+@test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES],
+      depends_on_groups=["services.initialize"])
+class DatastoreVersions(object):
+
+    @before_class
+    def setUp(self):
+        rd_user = test_config.users.find_user(
+            Requirements(is_admin=False, services=["trove"]))
+        self.rd_client = create_dbaas_client(rd_user)
+        self.datastore_active = self.rd_client.datastores.get(
+            test_config.dbaas_datastore)
+        self.datastore_version_active = self.rd_client.datastore_versions.list(
+            self.datastore_active.id)[0]
+
+    @test
+    def test_datastore_version_list_attrs(self):
+        versions = self.rd_client.datastore_versions.list(
+            self.datastore_active.name)
+        for version in versions:
+            with TypeCheck('DatastoreVersion', version) as check:
+                check.has_field("id", basestring)
+                check.has_field("name", basestring)
+                check.has_field("links", list)
+
+    @test
+    def test_datastore_version_get_attrs(self):
+        version = self.rd_client.datastore_versions.get(
+            self.datastore_active.name, self.datastore_version_active.name)
+        with TypeCheck('DatastoreVersion', version) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("datastore", basestring)
+            check.has_field("links", list)
+        assert_equal(version.name, self.datastore_version_active.name)
+
+    @test
+    def test_datastore_version_get_by_uuid_attrs(self):
+        version = self.rd_client.datastore_versions.get_by_uuid(
+            self.datastore_version_active.id)
+        with TypeCheck('DatastoreVersion', version) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("datastore", basestring)
+            check.has_field("links", list)
+        assert_equal(version.name, self.datastore_version_active.name)
+
+    @test
+    def test_datastore_version_not_found(self):
+        try:
+            assert_raises(exceptions.NotFound,
+                          self.rd_client.datastore_versions.get,
+                          self.datastore_active.name, NAME)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore version '%s' cannot be found." % NAME)
+
+    @test
+    def test_datastore_version_list_by_uuid(self):
+        versions = self.rd_client.datastore_versions.list(
+            self.datastore_active.id)
+        for version in versions:
+            with TypeCheck('DatastoreVersion', version) as check:
+                check.has_field("id", basestring)
+                check.has_field("name", basestring)
+                check.has_field("links", list)
+
+    @test
+    def test_datastore_version_get_by_uuid(self):
+        version = self.rd_client.datastore_versions.get(
+            self.datastore_active.id, self.datastore_version_active.id)
+        with TypeCheck('DatastoreVersion', version) as check:
+            check.has_field("id", basestring)
+            check.has_field("name", basestring)
+            check.has_field("datastore", basestring)
+            check.has_field("links", list)
+        assert_equal(version.name, self.datastore_version_active.name)
+
+    @test
+    def test_datastore_version_invalid_uuid(self):
+        try:
+            self.rd_client.datastore_versions.get_by_uuid(
+                self.datastore_version_active.id)
+        except exceptions.BadRequest as e:
+            assert_equal(e.message,
+                         "Datastore version '%s' cannot be found." %
+                         test_config.dbaas_datastore_version)
