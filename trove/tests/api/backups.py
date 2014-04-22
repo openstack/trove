@@ -15,12 +15,13 @@
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
+from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
 from trove.common.utils import poll_until
 from trove.common.utils import generate_uuid
+from trove.common import exception
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 from trove.tests.config import CONFIG
@@ -230,14 +231,12 @@ class IncrementalBackups(object):
         assert_equal(backup_info.id, incremental_info.parent_id)
 
 
-@test(runs_after=[IncrementalBackups],
-      groups=[GROUP, tests.INSTANCES])
+@test(groups=[GROUP, tests.INSTANCES])
 class RestoreUsingBackup(object):
 
-    @test
-    def test_restore(self):
-        """test restore"""
-        restorePoint = {"backupRef": incremental_info.id}
+    @classmethod
+    def _restore(cls, backup_ref):
+        restorePoint = {"backupRef": backup_ref}
         result = instance_info.dbaas.instances.create(
             instance_info.name + "_restore",
             instance_info.dbaas_flavor_href,
@@ -245,23 +244,28 @@ class RestoreUsingBackup(object):
             restorePoint=restorePoint)
         assert_equal(200, instance_info.dbaas.last_http_code)
         assert_equal("BUILD", result.status)
+        return result.id
+
+    @test(depends_on=[WaitForBackupCreateToFinish])
+    def test_restore(self):
         global restore_instance_id
-        restore_instance_id = result.id
+        restore_instance_id = self._restore(backup_info.id)
+
+    @test(depends_on=[IncrementalBackups])
+    def test_restore_incremental(self):
+        global incremental_restore_instance_id
+        incremental_restore_instance_id = self._restore(incremental_info.id)
 
 
-@test(depends_on_classes=[RestoreUsingBackup],
-      runs_after=[RestoreUsingBackup],
-      groups=[GROUP, tests.INSTANCES])
+@test(groups=[GROUP, tests.INSTANCES])
 class WaitForRestoreToFinish(object):
-    """
-        Wait until the instance is finished restoring.
-    """
 
-    @test
-    def test_instance_restored(self):
+    @classmethod
+    def _poll(cls, instance_id_to_poll):
+        """Shared "instance restored" test logic."""
         # This version just checks the REST API status.
         def result_is_active():
-            instance = instance_info.dbaas.instances.get(restore_instance_id)
+            instance = instance_info.dbaas.instances.get(instance_id_to_poll)
             if instance.status == "ACTIVE":
                 return True
             else:
@@ -275,41 +279,84 @@ class WaitForRestoreToFinish(object):
         poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_CREATE,
                    sleep_time=10)
 
+    """
+        Wait until the instance is finished restoring from full backup.
+    """
+    @test(depends_on=[RestoreUsingBackup.test_restore])
+    def test_instance_restored(self):
+        try:
+            self._poll(restore_instance_id)
+        except exception.PollTimeOut:
+            fail('Timed out')
 
-@test(depends_on_classes=[RestoreUsingBackup, WaitForRestoreToFinish],
-      runs_after=[WaitForRestoreToFinish],
-      enabled=(not CONFIG.fake_mode),
+    """
+        Wait until the instance is finished restoring from incremental backup.
+    """
+    @test(depends_on=[RestoreUsingBackup.test_restore_incremental])
+    def test_instance_restored_incremental(self):
+        try:
+            self._poll(incremental_restore_instance_id)
+        except exception.PollTimeOut:
+            fail('Timed out')
+
+
+@test(enabled=(not CONFIG.fake_mode),
       groups=[GROUP, tests.INSTANCES])
 class VerifyRestore(object):
 
-    @test
-    def test_database_restored(self):
-        databases = instance_info.dbaas.databases.list(restore_instance_id)
-        dbs = [d.name for d in databases]
-        assert_true(incremental_db in dbs,
-                    "%s not found on restored instance" % incremental_db)
+    @classmethod
+    def _poll(cls, instance_id, db):
+        def db_is_found():
+            databases = instance_info.dbaas.databases.list(instance_id)
+            if db in [d.name for d in databases]:
+                return True
+            else:
+                return False
+
+        poll_until(db_is_found, time_out=60 * 10, sleep_time=10)
+
+    @test(depends_on=[WaitForRestoreToFinish.
+          test_instance_restored_incremental])
+    def test_database_restored_incremental(self):
+        try:
+            self._poll(incremental_restore_instance_id, incremental_db)
+        except exception.PollTimeOut:
+            fail('Timed out')
 
 
-@test(runs_after=[VerifyRestore],
-      groups=[GROUP, tests.INSTANCES])
+@test(groups=[GROUP, tests.INSTANCES])
 class DeleteRestoreInstance(object):
 
-    @test
-    def test_delete_restored_instance(self):
+    @classmethod
+    def _delete(cls, instance_id):
         """test delete restored instance"""
-        instance_info.dbaas.instances.delete(restore_instance_id)
+        instance_info.dbaas.instances.delete(instance_id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
         def instance_is_gone():
             try:
-                instance_info.dbaas.instances.get(restore_instance_id)
+                instance_info.dbaas.instances.get(instance_id)
                 return False
             except exceptions.NotFound:
                 return True
 
         poll_until(instance_is_gone, time_out=TIMEOUT_INSTANCE_DELETE)
         assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
-                      restore_instance_id)
+                      instance_id)
+
+    @test(runs_after=[WaitForRestoreToFinish.test_instance_restored])
+    def test_delete_restored_instance(self):
+        try:
+            self._delete(restore_instance_id)
+        except exception.PollTimeOut:
+            fail('Timed out')
+
+    @test(runs_after=[VerifyRestore.test_database_restored_incremental])
+    def test_delete_restored_instance_incremental(self):
+        try:
+            self._delete(incremental_restore_instance_id)
+        except exception.PollTimeOut:
+            fail('Timed out')
 
 
 @test(runs_after=[DeleteRestoreInstance],
