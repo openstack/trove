@@ -20,19 +20,27 @@ class BackupView(object):
         self.backup = backup
 
     def data(self):
-        return {"backup": {
-            "id": self.backup.id,
-            "name": self.backup.name,
-            "description": self.backup.description,
-            "locationRef": self.backup.location,
-            "instance_id": self.backup.instance_id,
-            "created": self.backup.created,
-            "updated": self.backup.updated,
-            "size": self.backup.size,
-            "status": self.backup.state,
-            "parent_id": self.backup.parent_id,
+        result = {
+            "backup": {
+                "id": self.backup.id,
+                "name": self.backup.name,
+                "description": self.backup.description,
+                "locationRef": self.backup.location,
+                "instance_id": self.backup.instance_id,
+                "created": self.backup.created,
+                "updated": self.backup.updated,
+                "size": self.backup.size,
+                "status": self.backup.state,
+                "parent_id": self.backup.parent_id,
+            }
         }
-        }
+        if self.backup.datastore_version_id:
+            result['backup']['datastore'] = {
+                "type": self.backup.datastore.name,
+                "version": self.backup.datastore_version.name,
+                "version_id": self.backup.datastore_version.id
+            }
+        return result
 
 
 class BackupViews(object):

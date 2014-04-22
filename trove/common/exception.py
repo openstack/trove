@@ -359,10 +359,10 @@ class BackupFileNotFound(NotFound):
                 "storage.")
 
 
-class BackupDatastoreVersionMismatchError(TroveError):
-    message = _("The datastore-version from which the backup was"
-                " taken, %(version1)s, does not match the destination"
-                " datastore-version of %(version2)s")
+class BackupDatastoreMismatchError(TroveError):
+    message = _("The datastore from which the backup was taken, "
+                "%(datastore1)s, does not match the destination"
+                " datastore of %(datastore2)s")
 
 
 class SwiftAuthError(TroveError):

@@ -58,6 +58,8 @@ class BackupCreateTest(testtools.TestCase):
                           return_value=instance):
             instance.validate_can_perform_action = MagicMock(
                 return_value=None)
+            instance.datastore_version = MagicMock()
+            instance.datastore_version.id = 'datastore-id-999'
             with patch.object(models.Backup, 'validate_can_perform_action',
                               return_value=None):
                 with patch.object(models.Backup, 'verify_swift_auth_token',
@@ -80,6 +82,8 @@ class BackupCreateTest(testtools.TestCase):
                                      db_record['instance_id'])
                     self.assertEqual(models.BackupState.NEW,
                                      db_record['state'])
+                    self.assertEqual(instance.datastore_version.id,
+                                     db_record['datastore_version_id'])
 
     def test_create_incremental(self):
         instance = MagicMock()
@@ -88,6 +92,10 @@ class BackupCreateTest(testtools.TestCase):
                           return_value=instance):
             instance.validate_can_perform_action = MagicMock(
                 return_value=None)
+            instance.validate_can_perform_action = MagicMock(
+                return_value=None)
+            instance.datastore_version = MagicMock()
+            instance.datastore_version.id = 'datastore-id-999'
             with patch.object(models.Backup, 'validate_can_perform_action',
                               return_value=None):
                 with patch.object(models.Backup, 'verify_swift_auth_token',
@@ -118,6 +126,8 @@ class BackupCreateTest(testtools.TestCase):
                                          db_record['state'])
                         self.assertEqual('parent_uuid',
                                          db_record['parent_id'])
+                        self.assertEqual(instance.datastore_version.id,
+                                         db_record['datastore_version_id'])
 
     def test_create_instance_not_found(self):
         self.assertRaises(exception.NotFound, models.Backup.create,

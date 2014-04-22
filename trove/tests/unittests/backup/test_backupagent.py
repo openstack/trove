@@ -234,6 +234,8 @@ class BackupAgentTest(testtools.TestCase):
                        'location': 'fake-location',
                        'type': 'InnoBackupEx',
                        'checksum': 'fake-checksum',
+                       'datastore': 'mysql',
+                       'datastore_version': '5.5'
                        }
         agent.execute_backup(context=None, backup_info=backup_info,
                              runner=MockBackup)
@@ -267,6 +269,8 @@ class BackupAgentTest(testtools.TestCase):
                        'location': 'fake-location',
                        'type': 'InnoBackupEx',
                        'checksum': 'fake-checksum',
+                       'datastore': 'mysql',
+                       'datastore_version': '5.5'
                        }
 
         self.assertRaises(backupagent.BackupError, agent.execute_backup,

@@ -20,6 +20,7 @@ from swiftclient.client import ClientException
 from trove.common import cfg
 from trove.common import exception
 from trove.db.models import DatabaseModelBase
+from trove.datastore import models as datastore_models
 from trove.openstack.common import log as logging
 from trove.taskmanager import api
 from trove.common.remote import create_swift_client
@@ -78,6 +79,8 @@ class Backup(object):
                 instance_model, 'backup_create')
             cls.verify_swift_auth_token(context)
 
+            ds = instance_model.datastore
+            ds_version = instance_model.datastore_version
             parent = None
             if parent_id:
                 # Look up the parent info or fail early if not found or if
@@ -94,6 +97,7 @@ class Backup(object):
                                           state=BackupState.NEW,
                                           instance_id=instance_id,
                                           parent_id=parent_id,
+                                          datastore_version_id=ds_version.id,
                                           deleted=False)
             except exception.InvalidModelError as ex:
                 LOG.exception("Unable to create Backup record:")
@@ -106,6 +110,8 @@ class Backup(object):
                            'backup_type': db_info.backup_type,
                            'checksum': db_info.checksum,
                            'parent': parent,
+                           'datastore': ds.name,
+                           'datastore_version': ds_version.name,
                            }
             api.API(context).create_backup(backup_info, instance_id)
             return db_info
@@ -168,16 +174,23 @@ class Backup(object):
         return query.all(), marker
 
     @classmethod
-    def list(cls, context):
+    def list(cls, context, datastore=None):
         """
         list all live Backups belong to given tenant
         :param cls:
         :param context: tenant_id included
+        :param datastore: datastore to filter by
         :return:
         """
         query = DBBackup.query()
-        query = query.filter_by(tenant_id=context.tenant,
-                                deleted=False)
+        filters = [DBBackup.tenant_id == context.tenant,
+                   DBBackup.deleted == 0]
+        if datastore:
+            ds = datastore_models.Datastore.load(datastore)
+            filters.append(datastore_models.DBDatastoreVersion.
+                           datastore_id == ds.id)
+            query = query.join(datastore_models.DBDatastoreVersion)
+        query = query.filter(*filters)
         return cls._paginate(context, query)
 
     @classmethod
@@ -250,7 +263,8 @@ class DBBackup(DatabaseModelBase):
     _data_fields = ['id', 'name', 'description', 'location', 'backup_type',
                     'size', 'tenant_id', 'state', 'instance_id',
                     'checksum', 'backup_timestamp', 'deleted', 'created',
-                    'updated', 'deleted_at', 'parent_id']
+                    'updated', 'deleted_at', 'parent_id',
+                    'datastore_version_id']
     preserve_on_delete = True
 
     @property
@@ -270,6 +284,18 @@ class DBBackup(DatabaseModelBase):
             return self.location[last_slash + 1:]
         else:
             return None
+
+    @property
+    def datastore(self):
+        if self.datastore_version_id:
+            return datastore_models.Datastore.load(
+                self.datastore_version.datastore_id)
+
+    @property
+    def datastore_version(self):
+        if self.datastore_version_id:
+            return datastore_models.DatastoreVersion.load_by_uuid(
+                self.datastore_version_id)
 
     def check_swift_object_exist(self, context, verify_checksum=False):
         try:

@@ -37,8 +37,9 @@ class BackupController(wsgi.Controller):
         Return all backups information for a tenant ID.
         """
         LOG.debug("Listing Backups for tenant '%s'" % tenant_id)
+        datastore = req.GET.get('datastore')
         context = req.environ[wsgi.CONTEXT_KEY]
-        backups, marker = Backup.list(context)
+        backups, marker = Backup.list(context, datastore)
         view = views.BackupViews(backups)
         paged = pagination.SimplePaginatedDataView(req.url, 'backups', view,
                                                    marker)

@@ -125,7 +125,11 @@ class BackupAgent(object):
                     if not success:
                         raise BackupError(note)
 
-                    storage.save_metadata(location, bkup.metadata())
+                    meta = bkup.metadata()
+                    meta['datastore'] = backup_info['datastore']
+                    meta['datastore_version'] = backup_info[
+                        'datastore_version']
+                    storage.save_metadata(location, meta)
 
                 except Exception:
                     LOG.exception(_("Error saving %(backup_id)s Backup") %

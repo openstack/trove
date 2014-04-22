@@ -633,16 +633,11 @@ class Instance(BuiltInstance):
                 raise exception.BackupFileNotFound(
                     location=backup_info.location)
 
-            backup_db_info = DBInstance.find_by(
-                context=context, id=backup_info.instance_id)
-            if (backup_db_info.datastore_version_id
-                    != datastore_version.id):
-                ds_version = (datastore_models.DatastoreVersion.
-                              load_by_uuid(backup_db_info.datastore_version_id)
-                              )
-                raise exception.BackupDatastoreVersionMismatchError(
-                    version1=ds_version.name,
-                    version2=datastore_version.name)
+            if (backup_info.datastore_version_id
+                    and backup_info.datastore.name != datastore.name):
+                raise exception.BackupDatastoreMismatchError(
+                    datastore1=backup_info.datastore.name,
+                    datastore2=datastore.name)
 
         if not nics and CONF.default_neutron_networks:
             nics = []
