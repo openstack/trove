@@ -27,7 +27,7 @@ cmd_cluster_init = ('sudo /opt/couchbase/bin/couchbase-cli cluster-init '
                     '-c %(IP)s:8091 --cluster-init-username=Administrator '
                     '--cluster-init-password=password '
                     '--cluster-init-port=8091')
-cmd_kill = 'sudo pkill -9 couchbase-server'
+cmd_kill = 'sudo pkill -u couchbase'
 cmd_own_data_dir = ('sudo chown couchbase:couchbase %s' %
                     CONF.get('couchbase').mount_point)
 cmd_rm_old_data_dir = 'sudo rm -rf /opt/couchbase/var/lib/couchbase/data'
