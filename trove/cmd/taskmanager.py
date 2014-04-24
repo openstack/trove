@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2011 OpenStack Foundation
 # All Rights Reserved.
 #
@@ -14,49 +12,28 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import sys
-
-import eventlet
-
-from trove.common import cfg
 from oslo.config import cfg as openstack_cfg
-from trove.openstack.common import log as logging
-from trove.common import debug_utils
-
-# Apply whole eventlet.monkey_patch excluding 'thread' module.
-# Decision for 'thread' module patching will be made
-# after debug_utils setting up
-eventlet.monkey_patch(all=True, thread=False)
-
-CONF = cfg.CONF
-CONF.register_opts([openstack_cfg.StrOpt('taskmanager_manager')])
+from trove.cmd.common import with_initialize
 
 
-def startup(topic):
-    cfg.parse_args(sys.argv)
-    logging.setup(None)
+extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
 
-    debug_utils.setup()
 
-    # Patch 'thread' module if debug is disabled
-    if not debug_utils.enabled():
-        eventlet.monkey_patch(thread=True)
-
+def startup(conf, topic):
     from trove.common.rpc import service as rpc_service
     from trove.openstack.common import service as openstack_service
-    from trove.db import get_db_api
 
-    get_db_api().configure_db(CONF)
-    server = rpc_service.RpcService(manager=CONF.taskmanager_manager,
+    server = rpc_service.RpcService(manager=conf.taskmanager_manager,
                                     topic=topic)
     launcher = openstack_service.launch(server)
     launcher.wait()
 
 
-def main():
-    startup(None)
+@with_initialize(extra_opts=extra_opts)
+def main(conf):
+    startup(conf, None)
 
 
+@with_initialize(extra_opts=extra_opts)
 def mgmt_main():
-    startup("mgmt-taskmanager")
+    startup(conf, "mgmt-taskmanager")

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2011 OpenStack Foundation
 # All Rights Reserved.
 #
@@ -14,37 +12,40 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import gettext
-import sys
-
-
-gettext.install('trove', unicode=1)
-
-
-from trove.common import cfg
 from oslo.config import cfg as openstack_cfg
-from trove.openstack.common import log as logging
-from trove.common import wsgi
-from trove.db import get_db_api
+from trove.cmd.common import with_initialize
 
-extra_opts = [
-    openstack_cfg.BoolOpt('fork',
-                          short='f',
-                          default=False,
-                          dest='fork'),
-    openstack_cfg.StrOpt('pid-file',
-                         default='.pid'),
-    openstack_cfg.StrOpt('override-logfile',
-                         default=None),
+
+opts = [
+    openstack_cfg.BoolOpt('fork', short='f', default=False, dest='fork'),
+    openstack_cfg.StrOpt('pid-file', default='.pid'),
+    openstack_cfg.StrOpt('override-logfile', default=None),
 ]
 
-CONF = cfg.CONF
-CONF.register_cli_opts(extra_opts)
+
+def setup_logging(conf):
+    if conf.override_logfile:
+        conf.use_stderr = False
+        conf.log_file = conf.override_logfile
 
 
-def start_fake_taskmanager():
-    topic = CONF.taskmanager_queue
+@with_initialize(extra_opts=opts, pre_logging=setup_logging)
+def main(conf):
+    if conf.fork:
+        pid = os.fork()
+        if pid == 0:
+            start_server(conf)
+        else:
+            print("Starting server:%s" % pid)
+            pid_file = CONF.pid_file
+            with open(pid_file, 'w') as f:
+                f.write(str(pid))
+    else:
+        start_server(conf)
+
+
+def start_fake_taskmanager(conf):
+    topic = conf.taskmanager_queue
     from trove.openstack.common.rpc import service as rpc_service
     from trove.taskmanager import manager
     manager_impl = manager.Manager()
@@ -53,31 +54,10 @@ def start_fake_taskmanager():
     taskman_service.start()
 
 
-def run_server():
-    get_db_api().configure_db(CONF)
-    conf_file = CONF.find_file(CONF.api_paste_config)
-    launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
-                           workers=CONF.trove_api_workers)
-    start_fake_taskmanager()
+def start_server(conf):
+    from trove.common import wsgi
+    conf_file = conf.find_file(conf.api_paste_config)
+    launcher = wsgi.launch('trove', conf.bind_port or 8779, conf_file,
+                           workers=conf.trove_api_workers)
+    start_fake_taskmanager(conf)
     launcher.wait()
-
-
-def main():
-    cfg.parse_args(sys.argv)
-    if CONF.override_logfile:
-        CONF.use_stderr = False
-        CONF.log_file = CONF.override_logfile
-
-    logging.setup(None)
-
-    if CONF.fork:
-        pid = os.fork()
-        if pid == 0:
-            run_server()
-        else:
-            print("Starting server:%s" % pid)
-            pid_file = CONF.pid_file
-            with open(pid_file, 'w') as f:
-                f.write(str(pid))
-    else:
-        run_server()
