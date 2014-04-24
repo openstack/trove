@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flavor id="1" name="512MB Instance" ram="512"
+    xmlns="http://docs.openstack.org/database/api/v1.0">
+    <links>
+        <link
+            href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1"
+            rel="self"/>
+        <link
+            href="https://ord.databases.api.rackspacecloud.com/flavors/1"
+            rel="bookmark"/>
+    </links>
+</flavor>

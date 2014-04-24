@@ -1,0 +1,615 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="../xslts/xslt/schema.xslt"?>
+
+<schema  elementFormDefault="qualified"
+         attributeFormDefault="unqualified"
+         targetNamespace="http://docs.openstack.org/database/api/v1.0"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+         xmlns="http://www.w3.org/2001/XMLSchema"
+         xmlns:dbaas="http://docs.openstack.org/database/api/v1.0"
+         xmlns:xsdxt="http://docs.rackspacecloud.com/xsd-ext/v1.0">
+
+  <annotation>
+    <xsd:appinfo
+            xml:lang="EN"
+            xmlns="http://www.w3.org/1999/xhtml">
+            <xsdxt:title>DBaaS</xsdxt:title>
+    </xsd:appinfo>
+    <xsd:documentation
+            xml:lang="EN"
+            xmlns="http://www.w3.org/1999/xhtml">
+            <p>
+                This is the main index XML Schema document
+                for DBaaS API Schema Types Version 1.0.
+            </p>
+    </xsd:documentation>
+  </annotation>
+
+  <element name="user" type="dbaas:User">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>A MySQL User.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="users" type="dbaas:Users">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>A MySQL User.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="instance" type="dbaas:instance">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>A Database Instance.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="instances" type="dbaas:instances">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>Database Instances.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="flavor" type="dbaas:Flavor">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>Settings such as memory used to create a database instance.</p>
+        </xsd:documentation>
+      </annotation>
+    </element>
+  <element name="flavors" type="dbaas:Flavors">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>A list of flavors.</p>
+        </xsd:documentation>
+      </annotation>
+    </element>
+  <element name="database" type="dbaas:Database">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>A Database.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="databases" type="dbaas:Databases">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>List of Databases.</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="restart">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>Restart the Database</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+  <element name="resize" type="dbaas:Resize">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>Resize an Instance</p>
+      </xsd:documentation>
+    </annotation>
+  </element>
+
+  <!--Complex Types-->
+  <complexType name="Users">
+     <sequence>
+         <element name="users" type="dbaas:User" minOccurs="1" maxOccurs="unbounded">
+           <annotation>
+             <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+               <p>A list of database user names.</p>
+             </xsd:documentation>
+           </annotation>
+         </element>
+      </sequence>
+   </complexType>
+
+  <complexType name="User">
+    <sequence>
+       <element name="databases" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
+         <annotation>
+           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+             <p>A list of databases.</p>
+           </xsd:documentation>
+         </annotation>
+       </element>
+    </sequence>
+    <attribute name="name" type="xsd:string" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>The name for the user.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+    <attribute name="password" type="xsd:string" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>The password for the user.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+    <attribute name="status" type="dbaas:UserStatusType" use="optional">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>The status of the user.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+  </complexType>
+
+  <complexType name="instances">
+    <sequence>
+      <element name="instance" type="dbaas:instance" minOccurs="0" maxOccurs="unbounded">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>A list of database instances.</p>
+          </xsd:documentation>
+        </annotation>
+      </element>
+    </sequence>
+  </complexType>
+
+  <complexType name="instance">
+   <sequence>
+      <xsd:element name="databases" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
+         <annotation>
+           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+             <p>A list of optional databases.</p>
+           </xsd:documentation>
+         </annotation>
+      </xsd:element>
+      <xsd:element name="users" type="dbaas:User" minOccurs="0" maxOccurs="unbounded">
+           <annotation>
+               <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+                   <p>A list of optional users.</p>
+               </xsd:documentation>
+           </annotation>
+      </xsd:element>
+      <xsd:element name="links" type="dbaas:Links" minOccurs="0" maxOccurs="1">
+           <annotation>
+           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+             <p>The links for the type of instance.</p>
+           </xsd:documentation>
+         </annotation>
+       </xsd:element>
+       <xsd:element name="volume" type="dbaas:Volume" minOccurs="0" maxOccurs="1">
+           <annotation>
+           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+             <p>The volume attached to the instance.</p>
+           </xsd:documentation>
+         </annotation>
+       </xsd:element>
+   </sequence>
+   <attribute name="id" type="xsd:ID" use="optional">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>A unique database instance id.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+   <attribute name="created" type="xsd:dateTime" use="optional">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>Date/Time the instance was created.</p>
+        </xsd:documentation>
+      </annotation>
+   </attribute>
+   <attribute name="updated" type="xsd:dateTime" use="optional">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>Date/Time the instance was last updated.</p>
+        </xsd:documentation>
+      </annotation>
+   </attribute>
+   <attribute name="name" type="xsd:string" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The name for the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+   <attribute name="flavorRef" type="xsd:string" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The flavor reference of the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+   <attribute name="status" type="dbaas:StatusType" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The status of the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+   <attribute name="hostname" type="xsd:string" use="optional">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The hostname attached to the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+   <attribute name="rootEnabled" type="xsd:boolean" use="optional">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>Whether or not root is enabled for the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+ </complexType>
+
+  <complexType name="Link">
+    <attribute name="rel" type="xsd:string" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The type of link.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+    <attribute name="href" type="xsd:string" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The URL.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+    <attribute name="type" type="xsd:string" use="optional">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The type of link.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+  </complexType>
+
+  <complexType name="Flavors">
+    <sequence>
+      <element name="Flavors" type="dbaas:Flavor" minOccurs="0" maxOccurs="unbounded">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>A list of flavors.</p>
+          </xsd:documentation>
+        </annotation>
+      </element>
+    </sequence>
+  </complexType>
+
+  <complexType name="Flavor">
+   <sequence>
+      <element name="links" type="dbaas:Link" minOccurs="0" maxOccurs="unbounded">
+         <annotation>
+           <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+             <p>A list of links.</p>
+           </xsd:documentation>
+         </annotation>
+       </element>
+   </sequence>
+   <attribute name="id" type="xsd:ID" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>A unique flavor id.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+   <attribute name="name" type="xsd:string" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The name for the instance.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+   <attribute name="ram" type="xsd:integer" use="required">
+     <annotation>
+       <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+         <p>The RAM in megabytes.</p>
+       </xsd:documentation>
+     </annotation>
+   </attribute>
+ </complexType>
+
+  <xsd:complexType name="Links">
+      <xsd:sequence>
+          <xsd:element name="link" type="dbaas:Link" minOccurs="0" maxOccurs="unbounded">
+              <annotation>
+                <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+                    <p>A list of links.</p>
+                </xsd:documentation>
+              </annotation>
+          </xsd:element>
+      </xsd:sequence>
+  </xsd:complexType>
+
+  <complexType name="Databases">
+    <sequence>
+      <element name="database" type="dbaas:Database" minOccurs="0" maxOccurs="unbounded">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>A list of databases.</p>
+          </xsd:documentation>
+        </annotation>
+      </element>
+    </sequence>
+  </complexType>
+
+  <complexType name="Database">
+    <attribute name="character_set" type="xsd:string" use="optional">
+       <annotation>
+         <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+           <p>The Database character set.</p>
+         </xsd:documentation>
+       </annotation>
+     </attribute>
+    <attribute name="name" type="xsd:string" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>The name for the instance.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+    <attribute name="collate" type="xsd:string" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>The Collation type of the database.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+  </complexType>
+
+  <complexType name="RootEnabled">
+    <attribute name="rootEnabled" type="xsd:boolean" use="required">
+       <annotation>
+         <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+           <p>Whether or not root is enabled for the given instance.</p>
+         </xsd:documentation>
+       </annotation>
+     </attribute>
+  </complexType>
+
+  <complexType name="Volume">
+    <attribute name="size" type="xsd:integer" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>Size of the volume in GBs.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+    <attribute name="used" type="xsd:float" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>Used space on the attached volume in GBs.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+  </complexType>
+
+  <complexType name="FlavorRef">
+      <attribute name="flavorRef" type="xsd:ID" use="required">
+      <annotation>
+        <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+          <p>A unique flavor id.</p>
+        </xsd:documentation>
+      </annotation>
+    </attribute>
+  </complexType>
+
+  <complexType name="Resize">
+    <sequence>
+      <xsd:element name="volume" type="dbaas:Volume" minOccurs="0" maxOccurs="1">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>The volume attached to the instance.</p>
+          </xsd:documentation>
+        </annotation>
+      </xsd:element>
+      <xsd:element name="flavorRef" type="dbaas:FlavorRef" minOccurs="0" maxOccurs="1">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>New flavorRef to size the instance.</p>
+          </xsd:documentation>
+        </annotation>
+      </xsd:element>
+    </sequence>
+  </complexType>
+
+  <!--Simple Types-->
+  <simpleType name="StatusType">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>The instance status.</p>
+      </xsd:documentation>
+    </annotation>
+    <restriction base="xsd:string">
+      <enumeration value="ACTIVE">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>Healthy status.</p>
+          </xsd:documentation>
+        </annotation>
+      </enumeration>
+      <enumeration value="SHUTDOWN">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>Down status.</p>
+          </xsd:documentation>
+        </annotation>
+      </enumeration>
+      <enumeration value="BUILD">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>unavailable status.</p>
+          </xsd:documentation>
+        </annotation>
+      </enumeration>
+    </restriction>
+  </simpleType>
+
+  <simpleType name="UserStatusType">
+    <annotation>
+      <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+        <p>The mysql user status.</p>
+      </xsd:documentation>
+    </annotation>
+    <restriction base="xsd:string">
+      <enumeration value="ENABLED">
+        <annotation>
+          <xsd:documentation xml:lang="EN" xmlns="http://www.w3.org/1999/xhtml">
+            <p>Enabled status.</p>
+          </xsd:documentation>
+        </annotation>
+      </enumeration>
+    </restriction>
+  </simpleType>
+
+    <!-- Fault Elements -->
+    <element name="badRequest" type="dbaas:BadRequestFault"/>
+    <element name="unauthorized" type="dbaas:UnauthorizedFault"/>
+    <element name="forbidden" type="dbaas:ForbiddenFault"/>
+    <element name="badMethod" type="dbaas:BadMethodFault"/>
+    <element name="overLimit" type="dbaas:OverLimitFault"/>
+    <element name="unprocessableEntity" type="dbaas:UnprocessableEntityFault"/>
+    <element name="instanceFault" type="dbaas:InstanceFault" />
+    <element name="notImplemented" type="dbaas:NotImplementedFault" />
+    <element name="serviceUnavailable" type="dbaas:ServiceUnavailableFault"/>
+    <element name="itemNotFound" type="dbaas:ItemNotFoundFault"/>
+    <element name="badMediaType" type="dbaas:BadMediaTypeFault"/>
+
+    <!-- Fault Types -->
+    <complexType name="BaseFault">
+        <sequence>
+            <element name="message" type="xsd:string">
+                <annotation>
+                    <xsd:documentation
+                        xml:lang="EN"
+                        xmlns="http://www.w3.org/1999/xhtml">
+                        <p>
+                            A human readable message that is appropriate for display
+                            to the end user.
+                        </p>
+                    </xsd:documentation>
+                </annotation>
+            </element>
+            <element name="details" type="xsd:string" minOccurs="0">
+                <annotation>
+                    <xsd:documentation
+                        xml:lang="EN"
+                        xmlns="http://www.w3.org/1999/xhtml">
+                        <p>
+                            The optional &lt;details&gt; element may contain useful
+                            information for tracking down errors (e.g a stack
+                            trace).  This information may or may not be appropriate
+                            for display to an end user.
+                        </p>
+                    </xsd:documentation>
+                </annotation>
+            </element>
+            <any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+        </sequence>
+        <attribute name="code" type="xsd:int" use="required">
+            <annotation>
+                <xsd:documentation
+                    xml:lang="EN"
+                    xmlns="http://www.w3.org/1999/xhtml">
+                    <p>
+                        The HTTP status code associated with the current fault.
+                    </p>
+                </xsd:documentation>
+            </annotation>
+        </attribute>
+        <anyAttribute namespace="##other" processContents="lax"/>
+    </complexType>
+
+    <complexType name="BadRequestFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="UnauthorizedFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="ForbiddenFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="BadMethodFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="OverLimitFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+                <attribute name="retryAt" type="xsd:dateTime" use="optional">
+                    <annotation>
+                        <xsd:documentation
+                            xml:lang="EN"
+                            xmlns="http://www.w3.org/1999/xhtml">
+                            <p>
+                                An optional dateTime denoting when an operation should
+                                be retried.
+                            </p>
+                        </xsd:documentation>
+                    </annotation>
+                </attribute>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="UnprocessableEntityFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="InstanceFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="NotImplementedFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="ServiceUnavailableFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="ItemNotFoundFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="BadMediaTypeFault">
+        <complexContent>
+            <extension base="dbaas:BaseFault">
+            </extension>
+        </complexContent>
+    </complexType>
+
+</schema>

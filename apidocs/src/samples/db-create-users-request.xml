@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<users xmlns="http://docs.openstack.org/database/api/v1.0">
+    <user password="password" name="dbuser1" database="databaseA"/>
+    <user password="password" name="dbuser2">
+        <databases>
+            <database name="databaseB"/>
+            <database name="databaseC"/>
+        </databases>
+    </user>
+    <user password="password" name="dbuser3" database="databaseD"/>
+</users>

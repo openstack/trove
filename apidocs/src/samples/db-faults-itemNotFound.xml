@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<itemNotFound code="404"
+    xmlns="http://docs.openstack.org/database/api/v1.0">
+    <message> The resource could not be found. </message>
+</itemNotFound>

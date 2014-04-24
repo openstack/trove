@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<badRequest code="400"
+    xmlns="http://docs.openstack.org/database/api/v1.0">
+    <message> Volume 'size' needs to be a positive integer value, -1.0
+        cannot be accepted. </message>
+</badRequest>

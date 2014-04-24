@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.rackspace.cloud.dbaas</groupId>
+  <artifactId>dbaas-docs</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <name>Database Public API Spec</name>
+  <packaging>jar</packaging>
+  <dependencies>
+    <dependency>
+      <groupId>net.sourceforge.saxon</groupId>
+      <artifactId>saxon</artifactId>
+      <version>9.1.0.8</version>
+    </dependency>
+    <dependency>
+      <groupId>com.rackspace.cloud.api</groupId>
+      <artifactId>wadl-tools</artifactId>
+      <version>1.0.9</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+	<groupId>com.rackspace.cloud.api</groupId>
+	<artifactId>clouddocs-maven-plugin</artifactId>
+	<!-- this <version> relates only to the *plugin* used for document formatting -->
+	<!-- the version of the *API* that is the subject of the document is indicated within each document -->
+	<version>1.15.0</version>
+	<executions>
+	  
+	  <execution>
+	    <id>cdb-devguide</id>
+	    <goals>
+	      <goal>generate-webhelp</goal>
+	    </goals>
+	    <phase>generate-sources</phase>
+	    <configuration>
+	      <security>reviewer</security>
+	      <sourceDirectory>src</sourceDirectory>
+	      <highlightSource>false</highlightSource>
+	      <trimWadlUriCount>2</trimWadlUriCount>
+	      <!-- this is the public-facing client developer guide formerly known as PublicAPISpec.xml -->
+	      <!-- this document that will be published as cdb-devguide-latest.pdf at http://docs.rackspacecloud.com/api/ --> 
+	      <enableDisqus>1</enableDisqus>
+	      <googleAnalyticsId>UA-23102455-4</googleAnalyticsId>
+	      <includes>cdb-devguide.xml</includes>
+	      <canonicalUrlBase>http://docs.rackspace.com/cdb/api/v1.0/cdb-devguide/content</canonicalUrlBase>
+	      <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail>
+	    </configuration>
+	  </execution>
+	  
+	</executions>
+	<configuration>
+	  <socialIcons>1</socialIcons>
+	  <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail>
+		<branding>openstack</branding>
+	  <!-- <failOnValidationError>false</failOnValidationError> -->
+	</configuration>
+            </plugin>
+	    <!-- Unpack the wadl normalization xslts -->
+            <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+		  <execution>
+		    <id>unpack-shared-resources</id>
+		    <goals>
+		      <goal>unpack-dependencies</goal>
+		    </goals>
+		    <phase>generate-sources</phase>
+		    <configuration>
+		      <outputDirectory>${project.build.directory}/generated-resources</outputDirectory>
+		      <includeGroupIds>com.rackspace.cloud.api</includeGroupIds>
+		      <includeArtifactIds>wadl-tools</includeArtifactIds>
+		      <excludeTransitive>true</excludeTransitive>
+		      <includes>**/xsl/*.xsl</includes>
+		    </configuration>
+		  </execution>
+                </executions>
+            </plugin>            
+            <!-- Normalize the dbaas wadl -->
+            <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-antrun-plugin</artifactId>
+	      <version>1.5</version>
+	      <executions>
+		<execution>
+		  <id>ant</id>
+		  <phase>generate-sources</phase>
+		  <configuration>
+		    <target>
+		      <copy todir="${project.build.directory}/generated-resources/normalized/api/v1.0">
+			<fileset dir="src">
+			  <include name="xslts/**"/>
+			</fileset>
+			<fileset dir="src">
+			  <include name="samples/**"/>
+			</fileset>
+		      </copy>
+		      <copy file="src/xsd/dbaas.xsd" tofile="${project.build.directory}/generated-resources/normalized/api/v1.0/xsd/cdb.xsd"/>
+		      <copy file="src/xsd/dbaas.xsd" tofile="${project.build.directory}/generated-resources/normalized/api/v1.0/cdb.xsd"/>
+		       <java
+			  jar="${net.sourceforge.saxon:saxon:jar}"
+			  fork="true">
+			<arg value="-u"/>
+			<arg value="-s:src/xsd/dbaas.wadl"/>
+			<arg value="-xsl:${project.build.directory}/generated-resources/xsl/normalizeWadl.xsl"/>
+			<arg value="-o:${project.build.directory}/generated-resources/normalized/api/v1.0/cdb.wadl"/>
+			<arg value="flattenXsds=false"/>
+		      </java>
+		      <replaceregexp file="${project.build.directory}/generated-resources/normalized/api/v1.0/cdb.wadl"
+				     match="file:/.*/src/xsd/dbaas.xsd"
+				     replace="xsd/cdb.xsd"/>
+		      <war destfile="${project.build.directory}/docbkx/webhelp/cdb-wadls.war" needxmlfile="false">
+			<fileset dir="${project.build.directory}/generated-resources/normalized"/>			
+		      </war>		    
+		    </target>
+		  </configuration>
+		  <goals>
+		    <goal>run</goal>
+		  </goals>
+		</execution>
+	      </executions>
+            </plugin>
+            <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-assembly-plugin</artifactId>
+	      <version>2.3</version>
+	      <configuration>
+		<descriptors>
+		  <descriptor>includewars.xml</descriptor>
+		</descriptors>
+	      </configuration>
+	      <executions>
+		<execution>
+		  <id>assembly</id>
+		  <goals>
+		    <goal>single</goal>
+		  </goals>
+		  <phase>package</phase>
+		</execution>
+	      </executions>
+            </plugin>
+        </plugins>
+      </build>
+      <profiles>                                                                                              
+    <profile>                                                                                           
+      <id>Rackspace Research Repositories</id>                                                        
+      <activation>                                                                                    
+        <activeByDefault>true</activeByDefault>                                                     
+      </activation>                                                                                   
+      <repositories>                                                                                  
+        <repository>                                                                                
+          <id>rackspace-research</id>                                                             
+          <name>Rackspace Research Repository</name>                                              
+          <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>              
+        </repository>                                                                               
+      </repositories>                                                                                 
+      <pluginRepositories>                                                                            
+        <pluginRepository>                                                                          
+          <id>rackspace-research</id>                                                             
+          <name>Rackspace Research Repository</name>                                              
+          <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>              
+        </pluginRepository>                                                                         
+      </pluginRepositories>                                                                           
+    </profile> 
+  </profiles>
+</project>
