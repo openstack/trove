@@ -19,7 +19,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import dbaas
 from trove.guestagent import volume
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mongodb import service as mongo_service
 from trove.guestagent.datastore.mongodb import system
 from trove.openstack.common import log as logging
@@ -70,7 +69,6 @@ class Manager(periodic_task.PeriodicTasks):
             config_contents = self.app.update_config_contents(
                 config_contents, {
                     'dbpath': mount_point,
-                    'bind_ip': operating_system.get_ip_address()
                 })
 
         self.app.start_db_with_conf_changes(config_contents)
