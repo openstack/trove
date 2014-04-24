@@ -1,0 +1,25 @@
+{
+    "links": [
+        {
+            "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/44b277eb-39be-4921-be31-3d61b43651d7/users?marker=dbuser2&limit=2",
+            "rel": "next"
+        }
+    ],
+    "users": [
+        {
+            "databases": [],
+            "name": "dbuser1"
+        },
+        {
+            "databases": [
+                {
+                    "name": "databaseB"
+                },
+                {
+                    "name": "databaseC"
+                }
+            ],
+            "name": "dbuser2"
+        }
+    ]
+}

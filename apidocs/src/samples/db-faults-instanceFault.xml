@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instanceFault code="500"
+    xmlns="http://docs.openstack.org/database/api/v1.0">
+    <message> The server has either erred or is incapable of
+        performing the requested operation. </message>
+</instanceFault>
