@@ -14,7 +14,7 @@
 import os
 import testtools
 import pexpect
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock, patch, mock_open
 from trove.guestagent import volume
 from trove.common import utils
 
@@ -173,11 +173,9 @@ class VolumeMountPointTest(testtools.TestCase):
     def test_write_to_fstab(self):
         origin_execute = utils.execute
         utils.execute = Mock()
-        open = MagicMock()
-        # Avoiding error at PEP8 F841 rule
-        if open:
-            pass
-        self.volumeMountPoint.write_to_fstab()
+        m = mock_open()
+        with patch('%s.open' % volume.__name__, m, create=True):
+            self.volumeMountPoint.write_to_fstab()
 
         self.assertEqual(2, utils.execute.call_count)
         utils.execute = origin_execute
