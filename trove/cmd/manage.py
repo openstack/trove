@@ -114,9 +114,9 @@ def main():
         parser.add_argument('active')
 
         parser = subparser.add_parser(
-            'db_recreate', description='Drop the database and recreate it')
+            'db_recreate', description='Drop the database and recreate it.')
         parser.add_argument(
-            '--repo_path', help='SQLAlchemy Migrate repository path')
+            '--repo_path', help='SQLAlchemy Migrate repository path.')
         parser = subparser.add_parser('db_recreate')
         parser.add_argument('repo_path')
 
@@ -132,5 +132,5 @@ def main():
         print(_("Possible wrong number of arguments supplied %s") % e)
         sys.exit(2)
     except Exception:
-        print(_("Command failed, please check log for more info"))
+        print(_("Command failed, please check log for more info."))
         raise
