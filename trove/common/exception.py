@@ -401,3 +401,13 @@ class ConfigurationDatastoreNotMatchInstance(TroveError):
 class ConfigurationParameterDeleted(object):
     message = _("%(parameter_name)s parameter can no longer be "
                 " set as of %(parameter_deleted_at)s")
+
+
+class ConfigurationAlreadyAttached(TroveError):
+    message = _("Instance %(instance_id)s already has a "
+                "Configuration Group attached: %(configuration_id)s.")
+
+
+class InvalidInstanceState(TroveError):
+    message = _("The operation you have requested cannot be executed because "
+                "the instance status is currently: %(status)s")

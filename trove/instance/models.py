@@ -812,6 +812,28 @@ class Instance(BuiltInstance):
         LOG.error(msg)
         raise exception.UnprocessableEntity(msg)
 
+    def _validate_can_perform_assign(self):
+        """
+        Raises exception if a configuration assign cannot
+        currently be performed
+        """
+        # check if the instance already has a configuration assigned
+        if self.db_info.configuration_id:
+            raise exception.ConfigurationAlreadyAttached(
+                instance_id=self.id,
+                configuration_id=self.db_info.configuration_id)
+
+        # check if the instance is not ACTIVE or has tasks
+        status = None
+        if self.db_info.server_status != InstanceStatus.ACTIVE:
+            status = self.db_info.server_status
+        elif self.db_info.task_status != InstanceTasks.NONE:
+            status = self.db_info.task_status.action
+
+        if status:
+            raise exception.InvalidInstanceState(instance_id=self.id,
+                                                 status=status)
+
     def unassign_configuration(self):
         LOG.debug(_("Unassigning the configuration from the instance %s")
                   % self.id)
@@ -820,6 +842,9 @@ class Instance(BuiltInstance):
                       % self.configuration.id)
             flavor = self.get_flavor()
             config_id = self.configuration.id
+            LOG.debug(_("configuration being unassigned; "
+                        "marking restart required"))
+            self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
             task_api.API(self.context).unassign_configuration(self.id,
                                                               flavor,
                                                               config_id)
@@ -827,6 +852,8 @@ class Instance(BuiltInstance):
             LOG.debug("no configuration found on instance skipping.")
 
     def assign_configuration(self, configuration_id):
+        self._validate_can_perform_assign()
+
         try:
             configuration = Configuration.load(self.context, configuration_id)
         except exception.ModelNotFoundError:
