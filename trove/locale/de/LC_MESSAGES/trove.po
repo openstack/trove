@@ -7,23 +7,23 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-03-24 06:21+0000\n"
-"PO-Revision-Date: 2014-03-19 18:14+0000\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"POT-Creation-Date: 2014-04-29 06:18+0000\n"
+"PO-Revision-Date: 2014-04-23 19:07+0000\n"
+"Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: German "
-"(http://www.transifex.com/projects/p/openstack/language/de/)\n"
+"(http://www.transifex.com/projects/p/trove/language/de/)\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 
-#: trove/backup/models.py:281
+#: trove/backup/models.py:280
 #, python-format
 msgid "Checking if backup exist in '%s'"
 msgstr ""
 
-#: trove/backup/models.py:284
+#: trove/backup/models.py:283
 msgid "Checking if backup checksum matches swift."
 msgstr ""
 
@@ -82,7 +82,7 @@ msgstr ""
 msgid "User with tenant id %s cannot access this resource"
 msgstr ""
 
-#: trove/common/configurations.py:39 trove/taskmanager/models.py:827
+#: trove/common/configurations.py:39 trove/taskmanager/models.py:816
 #, python-format
 msgid "overrides: %s"
 msgstr ""
@@ -454,7 +454,7 @@ msgid ""
 "%(unit_string)s."
 msgstr ""
 
-#: trove/common/limits.py:210
+#: trove/common/limits.py:211
 msgid "This request was rate-limited."
 msgstr ""
 
@@ -504,47 +504,55 @@ msgid "Instance %(instance)s sent %(method)s at %(sent)s "
 msgstr ""
 
 #: trove/conductor/manager.py:45
-msgid "Sent field not present. Cannot compare."
+#, python-format
+msgid "[Instance %s] sent field not present. Cannot compare."
 msgstr ""
 
-#: trove/conductor/manager.py:57
-msgid "Did not find any previous message. Creating."
+#: trove/conductor/manager.py:58
+#, python-format
+msgid "[Instance %s] Did not find any previous message. Creating."
 msgstr ""
 
-#: trove/conductor/manager.py:66
-msgid "Rec'd message is younger than last seen. Updating."
+#: trove/conductor/manager.py:68
+#, python-format
+msgid "[Instance %s] Rec'd message is younger than last seen. Updating."
 msgstr ""
 
-#: trove/conductor/manager.py:72
-msgid "Rec'd message is older than last seen. Discarding."
+#: trove/conductor/manager.py:75
+#, python-format
+msgid "[Instance %s] Rec'd message is older than last seen. Discarding."
 msgstr ""
 
-#: trove/conductor/manager.py:76 trove/conductor/manager.py:89
+#: trove/conductor/manager.py:80 trove/conductor/manager.py:93
 #, python-format
 msgid "Instance ID: %s"
 msgstr ""
 
-#: trove/conductor/manager.py:77
+#: trove/conductor/manager.py:81
 #, python-format
 msgid "Payload: %s"
 msgstr ""
 
-#: trove/conductor/manager.py:90
+#: trove/conductor/manager.py:94
 #, python-format
 msgid "Backup ID: %s"
 msgstr ""
 
-#: trove/conductor/manager.py:103
+#: trove/conductor/manager.py:108
 #, python-format
-msgid "Backup IDs mismatch! Expected %(expected)s, found %(found)s"
+msgid ""
+"[Instance: %(instance)s] Backup IDs mismatch! Expected %(expected)s, "
+"found %(found)s"
 msgstr ""
 
-#: trove/conductor/manager.py:111
+#: trove/conductor/manager.py:117
 #, python-format
-msgid "Backup instance IDs mismatch! Expected %(expected)s, found %(found)s"
+msgid ""
+"[Instance: %(instance)s] Backup instance IDs mismatch! Expected "
+"%(expected)s, found %(found)s"
 msgstr ""
 
-#: trove/conductor/manager.py:121
+#: trove/conductor/manager.py:128
 #, python-format
 msgid "Backup %(key)s: %(value)s"
 msgstr ""
@@ -880,7 +888,7 @@ msgstr ""
 msgid "Security Group with id: %(id)s already had been deleted"
 msgstr ""
 
-#: trove/extensions/security_group/service.py:112
+#: trove/extensions/security_group/service.py:127
 #, python-format
 msgid "Create Security Group Rules Required field(s) - %s"
 msgstr ""
@@ -1783,78 +1791,78 @@ msgstr ""
 msgid "Writing metadata: %s"
 msgstr ""
 
-#: trove/instance/models.py:304
+#: trove/instance/models.py:297
 #, python-format
 msgid ""
 "While shutting down instance (%(instance)s): server had status "
 "(%(status)s)."
 msgstr ""
 
-#: trove/instance/models.py:509
+#: trove/instance/models.py:502
 #, python-format
 msgid "  ... deleting compute id = %s"
 msgstr ""
 
-#: trove/instance/models.py:511
+#: trove/instance/models.py:504
 msgid " ... setting status to DELETING."
 msgstr ""
 
-#: trove/instance/models.py:574
+#: trove/instance/models.py:567
 #, python-format
 msgid "Settting task status to NONE on instance %s..."
 msgstr ""
 
-#: trove/instance/models.py:604
+#: trove/instance/models.py:597
 #, python-format
 msgid "root_on_create not configured for %s hence defaulting the value to False"
 msgstr ""
 
-#: trove/instance/models.py:667
+#: trove/instance/models.py:660
 #, python-format
 msgid "Tenant %(tenant)s created new Trove instance %(db)s..."
 msgstr ""
 
-#: trove/instance/models.py:758
+#: trove/instance/models.py:751
 #, python-format
 msgid "Instance %s has no volume."
 msgstr ""
 
-#: trove/instance/models.py:762
+#: trove/instance/models.py:755
 #, python-format
 msgid "The new volume 'size' must be larger than the current volume size of '%s'"
 msgstr ""
 
-#: trove/instance/models.py:823 trove/taskmanager/models.py:851
+#: trove/instance/models.py:816 trove/taskmanager/models.py:840
 #, python-format
 msgid "Unassigning the configuration from the instance %s"
 msgstr ""
 
-#: trove/instance/models.py:825 trove/taskmanager/models.py:853
+#: trove/instance/models.py:819 trove/taskmanager/models.py:842
 #, python-format
 msgid "Unassigning the configuration id %s"
 msgstr ""
 
-#: trove/instance/models.py:860
+#: trove/instance/models.py:853
 #, python-format
 msgid "Updating or removing overrides for instance %s"
 msgstr ""
 
-#: trove/instance/models.py:864
+#: trove/instance/models.py:857
 #, python-format
 msgid "config overrides has non-dynamic settings, requires a restart: %s"
 msgstr ""
 
-#: trove/instance/models.py:885
+#: trove/instance/models.py:878
 #, python-format
 msgid "Server %(server)s for instance %(instance)s wasfound twice!"
 msgstr ""
 
-#: trove/instance/models.py:946 trove/instance/models.py:952
+#: trove/instance/models.py:939 trove/instance/models.py:945
 #, python-format
 msgid "Server status could not be read for instance id(%s)"
 msgstr ""
 
-#: trove/instance/models.py:949
+#: trove/instance/models.py:942
 #, python-format
 msgid "Server api_status(%s)"
 msgstr ""
@@ -2802,7 +2810,7 @@ msgstr ""
 msgid "begin _create_server_volume for id: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:350 trove/taskmanager/models.py:575
+#: trove/taskmanager/models.py:350 trove/taskmanager/models.py:576
 #, python-format
 msgid "Created new compute instance %(server_id)s for id: %(id)s"
 msgstr ""
@@ -2870,12 +2878,12 @@ msgstr ""
 msgid "Error provisioning volume for instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:487 trove/taskmanager/models.py:543
+#: trove/taskmanager/models.py:487 trove/taskmanager/models.py:544
 #, python-format
 msgid "device_path = %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:488 trove/taskmanager/models.py:544
+#: trove/taskmanager/models.py:488 trove/taskmanager/models.py:545
 #, python-format
 msgid "mount_point = %s"
 msgstr ""
@@ -2885,243 +2893,243 @@ msgstr ""
 msgid "begin _create_volume for id: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:525
+#: trove/taskmanager/models.py:526
 #, python-format
 msgid "end _create_volume for id: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:529
+#: trove/taskmanager/models.py:530
 #, python-format
 msgid "Created volume %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:584
+#: trove/taskmanager/models.py:585
 msgid "Entering guest_prepare"
 msgstr ""
 
-#: trove/taskmanager/models.py:595
+#: trove/taskmanager/models.py:596
 #, python-format
 msgid "%(gt)s: Creating dns entry for instance: %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:598 trove/taskmanager/models.py:725
+#: trove/taskmanager/models.py:599 trove/taskmanager/models.py:714
 #, python-format
 msgid "trove dns support = %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:608
+#: trove/taskmanager/models.py:609
 #, python-format
 msgid "Polling for ip addresses: $%s "
 msgstr ""
 
-#: trove/taskmanager/models.py:617
+#: trove/taskmanager/models.py:618
 #, python-format
 msgid ""
 "Instance IP not available, instance (%(instance)s): server had status "
 "(%(status)s)."
 msgstr ""
 
-#: trove/taskmanager/models.py:628
+#: trove/taskmanager/models.py:629
 msgid "Creating dns entry..."
 msgstr ""
 
-#: trove/taskmanager/models.py:634
+#: trove/taskmanager/models.py:635
 #, python-format
 msgid "%(gt)s: DNS not enabled for instance: %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:648
+#: trove/taskmanager/models.py:649
 #, python-format
 msgid ""
 "Error creating security group rules. Invalid port format. FromPort = "
 "%(from)s, ToPort = %(to)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:709
+#: trove/taskmanager/models.py:698
 #, python-format
 msgid "begin _delete_resources for id: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:721
+#: trove/taskmanager/models.py:710
 #, python-format
 msgid "Error during delete compute server %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:730
+#: trove/taskmanager/models.py:719
 #, python-format
 msgid "Error during dns entry of instance %(id)s: %(ex)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:739
+#: trove/taskmanager/models.py:728
 #, python-format
 msgid ""
 "Server %(server_id)s got into ERROR status during delete of instance "
 "%(instance_id)s!"
 msgstr ""
 
-#: trove/taskmanager/models.py:750
+#: trove/taskmanager/models.py:739
 #, python-format
 msgid "Timout during nova server delete of server: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:755
+#: trove/taskmanager/models.py:744
 #, python-format
 msgid "end _delete_resources for id: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:764
+#: trove/taskmanager/models.py:753
 #, python-format
 msgid "begin resize_volume for instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:767
+#: trove/taskmanager/models.py:756
 #, python-format
 msgid "end resize_volume for instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:774
+#: trove/taskmanager/models.py:763
 #, python-format
 msgid "Calling migrate with host(%s)..."
 msgstr ""
 
-#: trove/taskmanager/models.py:779
+#: trove/taskmanager/models.py:768
 #, python-format
 msgid "Calling create_backup  %s "
 msgstr ""
 
-#: trove/taskmanager/models.py:784 trove/taskmanager/models.py:1292
+#: trove/taskmanager/models.py:773 trove/taskmanager/models.py:1281
 #, python-format
 msgid "Instance %s calling stop_db..."
 msgstr ""
 
-#: trove/taskmanager/models.py:786
+#: trove/taskmanager/models.py:775
 #, python-format
 msgid "Rebooting instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:804
+#: trove/taskmanager/models.py:793
 #, python-format
 msgid "Successfully rebooted instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:806
+#: trove/taskmanager/models.py:795
 #, python-format
 msgid "Failed to reboot instance %(id)s: %(e)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:809
+#: trove/taskmanager/models.py:798
 #, python-format
 msgid "Rebooting FINALLY  %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:813
+#: trove/taskmanager/models.py:802
 #, python-format
 msgid "Restarting datastore on instance %s "
 msgstr ""
 
-#: trove/taskmanager/models.py:816
+#: trove/taskmanager/models.py:805
 #, python-format
 msgid "Restarting datastore successful  %s "
 msgstr ""
 
-#: trove/taskmanager/models.py:818
+#: trove/taskmanager/models.py:807
 #, python-format
 msgid "Failure to restart datastore for instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:821
+#: trove/taskmanager/models.py:810
 #, python-format
 msgid "Restarting complete on instance  %s "
 msgstr ""
 
-#: trove/taskmanager/models.py:825
+#: trove/taskmanager/models.py:814
 #, python-format
 msgid "Updating configuration overrides on instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:828
+#: trove/taskmanager/models.py:817
 #, python-format
 msgid "self.ds_version: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:832
+#: trove/taskmanager/models.py:821
 #, python-format
 msgid "do we need a restart?: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:846
+#: trove/taskmanager/models.py:835
 msgid "Configuration overrides update successful."
 msgstr ""
 
-#: trove/taskmanager/models.py:848
+#: trove/taskmanager/models.py:837
 msgid "Failed to update configuration overrides."
 msgstr ""
 
-#: trove/taskmanager/models.py:857
+#: trove/taskmanager/models.py:846
 #, python-format
 msgid "items: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:858
+#: trove/taskmanager/models.py:847
 #, python-format
 msgid "item_name: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:885
+#: trove/taskmanager/models.py:874
 #, python-format
 msgid "default %(ds_manager)s section: %(config)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:886
+#: trove/taskmanager/models.py:875
 #, python-format
 msgid "self.configuration: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:891
+#: trove/taskmanager/models.py:880
 #, python-format
 msgid "finding item(%s)"
 msgstr ""
 
-#: trove/taskmanager/models.py:900
+#: trove/taskmanager/models.py:889
 #, python-format
 msgid "setting the default variables in dict: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:950
+#: trove/taskmanager/models.py:939
 #, python-format
 msgid "Deleting files with prefix: %(cont)s/%(prefix)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:958
+#: trove/taskmanager/models.py:947
 #, python-format
 msgid "Deleting file: %(cont)s/%(name)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:962
+#: trove/taskmanager/models.py:951
 #, python-format
 msgid "Deleting file: %(cont)s/%(filename)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:981
+#: trove/taskmanager/models.py:970
 #, python-format
 msgid "Exception deleting from swift. Details: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1004
+#: trove/taskmanager/models.py:993
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Setting service status to failed."
 msgstr ""
 
-#: trove/taskmanager/models.py:1013
+#: trove/taskmanager/models.py:1002
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Trying to recover by restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1021
+#: trove/taskmanager/models.py:1010
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -3129,7 +3137,7 @@ msgid ""
 "restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1030
+#: trove/taskmanager/models.py:1019
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -3137,226 +3145,226 @@ msgid ""
 "and then restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1040
+#: trove/taskmanager/models.py:1029
 #, python-format
 msgid "Instance %s calling stop_db."
 msgstr ""
 
-#: trove/taskmanager/models.py:1045
+#: trove/taskmanager/models.py:1034
 #, python-format
 msgid "Unmounting the volume on instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1050
+#: trove/taskmanager/models.py:1039
 #, python-format
 msgid "Successfully unmounted the volume %(vol_id)s for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1056
+#: trove/taskmanager/models.py:1045
 #, python-format
 msgid "Detach volume %(vol_id)s from instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1069
+#: trove/taskmanager/models.py:1058
 #, python-format
 msgid "Successfully detached volume %(vol_id)s from instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1075
+#: trove/taskmanager/models.py:1064
 #, python-format
 msgid "Attach volume %(vol_id)s to instance %(id)s at %(dev)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1090
+#: trove/taskmanager/models.py:1079
 #, python-format
 msgid "Successfully attached volume %(vol_id)s to instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1096
+#: trove/taskmanager/models.py:1085
 #, python-format
 msgid "Resizing the filesystem for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1101
+#: trove/taskmanager/models.py:1090
 #, python-format
 msgid "Successfully resized volume %(vol_id)s filesystem for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1107
+#: trove/taskmanager/models.py:1096
 #, python-format
 msgid "Mount the volume on instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1112
+#: trove/taskmanager/models.py:1101
 #, python-format
 msgid "Successfully mounted the volume %(vol_id)s on instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1118
+#: trove/taskmanager/models.py:1107
 #, python-format
 msgid "Extending volume %(vol_id)s for instance %(id)s to size %(size)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1123
+#: trove/taskmanager/models.py:1112
 #, python-format
 msgid "Successfully extended the volume %(vol_id)s for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1132
+#: trove/taskmanager/models.py:1121
 #, python-format
 msgid "Failed to get volume %(vol_id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1146
+#: trove/taskmanager/models.py:1135
 #, python-format
 msgid "Timeout trying to extend the volume %(vol_id)s for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1159
+#: trove/taskmanager/models.py:1148
 #, python-format
 msgid ""
 "Error encountered trying to verify extend for the volume %(vol_id)s for "
 "instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1167
+#: trove/taskmanager/models.py:1156
 #, python-format
 msgid "begin _resize_active_volume for id: %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1179
+#: trove/taskmanager/models.py:1168
 #, python-format
 msgid "end _resize_active_volume for id: %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1183
+#: trove/taskmanager/models.py:1172
 #, python-format
 msgid ""
 "%(gt)s: Resizing instance %(id)s volume for server %(server_id)s from "
 "%(old_volume_size)s to %(new_size)r GB"
 msgstr ""
 
-#: trove/taskmanager/models.py:1206
+#: trove/taskmanager/models.py:1195
 #, python-format
 msgid ""
 "Volume resize failed for instance %(id)s. The instance must be in state "
 "%(state)s not %(inst_state)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1266
+#: trove/taskmanager/models.py:1255
 msgid "Nova guest is ok."
 msgstr ""
 
-#: trove/taskmanager/models.py:1268
+#: trove/taskmanager/models.py:1257
 msgid "Datastore is ok."
 msgstr ""
 
-#: trove/taskmanager/models.py:1271
+#: trove/taskmanager/models.py:1260
 #, python-format
 msgid "Instance %s calling Compute confirm resize..."
 msgstr ""
 
-#: trove/taskmanager/models.py:1285 trove/taskmanager/models.py:1395
+#: trove/taskmanager/models.py:1274 trove/taskmanager/models.py:1384
 #, python-format
 msgid "Instance %s calling Compute revert resize..."
 msgstr ""
 
-#: trove/taskmanager/models.py:1308
+#: trove/taskmanager/models.py:1297
 #, python-format
 msgid "begin resize method _perform_nova_action instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1312
+#: trove/taskmanager/models.py:1301
 msgid "Initiating nova action"
 msgstr ""
 
-#: trove/taskmanager/models.py:1314
+#: trove/taskmanager/models.py:1303
 msgid "Waiting for nova action"
 msgstr ""
 
-#: trove/taskmanager/models.py:1316
+#: trove/taskmanager/models.py:1305
 msgid "Asserting nova status is ok"
 msgstr ""
 
-#: trove/taskmanager/models.py:1319
+#: trove/taskmanager/models.py:1308
 msgid "* * * REVERT BARRIER PASSED * * *"
 msgstr ""
 
-#: trove/taskmanager/models.py:1320
+#: trove/taskmanager/models.py:1309
 msgid "Asserting nova action success"
 msgstr ""
 
-#: trove/taskmanager/models.py:1322
+#: trove/taskmanager/models.py:1311
 msgid "Asserting processes are OK"
 msgstr ""
 
-#: trove/taskmanager/models.py:1324
+#: trove/taskmanager/models.py:1313
 msgid "Confirming nova action"
 msgstr ""
 
-#: trove/taskmanager/models.py:1327
+#: trove/taskmanager/models.py:1316
 msgid "Exception during nova action."
 msgstr ""
 
-#: trove/taskmanager/models.py:1329
+#: trove/taskmanager/models.py:1318
 #, python-format
 msgid "Reverting action for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1335
+#: trove/taskmanager/models.py:1324
 msgid "Restarting datastore."
 msgstr ""
 
-#: trove/taskmanager/models.py:1338
+#: trove/taskmanager/models.py:1327
 msgid "Cannot restart datastore because Nova server status is not ACTIVE"
 msgstr ""
 
-#: trove/taskmanager/models.py:1341
+#: trove/taskmanager/models.py:1330
 #, python-format
 msgid "Error resizing instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1344
+#: trove/taskmanager/models.py:1333
 msgid "Recording success"
 msgstr ""
 
-#: trove/taskmanager/models.py:1346
+#: trove/taskmanager/models.py:1335
 #, python-format
 msgid "end resize method _perform_nova_action instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1397
+#: trove/taskmanager/models.py:1386
 msgid "Repairing config."
 msgstr ""
 
-#: trove/taskmanager/models.py:1407
+#: trove/taskmanager/models.py:1396
 msgid "Error sending reset_configuration call."
 msgstr ""
 
-#: trove/taskmanager/models.py:1408
+#: trove/taskmanager/models.py:1397
 msgid "Reverting resize."
 msgstr ""
 
-#: trove/taskmanager/models.py:1412
+#: trove/taskmanager/models.py:1401
 #, python-format
 msgid "Updating instance %(id)s to flavor_id %(flavor_id)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1437
+#: trove/taskmanager/models.py:1426
 msgid "Currently no assertions for a Migrate Action"
 msgstr ""
 
-#: trove/taskmanager/models.py:1440
+#: trove/taskmanager/models.py:1429
 #, python-format
 msgid "Migrating instance %s without flavor change ..."
 msgstr ""
 
-#: trove/taskmanager/models.py:1442
+#: trove/taskmanager/models.py:1431
 #, python-format
 msgid "Forcing migration to host(%s)"
 msgstr ""
 
-#: trove/taskmanager/models.py:1446
+#: trove/taskmanager/models.py:1435
 #, python-format
 msgid "Successfully finished Migration to %(hostname)s: %(id)s"
 msgstr ""
@@ -3411,46 +3419,46 @@ msgstr ""
 msgid "Resize volume id (%(volumeid)s) to size (%(size)s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:43
+#: trove/tests/fakes/swift.py:41
 msgid "fake FakeSwiftClient Connection"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:79
+#: trove/tests/fakes/swift.py:77
 #, python-format
 msgid "fake head_container(%s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:91
+#: trove/tests/fakes/swift.py:89
 #, python-format
 msgid "fake put_container(%s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:95
+#: trove/tests/fakes/swift.py:93
 #, python-format
 msgid "fake get_container(%s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:103
+#: trove/tests/fakes/swift.py:101
 #, python-format
 msgid "fake put_container(%(container)s, %(name)s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:125
+#: trove/tests/fakes/swift.py:123
 #, python-format
 msgid "fake get_object(%(container)s, %(name)s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:163
+#: trove/tests/fakes/swift.py:161
 #, python-format
 msgid "fake put_object(%(container)s, %(name)s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:197
+#: trove/tests/fakes/swift.py:195
 #, python-format
 msgid "fake post_object(%(container)s, %(name)s, %(head)s)"
 msgstr ""
 
-#: trove/tests/fakes/swift.py:201
+#: trove/tests/fakes/swift.py:199
 #, python-format
 msgid "fake delete_object(%(container)s, %(name)s)"
 msgstr ""
