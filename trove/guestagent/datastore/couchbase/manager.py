@@ -53,8 +53,7 @@ class Manager(periodic_task.PeriodicTasks):
             operation='change_passwords', datastore=MANAGER)
 
     def reset_configuration(self, context, configuration):
-        raise exception.DatastoreOperationNotSupported(
-            operation='reset_configuration', datastore=MANAGER)
+        self.app.reset_configuration(configuration)
 
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
@@ -88,8 +87,7 @@ class Manager(periodic_task.PeriodicTasks):
         self.app.restart()
 
     def start_db_with_conf_changes(self, context, config_contents):
-        raise exception.DatastoreOperationNotSupported(
-            operation='start_db_with_conf_changes', datastore=MANAGER)
+        self.app.start_db_with_conf_changes(config_contents)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
         """
