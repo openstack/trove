@@ -31,19 +31,6 @@ path_opts = [
 ]
 
 common_opts = [
-    cfg.StrOpt('sql_connection',
-               default='sqlite:///trove_test.sqlite',
-               help='SQL Connection.',
-               secret=True),
-    cfg.IntOpt('sql_idle_timeout', default=3600,
-               help="Idle time (in seconds) after which the connection to the "
-                    "database is reestablished. Some databases will drop "
-                    "connections after a specific amount of idle time. "
-                    "Setting sql_idle_timeout to a lower value than this will "
-                    "ensure that a reconnect occurs before the database can "
-                    "drop the connection."),
-    cfg.BoolOpt('sql_query_log', default=False,
-                help='Write all SQL queries to a log.'),
     cfg.StrOpt('bind_host', default='0.0.0.0',
                help='IP address the API server will listen on.'),
     cfg.IntOpt('bind_port', default=8779,
@@ -405,6 +392,25 @@ profiler_opts = [
     cfg.BoolOpt("trace_sqlalchemy", default=True,
                 help="If False doesn't trace SQL requests.")
 ]
+
+
+database_opts = [
+    cfg.StrOpt('connection',
+               default='sqlite:///trove_test.sqlite',
+               help='SQL Connection.',
+               secret=True,
+               deprecated_name='sql_connection',
+               deprecated_group='DEFAULT'),
+    cfg.IntOpt('idle_timeout',
+               default=3600,
+               deprecated_name='sql_idle_timeout',
+               deprecated_group='DEFAULT'),
+    cfg.BoolOpt('query_log',
+                default=False,
+                deprecated_name='sql_query_log',
+                deprecated_group='DEFAULT'),
+]
+
 
 # Datastore specific option groups
 
@@ -869,6 +875,8 @@ CONF.register_opts(common_opts)
 
 CONF.register_group(profiler_group)
 CONF.register_opts(profiler_opts, profiler_group)
+
+CONF.register_opts(database_opts, 'database')
 
 CONF.register_group(mysql_group)
 CONF.register_group(percona_group)

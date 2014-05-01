@@ -44,22 +44,6 @@ bind_port = 8779
 # AMQP Connection info
 rabbit_password=f7999d1955c5014aa32c
 
-# SQLAlchemy connection string for the reference implementation
-# registry server. Any valid SQLAlchemy connection string is fine.
-# See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine
-sql_connection = sqlite:///trove_test.sqlite
-#sql_connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove
-#sql_connection = postgresql://trove:trove@localhost/trove
-
-# Period in seconds after which SQLAlchemy should reestablish its connection
-# to the database.
-#
-# MySQL uses a default `wait_timeout` of 8 hours, after which it will drop
-# idle connections. This can result in 'MySQL Gone Away' exceptions. If you
-# notice this, you can lower this value to ensure that SQLAlchemy reconnects
-# before MySQL can drop the connection.
-sql_idle_timeout = 3600
-
 #DB Api Implementation
 db_api_implementation = trove.db.sqlalchemy.api
 
@@ -157,6 +141,23 @@ device_path = /dev/vdb
 [mongodb]
 volume_support = True
 device_path = /dev/vdb
+
+[database]
+# SQLAlchemy connection string for the reference implementation
+# registry server. Any valid SQLAlchemy connection string is fine.
+# See: http://www.sqlalchemy.org/docs/05/reference/sqlalchemy/connections.html#sqlalchemy.create_engine
+connection = sqlite:///trove_test.sqlite
+#connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove
+#connection = postgresql://trove:trove@localhost/trove
+
+# Period in seconds after which SQLAlchemy should reestablish its connection
+# to the database.
+#
+# MySQL uses a default `wait_timeout` of 8 hours, after which it will drop
+# idle connections. This can result in 'MySQL Gone Away' exceptions. If you
+# notice this, you can lower this value to ensure that SQLAlchemy reconnects
+# before MySQL can drop the connection.
+idle_timeout = 3600
 
 [composite:trove]
 use = call:trove.common.wsgi:versioned_urlmap

@@ -2,7 +2,6 @@
 verbose = True
 debug = True
 trove_auth_url = http://0.0.0.0:5000/v2.0
-sql_connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove
 
 #===================== RPC Configuration =================================
 
@@ -52,3 +51,6 @@ conductor_manager = trove.conductor.manager.Manager
 #enabled = False
 # If False doesn't trace SQL requests.
 #trace_sqlalchemy = True
+
+[database]
+connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove

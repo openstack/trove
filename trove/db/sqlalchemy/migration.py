@@ -38,7 +38,7 @@ def db_version(options, repo_path=None):
 
     """
     repo_path = get_migrate_repo_path(repo_path)
-    sql_connection = options['sql_connection']
+    sql_connection = options['database']['connection']
     try:
         return versioning_api.db_version(sql_connection, repo_path)
     except versioning_exceptions.DatabaseNotControlledError:
@@ -57,7 +57,7 @@ def upgrade(options, version=None, repo_path=None):
     """
     db_version(options, repo_path)  # Ensure db is under migration control
     repo_path = get_migrate_repo_path(repo_path)
-    sql_connection = options['sql_connection']
+    sql_connection = options['database']['connection']
     version_str = version or 'latest'
     logger.info("Upgrading %(sql_connection)s to version %(version_str)s" %
                 {'sql_connection': sql_connection, 'version_str': version_str})
@@ -74,7 +74,7 @@ def downgrade(options, version, repo_path=None):
     """
     db_version(options, repo_path)  # Ensure db is under migration control
     repo_path = get_migrate_repo_path(repo_path)
-    sql_connection = options['sql_connection']
+    sql_connection = options['database']['connection']
     logger.info("Downgrading %(sql_connection)s to version %(version)s" %
                 {'sql_connection': sql_connection, 'version': version})
     return versioning_api.downgrade(sql_connection, repo_path, version)
@@ -86,7 +86,7 @@ def version_control(options, repo_path=None):
     :param options: options dict
 
     """
-    sql_connection = options['sql_connection']
+    sql_connection = options['database']['connection']
     try:
         _version_control(options)
     except versioning_exceptions.DatabaseAlreadyControlledError:
@@ -102,7 +102,7 @@ def _version_control(options, repo_path):
 
     """
     repo_path = get_migrate_repo_path(repo_path)
-    sql_connection = options['sql_connection']
+    sql_connection = options['database']['connection']
     return versioning_api.version_control(sql_connection, repo_path)
 
 

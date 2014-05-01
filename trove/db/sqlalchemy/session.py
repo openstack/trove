@@ -75,11 +75,11 @@ def configure_db(options, models_mapper=None):
 
 def _create_engine(options):
     engine_args = {
-        "pool_recycle": CONF.sql_idle_timeout,
-        "echo": CONF.sql_query_log
+        "pool_recycle": CONF.database.idle_timeout,
+        "echo": CONF.database.query_log
     }
     LOG.info(_("Creating SQLAlchemy engine with args: %s") % engine_args)
-    db_engine = create_engine(options['sql_connection'], **engine_args)
+    db_engine = create_engine(options['database']['connection'], **engine_args)
     if CONF.profiler.enabled and CONF.profiler.trace_sqlalchemy:
         osprofiler.sqlalchemy.add_tracing(sqlalchemy, db_engine, "db")
     return db_engine
