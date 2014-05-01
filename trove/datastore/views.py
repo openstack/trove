@@ -22,8 +22,9 @@ from trove.common.views import create_links
 
 class DatastoreView(object):
 
-    def __init__(self, datastore, req=None):
+    def __init__(self, datastore, datastore_versions, req=None):
         self.datastore = datastore
+        self.datastore_versions = datastore_versions
         self.req = req
 
     def data(self):
@@ -32,6 +33,8 @@ class DatastoreView(object):
             "name": self.datastore.name,
             "links": self._build_links(),
         }
+        datastore_dict.update(DatastoreVersionsView(self.datastore_versions,
+                                                    self.req).data(False))
         default_version = self.datastore.default_version_id
         if default_version:
             datastore_dict["default_version"] = default_version
@@ -45,18 +48,24 @@ class DatastoreView(object):
 
 class DatastoresView(object):
 
-    def __init__(self, datastores, req=None):
+    def __init__(self, datastores, datastores_versions, req=None):
         self.datastores = datastores
+        self.datastores_versions = datastores_versions
         self.req = req
 
     def data(self):
         data = []
         for datastore in self.datastores:
-            data.append(self.data_for_datastore(datastore))
+            datastores_versions = [
+                datastore_version
+                for datastore_version in self.datastores_versions
+                if datastore_version.datastore_id == datastore.id]
+            data.append(self.data_for_datastore(datastore,
+                                                datastores_versions))
         return {'datastores': data}
 
-    def data_for_datastore(self, datastore):
-        view = DatastoreView(datastore, req=self.req)
+    def data_for_datastore(self, datastore, datastore_versions):
+        view = DatastoreView(datastore, datastore_versions, req=self.req)
         return view.data()['datastore']
 
 
@@ -67,13 +76,15 @@ class DatastoreVersionView(object):
         self.req = req
         self.context = req.environ[wsgi.CONTEXT_KEY]
 
-    def data(self):
+    def data(self, include_datastore_id=True):
         datastore_version_dict = {
             "id": self.datastore_version.id,
             "name": self.datastore_version.name,
-            "datastore": self.datastore_version.datastore_id,
             "links": self._build_links(),
         }
+        if include_datastore_id:
+            datastore_version_dict["datastore"] = (self.datastore_version.
+                                                   datastore_id)
         if self.context.is_admin:
             datastore_version_dict['active'] = self.datastore_version.active
             datastore_version_dict['packages'] = (self.datastore_version.
@@ -92,13 +103,15 @@ class DatastoreVersionsView(object):
         self.datastore_versions = datastore_versions
         self.req = req
 
-    def data(self):
+    def data(self, include_datastore_id=True):
         data = []
         for datastore_version in self.datastore_versions:
             data.append(self.
-                        data_for_datastore_version(datastore_version))
+                        data_for_datastore_version(datastore_version,
+                                                   include_datastore_id))
         return {'versions': data}
 
-    def data_for_datastore_version(self, datastore_version):
+    def data_for_datastore_version(self, datastore_version,
+                                   include_datastore_id):
         view = DatastoreVersionView(datastore_version, req=self.req)
-        return view.data()['version']
+        return view.data(include_datastore_id)['version']

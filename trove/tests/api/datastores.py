@@ -53,6 +53,7 @@ class Datastores(object):
                 check.has_field("id", basestring)
                 check.has_field("name", basestring)
                 check.has_field("links", list)
+                check.has_field("versions", list)
 
     @test
     def test_datastore_get(self):
@@ -72,6 +73,7 @@ class Datastores(object):
             check.has_field("id", basestring)
             check.has_field("name", basestring)
             check.has_field("links", list)
+            check.has_field("versions", list)
         assert_equal(datastore_by_id.id, datastore_by_name.id)
 
     @test
