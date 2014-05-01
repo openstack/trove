@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-04-29 06:18+0000\n"
-"PO-Revision-Date: 2014-04-23 19:07+0000\n"
+"POT-Creation-Date: 2014-05-01 06:27+0000\n"
+"PO-Revision-Date: 2014-04-30 05:58+0000\n"
 "Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: Nepali "
 "(http://www.transifex.com/projects/p/trove/language/ne/)\n"
@@ -49,7 +49,7 @@ msgid "Possible wrong number of arguments supplied %s"
 msgstr ""
 
 #: trove/cmd/manage.py:135
-msgid "Command failed, please check log for more info"
+msgid "Command failed, please check log for more info."
 msgstr ""
 
 #: trove/common/auth.py:31
@@ -430,6 +430,20 @@ msgstr ""
 msgid ""
 "%(parameter_name)s parameter can no longer be  set as of "
 "%(parameter_deleted_at)s"
+msgstr ""
+
+#: trove/common/exception.py:407
+#, python-format
+msgid ""
+"Instance %(instance_id)s already has a Configuration Group attached: "
+"%(configuration_id)s."
+msgstr ""
+
+#: trove/common/exception.py:412
+#, python-format
+msgid ""
+"The operation you have requested cannot be executed because the instance "
+"status is currently: %(status)s"
 msgstr ""
 
 #: trove/common/extensions.py:53 trove/openstack/common/extensions.py:262
@@ -1832,37 +1846,41 @@ msgstr ""
 msgid "The new volume 'size' must be larger than the current volume size of '%s'"
 msgstr ""
 
-#: trove/instance/models.py:816 trove/taskmanager/models.py:840
+#: trove/instance/models.py:838 trove/taskmanager/models.py:840
 #, python-format
 msgid "Unassigning the configuration from the instance %s"
 msgstr ""
 
-#: trove/instance/models.py:819 trove/taskmanager/models.py:842
+#: trove/instance/models.py:841 trove/taskmanager/models.py:842
 #, python-format
 msgid "Unassigning the configuration id %s"
 msgstr ""
 
-#: trove/instance/models.py:853
+#: trove/instance/models.py:845
+msgid "configuration being unassigned; marking restart required"
+msgstr ""
+
+#: trove/instance/models.py:880
 #, python-format
 msgid "Updating or removing overrides for instance %s"
 msgstr ""
 
-#: trove/instance/models.py:857
+#: trove/instance/models.py:884
 #, python-format
 msgid "config overrides has non-dynamic settings, requires a restart: %s"
 msgstr ""
 
-#: trove/instance/models.py:878
+#: trove/instance/models.py:905
 #, python-format
 msgid "Server %(server)s for instance %(instance)s wasfound twice!"
 msgstr ""
 
-#: trove/instance/models.py:939 trove/instance/models.py:945
+#: trove/instance/models.py:966 trove/instance/models.py:972
 #, python-format
 msgid "Server status could not be read for instance id(%s)"
 msgstr ""
 
-#: trove/instance/models.py:942
+#: trove/instance/models.py:969
 #, python-format
 msgid "Server api_status(%s)"
 msgstr ""
