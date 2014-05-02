@@ -38,24 +38,40 @@ class SingleInstanceConfigTemplate(object):
         rendering on the guest
     """
 
-    template_name = "%s/config.template"
+    template_name = "config.template"
 
-    def __init__(self, datastore_manager, flavor_dict, instance_id):
+    def __init__(self, datastore_version, flavor_dict, instance_id):
         """Constructor
 
-        :param datastore_manager: The datastore manager.
-        :type name: str.
+        :param datastore_version: The datastore version.
+        :type datastore_version: DatastoreVersion
         :param flavor_dict: dict containing flavor details for use in jinja.
         :type flavor_dict: dict.
         :param instance_id: trove instance id
-        :type: instance_id: str
+        :type instance_id: str
 
         """
         self.flavor_dict = flavor_dict
-        template_filename = self.template_name % datastore_manager
-        self.template = ENV.get_template(template_filename)
-        self.datastore_manager = datastore_manager
+        self.datastore_version = datastore_version
+        #TODO(tim.simpson): The current definition of datastore_version is a
+        #                   bit iffy and I believe will change soon, so I'm
+        #                   creating a dictionary here for jinja to consume
+        #                   rather than pass in the datastore version object.
+        self.datastore_dict = {
+            'name': self.datastore_version.datastore_name,
+            'manager': self.datastore_version.manager,
+            'version': self.datastore_version.name,
+        }
         self.instance_id = instance_id
+
+    def get_template(self):
+        patterns = ['{name}/{version}/{template_name}',
+                    '{name}/{template_name}',
+                    '{manager}/{template_name}']
+        context = self.datastore_dict.copy()
+        context['template_name'] = self.template_name
+        names = [name.format(**context) for name in patterns]
+        return ENV.select_template(names)
 
     def render(self, **kwargs):
         """Renders the jinja template
@@ -63,11 +79,12 @@ class SingleInstanceConfigTemplate(object):
         :returns: str -- The rendered configuration file
 
         """
-        template = ENV.get_template(self.template_name %
-                                    self.datastore_manager)
+        template = self.get_template()
         server_id = self._calculate_unique_id()
         self.config_contents = template.render(
-            flavor=self.flavor_dict, server_id=server_id, **kwargs)
+            flavor=self.flavor_dict,
+            datastore=self.datastore_dict,
+            server_id=server_id, **kwargs)
         return self.config_contents
 
     def render_dict(self):
@@ -76,10 +93,10 @@ class SingleInstanceConfigTemplate(object):
         to apply the default configuration dynamically.
         """
         config = self.render()
-        cfg_parser = SERVICE_PARSERS.get(self.datastore_manager)
+        cfg_parser = SERVICE_PARSERS.get(self.datastore_version.manager)
         if not cfg_parser:
             raise exception.NoConfigParserFound(
-                datastore_manager=self.datastore_manager)
+                datastore_manager=self.datastore_version.manager)
         return cfg_parser(config).parse()
 
     def _calculate_unique_id(self):
@@ -92,7 +109,7 @@ class SingleInstanceConfigTemplate(object):
 
 
 class OverrideConfigTemplate(SingleInstanceConfigTemplate):
-    template_name = "%s/override.config.template"
+    template_name = "override.config.template"
 
 
 def load_heat_template(datastore_manager):

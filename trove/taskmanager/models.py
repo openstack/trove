@@ -139,22 +139,21 @@ class ConfigurationMixin(object):
     Configuration related tasks for instances and resizes.
     """
 
-    def _render_config(self, datastore_manager, flavor, instance_id):
+    def _render_config(self, flavor):
         config = template.SingleInstanceConfigTemplate(
-            datastore_manager, flavor, instance_id)
+            self.datastore_version, flavor, self.id)
         config.render()
         return config
 
-    def _render_override_config(self, datastore_manager, flavor, instance_id,
-                                overrides=None):
+    def _render_override_config(self, flavor, overrides=None):
         config = template.OverrideConfigTemplate(
-            datastore_manager, flavor, instance_id)
+            self.datastore_version, flavor, self.id)
         config.render(overrides=overrides)
         return config
 
-    def _render_config_dict(self, datastore_manager, flavor, instance_id):
+    def _render_config_dict(self, flavor):
         config = template.SingleInstanceConfigTemplate(
-            datastore_manager, flavor, instance_id)
+            self.datastore_version, flavor, self.id)
         ret = config.render_dict()
         LOG.debug(_("the default template dict of mysqld section: %s") % ret)
         return ret
@@ -213,10 +212,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 availability_zone,
                 nics)
 
-        config = self._render_config(datastore_manager, flavor, self.id)
-        config_overrides = self._render_override_config(datastore_manager,
-                                                        None,
-                                                        self.id,
+        config = self._render_config(flavor)
+        config_overrides = self._render_override_config(flavor,
                                                         overrides=overrides)
 
         backup_info = None
@@ -823,10 +820,10 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             status = inst_models.InstanceTasks.RESTART_REQUIRED
             self.update_db(task_status=status)
 
+        flavor = self.nova_client.flavors.get(self.flavor_id)
+
         config_overrides = self._render_override_config(
-            self.ds_version.manager,
-            None,
-            self.id,
+            flavor,
             overrides=overrides)
         try:
             self.guest.update_overrides(config_overrides.config_contents,
@@ -864,9 +861,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             }
             return str(int(digits) * conversions[size])
 
-        default_config = self._render_config_dict(self.ds_version.manager,
-                                                  flavor,
-                                                  self.id)
+        default_config = self._render_config_dict(flavor)
         args = {
             "ds_manager": self.ds_version.manager,
             "config": default_config,
@@ -976,7 +971,7 @@ class BackupTasks(object):
             backup.delete()
 
 
-class ResizeVolumeAction(ConfigurationMixin):
+class ResizeVolumeAction(object):
     """Performs volume resize action."""
 
     def __init__(self, instance, old_size, new_size):
@@ -1200,7 +1195,7 @@ class ResizeVolumeAction(ConfigurationMixin):
             raise TroveError(msg)
 
 
-class ResizeActionBase(ConfigurationMixin):
+class ResizeActionBase(object):
     """Base class for executing a resize action."""
 
     def __init__(self, instance):
@@ -1385,11 +1380,7 @@ class ResizeAction(ResizeActionBase):
                   % self.instance.id)
         LOG.debug(_("Repairing config."))
         try:
-            config = self._render_config(
-                self.instance.datastore_version.manager,
-                self.old_flavor,
-                self.instance.id
-            )
+            config = self.instance._render_config(self.old_flavor)
             config = {'config_contents': config.config_contents}
             self.instance.guest.reset_configuration(config)
         except GuestTimeout:
@@ -1411,8 +1402,7 @@ class ResizeAction(ResizeActionBase):
             server=self.instance.server)
 
     def _start_datastore(self):
-        config = self._render_config(self.instance.datastore_version.manager,
-                                     self.new_flavor, self.instance.id)
+        config = self.instance._render_config(self.new_flavor)
         self.instance.guest.start_db_with_conf_changes(config.config_contents)
 
 

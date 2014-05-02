@@ -97,6 +97,7 @@ class DatastoreVersion(object):
 
     def __init__(self, db_info):
         self.db_info = db_info
+        self._datastore_name = None
 
     @classmethod
     def load(cls, datastore, id_or_name):
@@ -127,6 +128,14 @@ class DatastoreVersion(object):
     def datastore_id(self):
         return self.db_info.datastore_id
 
+    @property
+    def datastore_name(self):
+        if self._datastore_name is None:
+            self._datastore_name = Datastore.load(self.datastore_id).name
+        return self._datastore_name
+
+    #TODO(tim.simpson): This would be less confusing if it was called "version"
+    #                   and datastore_name was called "name".
     @property
     def name(self):
         return self.db_info.name
