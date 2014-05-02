@@ -219,7 +219,9 @@ class MySqlAdminTest(testtools.TestCase):
                          "Create database queries are not the same")
 
         self.assertEqual(1, dbaas.LocalSqlClient.execute.call_count,
-                         "The client object was not 2 times")
+                         "The client object was not called exactly once, " +
+                         "it was called %d times"
+                         % dbaas.LocalSqlClient.execute.call_count)
 
     def test_create_database_more_than_1(self):
 
@@ -244,7 +246,9 @@ class MySqlAdminTest(testtools.TestCase):
                          "Create database queries are not the same")
 
         self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count,
-                         "The client object was not 2 times")
+                         "The client object was not called exactly twice, " +
+                         "it was called %d times"
+                         % dbaas.LocalSqlClient.execute.call_count)
 
     def test_create_database_no_db(self):
 
