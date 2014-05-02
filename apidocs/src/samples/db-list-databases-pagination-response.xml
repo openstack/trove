@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databases xmlns="http://docs.openstack.org/database/api/v1.0">
+    <database name="anotherdb"/>
+    <database name="nextround"/>
+    <links>
+        <link
+            href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/098653ba-218b-47ce-936a-e0b749101f81/databases?marker=nextround&amp;limit=2"
+            rel="next"/>
+    </links>
+</databases>

@@ -24,3 +24,21 @@ trove.iml
 # Sphinx
 doc/build/*
 doc/source/api/*
+
+# Docs
+.DS_Store
+apidocs/.DS_Store
+apidocs/src/.DS_Store
+apidocs/src/samples/.DS_Store
+apidocs/includewars.xml
+apidocs/src/bookinfo.xml
+
+# Generated files
+target/
+publish-docs/
+/build-*.log.gz
+
+# Editors
+*~
+.*.swp
+.bak
