@@ -1099,10 +1099,10 @@ class DeleteInstance(object):
             result = True
             while result is not None:
                 attempts += 1
-                time.sleep(1)
                 result = dbaas.instances.get(instance_info.id)
                 assert_equal(200, dbaas.last_http_code)
                 assert_equal("SHUTDOWN", result.status)
+                time.sleep(1)
         except exceptions.NotFound:
             pass
         except Exception as ex:
