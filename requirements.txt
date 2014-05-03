@@ -14,7 +14,7 @@ passlib
 python-heatclient>=0.2.3
 python-novaclient>=2.17.0
 python-cinderclient>=1.0.6
-python-keystoneclient>=0.7.0
+python-keystoneclient>=0.8.0
 python-swiftclient>=1.6
 python-designateclient>=1.0.0
 iso8601>=0.1.9
