@@ -620,6 +620,7 @@ class CreateInstance(object):
                       "databases": [{"name": "firstdb"}]})
         instance_info.users = users
         instance_info.dbaas_datastore = CONFIG.dbaas_datastore
+        instance_info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
         if VOLUME_SUPPORT:
             instance_info.volume = {'size': 1}
         else:

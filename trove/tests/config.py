@@ -74,7 +74,7 @@ class TestConfig(object):
             'dbaas_datastore_id': "a00000a0-00a0-0a00-00a0-000a000000aa",
             'dbaas_datastore_id_no_versions': "e00000e0-00e0-0e00-00e0-"
                                               "000e000000ee",
-            'dbaas_datastore_version': "mysql-5.5",
+            'dbaas_datastore_version': "5.5",
             'dbaas_datastore_version_id': "b00000b0-00b0-0b00-00b0-"
                                           "000b000000bb",
             'dbaas_inactive_datastore_version': "mysql_inactive_version",
