@@ -19,9 +19,12 @@ import hashlib
 import os
 import testtools
 
+from trove.common import utils
 from trove.common.context import TroveContext
 from trove.conductor import api as conductor_api
+from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.backup import mysql_impl
+from trove.guestagent.strategies.backup import couchbase_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.backup.models import BackupState
 from trove.guestagent.backup import backupagent
@@ -204,6 +207,18 @@ class BackupAgentTest(testtools.TestCase):
         self.assertIsNotNone(inno_backup_ex.manifest)
         str_innobackup_manifest = 'innobackupex.xbstream.gz.enc'
         self.assertEqual(inno_backup_ex.manifest, str_innobackup_manifest)
+
+    def test_backup_impl_CbBackup(self):
+        operating_system.get_ip_address = Mock(return_value="1.1.1.1")
+        utils.execute_with_timeout = Mock(return_value=None)
+        cbbackup = couchbase_impl.CbBackup('cbbackup', extra_opts='')
+        self.assertIsNotNone(cbbackup)
+        str_cbbackup_cmd = ("tar cPf - /tmp/backups | "
+                            "gzip | openssl enc -aes-256-cbc -salt -pass "
+                            "pass:default_aes_cbc_key")
+        self.assertEqual(str_cbbackup_cmd, cbbackup.cmd)
+        self.assertIsNotNone(cbbackup.manifest)
+        self.assertIn('gz.enc', cbbackup.manifest)
 
     def test_backup_base(self):
         """This test is for

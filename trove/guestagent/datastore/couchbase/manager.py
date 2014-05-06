@@ -17,6 +17,8 @@ import os
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common import instance as rd_instance
+from trove.guestagent import backup
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.couchbase import service
@@ -77,6 +79,11 @@ class Manager(periodic_task.PeriodicTasks):
         if root_password:
             self.app.enable_root(root_password)
         self.app.initial_setup()
+        if backup_info:
+            LOG.debug('Now going to perform restore.')
+            self._perform_restore(backup_info,
+                                  context,
+                                  mount_point)
         self.app.complete_install_or_restart()
         LOG.info(_('"prepare" couchbase call has finished.'))
 
@@ -157,13 +164,28 @@ class Manager(periodic_task.PeriodicTasks):
     def is_root_enabled(self, context):
         return os.path.exists(system.pwd_file)
 
-    def _perform_restore(self, backup_info, context, restore_location, app):
-        raise exception.DatastoreOperationNotSupported(
-            operation='_perform_restore', datastore=MANAGER)
+    def _perform_restore(self, backup_info, context, restore_location):
+        """
+        Restores all couchbase buckets and their documents from the
+        backup.
+        """
+        LOG.info(_("Restoring database from backup %s") %
+                 backup_info['id'])
+        try:
+            backup.restore(context, backup_info, restore_location)
+        except Exception as e:
+            LOG.error(_("Error performing restore from backup %s") %
+                      backup_info['id'])
+            LOG.error(e)
+            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully"))
 
     def create_backup(self, context, backup_info):
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_backup', datastore=MANAGER)
+        """
+        Backup all couchbase buckets and their documents.
+        """
+        backup.backup(context, backup_info)
 
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)

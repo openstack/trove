@@ -16,6 +16,7 @@ import testtools
 from mock import MagicMock
 from trove.common.context import TroveContext
 from trove.guestagent import volume
+from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.couchbase import service as couch_service
 from trove.guestagent.datastore.couchbase import manager as couch_manager
@@ -62,8 +63,17 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
     def test_prepare_device_path_true(self):
         self._prepare_dynamic()
 
-    def _prepare_dynamic(self, device_path='/dev/vdb', is_db_installed=True,
-                         backup_info=None):
+    def test_prepare_from_backup(self):
+        self._prepare_dynamic(backup_id='backup_id_123abc')
+
+    def _prepare_dynamic(self, device_path='/dev/vdb', backup_id=None):
+
+        # covering all outcomes is starting to cause trouble here
+        backup_info = {'id': backup_id,
+                       'location': 'fake-location',
+                       'type': 'CbBackup',
+                       'checksum': 'fake-checksum'} if backup_id else None
+
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
 
@@ -79,6 +89,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             return_value=None)
         couch_service.CouchbaseApp.complete_install_or_restart = MagicMock(
             return_value=None)
+        backup.restore = MagicMock(return_value=None)
 
         #invocation
         self.manager.prepare(self.context, self.packages, None, 2048,
@@ -91,6 +102,10 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             self.packages)
         couch_service.CouchbaseApp.complete_install_or_restart.\
             assert_any_call()
+        if backup_info:
+            backup.restore.assert_any_call(self.context,
+                                           backup_info,
+                                           '/var/lib/couchbase')
 
     def test_restart(self):
         mock_status = MagicMock()

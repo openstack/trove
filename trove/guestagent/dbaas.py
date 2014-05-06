@@ -58,6 +58,13 @@ def to_gb(bytes):
     return round(size, 2)
 
 
+def to_mb(bytes):
+    if bytes == 0:
+        return 0.0
+    size = bytes / 1024.0 ** 2
+    return round(size, 2)
+
+
 def get_filesystem_volume_stats(fs_path):
     try:
         stats = os.statvfs(fs_path)

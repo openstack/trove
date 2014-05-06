@@ -300,6 +300,10 @@ mysql_opts = [
                 "instance-create as the 'password' field."),
     cfg.IntOpt('usage_timeout', default=400,
                help='Timeout to wait for a guest to become active.'),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.mysql_impl'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.mysql_impl'),
 ]
 
 # Percona
@@ -327,6 +331,10 @@ percona_opts = [
                 "instance-create as the 'password' field."),
     cfg.IntOpt('usage_timeout', default=450,
                help='Timeout to wait for a guest to become active.'),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.mysql_impl'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.mysql_impl'),
 ]
 
 # Redis
@@ -388,7 +396,7 @@ couchbase_opts = [
                 help='List of UDP ports and/or port ranges to open'
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.StrOpt('backup_strategy', default='CbBackup',
                help='Default strategy to perform backups.'),
     cfg.StrOpt('mount_point', default='/var/lib/couchbase',
                help="Filesystem path for mounting "
@@ -400,6 +408,10 @@ couchbase_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.couchbase_impl'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.couchbase_impl')
 ]
 
 # MongoDB
