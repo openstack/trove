@@ -41,8 +41,8 @@ class RpcService(rpc_service.Service):
     def start(self):
         super(RpcService, self).start()
         # TODO(hub-cap): Currently the context is none... do we _need_ it here?
-        pulse = loopingcall.LoopingCall(self.manager_impl.run_periodic_tasks,
-                                        context=None)
+        pulse = loopingcall.FixedIntervalLoopingCall(
+            self.manager_impl.run_periodic_tasks, context=None)
         pulse.start(interval=self.report_interval,
                     initial_delay=self.report_interval)
         pulse.wait()
