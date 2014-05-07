@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2011 OpenStack Foundation
 # All Rights Reserved.
 #
@@ -14,31 +12,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import gettext
-import sys
+from trove.cmd.common import with_initialize
 
 
-gettext.install('trove', unicode=1)
-
-
-from trove.common import cfg
-from trove.common import debug_utils
-from trove.openstack.common import log as logging
-from trove.common import wsgi
-from trove.db import get_db_api
-
-
-CONF = cfg.CONF
-
-
-def main():
-    cfg.parse_args(sys.argv)
-    logging.setup(None)
-
-    debug_utils.setup()
-
-    get_db_api().configure_db(CONF)
+@with_initialize
+def main(CONF):
+    from trove.common import wsgi
     conf_file = CONF.find_file(CONF.api_paste_config)
     launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
                            workers=CONF.trove_api_workers)
