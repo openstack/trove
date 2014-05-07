@@ -95,12 +95,12 @@ class TestConfig(object):
                 "configurations": {
                     "valid_values": {
                         "connect_timeout": 120,
-                        "local_infile": True,
+                        "local_infile": 0,
                         "collation_server": "latin1_swedish_ci"
                     },
                     "appending_values": {
                         "join_buffer_size": 1048576,
-                        "connect_timeout": 60
+                        "connect_timeout": 15
                     },
                     "nondynamic_parameter": {
                         "join_buffer_size": 1048576,
