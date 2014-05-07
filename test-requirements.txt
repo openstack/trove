@@ -17,3 +17,5 @@ mox>=0.5.3
 testtools>=0.9.34
 discover
 testrepository>=0.0.18
+six>=1.6.0
+
