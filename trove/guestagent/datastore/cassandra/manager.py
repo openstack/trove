@@ -72,6 +72,8 @@ class Manager(periodic_task.PeriodicTasks):
             self.app.make_host_reachable()
         if device_path:
             device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
             device.format()
             if os.path.exists(mount_point):
                 #rsync exiting data

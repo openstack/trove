@@ -39,6 +39,7 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
             redis_service.RedisApp.complete_install_or_restart
         self.origin_format = VolumeDevice.format
         self.origin_mount = VolumeDevice.mount
+        self.origin_mount_points = VolumeDevice.mount_points
         self.origin_restore = backup.restore
 
     def tearDown(self):
@@ -54,6 +55,7 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
             self.origin_complete_install_or_restart
         VolumeDevice.format = self.origin_format
         VolumeDevice.mount = self.origin_mount
+        VolumeDevice.mount_points = self.origin_mount_points
         backup.restore = self.origin_restore
 
     def test_update_status(self):
@@ -82,6 +84,7 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         mock_status.begin_install = MagicMock(return_value=None)
         VolumeDevice.format = MagicMock(return_value=None)
         VolumeDevice.mount = MagicMock(return_value=None)
+        VolumeDevice.mount_points = MagicMock(return_value=[])
         backup.restore = MagicMock(return_value=None)
 
         self.manager.prepare(self.context, self.packages,

@@ -57,6 +57,8 @@ class Manager(periodic_task.PeriodicTasks):
         mount_point = system.MONGODB_MOUNT_POINT
         if device_path:
             device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
             device.format()
             if os.path.exists(system.MONGODB_MOUNT_POINT):
                 device.migrate_data(mount_point)

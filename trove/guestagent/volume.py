@@ -57,7 +57,8 @@ class VolumeDevice(object):
             utils.execute('sudo', 'blockdev', '--getsize64', self.device_path,
                           attempts=num_tries)
         except ProcessExecutionError:
-            raise GuestError("InvalidDevicePath(path=%s)" % self.device_path)
+            raise GuestError(_("InvalidDevicePath(path=%s)") %
+                             self.device_path)
 
     def _check_format(self):
         """Checks that an unmounted volume is formatted."""
@@ -67,10 +68,12 @@ class VolumeDevice(object):
             if i == 0:
                 return
             volume_fstype = CONF.volume_fstype
-            raise IOError('Device path at %s did not seem to be %s.' %
-                          (self.device_path, volume_fstype))
+            raise IOError(
+                _('Device path at {0} did not seem to be {1}.').format(
+                    self.device_path, volume_fstype))
+
         except pexpect.EOF:
-            raise IOError("Volume was not formatted.")
+            raise IOError(_("Volume was not formatted."))
         child.expect(pexpect.EOF)
 
     def _format(self):
@@ -108,7 +111,7 @@ class VolumeDevice(object):
             utils.execute("sudo", "resize2fs", self.device_path)
         except ProcessExecutionError as err:
             LOG.error(err)
-            raise GuestError("Error resizing the filesystem: %s" %
+            raise GuestError(_("Error resizing the filesystem: %s") %
                              self.device_path)
 
     def unmount(self, mount_point):
@@ -116,6 +119,28 @@ class VolumeDevice(object):
             cmd = "sudo umount %s" % mount_point
             child = pexpect.spawn(cmd)
             child.expect(pexpect.EOF)
+
+    def unmount_device(self, device_path):
+        # unmount if device is already mounted
+        mount_points = self.mount_points(device_path)
+        for mnt in mount_points:
+            LOG.info(_("Device %(device)s is already mounted in "
+                       "%(mount_point)s") %
+                     {'device': device_path, 'mount_point': mnt})
+            LOG.info(_("Unmounting %s") % mnt)
+            self.unmount(mnt)
+
+    def mount_points(self, device_path):
+        """Returns a list of mount points on the specified device."""
+        try:
+            cmd = "grep %s /etc/mtab | awk '{print $2}'" % device_path
+            stdout, stderr = utils.execute(cmd, shell=True)
+            return stdout.strip().split('\n')
+
+        except ProcessExecutionError as err:
+            LOG.error(err)
+            raise GuestError(_("Could not obtain a list of mount points for "
+                               "device: %s") % device_path)
 
 
 class VolumeMountPoint(object):
@@ -129,10 +154,10 @@ class VolumeMountPoint(object):
     def mount(self):
         if not os.path.exists(self.mount_point):
             utils.execute("sudo", "mkdir", "-p", self.mount_point)
-        LOG.debug("Mounting volume. Device path:%s, mount_point:%s, "
-                  "volume_type:%s, mount options:%s" %
-                  (self.device_path, self.mount_point, self.volume_fstype,
-                   self.mount_options))
+        LOG.debug(_("Mounting volume. Device path:{0}, mount_point:{1}, "
+                    "volume_type:{2}, mount options:{3}").format(
+                        self.device_path, self.mount_point, self.volume_fstype,
+                        self.mount_options))
         cmd = ("sudo mount -t %s -o %s %s %s" %
                (self.volume_fstype, self.mount_options, self.device_path,
                 self.mount_point))
