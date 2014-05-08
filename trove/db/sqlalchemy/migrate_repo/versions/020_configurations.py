@@ -14,6 +14,7 @@
 #    under the License.
 
 from sqlalchemy import ForeignKey
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
@@ -22,6 +23,9 @@ from trove.db.sqlalchemy.migrate_repo.schema import DateTime
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.openstack.common import log as logging
+
+logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 
 meta = MetaData()
 
@@ -51,12 +55,19 @@ configuration_parameters = Table(
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-    create_tables([configurations])
-    create_tables([configuration_parameters])
 
-    instances = Table('instances', meta, autoload=True)
-    instances.create_column(Column('configuration_id', String(36),
-                                   ForeignKey("configurations.id")))
+    # since the downgrade is a no-op, an upgrade after a downgrade will
+    # cause an exception because the tables already exist
+    # we will catch that case and log an info message
+    try:
+        create_tables([configurations])
+        create_tables([configuration_parameters])
+
+        instances = Table('instances', meta, autoload=True)
+        instances.create_column(Column('configuration_id', String(36),
+                                       ForeignKey("configurations.id")))
+    except OperationalError as e:
+        logger.info(e)
 
 
 def downgrade(migrate_engine):
