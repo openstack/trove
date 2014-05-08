@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-05-01 06:27+0000\n"
-"PO-Revision-Date: 2014-04-30 05:58+0000\n"
+"POT-Creation-Date: 2014-05-08 06:23+0000\n"
+"PO-Revision-Date: 2014-05-07 15:34+0000\n"
 "Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: Serbian "
 "(http://www.transifex.com/projects/p/trove/language/sr/)\n"
@@ -44,12 +44,12 @@ msgid ""
 "\n"
 msgstr ""
 
-#: trove/cmd/manage.py:132
+#: trove/cmd/manage.py:130
 #, python-format
 msgid "Possible wrong number of arguments supplied %s"
 msgstr ""
 
-#: trove/cmd/manage.py:135
+#: trove/cmd/manage.py:133
 msgid "Command failed, please check log for more info."
 msgstr ""
 
@@ -1078,7 +1078,46 @@ msgstr ""
 msgid "Package %s already installed."
 msgstr ""
 
-#: trove/guestagent/volume.py:146
+#: trove/guestagent/volume.py:60
+#, python-format
+msgid "InvalidDevicePath(path=%s)"
+msgstr ""
+
+#: trove/guestagent/volume.py:72
+msgid "Device path at {0} did not seem to be {1}."
+msgstr ""
+
+#: trove/guestagent/volume.py:76
+msgid "Volume was not formatted."
+msgstr ""
+
+#: trove/guestagent/volume.py:114
+#, python-format
+msgid "Error resizing the filesystem: %s"
+msgstr ""
+
+#: trove/guestagent/volume.py:127
+#, python-format
+msgid "Device %(device)s is already mounted in %(mount_point)s"
+msgstr ""
+
+#: trove/guestagent/volume.py:130
+#, python-format
+msgid "Unmounting %s"
+msgstr ""
+
+#: trove/guestagent/volume.py:142
+#, python-format
+msgid "Could not obtain a list of mount points for device: %s"
+msgstr ""
+
+#: trove/guestagent/volume.py:157
+msgid ""
+"Mounting volume. Device path:{0}, mount_point:{1}, volume_type:{2}, mount"
+" options:{3}"
+msgstr ""
+
+#: trove/guestagent/volume.py:171
 #, python-format
 msgid "Writing new line to fstab:%s"
 msgstr ""
@@ -1166,38 +1205,38 @@ msgstr ""
 msgid "Config processing"
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:81
+#: trove/guestagent/datastore/cassandra/manager.py:83
 msgid "Mounting new volume."
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:85
+#: trove/guestagent/datastore/cassandra/manager.py:87
 #: trove/guestagent/datastore/mongodb/manager.py:77
 msgid "\"prepare\" call has finished."
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:156
-#: trove/guestagent/datastore/couchbase/manager.py:69
-#: trove/guestagent/datastore/couchbase/manager.py:166
+#: trove/guestagent/datastore/cassandra/manager.py:158
+#: trove/guestagent/datastore/couchbase/manager.py:71
+#: trove/guestagent/datastore/couchbase/manager.py:168
 #: trove/guestagent/datastore/mongodb/manager.py:164
-#: trove/guestagent/datastore/mysql/manager.py:125
-#: trove/guestagent/datastore/mysql/manager.py:185
-#: trove/guestagent/datastore/redis/manager.py:84
-#: trove/guestagent/datastore/redis/manager.py:134
+#: trove/guestagent/datastore/mysql/manager.py:127
+#: trove/guestagent/datastore/mysql/manager.py:187
+#: trove/guestagent/datastore/redis/manager.py:86
+#: trove/guestagent/datastore/redis/manager.py:136
 msgid "Mounted the volume."
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:161
-#: trove/guestagent/datastore/couchbase/manager.py:171
+#: trove/guestagent/datastore/cassandra/manager.py:163
+#: trove/guestagent/datastore/couchbase/manager.py:173
 #: trove/guestagent/datastore/mongodb/manager.py:169
-#: trove/guestagent/datastore/mysql/manager.py:190
-#: trove/guestagent/datastore/redis/manager.py:139
+#: trove/guestagent/datastore/mysql/manager.py:192
+#: trove/guestagent/datastore/redis/manager.py:141
 msgid "Unmounted the volume."
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:166
+#: trove/guestagent/datastore/cassandra/manager.py:168
 #: trove/guestagent/datastore/mongodb/manager.py:174
-#: trove/guestagent/datastore/mysql/manager.py:195
-#: trove/guestagent/datastore/redis/manager.py:144
+#: trove/guestagent/datastore/mysql/manager.py:197
+#: trove/guestagent/datastore/redis/manager.py:146
 msgid "Resized the filesystem"
 msgstr ""
 
@@ -1310,15 +1349,15 @@ msgstr ""
 msgid "OS Error %s"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:71
+#: trove/guestagent/datastore/couchbase/manager.py:73
 msgid "Securing couchbase now."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:73
+#: trove/guestagent/datastore/couchbase/manager.py:75
 msgid "\"prepare\" couchbase call has finished."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:176
+#: trove/guestagent/datastore/couchbase/manager.py:178
 msgid "Resized the filesystem."
 msgstr ""
 
@@ -1402,11 +1441,11 @@ msgstr ""
 msgid "Process execution %s "
 msgstr ""
 
-#: trove/guestagent/datastore/mongodb/manager.py:51
+#: trove/guestagent/datastore/mongodb/manager.py:50
 msgid "Prepare MongoDB instance"
 msgstr ""
 
-#: trove/guestagent/datastore/mongodb/manager.py:66
+#: trove/guestagent/datastore/mongodb/manager.py:67
 #, python-format
 msgid "Mounted the volume %(path)s as %(mount)s"
 msgstr ""
@@ -1516,7 +1555,7 @@ msgstr ""
 msgid "Restored database successfully"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:130
+#: trove/guestagent/datastore/mysql/manager.py:132
 msgid "Securing mysql now."
 msgstr ""
 
@@ -1660,11 +1699,11 @@ msgstr ""
 msgid "Cannot execute start_db_with_conf_changes because MySQL state == %s!"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/manager.py:86
+#: trove/guestagent/datastore/redis/manager.py:88
 msgid "Securing redis now."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/manager.py:89
+#: trove/guestagent/datastore/redis/manager.py:91
 msgid "\"prepare\" redis call has finished."
 msgstr ""
 
