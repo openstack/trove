@@ -200,7 +200,7 @@ class API(proxy.RpcProxy):
            access from anywhere
         """
         LOG.debug(_("Enable root user for Instance %s"), self.id)
-        return self._call("enable_root", AGENT_LOW_TIMEOUT)
+        return self._call("enable_root", AGENT_HIGH_TIMEOUT)
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
