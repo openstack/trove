@@ -107,8 +107,10 @@ class VolumeDevice(object):
         try:
             # check if the device is mounted at mount_point before e2fsck
             if not os.path.ismount(mount_point):
-                utils.execute("sudo", "e2fsck", "-f", "-n", self.device_path)
-            utils.execute("sudo", "resize2fs", self.device_path)
+                utils.execute("e2fsck", "-f", "-p", self.device_path,
+                              run_as_root=True, root_helper="sudo")
+            utils.execute("resize2fs", self.device_path,
+                          run_as_root=True, root_helper="sudo")
         except ProcessExecutionError as err:
             LOG.error(err)
             raise GuestError(_("Error resizing the filesystem: %s") %

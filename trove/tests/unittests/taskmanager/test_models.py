@@ -17,6 +17,7 @@ import testtools
 from mock import Mock, MagicMock, patch
 from testtools.matchers import Equals, Is
 from cinderclient import exceptions as cinder_exceptions
+from novaclient import exceptions as nova_exceptions
 import novaclient.v1_1.servers
 import novaclient.v1_1.flavors
 import cinderclient.v2.client as cinderclient
@@ -374,14 +375,15 @@ class ResizeVolumeTest(testtools.TestCase):
         self.instance.reset_mock()
 
     def test_resize_volume_detach_exception(self):
-        self.instance.volume_client.volumes.detach = Mock(
-            side_effect=cinder_exceptions.ClientException("test exception"))
-        self.assertRaises(cinder_exceptions.ClientException,
+        self.instance.nova_client.volumes.delete_server_volume = Mock(
+            side_effect=nova_exceptions.ClientException("test exception"))
+        self.assertRaises(nova_exceptions.ClientException,
                           self.action._detach_volume,
                           recover_func=self.action._recover_mount_restart)
         self.assertEqual(1, self.instance.guest.mount_volume.call_count)
         self.assertEqual(1, self.instance.restart.call_count)
-        self.instance.volume_client.volumes.detach.side_effect = None
+        self.instance.nova_client.volumes.delete_server_volume.side_effect = (
+            None)
         self.instance.reset_mock()
 
     def test_resize_volume_extend_exception(self):
@@ -390,7 +392,8 @@ class ResizeVolumeTest(testtools.TestCase):
         self.assertRaises(cinder_exceptions.ClientException,
                           self.action._extend,
                           recover_func=self.action._recover_full)
-        attach_count = self.instance.volume_client.volumes.attach.call_count
+        attach_count = (
+            self.instance.nova_client.volumes.create_server_volume.call_count)
         self.assertEqual(1, attach_count)
         self.assertEqual(1, self.instance.guest.mount_volume.call_count)
         self.assertEqual(1, self.instance.restart.call_count)
@@ -417,11 +420,13 @@ class ResizeVolumeTest(testtools.TestCase):
         self.action.execute()
         self.assertEqual(1, self.instance.guest.stop_db.call_count)
         self.assertEqual(1, self.instance.guest.unmount_volume.call_count)
-        detach_count = self.instance.volume_client.volumes.detach.call_count
+        detach_count = (
+            self.instance.nova_client.volumes.delete_server_volume.call_count)
         self.assertEqual(1, detach_count)
         extend_count = self.instance.volume_client.volumes.extend.call_count
         self.assertEqual(1, extend_count)
-        attach_count = self.instance.volume_client.volumes.attach.call_count
+        attach_count = (
+            self.instance.nova_client.volumes.create_server_volume.call_count)
         self.assertEqual(1, attach_count)
         self.assertEqual(1, self.instance.guest.resize_fs.call_count)
         self.assertEqual(1, self.instance.guest.mount_volume.call_count)

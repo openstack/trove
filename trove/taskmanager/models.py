@@ -1045,7 +1045,8 @@ class ResizeVolumeAction(ConfigurationMixin):
         LOG.debug(_("Detach volume %(vol_id)s from instance %(id)s") % {
                   'vol_id': self.instance.volume_id,
                   'id': self.instance.id})
-        self.instance.volume_client.volumes.detach(self.instance.volume_id)
+        self.instance.nova_client.volumes.delete_server_volume(
+            self.instance.server.id, self.instance.volume_id)
 
         def volume_available():
             volume = self.instance.volume_client.volumes.get(
@@ -1064,9 +1065,8 @@ class ResizeVolumeAction(ConfigurationMixin):
         LOG.debug(_("Attach volume %(vol_id)s to instance %(id)s at "
                   "%(dev)s") % {'vol_id': self.instance.volume_id,
                   'id': self.instance.id, 'dev': CONF.device_path})
-        self.instance.volume_client.volumes.attach(self.instance.volume_id,
-                                                   self.instance.server.id,
-                                                   CONF.device_path)
+        self.instance.nova_client.volumes.create_server_volume(
+            self.instance.server.id, self.instance.volume_id, CONF.device_path)
 
         def volume_in_use():
             volume = self.instance.volume_client.volumes.get(
