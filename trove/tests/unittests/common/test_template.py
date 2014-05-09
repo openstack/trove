@@ -78,11 +78,10 @@ class HeatTemplateLoadTest(testtools.TestCase):
 
     def test_heat_template_load_success(self):
         mysql_tmpl = template.load_heat_template('mysql')
-        #TODO(denis_makogon): use it when redis template would be added
-        #redis_tmplt = template.load_heat_template('redis')
+        redis_tmplt = template.load_heat_template('redis')
         cassandra_tmpl = template.load_heat_template('cassandra')
         mongo_tmpl = template.load_heat_template('mongodb')
         self.assertIsNotNone(mysql_tmpl)
+        self.assertIsNotNone(redis_tmplt)
         self.assertIsNotNone(cassandra_tmpl)
         self.assertIsNotNone(mongo_tmpl)
-        # self.assertIsNotNone(redis_tmpl)
