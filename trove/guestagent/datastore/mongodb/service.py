@@ -41,7 +41,7 @@ class MongoDBApp(object):
         """Prepare the guest machine with a MongoDB installation"""
         LOG.info(_("Preparing Guest as MongoDB"))
         if not system.PACKAGER.pkg_is_installed(packages):
-            LOG.debug(_("Installing packages: %s") % str(packages))
+            LOG.debug("Installing packages: %s" % str(packages))
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing MongoDB server"))
 

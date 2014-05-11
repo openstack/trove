@@ -156,10 +156,10 @@ class VolumeMountPoint(object):
     def mount(self):
         if not os.path.exists(self.mount_point):
             utils.execute("sudo", "mkdir", "-p", self.mount_point)
-        LOG.debug(_("Mounting volume. Device path:{0}, mount_point:{1}, "
-                    "volume_type:{2}, mount options:{3}").format(
-                        self.device_path, self.mount_point, self.volume_fstype,
-                        self.mount_options))
+        LOG.debug("Mounting volume. Device path:{0}, mount_point:{1}, "
+                  "volume_type:{2}, mount options:{3}".format(
+                      self.device_path, self.mount_point, self.volume_fstype,
+                      self.mount_options))
         cmd = ("sudo mount -t %s -o %s %s %s" %
                (self.volume_fstype, self.mount_options, self.device_path,
                 self.mount_point))
@@ -170,7 +170,7 @@ class VolumeMountPoint(object):
         fstab_line = ("%s\t%s\t%s\t%s\t0\t0" %
                       (self.device_path, self.mount_point, self.volume_fstype,
                        self.mount_options))
-        LOG.debug(_("Writing new line to fstab:%s") % fstab_line)
+        LOG.debug("Writing new line to fstab:%s" % fstab_line)
         with open('/etc/fstab', "r") as fstab:
             fstab_content = fstab.read()
         with NamedTemporaryFile(delete=False) as tempfstab:

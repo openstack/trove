@@ -330,7 +330,7 @@ def try_recover(func):
             if recover_func is not None:
                 recover_func(func)
             else:
-                LOG.debug(_("No recovery method defined for %(func)s") % {
+                LOG.debug("No recovery method defined for %(func)s" % {
                           'func': func.__name__})
             raise
     return _decorator

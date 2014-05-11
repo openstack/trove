@@ -372,7 +372,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             installed_version = self.pkg_version(package_name)
             if ((package_version and installed_version == package_version) or
                (installed_version and not package_version)):
-                LOG.debug(_("Package %s already installed.") % package_name)
+                LOG.debug("Package %s already installed." % package_name)
             else:
                 return False
         return True

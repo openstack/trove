@@ -499,9 +499,9 @@ class BaseInstance(SimpleInstance):
             if self.is_building:
                 raise exception.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
-            LOG.debug(_("  ... deleting compute id = %s") %
+            LOG.debug("  ... deleting compute id = %s" %
                       self.db_info.compute_instance_id)
-            LOG.debug(_(" ... setting status to DELETING."))
+            LOG.debug(" ... setting status to DELETING.")
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
@@ -594,8 +594,8 @@ class Instance(BuiltInstance):
             root_on_create = CONF.get(datastore_manager).root_on_create
             return root_on_create
         except NoSuchOptError:
-            LOG.debug(_("root_on_create not configured for %s"
-                        " hence defaulting the value to False")
+            LOG.debug("root_on_create not configured for %s"
+                      " hence defaulting the value to False"
                       % datastore_manager)
             return False
 
@@ -657,8 +657,8 @@ class Instance(BuiltInstance):
                                         datastore_version.id,
                                         task_status=InstanceTasks.BUILDING,
                                         configuration_id=configuration_id)
-            LOG.debug(_("Tenant %(tenant)s created new "
-                        "Trove instance %(db)s...") %
+            LOG.debug("Tenant %(tenant)s created new "
+                      "Trove instance %(db)s..." %
                       {'tenant': context.tenant, 'db': db_info.id})
 
             # if a configuration group is associated with an instance,
@@ -835,15 +835,15 @@ class Instance(BuiltInstance):
                                                  status=status)
 
     def unassign_configuration(self):
-        LOG.debug(_("Unassigning the configuration from the instance %s")
+        LOG.debug("Unassigning the configuration from the instance %s"
                   % self.id)
         if self.configuration and self.configuration.id:
-            LOG.debug(_("Unassigning the configuration id %s")
+            LOG.debug("Unassigning the configuration id %s"
                       % self.configuration.id)
             flavor = self.get_flavor()
             config_id = self.configuration.id
-            LOG.debug(_("configuration being unassigned; "
-                        "marking restart required"))
+            LOG.debug("configuration being unassigned; "
+                      "marking restart required")
             self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
             task_api.API(self.context).unassign_configuration(self.id,
                                                               flavor,
@@ -877,12 +877,12 @@ class Instance(BuiltInstance):
         self.update_db(configuration_id=configuration.id)
 
     def update_overrides(self, overrides):
-        LOG.debug(_("Updating or removing overrides for instance %s")
+        LOG.debug("Updating or removing overrides for instance %s"
                   % self.id)
         need_restart = do_configs_require_restart(
             overrides, datastore_manager=self.ds_version.manager)
-        LOG.debug(_("config overrides has non-dynamic settings, "
-                    "requires a restart: %s") % need_restart)
+        LOG.debug("config overrides has non-dynamic settings, "
+                  "requires a restart: %s" % need_restart)
         if need_restart:
             self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
         task_api.API(self.context).update_overrides(self.id, overrides)

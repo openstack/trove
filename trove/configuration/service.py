@@ -74,8 +74,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id):
-        LOG.debug(_("req : '%s'\n\n") % req)
-        LOG.debug(_("body : '%s'\n\n") % req)
+        LOG.debug("req : '%s'\n\n" % req)
+        LOG.debug("body : '%s'\n\n" % req)
 
         name = body['configuration']['name']
         description = body['configuration'].get('description')

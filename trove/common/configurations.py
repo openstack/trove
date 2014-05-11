@@ -19,7 +19,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
 from six.moves import configparser
 
 
@@ -36,11 +35,11 @@ def _get_item(key, dictList):
 
 def do_configs_require_restart(overrides, datastore_manager='mysql'):
     rules = get_validation_rules(datastore_manager=datastore_manager)
-    LOG.debug(_("overrides: %s") % overrides)
-    LOG.debug(_("rules?: %s") % rules)
+    LOG.debug("overrides: %s" % overrides)
+    LOG.debug("rules?: %s" % rules)
     for key in overrides.keys():
         rule = _get_item(key, rules['configuration-parameters'])
-        LOG.debug(_("checking the rule: %s") % rule)
+        LOG.debug("checking the rule: %s" % rule)
         if rule.get('restart_required'):
             return True
     return False

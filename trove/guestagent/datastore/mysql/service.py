@@ -405,7 +405,7 @@ class MySqlAdmin(object):
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance."""
-        LOG.debug(_("---Listing Databases---"))
+        LOG.debug("---Listing Databases---")
         databases = []
         with LocalSqlClient(get_engine()) as client:
             # If you have an external volume mounted at /var/lib/mysql
@@ -433,18 +433,18 @@ class MySqlAdmin(object):
             t = text(str(q))
             database_names = client.execute(t)
             next_marker = None
-            LOG.debug(_("database_names = %r") % database_names)
+            LOG.debug("database_names = %r" % database_names)
             for count, database in enumerate(database_names):
                 if count >= limit:
                     break
-                LOG.debug(_("database = %s ") % str(database))
+                LOG.debug("database = %s " % str(database))
                 mysql_db = models.MySQLDatabase()
                 mysql_db.name = database[0]
                 next_marker = mysql_db.name
                 mysql_db.character_set = database[1]
                 mysql_db.collate = database[2]
                 databases.append(mysql_db.serialize())
-        LOG.debug(_("databases = ") + str(databases))
+        LOG.debug("databases = " + str(databases))
         if database_names.rowcount <= limit:
             next_marker = None
         return databases, next_marker
@@ -469,7 +469,7 @@ class MySqlAdmin(object):
             Marker
         LIMIT :limit;
         '''
-        LOG.debug(_("---Listing Users---"))
+        LOG.debug("---Listing Users---")
         users = []
         with LocalSqlClient(get_engine()) as client:
             mysql_user = models.MySQLUser()
@@ -585,14 +585,14 @@ class MySqlApp(object):
         """
         LOG.info(_("Preparing Guest as MySQL Server"))
         if not packager.pkg_is_installed(packages):
-            LOG.debug(_("Installing mysql server"))
+            LOG.debug("Installing mysql server")
             self._clear_mysql_config()
             # set blank password on pkg configuration stage
             pkg_opts = {'root_password': '',
                         'root_password_again': ''}
             packager.pkg_install(packages, pkg_opts, self.TIME_OUT)
             self._create_mysql_confd_dir()
-            LOG.debug(_("Finished installing mysql server"))
+            LOG.debug("Finished installing mysql server")
         self.start_mysql()
         LOG.info(_("Dbaas install_if_needed complete"))
 
@@ -704,16 +704,16 @@ class MySqlApp(object):
         """
 
         if overrides_file:
-            LOG.debug(_("writing new overrides.cnf config file"))
+            LOG.debug("writing new overrides.cnf config file")
             self._write_config_overrides(overrides_file)
         if remove:
-            LOG.debug(_("removing overrides.cnf config file"))
+            LOG.debug("removing overrides.cnf config file")
             self._remove_overrides()
 
     def apply_overrides(self, overrides):
-        LOG.debug(_("applying overrides to mysql"))
+        LOG.debug("applying overrides to mysql")
         with LocalSqlClient(get_engine()) as client:
-            LOG.debug(_("updating overrides values in running daemon"))
+            LOG.debug("updating overrides values in running daemon")
             for k, v in overrides.iteritems():
                 q = sql_query.SetServerVariable(key=k, value=v)
                 t = text(str(q))
@@ -725,8 +725,8 @@ class MySqlApp(object):
                                     "%(value)s") % output)
 
     def _replace_mycnf_with_template(self, template_path, original_path):
-        LOG.debug(_("replacing the mycnf with template"))
-        LOG.debug(_("template_path(%(template)s) original_path(%(origin)s)")
+        LOG.debug("replacing the mycnf with template")
+        LOG.debug("template_path(%(template)s) original_path(%(origin)s)"
                   % {"template": template_path, "origin": original_path})
         if os.path.isfile(template_path):
             if os.path.isfile(original_path):

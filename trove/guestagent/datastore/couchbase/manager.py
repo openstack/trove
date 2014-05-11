@@ -70,7 +70,7 @@ class Manager(periodic_task.PeriodicTasks):
             device.unmount_device(device_path)
             device.format()
             device.mount(mount_point)
-            LOG.debug(_('Mounted the volume.'))
+            LOG.debug('Mounted the volume.')
         if root_password:
             self.app.enable_root(root_password)
         self.app.install_if_needed(packages)
@@ -166,17 +166,17 @@ class Manager(periodic_task.PeriodicTasks):
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.mount(mount_point, write_to_fstab=False)
-        LOG.debug(_("Mounted the volume."))
+        LOG.debug("Mounted the volume.")
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
-        LOG.debug(_("Unmounted the volume."))
+        LOG.debug("Unmounted the volume.")
 
     def resize_fs(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point)
-        LOG.debug(_("Resized the filesystem."))
+        LOG.debug("Resized the filesystem.")
 
     def update_overrides(self, context, overrides, remove=False):
         raise exception.DatastoreOperationNotSupported(

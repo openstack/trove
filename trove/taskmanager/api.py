@@ -22,7 +22,6 @@ Routes all the requests to the task manager.
 from trove.common import cfg
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
 
 
 CONF = cfg.CONF
@@ -124,8 +123,8 @@ class API(proxy.RpcProxy):
                                 overrides=overrides))
 
     def update_overrides(self, instance_id, overrides=None):
-        LOG.debug(_("Making async call to update configuration overrides for "
-                    "instance %s") % instance_id)
+        LOG.debug("Making async call to update configuration overrides for "
+                  "instance %s" % instance_id)
 
         self.cast(self.context,
                   self.make_msg("update_overrides",
@@ -133,8 +132,8 @@ class API(proxy.RpcProxy):
                                 overrides=overrides))
 
     def unassign_configuration(self, instance_id, flavor, configuration_id):
-        LOG.debug(_("Making async call to unassign configuration for "
-                    "instance %s") % instance_id)
+        LOG.debug("Making async call to unassign configuration for "
+                  "instance %s" % instance_id)
 
         self.cast(self.context,
                   self.make_msg("unassign_configuration",

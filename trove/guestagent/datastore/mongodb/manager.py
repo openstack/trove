@@ -47,7 +47,7 @@ class Manager(periodic_task.PeriodicTasks):
                 config_contents=None, root_password=None, overrides=None):
         """Makes ready DBAAS on a Guest container."""
 
-        LOG.debug(_("Prepare MongoDB instance"))
+        LOG.debug("Prepare MongoDB instance")
 
         self.status.begin_install()
         self.app.install_if_needed(packages)
@@ -64,7 +64,7 @@ class Manager(periodic_task.PeriodicTasks):
             device.mount(mount_point)
             self.app.update_owner(mount_point)
 
-            LOG.debug(_("Mounted the volume %(path)s as %(mount)s") %
+            LOG.debug("Mounted the volume %(path)s as %(mount)s" %
                       {'path': device_path, "mount": mount_point})
 
         if mount_point:
@@ -161,17 +161,17 @@ class Manager(periodic_task.PeriodicTasks):
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.mount(mount_point, write_to_fstab=False)
-        LOG.debug(_("Mounted the volume."))
+        LOG.debug("Mounted the volume.")
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
-        LOG.debug(_("Unmounted the volume."))
+        LOG.debug("Unmounted the volume.")
 
     def resize_fs(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point)
-        LOG.debug(_("Resized the filesystem"))
+        LOG.debug("Resized the filesystem")
 
     def update_overrides(self, context, overrides, remove=False):
         raise exception.DatastoreOperationNotSupported(

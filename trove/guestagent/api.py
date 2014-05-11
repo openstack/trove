@@ -27,7 +27,6 @@ from trove.openstack.common import rpc
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common.rpc import common
-from trove.openstack.common.gettextutils import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -121,30 +120,30 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to change the passwords of one or more
            users.
         """
-        LOG.debug(_("Changing passwords for users on Instance %s"), self.id)
+        LOG.debug("Changing passwords for users on Instance %s", self.id)
         self._cast("change_passwords", users=users)
 
     def update_attributes(self, username, hostname, user_attrs):
         """Update user attributes."""
-        LOG.debug(_("Changing user attributes on Instance %s"), self.id)
+        LOG.debug("Changing user attributes on Instance %s", self.id)
         self._cast("update_attributes", username=username, hostname=hostname,
                    user_attrs=user_attrs)
 
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
-        LOG.debug(_("Creating Users for Instance %s"), self.id)
+        LOG.debug("Creating Users for Instance %s", self.id)
         self._cast("create_user", users=users)
 
     def get_user(self, username, hostname):
         """Make an asynchronous call to get a single database user."""
-        LOG.debug(_("Getting a user on Instance %s"), self.id)
+        LOG.debug("Getting a user on Instance %s", self.id)
         LOG.debug("User name is %s" % username)
         return self._call("get_user", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname)
 
     def list_access(self, username, hostname):
         """Show all the databases to which a user has more than USAGE."""
-        LOG.debug(_("Showing user grants on Instance %s"), self.id)
+        LOG.debug("Showing user grants on Instance %s", self.id)
         LOG.debug("User name is %s" % username)
         return self._call("list_access", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname)
@@ -163,13 +162,13 @@ class API(proxy.RpcProxy):
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users"""
-        LOG.debug(_("Listing Users for Instance %s"), self.id)
+        LOG.debug("Listing Users for Instance %s", self.id)
         return self._call("list_users", AGENT_LOW_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user"""
-        LOG.debug(_("Deleting user %(user)s for Instance %(instance_id)s") %
+        LOG.debug("Deleting user %(user)s for Instance %(instance_id)s" %
                   {'user': user, 'instance_id': self.id})
         self._cast("delete_user", user=user)
 
@@ -177,12 +176,12 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to create a new database
            within the specified container
         """
-        LOG.debug(_("Creating databases for Instance %s"), self.id)
+        LOG.debug("Creating databases for Instance %s", self.id)
         self._cast("create_database", databases=databases)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list databases"""
-        LOG.debug(_("Listing databases for Instance %s"), self.id)
+        LOG.debug("Listing databases for Instance %s", self.id)
         return self._call("list_databases", AGENT_LOW_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
@@ -190,40 +189,40 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to delete an existing database
            within the specified container
         """
-        LOG.debug(_("Deleting database %(database)s for "
-                    "Instance %(instance_id)s") % {'database': database,
-                                                   'instance_id': self.id})
+        LOG.debug("Deleting database %(database)s for "
+                  "Instance %(instance_id)s" % {'database': database,
+                                                'instance_id': self.id})
         self._cast("delete_database", database=database)
 
     def enable_root(self):
         """Make a synchronous call to enable the root user for
            access from anywhere
         """
-        LOG.debug(_("Enable root user for Instance %s"), self.id)
+        LOG.debug("Enable root user for Instance %s", self.id)
         return self._call("enable_root", AGENT_HIGH_TIMEOUT)
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere
         """
-        LOG.debug(_("Disable root user for Instance %s"), self.id)
+        LOG.debug("Disable root user for Instance %s", self.id)
         return self._call("disable_root", AGENT_LOW_TIMEOUT)
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
            available for the container
         """
-        LOG.debug(_("Check root access for Instance %s"), self.id)
+        LOG.debug("Check root access for Instance %s", self.id)
         return self._call("is_root_enabled", AGENT_LOW_TIMEOUT)
 
     def get_hwinfo(self):
         """Make a synchronous call to get hardware info for the container"""
-        LOG.debug(_("Check hwinfo on Instance %s"), self.id)
+        LOG.debug("Check hwinfo on Instance %s", self.id)
         return self._call("get_hwinfo", AGENT_LOW_TIMEOUT)
 
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
-        LOG.debug(_("Check diagnostics on Instance %s"), self.id)
+        LOG.debug("Check diagnostics on Instance %s", self.id)
         return self._call("get_diagnostics", AGENT_LOW_TIMEOUT)
 
     def prepare(self, memory_mb, packages, databases, users,
@@ -233,7 +232,7 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
-        LOG.debug(_("Sending the call to prepare the Guest"))
+        LOG.debug("Sending the call to prepare the Guest")
         self._cast_with_consumer(
             "prepare", packages=packages, databases=databases,
             memory_mb=memory_mb, users=users, device_path=device_path,
@@ -243,13 +242,13 @@ class API(proxy.RpcProxy):
 
     def restart(self):
         """Restart the MySQL server."""
-        LOG.debug(_("Sending the call to restart MySQL on the Guest."))
+        LOG.debug("Sending the call to restart MySQL on the Guest.")
         self._call("restart", AGENT_HIGH_TIMEOUT)
 
     def start_db_with_conf_changes(self, config_contents):
         """Start the MySQL server."""
-        LOG.debug(_("Sending the call to start MySQL on the Guest with "
-                    "a timeout of %s.") % AGENT_HIGH_TIMEOUT)
+        LOG.debug("Sending the call to start MySQL on the Guest with "
+                  "a timeout of %s." % AGENT_HIGH_TIMEOUT)
         self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
                    config_contents=config_contents)
 
@@ -257,25 +256,25 @@ class API(proxy.RpcProxy):
         """Ignore running state of MySQL, and just change the config file
            to a new flavor.
         """
-        LOG.debug(_("Sending the call to change MySQL conf file on the Guest "
-                    "with a timeout of %s.") % AGENT_HIGH_TIMEOUT)
+        LOG.debug("Sending the call to change MySQL conf file on the Guest "
+                  "with a timeout of %s." % AGENT_HIGH_TIMEOUT)
         self._call("reset_configuration", AGENT_HIGH_TIMEOUT,
                    configuration=configuration)
 
     def stop_db(self, do_not_start_on_reboot=False):
         """Stop the MySQL server."""
-        LOG.debug(_("Sending the call to stop MySQL on the Guest."))
+        LOG.debug("Sending the call to stop MySQL on the Guest.")
         self._call("stop_db", AGENT_HIGH_TIMEOUT,
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self):
         """Make an asynchronous call to self upgrade the guest agent"""
-        LOG.debug(_("Sending an upgrade call to nova-guest"))
+        LOG.debug("Sending an upgrade call to nova-guest")
         self._cast_with_consumer("upgrade")
 
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container"""
-        LOG.debug(_("Check Volume Info on Instance %s"), self.id)
+        LOG.debug("Check Volume Info on Instance %s", self.id)
         # self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path=None)
@@ -286,38 +285,38 @@ class API(proxy.RpcProxy):
 
     def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance"""
-        LOG.debug(_("Create Backup %(backup_id)s "
-                    "for Instance %(instance_id)s") %
+        LOG.debug("Create Backup %(backup_id)s "
+                  "for Instance %(instance_id)s" %
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
         self._cast("create_backup", backup_info=backup_info)
 
     def mount_volume(self, device_path=None, mount_point=None):
         """Mount the volume"""
-        LOG.debug(_("Mount volume %(mount)s on instance %(id)s") % {
+        LOG.debug("Mount volume %(mount)s on instance %(id)s" % {
             'mount': mount_point, 'id': self.id})
         self._call("mount_volume", AGENT_LOW_TIMEOUT,
                    device_path=device_path, mount_point=mount_point)
 
     def unmount_volume(self, device_path=None, mount_point=None):
         """Unmount the volume"""
-        LOG.debug(_("Unmount volume %(device)s on instance %(id)s") % {
+        LOG.debug("Unmount volume %(device)s on instance %(id)s" % {
             'device': device_path, 'id': self.id})
         self._call("unmount_volume", AGENT_LOW_TIMEOUT,
                    device_path=device_path, mount_point=mount_point)
 
     def resize_fs(self, device_path=None, mount_point=None):
         """Resize the filesystem"""
-        LOG.debug(_("Resize device %(device)s on instance %(id)s") % {
+        LOG.debug("Resize device %(device)s on instance %(id)s" % {
             'device': device_path, 'id': self.id})
         self._call("resize_fs", AGENT_HIGH_TIMEOUT, device_path=device_path,
                    mount_point=mount_point)
 
     def update_overrides(self, overrides, remove=False):
-        LOG.debug(_("Updating overrides on Instance %s"), self.id)
-        LOG.debug(_("Updating overrides values %s") % overrides)
+        LOG.debug("Updating overrides on Instance %s", self.id)
+        LOG.debug("Updating overrides values %s" % overrides)
         self._cast("update_overrides", overrides=overrides, remove=remove)
 
     def apply_overrides(self, overrides):
-        LOG.debug(_("Applying overrides on Instance %s"), self.id)
-        LOG.debug(_("Applying overrides values %s") % overrides)
+        LOG.debug("Applying overrides on Instance %s", self.id)
+        LOG.debug("Applying overrides values %s" % overrides)
         self._cast("apply_overrides", overrides=overrides)

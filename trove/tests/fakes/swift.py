@@ -38,7 +38,7 @@ class FakeSwiftClient(object):
 
     @classmethod
     def Connection(self, *args, **kargs):
-        LOG.debug(_("fake FakeSwiftClient Connection"))
+        LOG.debug("fake FakeSwiftClient Connection")
         return FakeSwiftConnection()
 
 
@@ -74,7 +74,7 @@ class FakeSwiftConnection(object):
                  'x-account-object-count': '0'}, [])
 
     def head_container(self, container):
-        LOG.debug(_("fake head_container(%s)") % container)
+        LOG.debug("fake head_container(%s)" % container)
         if container == 'missing_container':
             raise swift.ClientException('fake exception',
                                         http_status=httplib.NOT_FOUND)
@@ -86,11 +86,11 @@ class FakeSwiftConnection(object):
         pass
 
     def put_container(self, container):
-        LOG.debug(_("fake put_container(%s)") % container)
+        LOG.debug("fake put_container(%s)" % container)
         pass
 
     def get_container(self, container, **kwargs):
-        LOG.debug(_("fake get_container(%s)") % container)
+        LOG.debug("fake get_container(%s)" % container)
         fake_header = None
         fake_body = [{'name': 'backup_001'},
                      {'name': 'backup_002'},
@@ -98,7 +98,7 @@ class FakeSwiftConnection(object):
         return fake_header, fake_body
 
     def head_object(self, container, name):
-        LOG.debug(_("fake put_container(%(container)s, %(name)s)") %
+        LOG.debug("fake put_container(%(container)s, %(name)s)" %
                   {'container': container, 'name': name})
         checksum = md5()
         if self.manifest_prefix and self.manifest_name == name:
@@ -120,7 +120,7 @@ class FakeSwiftConnection(object):
         return {'etag': '"%s"' % checksum.hexdigest()}
 
     def get_object(self, container, name, resp_chunk_size=None):
-        LOG.debug(_("fake get_object(%(container)s, %(name)s)") %
+        LOG.debug("fake get_object(%(container)s, %(name)s)" %
                   {'container': container, 'name': name})
         if container == 'socket_error_on_get':
             raise socket.error(111, 'ECONNREFUSED')
@@ -158,7 +158,7 @@ class FakeSwiftConnection(object):
         return (fake_header, fake_object_body)
 
     def put_object(self, container, name, contents, **kwargs):
-        LOG.debug(_("fake put_object(%(container)s, %(name)s)") %
+        LOG.debug("fake put_object(%(container)s, %(name)s)" %
                   {'container': container, 'name': name})
         if container == 'socket_error_on_put':
             raise socket.error(111, 'ECONNREFUSED')
@@ -192,11 +192,11 @@ class FakeSwiftConnection(object):
         return object_checksum.hexdigest()
 
     def post_object(self, container, name, headers={}):
-        LOG.debug(_("fake post_object(%(container)s, %(name)s, %(head)s)") %
+        LOG.debug("fake post_object(%(container)s, %(name)s, %(head)s)" %
                   {'container': container, 'name': name, 'head': str(headers)})
 
     def delete_object(self, container, name):
-        LOG.debug(_("fake delete_object(%(container)s, %(name)s)") %
+        LOG.debug("fake delete_object(%(container)s, %(name)s)" %
                   {'container': container, 'name': name})
         if container == 'socket_error_on_delete':
             raise socket.error(111, 'ECONNREFUSED')

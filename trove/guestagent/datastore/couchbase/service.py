@@ -97,8 +97,8 @@ class CouchbaseApp(object):
         """
         Install the Couchbase Server.
         """
-        LOG.debug(_('Installing Couchbase Server'))
-        msg = _("Creating %s") % system.COUCHBASE_CONF_DIR
+        LOG.debug('Installing Couchbase Server')
+        msg = "Creating %s" % system.COUCHBASE_CONF_DIR
         LOG.debug(msg)
         utils.execute_with_timeout('mkdir',
                                    '-p',
@@ -108,7 +108,7 @@ class CouchbaseApp(object):
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, system.TIME_OUT)
         self.start_db()
-        LOG.debug(_('Finished installing Couchbase Server'))
+        LOG.debug('Finished installing Couchbase Server')
 
     def _enable_db_on_boot(self):
         """

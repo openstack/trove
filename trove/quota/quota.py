@@ -272,7 +272,7 @@ class QuotaEngine(object):
 
         reservations = self._driver.reserve(tenant_id, self._resources, deltas)
 
-        LOG.debug(_("Created reservations %(reservations)s") %
+        LOG.debug("Created reservations %(reservations)s" %
                   {'reservations': reservations})
 
         return reservations

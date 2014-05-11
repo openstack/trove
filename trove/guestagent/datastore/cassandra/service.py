@@ -112,9 +112,9 @@ class CassandraApp(object):
 
     def _install_db(self, packages):
         """Install cassandra server"""
-        LOG.debug(_("Installing cassandra server"))
+        LOG.debug("Installing cassandra server")
         packager.pkg_install(packages, None, system.TIME_OUT)
-        LOG.debug(_("Finished installing cassandra server"))
+        LOG.debug("Finished installing cassandra server")
 
     def write_config(self, config_contents):
         LOG.info(_('Defining temp config holder at '

@@ -25,7 +25,6 @@ from trove.db import get_db_api
 from trove.guestagent.db import models as guest_models
 from trove.instance import models as base_models
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -213,7 +212,7 @@ class RootHistory(object):
         self.created = utils.utcnow()
 
     def save(self):
-        LOG.debug(_("Saving %(name)s: %(dict)s") %
+        LOG.debug("Saving %(name)s: %(dict)s" %
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 

@@ -158,8 +158,8 @@ class RedisApp(object):
         """
         Install the redis server.
         """
-        LOG.debug(_('Installing redis server'))
-        msg = _("Creating %s") % (system.REDIS_CONF_DIR)
+        LOG.debug('Installing redis server')
+        msg = "Creating %s" % system.REDIS_CONF_DIR
         LOG.debug(msg)
         utils.execute_with_timeout('mkdir',
                                    '-p',
@@ -169,7 +169,7 @@ class RedisApp(object):
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, TIME_OUT)
         self.start_redis()
-        LOG.debug(_('Finished installing redis server'))
+        LOG.debug('Finished installing redis server')
 
     def _enable_redis_on_boot(self):
         """

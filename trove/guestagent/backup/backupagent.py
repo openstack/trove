@@ -153,7 +153,7 @@ class BackupAgent(object):
     def execute_restore(self, context, backup_info, restore_location):
 
         try:
-            LOG.debug(_("Getting Restore Runner %(type)s"), backup_info)
+            LOG.debug("Getting Restore Runner %(type)s", backup_info)
             restore_runner = self._get_restore_runner(backup_info['type'])
 
             LOG.debug("Getting Storage Strategy")
@@ -165,8 +165,8 @@ class BackupAgent(object):
                                     checksum=backup_info['checksum'],
                                     restore_location=restore_location)
             backup_info['restore_location'] = restore_location
-            LOG.debug(_("Restoring instance from backup %(id)s to "
-                        "%(restore_location)s") % backup_info)
+            LOG.debug("Restoring instance from backup %(id)s to "
+                      "%(restore_location)s" % backup_info)
             content_size = runner.restore()
             LOG.info(_("Restore from backup %(id)s completed successfully "
                        "to %(restore_location)s") % backup_info)

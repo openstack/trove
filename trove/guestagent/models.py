@@ -21,7 +21,6 @@ from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
         self['updated_at'] = utils.utcnow()
-        LOG.debug(_("Saving %(name)s: %(dict)s") %
+        LOG.debug("Saving %(name)s: %(dict)s" %
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)
 
