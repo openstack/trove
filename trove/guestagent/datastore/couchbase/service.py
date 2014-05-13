@@ -199,6 +199,27 @@ class CouchbaseApp(object):
     def enable_root(self, root_password=None):
         return CouchbaseRootAccess.enable_root(root_password)
 
+    def start_db_with_conf_changes(self, config_contents):
+        LOG.info(_("Starting Couchbase with configuration changes"))
+        LOG.info(_("Configuration contents:\n %s") % config_contents)
+        if self.status.is_running:
+            LOG.error(_("Cannot start Couchbase with configuration changes. "
+                        "Couchbase state == %s!") % self.status)
+            raise RuntimeError("Couchbase is not stopped.")
+        self._write_config(config_contents)
+        self.start_db(True)
+
+    def reset_configuration(self, configuration):
+        config_contents = configuration['config_contents']
+        LOG.info(_("Resetting configuration"))
+        self._write_config(config_contents)
+
+    def _write_config(self, config_contents):
+        """
+        Update contents of Couchbase configuration file
+        """
+        LOG.info(_("Doing nothing."))
+
 
 class CouchbaseAppStatus(service.BaseDbStatus):
     """
