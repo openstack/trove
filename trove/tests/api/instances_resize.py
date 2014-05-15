@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mox
 from mock import Mock
+from mox3 import mox
 from testtools import TestCase
 from proboscis import test
 

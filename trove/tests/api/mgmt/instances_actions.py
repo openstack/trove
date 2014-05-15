@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mox
+from mox3 import mox
 import trove.common.instance as tr_instance
 from trove.backup import models as backup_models
 from trove.common.context import TroveContext
