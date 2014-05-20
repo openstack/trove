@@ -18,6 +18,7 @@ from trove.common.context import TroveContext
 from trove.guestagent.datastore.redis.manager import Manager as RedisManager
 import trove.guestagent.datastore.redis.service as redis_service
 from trove.guestagent import backup
+from trove.guestagent.common import operating_system
 from trove.guestagent.volume import VolumeDevice
 
 
@@ -79,8 +80,8 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisApp.start_redis = MagicMock(return_value=None)
         redis_service.RedisApp.install_if_needed = MagicMock(return_value=None)
         redis_service.RedisApp.write_config = MagicMock(return_value=None)
-        redis_service.RedisApp.complete_install_or_restart = MagicMock(
-            return_value=None)
+        operating_system.update_owner = MagicMock(return_value=None)
+        redis_service.RedisApp.restart = MagicMock(return_value=None)
         mock_status.begin_install = MagicMock(return_value=None)
         VolumeDevice.format = MagicMock(return_value=None)
         VolumeDevice.mount = MagicMock(return_value=None)
@@ -90,7 +91,7 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         self.manager.prepare(self.context, self.packages,
                              None, '2048',
                              None, device_path=device_path,
-                             mount_point='/var/lib/redis',
+                             mount_point=mount_point,
                              backup_info=backup_info)
 
         self.assertEqual(redis_service.RedisAppStatus.get.call_count, 2)
@@ -98,7 +99,9 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         VolumeDevice.format.assert_any_call()
         redis_service.RedisApp.install_if_needed.assert_any_call(self.packages)
         redis_service.RedisApp.write_config.assert_any_call(None)
-        redis_service.RedisApp.complete_install_or_restart.assert_any_call()
+        operating_system.update_owner.assert_any_call(
+            'redis', 'redis', mount_point)
+        redis_service.RedisApp.restart.assert_any_call()
 
     def test_restart(self):
         mock_status = MagicMock()

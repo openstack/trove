@@ -17,6 +17,7 @@ import os
 import fcntl
 import struct
 import socket
+from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'
@@ -87,3 +88,11 @@ def get_ip_address(ifname='eth0'):
         0x8915,  # SIOCGIFADDR
         struct.pack('256s', ifname[:15])
     )[20:24])
+
+
+def update_owner(user, group, path):
+    """
+       Changes the owner and group for the path (recursively)
+    """
+    utils.execute_with_timeout("chown", "-R", "%s:%s" % (user, group), path,
+                               run_as_root=True, root_helper="sudo")

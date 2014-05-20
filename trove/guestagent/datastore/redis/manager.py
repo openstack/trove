@@ -17,6 +17,8 @@ from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import dbaas
 from trove.guestagent import volume
+from trove.common import instance as rd_instance
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.redis.service import RedisAppStatus
 from trove.guestagent.datastore.redis.service import RedisApp
 from trove.openstack.common import log as logging
@@ -75,20 +77,26 @@ class Manager(periodic_task.PeriodicTasks):
         It is the first rpc message passed from the task manager.
         prepare handles all the base configuration of the redis instance.
         """
-        app = RedisApp(RedisAppStatus.get())
-        RedisAppStatus.get().begin_install()
-        if device_path:
-            device = volume.VolumeDevice(device_path)
-            # unmount if device is already mounted
-            device.unmount_device(device_path)
-            device.format()
-            device.mount(mount_point)
-            LOG.debug(_('Mounted the volume.'))
-        app.install_if_needed(packages)
-        LOG.info(_('Securing redis now.'))
-        app.write_config(config_contents)
-        app.complete_install_or_restart()
-        LOG.info(_('"prepare" redis call has finished.'))
+        try:
+            app = RedisApp(RedisAppStatus.get())
+            RedisAppStatus.get().begin_install()
+            if device_path:
+                device = volume.VolumeDevice(device_path)
+                # unmount if device is already mounted
+                device.unmount_device(device_path)
+                device.format()
+                device.mount(mount_point)
+                operating_system.update_owner('redis', 'redis', mount_point)
+                LOG.debug(_('Mounted the volume.'))
+            app.install_if_needed(packages)
+            LOG.info(_('Securing redis now.'))
+            app.write_config(config_contents)
+            app.restart()
+            LOG.info(_('"prepare" redis call has finished.'))
+        except Exception as e:
+            LOG.error(e)
+            app.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise RuntimeError("prepare call has failed.")
 
     def restart(self, context):
         """
