@@ -20,6 +20,7 @@ from trove.common import utils as utils
 from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.guestagent import pkg
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import service
 from trove.guestagent.datastore.redis import system
 from trove.openstack.common import log as logging
@@ -174,34 +175,29 @@ class RedisApp(object):
         """
         Enables redis on boot.
         """
-        LOG.info(_('Enabling redis on boot.'))
-        if os.path.isfile(system.REDIS_INIT):
-            LOG.info(_("OS Using Upstart"))
-            cmd = "sudo sed -i '/^manual$/d' %s" % (system.REDIS_INIT)
-            utils.execute_with_timeout(cmd,
-                                       shell=True)
-        else:
-            cmd = 'sudo %s' % (system.REDIS_CMD_ENABLE)
-            utils.execute_with_timeout(cmd,
-                                       shell=True)
+        LOG.info(_('Enabling Redis on boot.'))
+        try:
+            redis_service = operating_system.service_discovery(
+                system.SERVICE_CANDIDATES)
+            utils.execute_with_timeout(
+                redis_service['cmd_enable'], shell=True)
+        except KeyError:
+            raise RuntimeError(_(
+                "Command to enable Redis on boot not found."))
 
     def _disable_redis_on_boot(self):
         """
         Disables redis on boot.
         """
-        LOG.info(_('Disabling redis on boot.'))
-        if os.path.isfile(system.REDIS_INIT):
-            LOG.info(_("OS Using Upstart"))
-            utils.execute_with_timeout('echo',
-                                       "'manual'",
-                                       '>>',
-                                       system.REDIS_INIT,
-                                       run_as_root=True,
-                                       root_helper='sudo')
-        else:
-            cmd = 'sudo %s' % (system.REDIS_CMD_DISABLE)
-            utils.execute_with_timeout(cmd,
-                                       shell=True)
+        LOG.info(_("Disabling Redis on boot."))
+        try:
+            redis_service = operating_system.service_discovery(
+                system.SERVICE_CANDIDATES)
+            utils.execute_with_timeout(
+                redis_service['cmd_disable'], shell=True)
+        except KeyError:
+            raise RuntimeError(
+                "Command to disable Redis on boot not found.")
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         """
@@ -241,6 +237,20 @@ class RedisApp(object):
                                    system.REDIS_CONFIG,
                                    run_as_root=True,
                                    root_helper='sudo')
+
+    def start_db_with_conf_changes(self, config_contents):
+        LOG.info(_('Starting redis with conf changes...'))
+        if self.status.is_running:
+            raise RuntimeError('Cannot start_db_with_conf_changes because '
+                               'status is %s' % self.status)
+        LOG.info(_("Initiating config."))
+        self.write_config(config_contents)
+        self.start_redis(True)
+
+    def reset_configuration(self, configuration):
+        config_contents = configuration['config_contents']
+        LOG.info(_("Resetting configuration"))
+        self.write_config(config_contents)
 
     def start_redis(self, update_db=False):
         """

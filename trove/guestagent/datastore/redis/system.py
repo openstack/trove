@@ -29,6 +29,7 @@ REDIS_CMD_DISABLE = 'update-rc.d redis-server disable'
 REDIS_CMD_START = 'service redis-server start || /bin/true'
 REDIS_CMD_STOP = 'service redis-server stop || /bin/true'
 REDIS_PACKAGE = 'redis-server'
+SERVICE_CANDIDATES = ['redis-server']
 
 if OS is 'redhat':
     REDIS_BIN = '/usr/libexec/redis-server'
