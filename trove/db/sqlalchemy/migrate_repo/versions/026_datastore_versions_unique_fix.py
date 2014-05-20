@@ -29,8 +29,13 @@ def upgrade(migrate_engine):
 
     # drop the unique index on the name column - unless we are
     # using sqlite - it doesn't support dropping unique constraints
-    if migrate_engine.name != "sqlite":
+    uc = None
+    if migrate_engine.name == "mysql":
         uc = UniqueConstraint('name', table=datastore_versions, name='name')
+    elif migrate_engine.name == "postgresql":
+        uc = UniqueConstraint('name', table=datastore_versions,
+                              name='datastore_versions_name_key')
+    if uc:
         try:
             uc.drop()
         except OperationalError as e:
