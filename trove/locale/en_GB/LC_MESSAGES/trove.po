@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-05-08 06:23+0000\n"
+"POT-Creation-Date: 2014-05-21 06:15+0000\n"
 "PO-Revision-Date: 2014-05-07 15:34+0000\n"
 "Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: English (United Kingdom) "
@@ -1090,33 +1090,33 @@ msgstr ""
 msgid "Volume was not formatted."
 msgstr ""
 
-#: trove/guestagent/volume.py:114
+#: trove/guestagent/volume.py:116
 #, python-format
 msgid "Error resizing the filesystem: %s"
 msgstr ""
 
-#: trove/guestagent/volume.py:127
+#: trove/guestagent/volume.py:129
 #, python-format
 msgid "Device %(device)s is already mounted in %(mount_point)s"
 msgstr ""
 
-#: trove/guestagent/volume.py:130
+#: trove/guestagent/volume.py:132
 #, python-format
 msgid "Unmounting %s"
 msgstr ""
 
-#: trove/guestagent/volume.py:142
+#: trove/guestagent/volume.py:144
 #, python-format
 msgid "Could not obtain a list of mount points for device: %s"
 msgstr ""
 
-#: trove/guestagent/volume.py:157
+#: trove/guestagent/volume.py:159
 msgid ""
 "Mounting volume. Device path:{0}, mount_point:{1}, volume_type:{2}, mount"
 " options:{3}"
 msgstr ""
 
-#: trove/guestagent/volume.py:171
+#: trove/guestagent/volume.py:173
 #, python-format
 msgid "Writing new line to fstab:%s"
 msgstr ""
@@ -1214,28 +1214,28 @@ msgid "\"prepare\" call has finished."
 msgstr ""
 
 #: trove/guestagent/datastore/cassandra/manager.py:158
-#: trove/guestagent/datastore/couchbase/manager.py:71
-#: trove/guestagent/datastore/couchbase/manager.py:168
+#: trove/guestagent/datastore/couchbase/manager.py:73
+#: trove/guestagent/datastore/couchbase/manager.py:169
 #: trove/guestagent/datastore/mongodb/manager.py:164
 #: trove/guestagent/datastore/mysql/manager.py:127
 #: trove/guestagent/datastore/mysql/manager.py:187
-#: trove/guestagent/datastore/redis/manager.py:86
-#: trove/guestagent/datastore/redis/manager.py:136
+#: trove/guestagent/datastore/redis/manager.py:90
+#: trove/guestagent/datastore/redis/manager.py:143
 msgid "Mounted the volume."
 msgstr ""
 
 #: trove/guestagent/datastore/cassandra/manager.py:163
-#: trove/guestagent/datastore/couchbase/manager.py:173
+#: trove/guestagent/datastore/couchbase/manager.py:174
 #: trove/guestagent/datastore/mongodb/manager.py:169
 #: trove/guestagent/datastore/mysql/manager.py:192
-#: trove/guestagent/datastore/redis/manager.py:141
+#: trove/guestagent/datastore/redis/manager.py:148
 msgid "Unmounted the volume."
 msgstr ""
 
 #: trove/guestagent/datastore/cassandra/manager.py:168
 #: trove/guestagent/datastore/mongodb/manager.py:174
 #: trove/guestagent/datastore/mysql/manager.py:197
-#: trove/guestagent/datastore/redis/manager.py:146
+#: trove/guestagent/datastore/redis/manager.py:153
 msgid "Resized the filesystem"
 msgstr ""
 
@@ -1245,7 +1245,7 @@ msgstr ""
 
 #: trove/guestagent/datastore/cassandra/service.py:48
 #: trove/guestagent/datastore/mysql/service.py:597
-#: trove/guestagent/datastore/redis/service.py:148
+#: trove/guestagent/datastore/redis/service.py:149
 msgid "Dbaas install_if_needed complete"
 msgstr ""
 
@@ -1326,12 +1326,15 @@ msgstr ""
 
 #: trove/guestagent/datastore/cassandra/service.py:183
 #: trove/guestagent/datastore/mysql/service.py:864
+#: trove/guestagent/datastore/redis/service.py:246
 msgid "Initiating config."
 msgstr ""
 
 #: trove/guestagent/datastore/cassandra/service.py:189
+#: trove/guestagent/datastore/couchbase/service.py:214
 #: trove/guestagent/datastore/mongodb/service.py:143
 #: trove/guestagent/datastore/mysql/service.py:870
+#: trove/guestagent/datastore/redis/service.py:252
 msgid "Resetting configuration"
 msgstr ""
 
@@ -1348,94 +1351,115 @@ msgstr ""
 msgid "OS Error %s"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:73
+#: trove/guestagent/datastore/couchbase/manager.py:77
 msgid "Securing couchbase now."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:75
+#: trove/guestagent/datastore/couchbase/manager.py:79
 msgid "\"prepare\" couchbase call has finished."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/manager.py:178
+#: trove/guestagent/datastore/couchbase/manager.py:179
 msgid "Resized the filesystem."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:53
+#: trove/guestagent/datastore/couchbase/service.py:57
 msgid "Preparing Guest as Couchbase Server"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:55
+#: trove/guestagent/datastore/couchbase/service.py:59
 msgid "Installing Couchbase"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:63
+#: trove/guestagent/datastore/couchbase/service.py:67
 msgid "Couchbase Server change data dir path"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:71
+#: trove/guestagent/datastore/couchbase/service.py:77
 msgid "Couchbase Server initialize cluster"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:78
+#: trove/guestagent/datastore/couchbase/service.py:85
 msgid "Couchbase Server initial setup finished"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:80
+#: trove/guestagent/datastore/couchbase/service.py:87
 #, python-format
 msgid "Process execution error %s"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:93
+#: trove/guestagent/datastore/couchbase/service.py:100
 msgid "Installing Couchbase Server"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:94
-#: trove/guestagent/datastore/redis/service.py:161
+#: trove/guestagent/datastore/couchbase/service.py:101
+#: trove/guestagent/datastore/redis/service.py:162
 #, python-format
 msgid "Creating %s"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:104
+#: trove/guestagent/datastore/couchbase/service.py:111
 msgid "Finished installing Couchbase Server"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:110
+#: trove/guestagent/datastore/couchbase/service.py:117
 msgid "Enabling Couchbase Server on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:117
+#: trove/guestagent/datastore/couchbase/service.py:124
 msgid "Command to enable Couchbase Server on boot not found."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:121
+#: trove/guestagent/datastore/couchbase/service.py:128
 msgid "Disabling Couchbase Server on boot"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:135
+#: trove/guestagent/datastore/couchbase/service.py:142
 msgid "Stopping Couchbase Server..."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:150
+#: trove/guestagent/datastore/couchbase/service.py:157
 msgid "Could not stop Couchbase Server!"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:152
+#: trove/guestagent/datastore/couchbase/service.py:159
 msgid "Could not stop Couchbase Server"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:155
+#: trove/guestagent/datastore/couchbase/service.py:162
 msgid "Restarting Couchbase Server"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:167
+#: trove/guestagent/datastore/couchbase/service.py:174
 msgid "Starting Couchbase Server..."
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:183
+#: trove/guestagent/datastore/couchbase/service.py:190
 msgid "Start up of Couchbase Server failed!"
 msgstr ""
 
-#: trove/guestagent/datastore/couchbase/service.py:210
+#: trove/guestagent/datastore/couchbase/service.py:203
+msgid "Starting Couchbase with configuration changes"
+msgstr ""
+
+#: trove/guestagent/datastore/couchbase/service.py:204
+#: trove/guestagent/datastore/mongodb/service.py:133
+#, python-format
+msgid ""
+"Configuration contents:\n"
+" %s"
+msgstr ""
+
+#: trove/guestagent/datastore/couchbase/service.py:206
+#, python-format
+msgid "Cannot start Couchbase with configuration changes. Couchbase state == %s!"
+msgstr ""
+
+#: trove/guestagent/datastore/couchbase/service.py:221
+msgid "Doing nothing."
+msgstr ""
+
+#: trove/guestagent/datastore/couchbase/service.py:242
 #, python-format
 msgid "Process execution %s "
 msgstr ""
@@ -1498,13 +1522,6 @@ msgstr ""
 
 #: trove/guestagent/datastore/mongodb/service.py:132
 msgid "Starting MongoDB with configuration changes"
-msgstr ""
-
-#: trove/guestagent/datastore/mongodb/service.py:133
-#, python-format
-msgid ""
-"Configuration contents:\n"
-" %s"
 msgstr ""
 
 #: trove/guestagent/datastore/mongodb/service.py:135
@@ -1698,89 +1715,92 @@ msgstr ""
 msgid "Cannot execute start_db_with_conf_changes because MySQL state == %s!"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/manager.py:88
+#: trove/guestagent/datastore/redis/manager.py:92
 msgid "Securing redis now."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/manager.py:91
+#: trove/guestagent/datastore/redis/manager.py:95
 msgid "\"prepare\" redis call has finished."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:85
+#: trove/guestagent/datastore/redis/service.py:86
 msgid "Password is set running ping with password"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:94
+#: trove/guestagent/datastore/redis/service.py:95
 msgid "Password not set running ping without password"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:100
+#: trove/guestagent/datastore/redis/service.py:101
 msgid "Redis is RUNNING."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:103
+#: trove/guestagent/datastore/redis/service.py:104
 msgid "Process execution error on redis-cli"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:109
+#: trove/guestagent/datastore/redis/service.py:110
 #, python-format
 msgid "Redis pid: %s"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:111
+#: trove/guestagent/datastore/redis/service.py:112
 msgid "Service Status is BLOCKED."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:117
+#: trove/guestagent/datastore/redis/service.py:118
 msgid "Service Status is CRASHED."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:120
+#: trove/guestagent/datastore/redis/service.py:121
 msgid "Service Status is SHUTDOWN."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:144
+#: trove/guestagent/datastore/redis/service.py:145
 msgid "Preparing Guest as Redis Server"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:146
+#: trove/guestagent/datastore/redis/service.py:147
 msgid "Installing Redis"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:160
+#: trove/guestagent/datastore/redis/service.py:161
 msgid "Installing redis server"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:171
+#: trove/guestagent/datastore/redis/service.py:172
 msgid "Finished installing redis server"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:177
-msgid "Enabling redis on boot."
+#: trove/guestagent/datastore/redis/service.py:178
+msgid "Enabling Redis on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:179
-#: trove/guestagent/datastore/redis/service.py:194
-msgid "OS Using Upstart"
+#: trove/guestagent/datastore/redis/service.py:185
+msgid "Command to enable Redis on boot not found."
 msgstr ""
 
 #: trove/guestagent/datastore/redis/service.py:192
-msgid "Disabling redis on boot."
+msgid "Disabling Redis on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:210
+#: trove/guestagent/datastore/redis/service.py:206
 msgid "Stopping redis..."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:219
+#: trove/guestagent/datastore/redis/service.py:215
 msgid "Could not stop Redis!"
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:249
+#: trove/guestagent/datastore/redis/service.py:242
+msgid "Starting redis with conf changes..."
+msgstr ""
+
+#: trove/guestagent/datastore/redis/service.py:259
 msgid "Starting redis..."
 msgstr ""
 
-#: trove/guestagent/datastore/redis/service.py:260
+#: trove/guestagent/datastore/redis/service.py:270
 msgid "Start up of redis failed!"
 msgstr ""
 
@@ -3222,12 +3242,12 @@ msgstr ""
 msgid "Detach volume %(vol_id)s from instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1058
+#: trove/taskmanager/models.py:1059
 #, python-format
 msgid "Successfully detached volume %(vol_id)s from instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1064
+#: trove/taskmanager/models.py:1065
 #, python-format
 msgid "Attach volume %(vol_id)s to instance %(id)s at %(dev)s"
 msgstr ""
