@@ -1,26 +1,26 @@
 {
-   "users":[
-      {
-         "database":"databaseA",
-         "name":"dbuser1",
-         "password":"password"
-      },
-      {
-         "databases":[
-            {
-               "name":"databaseB"
-            },
-            {
-               "name":"databaseC"
-            }
-         ],
-         "name":"dbuser2",
-         "password":"password"
-      },
-      {
-         "database":"databaseD",
-         "name":"dbuser3",
-         "password":"password"
-      }
-   ]
+    "users": [
+        {
+            "database": "databaseA",
+            "name": "dbuser1",
+            "password": "password"
+        },
+        {
+            "databases": [
+                {
+                    "name": "databaseB"
+                },
+                {
+                    "name": "databaseC"
+                }
+            ],
+            "name": "dbuser2",
+            "password": "password"
+        },
+        {
+            "database": "databaseD",
+            "name": "dbuser3",
+            "password": "password"
+        }
+    ]
 }
