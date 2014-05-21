@@ -14,20 +14,67 @@
 #    under the License.
 
 from trove.common import cfg
+from trove.common import exception
 from trove.openstack.common.importutils import import_class
+from trove.openstack.common import log as logging
+
 from cinderclient.v2 import client as CinderClient
 from heatclient.v1 import client as HeatClient
+from keystoneclient.service_catalog import ServiceCatalog
 from novaclient.v1_1.client import Client
 from swiftclient.client import Connection
 
 CONF = cfg.CONF
 
-COMPUTE_URL = CONF.nova_compute_url
 PROXY_AUTH_URL = CONF.trove_auth_url
-VOLUME_URL = CONF.cinder_url
-OBJECT_STORE_URL = CONF.swift_url
 USE_SNET = CONF.backup_use_snet
-HEAT_URL = CONF.heat_url
+
+LOG = logging.getLogger(__name__)
+
+
+def normalize_url(url):
+    """Adds trailing slash if necessary."""
+    if not url.endswith('/'):
+        return '%(url)s/' % {'url': url}
+    else:
+        return url
+
+
+def get_endpoint(service_catalog, service_type=None, endpoint_region=None,
+                 endpoint_type='publicURL'):
+    """
+    Select an endpoint from the service catalog
+
+    We search the full service catalog for services
+    matching both type and region. If the client
+    supplied no region then any endpoint matching service_type
+    is considered a match. There must be one -- and
+    only one -- successful match in the catalog,
+    otherwise we will raise an exception.
+
+    Some parts copied from glance/common/auth.py.
+    """
+    if not service_catalog:
+        raise exception.EmptyCatalog()
+
+    # per IRC chat, X-Service-Catalog will be a v2 catalog regardless of token
+    # format; see https://bugs.launchpad.net/python-keystoneclient/+bug/1302970
+    # 'token' key necessary to get past factory validation
+    sc = ServiceCatalog.factory({'token': None,
+                                 'serviceCatalog': service_catalog})
+    urls = sc.get_urls(service_type=service_type, region_name=endpoint_region,
+                       endpoint_type=endpoint_type)
+
+    if not urls:
+        raise exception.NoServiceEndpoint(service_type=service_type,
+                                          endpoint_region=endpoint_region,
+                                          endpoint_type=endpoint_type)
+
+    if len(urls) > 1:
+        raise exception.RegionAmbiguity(service_type=service_type,
+                                        endpoint_region=endpoint_region)
+
+    return urls[0]
 
 
 def dns_client(context):
@@ -41,11 +88,19 @@ def guest_client(context, id):
 
 
 def nova_client(context):
+    if CONF.nova_compute_url:
+        url = '%(nova_url)s%(tenant)s' % {
+            'nova_url': normalize_url(CONF.nova_compute_url),
+            'tenant': context.tenant}
+    else:
+        url = get_endpoint(context.service_catalog,
+                           service_type=CONF.nova_compute_service_type,
+                           endpoint_region=CONF.os_region_name)
+
     client = Client(context.user, context.auth_token,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
-    client.client.management_url = "%s/%s" % (COMPUTE_URL, context.tenant)
-
+    client.client.management_url = url
     return client
 
 
@@ -60,24 +115,50 @@ def create_admin_nova_client(context):
 
 
 def cinder_client(context):
+    if CONF.cinder_url:
+        url = '%(cinder_url)s%(tenant)s' % {
+            'cinder_url': normalize_url(CONF.cinder_url),
+            'tenant': context.tenant}
+    else:
+        url = get_endpoint(context.service_catalog,
+                           service_type=CONF.cinder_service_type,
+                           endpoint_region=CONF.os_region_name)
+
     client = CinderClient.Client(context.user, context.auth_token,
                                  project_id=context.tenant,
                                  auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
-    client.client.management_url = "%s/%s" % (VOLUME_URL, context.tenant)
+    client.client.management_url = url
     return client
 
 
 def heat_client(context):
-    endpoint = "%s/%s" % (HEAT_URL, context.tenant)
+    if CONF.heat_url:
+        url = '%(heat_url)s%(tenant)s' % {
+            'heat_url': normalize_url(CONF.heat_url),
+            'tenant': context.tenant}
+    else:
+        url = get_endpoint(context.service_catalog,
+                           service_type=CONF.heat_service_type,
+                           endpoint_region=CONF.os_region_name)
+
     client = HeatClient.Client(token=context.auth_token,
                                os_no_client_auth=True,
-                               endpoint=endpoint)
+                               endpoint=url)
     return client
 
 
 def swift_client(context):
-    client = Connection(preauthurl=OBJECT_STORE_URL + context.tenant,
+    if CONF.swift_url:
+        # swift_url has a different format so doesn't need to be normalized
+        url = '%(swift_url)s%(tenant)s' % {'swift_url': CONF.swift_url,
+                                           'tenant': context.tenant}
+    else:
+        url = get_endpoint(context.service_catalog,
+                           service_type=CONF.swift_service_type,
+                           endpoint_region=CONF.os_region_name)
+
+    client = Connection(preauthurl=url,
                         preauthtoken=context.auth_token,
                         tenant_name=context.tenant,
                         snet=USE_SNET)

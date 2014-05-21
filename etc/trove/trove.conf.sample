@@ -72,9 +72,24 @@ api_extensions_path = trove/extensions/routes
 
 # Configuration options for talking to nova via the novaclient.
 trove_auth_url = http://0.0.0.0:5000/v2.0
-nova_compute_url = http://localhost:8774/v2
-cinder_url = http://localhost:8776/v1
-swift_url = http://localhost:8080/v1/AUTH_
+#nova_compute_url = http://localhost:8774/v2
+#cinder_url = http://localhost:8776/v1
+#swift_url = http://localhost:8080/v1/AUTH_
+
+# nova_compute_url, cinder_url, swift_url, and heat_url can all be fetched
+# from Keystone. To fetch from Keystone, comment out nova_compute_url,
+# cinder_url, swift_url, and heat_url and optionally uncomment the lines below.
+
+# Region name of this node. Used when searching catalog. Default value is None.
+#os_region_name = RegionOne
+# Service type to use when searching catalog.
+#nova_compute_service_type = compute
+# Service type to use when searching catalog.
+#cinder_service_type = volumev2
+# Service type to use when searching catalog.
+#swift_service_type = object-store
+# Service type to use when searching catalog.
+#heat_service_type = orchestration
 
 # Config option for showing the IP address that nova doles out
 network_label_regex = ^private$

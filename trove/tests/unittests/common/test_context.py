@@ -21,12 +21,15 @@ from testtools.matchers import Equals, Is
 
 class TestTroveContext(testtools.TestCase):
     def test_create_with_extended_args(self):
+        expected_service_catalog = {'key': 'value'}
         ctx = context.TroveContext(user="test_user_id",
                                    request_id="test_req_id",
                                    limit="500",
-                                   marker="x")
+                                   marker="x",
+                                   service_catalog=expected_service_catalog)
         self.assertThat(ctx.limit, Equals("500"))
         self.assertThat(ctx.marker, Equals("x"))
+        self.assertThat(ctx.service_catalog, Equals(expected_service_catalog))
 
     def test_create(self):
         ctx = context.TroveContext(user='test_user_id',
@@ -35,6 +38,7 @@ class TestTroveContext(testtools.TestCase):
         self.assertThat(ctx.request_id, Equals('test_req_id'))
         self.assertThat(ctx.limit, Is(None))
         self.assertThat(ctx.marker, Is(None))
+        self.assertThat(ctx.service_catalog, Is(None))
 
     def test_to_dict(self):
         ctx = context.TroveContext(user='test_user_id',

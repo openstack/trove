@@ -509,6 +509,14 @@ class ContextMiddleware(openstack_wsgi.Middleware):
                      if key in ["limit", "marker"]])
 
     def process_request(self, request):
+        service_catalog = None
+        catalog_header = request.headers.get('X-Service-Catalog', None)
+        if catalog_header:
+            try:
+                service_catalog = jsonutils.loads(catalog_header)
+            except ValueError:
+                raise webob.exc.HTTPInternalServerError(
+                    _('Invalid service catalog json.'))
         tenant_id = request.headers.get('X-Tenant-Id', None)
         auth_token = request.headers["X-Auth-Token"]
         user_id = request.headers.get('X-User-ID', None)
@@ -524,7 +532,8 @@ class ContextMiddleware(openstack_wsgi.Middleware):
                                           user=user_id,
                                           is_admin=is_admin,
                                           limit=limits.get('limit'),
-                                          marker=limits.get('marker'))
+                                          marker=limits.get('marker'),
+                                          service_catalog=service_catalog)
         request.environ[CONTEXT_KEY] = context
 
     @classmethod

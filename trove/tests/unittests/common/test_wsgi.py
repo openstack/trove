@@ -29,7 +29,8 @@ class TestWsgi(testtools.TestCase):
         req.headers = {
             'X-User': 'do not use - deprecated',
             'X-User-ID': user_id,
-            'X-Auth-Token': token
+            'X-Auth-Token': token,
+            'X-Service-Catalog': '[]'
         }
         req.environ = {}
         # invocation
@@ -39,3 +40,4 @@ class TestWsgi(testtools.TestCase):
         self.assertThat(ctx, Not(Is(None)))
         self.assertThat(ctx.user, Equals(user_id))
         self.assertThat(ctx.auth_token, Equals(token))
+        self.assertEqual(0, len(ctx.service_catalog))

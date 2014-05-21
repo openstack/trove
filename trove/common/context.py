@@ -32,6 +32,7 @@ class TroveContext(context.RequestContext):
     def __init__(self, **kwargs):
         self.limit = kwargs.pop('limit', None)
         self.marker = kwargs.pop('marker', None)
+        self.service_catalog = kwargs.pop('service_catalog', None)
         super(TroveContext, self).__init__(**kwargs)
 
         if not hasattr(local.store, 'context'):
@@ -40,7 +41,8 @@ class TroveContext(context.RequestContext):
     def to_dict(self):
         parent_dict = super(TroveContext, self).to_dict()
         parent_dict.update({'limit': self.limit,
-                            'marker': self.marker
+                            'marker': self.marker,
+                            'service_catalog': self.service_catalog
                             })
         return parent_dict
 
