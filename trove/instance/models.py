@@ -707,7 +707,7 @@ class Instance(BuiltInstance):
         flavor = self.get_flavor()
         LOG.debug("flavor: %s" % flavor)
         config = template.SingleInstanceConfigTemplate(
-            self.ds_version.manager, flavor, id)
+            self.ds_version, flavor, id)
         return config.render_dict()
 
     def resize_flavor(self, new_flavor_id):

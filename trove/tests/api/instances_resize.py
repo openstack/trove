@@ -14,6 +14,7 @@
 #    under the License.
 
 import mox
+from mock import Mock
 from testtools import TestCase
 from proboscis import test
 
@@ -25,6 +26,7 @@ from trove.common import template
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.common import instance as rd_instance
+from trove.datastore.models import DatastoreVersion
 from trove.guestagent import api as guest
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
@@ -120,8 +122,12 @@ class ResizeTests(ResizeTestBase):
                                           NEW_FLAVOR.__dict__)
 
     def _start_mysql(self):
+        datastore = Mock(spec=DatastoreVersion)
+        datastore.datastore_name = 'mysql'
+        datastore.name = 'mysql-5.6'
+        datastore.manager = 'mysql'
         config = template.SingleInstanceConfigTemplate(
-            "mysql", NEW_FLAVOR.__dict__, self.instance.id)
+            datastore, NEW_FLAVOR.__dict__, self.instance.id)
         self.instance.guest.start_db_with_conf_changes(config.render())
 
     def test_guest_wont_stop_mysql(self):
