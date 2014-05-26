@@ -28,7 +28,7 @@ from trove.guestagent.strategies.storage.swift import StreamReader
 
 
 class SwiftStorageSaveChecksumTests(testtools.TestCase):
-    """SwiftStorage.save is used to save a backup to Swift"""
+    """SwiftStorage.save is used to save a backup to Swift."""
 
     def setUp(self):
         super(SwiftStorageSaveChecksumTests, self).setUp()
@@ -37,7 +37,7 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
         super(SwiftStorageSaveChecksumTests, self).tearDown()
 
     def test_swift_checksum_save(self):
-        """This tests that SwiftStorage.save returns the swift checksum"""
+        """This tests that SwiftStorage.save returns the swift checksum."""
         context = TroveContext()
         backup_id = '123'
         user = 'user'

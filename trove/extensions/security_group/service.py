@@ -29,7 +29,7 @@ CONF = cfg.CONF
 
 
 class SecurityGroupController(wsgi.Controller):
-    """Controller for security groups functionality"""
+    """Controller for security groups functionality."""
 
     def index(self, req, tenant_id):
         """Return all security groups tied to a particular tenant_id."""
@@ -61,7 +61,7 @@ class SecurityGroupController(wsgi.Controller):
 
 
 class SecurityGroupRuleController(wsgi.Controller):
-    """Controller for security group rule functionality"""
+    """Controller for security group rule functionality."""
 
     def delete(self, req, tenant_id, id):
         LOG.debug("Delete Security Group Rule called %s, %s" % (tenant_id, id))

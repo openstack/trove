@@ -61,7 +61,7 @@ class MockCheckProcessBackup(MockBackup):
 
 
 class MockLossyBackup(MockBackup):
-    """Fake Incomplete writes to swift"""
+    """Fake Incomplete writes to swift."""
 
     def read(self, *args):
         results = super(MockLossyBackup, self).read(*args)
@@ -71,7 +71,7 @@ class MockLossyBackup(MockBackup):
 
 
 class MockSwift(object):
-    """Store files in String"""
+    """Store files in String."""
 
     def __init__(self, *args, **kwargs):
         self.store = ''

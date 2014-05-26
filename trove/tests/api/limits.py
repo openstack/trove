@@ -83,7 +83,7 @@ class Limits(object):
 
     @test
     def test_limits_index(self):
-        """test_limits_index"""
+        """Test_limits_index."""
 
         limits = self.rd_client.limits.list()
         d = self._get_limits_as_dict(limits)
@@ -104,7 +104,7 @@ class Limits(object):
 
     @test
     def test_limits_get_remaining(self):
-        """test_limits_get_remaining"""
+        """Test_limits_get_remaining."""
 
         limits = ()
         for i in xrange(5):
@@ -125,7 +125,7 @@ class Limits(object):
 
     @test
     def test_limits_exception(self):
-        """test_limits_exception"""
+        """Test_limits_exception."""
 
         # use a different user to avoid throttling tests run out of order
         rate_user_exceeded = self._get_user('rate_limit_exceeded')

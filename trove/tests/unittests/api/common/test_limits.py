@@ -179,7 +179,7 @@ class LimitsControllerTest(BaseLimitTestSuite):
 
 
 class TestLimiter(limits.Limiter):
-    """Note: This was taken from Nova"""
+    """Note: This was taken from Nova."""
     pass
 
 

@@ -36,7 +36,7 @@ class VolumeDevice(object):
         self.device_path = device_path
 
     def migrate_data(self, mysql_base):
-        """Synchronize the data from the mysql directory to the new volume """
+        """Synchronize the data from the mysql directory to the new volume."""
         self.mount(TMP_MOUNT_POINT, write_to_fstab=False)
         if not mysql_base[-1] == '/':
             mysql_base = "%s/" % mysql_base
@@ -102,7 +102,7 @@ class VolumeDevice(object):
             mount_point.write_to_fstab()
 
     def resize_fs(self, mount_point):
-        """Resize the filesystem on the specified device"""
+        """Resize the filesystem on the specified device."""
         self._check_device_exists()
         try:
             # check if the device is mounted at mount_point before e2fsck

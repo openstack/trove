@@ -89,7 +89,7 @@ class StreamReader(object):
 
 
 class SwiftStorage(base.Storage):
-    """Implementation of Storage Strategy for Swift """
+    """Implementation of Storage Strategy for Swift."""
     __strategy_name__ = 'swift'
 
     def __init__(self, *args, **kwargs):
@@ -183,7 +183,7 @@ class SwiftStorage(base.Storage):
         return True
 
     def load(self, location, backup_checksum):
-        """Restore a backup from the input stream to the restore_location"""
+        """Restore a backup from the input stream to the restore_location."""
         storage_url, container, filename = self._explodeLocation(location)
 
         headers, info = self.connection.get_object(container, filename,
@@ -195,13 +195,13 @@ class SwiftStorage(base.Storage):
         return info
 
     def _get_attr(self, original):
-        """Get a friendly name from an object header key"""
+        """Get a friendly name from an object header key."""
         key = original.replace('-', '_')
         key = key.replace('x_object_meta_', '')
         return key
 
     def _set_attr(self, original):
-        """Return a swift friendly header key"""
+        """Return a swift friendly header key."""
         key = original.replace('_', '-')
         return 'X-Object-Meta-%s' % key
 

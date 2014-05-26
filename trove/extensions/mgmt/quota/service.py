@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 
 class QuotaController(wsgi.Controller):
-    """Controller for quota  functionality"""
+    """Controller for quota functionality."""
 
     @admin_context
     def show(self, req, tenant_id, id):

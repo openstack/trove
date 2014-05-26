@@ -138,7 +138,7 @@ class CreateConfigurations(object):
 
     @test
     def test_expected_configurations_parameters(self):
-        """test get expected configurations parameters"""
+        """Test get expected configurations parameters."""
         expected_attrs = ["configuration-parameters"]
         instance_info.dbaas.configuration_parameters.parameters(
             instance_info.dbaas_datastore,
@@ -182,21 +182,21 @@ class CreateConfigurations(object):
 
     @test
     def test_configurations_create_invalid_values(self):
-        """test create configurations with invalid values"""
+        """Test create configurations with invalid values."""
         values = '{"this_is_invalid": 123}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_configurations_create_invalid_value_type(self):
-        """test create configuration with invalild value type"""
+        """Test create configuration with invalild value type."""
         values = '{"key_buffer_size": "this is a string not int"}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_configurations_create_value_out_of_bounds(self):
-        """test create configuration with value out of bounds"""
+        """Test create configuration with value out of bounds."""
         values = '{"connect_timeout": 1000000}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)

@@ -30,7 +30,7 @@ LOG = logging.getLogger(__name__)
 
 
 class MySQLRestoreMixin(object):
-    """Common utils for restoring MySQL databases"""
+    """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
     RESET_ROOT_MYSQL_COMMAND = ("SET PASSWORD FOR"
@@ -97,13 +97,13 @@ class MySQLRestoreMixin(object):
 
 
 class MySQLDump(base.RestoreRunner, MySQLRestoreMixin):
-    """Implementation of Restore Strategy for MySQLDump"""
+    """Implementation of Restore Strategy for MySQLDump."""
     __strategy_name__ = 'mysqldump'
     base_restore_cmd = 'sudo mysql'
 
 
 class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
-    """Implementation of Restore Strategy for InnoBackupEx"""
+    """Implementation of Restore Strategy for InnoBackupEx."""
     __strategy_name__ = 'innobackupex'
     base_restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
     base_prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s'

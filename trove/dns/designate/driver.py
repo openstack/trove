@@ -103,7 +103,7 @@ class DesignateDriver(driver.DnsDriver):
         self.dns_client.records.delete(dns_zone.id, matching_record[0].id)
 
     def get_entries_by_content(self, content, dns_zone=None):
-        """Retrieves all entries in a dns_zone with a matching content field"""
+        """Retrieves all entries in a DNS zone with matching content field."""
         records = self._get_records(dns_zone)
         return [self.converter.record_to_entry(record, dns_zone)
                 for record in records if record.data == content]

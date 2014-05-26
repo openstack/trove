@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class HostController(InstanceController):
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
 
     @admin_context
     def index(self, req, tenant_id, detailed=False):

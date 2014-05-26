@@ -103,7 +103,7 @@ class API(proxy.RpcProxy):
         rd_rpc.delete_queue(self.context, topic)
 
     def _get_routing_key(self):
-        """Create the routing key based on the container id"""
+        """Create the routing key based on the container id."""
         return "guestagent.%s" % self.id
 
     def _check_for_hearbeat(self):
@@ -161,13 +161,13 @@ class API(proxy.RpcProxy):
                           database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
-        """Make an asynchronous call to list database users"""
+        """Make an asynchronous call to list database users."""
         LOG.debug("Listing Users for Instance %s", self.id)
         return self._call("list_users", AGENT_LOW_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
     def delete_user(self, user):
-        """Make an asynchronous call to delete an existing database user"""
+        """Make an asynchronous call to delete an existing database user."""
         LOG.debug("Deleting user %(user)s for Instance %(instance_id)s" %
                   {'user': user, 'instance_id': self.id})
         self._cast("delete_user", user=user)
@@ -180,7 +180,7 @@ class API(proxy.RpcProxy):
         self._cast("create_database", databases=databases)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
-        """Make an asynchronous call to list databases"""
+        """Make an asynchronous call to list databases."""
         LOG.debug("Listing databases for Instance %s", self.id)
         return self._call("list_databases", AGENT_LOW_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
@@ -268,12 +268,12 @@ class API(proxy.RpcProxy):
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self):
-        """Make an asynchronous call to self upgrade the guest agent"""
+        """Make an asynchronous call to self upgrade the guest agent."""
         LOG.debug("Sending an upgrade call to nova-guest")
         self._cast_with_consumer("upgrade")
 
     def get_volume_info(self):
-        """Make a synchronous call to get volume info for the container"""
+        """Make a synchronous call to get volume info for the container."""
         LOG.debug("Check Volume Info on Instance %s", self.id)
         # self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
@@ -284,34 +284,35 @@ class API(proxy.RpcProxy):
         self._call("update_guest", AGENT_HIGH_TIMEOUT)
 
     def create_backup(self, backup_info):
-        """Make async call to create a full backup of this instance"""
+        """Make async call to create a full backup of this instance."""
         LOG.debug("Create Backup %(backup_id)s "
                   "for Instance %(instance_id)s" %
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
         self._cast("create_backup", backup_info=backup_info)
 
     def mount_volume(self, device_path=None, mount_point=None):
-        """Mount the volume"""
+        """Mount the volume."""
         LOG.debug("Mount volume %(mount)s on instance %(id)s" % {
             'mount': mount_point, 'id': self.id})
         self._call("mount_volume", AGENT_LOW_TIMEOUT,
                    device_path=device_path, mount_point=mount_point)
 
     def unmount_volume(self, device_path=None, mount_point=None):
-        """Unmount the volume"""
+        """Unmount the volume."""
         LOG.debug("Unmount volume %(device)s on instance %(id)s" % {
             'device': device_path, 'id': self.id})
         self._call("unmount_volume", AGENT_LOW_TIMEOUT,
                    device_path=device_path, mount_point=mount_point)
 
     def resize_fs(self, device_path=None, mount_point=None):
-        """Resize the filesystem"""
+        """Resize the filesystem."""
         LOG.debug("Resize device %(device)s on instance %(id)s" % {
             'device': device_path, 'id': self.id})
         self._call("resize_fs", AGENT_HIGH_TIMEOUT, device_path=device_path,
                    mount_point=mount_point)
 
     def update_overrides(self, overrides, remove=False):
+        """Update the overrides."""
         LOG.debug("Updating overrides on Instance %s", self.id)
         LOG.debug("Updating overrides values %s" % overrides)
         self._cast("update_overrides", overrides=overrides, remove=remove)

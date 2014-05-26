@@ -87,21 +87,21 @@ class TestRootOnCreate(object):
 
     @test
     def test_root_on_create(self):
-        """Test that root is enabled after instance creation"""
+        """Test that root is enabled after instance creation."""
         enabled = self.enabled(self.instance_id).rootEnabled
         assert_equal(200, self.dbaas.last_http_code)
         assert_true(enabled)
 
     @test(depends_on=[test_root_on_create])
     def test_history_after_root_on_create(self):
-        """Test that the timestamp in the root enabled history is set"""
+        """Test that the timestamp in the root enabled history is set."""
         self.root_enabled_timestamp = self.history(self.instance_id).enabled
         assert_equal(200, self.dbaas.last_http_code)
         assert_not_equal(self.root_enabled_timestamp, 'Never')
 
     @test(depends_on=[test_history_after_root_on_create])
     def test_reset_root(self):
-        """Test that root reset does not alter the timestamp"""
+        """Test that root reset does not alter the timestamp."""
         orig_timestamp = self.root_enabled_timestamp
         self.dbaas.root.create(self.instance_id)
         assert_equal(200, self.dbaas.last_http_code)

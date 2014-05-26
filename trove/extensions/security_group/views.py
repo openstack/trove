@@ -33,7 +33,7 @@ class SecurityGroupView(object):
         self.tenant_id = tenant_id
 
     def _build_links(self):
-        """Build the links for the secgroup"""
+        """Build the links for the secgroup."""
         base_url = _base_url(self.request)
         href = os.path.join(base_url, self.tenant_id,
                             "security-groups", str(self.secgroup['id']))

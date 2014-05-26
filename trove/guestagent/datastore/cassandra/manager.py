@@ -37,14 +37,14 @@ class Manager(periodic_task.PeriodicTasks):
 
     @periodic_task.periodic_task(ticks_between_runs=3)
     def update_status(self, context):
-        """Update the status of the Cassandra service"""
+        """Update the status of the Cassandra service."""
         self.appStatus.update()
 
     def restart(self, context):
         self.app.restart()
 
     def get_filesystem_stats(self, context, fs_path):
-        """Gets the filesystem stats for the path given. """
+        """Gets the filesystem stats for the path given."""
         mount_point = CONF.get(
             'mysql' if not MANAGER else MANAGER).mount_point
         return dbaas.get_filesystem_volume_stats(mount_point)

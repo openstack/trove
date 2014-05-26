@@ -36,7 +36,7 @@ LOG = logging.getLogger(__name__)
 
 
 class MgmtInstanceController(InstanceController):
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
     schemas = apischema.mgmt_instance
 
     @classmethod

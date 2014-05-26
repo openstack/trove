@@ -66,7 +66,7 @@ class TestRoot(object):
 
     @test
     def test_root_initially_disabled(self):
-        """Test that root is disabled"""
+        """Test that root is disabled."""
         enabled = self.dbaas.root.is_root_enabled(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
 
@@ -98,7 +98,7 @@ class TestRoot(object):
 
     @test(depends_on=[test_root_initially_disabled_details])
     def test_root_disabled_in_mgmt_api(self):
-        """Verifies in the management api that the timestamp exists"""
+        """Verifies in the management api that the timestamp exists."""
         self._verify_root_timestamp(instance_info.id)
 
     @test(depends_on=[test_root_initially_disabled_details])

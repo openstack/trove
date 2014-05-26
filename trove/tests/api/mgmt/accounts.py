@@ -212,7 +212,7 @@ class AccountWithBrokenInstance(object):
 
     @test
     def no_compute_instance_no_problem(self):
-        '''Get account by ID shows even instances lacking computes'''
+        """Get account by ID shows even instances lacking computes."""
         if test_config.auth_strategy == "fake":
             raise SkipTest("Skipping this as auth is faked anyway.")
         account_info = self.client.accounts.show(self.user.tenant_id)

@@ -43,7 +43,7 @@ class FakeSwiftClient(object):
 
 
 class FakeSwiftConnection(object):
-    """Logging calls instead of executing"""
+    """Logging calls instead of executing."""
     MANIFEST_HEADER_KEY = 'X-Object-Manifest'
     url = 'http://mockswift/v1'
 

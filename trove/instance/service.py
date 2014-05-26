@@ -37,7 +37,7 @@ LOG = logging.getLogger(__name__)
 
 class InstanceController(wsgi.Controller):
 
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
     schemas = apischema.instance.copy()
     if not CONF.trove_volume_support:
         # see instance.models.create for further validation around this

@@ -21,7 +21,7 @@ from trove.flavor import views
 
 
 class FlavorController(wsgi.Controller):
-    """Controller for flavor functionality"""
+    """Controller for flavor functionality."""
 
     def show(self, req, tenant_id, id):
         """Return a single flavor."""

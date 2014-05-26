@@ -98,7 +98,7 @@ class Manager(periodic_task.PeriodicTasks):
         self.app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def get_filesystem_stats(self, context, fs_path):
-        """Gets the filesystem stats for the path given. """
+        """Gets the filesystem stats for the path given."""
         mount_point = CONF.get(
             'mysql' if not MANAGER else MANAGER).mount_point
         return dbaas.get_filesystem_volume_stats(mount_point)

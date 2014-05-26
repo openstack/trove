@@ -31,11 +31,11 @@ class BackupError(Exception):
 
 
 class UnknownBackupType(Exception):
-    """Unknown backup type"""
+    """Unknown backup type."""
 
 
 class BackupRunner(Strategy):
-    """Base class for Backup Strategy implementations """
+    """Base class for Backup Strategy implementations."""
     __strategy_type__ = 'backup_runner'
     __strategy_ns__ = 'trove.guestagent.strategies.backup'
 
@@ -65,7 +65,7 @@ class BackupRunner(Strategy):
         self.pid = self.process.pid
 
     def __enter__(self):
-        """Start up the process"""
+        """Start up the process."""
         self._run_pre_backup()
         self.run()
         self._run_post_backup()
@@ -99,7 +99,7 @@ class BackupRunner(Strategy):
 
     @property
     def filename(self):
-        """Subclasses may overwrite this to declare a format (.tar)"""
+        """Subclasses may overwrite this to declare a format (.tar)."""
         return self.base_filename
 
     @property
