@@ -35,5 +35,5 @@ def main(conf):
 
 
 @with_initialize(extra_opts=extra_opts)
-def mgmt_main():
+def mgmt_main(conf):
     startup(conf, "mgmt-taskmanager")
