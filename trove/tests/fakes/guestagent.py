@@ -323,6 +323,23 @@ class FakeGuest(object):
     def apply_overrides(self, overrides):
         self.overrides = overrides
 
+    def get_replication_snapshot(self, master_config):
+        return {
+            'dataset':
+            {
+                'datastore_manager': 'mysql',
+                'dataset_size': '0.0',
+                'volume_size': '10.0',
+                'snapshot_id': None
+            },
+            'replication_strategy': 'replication_strategy',
+            'master': '1',
+            'log_position': '100'
+        }
+
+    def attach_replication_slave(self, snapshot, slave_config):
+        pass
+
 
 def get_or_create(id):
     if id not in DB:

@@ -252,6 +252,12 @@ class VolumeNotSupported(TroveError):
     message = _("Volume support is not enabled.")
 
 
+class ReplicationNotSupported(TroveError):
+
+    message = _("Replication is not supported for "
+                "the '%(datastore)s' datastore.")
+
+
 class TaskManagerError(TroveError):
 
     message = _("An error occurred communicating with the task manager: "
@@ -445,3 +451,15 @@ class NoServiceEndpoint(TroveError):
 class EmptyCatalog(NoServiceEndpoint):
     """The service catalog is empty."""
     message = _("Empty catalog.")
+
+
+class IncompatibleReplicationStrategy(TroveError):
+    message = _("Instance with replication strategy %(guest_strategy)s "
+                "cannot replicate from instance with replication strategy "
+                "%(replication_strategy)s.")
+
+
+class InsufficientSpaceForSlave(TroveError):
+    message = _("The target instance has only %(slave_volume_size)sG free, "
+                "but the replication snapshot contains %(dataset_size)sG "
+                "of data.")

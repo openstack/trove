@@ -26,6 +26,7 @@ from trove.guestagent import volume
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlApp
+from trove.guestagent.strategies.replication import get_replication_strategy
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import periodic_task
@@ -33,7 +34,11 @@ from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-MANAGER = CONF.datastore_manager
+MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
+REPLICATION_STRATEGY = CONF.get(MANAGER).replication_strategy
+REPLICATION_NAMESPACE = CONF.get(MANAGER).replication_namespace
+REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
+                                                      REPLICATION_NAMESPACE)
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -166,8 +171,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def get_filesystem_stats(self, context, fs_path):
         """Gets the filesystem stats for the path given."""
-        mount_point = CONF.get(
-            'mysql' if not MANAGER else MANAGER).mount_point
+        mount_point = CONF.get(MANAGER).mount_point
         return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
@@ -209,22 +213,69 @@ class Manager(periodic_task.PeriodicTasks):
         app = MySqlApp(MySqlAppStatus.get())
         app.apply_overrides(overrides)
 
-    def get_replication_snapshot(self, master_config):
+    def get_replication_snapshot(self, context, master_config):
         LOG.debug("Getting replication snapshot.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_replication_snapshot', datastore=MANAGER)
+        app = MySqlApp(MySqlAppStatus.get())
 
-    def attach_replication_slave(self, snapshot, slave_config):
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.enable_as_master(app, master_config)
+
+        snapshot_id, log_position = (
+            replication.snapshot_for_replication(app, None, master_config))
+
+        mount_point = CONF.get(MANAGER).mount_point
+        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+
+        replication_snapshot = {
+            'dataset': {
+                'datastore_manager': MANAGER,
+                'dataset_size': volume_stats.get('used', 0.0),
+                'volume_size': volume_stats.get('total', 0.0),
+                'snapshot_id': snapshot_id
+            },
+            'replication_strategy': REPLICATION_STRATEGY,
+            'master': replication.get_master_ref(app, master_config),
+            'log_position': log_position
+        }
+
+        return replication_snapshot
+
+    def _validate_slave_for_replication(self, context, snapshot):
+        if (snapshot['replication_strategy'] != REPLICATION_STRATEGY):
+            raise exception.IncompatibleReplicationStrategy(
+                snapshot.update({
+                    'guest_strategy': REPLICATION_STRATEGY
+                }))
+
+        mount_point = CONF.get(MANAGER).mount_point
+        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+        if (volume_stats.get('total', 0.0) <
+                snapshot['dataset']['dataset_size']):
+            raise exception.InsufficientSpaceForSlave(
+                snapshot.update({
+                    'slave_volume_size': volume_stats.get('total', 0.0)
+                }))
+
+    def attach_replication_slave(self, context, snapshot, slave_config):
         LOG.debug("Attaching replication snapshot.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='attach_replication_slave', datastore=MANAGER)
+        app = MySqlApp(MySqlAppStatus.get())
+        try:
+            self._validate_slave_for_replication(context, snapshot)
+            replication = REPLICATION_STRATEGY_CLASS(context)
+            replication.enable_as_slave(app, snapshot)
+        except Exception:
+            LOG.exception("Error enabling replication.")
+            app.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
 
-    def detach_replication_slave(self):
-        LOG.debug("Detaching replication slave.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='detach_replication_slave', datastore=MANAGER)
+    def detach_replication_slave(self, context):
+        LOG.debug("Detaching replication snapshot.")
+        app = MySqlApp(MySqlAppStatus.get())
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.detach_slave(app)
 
-    def demote_replication_master(self):
+    def demote_replication_master(self, context):
         LOG.debug("Demoting replication master.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='demote_replication_master', datastore=MANAGER)
+        app = MySqlApp(MySqlAppStatus.get())
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.demote_master(app)

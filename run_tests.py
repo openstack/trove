@@ -174,6 +174,7 @@ if __name__ == "__main__":
         from trove.tests.api import instances_resize  # noqa
         from trove.tests.api import databases  # noqa
         from trove.tests.api import datastores  # noqa
+        from trove.tests.api import replication  # noqa
         from trove.tests.api import root  # noqa
         from trove.tests.api import root_on_create  # noqa
         from trove.tests.api import users  # noqa

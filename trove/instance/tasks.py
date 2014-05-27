@@ -92,6 +92,9 @@ class InstanceTasks(object):
                                             'Build error: Secgroup '
                                             'or rule.',
                                             is_error=True)
+    BUILDING_ERROR_SLAVE = InstanceTask(0x54, 'BUILDING',
+                                        'Build error: Replication slave.',
+                                        is_error=True)
 
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None

@@ -617,6 +617,7 @@ class Instance(BuiltInstance):
                availability_zone=None, nics=None, configuration_id=None,
                slave_of_id=None):
 
+        datastore_cfg = CONF.get(datastore_version.manager)
         client = create_nova_client(context)
         try:
             flavor = client.flavors.get(flavor_id)
@@ -624,14 +625,14 @@ class Instance(BuiltInstance):
             raise exception.FlavorNotFound(uuid=flavor_id)
 
         deltas = {'instances': 1}
-        volume_support = CONF.get(datastore_version.manager).volume_support
+        volume_support = datastore_cfg.volume_support
         if volume_support:
             validate_volume_size(volume_size)
             deltas['volumes'] = volume_size
         else:
             if volume_size is not None:
                 raise exception.VolumeNotSupported()
-            ephemeral_support = CONF.get(datastore_version.manager).device_path
+            ephemeral_support = datastore_cfg.device_path
             if ephemeral_support:
                 if flavor.ephemeral == 0:
                     raise exception.LocalStorageNotSpecified(flavor=flavor_id)
@@ -652,6 +653,12 @@ class Instance(BuiltInstance):
                 raise exception.BackupDatastoreMismatchError(
                     datastore1=backup_info.datastore.name,
                     datastore2=datastore.name)
+
+        if slave_of_id:
+            replication_support = datastore_cfg.replication_strategy
+            if not replication_support:
+                raise exception.ReplicationNotSupported(
+                    datastore=datastore.name)
 
         if not nics:
             nics = []
@@ -702,7 +709,8 @@ class Instance(BuiltInstance):
                                                   availability_zone,
                                                   root_password,
                                                   nics,
-                                                  overrides)
+                                                  overrides,
+                                                  slave_of_id)
 
             return SimpleInstance(context, db_info, datastore_status,
                                   root_password)
