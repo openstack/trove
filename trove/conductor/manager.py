@@ -17,6 +17,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.instance import ServiceStatus
 from trove.conductor.models import LastSeen
+from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
@@ -128,3 +129,6 @@ class Manager(periodic_task.PeriodicTasks):
                 LOG.debug("Backup %(key)s: %(value)s" % fields)
                 setattr(backup, k, v)
         backup.save()
+
+    def report_root(self, context, instance_id, user):
+        mysql_models.RootHistory.create(context, instance_id, user)
