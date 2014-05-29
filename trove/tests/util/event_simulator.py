@@ -20,11 +20,14 @@
 Simulates time itself to make the fake mode tests run even faster.
 """
 
-
+from proboscis.asserts import fail
 from trove.openstack.common import log as logging
+from trove.common import exception
+
 
 LOG = logging.getLogger(__name__)
 
+allowable_empty_sleeps = 0
 pending_events = []
 sleep_entrance_count = 0
 
@@ -41,11 +44,38 @@ def event_simulator_spawn(func, *args, **kw):
 
 
 def event_simulator_sleep(time_to_sleep):
-    """Simulates waiting for an event."""
+    """Simulates waiting for an event.
+
+    This is used to monkey patch the sleep methods, so that no actually waiting
+    occurs but functions which would have run as threads are executed.
+
+    This function will also raise an assertion failure if there were no pending
+    events ready to run. If this happens there are two possibilities:
+        1. The test code (or potentially code in Trove task manager) is
+           sleeping even though no action is taking place in
+           another thread.
+        2. The test code (or task manager code) is sleeping waiting for a
+           condition that will never be met because the thread it was waiting
+           on experienced an error or did not finish successfully.
+
+    A good example of this second case is when a bug in task manager causes the
+    create instance method to fail right away, but the test code tries to poll
+    the instance's status until it gets rate limited. That makes finding the
+    real error a real hassle. Thus it makes more sense to raise an exception
+    whenever the app seems to be napping for no reason.
+
+    """
+    global pending_events
+    global allowable_empty_sleeps
+    if len(pending_events) == 0:
+        allowable_empty_sleeps -= 1
+        if allowable_empty_sleeps < 0:
+            fail("Trying to sleep when no events are pending.")
+
     global sleep_entrance_count
     sleep_entrance_count += 1
     time_to_sleep = float(time_to_sleep)
-    global pending_events
+
     run_once = False  # Ensure simulator runs even if the sleep time is zero.
     while not run_once or time_to_sleep > 0:
         run_once = True
@@ -70,6 +100,25 @@ def event_simulator_sleep(time_to_sleep):
                           if event["func"] is not None]
 
 
+def fake_poll_until(retriever, condition=lambda value: value,
+                    sleep_time=1, time_out=None):
+    """Retrieves object until it passes condition, then returns it.
+
+    If time_out_limit is passed in, PollTimeOut will be raised once that
+    amount of time is eclipsed.
+
+    """
+    slept_time = 0
+    while True:
+        resource = retriever()
+        if condition(resource):
+            return resource
+        event_simulator_sleep(sleep_time)
+        slept_time += sleep_time
+        if time_out and slept_time >= time_out:
+                raise exception.PollTimeOut()
+
+
 def monkey_patch():
     import time
     time.sleep = event_simulator_sleep
@@ -80,3 +129,5 @@ def monkey_patch():
     eventlet.spawn_after = event_simulator_spawn_after
     eventlet.spawn_n = event_simulator_spawn
     eventlet.spawn = NotImplementedError
+    from trove.common import utils
+    utils.poll_until = fake_poll_until
