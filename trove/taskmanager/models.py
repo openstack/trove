@@ -407,7 +407,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                     time_out=HEAT_TIME_OUT)
             except PollTimeOut:
                 LOG.error(_("Timeout during stack status tracing"))
-                raise TroveError("Timeout occured in tracking stack status")
+                raise TroveError("Timeout occurred in tracking stack status")
 
             stack = client.stacks.get(stack_name)
             if ((stack.action, stack.stack_status)
@@ -429,7 +429,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             else:
                 self.update_db(compute_instance_id=instance_id)
 
-        except (TroveError, heat_exceptions.HTTPNotFound) as e:
+        except (TroveError, heat_exceptions.HTTPNotFound,
+                heat_exceptions.HTTPException) as e:
             msg = "Error during creating stack for instance %s" % self.id
             LOG.debug(msg)
             err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
