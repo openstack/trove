@@ -172,6 +172,12 @@ class DatastoreVersions(object):
             versions = DBDatastoreVersion.find_all(datastore_id=datastore.id)
         return cls(versions)
 
+    @classmethod
+    def load_all(cls, only_active=True):
+        if only_active:
+            return cls(DBDatastoreVersion.find_all(active=True))
+        return cls(DBDatastoreVersion.find_all())
+
     def __iter__(self):
         for item in self.db_info:
             yield item

@@ -24,8 +24,10 @@ class DatastoreController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         datastore = models.Datastore.load(id)
+        datastore_versions = (models.DatastoreVersions.load(datastore.id))
         return wsgi.Result(views.
-                           DatastoreView(datastore, req).data(), 200)
+                           DatastoreView(datastore, datastore_versions,
+                           req).data(), 200)
 
     def index(self, req, tenant_id):
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -33,9 +35,10 @@ class DatastoreController(wsgi.Controller):
         if context.is_admin:
             only_active = False
         datastores = models.Datastores.load(only_active)
+        datastores_versions = models.DatastoreVersions.load_all(only_active)
         return wsgi.Result(views.
-                           DatastoresView(datastores, req).data(),
-                           200)
+                           DatastoresView(datastores, datastores_versions,
+                           req).data(), 200)
 
     def version_show(self, req, tenant_id, datastore, id):
         datastore = models.Datastore.load(datastore)
