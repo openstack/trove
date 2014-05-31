@@ -13,7 +13,7 @@ wsgi_intercept>=0.6.1 # MIT License
 proboscis==1.2.5.3
 http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
 mock>=1.0
-mox>=0.5.3
+mox3>=0.7.0
 testtools>=0.9.34
 discover
 testrepository>=0.0.18
