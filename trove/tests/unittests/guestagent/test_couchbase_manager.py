@@ -73,6 +73,10 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount_points = MagicMock(return_value=[])
         couch_service.CouchbaseApp.install_if_needed = MagicMock(
             return_value=None)
+        couch_service.CouchbaseApp.start_db_with_conf_changes = MagicMock(
+            return_value=None)
+        couch_service.CouchbaseApp.initial_setup = MagicMock(
+            return_value=None)
         couch_service.CouchbaseApp.complete_install_or_restart = MagicMock(
             return_value=None)
 

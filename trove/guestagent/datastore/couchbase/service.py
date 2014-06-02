@@ -58,7 +58,6 @@ class CouchbaseApp(object):
         if not packager.pkg_is_installed(packages):
             LOG.info(_('Installing Couchbase'))
             self._install_couchbase(packages)
-        self.initial_setup()
 
     def initial_setup(self):
         self.ip_address = operating_system.get_ip_address()
