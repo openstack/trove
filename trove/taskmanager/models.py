@@ -590,12 +590,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                            overrides=overrides)
 
     def _create_dns_entry(self):
-        LOG.debug("%(gt)s: Creating dns entry for instance: %(id)s" %
-                  {'gt': greenthread.getcurrent(), 'id': self.id})
         dns_support = CONF.trove_dns_support
         LOG.debug("trove dns support = %s" % dns_support)
 
         if dns_support:
+            LOG.debug("%(gt)s: Creating dns entry for instance: %(id)s" %
+                      {'gt': greenthread.getcurrent(), 'id': self.id})
             dns_client = create_dns_client(self.context)
 
             def get_server():
