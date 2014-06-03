@@ -92,7 +92,8 @@ class CassandraApp(object):
         if do_not_start_on_reboot:
             self._disable_db_on_boot()
         utils.execute_with_timeout(system.STOP_CASSANDRA,
-                                   shell=True)
+                                   shell=True,
+                                   timeout=system.SERVICE_STOP_TIMEOUT)
 
         if not (self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
@@ -113,7 +114,7 @@ class CassandraApp(object):
     def _install_db(self, packages):
         """Install cassandra server"""
         LOG.debug("Installing cassandra server")
-        packager.pkg_install(packages, None, system.TIME_OUT)
+        packager.pkg_install(packages, None, system.INSTALL_TIMEOUT)
         LOG.debug("Finished installing cassandra server")
 
     def write_config(self, config_contents):
