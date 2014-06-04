@@ -26,6 +26,8 @@ from trove.taskmanager import api
 from trove.common.remote import create_swift_client
 from trove.common import utils
 from trove.quota.quota import run_with_quotas
+from trove.openstack.common.gettextutils import _
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -100,7 +102,8 @@ class Backup(object):
                                           datastore_version_id=ds_version.id,
                                           deleted=False)
             except exception.InvalidModelError as ex:
-                LOG.exception("Unable to create Backup record:")
+                LOG.exception(_("Unable to create backup record for "
+                                "instance: %s"), instance_id)
                 raise exception.BackupCreationError(str(ex))
 
             backup_info = {'id': db_info.id,
@@ -235,9 +238,8 @@ class Backup(object):
         def _delete_resources():
             backup = cls.get_by_id(context, backup_id)
             if backup.is_running:
-                msg = ("Backup %s cannot be delete because it is running." %
-                       backup_id)
-                raise exception.UnprocessableEntity(msg)
+                msg = _("Backup %s cannot be deleted because it is running.")
+                raise exception.UnprocessableEntity(msg % backup_id)
             cls.verify_swift_auth_token(context)
             api.API(context).delete_backup(backup_id)
 
@@ -280,7 +282,8 @@ class DBBackup(DatabaseModelBase):
         if self.location:
             last_slash = self.location.rfind("/")
             if last_slash < 0:
-                raise ValueError("Bad location for backup object.")
+                raise ValueError(_("Bad location for backup object: %s")
+                                 % self.location)
             return self.location[last_slash + 1:]
         else:
             return None
@@ -303,10 +306,11 @@ class DBBackup(DatabaseModelBase):
             obj = parts[-1]
             container = parts[-2]
             client = create_swift_client(context)
-            LOG.info(_("Checking if backup exist in '%s'") % self.location)
+            LOG.debug("Checking if backup exists in %s" % self.location)
             resp = client.head_object(container, obj)
             if verify_checksum:
-                LOG.info(_("Checking if backup checksum matches swift."))
+                LOG.debug("Checking if backup checksum matches swift "
+                          "for backup %s" % self.id)
                 # swift returns etag in double quotes
                 # e.g. '"dc3b0827f276d8d78312992cc60c2c3f"'
                 swift_checksum = resp['etag'].strip('"')

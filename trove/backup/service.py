@@ -36,7 +36,7 @@ class BackupController(wsgi.Controller):
         """
         Return all backups information for a tenant ID.
         """
-        LOG.debug("Listing Backups for tenant '%s'" % tenant_id)
+        LOG.debug("Listing backups for tenant %s" % tenant_id)
         datastore = req.GET.get('datastore')
         context = req.environ[wsgi.CONTEXT_KEY]
         backups, marker = Backup.list(context, datastore)
@@ -47,14 +47,14 @@ class BackupController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single backup."""
-        LOG.info(_("Showing a backup for tenant '%s'") % tenant_id)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.debug("Showing a backup for tenant %s ID: '%s'"
+                  % (tenant_id, id))
         context = req.environ[wsgi.CONTEXT_KEY]
         backup = Backup.get_by_id(context, id)
         return wsgi.Result(views.BackupView(backup).data(), 200)
 
     def create(self, req, body, tenant_id):
-        LOG.debug("Creating a Backup for tenant '%s'" % tenant_id)
+        LOG.info(_("Creating a backup for tenant %s"), tenant_id)
         context = req.environ[wsgi.CONTEXT_KEY]
         data = body['backup']
         instance = data['instance']
@@ -65,7 +65,9 @@ class BackupController(wsgi.Controller):
         return wsgi.Result(views.BackupView(backup).data(), 202)
 
     def delete(self, req, tenant_id, id):
-        LOG.debug("Delete Backup for tenant: %s, ID: %s" % (tenant_id, id))
+        LOG.info(_('Deleting backup for tenant %(tenant_id)s '
+                   'ID: %(backup_id)s') %
+                 {'tenant_id': tenant_id, 'backup_id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
         Backup.delete(context, id)
         return wsgi.Result(None, 202)
