@@ -221,12 +221,17 @@ class InstanceController(wsgi.Controller):
         else:
             nics = None
 
+        if 'slave_of' in body['instance']:
+            slave_of_id = body['instance']['slave_of']
+        else:
+            slave_of_id = None
+
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           datastore, datastore_version,
                                           volume_size, backup_id,
                                           availability_zone, nics,
-                                          configuration)
+                                          configuration, slave_of_id)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
