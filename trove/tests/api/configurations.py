@@ -268,7 +268,7 @@ class AfterConfigurationsCreation(object):
                       configuration=config_id)
 
     @test(depends_on=[test_assign_configuration_to_valid_instance])
-    @time_out(10)
+    @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
         # validate that the configuraiton was applied correctly to the instance
         inst = instance_info.dbaas.instances.get(instance_info.id)
@@ -414,7 +414,7 @@ class ListConfigurations(object):
         poll_until(result_is_active)
 
     @test(depends_on=[test_restart_service_should_return_active])
-    @time_out(10)
+    @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
         # validate that the configuraiton was applied correctly to the instance
         inst = instance_info.dbaas.instances.get(instance_info.id)
@@ -484,7 +484,7 @@ class WaitForConfigurationInstanceToFinish(object):
         poll_until(result_is_active)
 
     @test(depends_on=[test_instance_with_configuration_active])
-    @time_out(10)
+    @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
         # validate that the configuraiton was applied correctly to the instance
         inst = instance_info.dbaas.instances.get(configuration_instance.id)
