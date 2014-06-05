@@ -65,6 +65,16 @@ class NotFound(TroveError):
     message = _("Resource %(uuid)s cannot be found")
 
 
+class CapabilityNotFound(NotFound):
+
+    message = _("Capability '%(capability)s' cannot be found.")
+
+
+class CapabilityDisabled(TroveError):
+
+    message = _("Capability '%(capability)s' is disabled.")
+
+
 class FlavorNotFound(TroveError):
 
     message = _("Resource %(uuid)s cannot be found")
