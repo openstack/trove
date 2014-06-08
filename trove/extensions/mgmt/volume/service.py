@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 
 class StorageController(wsgi.Controller):
-    """Controller for storage device functionality"""
+    """Controller for storage device functionality."""
 
     @admin_context
     def index(self, req, tenant_id):

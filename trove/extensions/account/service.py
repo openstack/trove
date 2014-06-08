@@ -26,7 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class AccountController(wsgi.Controller):
-    """Controller for account functionality"""
+    """Controller for account functionality."""
     schemas = apischema.account
 
     @admin_context

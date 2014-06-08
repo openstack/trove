@@ -19,7 +19,7 @@ from trove.guestagent.strategy import Strategy
 
 
 class Storage(Strategy):
-    """Base class for Storage Strategy implementation """
+    """Base class for Storage Strategy implementation."""
     __strategy_type__ = 'storage'
     __strategy_ns__ = 'trove.guestagent.strategies.storage'
 
@@ -29,11 +29,11 @@ class Storage(Strategy):
 
     @abc.abstractmethod
     def save(self, filename, stream):
-        """Persist information from the stream """
+        """Persist information from the stream."""
 
     @abc.abstractmethod
     def load(self, location, backup_checksum):
-        """Load a stream from a persisted storage location  """
+        """Load a stream from a persisted storage location."""
 
     @abc.abstractmethod
     def load_metadata(self, location, backup_checksum):

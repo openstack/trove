@@ -39,7 +39,7 @@ GROUP = "dbaas.api.mgmt.instances"
 
 @test(groups=[GROUP])
 def mgmt_index_requires_admin_account():
-    """Verify that an admin context is required to call this function. """
+    """Verify that an admin context is required to call this function."""
     client = create_client(is_admin=False)
     assert_raises(exceptions.Unauthorized, client.management.index)
 
@@ -72,7 +72,7 @@ def volume_check(volume):
 
 @test(depends_on_groups=[GROUP_START], groups=[GROUP, GROUP_TEST])
 def mgmt_instance_get():
-    """Tests the mgmt instances index method. """
+    """Tests the mgmt instances index method."""
     reqs = Requirements(is_admin=True)
     user = CONFIG.users.find_user(reqs)
     client = create_dbaas_client(user)
@@ -199,7 +199,7 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
 
 @test(depends_on_classes=[CreateInstance], groups=[GROUP])
 class MgmtInstancesIndex(object):
-    """Tests the mgmt instances index method. """
+    """Tests the mgmt instances index method."""
 
     @before_class
     def setUp(self):

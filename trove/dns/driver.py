@@ -33,7 +33,7 @@ class DnsDriver(object):
         pass
 
     def get_entries_by_content(self, content, dns_zone=None):
-        """Retrieves all entries in a dns_zone with a matching content field"""
+        """Retrieves all entries in a DNS zone with matching content field."""
         pass
 
     def get_entries_by_name(self, name, dns_zone=None):

@@ -26,7 +26,7 @@ from trove.datastore.service import DatastoreController
 
 
 class API(wsgi.Router):
-    """API"""
+    """Defines the API routes."""
     def __init__(self):
         mapper = routes.Mapper()
         super(API, self).__init__(mapper)

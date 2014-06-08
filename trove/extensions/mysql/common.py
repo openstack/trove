@@ -44,7 +44,7 @@ def populate_validated_databases(dbs):
 
 
 def populate_users(users, initial_databases=None):
-    """Create a serializable request containing users"""
+    """Create a serializable request containing users."""
     users_data = []
     unique_identities = set()
     for user in users:

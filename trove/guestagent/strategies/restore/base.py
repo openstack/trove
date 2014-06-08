@@ -43,7 +43,7 @@ class RestoreError(Exception):
 
 
 class RestoreRunner(Strategy):
-    """Base class for Restore Strategy implementations """
+    """Base class for Restore Strategy implementations."""
     """Restore a database from a previous backup."""
 
     __strategy_type__ = 'restore_runner'
@@ -72,11 +72,11 @@ class RestoreRunner(Strategy):
         super(RestoreRunner, self).__init__()
 
     def pre_restore(self):
-        """Hook that is called before the restore command"""
+        """Hook that is called before the restore command."""
         pass
 
     def post_restore(self):
-        """Hook that is called after the restore command"""
+        """Hook that is called after the restore command."""
         pass
 
     def restore(self):

@@ -26,7 +26,7 @@ from trove.tests.api.versions import Versions
 
 @test(groups=['dbaas.api.headers'])
 def must_work_with_blank_accept_headers():
-    """Test to make sure that trove works without the headers"""
+    """Test to make sure that trove works without the headers."""
     versions = Versions()
     versions.setUp()
     client = versions.client

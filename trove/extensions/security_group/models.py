@@ -228,7 +228,7 @@ class RemoteSecurityGroup(NovaRemoteModelBase):
 
     @classmethod
     def create(cls, name, description, context):
-        """Creates a new Security Group"""
+        """Creates a new Security Group."""
         client = trove.common.remote.create_nova_client(context)
         try:
             sec_group = client.security_groups.create(name=name,

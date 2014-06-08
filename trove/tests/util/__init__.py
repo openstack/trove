@@ -214,7 +214,7 @@ def unquote_user_host(user_hostname):
 
 
 def iso_time(time_string):
-    """Return a iso formated datetime: 2013-04-15T19:50:23Z"""
+    """Return a iso formated datetime: 2013-04-15T19:50:23Z."""
     ts = time_string.replace(' ', 'T')
     try:
         micro = ts.rindex('.')
@@ -266,7 +266,7 @@ class MySqlConnection(object):
 
 
 class LocalSqlClient(object):
-    """A sqlalchemy wrapper to manage transactions"""
+    """A sqlalchemy wrapper to manage transactions."""
 
     def __init__(self, engine, use_flush=True):
         self.engine = engine

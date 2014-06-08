@@ -246,7 +246,7 @@ def persisted_models():
 
 
 class DBBackup(DatabaseModelBase):
-    """A table for Backup records"""
+    """A table for Backup records."""
     _data_fields = ['id', 'name', 'description', 'location', 'backup_type',
                     'size', 'tenant_id', 'state', 'instance_id',
                     'checksum', 'backup_timestamp', 'deleted', 'created',

@@ -55,7 +55,7 @@ class CreateBackups(object):
 
     @test
     def test_backup_create_instance_invalid(self):
-        """test create backup with unknown instance"""
+        """Test create backup with unknown instance."""
         invalid_inst_id = 'invalid-inst-id'
         try:
             instance_info.dbaas.backups.create(BACKUP_NAME, invalid_inst_id,
@@ -73,13 +73,13 @@ class CreateBackups(object):
 
     @test
     def test_backup_create_instance_not_found(self):
-        """test create backup with unknown instance"""
+        """Test create backup with unknown instance."""
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.create,
                       BACKUP_NAME, generate_uuid(), BACKUP_DESC)
 
     @test
     def test_backup_create_instance(self):
-        """test create backup for a given instance"""
+        """Test create backup for a given instance."""
         # Necessary to test that the count increases.
         global backup_count_prior_to_create
         backup_count_prior_to_create = len(instance_info.dbaas.backups.list())
@@ -106,20 +106,20 @@ class AfterBackupCreation(object):
 
     @test
     def test_instance_action_right_after_backup_create(self):
-        """test any instance action while backup is running"""
+        """Test any instance action while backup is running."""
         assert_unprocessable(instance_info.dbaas.instances.resize_instance,
                              instance_info.id, 1)
 
     @test
     def test_backup_create_another_backup_running(self):
-        """test create backup when another backup is running"""
+        """Test create backup when another backup is running."""
         assert_unprocessable(instance_info.dbaas.backups.create,
                              'backup_test2', instance_info.id,
                              'test description2')
 
     @test
     def test_backup_delete_still_running(self):
-        """test delete backup when it is running"""
+        """Test delete backup when it is running."""
         result = instance_info.dbaas.backups.list()
         backup = result[0]
         assert_unprocessable(instance_info.dbaas.backups.delete, backup.id)
@@ -153,7 +153,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list(self):
-        """test list backups"""
+        """Test list backups."""
         result = instance_info.dbaas.backups.list()
         assert_equal(backup_count_prior_to_create + 1, len(result))
         backup = result[0]
@@ -165,7 +165,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list_for_instance(self):
-        """test backup list for instance"""
+        """Test backup list for instance."""
         result = instance_info.dbaas.instances.backups(instance_info.id)
         assert_equal(backup_count_for_instance_prior_to_create + 1,
                      len(result))
@@ -178,7 +178,7 @@ class ListBackups(object):
 
     @test
     def test_backup_get(self):
-        """test get backup"""
+        """Test get backup."""
         backup = instance_info.dbaas.backups.get(backup_info.id)
         assert_equal(backup_info.id, backup.id)
         assert_equal(backup_info.name, backup.name)
@@ -329,7 +329,7 @@ class DeleteRestoreInstance(object):
 
     @classmethod
     def _delete(cls, instance_id):
-        """test delete restored instance"""
+        """Test delete restored instance."""
         instance_info.dbaas.instances.delete(instance_id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
@@ -365,13 +365,13 @@ class DeleteBackups(object):
 
     @test
     def test_backup_delete_not_found(self):
-        """test delete unknown backup"""
+        """Test delete unknown backup."""
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.delete,
                       'nonexistent_backup')
 
     @test
     def test_backup_delete_other(self):
-        """Test another user cannot delete backup"""
+        """Test another user cannot delete backup."""
         # Test to make sure that user in other tenant is not able
         # to DELETE this backup
         reqs = Requirements(is_admin=False)
@@ -384,7 +384,7 @@ class DeleteBackups(object):
 
     @test(runs_after=[test_backup_delete_other])
     def test_backup_delete(self):
-        """test backup deletion"""
+        """Test backup deletion."""
         instance_info.dbaas.backups.delete(backup_info.id)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
@@ -399,7 +399,7 @@ class DeleteBackups(object):
 
     @test(runs_after=[test_backup_delete])
     def test_incremental_deleted(self):
-        """test backup children are deleted"""
+        """Test backup children are deleted."""
         if incremental_info is None:
             raise SkipTest("Incremental Backup not created")
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.get,

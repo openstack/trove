@@ -34,7 +34,7 @@ LOG = logging.getLogger(__name__)
 
 
 class RootController(wsgi.Controller):
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
 
     def index(self, req, tenant_id, instance_id):
         """Returns True if root is enabled for the given instance;
@@ -47,7 +47,7 @@ class RootController(wsgi.Controller):
         return wsgi.Result(views.RootEnabledView(is_root_enabled).data(), 200)
 
     def create(self, req, tenant_id, instance_id):
-        """Enable the root user for the db instance """
+        """Enable the root user for the db instance."""
         LOG.info(_("Enabling root for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -57,7 +57,7 @@ class RootController(wsgi.Controller):
 
 
 class UserController(wsgi.Controller):
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
     schemas = apischema.user
 
     @classmethod
@@ -80,7 +80,7 @@ class UserController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
-        """Creates a set of users"""
+        """Creates a set of users."""
         LOG.info(_("Creating users for instance '%s'") % instance_id)
         LOG.info(logging.mask_password(_("req : '%s'\n\n") % req))
         LOG.info(logging.mask_password(_("body : '%s'\n\n") % body))
@@ -253,7 +253,7 @@ class UserAccessController(wsgi.Controller):
 
 
 class SchemaController(wsgi.Controller):
-    """Controller for instance functionality"""
+    """Controller for instance functionality."""
     schemas = apischema.dbschema
 
     def index(self, req, tenant_id, instance_id):
@@ -268,7 +268,7 @@ class SchemaController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id, instance_id):
-        """Creates a set of schemas"""
+        """Creates a set of schemas."""
         LOG.info(_("Creating schema for instance '%s'") % instance_id)
         LOG.info(_("req : '%s'\n\n") % req)
         LOG.info(_("body : '%s'\n\n") % body)

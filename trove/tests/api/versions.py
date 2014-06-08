@@ -29,7 +29,7 @@ GROUP = "dbaas.api.versions"
 @test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES, 'DBAAS_VERSIONS'],
       depends_on_groups=["services.initialize"])
 class Versions(object):
-    """Test listing all versions and verify the current version"""
+    """Test listing all versions and verify the current version."""
 
     @before_class
     def setUp(self):

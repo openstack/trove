@@ -166,7 +166,7 @@ class Configuration(object):
 
     @staticmethod
     def get_configuration_overrides(context, configuration_id):
-        """Gets the overrides dict to apply to an instance"""
+        """Gets the overrides dictionary to apply to an instance."""
         overrides = {}
         if configuration_id:
             config_items = Configuration.load_items(context,

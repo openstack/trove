@@ -30,7 +30,7 @@ class Base(object):
 
 
 class MySQLDatabase(Base):
-    """Represents a Database and its properties"""
+    """Represents a Database and its properties."""
 
     _ignore_dbs = CONF.ignore_dbs
 
@@ -287,7 +287,7 @@ class MySQLDatabase(Base):
 
     @property
     def collate(self):
-        """Get the appropriate collate value"""
+        """Get the appropriate collate value."""
         if not self._collate and not self._character_set:
             return self.__collation__
         elif not self._collate:
@@ -297,7 +297,7 @@ class MySQLDatabase(Base):
 
     @collate.setter
     def collate(self, value):
-        """Validate the collation and set it"""
+        """Validate the collation and set it."""
         if not value:
             pass
         elif self._character_set:
@@ -313,7 +313,7 @@ class MySQLDatabase(Base):
 
     @property
     def character_set(self):
-        """Get the appropriate character set value"""
+        """Get the appropriate character set value."""
         if not self._character_set:
             return self.__charset__
         else:
@@ -321,7 +321,7 @@ class MySQLDatabase(Base):
 
     @character_set.setter
     def character_set(self, value):
-        """Validate the character set and set it"""
+        """Validate the character set and set it."""
         if not value:
             pass
         elif not value in self.charset:
@@ -346,7 +346,7 @@ class ValidatedMySQLDatabase(MySQLDatabase):
 
 
 class MySQLUser(Base):
-    """Represents a MySQL User and its associated properties"""
+    """Represents a MySQL User and its associated properties."""
 
     not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
     _ignore_users = CONF.ignore_users
