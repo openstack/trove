@@ -59,11 +59,8 @@ class API(proxy.RpcProxy):
         except Exception as e:
             LOG.error(e)
             raise exception.GuestError(original_message=str(e))
-        except Timeout as t:
-            if t is not timeout:
-                raise
-            else:
-                raise exception.GuestTimeout()
+        except Timeout:
+            raise exception.GuestTimeout()
 
     def _cast(self, method_name, **kwargs):
         LOG.debug("Casting %s" % method_name)
