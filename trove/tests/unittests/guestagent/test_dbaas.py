@@ -1599,13 +1599,11 @@ class CouchbaseAppTest(testtools.TestCase):
         self.assertTrue(conductor_api.API.heartbeat.called)
 
     def test_install_when_couchbase_installed(self):
-        self.couchbaseApp.initial_setup = Mock()
         couchservice.packager.pkg_is_installed = Mock(return_value=True)
         couchservice.utils.execute_with_timeout = Mock()
 
         self.couchbaseApp.install_if_needed(["package"])
         self.assertTrue(couchservice.packager.pkg_is_installed.called)
-        self.assertTrue(self.couchbaseApp.initial_setup.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
 

@@ -64,6 +64,7 @@ class Manager(periodic_task.PeriodicTasks):
         prepare handles all the base configuration of the Couchbase instance.
         """
         self.appStatus.begin_install()
+        self.app.install_if_needed(packages)
         if device_path:
             device = volume.VolumeDevice(device_path)
             # unmount if device is already mounted
@@ -71,10 +72,11 @@ class Manager(periodic_task.PeriodicTasks):
             device.format()
             device.mount(mount_point)
             LOG.debug('Mounted the volume.')
+        self.app.start_db_with_conf_changes(config_contents)
+        LOG.info(_('Securing couchbase now.'))
         if root_password:
             self.app.enable_root(root_password)
-        self.app.install_if_needed(packages)
-        LOG.info(_('Securing couchbase now.'))
+        self.app.initial_setup()
         self.app.complete_install_or_restart()
         LOG.info(_('"prepare" couchbase call has finished.'))
 
