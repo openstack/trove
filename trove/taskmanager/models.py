@@ -369,18 +369,34 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("end _create_server_volume for id: %s" % self.id)
         return volume_info
 
+    def _build_sg_rules_mapping(self, rule_ports):
+        final = []
+        cidr = CONF.trove_security_group_rule_cidr
+        for port_or_range in set(rule_ports):
+            from_, to_ = utils.gen_ports(port_or_range)
+            final.append({'cidr': cidr,
+                          'from_': str(from_),
+                          'to_': str(to_)})
+        return final
+
     def _create_server_volume_heat(self, flavor, image_id,
                                    datastore_manager,
                                    volume_size, availability_zone, nics):
         LOG.debug("begin _create_server_volume_heat for id: %s" % self.id)
         try:
             client = create_heat_client(self.context)
+            tcp_rules_mapping_list = self._build_sg_rules_mapping(CONF.get(
+                datastore_manager).tcp_ports)
+            udp_ports_mapping_list = self._build_sg_rules_mapping(CONF.get(
+                datastore_manager).udp_ports)
 
             ifaces, ports = self._build_heat_nics(nics)
             template_obj = template.load_heat_template(datastore_manager)
             heat_template_unicode = template_obj.render(
                 volume_support=CONF.trove_volume_support,
-                ifaces=ifaces, ports=ports)
+                ifaces=ifaces, ports=ports,
+                tcp_rules=tcp_rules_mapping_list,
+                udp_rules=udp_ports_mapping_list)
             try:
                 heat_template = heat_template_unicode.encode('utf-8')
             except UnicodeEncodeError:

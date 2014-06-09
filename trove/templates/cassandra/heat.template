@@ -23,7 +23,7 @@ Resources:
     Type: OS::Neutron::Port
     Properties:
       network_id: "{{ port.net_id }}"
-      security_groups: [{Ref: CassandraDbaasSG}]
+      security_groups: [{Ref: DatastoreSG}]
       {% if port.fixed_ip %}
       fixed_ips: [{"ip_address": "{{ port.fixed_ip }}"}]
       {% endif %}
@@ -48,7 +48,7 @@ Resources:
       ImageId: {Ref: ImageId}
       InstanceType: {Ref: Flavor}
       AvailabilityZone: {Ref: AvailabilityZone}
-      SecurityGroups : [{Ref: CassandraDbaasSG}]
+      SecurityGroups : [{Ref: DatastoreSG}]
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -71,15 +71,25 @@ Resources:
       VolumeId: {Ref: DataVolume}
       Device: /dev/vdb
 {% endif %}
-  CassandraDbaasSG:
+  DatastoreSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Default Security group for Cassandra
+{% if tcp_rules or udp_rules %}
       SecurityGroupIngress:
+{% for rule in tcp_rules %}
       - IpProtocol: "tcp"
-        FromPort: "9160"
-        ToPort: "9160"
-        CidrIp: "0.0.0.0/0"
+        FromPort: "{{rule.from_}}"
+        ToPort: "{{rule.to_}}"
+        CidrIp: "{{rule.cidr}}"
+{% endfor %}
+{% for rule in udp_rules %}
+      - IpProtocol: "udp"
+        FromPort: "{{rule.from_}}"
+        ToPort: "{{rule.to_}}"
+        CidrIp: "{{rule.cidr}}"
+{% endfor %}
+{% endif %}
   DatabaseIPAddress:
     Type: AWS::EC2::EIP
   DatabaseIPAssoc :

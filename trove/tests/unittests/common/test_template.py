@@ -103,3 +103,34 @@ class HeatTemplateLoadTest(testtools.TestCase):
         self.assertIsNotNone(redis_tmplt)
         self.assertIsNotNone(cassandra_tmpl)
         self.assertIsNotNone(mongo_tmpl)
+
+    def test_render_templates_with_ports_from_config(self):
+        mysql_tmpl = template.load_heat_template('mysql')
+        tcp_rules = [{'cidr': "0.0.0.0/0",
+                      'from_': 3306,
+                      'to_': 3309},
+                     {'cidr': "0.0.0.0/0",
+                      'from_': 3320,
+                      'to_': 33022}]
+        output = mysql_tmpl.render(
+            volume_support=True,
+            ifaces=[], ports=[],
+            tcp_rules=tcp_rules,
+            udp_rules=[])
+        self.assertIsNotNone(output)
+        self.assertIn('FromPort: "3306"', output)
+        self.assertIn('ToPort: "3309"', output)
+        self.assertIn('CidrIp: "0.0.0.0/0"', output)
+        self.assertIn('FromPort: "3320"', output)
+        self.assertIn('ToPort: "33022"', output)
+
+    def test_no_rules_if_no_ports(self):
+        mysql_tmpl = template.load_heat_template('mysql')
+        output = mysql_tmpl.render(
+            volume_support=True,
+            ifaces=[], ports=[],
+            tcp_rules=[],
+            udp_rules=[])
+        self.assertIsNotNone(output)
+        self.assertNotIn('- IpProtocol: "tcp"', output)
+        self.assertNotIn('- IpProtocol: "udp"', output)
