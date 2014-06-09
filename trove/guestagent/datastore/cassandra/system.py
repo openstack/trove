@@ -35,5 +35,5 @@ STOP_CASSANDRA = "sudo service cassandra stop"
 CASSANDRA_STATUS = """echo "use system;" > /tmp/check; cqlsh -f /tmp/check"""
 
 CASSANDRA_KILL = "sudo killall java  || true"
-
-TIME_OUT = 10000
+SERVICE_STOP_TIMEOUT = 60
+INSTALL_TIMEOUT = 10000
