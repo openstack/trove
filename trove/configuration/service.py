@@ -50,6 +50,11 @@ class ConfigurationsController(wsgi.Controller):
         configuration = models.Configuration.load(context, id)
         configuration_items = models.Configuration.load_items(context, id)
 
+        configuration.instance_count = instances_models.DBInstance.find_all(
+            tenant_id=context.tenant,
+            configuration_id=configuration.id,
+            deleted=False).count()
+
         return wsgi.Result(views.DetailedConfigurationView(
                            configuration,
                            configuration_items).data(), 200)

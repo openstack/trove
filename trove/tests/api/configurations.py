@@ -15,6 +15,7 @@
 
 
 import json
+from time import sleep
 from datetime import datetime
 from proboscis import SkipTest
 from proboscis import test
@@ -55,6 +56,14 @@ sql_variables = [
     'connect_timeout',
     'join_buffer_size',
 ]
+
+
+def _is_valid_timestamp(time_string):
+    try:
+        datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return False
+    return True
 
 
 # helper methods to validate configuration is applied to instance
@@ -226,6 +235,8 @@ class CreateConfigurations(object):
         # test being able to update and insert new parameter name and values
         # to an existing configuration
         values = '{"join_buffer_size": 1048576, "connect_timeout": 60}'
+        # ensure updated timestamp is different than created
+        sleep(1)
         instance_info.dbaas.configurations.edit(configuration_info.id,
                                                 values)
         resp, body = instance_info.dbaas.client.last_response
@@ -291,8 +302,23 @@ class AfterConfigurationsCreation(object):
             check.has_field("name", basestring)
             check.has_field("description", basestring)
             check.has_field("values", dict)
+            check.has_field("created", basestring)
+            check.has_field("updated", basestring)
+            check.has_field("instance_count", int)
 
         print(result.values)
+
+        # check for valid timestamps
+        assert_true(_is_valid_timestamp(result.created))
+        assert_true(_is_valid_timestamp(result.updated))
+
+        # check that created and updated timestamps differ, since
+        # test_appending_to_existing_configuration should have changed the
+        # updated timestamp
+        assert_not_equal(result.created, result.updated)
+
+        assert_equal(result.instance_count, 1)
+
         with CollectionCheck("configuration_values", result.values) as check:
             # check each item has the correct type according to the rules
             for (item_key, item_val) in result.values.iteritems():
@@ -422,6 +448,18 @@ class ListConfigurations(object):
         assert_not_equal(None, inst.configuration['id'])
         _test_configuration_is_applied_to_instance(instance_info,
                                                    configuration_id)
+
+    @test(depends_on=[test_configurations_list])
+    def test_compare_list_and_details_timestamps(self):
+        # compare config timestamps between list and details calls
+        result = instance_info.dbaas.configurations.list()
+        list_config = [config for config in result if
+                       config.id == configuration_info.id]
+        assert_equal(1, len(list_config))
+        details_config = instance_info.dbaas.configurations.get(
+            configuration_info.id)
+        assert_equal(list_config[0].created, details_config.created)
+        assert_equal(list_config[0].updated, details_config.updated)
 
 
 @test(runs_after=[ListConfigurations], groups=[GROUP])
@@ -557,6 +595,7 @@ class DeleteConfigurations(object):
         assert_equal(configuration_info.id, result.id)
         assert_equal(configuration_info.name, result.name)
         assert_equal(configuration_info.description, result.description)
+        assert_equal(result.instance_count, 0)
         print(configuration_instance.id)
         print(instance_info.id)
 

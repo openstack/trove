@@ -196,7 +196,7 @@ class Configuration(object):
 
 class DBConfiguration(dbmodels.DatabaseModelBase):
     _data_fields = ['name', 'description', 'tenant_id', 'datastore_version_id',
-                    'deleted', 'deleted_at']
+                    'deleted', 'deleted_at', 'created', 'updated']
 
 
 class ConfigurationParameter(dbmodels.DatabaseModelBase):
