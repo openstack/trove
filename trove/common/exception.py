@@ -138,6 +138,11 @@ class DatastoreDefaultVersionNotFound(TroveError):
     message = _("Default version for datastore '%(datastore)s' not found.")
 
 
+class InvalidDatastoreManager(TroveError):
+
+    message = _("Datastore manager %(datastore_manager)s cannot be found.")
+
+
 class DatastoreOperationNotSupported(TroveError):
 
     message = _("The '%(operation)s' operation is not supported for "

@@ -15,8 +15,9 @@ from mock import Mock
 import testtools
 import re
 
-from trove.common import template
 from trove.common import exception
+from trove.common import template
+from trove.common import utils
 from trove.datastore.models import DatastoreVersion
 from trove.tests.unittests.util import util
 
@@ -83,26 +84,53 @@ class TemplateTest(testtools.TestCase):
 
 class HeatTemplateLoadTest(testtools.TestCase):
 
+    class FakeTemplate():
+        def __init__(self):
+            self.name = 'mysql/heat.template'
+
     def setUp(self):
+        self.default = 'default.heat.template'
+        self.orig_1 = utils.ENV.list_templates
+        self.orig_2 = utils.ENV.get_template
         super(HeatTemplateLoadTest, self).setUp()
 
     def tearDown(self):
+        utils.ENV.list_templates = self.orig_1
+        utils.ENV.get_template = self.orig_2
         super(HeatTemplateLoadTest, self).tearDown()
 
-    def test_heat_template_load_fail(self):
-        self.assertRaises(exception.TroveError,
+    def test_heat_template_load_with_invalid_datastore(self):
+        invalid_datastore = 'mysql-blah'
+        self.assertRaises(exception.InvalidDatastoreManager,
                           template.load_heat_template,
-                          'mysql-blah')
+                          invalid_datastore)
+
+    def test_heat_template_load_non_default(self):
+        orig = utils.ENV._load_template
+        utils.ENV._load_template = Mock(return_value=self.FakeTemplate())
+        mysql_tmpl = template.load_heat_template('mysql')
+        self.assertNotEqual(mysql_tmpl.name, self.default)
+        utils.ENV._load_template = orig
 
     def test_heat_template_load_success(self):
         mysql_tmpl = template.load_heat_template('mysql')
-        redis_tmplt = template.load_heat_template('redis')
+        redis_tmpl = template.load_heat_template('redis')
         cassandra_tmpl = template.load_heat_template('cassandra')
         mongo_tmpl = template.load_heat_template('mongodb')
+        percona_tmpl = template.load_heat_template('percona')
+        couchbase_tmpl = template.load_heat_template('couchbase')
         self.assertIsNotNone(mysql_tmpl)
-        self.assertIsNotNone(redis_tmplt)
+        self.assertIsNotNone(redis_tmpl)
         self.assertIsNotNone(cassandra_tmpl)
         self.assertIsNotNone(mongo_tmpl)
+        self.assertIsNotNone(percona_tmpl)
+        self.assertIsNotNone(couchbase_tmpl)
+        self.assertEqual(mysql_tmpl.name, self.default)
+        self.assertEqual(redis_tmpl.name, self.default)
+        self.assertEqual(cassandra_tmpl.name, self.default)
+        self.assertEqual(mongo_tmpl.name, self.default)
+        self.assertEqual(percona_tmpl.name, self.default)
+        self.assertEqual(couchbase_tmpl.name, self.default)
 
     def test_render_templates_with_ports_from_config(self):
         mysql_tmpl = template.load_heat_template('mysql')

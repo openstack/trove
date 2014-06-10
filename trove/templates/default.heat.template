@@ -1,5 +1,5 @@
 HeatTemplateFormatVersion: '2012-12-12'
-Description: Instance creation template for Redis
+Description: Instance creation template for {{datastore_manager}}
 Parameters:
   Flavor:
     Type: String
@@ -48,11 +48,7 @@ Resources:
       ImageId: {Ref: ImageId}
       InstanceType: {Ref: Flavor}
       AvailabilityZone: {Ref: AvailabilityZone}
-      {% if ifaces %}
-      NetworkInterfaces: [{{ ifaces|join(', ') }}]
-      {% else %}
-      SecurityGroups: [{Ref: DatastoreSG}]
-      {% endif %}
+      SecurityGroups : [{Ref: DatastoreSG}]
       UserData:
         Fn::Base64:
           Fn::Join:
@@ -78,7 +74,7 @@ Resources:
   DatastoreSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Default Security group for Redis
+      GroupDescription: Default Security group for {{datastore_manager}}
 {% if tcp_rules or udp_rules %}
       SecurityGroupIngress:
 {% for rule in tcp_rules %}
