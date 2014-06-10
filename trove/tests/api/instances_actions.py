@@ -527,7 +527,8 @@ class ResizeInstanceTest(ActionTestBase):
                     "Having to recreate the test_user! Resizing killed it!")
                 self.log_current_users()
                 self.create_user()
-                fail("Somehow, the resize made the test user disappear.")
+                asserts.fail(
+                    "Somehow, the resize made the test user disappear.")
 
     @test(depends_on=[test_instance_returns_to_active_after_resize],
           runs_after=[resize_should_not_delete_users])
@@ -578,7 +579,7 @@ class ResizeInstanceTest(ActionTestBase):
       runs_after=[RebootTests, ResizeInstanceTest])
 def resize_should_not_delete_users():
     if USER_WAS_DELETED:
-        fail("Somehow, the resize made the test user disappear.")
+        asserts.fail("Somehow, the resize made the test user disappear.")
 
 
 @test(runs_after=[ResizeInstanceTest], depends_on=[create_user],
@@ -618,7 +619,7 @@ class ResizeInstanceVolume(ActionTestBase):
             elif instance.status == "RESIZE":
                 return False
             else:
-                fail("Status should not be %s" % instance.status)
+                asserts.fail("Status should not be %s" % instance.status)
 
         poll_until(check_resize_status, sleep_time=2, time_out=300)
         instance = instance_info.dbaas.instances.get(instance_info.id)
@@ -657,8 +658,9 @@ class ResizeInstanceVolume(ActionTestBase):
             db_list.append(database.name)
         for name in self.expected_dbs:
             if name not in db_list:
-                fail("Database %s was not found after the volume resize. "
-                     "Returned list: %s" % (name, databases))
+                asserts.fail(
+                    "Database %s was not found after the volume resize. "
+                    "Returned list: %s" % (name, databases))
 
 
 # This tests the ability of the guest to upgrade itself.
@@ -701,7 +703,7 @@ class UpdateGuest(object):
                 return True
             # The only valid thing for it to be aside from next_version is
             # old version.
-            assert_equal(current_version, self.old_version)
+            asserts.assert_equal(current_version, self.old_version)
         poll_until(finished, sleep_time=1, time_out=3 * 60)
 
     @test(enabled=UPDATE_GUEST_CONF is not None,
