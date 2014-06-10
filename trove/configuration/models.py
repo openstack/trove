@@ -18,7 +18,7 @@ from datetime import datetime
 from trove.common import cfg
 from trove.common import configurations
 from trove.common.exception import ModelNotFoundError
-from trove.datastore.models import DatastoreVersion
+from trove.datastore import models as dstore_models
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -120,7 +120,7 @@ class Configuration(object):
     @staticmethod
     def load_configuration_datastore_version(context, id):
         config = Configuration.load(context, id)
-        datastore_version = DatastoreVersion.load_by_uuid(
+        datastore_version = dstore_models.DatastoreVersion.load_by_uuid(
             config.datastore_version_id)
         return datastore_version
 
@@ -197,6 +197,20 @@ class Configuration(object):
 class DBConfiguration(dbmodels.DatabaseModelBase):
     _data_fields = ['name', 'description', 'tenant_id', 'datastore_version_id',
                     'deleted', 'deleted_at', 'created', 'updated']
+
+    @property
+    def datastore(self):
+        datastore_version = dstore_models.DatastoreVersion.load_by_uuid(
+            self.datastore_version_id)
+        datastore = dstore_models.Datastore.load(
+            datastore_version.datastore_id)
+        return datastore
+
+    @property
+    def datastore_version(self):
+        datastore_version = dstore_models.DatastoreVersion.load_by_uuid(
+            self.datastore_version_id)
+        return datastore_version
 
 
 class ConfigurationParameter(dbmodels.DatabaseModelBase):
