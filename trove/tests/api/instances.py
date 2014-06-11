@@ -63,6 +63,7 @@ from trove.common.utils import poll_until
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import TypeCheck
 from trove.tests.util import test_config
+from trove.tests.util import event_simulator
 
 FAKE = test_config.values['fake_mode']
 
@@ -790,6 +791,8 @@ class SecurityGroupsTest(object):
         assert_equal(self.testSecurityGroup.name, self.secGroupName)
         assert_equal(self.testSecurityGroup.description,
                      self.secGroupDescription)
+        assert_equal(self.testSecurityGroup.created,
+                     self.testSecurityGroup.updated)
 
     @test
     def test_list_security_group(self):
@@ -821,9 +824,20 @@ class SecurityGroupsRulesTest(object):
             instance_info.id)
         self.secGroupName = "SecGroup_%s" % instance_info.id
         self.secGroupDescription = "Security Group for %s" % instance_info.id
+        self.orig_allowable_empty_sleeps = (event_simulator.
+                                            allowable_empty_sleeps)
+        event_simulator.allowable_empty_sleeps = 2
+        self.test_rule_id = None
+
+    @after_class
+    def tearDown(self):
+        (event_simulator.
+         allowable_empty_sleeps) = self.orig_allowable_empty_sleeps
 
     @test
     def test_create_security_group_rule(self):
+        # Need to sleep to verify created/updated timestamps
+        time.sleep(1)
         cidr = "1.2.3.4/16"
         self.testSecurityGroupRules = (
             dbaas.security_group_rules.create(
@@ -840,6 +854,34 @@ class SecurityGroupsRulesTest(object):
             assert_equal(rule['from_port'], 3306)
             assert_equal(rule['to_port'], 3306)
             assert_is_not_none(rule['created'])
+            self.test_rule_id = rule['id']
+
+        if not CONFIG.fake_mode:
+            group = dbaas.security_groups.get(
+                self.testSecurityGroup.id)
+            assert_not_equal(self.testSecurityGroup.created,
+                             group.updated)
+            assert_not_equal(self.testSecurityGroup.updated,
+                             group.updated)
+
+    @test(depends_on=[test_create_security_group_rule])
+    def test_delete_security_group_rule(self):
+        # Need to sleep to verify created/updated timestamps
+        time.sleep(1)
+        group_before = dbaas.security_groups.get(
+            self.testSecurityGroup.id)
+        dbaas.security_group_rules.delete(self.test_rule_id)
+        assert_equal(204, dbaas.last_http_code)
+
+        if not CONFIG.fake_mode:
+            group = dbaas.security_groups.get(
+                self.testSecurityGroup.id)
+            assert_not_equal(group_before.created,
+                             group.updated)
+            assert_not_equal(group_before.updated,
+                             group.updated)
+            assert_not_equal(self.testSecurityGroup,
+                             group.updated)
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
