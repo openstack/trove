@@ -514,6 +514,7 @@ class BaseInstance(SimpleInstance):
                                _delete_resources)
 
     def _delete_resources(self, deleted_at):
+        """Implemented in subclass."""
         pass
 
     def delete_async(self):

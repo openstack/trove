@@ -20,6 +20,8 @@ Routes all the requests to the task manager.
 
 
 from trove.common import cfg
+from trove.common import exception
+from trove.guestagent import models as agent_models
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common import log as logging
 
@@ -50,6 +52,14 @@ class API(proxy.RpcProxy):
     def _get_routing_key(self):
         """Create the routing key for the taskmanager"""
         return CONF.taskmanager_queue
+
+    def _delete_heartbeat(self, instance_id):
+        agent_heart_beat = agent_models.AgentHeartBeat()
+        try:
+            heartbeat = agent_heart_beat.find_by_instance_id(instance_id)
+            heartbeat.delete()
+        except exception.ModelNotFoundError as e:
+            LOG.error(e.message)
 
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"
@@ -86,6 +96,7 @@ class API(proxy.RpcProxy):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
         self.cast(self.context,
                   self.make_msg("delete_instance", instance_id=instance_id))
+        self._delete_heartbeat(instance_id)
 
     def create_backup(self, backup_info, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s" %
