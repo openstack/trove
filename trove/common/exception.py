@@ -408,7 +408,7 @@ class ConfigurationDatastoreNotMatchInstance(TroveError):
                 "%(instance_datastore_version)s.")
 
 
-class ConfigurationParameterDeleted(object):
+class ConfigurationParameterDeleted(TroveError):
     message = _("%(parameter_name)s parameter can no longer be "
                 " set as of %(parameter_deleted_at)s")
 
