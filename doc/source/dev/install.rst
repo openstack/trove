@@ -81,18 +81,20 @@ options that you can run.
 Running the trove client
 ------------------------
 
-* rd-client sets of the authorization endpoint and gets a token for you::
+* The trove client is run using the trove command. You can show the
+  complete documentation on the shell by running trove help::
 
-    # ./redstack rd-client
+    # trove help
 
 
 -----------------------
 Running the nova client
 -----------------------
 
-* nova-client sets of the authorization endpoint and gets a token for you::
+* The nova client is run using the nova command. You can show the
+  complete documentation on the shell by running nova help:::
 
-    # ./redstack nova-client
+    # nova help
 
 
 More information
