@@ -83,6 +83,11 @@ mount_point = /var/lib/mysql
 volume_time_out=30
 server_delete_time_out=480
 
+# Nova server boot options
+# sets the --config-drive argument when doing a nova boot
+# (controls how file injection is handled by nova)
+use_nova_server_config_drive = False
+
 # Configuration options for talking to nova via the novaclient.
 # These options are for an admin user in your keystone config.
 # It proxy's the token received from the user to send to nova via this admin users creds,
