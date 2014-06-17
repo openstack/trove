@@ -701,7 +701,7 @@ class Instance(BuiltInstance):
         client = create_nova_client(self.context)
         return client.flavors.get(self.flavor_id)
 
-    def get_default_configration_template(self):
+    def get_default_configuration_template(self):
         flavor = self.get_flavor()
         LOG.debug("flavor: %s" % flavor)
         config = template.SingleInstanceConfigTemplate(

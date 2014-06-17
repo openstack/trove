@@ -273,7 +273,7 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
         LOG.debug("server: %s" % instance)
-        config = instance.get_default_configration_template()
+        config = instance.get_default_configuration_template()
         LOG.debug("default config for instance is: %s" % config)
         return wsgi.Result(views.DefaultConfigurationView(
                            config).data(), 200)
