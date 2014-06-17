@@ -64,11 +64,22 @@ def service_discovery(service_candidates):
                 result['cmd_disable'] = "sudo chkconfig %s off" % service
             break
         # check systemd
-        if os.path.isfile("/lib/systemd/system/%s.service" % service):
+        service_path = "/lib/systemd/system/%s.service" % service
+        if os.path.isfile(service_path):
             result['cmd_start'] = "sudo systemctl start %s" % service
             result['cmd_stop'] = "sudo systemctl stop %s" % service
-            result['cmd_enable'] = "sudo systemctl enable %s" % service
-            result['cmd_disable'] = "sudo systemctl disable %s" % service
+
+            # currently "systemctl enable" doesn't work for symlinked units
+            # as described in https://bugzilla.redhat.com/1014311, therefore
+            # replacing a symlink with its real path
+            if os.path.islink(service_path):
+                real_path = os.path.realpath(service_path)
+                result['cmd_enable'] = "sudo systemctl enable %s" % real_path
+                result['cmd_disable'] = ("sudo systemctl disable %s" %
+                                         real_path)
+            else:
+                result['cmd_enable'] = "sudo systemctl enable %s" % service
+                result['cmd_disable'] = "sudo systemctl disable %s" % service
             break
     return result
 
