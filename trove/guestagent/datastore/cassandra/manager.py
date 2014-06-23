@@ -200,10 +200,9 @@ class Manager(periodic_task.PeriodicTasks):
         raise exception.DatastoreOperationNotSupported(
             operation='attach_replication_slave', datastore=MANAGER)
 
-    def detach_replication_slave(self, context):
-        LOG.debug("Detaching replication slave.")
+    def detach_replica(self, context):
         raise exception.DatastoreOperationNotSupported(
-            operation='detach_replication_slave', datastore=MANAGER)
+            operation='detach_replica', datastore=MANAGER)
 
     def demote_replication_master(self, context):
         LOG.debug("Demoting replication master.")

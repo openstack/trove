@@ -87,6 +87,11 @@ class API(proxy.RpcProxy):
         self.cast(self.context,
                   self.make_msg("restart", instance_id=instance_id))
 
+    def detach_replica(self, instance_id):
+        LOG.debug("Making async call to detach replica: %s" % instance_id)
+        self.cast(self.context,
+                  self.make_msg("detach_replica", instance_id=instance_id))
+
     def migrate(self, instance_id, host):
         LOG.debug("Making async call to migrate instance: %s" % instance_id)
         self.cast(self.context,

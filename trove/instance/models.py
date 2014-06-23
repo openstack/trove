@@ -824,6 +824,15 @@ class Instance(BuiltInstance):
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).restart(self.id)
 
+    def detach_replica(self):
+        self.validate_can_perform_action()
+        LOG.info(_("Detaching instance %s from its replication source.")
+                 % self.id)
+        if not self.slave_of_id:
+            raise exception.BadRequest(_("Instance %s is not a replica.")
+                                       % self.id)
+        task_api.API(self.context).detach_replica(self.id)
+
     def migrate(self, host=None):
         self.validate_can_perform_action()
         LOG.info(_("Migrating instance id = %(instance_id)s "

@@ -334,7 +334,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         # assertions
         self.assertEqual(mock_replication.enable_as_slave.call_count, 0)
 
-    def test_detach_replication_slave(self):
+    def test_detach_replica(self):
         mock_status = MagicMock()
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
 
@@ -343,7 +343,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.mock_rs_class.return_value = mock_replication
 
         # entry point
-        self.manager.detach_replication_slave(self.context)
+        self.manager.detach_replica(self.context)
         # assertions
         self.assertEqual(mock_replication.detach_slave.call_count, 1)
 
