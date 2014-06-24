@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-06-14 06:06+0000\n"
+"POT-Creation-Date: 2014-06-24 06:05+0000\n"
 "PO-Revision-Date: 2014-03-19 18:14+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: English (United States) "
@@ -18,21 +18,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 
-#: trove/backup/models.py:280
+#: trove/backup/models.py:306
 #, python-format
 msgid "Checking if backup exist in '%s'"
 msgstr ""
 
-#: trove/backup/models.py:283
+#: trove/backup/models.py:309
 msgid "Checking if backup checksum matches swift."
 msgstr ""
 
-#: trove/backup/service.py:49
+#: trove/backup/service.py:50
 #, python-format
 msgid "Showing a backup for tenant '%s'"
 msgstr ""
 
-#: trove/backup/service.py:50 trove/extensions/mgmt/host/service.py:45
+#: trove/backup/service.py:51 trove/extensions/mgmt/host/service.py:45
 #: trove/extensions/mgmt/instances/service.py:73
 #: trove/extensions/mgmt/instances/service.py:151
 #: trove/extensions/mgmt/instances/service.py:182 trove/instance/service.py:158
@@ -346,8 +346,8 @@ msgstr ""
 #: trove/common/exception.py:363
 #, python-format
 msgid ""
-"The datastore-version from which the backup was taken, %(version1)s, does"
-" not match the destination datastore-version of %(version2)s"
+"The datastore from which the backup was taken, %(datastore1)s, does not "
+"match the destination datastore of %(datastore2)s"
 msgstr ""
 
 #: trove/common/exception.py:369
@@ -782,20 +782,20 @@ msgstr ""
 msgid "Create Security Group Rules Required field(s) - %s"
 msgstr ""
 
-#: trove/guestagent/pkg.py:111
+#: trove/guestagent/pkg.py:112
 #, python-format
 msgid "Error removing conflict %s"
 msgstr ""
 
-#: trove/guestagent/pkg.py:207
+#: trove/guestagent/pkg.py:208
 msgid "version() saw unexpected output from rpm!"
 msgstr ""
 
-#: trove/guestagent/pkg.py:230
+#: trove/guestagent/pkg.py:231
 msgid "Error fixing dpkg"
 msgstr ""
 
-#: trove/guestagent/pkg.py:336
+#: trove/guestagent/pkg.py:337
 msgid "Error updating the apt sources"
 msgstr ""
 
@@ -862,37 +862,37 @@ msgstr ""
 msgid "Backup %(backup_id)s location: %(location)s"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:131
+#: trove/guestagent/backup/backupagent.py:135
 #, python-format
 msgid "Error saving %(backup_id)s Backup"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:140
+#: trove/guestagent/backup/backupagent.py:144
 #, python-format
 msgid "Error running backup: %(backup_id)s"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:147
+#: trove/guestagent/backup/backupagent.py:151
 #, python-format
 msgid "Saving %(backup_id)s Backup Info to model"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:171
+#: trove/guestagent/backup/backupagent.py:175
 #, python-format
 msgid "Restore from backup %(id)s completed successfully to %(restore_location)s"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:173
+#: trove/guestagent/backup/backupagent.py:177
 #, python-format
 msgid "Restore size: %s"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:177
+#: trove/guestagent/backup/backupagent.py:181
 #, python-format
 msgid "Error restoring backup %(id)s"
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:181
+#: trove/guestagent/backup/backupagent.py:185
 #, python-format
 msgid "Restored Backup %(id)s"
 msgstr ""
@@ -1444,27 +1444,27 @@ msgstr ""
 msgid "Settting task status to NONE on instance %s..."
 msgstr ""
 
-#: trove/instance/models.py:752
+#: trove/instance/models.py:747
 #, python-format
 msgid "Instance %s has no volume."
 msgstr ""
 
-#: trove/instance/models.py:756
+#: trove/instance/models.py:751
 #, python-format
 msgid "The new volume 'size' must be larger than the current volume size of '%s'"
 msgstr ""
 
-#: trove/instance/models.py:906
+#: trove/instance/models.py:901
 #, python-format
 msgid "Server %(server)s for instance %(instance)s wasfound twice!"
 msgstr ""
 
-#: trove/instance/models.py:967 trove/instance/models.py:973
+#: trove/instance/models.py:962 trove/instance/models.py:968
 #, python-format
 msgid "Server status could not be read for instance id(%s)"
 msgstr ""
 
-#: trove/instance/models.py:970
+#: trove/instance/models.py:965
 #, python-format
 msgid "Server api_status(%s)"
 msgstr ""
