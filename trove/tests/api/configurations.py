@@ -142,8 +142,30 @@ def _test_configuration_is_applied_to_instance(instance, configuration_id):
         assert_true(converted_key_value in testconfig_info.values.items())
 
 
+class ConfigurationsTestBase(object):
+
+    @staticmethod
+    def expected_instance_datastore_configs(instance_id):
+        """Given an instance retrieve the expected test configurations for
+        instance's datastore.
+        """
+        instance = instance_info.dbaas.instances.get(instance_id)
+        datastore_type = instance.datastore['type']
+        datastore_test_configs = CONFIG.get(datastore_type, {})
+        return datastore_test_configs.get("configurations", {})
+
+    @staticmethod
+    def expected_default_datastore_configs():
+        """Returns the expected test configurations for the default datastore
+        defined in the Test Config as dbaas_datastore.
+        """
+        default_datatstore = CONFIG.get('dbaas_datastore', None)
+        datastore_test_configs = CONFIG.get(default_datatstore, {})
+        return datastore_test_configs.get("configurations", {})
+
+
 @test(depends_on_classes=[WaitForGuestInstallationToFinish], groups=[GROUP])
-class CreateConfigurations(object):
+class CreateConfigurations(ConfigurationsTestBase):
 
     @test
     def test_expected_configurations_parameters(self):
@@ -162,7 +184,8 @@ class CreateConfigurations(object):
         config_param_keys = []
         for param in config_params_list:
             config_param_keys.append(param['name'])
-        expected_config_params = ['key_buffer_size', 'connect_timeout']
+        expected_configs = self.expected_default_datastore_configs()
+        expected_config_params = expected_configs.get('parameters_list')
         # check for duplicate configuration parameters
         msg = "check for duplicate configuration parameters"
         assert_equal(len(config_param_keys), len(set(config_param_keys)), msg)
@@ -206,22 +229,26 @@ class CreateConfigurations(object):
     @test
     def test_configurations_create_value_out_of_bounds(self):
         """Test create configuration with value out of bounds."""
-        values = '{"connect_timeout": 1000000}'
+        expected_configs = self.expected_default_datastore_configs()
+        values = json.dumps(expected_configs.get('out_of_bounds_over'))
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
-        values = '{"connect_timeout": -10}'
+        values = json.dumps(expected_configs.get('out_of_bounds_under'))
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
 
     @test
     def test_valid_configurations_create(self):
         # create a configuration with valid parameters
-        values = ('{"connect_timeout": 120, "local_infile": true, '
-                  '"collation_server": "latin1_swedish_ci"}')
+        expected_configs = self.expected_default_datastore_configs()
+        values = json.dumps(expected_configs.get('valid_values'))
         expected_values = json.loads(values)
-        result = instance_info.dbaas.configurations.create(CONFIG_NAME,
-                                                           values,
-                                                           CONFIG_DESC)
+        result = instance_info.dbaas.configurations.create(
+            CONFIG_NAME,
+            values,
+            CONFIG_DESC,
+            datastore=instance_info.dbaas_datastore,
+            datastore_version=instance_info.dbaas_datastore_version)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 200)
         global configuration_info
@@ -234,7 +261,8 @@ class CreateConfigurations(object):
     def test_appending_to_existing_configuration(self):
         # test being able to update and insert new parameter name and values
         # to an existing configuration
-        values = '{"join_buffer_size": 1048576, "connect_timeout": 60}'
+        expected_configs = self.expected_default_datastore_configs()
+        values = json.dumps(expected_configs.get('appending_values'))
         # ensure updated timestamp is different than created
         sleep(1)
         instance_info.dbaas.configurations.edit(configuration_info.id,
@@ -244,7 +272,7 @@ class CreateConfigurations(object):
 
 
 @test(runs_after=[CreateConfigurations], groups=[GROUP])
-class AfterConfigurationsCreation(object):
+class AfterConfigurationsCreation(ConfigurationsTestBase):
 
     @test
     def test_assign_configuration_to_invalid_instance(self):
@@ -355,7 +383,7 @@ class AfterConfigurationsCreation(object):
 
 
 @test(runs_after=[AfterConfigurationsCreation], groups=[GROUP])
-class ListConfigurations(object):
+class ListConfigurations(ConfigurationsTestBase):
 
     @test
     def test_configurations_list(self):
@@ -393,8 +421,8 @@ class ListConfigurations(object):
     def test_changing_configuration_with_nondynamic_parameter(self):
         # test that changing a non-dynamic parameter is applied to instance
         # and show that the instance requires a restart
-        values = ('{"join_buffer_size":1048576,'
-                  '"innodb_buffer_pool_size":57671680}')
+        expected_configs = self.expected_default_datastore_configs()
+        values = json.dumps(expected_configs.get('nondynamic_parameter'))
         instance_info.dbaas.configurations.update(configuration_info.id,
                                                   values)
         resp, body = instance_info.dbaas.client.last_response
@@ -463,7 +491,7 @@ class ListConfigurations(object):
 
 
 @test(runs_after=[ListConfigurations], groups=[GROUP])
-class StartInstanceWithConfiguration(object):
+class StartInstanceWithConfiguration(ConfigurationsTestBase):
 
     @test
     def test_start_instance_with_configuration(self):
@@ -500,7 +528,7 @@ class StartInstanceWithConfiguration(object):
 
 
 @test(runs_after=[StartInstanceWithConfiguration], groups=[GROUP])
-class WaitForConfigurationInstanceToFinish(object):
+class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
 
     @test
     @time_out(TIMEOUT_INSTANCE_CREATE)
@@ -533,7 +561,7 @@ class WaitForConfigurationInstanceToFinish(object):
 
 
 @test(runs_after=[WaitForConfigurationInstanceToFinish], groups=[GROUP])
-class DeleteConfigurations(object):
+class DeleteConfigurations(ConfigurationsTestBase):
 
     @test
     def test_delete_invalid_configuration_not_found(self):
