@@ -1,5 +1,4 @@
-# Copyright 2013 Rackspace Hosting
-# All Rights Reserved.
+# Copyright 2014 IBM Corp.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,17 +11,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from trove.cmd.common import with_initialize
 
 
-@with_initialize
-def main(conf):
-    from trove.common.rpc import service as rpc_service
-    from trove.openstack.common import service as openstack_service
+class FakeConf(object):
 
-    topic = conf.conductor_queue
-    server = rpc_service.RpcService(manager=conf.conductor_manager,
-                                    topic=topic)
-    launcher = openstack_service.launch(server,
-                                        workers=conf.trove_conductor_workers)
-    launcher.wait()
+    def __init__(self, conf_dict):
+        self._conf = conf_dict
+
+    def __getattr__(self, name):
+        return self._conf[name]

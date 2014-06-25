@@ -32,3 +32,6 @@ rabbit_password=f7999d1955c5014aa32c
 #rabbit_notification_topic = ['notifications']
 
 rpc_backend = trove.openstack.common.rpc.impl_kombu
+
+# The manager class to use for conductor. (string value)
+conductor_manager = trove.conductor.manager.Manager
