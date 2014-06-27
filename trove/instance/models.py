@@ -96,7 +96,7 @@ def validate_volume_size(size):
     max_size = CONF.max_accepted_volume_size
     if long(size) > max_size:
         msg = ("Volume 'size' cannot exceed maximum "
-               "of %d Gb, %s cannot be accepted."
+               "of %d GB, %s cannot be accepted."
                % (max_size, size))
         raise exception.VolumeQuotaExceeded(msg)
 
@@ -343,7 +343,7 @@ class SimpleInstance(object):
 
 
 class DetailInstance(SimpleInstance):
-    """A detailed view of an Instnace.
+    """A detailed view of an Instance.
 
     This loads a SimpleInstance and then adds additional data for the
     instance from the guest.
@@ -520,7 +520,7 @@ class BaseInstance(SimpleInstance):
     def delete_async(self):
         deleted_at = datetime.utcnow()
         self._delete_resources(deleted_at)
-        LOG.debug("Setting instance %s to deleted..." % self.id)
+        LOG.debug("Setting instance %s to be deleted..." % self.id)
         # Delete guest queue.
         try:
             guest = self.get_guest()
@@ -565,7 +565,7 @@ class BaseInstance(SimpleInstance):
         return self._volume_client
 
     def reset_task_status(self):
-        LOG.info(_("Settting task status to NONE on instance %s...") % self.id)
+        LOG.info(_("Setting task status to NONE on instance %s...") % self.id)
         self.update_db(task_status=InstanceTasks.NONE)
 
 
@@ -595,7 +595,7 @@ class Instance(BuiltInstance):
             root_on_create = CONF.get(datastore_manager).root_on_create
             return root_on_create
         except NoSuchOptError:
-            LOG.debug("root_on_create not configured for %s"
+            LOG.debug("root_on_create not configured for %s,"
                       " hence defaulting the value to False"
                       % datastore_manager)
             return False
@@ -840,14 +840,14 @@ class Instance(BuiltInstance):
                       % self.configuration.id)
             flavor = self.get_flavor()
             config_id = self.configuration.id
-            LOG.debug("configuration being unassigned; "
+            LOG.debug("Configuration being unassigned; "
                       "marking restart required")
             self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
             task_api.API(self.context).unassign_configuration(self.id,
                                                               flavor,
                                                               config_id)
         else:
-            LOG.debug("no configuration found on instance skipping.")
+            LOG.debug("No configuration found on instance. Skipping.")
 
     def assign_configuration(self, configuration_id):
         self._validate_can_perform_assign()
@@ -933,7 +933,7 @@ class Instances(object):
 
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
-            LOG.debug("checking for db [id=%s, compute_instance_id=%s]" %
+            LOG.debug("Checking for db [id=%s, compute_instance_id=%s]" %
                       (db.id, db.compute_instance_id))
         ret = Instances._load_servers_status(load_simple_instance, context,
                                              data_view.collection,
@@ -988,7 +988,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
     def __init__(self, task_status, **kwargs):
         """
         Creates a new persistable entity of the Trove Guest Instance for
-        purposes recording its current state and record of modifications
+        purposes of recording its current state and record of modifications
         :param task_status: the current state details of any activity or error
          that is running on this guest instance (e.g. resizing, deleting)
         :type task_status: trove.instance.tasks.InstanceTask
@@ -1003,7 +1003,7 @@ class DBInstance(dbmodels.DatabaseModelBase):
         if InstanceTask.from_code(self.task_id) is None:
             errors['task_id'] = "Not valid."
         if self.task_status is None:
-            errors['task_status'] = "Cannot be none."
+            errors['task_status'] = "Cannot be None."
 
     def get_task_status(self):
         return InstanceTask.from_code(self.task_id)
@@ -1027,7 +1027,7 @@ class InstanceServiceStatus(dbmodels.DatabaseModelBase):
 
     def _validate(self, errors):
         if self.status is None:
-            errors['status'] = "Cannot be none."
+            errors['status'] = "Cannot be None."
         if tr_instance.ServiceStatus.from_code(self.status_id) is None:
             errors['status_id'] = "Not valid."
 
