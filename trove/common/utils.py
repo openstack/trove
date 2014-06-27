@@ -218,7 +218,7 @@ class LoopingCall(object):
                 self.stop()
                 done.send(e.retvalue)
             except Exception:
-                LOG.exception(_('in looping call'))
+                LOG.exception(_('In looping call.'))
                 done.send_exception(*sys.exc_info())
                 return
             else:
@@ -273,26 +273,18 @@ def get_id_from_href(href):
 def execute_with_timeout(*args, **kwargs):
     time = kwargs.pop('timeout', 30)
 
-    def cb_timeout():
-        msg = (_("Time out after waiting"
-                 " %(time)s seconds when running proc: %(args)s"
-                 " %(kwargs)s") % {'time': time, 'args': args,
-                                   'kwargs': kwargs})
-        LOG.error(msg)
-        raise exception.ProcessExecutionError(msg)
-
     timeout = Timeout(time)
     try:
         return execute(*args, **kwargs)
     except Timeout as t:
         if t is not timeout:
-            LOG.error("Timeout reached but not from our timeout. This is bad!")
+            LOG.error(_("Got a timeout but not the one expected."))
             raise
         else:
             msg = (_("Time out after waiting "
                      "%(time)s seconds when running proc: %(args)s"
-                     " %(kwargs)s") % {'time': time, 'args': args,
-                                       'kwargs': kwargs})
+                     " %(kwargs)s.") % {'time': time, 'args': args,
+                                        'kwargs': kwargs})
             LOG.error(msg)
             raise exception.ProcessExecutionError(msg)
     finally:
