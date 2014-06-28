@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2014.2.dev20.ga538568\n"
+"Project-Id-Version: trove 2014.2.dev31.g36d39c9\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-06-25 06:06+0000\n"
+"POT-Creation-Date: 2014-06-28 06:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1445,7 +1445,7 @@ msgstr ""
 
 #: trove/instance/models.py:568
 #, python-format
-msgid "Settting task status to NONE on instance %s..."
+msgid "Setting task status to NONE on instance %s..."
 msgstr ""
 
 #: trove/instance/models.py:749
