@@ -29,6 +29,8 @@ class ConfigurationView(object):
             "name": self.configuration.name,
             "description": self.configuration.description,
             "datastore_version_id": self.configuration.datastore_version_id,
+            "created": self.configuration.created,
+            "updated": self.configuration.updated
         }
 
         return {"configuration": configuration_dict}
@@ -93,6 +95,9 @@ class DetailedConfigurationView(object):
             "description": self.configuration.description,
             "values": values,
             "datastore_version_id": self.configuration.datastore_version_id,
+            "created": self.configuration.created,
+            "updated": self.configuration.updated,
+            "instance_count": getattr(self.configuration, "instance_count", 0)
         }
 
         return {"configuration": configuration_dict}
