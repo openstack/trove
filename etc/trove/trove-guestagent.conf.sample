@@ -1,15 +1,6 @@
 [DEFAULT]
-# Show more verbose log output (sets INFO log level output)
-verbose = True
 
-# Show debugging output in logs (sets DEBUG log level output)
-debug = True
-
-# Address to bind the API server
-bind_host = 0.0.0.0
-
-# Port the bind the API server to
-bind_port = 8778
+# ========== Sample RabbitMQ Configuration ==========
 
 # The RabbitMQ broker address where a single node is used.
 # (string value)
@@ -17,85 +8,110 @@ rabbit_host=10.0.0.1
 
 # The RabbitMQ broker port where a single node is used.
 # (integer value)
-#rabbit_port=5672
+# rabbit_port=5672
 
 # RabbitMQ HA cluster host:port pairs. (list value)
-#rabbit_hosts=$rabbit_host:$rabbit_port
+# rabbit_hosts=$rabbit_host:$rabbit_port
 
 # Connect over SSL for RabbitMQ. (boolean value)
-#rabbit_use_ssl=false
+# rabbit_use_ssl=false
 
 # The RabbitMQ userid. (string value)
-#rabbit_userid=guest
+# rabbit_userid=guest
 
 # The RabbitMQ password. (string value)
 rabbit_password=f7999d1955c5014aa32c
 
 # The RabbitMQ virtual host. (string value)
-#rabbit_virtual_host=/
+# rabbit_virtual_host=/
 
 # RabbitMQ topic used for OpenStack notifications. (list value)
-#rabbit_notification_topic = ['notifications']
+# rabbit_notification_topic = ['notifications']
 
-# Configuration options for talking to nova via the novaclient.
-# These options are for an admin user in your keystone config.
-# It proxies the token received from the user to send to nova via this admin users creds,
-# basically acting like the client via that proxy token.
-nova_proxy_admin_user = admin
-nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
-nova_proxy_admin_tenant_name = admin
-trove_auth_url = http://0.0.0.0:5000/v2.0
-#swift_url = http://10.0.0.1:8080/v1/AUTH_
 
-# swift_url can be fetched from Keystone. To fetch from Keystone, comment
-# out swift_url and optionally uncomment the lines below.
+# ========== Configuration options for Swift ==========
 
-# Region name of this node. Used when searching catalog. Default value is None.
-#os_region_name = RegionOne
+# The swift_url can be specified directly or fetched from Keystone catalog.
+
+# To fetch from Keystone, comment out swift_url, and uncomment the others.
+# swift_url = http://10.0.0.1:8080/v1/AUTH_
+# Region name of this node. Default value is None.
+# os_region_name = RegionOne
 # Service type to use when searching catalog.
-#swift_service_type = object-store
+# swift_service_type = object-store
 
-# Datastore management implementations. Format datastore:manager.impl
+# ========== Datastore Manager Configurations ==========
+# Datastore manager implementations.
+# Format: list of 'datastore-type:datastore.manager.implementation.module'
 # datastore_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager
 
-# Root configuration
-root_grant = ALL
-root_grant_option = True
 
-#root_grant = ALTER ROUTINE, CREATE, ALTER, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, CREATE USER, DELETE, DROP, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, PROCESS, REFERENCES, SELECT, SHOW DATABASES, SHOW VIEW, TRIGGER, UPDATE, USAGE
-#root_grant_option = False
-
-# used by passlib to generate root password
-#default_password_length = 36
-
-# For communicating with trove-conductor
-control_exchange = trove
-
-# ============ Logging information =============================
-log_dir = /tmp/
-log_file = logfile.txt
+# ========== Default Users / DBs Configuration ==========
 
 # Users to ignore for user create/list/delete operations
 ignore_users = os_admin
+
+# Databases to ignore for db create/list/delete operations
 ignore_dbs = lost+found, mysql, information_schema
 
-# Strategy information for backups
-# Additional commandline options to be passed to the backup runner (by strategy). For example:
-# backup_runner_options = InnoBackupEx:--no-lock,  MySQLDump:--events --routines --triggers
-storage_strategy = SwiftStorage
-storage_namespace = trove.guestagent.strategies.storage.swift
-backup_swift_container = database_backups
-backup_use_gzip_compression = True
-backup_use_openssl_encryption = True
-backup_aes_cbc_key = "default_aes_cbc_key"
-backup_use_snet = False
-backup_chunk_size = 65536
-backup_segment_max_size = 2147483648
+# Permissions to grant "root" user by default
+root_grant = ALL
+root_grant_option = True
+# root_grant = ALTER ROUTINE, CREATE, ALTER, CREATE ROUTINE, CREATE TEMPORARY TABLES, CREATE VIEW, CREATE USER, DELETE, DROP, EVENT, EXECUTE, INDEX, INSERT, LOCK TABLES, PROCESS, REFERENCES, SELECT, SHOW DATABASES, SHOW VIEW, TRIGGER, UPDATE, USAGE
+# root_grant_option = False
+
+# Default password Length for root password
+# default_password_length = 36
+
+
+# ========== Default Storage Options for backup ==========
+
+# Default configuration for storage strategy and storage options
+# for backups
+
+# For storage to Swift, use the following as defaults:
+# storage_strategy = SwiftStorage
+# storage_namespace = trove.guestagent.strategies.storage.swift
+
+# Default config options for storing backups to swift
+# backup_swift_container = database_backups
+# backup_use_gzip_compression = True
+# backup_use_openssl_encryption = True
+# backup_aes_cbc_key = "default_aes_cbc_key"
+# backup_use_snet = False
+# backup_chunk_size = 65536
+# backup_segment_max_size = 2147483648
+
+# ========== Configuration for communication with trove-conductor ==========
+
+# Control Exchange used to communicate with trove-conductor
+control_exchange = trove
+
+
+# ========== Sample Logging Configuration ==========
+
+# Show more verbose log output (sets INFO log level output)
+# verbose = True
+
+# Show debugging output in logs (sets DEBUG log level output)
+# debug = True
+
+# Directory and path for log files
+log_dir = /tmp/
+log_file = logfile.txt
+
+
+# ========== Datastore Specific Configuration Options ==========
 
 [mysql]
 
-# Configuration for Replication
-replication_strategy = MysqlBinlogReplication
-replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
-replication_user = slave_user
-replication_password = slave_password
+# For mysql, the following are the defaults for backup, and restore:
+# backup_strategy = InnoBackupEx
+# backup_namespace = trove.guestagent.strategies.backup.mysql_impl
+# restore_namespace = trove.guestagent.strategies.restore.mysql_impl
+
+# Default configuration for mysql replication
+# replication_strategy = MysqlBinlogReplication
+# replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
+# replication_user = slave_user
+# replication_password = slave_password
