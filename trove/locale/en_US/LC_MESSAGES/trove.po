@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-06-30 06:05+0000\n"
+"POT-Creation-Date: 2014-07-03 06:06+0000\n"
 "PO-Revision-Date: 2014-03-19 18:14+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: English (United States) "
@@ -498,65 +498,65 @@ msgstr ""
 msgid "Configuration group with ID %s could not be found."
 msgstr ""
 
-#: trove/configuration/service.py:122
+#: trove/configuration/service.py:127
 #, python-format
 msgid "Updating configuration for tenant id %s"
 msgstr ""
 
-#: trove/configuration/service.py:141 trove/configuration/service.py:152
+#: trove/configuration/service.py:146 trove/configuration/service.py:157
 #, python-format
 msgid "loaded configuration instances: %s"
 msgstr ""
 
-#: trove/configuration/service.py:160
+#: trove/configuration/service.py:165
 #, python-format
 msgid "loaded configuration group: %s"
 msgstr ""
 
-#: trove/configuration/service.py:177
+#: trove/configuration/service.py:182
 msgid "Validating configuration values"
 msgstr ""
 
-#: trove/configuration/service.py:196
+#: trove/configuration/service.py:201
 #, python-format
 msgid ""
 "The value provided for the configuration parameter %(key)s is not of type"
 " %(type)s."
 msgstr ""
 
-#: trove/configuration/service.py:205
+#: trove/configuration/service.py:210
 msgid ""
 "Invalid or unsupported min value defined in the configuration-parameters "
 "configuration file. Expected integer."
 msgstr ""
 
-#: trove/configuration/service.py:211
+#: trove/configuration/service.py:216
 #, python-format
 msgid ""
 "The value for the configuration parameter %(key)s is less than the "
 "minimum allowed: %(min)s"
 msgstr ""
 
-#: trove/configuration/service.py:219
+#: trove/configuration/service.py:224
 msgid ""
 "Invalid or unsupported max value defined in the configuration-parameters "
 "configuration file. Expected integer."
 msgstr ""
 
-#: trove/configuration/service.py:225
+#: trove/configuration/service.py:230
 #, python-format
 msgid ""
 "The value for the configuration parameter %(key)s is greater than the "
 "maximum allowed: %(max)s"
 msgstr ""
 
-#: trove/configuration/service.py:239
+#: trove/configuration/service.py:244
 msgid ""
 "Invalid or unsupported type defined in the configuration-parameters "
 "configuration file."
 msgstr ""
 
-#: trove/configuration/service.py:249
+#: trove/configuration/service.py:254
 #, python-format
 msgid "%s is not a supported configuration parameter."
 msgstr ""
@@ -1603,6 +1603,16 @@ msgstr ""
 msgid "Loaded extension: %s"
 msgstr ""
 
+#: trove/openstack/common/gettextutils.py:320
+msgid "Message objects do not support addition."
+msgstr ""
+
+#: trove/openstack/common/gettextutils.py:330
+msgid ""
+"Message objects do not support str() because they may contain non-ascii "
+"characters. Please use unicode() or translate() instead."
+msgstr ""
+
 #: trove/openstack/common/lockutils.py:105
 #, python-format
 msgid "Could not release the acquired lock `%s`"
@@ -1643,22 +1653,22 @@ msgstr ""
 msgid "Semaphore / lock released \"%(function)s\""
 msgstr ""
 
-#: trove/openstack/common/log.py:301
+#: trove/openstack/common/log.py:327
 #, python-format
 msgid "Deprecated: %s"
 msgstr ""
 
-#: trove/openstack/common/log.py:402
+#: trove/openstack/common/log.py:436
 #, python-format
 msgid "Error loading logging config %(log_config)s: %(err_msg)s"
 msgstr ""
 
-#: trove/openstack/common/log.py:453
+#: trove/openstack/common/log.py:486
 #, python-format
 msgid "syslog facility must be one of: %s"
 msgstr ""
 
-#: trove/openstack/common/log.py:623
+#: trove/openstack/common/log.py:729
 #, python-format
 msgid "Fatal call to deprecated config: %(msg)s"
 msgstr ""
@@ -1711,24 +1721,35 @@ msgstr ""
 msgid "Failed to understand rule %(rule)r"
 msgstr ""
 
-#: trove/openstack/common/processutils.py:122
+#: trove/openstack/common/processutils.py:59
+msgid "Unexpected error while running command."
+msgstr ""
+
+#: trove/openstack/common/processutils.py:62
+#, python-format
+msgid ""
+"%(description)s\n"
+"Command: %(cmd)s\n"
+"Exit code: %(exit_code)s\n"
+"Stdout: %(stdout)r\n"
+"Stderr: %(stderr)r"
+msgstr ""
+
+#: trove/openstack/common/processutils.py:144
 #, python-format
 msgid "Got unknown keyword args to utils.execute: %r"
 msgstr ""
 
-#: trove/openstack/common/processutils.py:137
-#, python-format
-msgid "Running cmd (subprocess): %s"
+#: trove/openstack/common/processutils.py:150
+msgid "Command requested root, but did not specify a root helper."
 msgstr ""
 
-#: trove/openstack/common/processutils.py:162
-#, python-format
-msgid "Result was %s"
+#: trove/openstack/common/processutils.py:247
+msgid "Environment not supported over SSH"
 msgstr ""
 
-#: trove/openstack/common/processutils.py:174
-#, python-format
-msgid "%r failed. Retrying."
+#: trove/openstack/common/processutils.py:251
+msgid "process_input not supported over SSH"
 msgstr ""
 
 #: trove/openstack/common/service.py:118 trove/openstack/common/service.py:335
@@ -1815,6 +1836,21 @@ msgstr ""
 #: trove/openstack/common/sslutils.py:100
 #, python-format
 msgid "Invalid SSL version : %s"
+msgstr ""
+
+#: trove/openstack/common/strutils.py:92
+#, python-format
+msgid "Unrecognized value '%(val)s', acceptable values are: %(acceptable)s"
+msgstr ""
+
+#: trove/openstack/common/strutils.py:197
+#, python-format
+msgid "Invalid unit system: \"%s\""
+msgstr ""
+
+#: trove/openstack/common/strutils.py:206
+#, python-format
+msgid "Invalid string format: %s"
 msgstr ""
 
 #: trove/openstack/common/versionutils.py:69
