@@ -396,7 +396,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_support=CONF.trove_volume_support,
                 ifaces=ifaces, ports=ports,
                 tcp_rules=tcp_rules_mapping_list,
-                udp_rules=udp_ports_mapping_list)
+                udp_rules=udp_ports_mapping_list,
+                datastore_manager=datastore_manager)
             try:
                 heat_template = heat_template_unicode.encode('utf-8')
             except UnicodeEncodeError:
