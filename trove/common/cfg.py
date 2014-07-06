@@ -15,6 +15,7 @@
 #    under the License.
 """Routines for configuring Trove."""
 
+import trove
 from oslo.config import cfg
 from trove.openstack.common import log as logging
 
@@ -445,4 +446,5 @@ def custom_parser(parsername, parser):
 def parse_args(argv, default_config_files=None):
     cfg.CONF(args=argv[1:],
              project='trove',
+             version=trove.__version__,
              default_config_files=default_config_files)
