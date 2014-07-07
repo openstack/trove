@@ -49,6 +49,9 @@ class InstanceView(object):
             if ip:
                 instance_dict['ip'] = ip
 
+        if self.instance.slave_of_id is not None:
+            instance_dict['slave_of'] = self._build_master_info()
+
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
 
@@ -65,6 +68,13 @@ class InstanceView(object):
         return create_links("flavors", self.req,
                             self.instance.flavor_id)
 
+    def _build_master_info(self):
+        return {
+            "id": self.instance.slave_of_id,
+            "links": create_links("instances", self.req,
+                                  self.instance.slave_of_id)
+        }
+
 
 class InstanceDetailView(InstanceView):
     """Works with a full-blown instance."""
@@ -80,6 +90,9 @@ class InstanceDetailView(InstanceView):
 
         result['instance']['datastore']['version'] = (self.instance.
                                                       datastore_version.name)
+
+        if self.instance.slaves:
+            result['instance']['slaves'] = self._build_slaves_info()
 
         if self.instance.configuration is not None:
             result['instance']['configuration'] = (self.
@@ -98,6 +111,15 @@ class InstanceDetailView(InstanceView):
             result['instance']['password'] = self.instance.root_password
 
         return result
+
+    def _build_slaves_info(self):
+        data = []
+        for slave in self.instance.slaves:
+            data.append({
+                "id": slave.id,
+                "links": create_links("instances", self.req, slave.id)
+            })
+        return data
 
     def _build_configuration_info(self):
         return {

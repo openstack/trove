@@ -162,6 +162,8 @@ class SimpleInstance(object):
             self.ds = (datastore_models.Datastore.
                        load(self.ds_version.datastore_id))
 
+        self.slave_list = None
+
     @property
     def addresses(self):
         #TODO(tim.simpson): This code attaches two parts of the Nova server to
@@ -238,6 +240,10 @@ class SimpleInstance(object):
     @property
     def server_id(self):
         return self.db_info.compute_instance_id
+
+    @property
+    def slave_of_id(self):
+        return self.db_info.slave_of_id
 
     @property
     def datastore_status(self):
@@ -351,6 +357,14 @@ class SimpleInstance(object):
         if self.db_info.configuration_id is not None:
             return Configuration.load(self.context,
                                       self.db_info.configuration_id)
+
+    @property
+    def slaves(self):
+        if self.slave_list is None:
+            self.slave_list = DBInstance.find_all(tenant_id=self.tenant_id,
+                                                  slave_of_id=self.id,
+                                                  deleted=False).all()
+        return self.slave_list
 
 
 class DetailInstance(SimpleInstance):
@@ -1005,8 +1019,6 @@ class Instances(object):
 
 class DBInstance(dbmodels.DatabaseModelBase):
     """Defines the task being executed plus the start time."""
-
-    #TODO(tim.simpson): Add start time.
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
