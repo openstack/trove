@@ -95,15 +95,19 @@ class DatabaseModelBase(models.ModelBase):
         model = cls.get_by(**conditions)
 
         if model is None:
-            raise exception.ModelNotFoundError(_("%s Not Found") %
-                                               cls.__name__)
+            raise exception.ModelNotFoundError(_("%(s_name)s Not Found") %
+                                               {"s_name": cls.__name__})
 
         if ((context and not context.is_admin and hasattr(model, 'tenant_id')
              and model.tenant_id != context.tenant)):
-            LOG.error("Tenant %s tried to access %s, owned by %s."
-                      % (context.tenant, cls.__name__, model.tenant_id))
-            raise exception.ModelNotFoundError(_("%s Not Found") %
-                                               cls.__name__)
+            msg = _("Tenant %(s_tenant)s tried to access "
+                    "%(s_name)s, owned by %(s_owner)s.")
+            LOG.error(msg % (
+                {"s_tenant": context.tenant, "s_name": cls.__name__,
+                 "s_owner": model.tenant_id}))
+            raise exception.ModelNotFoundError(
+                _("Tenant %(s_tenant)s cannot access %(s_name)s") % (
+                    {"s_tenant": context.tenant, "s_name": cls.__name__}))
 
         return model
 
