@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-03 06:06+0000\n"
+"POT-Creation-Date: 2014-07-06 06:07+0000\n"
 "PO-Revision-Date: 2014-03-19 18:14+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: English (United States) "
@@ -146,216 +146,221 @@ msgstr ""
 
 #: trove/common/exception.py:143
 #, python-format
+msgid "Datastore manager %(datastore_manager)s cannot be found."
+msgstr ""
+
+#: trove/common/exception.py:148
+#, python-format
 msgid ""
 "The '%(operation)s' operation is not supported for the '%(datastore)s' "
 "datastore."
 msgstr ""
 
-#: trove/common/exception.py:149
+#: trove/common/exception.py:154
 #, python-format
 msgid "Multiple matches found for '%(name)s', iuse an UUID to be more specific."
 msgstr ""
 
-#: trove/common/exception.py:155
+#: trove/common/exception.py:160
 msgid "The server rejected the request due to its size or rate."
 msgstr ""
 
-#: trove/common/exception.py:161
+#: trove/common/exception.py:166
 #, python-format
 msgid "Quota exceeded for resources: %(overs)s"
 msgstr ""
 
-#: trove/common/exception.py:166
+#: trove/common/exception.py:171
 msgid "Instance volume quota exceeded."
 msgstr ""
 
-#: trove/common/exception.py:171
+#: trove/common/exception.py:176
 #, python-format
 msgid "An error occurred communicating with the guest: %(original_message)s."
 msgstr ""
 
-#: trove/common/exception.py:177
+#: trove/common/exception.py:182
 msgid "Timeout trying to connect to the Guest Agent."
 msgstr ""
 
-#: trove/common/exception.py:182
+#: trove/common/exception.py:187
 msgid ""
 "The server could not comply with the request since it is either malformed"
 " or otherwise incorrect."
 msgstr ""
 
-#: trove/common/exception.py:188
+#: trove/common/exception.py:193
 #, python-format
 msgid "Required element/key - %(key)s was not specified"
 msgstr ""
 
-#: trove/common/exception.py:193
+#: trove/common/exception.py:198
 #, python-format
 msgid "A database with the name \"%(name)s\" already exists."
 msgstr ""
 
-#: trove/common/exception.py:198
+#: trove/common/exception.py:203
 #, python-format
 msgid "A user with the name \"%(name)s\" already exists."
 msgstr ""
 
-#: trove/common/exception.py:203
+#: trove/common/exception.py:208
 msgid ""
 "A configuration group cannot be deleted if it is associated with one or "
 "more non-terminated instances. Detach the configuration group from all "
 "non-terminated instances and please try again."
 msgstr ""
 
-#: trove/common/exception.py:211
+#: trove/common/exception.py:216
 msgid "Unable to process the contained request"
 msgstr ""
 
-#: trove/common/exception.py:216
+#: trove/common/exception.py:221
 msgid "When resizing, instances must change size!"
 msgstr ""
 
-#: trove/common/exception.py:221
+#: trove/common/exception.py:226
 msgid "Cannot find the volumes attached to compute instance %(server_id)"
 msgstr ""
 
-#: trove/common/exception.py:227
+#: trove/common/exception.py:232
 msgid "Failed to create a volume in Nova."
 msgstr ""
 
-#: trove/common/exception.py:232
+#: trove/common/exception.py:237
 msgid "Volume size was not specified."
 msgstr ""
 
-#: trove/common/exception.py:237
+#: trove/common/exception.py:242
 #, python-format
 msgid "Local storage not specified in flavor ID: %(flavor)s."
 msgstr ""
 
-#: trove/common/exception.py:242
+#: trove/common/exception.py:247
 msgid "Local storage support is not enabled."
 msgstr ""
 
-#: trove/common/exception.py:247
+#: trove/common/exception.py:252
 msgid "Volume support is not enabled."
 msgstr ""
 
-#: trove/common/exception.py:252
+#: trove/common/exception.py:257
 #, python-format
 msgid ""
 "An error occurred communicating with the task manager: "
 "%(original_message)s."
 msgstr ""
 
-#: trove/common/exception.py:258
+#: trove/common/exception.py:263
 #, python-format
 msgid "Value could not be converted: %(msg)s"
 msgstr ""
 
-#: trove/common/exception.py:263
+#: trove/common/exception.py:268
 msgid "Polling request timed out."
 msgstr ""
 
-#: trove/common/exception.py:268
+#: trove/common/exception.py:273
 msgid "User does not have admin privileges."
 msgstr ""
 
-#: trove/common/exception.py:273
+#: trove/common/exception.py:278
 #, python-format
 msgid "The following values are invalid: %(errors)s"
 msgstr ""
 
-#: trove/common/exception.py:278
+#: trove/common/exception.py:283
 msgid "Not Found"
 msgstr ""
 
-#: trove/common/exception.py:283
+#: trove/common/exception.py:288
 msgid "Failed to update instances"
 msgstr ""
 
-#: trove/common/exception.py:288
+#: trove/common/exception.py:293
 msgid "Config file not found"
 msgstr ""
 
-#: trove/common/exception.py:293
+#: trove/common/exception.py:298
 msgid "Paste app not found."
 msgstr ""
 
-#: trove/common/exception.py:297
+#: trove/common/exception.py:302
 msgid "Quota could not be found"
 msgstr ""
 
-#: trove/common/exception.py:301
+#: trove/common/exception.py:306
 #, python-format
 msgid "Quota for tenant %(tenant_id)s could not be found."
 msgstr ""
 
-#: trove/common/exception.py:305
+#: trove/common/exception.py:310
 #, python-format
 msgid "Unknown quota resources %(unknown)s."
 msgstr ""
 
-#: trove/common/exception.py:309
+#: trove/common/exception.py:314
 msgid "Unable to upload Backup onto swift"
 msgstr ""
 
-#: trove/common/exception.py:313
+#: trove/common/exception.py:318
 msgid "Unable to download Backup from swift"
 msgstr ""
 
-#: trove/common/exception.py:317
+#: trove/common/exception.py:322
 msgid "Unable to create Backup"
 msgstr ""
 
-#: trove/common/exception.py:321
+#: trove/common/exception.py:326
 msgid "Unable to update Backup table in db"
 msgstr ""
 
-#: trove/common/exception.py:326
+#: trove/common/exception.py:331
 msgid "Failed to create Security Group."
 msgstr ""
 
-#: trove/common/exception.py:331
+#: trove/common/exception.py:336
 msgid "Failed to delete Security Group."
 msgstr ""
 
-#: trove/common/exception.py:336
+#: trove/common/exception.py:341
 msgid "Failed to create Security Group Rule."
 msgstr ""
 
-#: trove/common/exception.py:341
+#: trove/common/exception.py:346
 msgid "Failed to delete Security Group Rule."
 msgstr ""
 
-#: trove/common/exception.py:346
+#: trove/common/exception.py:351
 #, python-format
 msgid ""
 "Error creating security group rules. Malformed port(s). Port(s) is not "
 "integer. FromPort = %(from)s greater than ToPort = %(to)s"
 msgstr ""
 
-#: trove/common/exception.py:353
+#: trove/common/exception.py:358
 #, python-format
 msgid "Unable to create instance because backup %(backup_id)s is not completed"
 msgstr ""
 
-#: trove/common/exception.py:358
+#: trove/common/exception.py:363
 #, python-format
 msgid "Backup file in %(location)s was not found in the object storage."
 msgstr ""
 
-#: trove/common/exception.py:363
+#: trove/common/exception.py:368
 #, python-format
 msgid ""
 "The datastore from which the backup was taken, %(datastore1)s, does not "
 "match the destination datastore of %(datastore2)s"
 msgstr ""
 
-#: trove/common/exception.py:369
+#: trove/common/exception.py:374
 #, python-format
 msgid "Swift account not accessible for tenant %(tenant_id)s."
 msgstr ""
 
-#: trove/common/exception.py:373
+#: trove/common/exception.py:378
 #, python-format
 msgid ""
 "The request indicates that user %(user)s should have access to database "
@@ -363,36 +368,36 @@ msgid ""
 "databases list."
 msgstr ""
 
-#: trove/common/exception.py:379
+#: trove/common/exception.py:384
 msgid ""
 "Two or more databases share the same name in the initial databases list. "
 "Please correct the names or remove the duplicate entries."
 msgstr ""
 
-#: trove/common/exception.py:385
+#: trove/common/exception.py:390
 msgid ""
 "Two or more users share the same name and host in the initial users list."
 " Please correct the names or remove the duplicate entries."
 msgstr ""
 
-#: trove/common/exception.py:391
+#: trove/common/exception.py:396
 #, python-format
 msgid ""
 "Current Swift object checksum does not match original checksum for backup"
 " %(backup_id)s."
 msgstr ""
 
-#: trove/common/exception.py:396
+#: trove/common/exception.py:401
 #, python-format
 msgid "%(key)s is not a supported configuration parameter"
 msgstr ""
 
-#: trove/common/exception.py:400
+#: trove/common/exception.py:405
 #, python-format
 msgid "No configuration parser found for datastore %(datastore_manager)s"
 msgstr ""
 
-#: trove/common/exception.py:405
+#: trove/common/exception.py:410
 #, python-format
 msgid ""
 "Datastore Version on Configuration %(config_datastore_version)s does not "
@@ -400,28 +405,28 @@ msgid ""
 "%(instance_datastore_version)s."
 msgstr ""
 
-#: trove/common/exception.py:412
+#: trove/common/exception.py:417
 #, python-format
 msgid ""
 "%(parameter_name)s parameter can no longer be  set as of "
 "%(parameter_deleted_at)s"
 msgstr ""
 
-#: trove/common/exception.py:417
+#: trove/common/exception.py:422
 #, python-format
 msgid ""
 "Instance %(instance_id)s already has a Configuration Group attached: "
 "%(configuration_id)s."
 msgstr ""
 
-#: trove/common/exception.py:422
+#: trove/common/exception.py:427
 #, python-format
 msgid ""
 "The operation you have requested cannot be executed because the instance "
 "status is currently: %(status)s"
 msgstr ""
 
-#: trove/common/exception.py:428
+#: trove/common/exception.py:433
 #, python-format
 msgid ""
 "Multiple matches for service_type=%(service_type)s and "
@@ -2434,122 +2439,122 @@ msgstr ""
 msgid "Error creating server and volume for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:403
+#: trove/taskmanager/models.py:404
 msgid "heat template ascii encode issue"
 msgstr ""
 
-#: trove/taskmanager/models.py:425
+#: trove/taskmanager/models.py:426
 msgid "Timeout during stack status tracing"
 msgstr ""
 
-#: trove/taskmanager/models.py:481
+#: trove/taskmanager/models.py:482
 #, python-format
 msgid "Error creating server for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:497
+#: trove/taskmanager/models.py:498
 #, python-format
 msgid "Error provisioning volume for instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:599
+#: trove/taskmanager/models.py:600
 msgid "Entering guest_prepare"
 msgstr ""
 
-#: trove/taskmanager/models.py:623
+#: trove/taskmanager/models.py:624
 #, python-format
 msgid "Polling for ip addresses: $%s "
 msgstr ""
 
-#: trove/taskmanager/models.py:632
+#: trove/taskmanager/models.py:633
 #, python-format
 msgid ""
 "Instance IP not available, instance (%(instance)s): server had status "
 "(%(status)s)."
 msgstr ""
 
-#: trove/taskmanager/models.py:643
+#: trove/taskmanager/models.py:644
 msgid "Creating dns entry..."
 msgstr ""
 
-#: trove/taskmanager/models.py:663
+#: trove/taskmanager/models.py:664
 #, python-format
 msgid ""
 "Error creating security group rules. Invalid port format. FromPort = "
 "%(from)s, ToPort = %(to)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:724
+#: trove/taskmanager/models.py:725
 #, python-format
 msgid "Error during delete compute server %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:733
+#: trove/taskmanager/models.py:734
 #, python-format
 msgid "Error during dns entry of instance %(id)s: %(ex)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:742
+#: trove/taskmanager/models.py:743
 #, python-format
 msgid ""
 "Server %(server_id)s got into ERROR status during delete of instance "
 "%(instance_id)s!"
 msgstr ""
 
-#: trove/taskmanager/models.py:753
+#: trove/taskmanager/models.py:754
 #, python-format
 msgid "Timout during nova server delete of server: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:809
+#: trove/taskmanager/models.py:810
 #, python-format
 msgid "Failed to reboot instance %(id)s: %(e)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:821
+#: trove/taskmanager/models.py:822
 #, python-format
 msgid "Failure to restart datastore for instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:851
+#: trove/taskmanager/models.py:852
 msgid "Failed to update configuration overrides."
 msgstr ""
 
-#: trove/taskmanager/models.py:951
+#: trove/taskmanager/models.py:952
 #, python-format
 msgid "Deleting files with prefix: %(cont)s/%(prefix)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:959
+#: trove/taskmanager/models.py:960
 #, python-format
 msgid "Deleting file: %(cont)s/%(name)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:963
+#: trove/taskmanager/models.py:964
 #, python-format
 msgid "Deleting file: %(cont)s/%(filename)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:982
+#: trove/taskmanager/models.py:983
 #, python-format
 msgid "Exception deleting from swift. Details: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1005
+#: trove/taskmanager/models.py:1006
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Setting service status to failed."
 msgstr ""
 
-#: trove/taskmanager/models.py:1014
+#: trove/taskmanager/models.py:1015
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Trying to recover by restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1022
+#: trove/taskmanager/models.py:1023
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -2557,7 +2562,7 @@ msgid ""
 "restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1031
+#: trove/taskmanager/models.py:1032
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -2565,53 +2570,53 @@ msgid ""
 "and then restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1133
+#: trove/taskmanager/models.py:1134
 #, python-format
 msgid "Failed to get volume %(vol_id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1147
+#: trove/taskmanager/models.py:1148
 #, python-format
 msgid "Timeout trying to extend the volume %(vol_id)s for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1160
+#: trove/taskmanager/models.py:1161
 #, python-format
 msgid ""
 "Error encountered trying to verify extend for the volume %(vol_id)s for "
 "instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1207
+#: trove/taskmanager/models.py:1208
 #, python-format
 msgid ""
 "Volume resize failed for instance %(id)s. The instance must be in state "
 "%(state)s not %(inst_state)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1328
+#: trove/taskmanager/models.py:1329
 msgid "Exception during nova action."
 msgstr ""
 
-#: trove/taskmanager/models.py:1330
+#: trove/taskmanager/models.py:1331
 #, python-format
 msgid "Reverting action for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1336
+#: trove/taskmanager/models.py:1337
 msgid "Restarting datastore."
 msgstr ""
 
-#: trove/taskmanager/models.py:1339
+#: trove/taskmanager/models.py:1340
 msgid "Cannot restart datastore because Nova server status is not ACTIVE"
 msgstr ""
 
-#: trove/taskmanager/models.py:1342
+#: trove/taskmanager/models.py:1343
 #, python-format
 msgid "Error resizing instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1404
+#: trove/taskmanager/models.py:1405
 msgid "Error sending reset_configuration call."
 msgstr ""
 
