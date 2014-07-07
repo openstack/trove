@@ -14,6 +14,7 @@
 #    under the License.
 from oslo.config import cfg as openstack_cfg
 from trove.cmd.common import with_initialize
+from trove.openstack.common import processutils
 
 
 opts = [
@@ -57,7 +58,8 @@ def start_fake_taskmanager(conf):
 def start_server(conf):
     from trove.common import wsgi
     conf_file = conf.find_file(conf.api_paste_config)
+    workers = conf.trove_api_workers or processutils.get_worker_count()
     launcher = wsgi.launch('trove', conf.bind_port or 8779, conf_file,
-                           workers=conf.trove_api_workers)
+                           workers=workers)
     start_fake_taskmanager(conf)
     launcher.wait()

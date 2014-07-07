@@ -122,7 +122,9 @@ common_opts = [
                help='Default driver to use for quota checks.'),
     cfg.StrOpt('taskmanager_queue', default='taskmanager'),
     cfg.StrOpt('conductor_queue', default='trove-conductor'),
-    cfg.IntOpt('trove_conductor_workers', default=1),
+    cfg.IntOpt('trove_conductor_workers',
+               help="Number of workers for the Conductor service. The default "
+               "will be the number of CPUs available."),
     cfg.BoolOpt('use_nova_server_volume', default=False),
     cfg.BoolOpt('use_heat', default=False),
     cfg.StrOpt('device_path', default='/dev/vdb'),
@@ -154,7 +156,9 @@ common_opts = [
     cfg.BoolOpt('trove_security_groups_support', default=True),
     cfg.StrOpt('trove_security_group_name_prefix', default='SecGroup'),
     cfg.StrOpt('trove_security_group_rule_cidr', default='0.0.0.0/0'),
-    cfg.IntOpt('trove_api_workers', default=None),
+    cfg.IntOpt('trove_api_workers',
+               help="Number of workers for the API service. The default will "
+               "be the number of CPUs available."),
     cfg.IntOpt('usage_sleep_time', default=5,
                help='Time to sleep during the check active guest.'),
     cfg.StrOpt('region', default='LOCAL_DEV',

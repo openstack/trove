@@ -13,12 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from trove.cmd.common import with_initialize
+from trove.openstack.common import processutils
 
 
 @with_initialize
 def main(CONF):
     from trove.common import wsgi
     conf_file = CONF.find_file(CONF.api_paste_config)
+    workers = CONF.trove_api_workers or processutils.get_worker_count()
     launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
-                           workers=CONF.trove_api_workers)
+                           workers=workers)
     launcher.wait()
