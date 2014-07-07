@@ -180,3 +180,19 @@ class Manager(periodic_task.PeriodicTasks):
     def apply_overrides(self, context, overrides):
         raise exception.DatastoreOperationNotSupported(
             operation='apply_overrides', datastore=MANAGER)
+
+    def get_replication_snapshot(self, master_config):
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_replication_snapshot', datastore=MANAGER)
+
+    def attach_replication_slave(self, snapshot, slave_config):
+        raise exception.DatastoreOperationNotSupported(
+            operation='attach_replication_slave', datastore=MANAGER)
+
+    def detach_replication_slave(self):
+        raise exception.DatastoreOperationNotSupported(
+            operation='detach_replication_slave', datastore=MANAGER)
+
+    def demote_replication_master(self):
+        raise exception.DatastoreOperationNotSupported(
+            operation='demote_replication_master', datastore=MANAGER)
