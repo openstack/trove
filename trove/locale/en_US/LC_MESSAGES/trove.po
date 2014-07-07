@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-06 06:07+0000\n"
+"POT-Creation-Date: 2014-07-07 06:05+0000\n"
 "PO-Revision-Date: 2014-03-19 18:14+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: English (United States) "
@@ -598,6 +598,7 @@ msgstr ""
 #: trove/extensions/mgmt/instances/service.py:168
 #: trove/extensions/mgmt/instances/service.py:180
 #: trove/extensions/mgmt/quota/service.py:33
+#: trove/extensions/mgmt/upgrade/service.py:35
 #: trove/extensions/mgmt/volume/service.py:33
 #: trove/extensions/mysql/service.py:44 trove/extensions/mysql/service.py:52
 #: trove/extensions/mysql/service.py:74 trove/extensions/mysql/service.py:85
@@ -697,6 +698,15 @@ msgstr ""
 #: trove/extensions/mgmt/quota/service.py:34
 #, python-format
 msgid "Indexing quota info for tenant '%s'"
+msgstr ""
+
+#: trove/extensions/mgmt/upgrade/service.py:36
+msgid "Sending upgrade notification"
+msgstr ""
+
+#: trove/extensions/mgmt/upgrade/service.py:37
+#, python-format
+msgid "Admin tenant_id: %s"
 msgstr ""
 
 #: trove/extensions/mgmt/volume/service.py:34
