@@ -315,14 +315,21 @@ class ApiTest(testtools.TestCase):
         self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
 
     def test_upgrade(self):
+        instance_version = "v1.0.1"
+        strategy = "pip"
+        location = "http://swift/trove-guestagent-v1.0.1.tar.gz"
+
         mock_conn = mock.Mock()
         rpc.create_connection = mock.Mock(return_value=mock_conn)
         rpc.cast = mock.Mock()
-        exp_msg = RpcMsgMatcher('upgrade')
+        exp_msg = RpcMsgMatcher(
+            'upgrade', 'instance_version', 'location', 'metadata')
+
         # execute
-        self.api.upgrade()
+        self.api.upgrade(instance_version, strategy, location)
+
         # verify
-        self._verify_rpc_connection_and_cast(rpc, mock_conn, exp_msg)
+        self._verify_rpc_cast(exp_msg, rpc.cast)
 
     def test_rpc_cast_with_consumer_exception(self):
         mock_conn = mock.Mock()
