@@ -100,8 +100,8 @@ def __setup_remote_pydev_debug_safe(pydev_debug_host=None,
             pydev_debug_port=pydev_debug_port,
             pydev_path=pydev_path)
     except Exception as e:
-        LOG.info("Cann't connect to remote debug server. Continue working in "
-                 "standard mode. Error: %s", e)
+        LOG.warn(_("Can't connect to remote debug server. Continuing to "
+                 "work in standard mode. Error: %s."), e)
         return False
 
 
@@ -128,7 +128,7 @@ def __setup_remote_pydev_debug(pydev_debug_host=None, pydev_debug_port=None,
         import pydevd
         LOG.debug("pydevd module was imported from system path")
     except ImportError:
-        LOG.debug("Cann't load pydevd module from system path. Try load it "
+        LOG.debug("Can't load pydevd module from system path. Try loading it "
                   "from pydev_path: %s", pydev_path)
         assert pydev_path, "pydev_path is not set"
         if pydev_path not in sys.path:

@@ -16,7 +16,6 @@
 from trove.common import cfg
 from trove.common import exception
 from trove.openstack.common.importutils import import_class
-from trove.openstack.common import log as logging
 
 from cinderclient.v2 import client as CinderClient
 from heatclient.v1 import client as HeatClient
@@ -28,8 +27,6 @@ CONF = cfg.CONF
 
 PROXY_AUTH_URL = CONF.trove_auth_url
 USE_SNET = CONF.backup_use_snet
-
-LOG = logging.getLogger(__name__)
 
 
 def normalize_url(url):

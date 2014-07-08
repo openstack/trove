@@ -98,7 +98,7 @@ def factory(global_config, **local_config):
     def _factory(app):
         extensions.DEFAULT_XMLNS = "http://docs.openstack.org/trove"
         if not os.path.exists(CONF.api_extensions_path):
-            LOG.warning(_('API extensions path does not exist: %s'),
+            LOG.warning(_('API extensions path does not exist: %s.'),
                         CONF.api_extensions_path)
         ext_mgr = extensions.ExtensionManager(CONF.api_extensions_path)
         return TroveExtensionMiddleware(app, ext_mgr)

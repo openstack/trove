@@ -16,7 +16,6 @@
 """Routines for configuring Trove."""
 
 from oslo.config import cfg
-from trove.openstack.common import log as logging
 
 import os.path
 
@@ -28,8 +27,6 @@ path_opts = [
                                                     '../')),
                help='Directory where the trove python module is installed.'),
 ]
-
-LOG = logging.getLogger(__name__)
 
 common_opts = [
     cfg.StrOpt('sql_connection',
@@ -367,7 +364,7 @@ cassandra_opts = [
                help='Timeout to wait for a guest to become active.'),
 ]
 
-#Couchbase
+# Couchbase
 couchbase_group = cfg.OptGroup(
     'couchbase', title='Couchbase options',
     help="Oslo option group designed for Couchbase datastore")

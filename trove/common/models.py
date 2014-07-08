@@ -15,11 +15,7 @@
 
 """Model classes that form the core of instances functionality."""
 
-from trove.openstack.common import log as logging
 from trove.common import remote
-
-
-LOG = logging.getLogger(__name__)
 
 
 class ModelBase(object):
