@@ -34,8 +34,9 @@ bind_host = 0.0.0.0
 # Port the bind the API server to
 bind_port = 8779
 
-# Number of child processes to run
-#trove_api_workers=5
+# Number of workers for the API service. The default will
+# be the number of CPUs available. (integer value)
+#trove_api_workers=None
 
 # AMQP Connection info
 rabbit_password=f7999d1955c5014aa32c
