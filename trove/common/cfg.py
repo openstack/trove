@@ -45,11 +45,10 @@ common_opts = [
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
     cfg.ListOpt('admin_roles', default=['admin']),
-    cfg.BoolOpt('update_status_on_fail', default=False,
-                help='If instance fails to become active, '
-                     'taskmanager updates statuses, '
-                     'service status = FAILED_TIMEOUT_GUESTAGENT, '
-                     'instance task status = BUILDING_ERROR_TIMEOUT_GA.'),
+    cfg.BoolOpt('update_status_on_fail', default=True,
+                help='Set the service and instance task statuses to ERROR '
+                     'when an instance fails to become active within the '
+                     'configured usage_timeout.'),
     cfg.StrOpt('os_region_name',
                help='Region name of this node. Used when searching catalog.'),
     cfg.StrOpt('nova_compute_url', help='URL without the tenant segment.'),
