@@ -66,22 +66,34 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info("Installing cassandra")
         self.app.install_if_needed(packages)
         self.app.init_storage_structure(mount_point)
-        if config_contents:
-            LOG.info(_("Config processing"))
-            self.app.write_config(config_contents)
-            self.app.make_host_reachable()
-        if device_path:
-            device = volume.VolumeDevice(device_path)
-            # unmount if device is already mounted
-            device.unmount_device(device_path)
-            device.format()
-            if os.path.exists(mount_point):
-                #rsync exiting data
-                device.migrate_data(mount_point)
-            #mount the volume
-            device.mount(mount_point)
-            LOG.debug("Mounting new volume.")
-            self.app.restart()
+
+        if config_contents or device_path:
+            # Stop the db while we configure
+            # FIXME(amrith) Once the cassandra bug
+            # https://issues.apache.org/jira/browse/CASSANDRA-2356
+            # is fixed, this code may have to be revisited.
+            LOG.debug("Stopping database prior to changes.")
+            self.app.stop_db()
+
+            if config_contents:
+                LOG.debug("Processing configuration.")
+                self.app.write_config(config_contents)
+                self.app.make_host_reachable()
+
+            if device_path:
+                device = volume.VolumeDevice(device_path)
+                # unmount if device is already mounted
+                device.unmount_device(device_path)
+                device.format()
+                if os.path.exists(mount_point):
+                    #rsync exiting data
+                    device.migrate_data(mount_point)
+                #mount the volume
+                device.mount(mount_point)
+                LOG.debug("Mounting new volume.")
+
+            LOG.debug("Restarting database after changes.")
+            self.app.start_db()
 
         self.appStatus.end_install_or_restart()
         LOG.info(_('"prepare" call has finished.'))
