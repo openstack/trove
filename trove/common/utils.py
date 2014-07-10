@@ -272,10 +272,21 @@ def get_id_from_href(href):
 
 def execute_with_timeout(*args, **kwargs):
     time = kwargs.pop('timeout', 30)
+    log_output_on_error = kwargs.pop('log_output_on_error', False)
 
     timeout = Timeout(time)
     try:
         return execute(*args, **kwargs)
+    except exception.ProcessExecutionError as e:
+        if log_output_on_error:
+            LOG.error(
+                _("Command '%(cmd)s' failed. %(description)s "
+                  "Exit code: %(exit_code)s\nstderr: %(stderr)s\n"
+                  "stdout: %(stdout)s") %
+                {'cmd': e.cmd, 'description': e.description or '',
+                 'exit_code': e.exit_code, 'stderr': e.stderr,
+                 'stdout': e.stdout})
+        raise
     except Timeout as t:
         if t is not timeout:
             LOG.error(_("Got a timeout but not the one expected."))
