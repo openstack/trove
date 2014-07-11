@@ -313,6 +313,10 @@ mysql_opts = [
                default='trove.guestagent.strategies.backup.mysql_impl'),
     cfg.StrOpt('restore_namespace',
                default='trove.guestagent.strategies.restore.mysql_impl'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
 # Percona
@@ -344,6 +348,10 @@ percona_opts = [
                default='trove.guestagent.strategies.backup.mysql_impl'),
     cfg.StrOpt('restore_namespace',
                default='trove.guestagent.strategies.restore.mysql_impl'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
 # Redis
@@ -366,6 +374,10 @@ redis_opts = [
                "volumes if volume support is enabled."),
     cfg.IntOpt('usage_timeout', default=450,
                help='Timeout to wait for a guest to become active.'),
+    cfg.BoolOpt('volume_support',
+                default=False,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default=None),
 ]
 
 # Cassandra
@@ -388,6 +400,10 @@ cassandra_opts = [
                "volumes if volume support is enabled."),
     cfg.IntOpt('usage_timeout', default=600,
                help='Timeout to wait for a guest to become active.'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
 # Couchbase
@@ -420,7 +436,11 @@ couchbase_opts = [
     cfg.StrOpt('backup_namespace',
                default='trove.guestagent.strategies.backup.couchbase_impl'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.couchbase_impl')
+               default='trove.guestagent.strategies.restore.couchbase_impl'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
 # MongoDB
@@ -443,6 +463,10 @@ mongodb_opts = [
                "volumes if volume support is enabled."),
     cfg.IntOpt('usage_timeout', default=450,
                help='Timeout to wait for a guest to become active.'),
+    cfg.BoolOpt('volume_support',
+                default=True,
+                help='Whether to provision a cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb'),
 ]
 
 CONF = cfg.CONF

@@ -116,8 +116,10 @@ class TestConfig(object):
                         "key_buffer_size",
                         "connect_timeout"
                     ]
-                }
-            }
+                },
+                "volume_support": True,
+            },
+            "redis": {"volume_support": False},
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None

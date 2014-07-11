@@ -81,6 +81,8 @@ def mgmt_instance_get():
     # a global.
     id = instance_info.id
     api_instance = mgmt.show(id)
+    datastore = getattr(api_instance, 'datastore')
+    datastore_type = datastore.get('type')
 
     # Print out all fields for extra info if the test fails.
     for name in dir(api_instance):
@@ -102,7 +104,8 @@ def mgmt_instance_get():
         instance.has_field('tenant_id', basestring)
         instance.has_field('updated', basestring)
         # Can be None if no volume is given on this instance.
-        if CONFIG.trove_volume_support:
+        volume_support = CONFIG.get(datastore_type, 'mysql')['volume_support']
+        if volume_support:
             instance.has_field('volume', dict, volume_check)
         else:
             instance.has_field('volume', None)
@@ -126,7 +129,7 @@ def mgmt_instance_get():
             server.has_element("status", basestring)
             server.has_element("tenant_id", basestring)
 
-    if (CONFIG.trove_volume_support and
+    if (volume_support and
             CONFIG.trove_main_instance_has_volume):
         with CollectionCheck("volume", api_instance.volume) as volume:
             volume.has_element("attachments", list)
@@ -151,9 +154,11 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
         # Fake volume will fail if the size is 13.
         # TODO(tim.simpson): This would be a lot nicer looking if we used a
         #                    traditional mock framework.
-        body = None
-        if CONFIG.trove_volume_support:
-            body = {'size': 13}
+        datastore = {'type': 'mysql', 'version': '5.5'}
+        body = {'datastore': datastore}
+        vol_support = CONFIG.get(datastore['type'], 'mysql')['volume_support']
+        if vol_support:
+            body.update({'size': 13})
         response = self.client.instances.create(
             'test_SERVER_ERROR',
             instance_info.dbaas_flavor_href,

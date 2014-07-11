@@ -53,6 +53,7 @@ class InstanceDetailViewTest(TestCase):
         self.instance.updated = 'Now'
         self.instance.datastore_version = Mock()
         self.instance.datastore_version.name = 'mysql_test_version'
+        self.instance.datastore_version.manager = 'mysql'
         self.instance.hostname = 'test.trove.com'
         self.ip = "1.2.3.4"
         self.instance.addresses = {"private": [{"addr": self.ip}]}

@@ -39,10 +39,6 @@ class InstanceController(wsgi.Controller):
 
     """Controller for instance functionality."""
     schemas = apischema.instance.copy()
-    if not CONF.trove_volume_support:
-        # see instance.models.create for further validation around this
-        LOG.info("Removing volume attributes from schema")
-        schemas['create']['properties']['instance']['required'].pop()
 
     @classmethod
     def get_action_schema(cls, body, action_schema):
