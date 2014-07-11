@@ -19,7 +19,6 @@
 import os
 import re
 import uuid
-from datetime import date
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy import interfaces
@@ -728,20 +727,6 @@ class MySqlApp(object):
                     output = {'key': k, 'value': v}
                     LOG.exception(_("Unable to set %(key)s with value "
                                     "%(value)s.") % output)
-
-    def _replace_mycnf_with_template(self, template_path, original_path):
-        LOG.debug("Replacing the MySQL Configuration with template.")
-        LOG.debug("template_path(%(template)s) original_path(%(origin)s)."
-                  % {"template": template_path, "origin": original_path})
-        if os.path.isfile(template_path):
-            if os.path.isfile(original_path):
-                utils.execute_with_timeout(
-                    "sudo", "mv", original_path,
-                    "%(name)s.%(date)s" %
-                    {'name': original_path, 'date':
-                        date.today().isoformat()})
-            utils.execute_with_timeout("sudo", "cp", template_path,
-                                       original_path)
 
     def _write_temp_mycnf_with_admin_account(self, original_file_path,
                                              temp_file_path, password):
