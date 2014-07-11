@@ -224,6 +224,11 @@ class InnoBackupExIncremental(InnoBackupEx):
         self.content_length += self._unpack(location, checksum, command)
         self._incremental_prepare(incremental_dir)
 
+        # Delete unpacked incremental backup metadata
+        if incremental_dir:
+            utils.execute("rm", "-fr", incremental_dir, root_helper="sudo",
+                          run_as_root=True)
+
     def _run_restore(self):
         """Run incremental restore.
 

@@ -45,6 +45,7 @@ backup_info = None
 incremental_info = None
 incremental_db = generate_uuid()
 restore_instance_id = None
+total_num_dbs = 0
 backup_count_prior_to_create = 0
 backup_count_for_instance_prior_to_create = 0
 
@@ -251,9 +252,13 @@ class IncrementalBackups(object):
 
     @test
     def test_create_db(self):
+        global total_num_dbs
+        total_num_dbs = len(instance_info.dbaas.databases.list(
+            instance_info.id))
         databases = [{'name': incremental_db}]
         instance_info.dbaas.databases.create(instance_info.id, databases)
         assert_equal(202, instance_info.dbaas.last_http_code)
+        total_num_dbs += 1
 
     @test(runs_after=['test_create_db'])
     def test_create_incremental_backup(self):
@@ -366,6 +371,8 @@ class VerifyRestore(object):
     def test_database_restored_incremental(self):
         try:
             self._poll(incremental_restore_instance_id, incremental_db)
+            assert_equal(total_num_dbs, len(instance_info.dbaas.databases.list(
+                incremental_restore_instance_id)))
         except exception.PollTimeOut:
             fail('Timed out')
 
