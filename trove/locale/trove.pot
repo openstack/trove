@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2014.2.dev60.ge5d39d1\n"
+"Project-Id-Version: trove 2014.2.dev74.gc3e8573\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-07 06:05+0000\n"
+"POT-Creation-Date: 2014-07-11 06:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -61,18 +61,25 @@ msgstr ""
 msgid "User with tenant id %s cannot access this resource"
 msgstr ""
 
+#: trove/common/debug_utils.py:103
+#, python-format
+msgid ""
+"Can't connect to remote debug server. Continuing to work in standard "
+"mode. Error: %s."
+msgstr ""
+
 #: trove/common/exception.py:55
 #, python-format
-msgid "Failed to save %(model_name)s because: %(error)s"
+msgid "Failed to save %(model_name)s because: %(error)s."
 msgstr ""
 
 #: trove/common/exception.py:60
-msgid "Invalid RPC Connection Reuse"
+msgid "Invalid RPC Connection Reuse."
 msgstr ""
 
 #: trove/common/exception.py:65 trove/common/exception.py:80
 #, python-format
-msgid "Resource %(uuid)s cannot be found"
+msgid "Resource %(uuid)s cannot be found."
 msgstr ""
 
 #: trove/common/exception.py:70
@@ -157,7 +164,7 @@ msgstr ""
 
 #: trove/common/exception.py:154
 #, python-format
-msgid "Multiple matches found for '%(name)s', iuse an UUID to be more specific."
+msgid "Multiple matches found for '%(name)s', use an UUID to be more specific."
 msgstr ""
 
 #: trove/common/exception.py:160
@@ -166,7 +173,7 @@ msgstr ""
 
 #: trove/common/exception.py:166
 #, python-format
-msgid "Quota exceeded for resources: %(overs)s"
+msgid "Quota exceeded for resources: %(overs)s."
 msgstr ""
 
 #: trove/common/exception.py:171
@@ -190,7 +197,7 @@ msgstr ""
 
 #: trove/common/exception.py:193
 #, python-format
-msgid "Required element/key - %(key)s was not specified"
+msgid "Required element/key - %(key)s was not specified."
 msgstr ""
 
 #: trove/common/exception.py:198
@@ -211,15 +218,15 @@ msgid ""
 msgstr ""
 
 #: trove/common/exception.py:216
-msgid "Unable to process the contained request"
+msgid "Unable to process the contained request."
 msgstr ""
 
 #: trove/common/exception.py:221
-msgid "When resizing, instances must change size!"
+msgid "No change was requested in the size of the instance."
 msgstr ""
 
 #: trove/common/exception.py:226
-msgid "Cannot find the volumes attached to compute instance %(server_id)"
+msgid "Cannot find the volumes attached to compute instance %(server_id)."
 msgstr ""
 
 #: trove/common/exception.py:232
@@ -252,7 +259,7 @@ msgstr ""
 
 #: trove/common/exception.py:263
 #, python-format
-msgid "Value could not be converted: %(msg)s"
+msgid "Value could not be converted: %(msg)s."
 msgstr ""
 
 #: trove/common/exception.py:268
@@ -265,19 +272,19 @@ msgstr ""
 
 #: trove/common/exception.py:278
 #, python-format
-msgid "The following values are invalid: %(errors)s"
+msgid "The following values are invalid: %(errors)s."
 msgstr ""
 
 #: trove/common/exception.py:283
-msgid "Not Found"
+msgid "Not Found."
 msgstr ""
 
 #: trove/common/exception.py:288
-msgid "Failed to update instances"
+msgid "Failed to update instances."
 msgstr ""
 
 #: trove/common/exception.py:293
-msgid "Config file not found"
+msgid "Config file not found."
 msgstr ""
 
 #: trove/common/exception.py:298
@@ -285,7 +292,7 @@ msgid "Paste app not found."
 msgstr ""
 
 #: trove/common/exception.py:302
-msgid "Quota could not be found"
+msgid "Quota could not be found."
 msgstr ""
 
 #: trove/common/exception.py:306
@@ -299,7 +306,7 @@ msgid "Unknown quota resources %(unknown)s."
 msgstr ""
 
 #: trove/common/exception.py:314
-msgid "Unable to upload Backup onto swift"
+msgid "Unable to upload Backup to swift."
 msgstr ""
 
 #: trove/common/exception.py:318
@@ -307,11 +314,11 @@ msgid "Unable to download Backup from swift"
 msgstr ""
 
 #: trove/common/exception.py:322
-msgid "Unable to create Backup"
+msgid "Unable to create Backup."
 msgstr ""
 
 #: trove/common/exception.py:326
-msgid "Unable to update Backup table in db"
+msgid "Unable to update Backup table in database."
 msgstr ""
 
 #: trove/common/exception.py:331
@@ -333,13 +340,13 @@ msgstr ""
 #: trove/common/exception.py:351
 #, python-format
 msgid ""
-"Error creating security group rules. Malformed port(s). Port(s) is not "
-"integer. FromPort = %(from)s greater than ToPort = %(to)s"
+"Error creating security group rules. Malformed port(s). Port must be an "
+"integer. FromPort = %(from)s greater than ToPort = %(to)s."
 msgstr ""
 
 #: trove/common/exception.py:358
 #, python-format
-msgid "Unable to create instance because backup %(backup_id)s is not completed"
+msgid "Unable to create instance because backup %(backup_id)s is not completed."
 msgstr ""
 
 #: trove/common/exception.py:363
@@ -351,7 +358,7 @@ msgstr ""
 #, python-format
 msgid ""
 "The datastore from which the backup was taken, %(datastore1)s, does not "
-"match the destination datastore of %(datastore2)s"
+"match the destination datastore of %(datastore2)s."
 msgstr ""
 
 #: trove/common/exception.py:374
@@ -388,12 +395,12 @@ msgstr ""
 
 #: trove/common/exception.py:401
 #, python-format
-msgid "%(key)s is not a supported configuration parameter"
+msgid "%(key)s is not a supported configuration parameter."
 msgstr ""
 
 #: trove/common/exception.py:405
 #, python-format
-msgid "No configuration parser found for datastore %(datastore_manager)s"
+msgid "No configuration parser found for datastore %(datastore_manager)s."
 msgstr ""
 
 #: trove/common/exception.py:410
@@ -408,7 +415,7 @@ msgstr ""
 #, python-format
 msgid ""
 "%(parameter_name)s parameter can no longer be  set as of "
-"%(parameter_deleted_at)s"
+"%(parameter_deleted_at)s."
 msgstr ""
 
 #: trove/common/exception.py:422
@@ -422,7 +429,7 @@ msgstr ""
 #, python-format
 msgid ""
 "The operation you have requested cannot be executed because the instance "
-"status is currently: %(status)s"
+"status is currently: %(status)s."
 msgstr ""
 
 #: trove/common/exception.py:433
@@ -433,9 +440,20 @@ msgid ""
 "is required and you have not supplied one."
 msgstr ""
 
+#: trove/common/exception.py:440
+#, python-format
+msgid ""
+"Endpoint not found for service_type=%(service_type)s, "
+"endpoint_type=%(endpoint_type)s, endpoint_region=%(endpoint_region)s."
+msgstr ""
+
+#: trove/common/exception.py:447
+msgid "Empty catalog."
+msgstr ""
+
 #: trove/common/extensions.py:101
 #, python-format
-msgid "API extensions path does not exist: %s"
+msgid "API extensions path does not exist: %s."
 msgstr ""
 
 #: trove/common/limits.py:87
@@ -449,28 +467,41 @@ msgstr ""
 msgid "This request was rate-limited."
 msgstr ""
 
-#: trove/common/utils.py:221
-msgid "in looping call"
+#: trove/common/template.py:134
+#, python-format
+msgid "Missing heat template for %(s_datastore_manager)s."
 msgstr ""
 
-#: trove/common/utils.py:277 trove/common/utils.py:292
+#: trove/common/utils.py:221
+msgid "In looping call."
+msgstr ""
+
+#: trove/common/utils.py:281
+msgid "Got a timeout but not the one expected."
+msgstr ""
+
+#: trove/common/utils.py:284
 #, python-format
 msgid ""
 "Time out after waiting %(time)s seconds when running proc: %(args)s "
-"%(kwargs)s"
+"%(kwargs)s."
 msgstr ""
 
 #: trove/common/wsgi.py:145
 msgid "version not supported"
 msgstr ""
 
-#: trove/common/wsgi.py:519
+#: trove/common/wsgi.py:304
+msgid "Unserializable result detected."
+msgstr ""
+
+#: trove/common/wsgi.py:520
 msgid "Invalid service catalog json."
 msgstr ""
 
-#: trove/common/wsgi.py:564
+#: trove/common/wsgi.py:565
 #, python-format
-msgid "Caught error: %s"
+msgid "Caught error: %s."
 msgstr ""
 
 #: trove/conductor/manager.py:45
@@ -577,14 +608,29 @@ msgstr ""
 msgid "Capability Override not found for capability %s"
 msgstr ""
 
-#: trove/db/models.py:98 trove/db/models.py:105 trove/dns/models.py:68
+#: trove/db/models.py:98
 #, python-format
-msgid "%s Not Found"
+msgid "%(s_name)s Not Found"
+msgstr ""
+
+#: trove/db/models.py:103
+#, python-format
+msgid "Tenant %(s_tenant)s tried to access %(s_name)s, owned by %(s_owner)s."
+msgstr ""
+
+#: trove/db/models.py:109
+#, python-format
+msgid "Tenant %(s_tenant)s cannot access %(s_name)s"
 msgstr ""
 
 #: trove/db/sqlalchemy/session.py:77
 #, python-format
 msgid "Creating SQLAlchemy engine with args: %s"
+msgstr ""
+
+#: trove/dns/models.py:68
+#, python-format
+msgid "%s Not Found"
 msgstr ""
 
 #: trove/extensions/account/service.py:35
@@ -1223,16 +1269,16 @@ msgstr ""
 msgid "Set group to 'mongodb' for %s "
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:96
+#: trove/guestagent/datastore/mysql/manager.py:97
 #, python-format
 msgid "Restoring database from backup %s"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:105
+#: trove/guestagent/datastore/mysql/manager.py:106
 msgid "Restored database successfully"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:132
+#: trove/guestagent/datastore/mysql/manager.py:133
 msgid "Securing mysql now."
 msgstr ""
 
