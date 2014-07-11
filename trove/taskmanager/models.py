@@ -524,7 +524,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         volume_desc = ("datastore volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
             volume_size, name="datastore-%s" % self.id,
-            description=volume_desc)
+            description=volume_desc, volume_type=CONF.cinder_volume_type)
 
         # Record the volume ID in case something goes wrong.
         self.update_db(volume_id=volume_ref.id)
