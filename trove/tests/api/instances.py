@@ -964,7 +964,7 @@ class TestInstanceListing(object):
     @test
     def test_index_list(self):
         expected_attrs = ['id', 'links', 'name', 'status', 'flavor',
-                          'datastore']
+                          'datastore', 'ip', 'hostname']
         if VOLUME_SUPPORT:
             expected_attrs.append('volume')
         instances = dbaas.instances.list()

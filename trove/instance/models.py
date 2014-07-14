@@ -949,12 +949,15 @@ class Instances(object):
                 #TODO(tim.simpson): Delete when we get notifications working!
                 if InstanceTasks.BUILDING == db.task_status:
                     db.server_status = "BUILD"
+                    db.addresses = {}
                 else:
                     try:
                         server = find_server(db.id, db.compute_instance_id)
                         db.server_status = server.status
+                        db.addresses = server.addresses
                     except exception.ComputeInstanceNotFound:
                         db.server_status = "SHUTDOWN"  # Fake it...
+                        db.addresses = {}
                 #TODO(tim.simpson): End of hack.
 
                 #volumes = find_volumes(server.id)
