@@ -88,36 +88,60 @@ class Commands(object):
 def main():
 
     def actions(subparser):
-        parser = subparser.add_parser('db_sync')
-        parser.add_argument('--repo_path')
+        repo_path_help = 'SQLAlchemy Migrate repository path.'
 
-        parser = subparser.add_parser('db_upgrade')
-        parser.add_argument('--version')
-        parser.add_argument('--repo_path')
+        parser = subparser.add_parser(
+            'db_sync', description='Populate the database structure')
+        parser.add_argument('--repo_path', help=repo_path_help)
 
-        parser = subparser.add_parser('db_downgrade')
-        parser.add_argument('version')
-        parser.add_argument('--repo_path')
+        parser = subparser.add_parser(
+            'db_upgrade', description='Upgrade the database to the '
+            'specified version.')
+        parser.add_argument(
+            '--version', help='Target version. Defaults to the '
+            'latest version.')
+        parser.add_argument('--repo_path', help=repo_path_help)
 
-        parser = subparser.add_parser('datastore_update')
-        parser.add_argument('datastore_name')
-        parser.add_argument('default_version')
+        parser = subparser.add_parser(
+            'db_downgrade', description='Downgrade the database to the '
+            'specified version.')
+        parser.add_argument('version', help='Target version.')
+        parser.add_argument('--repo_path', help=repo_path_help)
 
-        parser = subparser.add_parser('datastore_version_update')
-        parser.add_argument('datastore')
-        parser.add_argument('version_name')
-        parser.add_argument('manager')
-        parser.add_argument('image_id')
-        parser.add_argument('packages')
-        parser.add_argument('active')
+        parser = subparser.add_parser(
+            'datastore_update', description='Add or update a datastore. '
+            'If the datastore already exists, the default version will be '
+            'updated.')
+        parser.add_argument(
+            'datastore_name', help='Name of the datastore.')
+        parser.add_argument(
+            'default_version', help='Name or ID of an existing datastore '
+            'version to set as the default. When adding a new datastore, use '
+            'an empty string.')
+
+        parser = subparser.add_parser(
+            'datastore_version_update', description='Add or update a '
+            'datastore version. If the datastore version already exists, all '
+            'values except the datastore name and version will be updated.')
+        parser.add_argument('datastore', help='Name of the datastore.')
+        parser.add_argument(
+            'version_name', help='Name of the datastore version.')
+        parser.add_argument(
+            'manager', help='Name of the manager that will administer the '
+            'datastore version.')
+        parser.add_argument(
+            'image_id', help='ID of the image used to create an instance of '
+            'the datastore version.')
+        parser.add_argument(
+            'packages', help='Packages required by the datastore version that '
+            'are installed on the guest image.')
+        parser.add_argument(
+            'active', help='Whether the datastore version is active or not. '
+            'Accepted values are 0 and 1.')
 
         parser = subparser.add_parser(
             'db_recreate', description='Drop the database and recreate it.')
-        parser.add_argument(
-            '--repo_path', help='SQLAlchemy Migrate repository path.')
-        parser = subparser.add_parser('db_recreate')
-        parser.add_argument('repo_path')
-
+        parser.add_argument('repo_path', help=repo_path_help)
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)
 
