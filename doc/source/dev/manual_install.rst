@@ -22,7 +22,14 @@ Requirements
 
 - PC with freshly installed Ubuntu 12.04 to run Trove services. This will be referred to as "local PC"
 
-- Running OpenStack Grizzly environment. All of Grizzly's services must be accessible directly from the local PC
+- Running OpenStack environment that includes at least the following components:
+
+  - Compute (nova)
+  - Image Service (glance)
+  - Identity (keystone)
+  - A networking component (either neutron or nova-network)
+  - If you want to provision datastores on block-storage volumes, you also need Block Storage (cinder)
+  - If you want to do backup and restore, you also need Object Storage (swift)
 
 - AMQP service provided by RabbitMQ
 
