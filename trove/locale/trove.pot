@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2014.2.dev74.gc3e8573\n"
+"Project-Id-Version: trove 2014.2.dev90.g8583560\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-11 06:07+0000\n"
+"POT-Creation-Date: 2014-07-15 06:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -853,7 +853,7 @@ msgstr ""
 msgid "Security Group with id: %(id)s already had been deleted"
 msgstr ""
 
-#: trove/extensions/security_group/service.py:127
+#: trove/extensions/security_group/service.py:129
 #, python-format
 msgid "Create Security Group Rules Required field(s) - %s"
 msgstr ""
@@ -977,11 +977,7 @@ msgstr ""
 msgid "Setting status BUILDING"
 msgstr ""
 
-#: trove/guestagent/datastore/cassandra/manager.py:70
-msgid "Config processing"
-msgstr ""
-
-#: trove/guestagent/datastore/cassandra/manager.py:87
+#: trove/guestagent/datastore/cassandra/manager.py:99
 #: trove/guestagent/datastore/mongodb/manager.py:77
 msgid "\"prepare\" call has finished."
 msgstr ""
@@ -1535,12 +1531,12 @@ msgstr ""
 msgid "Server %(server)s for instance %(instance)s wasfound twice!"
 msgstr ""
 
-#: trove/instance/models.py:964 trove/instance/models.py:970
+#: trove/instance/models.py:967 trove/instance/models.py:973
 #, python-format
 msgid "Server status could not be read for instance id(%s)"
 msgstr ""
 
-#: trove/instance/models.py:967
+#: trove/instance/models.py:970
 #, python-format
 msgid "Server api_status(%s)"
 msgstr ""
@@ -2695,7 +2691,7 @@ msgstr ""
 msgid "Simulated event ended, deleting server %s."
 msgstr ""
 
-#: trove/tests/fakes/nova.py:482
+#: trove/tests/fakes/nova.py:483
 #, python-format
 msgid "Couldn't find volume id %(id)s, collection=%(db)s"
 msgstr ""
