@@ -584,10 +584,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 userdata = f.read()
         name = self.hostname or self.name
         bdmap = block_device_mapping
+        config_drive = CONF.use_nova_server_config_drive
+
         server = self.nova_client.servers.create(
             name, image_id, flavor_id, files=files, userdata=userdata,
             security_groups=security_groups, block_device_mapping=bdmap,
-            availability_zone=availability_zone, nics=nics)
+            availability_zone=availability_zone, nics=nics,
+            config_drive=config_drive)
         LOG.debug("Created new compute instance %(server_id)s "
                   "for id: %(id)s" %
                   {'server_id': server.id, 'id': self.id})
