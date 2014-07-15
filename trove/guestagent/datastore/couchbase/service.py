@@ -61,7 +61,7 @@ class CouchbaseApp(object):
 
     def initial_setup(self):
         self.ip_address = operating_system.get_ip_address()
-        mount_point = CONF.get('couchbase').mount_point
+        mount_point = CONF.couchbase.mount_point
         try:
             LOG.info(_('Couchbase Server change data dir path'))
             utils.execute_with_timeout(system.cmd_own_data_dir, shell=True)
