@@ -16,8 +16,10 @@ import os
 
 import testtools
 from mock import MagicMock
+from mock import patch
 from testtools.matchers import Is, Equals, Not
 from trove.common.context import TroveContext
+from trove.common.exception import InsufficientSpaceForSlave
 from trove.guestagent import volume
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
@@ -42,6 +44,16 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
         self.origin_pkg_is_installed = pkg.Package.pkg_is_installed
         self.origin_os_path_exists = os.path.exists
+        # set up common mock objects, etc. for replication testing
+        self.patcher_gfvs = patch(
+            'trove.guestagent.dbaas.get_filesystem_volume_stats')
+        self.patcher_rs = patch(
+            'trove.guestagent.datastore.mysql.manager.'
+            'REPLICATION_STRATEGY_CLASS')
+        self.mock_gfvs_class = self.patcher_gfvs.start()
+        self.mock_rs_class = self.patcher_rs.start()
+        self.repl_datastore_manager = 'mysql'
+        self.repl_replication_strategy = 'MysqlBinlogReplication'
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
@@ -56,6 +68,9 @@ class GuestAgentManagerTest(testtools.TestCase):
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
         pkg.Package.pkg_is_installed = self.origin_pkg_is_installed
         os.path.exists = self.origin_os_path_exists
+        # teardown the replication mock objects
+        self.patcher_gfvs.stop()
+        self.patcher_rs.stop()
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -226,9 +241,121 @@ class GuestAgentManagerTest(testtools.TestCase):
                                            backup_info,
                                            '/var/lib/mysql')
         dbaas.MySqlApp.install_if_needed.assert_any_call(None)
-        # We dont need to make sure the exact contents are there
+        # We don't need to make sure the exact contents are there
         dbaas.MySqlApp.secure.assert_any_call(None, None)
         self.assertFalse(dbaas.MySqlAdmin.create_database.called)
         self.assertFalse(dbaas.MySqlAdmin.create_user.called)
         dbaas.MySqlApp.secure_root.assert_any_call(
             secure_remote_root=not is_root_enabled)
+
+    def test_get_replication_snapshot(self):
+        mock_status = MagicMock()
+        dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
+
+        snapshot_id = 'my_snapshot_id'
+        log_position = 123456789
+        master_ref = 'my_master'
+        used_size = 1.0
+        total_size = 2.0
+
+        mock_replication = MagicMock()
+        mock_replication.enable_as_master = MagicMock()
+        mock_replication.snapshot_for_replication = MagicMock(
+            return_value=(snapshot_id, log_position))
+        mock_replication.get_master_ref = MagicMock(
+            return_value=master_ref)
+        self.mock_rs_class.return_value = mock_replication
+        self.mock_gfvs_class.return_value = (
+            {'used': used_size, 'total': total_size})
+
+        expected_replication_snapshot = {
+            'dataset': {
+                'datastore_manager': self.repl_datastore_manager,
+                'dataset_size': used_size,
+                'volume_size': total_size,
+                'snapshot_id': snapshot_id
+            },
+            'replication_strategy': self.repl_replication_strategy,
+            'master': master_ref,
+            'log_position': log_position
+        }
+
+        master_config = None
+        # entry point
+        replication_snapshot = (
+            self.manager.get_replication_snapshot(self.context,
+                                                  master_config))
+        # assertions
+        self.assertEqual(expected_replication_snapshot, replication_snapshot)
+        self.assertEqual(mock_replication.enable_as_master.call_count, 1)
+        self.assertEqual(
+            mock_replication.snapshot_for_replication.call_count, 1)
+        self.assertEqual(mock_replication.get_master_ref.call_count, 1)
+
+    def test_attach_replication_slave_valid(self):
+        mock_status = MagicMock()
+        dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
+
+        total_size = 2.0
+        dataset_size = 1.0
+
+        mock_replication = MagicMock()
+        mock_replication.enable_as_slave = MagicMock()
+        self.mock_rs_class.return_value = mock_replication
+        self.mock_gfvs_class.return_value = {'total': total_size}
+
+        snapshot = {'replication_strategy': self.repl_replication_strategy,
+                    'dataset': {'dataset_size': dataset_size}}
+
+        # entry point
+        self.manager.attach_replication_slave(self.context, snapshot, None)
+        # assertions
+        self.assertEqual(mock_replication.enable_as_slave.call_count, 1)
+
+    def test_attach_replication_slave_invalid(self):
+        mock_status = MagicMock()
+        dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
+
+        total_size = 2.0
+        dataset_size = 3.0
+
+        mock_replication = MagicMock()
+        mock_replication.enable_as_slave = MagicMock()
+        self.mock_rs_class.return_value = mock_replication
+        self.mock_gfvs_class.return_value = {'total': total_size}
+
+        snapshot = {'replication_strategy': self.repl_replication_strategy,
+                    'dataset': {'dataset_size': dataset_size}}
+
+        # entry point
+        self.assertRaises(InsufficientSpaceForSlave,
+                          self.manager.attach_replication_slave,
+                          self.context, snapshot, None)
+        # assertions
+        self.assertEqual(mock_replication.enable_as_slave.call_count, 0)
+
+    def test_detach_replication_slave(self):
+        mock_status = MagicMock()
+        dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
+
+        mock_replication = MagicMock()
+        mock_replication.detach_slave = MagicMock()
+        self.mock_rs_class.return_value = mock_replication
+
+        # entry point
+        self.manager.detach_replication_slave(self.context)
+        # assertions
+        self.assertEqual(mock_replication.detach_slave.call_count, 1)
+
+    def test_demote_replication_master(self):
+        mock_status = MagicMock()
+        dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
+
+        mock_replication = MagicMock()
+        mock_replication.demote_master = MagicMock()
+        self.mock_rs_class.return_value = mock_replication
+
+        # entry point
+        self.manager.demote_replication_master(self.context)
+        # assertions
+        self.assertEqual(mock_replication.demote_master.call_count, 1)
