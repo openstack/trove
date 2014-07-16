@@ -68,7 +68,6 @@ class BackupRunner(Strategy):
         """Start up the process."""
         self._run_pre_backup()
         self.run()
-        self._run_post_backup()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -90,6 +89,8 @@ class BackupRunner(Strategy):
             utils.raise_if_process_errored(self.process, BackupError)
             if not self.check_process():
                 raise BackupError
+
+        self._run_post_backup()
 
         return True
 
