@@ -23,6 +23,7 @@ from trove.conductor import api as conductor_api
 from trove.guestagent.common import timeutils
 from trove.instance import models as rd_models
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -74,10 +75,10 @@ class BaseDbStatus(object):
 
         Updates the database with the actual DB server status.
         """
-        LOG.info("Ending install_if_needed or restart.")
+        LOG.debug("Ending install_if_needed or restart.")
         self.restart_mode = False
         real_status = self._get_actual_db_status()
-        LOG.info("Updating status to %s" % real_status)
+        LOG.info(_("Updating database status to %s.") % real_status)
         self.set_status(real_status)
 
     def _get_actual_db_status(self):
@@ -124,13 +125,13 @@ class BaseDbStatus(object):
         The database is updated and the status is also returned.
         """
         if self.is_installed and not self._is_restarting:
-            LOG.info("Determining status of DB server...")
+            LOG.debug("Determining status of DB server.")
             status = self._get_actual_db_status()
             self.set_status(status)
         else:
-            LOG.info("DB server is not installed or is in restart mode, so "
-                     "for now we'll skip determining the status of DB on this "
-                     "box.")
+            LOG.info(_("DB server is not installed or is in restart mode, so "
+                       "for now we'll skip determining the status of DB on "
+                       "this instance."))
 
     def wait_for_real_status_to_change_to(self, status, max_time,
                                           update_db=False):
@@ -144,15 +145,15 @@ class BaseDbStatus(object):
         while waited_time < max_time:
             time.sleep(WAIT_TIME)
             waited_time += WAIT_TIME
-            LOG.info("Waiting for DB status to change to %s..." % status)
+            LOG.debug("Waiting for DB status to change to %s." % status)
             actual_status = self._get_actual_db_status()
-            LOG.info("DB status was %s after %d seconds."
-                     % (actual_status, waited_time))
+            LOG.debug("DB status was %s after %d seconds."
+                      % (actual_status, waited_time))
             if actual_status == status:
                 if update_db:
                     self.set_status(actual_status)
                 return True
-        LOG.error("Time out while waiting for DB status to change!")
+        LOG.error(_("Timeout while waiting for database status to change."))
         return False
 
     def report_root(self, user):
