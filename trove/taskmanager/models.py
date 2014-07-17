@@ -41,6 +41,8 @@ from trove.extensions.mysql import models as mysql_models
 from trove.configuration.models import Configuration
 from trove.extensions.security_group.models import SecurityGroup
 from trove.extensions.security_group.models import SecurityGroupRule
+from trove.extensions.security_group.models import (
+    SecurityGroupInstanceAssociation)
 from swiftclient.client import ClientException
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
@@ -445,6 +447,20 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                volume_id=volume_id)
             else:
                 self.update_db(compute_instance_id=instance_id)
+
+            if CONF.trove_security_groups_support:
+                resource = client.resources.get(stack.id, 'DatastoreSG')
+                name = "%s_%s" % (
+                    CONF.trove_security_group_name_prefix, self.id)
+                description = _("Security Group for %s") % self.id
+                SecurityGroup.create(
+                    id=resource.physical_resource_id,
+                    name=name, description=description,
+                    user=self.context.user,
+                    tenant_id=self.context.tenant)
+                SecurityGroupInstanceAssociation.create(
+                    security_group_id=resource.physical_resource_id,
+                    instance_id=self.id)
 
         except (TroveError, heat_exceptions.HTTPNotFound,
                 heat_exceptions.HTTPException) as e:
