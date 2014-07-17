@@ -49,7 +49,8 @@ class Manager(periodic_task.PeriodicTasks):
                 config_contents=None, root_password=None, overrides=None,
                 cluster_config=None):
         """Makes ready DBAAS on a Guest container."""
-        LOG.debug("Prepare MongoDB instance")
+
+        LOG.debug("Preparing MongoDB instance.")
 
         self.status.begin_install()
         self.app.install_if_needed(packages)
@@ -66,7 +67,7 @@ class Manager(periodic_task.PeriodicTasks):
             device.mount(mount_point)
             operating_system.update_owner('mongodb', 'mongodb', mount_point)
 
-            LOG.debug("Mounted the volume %(path)s as %(mount)s" %
+            LOG.debug("Mounted the volume %(path)s as %(mount)s." %
                       {'path': device_path, "mount": mount_point})
 
         conf_changes = self.get_config_changes(cluster_config, mount_point)
@@ -90,15 +91,16 @@ class Manager(periodic_task.PeriodicTasks):
                 self.app.start_db_with_conf_changes(config_contents)
 
             else:
-                LOG.error("Bad cluster configuration; instance type given "
-                          "as %s" % cluster_config['instance_type'])
+                LOG.error(_("Bad cluster configuration; instance type "
+                            "given as %s.") % cluster_config['instance_type'])
                 self.status.set_status(ds_instance.ServiceStatuses.FAILED)
                 return
 
             self.status.set_status(ds_instance.ServiceStatuses.BUILD_PENDING)
-        LOG.info(_('"prepare" call has finished.'))
+        LOG.info(_('Completed setup of MongoDB database instance.'))
 
     def get_config_changes(self, cluster_config, mount_point=None):
+        LOG.debug("Getting configuration changes.")
         config_changes = {}
         if cluster_config is not None:
             config_changes['bind_ip'] = operating_system.get_ip_address()
@@ -117,76 +119,95 @@ class Manager(periodic_task.PeriodicTasks):
         return config_changes
 
     def restart(self, context):
+        LOG.debug("Restarting MongoDB.")
         self.app.restart()
 
     def start_db_with_conf_changes(self, context, config_contents):
+        LOG.debug("Starting MongoDB with configuration changes.")
         self.app.start_db_with_conf_changes(config_contents)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
+        LOG.debug("Stopping MongoDB.")
         self.app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
 
     def reset_configuration(self, context, configuration):
+        LOG.debug("Resetting MongoDB configuration.")
         self.app.reset_configuration(configuration)
 
     def get_filesystem_stats(self, context, fs_path):
         """Gets the filesystem stats for the path given."""
+        LOG.debug("Getting file system status.")
         return dbaas.get_filesystem_volume_stats(system.MONGODB_MOUNT_POINT)
 
     def change_passwords(self, context, users):
+        LOG.debug("Changing password.")
         raise exception.DatastoreOperationNotSupported(
             operation='change_passwords', datastore=MANAGER)
 
     def update_attributes(self, context, username, hostname, user_attrs):
+        LOG.debug("Updating database attributes.")
         raise exception.DatastoreOperationNotSupported(
             operation='update_attributes', datastore=MANAGER)
 
     def create_database(self, context, databases):
+        LOG.debug("Creating database.")
         raise exception.DatastoreOperationNotSupported(
             operation='create_database', datastore=MANAGER)
 
     def create_user(self, context, users):
+        LOG.debug("Creating user.")
         raise exception.DatastoreOperationNotSupported(
             operation='create_user', datastore=MANAGER)
 
     def delete_database(self, context, database):
+        LOG.debug("Deleting database.")
         raise exception.DatastoreOperationNotSupported(
             operation='delete_database', datastore=MANAGER)
 
     def delete_user(self, context, user):
+        LOG.debug("Deleting user.")
         raise exception.DatastoreOperationNotSupported(
             operation='delete_user', datastore=MANAGER)
 
     def get_user(self, context, username, hostname):
+        LOG.debug("Getting user.")
         raise exception.DatastoreOperationNotSupported(
             operation='get_user', datastore=MANAGER)
 
     def grant_access(self, context, username, hostname, databases):
+        LOG.debug("Granting acccess.")
         raise exception.DatastoreOperationNotSupported(
             operation='grant_access', datastore=MANAGER)
 
     def revoke_access(self, context, username, hostname, database):
+        LOG.debug("Revoking access.")
         raise exception.DatastoreOperationNotSupported(
             operation='revoke_access', datastore=MANAGER)
 
     def list_access(self, context, username, hostname):
+        LOG.debug("Listing access.")
         raise exception.DatastoreOperationNotSupported(
             operation='list_access', datastore=MANAGER)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
+        LOG.debug("Listing databases.")
         raise exception.DatastoreOperationNotSupported(
             operation='list_databases', datastore=MANAGER)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
+        LOG.debug("Listing users.")
         raise exception.DatastoreOperationNotSupported(
             operation='list_users', datastore=MANAGER)
 
     def enable_root(self, context):
+        LOG.debug("Enabling root.")
         raise exception.DatastoreOperationNotSupported(
             operation='enable_root', datastore=MANAGER)
 
     def is_root_enabled(self, context):
+        LOG.debug("Checking if root is enabled.")
         raise exception.DatastoreOperationNotSupported(
             operation='is_root_enabled', datastore=MANAGER)
 
@@ -195,81 +216,91 @@ class Manager(periodic_task.PeriodicTasks):
             operation='_perform_restore', datastore=MANAGER)
 
     def create_backup(self, context, backup_info):
+        LOG.debug("Creating backup.")
         raise exception.DatastoreOperationNotSupported(
             operation='create_backup', datastore=MANAGER)
 
     def mount_volume(self, context, device_path=None, mount_point=None):
+        LOG.debug("Mounting the device %s at the mount point %s." %
+                  (device_path, mount_point))
         device = volume.VolumeDevice(device_path)
         device.mount(mount_point, write_to_fstab=False)
-        LOG.debug("Mounted the volume.")
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
+        LOG.debug("Unmounting the device %s from the mount point %s." %
+                  (device_path, mount_point))
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
-        LOG.debug("Unmounted the volume.")
 
     def resize_fs(self, context, device_path=None, mount_point=None):
+        LOG.debug("Resizing the filesystem at %s." % mount_point)
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point)
-        LOG.debug("Resized the filesystem")
 
     def update_overrides(self, context, overrides, remove=False):
+        LOG.debug("Updating overrides.")
         raise exception.DatastoreOperationNotSupported(
             operation='update_overrides', datastore=MANAGER)
 
     def apply_overrides(self, context, overrides):
+        LOG.debug("Applying overrides.")
         raise exception.DatastoreOperationNotSupported(
             operation='apply_overrides', datastore=MANAGER)
 
     def get_replication_snapshot(self, context, snapshot_info,
                                  replica_source_config=None):
+        LOG.debug("Getting replication snapshot.")
         raise exception.DatastoreOperationNotSupported(
             operation='get_replication_snapshot', datastore=MANAGER)
 
     def attach_replication_slave(self, context, snapshot, slave_config):
+        LOG.debug("Attaching replica.")
         raise exception.DatastoreOperationNotSupported(
             operation='attach_replication_slave', datastore=MANAGER)
 
     def detach_replica(self, context):
+        LOG.debug("Detaching replica.")
         raise exception.DatastoreOperationNotSupported(
             operation='detach_replica', datastore=MANAGER)
 
     def demote_replication_master(self, context):
+        LOG.debug("Demoting replica source.")
         raise exception.DatastoreOperationNotSupported(
             operation='demote_replication_master', datastore=MANAGER)
 
     def add_members(self, context, members):
         try:
-            LOG.debug("add_members called")
-            LOG.debug("args: members=%s" % members)
+            LOG.debug("add_members called.")
+            LOG.debug("args: members=%s." % members)
             self.app.add_members(members)
-            LOG.debug("add_members call has finished")
+            LOG.debug("add_members call has finished.")
         except Exception:
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
 
     def add_config_servers(self, context, config_servers):
         try:
-            LOG.debug("add_config_servers called")
-            LOG.debug("args: config_servers=%s" % config_servers)
+            LOG.debug("add_config_servers called.")
+            LOG.debug("args: config_servers=%s." % config_servers)
             self.app.add_config_servers(config_servers)
-            LOG.debug("add_config_servers call has finished")
+            LOG.debug("add_config_servers call has finished.")
         except Exception:
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
 
     def add_shard(self, context, replica_set_name, replica_set_member):
         try:
-            LOG.debug("add_shard called")
-            LOG.debug("args: replica_set_name=%s, replica_set_member=%s" % (
-                replica_set_name, replica_set_member))
+            LOG.debug("add_shard called.")
+            LOG.debug("args: replica_set_name=%s, replica_set_member=%s." %
+                      (replica_set_name, replica_set_member))
             self.app.add_shard(replica_set_name, replica_set_member)
-            LOG.debug("add_shard call has finished")
+            LOG.debug("add_shard call has finished.")
         except Exception:
             self.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
 
     def cluster_complete(self, context):
         # Now that cluster creation is complete, start status checks
+        LOG.debug("Cluster creation complete, starting status checks.")
         status = self.status._get_actual_db_status()
         self.status.set_status(status)
