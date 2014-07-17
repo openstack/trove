@@ -44,6 +44,7 @@ from sqlalchemy.sql.expression import text
 GROUP = "dbaas.api.instances.actions"
 GROUP_REBOOT = "dbaas.api.instances.actions.reboot"
 GROUP_RESTART = "dbaas.api.instances.actions.restart"
+GROUP_RESIZE = "dbaas.api.instances.actions.resize.instance"
 GROUP_STOP_MYSQL = "dbaas.api.instances.actions.stop"
 MYSQL_USERNAME = "test_user"
 MYSQL_PASSWORD = "abcde"
@@ -390,7 +391,7 @@ class RebootTests(RebootTestBase):
 
 
 @test(groups=[tests.INSTANCES, INSTANCE_GROUP, GROUP,
-              GROUP + ".resize.instance"],
+              GROUP_RESIZE],
       depends_on_groups=[GROUP_START], depends_on=[create_user],
       runs_after=[RebootTests])
 class ResizeInstanceTest(ActionTestBase):
