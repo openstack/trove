@@ -28,8 +28,6 @@ cmd_cluster_init = ('sudo /opt/couchbase/bin/couchbase-cli cluster-init '
                     '--cluster-init-password=%(PWD)s '
                     '--cluster-init-port=8091')
 cmd_kill = 'sudo pkill -u couchbase'
-cmd_own_data_dir = ('sudo chown couchbase:couchbase %s' %
-                    CONF.couchbase.mount_point)
 cmd_rm_old_data_dir = 'sudo rm -rf /opt/couchbase/var/lib/couchbase/data'
 """ For optimal couchbase operations, swappiness of vm should be set to 0.
 Reference link: http://docs.couchbase.com/couchbase-manual-2

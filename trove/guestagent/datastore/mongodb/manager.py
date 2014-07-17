@@ -17,6 +17,7 @@ import os
 
 from trove.common import cfg
 from trove.common import exception
+from trove.guestagent.common import operating_system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.mongodb import service as mongo_service
@@ -62,7 +63,7 @@ class Manager(periodic_task.PeriodicTasks):
             if os.path.exists(system.MONGODB_MOUNT_POINT):
                 device.migrate_data(mount_point)
             device.mount(mount_point)
-            self.app.update_owner(mount_point)
+            operating_system.update_owner('mongodb', 'mongodb', mount_point)
 
             LOG.debug("Mounted the volume %(path)s as %(mount)s" %
                       {'path': device_path, "mount": mount_point})
