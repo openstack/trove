@@ -21,6 +21,7 @@ from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 
@@ -81,8 +82,8 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
         try:
             return cls.find_by(instance_id=instance_id)
 
-        except exception.NotFound as e:
-            LOG.error(e.message)
+        except exception.NotFound:
+            LOG.exception(_("Error finding instance %s") % instance_id)
             raise exception.ModelNotFoundError(instance_id=instance_id)
 
     @staticmethod
