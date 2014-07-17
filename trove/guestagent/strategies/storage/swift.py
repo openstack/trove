@@ -128,9 +128,9 @@ class SwiftStorage(base.Storage):
             # Check each segment MD5 hash against swift etag
             # Raise an error and mark backup as failed
             if etag != segment_checksum:
-                LOG.error("Error saving data segment to swift. "
-                          "ETAG: %s Segment MD5: %s",
-                          etag, segment_checksum)
+                LOG.error(_("Error saving data segment to swift. "
+                          "ETAG: %(tag)s Segment MD5: %(checksum)s."),
+                          {'tag': etag, 'checksum': segment_checksum})
                 return False, "Error saving data to Swift!", None, location
 
             swift_checksum.update(segment_checksum)
@@ -159,8 +159,9 @@ class SwiftStorage(base.Storage):
         final_swift_checksum = swift_checksum.hexdigest()
         if etag != final_swift_checksum:
             LOG.error(
-                "Error saving data to swift. Manifest ETAG: %s Swift MD5: %s",
-                etag, final_swift_checksum)
+                _("Error saving data to swift. Manifest "
+                  "ETAG: %(tag)s Swift MD5: %(checksum)s"),
+                {'tag': etag, 'checksum': final_swift_checksum})
             return False, "Error saving data to Swift!", None, location
 
         return (True, "Successfully saved data to Swift!",
@@ -175,8 +176,8 @@ class SwiftStorage(base.Storage):
     def _verify_checksum(self, etag, checksum):
         etag_checksum = etag.strip('"')
         if etag_checksum != checksum:
-            msg = ("Original checksum: %(original)s does not match"
-                   " the current checksum: %(current)s" %
+            msg = (_("Original checksum: %(original)s does not match"
+                     " the current checksum: %(current)s") %
                    {'original': etag_checksum, 'current': checksum})
             LOG.error(msg)
             raise SwiftDownloadIntegrityError(msg)

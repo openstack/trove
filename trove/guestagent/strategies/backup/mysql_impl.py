@@ -58,22 +58,22 @@ class InnoBackupEx(base.BackupRunner):
 
     def check_process(self):
         """Check the output from innobackupex for 'completed OK!'."""
-        LOG.debug('Checking innobackupex process output')
+        LOG.debug('Checking innobackupex process output.')
         with open('/tmp/innobackupex.log', 'r') as backup_log:
             output = backup_log.read()
             LOG.info(output)
             if not output:
-                LOG.error("Innobackupex log file empty")
+                LOG.error(_("Innobackupex log file empty."))
                 return False
             last_line = output.splitlines()[-1].strip()
             if not re.search('completed OK!', last_line):
-                LOG.error("Innobackupex did not complete successfully")
+                LOG.error(_("Innobackupex did not complete successfully."))
                 return False
 
         return True
 
     def metadata(self):
-        LOG.debug('Getting metadata from backup')
+        LOG.debug('Getting metadata from backup.')
         meta = {}
         lsn = re.compile("The latest check point \(for incremental\): '(\d+)'")
         with open('/tmp/innobackupex.log', 'r') as backup_log:
@@ -81,7 +81,7 @@ class InnoBackupEx(base.BackupRunner):
             match = lsn.search(output)
             if match:
                 meta = {'lsn': match.group(1)}
-        LOG.info("Metadata for backup: %s", str(meta))
+        LOG.info(_("Metadata for backup: %s.") % str(meta))
         return meta
 
     @property

@@ -38,18 +38,18 @@ class MySQLRestoreMixin(object):
 
     def mysql_is_running(self):
         if base.exec_with_root_helper("/usr/bin/mysqladmin", "ping"):
-            LOG.info(_("The mysqld daemon is up and running."))
+            LOG.debug("MySQL is up and running.")
             return True
         else:
-            LOG.info(_("The mysqld daemon is not running."))
+            LOG.debug("MySQL is not running.")
             return False
 
     def mysql_is_not_running(self):
         if base.exec_with_root_helper("/usr/bin/pgrep", "mysqld"):
-            LOG.info(_("The mysqld daemon is still running."))
+            LOG.info("MySQL is still running.")
             return False
         else:
-            LOG.info(_("The mysqld daemon is not running."))
+            LOG.debug("MySQL is not running.")
             return True
 
     def poll_until_then_raise(self, event, exc):
@@ -66,9 +66,9 @@ class MySQLRestoreMixin(object):
         try:
             i = child.expect(['Starting mysqld daemon'])
             if i == 0:
-                LOG.info(_("Starting mysqld daemon"))
+                LOG.info(_("Starting MySQL"))
         except pexpect.TIMEOUT:
-            LOG.exception(_("wait_and_close_proc failed"))
+            LOG.exception(_("Got a timeout launching mysqld_safe"))
         finally:
             # There is a race condition here where we kill mysqld before
             # the init file been executed. We need to ensure mysqld is up.
@@ -76,8 +76,8 @@ class MySQLRestoreMixin(object):
                 self.mysql_is_running,
                 base.RestoreError("Reset root password failed: "
                                   "mysqld did not start!"))
-            LOG.info(_("Root password reset successfully!"))
-            LOG.info(_("Cleaning up the temp mysqld process..."))
+            LOG.info(_("Root password reset successfully."))
+            LOG.debug("Cleaning up the temp mysqld process.")
             child.delayafterclose = 1
             child.delayafterterminate = 1
             child.close(force=True)
@@ -118,7 +118,8 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
     def pre_restore(self):
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
         app.stop_db()
-        LOG.info(_("Cleaning out restore location: %s"), self.restore_location)
+        LOG.info(_("Cleaning out restore location: %s."),
+                 self.restore_location)
         utils.execute_with_timeout("chmod", "-R", "0777",
                                    self.restore_location,
                                    root_helper="sudo",
@@ -126,9 +127,9 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         utils.clean_out(self.restore_location)
 
     def _run_prepare(self):
-        LOG.info(_("Running innobackupex prepare: %s"), self.prepare_cmd)
+        LOG.debug("Running innobackupex prepare: %s.", self.prepare_cmd)
         self.prep_retcode = utils.execute(self.prepare_cmd, shell=True)
-        LOG.info(_("Innobackupex prepare finished successfully"))
+        LOG.info(_("Innobackupex prepare finished successfully."))
 
     def post_restore(self):
         self._run_prepare()
@@ -185,9 +186,9 @@ class InnoBackupExIncremental(InnoBackupEx):
 
     def _incremental_prepare(self, incremental_dir):
         prepare_cmd = self._incremental_prepare_cmd(incremental_dir)
-        LOG.info(_("Running innobackupex prepare: %s"), prepare_cmd)
+        LOG.debug("Running innobackupex prepare: %s.", prepare_cmd)
         utils.execute(prepare_cmd, shell=True)
-        LOG.info(_("Innobackupex prepare finished successfully"))
+        LOG.info(_("Innobackupex prepare finished successfully."))
 
     def _incremental_restore(self, location, checksum):
         """Recursively apply backups from all parents.
@@ -203,7 +204,7 @@ class InnoBackupExIncremental(InnoBackupEx):
         incremental_dir = None
         if 'parent_location' in metadata:
             LOG.info(_("Restoring parent: %(parent_location)s"
-                       " checksum: %(parent_checksum)s") % metadata)
+                       " checksum: %(parent_checksum)s.") % metadata)
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
             # Restore parents recursively so backup are applied sequentially
