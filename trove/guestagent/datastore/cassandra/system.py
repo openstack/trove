@@ -14,9 +14,7 @@
 #    under the License.
 
 from trove.common import cfg
-from trove.openstack.common import log as logging
 
-LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 CASSANDRA_DATA_DIR = "/var/lib/cassandra/data"
