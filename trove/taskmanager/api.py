@@ -134,7 +134,7 @@ class API(proxy.RpcProxy):
                                 overrides=overrides))
 
     def update_overrides(self, instance_id, overrides=None):
-        LOG.debug("Making async call to update configuration overrides for "
+        LOG.debug("Making async call to update datastore configurations for "
                   "instance %s" % instance_id)
 
         self.cast(self.context,
@@ -143,7 +143,7 @@ class API(proxy.RpcProxy):
                                 overrides=overrides))
 
     def unassign_configuration(self, instance_id, flavor, configuration_id):
-        LOG.debug("Making async call to unassign configuration for "
+        LOG.debug("Making async call to remove datastore configurations for "
                   "instance %s" % instance_id)
 
         self.cast(self.context,
