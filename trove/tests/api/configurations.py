@@ -224,6 +224,13 @@ class CreateConfigurations(object):
                                                            CONFIG_DESC)
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 200)
+        with TypeCheck('Configuration', result) as configuration:
+            configuration.has_field('name', basestring)
+            configuration.has_field('description', basestring)
+            configuration.has_field('values', dict)
+            configuration.has_field('datastore_name', basestring)
+            configuration.has_field('datastore_version_id', unicode)
+            configuration.has_field('datastore_version_name', basestring)
         global configuration_info
         configuration_info = result
         assert_equal(configuration_info.name, CONFIG_NAME)
@@ -361,6 +368,15 @@ class ListConfigurations(object):
     def test_configurations_list(self):
         # test listing configurations show up
         result = instance_info.dbaas.configurations.list()
+        for conf in result:
+            with TypeCheck("Configuration", conf) as check:
+                check.has_field('id', basestring)
+                check.has_field('name', basestring)
+                check.has_field('description', basestring)
+                check.has_field('datastore_version_id', basestring)
+                check.has_field('datastore_version_name', basestring)
+                check.has_field('datastore_name', basestring)
+
         exists = [config for config in result if
                   config.id == configuration_info.id]
         assert_equal(1, len(exists))

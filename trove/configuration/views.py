@@ -28,10 +28,14 @@ class ConfigurationView(object):
             "id": self.configuration.id,
             "name": self.configuration.name,
             "description": self.configuration.description,
-            "datastore_version_id": self.configuration.datastore_version_id,
             "created": self.configuration.created,
-            "updated": self.configuration.updated
-        }
+            "updated": self.configuration.updated,
+            "datastore_version_id":
+            self.configuration.datastore_version_id,
+            "datastore_name":
+            self.configuration.datastore.name,
+            "datastore_version_name":
+            self.configuration.datastore_version.name}
 
         return {"configuration": configuration_dict}
 
@@ -94,10 +98,15 @@ class DetailedConfigurationView(object):
             "name": self.configuration.name,
             "description": self.configuration.description,
             "values": values,
-            "datastore_version_id": self.configuration.datastore_version_id,
             "created": self.configuration.created,
             "updated": self.configuration.updated,
-            "instance_count": getattr(self.configuration, "instance_count", 0)
+            "instance_count":
+            getattr(self.configuration, "instance_count", 0),
+            "datastore_name": self.configuration.datastore.name,
+            "datastore_version_id":
+            self.configuration.datastore_version_id,
+            "datastore_version_name":
+            self.configuration.datastore_version.name
         }
 
         return {"configuration": configuration_dict}
