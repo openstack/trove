@@ -59,7 +59,10 @@ INCLUDE_MARKER_OPERATORS = {
     False: ">"
 }
 
-MYSQL_CONFIG = "/etc/mysql/my.cnf"
+OS_NAME = operating_system.get_os()
+MYSQL_CONFIG = {operating_system.REDHAT: "/etc/mysql/my.cnf",
+                operating_system.DEBIAN: "/etc/mysql/my.cnf",
+                operating_system.SUSE: "/etc/my.cnf"}[OS_NAME]
 MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYCNF_OVERRIDES = "/etc/mysql/conf.d/overrides.cnf"
