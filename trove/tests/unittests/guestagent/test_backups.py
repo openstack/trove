@@ -20,6 +20,7 @@ import trove.guestagent.strategies.restore.base as restoreBase
 
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.common import utils
+from trove.common import exception
 
 BACKUP_XTRA_CLS = ("trove.guestagent.strategies.backup."
                    "mysql_impl.InnoBackupEx")
@@ -33,6 +34,10 @@ BACKUP_SQLDUMP_CLS = ("trove.guestagent.strategies.backup."
                       "mysql_impl.MySQLDump")
 RESTORE_SQLDUMP_CLS = ("trove.guestagent.strategies.restore."
                        "mysql_impl.MySQLDump")
+BACKUP_CBBACKUP_CLS = ("trove.guestagent.strategies.backup."
+                       "couchbase_impl.CbBackup")
+RESTORE_CBBACKUP_CLS = ("trove.guestagent.strategies.restore."
+                        "couchbase_impl.CbBackup")
 PIPE = " | "
 ZIP = "gzip"
 UNZIP = "gzip -d -c"
@@ -63,6 +68,10 @@ PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql "
            "--defaults-file=/var/lib/mysql/backup-my.cnf "
            "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
 CRYPTO_KEY = "default_aes_cbc_key"
+
+CBBACKUP_CMD = "tar cPf - /tmp/backups"
+
+CBBACKUP_RESTORE = "sudo tar xPf -"
 
 
 class GuestAgentBackupTest(testtools.TestCase):
@@ -244,3 +253,116 @@ class GuestAgentBackupTest(testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + SQLDUMP_RESTORE)
+
+    def test_backup_encrypted_cbbackup_command(self):
+        backupBase.BackupRunner.is_encrypted = True
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_CBBACKUP_CLS)
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(
+            CBBACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn("gz.enc", bkp.manifest)
+
+    def test_backup_not_encrypted_cbbackup_command(self):
+        backupBase.BackupRunner.is_encrypted = False
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_CBBACKUP_CLS)
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(CBBACKUP_CMD + PIPE + ZIP, bkp.command)
+        self.assertIn("gz", bkp.manifest)
+
+    def test_restore_decrypted_cbbackup_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = False
+        RunnerClass = utils.import_class(RESTORE_CBBACKUP_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd, UNZIP + PIPE + CBBACKUP_RESTORE)
+
+    def test_restore_encrypted_cbbackup_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = True
+        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_CBBACKUP_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd,
+                         DECRYPT + PIPE + UNZIP + PIPE + CBBACKUP_RESTORE)
+
+
+class CouchbaseBackupTests(testtools.TestCase):
+
+    def setUp(self):
+        super(CouchbaseBackupTests, self).setUp()
+
+        self.backup_runner = utils.import_class(
+            BACKUP_CBBACKUP_CLS)
+
+    def tearDown(self):
+        super(CouchbaseBackupTests, self).tearDown()
+
+    def test_backup_success(self):
+        self.backup_runner.__exit__ = mock.Mock()
+        self.backup_runner.run = mock.Mock()
+        self.backup_runner._run_pre_backup = mock.Mock()
+        self.backup_runner._run_post_backup = mock.Mock()
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        with self.backup_runner(12345):
+            pass
+        self.assertTrue(self.backup_runner.run)
+        self.assertTrue(self.backup_runner._run_pre_backup)
+        self.assertTrue(self.backup_runner._run_post_backup)
+
+    def test_backup_failed_due_to_run_backup(self):
+        self.backup_runner.run = mock.Mock(
+            side_effect=exception.ProcessExecutionError('test'))
+        self.backup_runner._run_pre_backup = mock.Mock()
+        self.backup_runner._run_post_backup = mock.Mock()
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.backup_runner(12345).__enter__)
+
+
+class CouchbaseRestoreTests(testtools.TestCase):
+
+    def setUp(self):
+        super(CouchbaseRestoreTests, self).setUp()
+
+        self.restore_runner = utils.import_class(
+            RESTORE_CBBACKUP_CLS)(
+                'swift', location='http://some.where',
+                checksum='True_checksum',
+                restore_location='/tmp/somewhere')
+
+    def tearDown(self):
+        super(CouchbaseRestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=expected_content_length)
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner.post_restore = mock.Mock()
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_pre_restore(self):
+        self.restore_runner.post_restore = mock.Mock()
+        self.restore_runner.pre_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner._run_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner._run_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner.post_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
