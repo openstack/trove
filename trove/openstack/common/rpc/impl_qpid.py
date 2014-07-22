@@ -319,7 +319,8 @@ class DirectPublisher(Publisher):
     """Publisher class for 'direct'."""
     def __init__(self, conf, session, msg_id):
         """Init a 'direct' publisher."""
-        super(DirectPublisher, self).__init__(session, msg_id,
+        node_name = "%s/%s" % (msg_id, msg_id)
+        super(DirectPublisher, self).__init__(session, node_name,
                                               {"type": "direct"})
 
 
