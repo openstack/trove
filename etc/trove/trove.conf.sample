@@ -76,6 +76,7 @@ trove_auth_url = http://0.0.0.0:5000/v2.0
 #nova_compute_url = http://localhost:8774/v2
 #cinder_url = http://localhost:8776/v1
 #swift_url = http://localhost:8080/v1/AUTH_
+#neutron_url = http://localhost:9696/
 
 # nova_compute_url, cinder_url, swift_url, and heat_url can all be fetched
 # from Keystone. To fetch from Keystone, comment out nova_compute_url,
@@ -91,10 +92,18 @@ trove_auth_url = http://0.0.0.0:5000/v2.0
 #swift_service_type = object-store
 # Service type to use when searching catalog.
 #heat_service_type = orchestration
+# Service type to use when searching catalog.
+#neutron_service_type = network
 
 # Config option for showing the IP address that nova doles out
+# For nova-network, set this to the appropriate network label defined in nova
+# For neutron, set this to .* since users can specify custom network labels
+# You can also optionally specify regex'es to match the actual IP addresses
+# ip_regex (white-list) is applied before black_list_regex in the filter chain
 network_label_regex = ^private$
+#network_label_regex = .* //with neutron enabled
 #ip_regex = ^(15.|123.)
+#black_list_regex = ^10.0.0.
 
 # Config options for enabling volume service
 trove_volume_support = True
@@ -128,6 +137,11 @@ dns_driver = trove.dns.designate.driver.DesignateDriver
 dns_instance_entry_factory = trove.dns.designate.driver.DesignateInstanceEntryFactory
 dns_endpoint_url = http://127.0.0.1/v1/
 dns_service_type = dns
+
+# Neutron
+network_driver = trove.network.nova.NovaNetwork
+default_neutron_networks =
+
 
 # Taskmanager queue name
 taskmanager_queue = taskmanager

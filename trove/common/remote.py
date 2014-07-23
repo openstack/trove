@@ -162,9 +162,25 @@ def swift_client(context):
     return client
 
 
+def neutron_client(context):
+    from neutronclient.v2_0 import client as NeutronClient
+    if CONF.neutron_url:
+        # neutron endpoint url / publicURL does not include tenant segment
+        url = CONF.neutron_url
+    else:
+        url = get_endpoint(context.service_catalog,
+                           service_type=CONF.neutron_service_type,
+                           endpoint_region=CONF.os_region_name)
+
+    client = NeutronClient.Client(token=context.auth_token,
+                                  endpoint_url=url)
+    return client
+
+
 create_dns_client = import_class(CONF.remote_dns_client)
 create_guest_client = import_class(CONF.remote_guest_client)
 create_nova_client = import_class(CONF.remote_nova_client)
 create_swift_client = import_class(CONF.remote_swift_client)
 create_cinder_client = import_class(CONF.remote_cinder_client)
 create_heat_client = import_class(CONF.remote_heat_client)
+create_neutron_client = import_class(CONF.remote_neutron_client)

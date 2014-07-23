@@ -79,6 +79,7 @@ nova_service_name = Compute Service
 # Config option for showing the IP address that nova doles out
 network_label_regex = ^private$
 ip_regex = ^(15.|123.)
+black_list_regex = ^(10.0.0.)
 
 # Config options for enabling volume service
 trove_volume_support = True

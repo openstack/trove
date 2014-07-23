@@ -289,9 +289,11 @@ class FakeServers(object):
             raise nova_exceptions.ClientException("The requested availability "
                                                   "zone is not available.")
 
-        if nics is not None and nics.port_id == 'UNKNOWN':
-            raise nova_exceptions.ClientException("The requested availability "
-                                                  "zone is not available.")
+        if nics:
+            if 'port-id' in nics[0] and nics[0]['port-id'] == "UNKNOWN":
+                raise nova_exceptions.ClientException("The requested "
+                                                      "port-id is not "
+                                                      "available.")
 
         server.schedule_status("ACTIVE", 1)
         LOG.info(_("FAKE_SERVERS_DB : %s") % str(FAKE_SERVERS_DB))
