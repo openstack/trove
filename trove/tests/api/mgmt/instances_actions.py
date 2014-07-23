@@ -143,6 +143,8 @@ class RestartTaskStatusTests(MgmtInstanceBase):
 
         user = test_config.users.find_user(Requirements(is_admin=False))
         dbaas = create_dbaas_client(user)
+        admin = test_config.users.find_user(Requirements(is_admin=True))
+        admin_dbaas = create_dbaas_client(admin)
         result = dbaas.instances.backups(self.db_info.id)
         assert_equal(0, len(result))
 
@@ -171,15 +173,19 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             instance_id=self.db_info.id,
             deleted=False)
 
-        # List the backups for this instance. There ought to be three!
+        # List the backups for this instance.
+        # There ought to be three in the admin tenant, but
+        # none in a different user's tenant.
         result = dbaas.instances.backups(self.db_info.id)
+        assert_equal(0, len(result))
+        result = admin_dbaas.instances.backups(self.db_info.id)
         assert_equal(3, len(result))
         self.backups_to_clear = result
 
         # Reset the task status.
         self.reset_task_status()
         self._reload_db_info()
-        result = dbaas.instances.backups(self.db_info.id)
+        result = admin_dbaas.instances.backups(self.db_info.id)
         assert_equal(3, len(result))
         for backup in result:
             if backup.name == 'forever_completed':
@@ -193,7 +199,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         for backup in self.backups_to_clear:
             found_backup = backup_models.DBBackup.find_by(id=backup.id)
             found_backup.delete()
-        user = test_config.users.find_user(Requirements(is_admin=False))
-        dbaas = create_dbaas_client(user)
-        result = dbaas.instances.backups(self.db_info.id)
+        admin = test_config.users.find_user(Requirements(is_admin=True))
+        admin_dbaas = create_dbaas_client(admin)
+        result = admin_dbaas.instances.backups(self.db_info.id)
         assert_equal(0, len(result))

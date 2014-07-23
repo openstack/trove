@@ -205,8 +205,13 @@ class Backup(object):
         :return:
         """
         query = DBBackup.query()
-        query = query.filter_by(instance_id=instance_id,
-                                deleted=False)
+        if context.is_admin:
+            query = query.filter_by(instance_id=instance_id,
+                                    deleted=False)
+        else:
+            query = query.filter_by(instance_id=instance_id,
+                                    tenant_id=context.tenant,
+                                    deleted=False)
         return cls._paginate(context, query)
 
     @classmethod
