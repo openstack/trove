@@ -50,6 +50,11 @@ To generate a coverage report,run:
 
 (note: on some boxes, the results may not be accurate unless you run it twice)
 
+If you want to run only the tests in one file you can use testtools e.g.
+
+.. code-block:: bash
+
+    $ python -m testtools.run trove.tests.unittests.python.module.path
 
 ======
 Docs
