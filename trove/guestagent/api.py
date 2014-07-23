@@ -230,6 +230,7 @@ class API(proxy.RpcProxy):
            as a database container optionally includes a backup id for restores
         """
         LOG.debug("Sending the call to prepare the Guest")
+        packages = packages.split()
         self._cast_with_consumer(
             "prepare", packages=packages, databases=databases,
             memory_mb=memory_mb, users=users, device_path=device_path,
