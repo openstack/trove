@@ -64,7 +64,9 @@ class CouchbaseApp(object):
         mount_point = CONF.couchbase.mount_point
         try:
             LOG.info(_('Couchbase Server change data dir path'))
-            utils.execute_with_timeout(system.cmd_own_data_dir, shell=True)
+            operating_system.update_owner('couchbase',
+                                          'couchbase',
+                                          mount_point)
             pwd = CouchbaseRootAccess.get_password()
             utils.execute_with_timeout(
                 (system.cmd_node_init
