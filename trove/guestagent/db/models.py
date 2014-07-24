@@ -16,6 +16,8 @@
 import re
 import string
 
+import netaddr
+
 from trove.common import cfg
 
 CONF = cfg.CONF
@@ -376,23 +378,15 @@ class MySQLUser(Base):
             # % is MySQL shorthand for "everywhere". Always permitted.
             # Null host defaults to % anyway.
             return True
-        if CONF.hostname_require_ipv4:
-            # Do a little legwork to determine that an address looks legit.
-
-            if value.count('/') > 1:
-                # No subnets.
-                return False
-            octets = value.split('.')
-            if len(octets) not in range(1, 5):
-                # A, A.B, A.B.C, and A.B.C.D are all valid technically.
-                return False
+        if CONF.hostname_require_valid_ip:
             try:
-                octets = [int(octet, 10) for octet in octets if octet != '%']
-            except ValueError:
-                # If these weren't decimal, there's a problem.
+                # '%' works as a MySQL wildcard, but it is not a valid
+                # part of an IPAddress
+                netaddr.IPAddress(value.replace('%', '1'))
+            except (ValueError, netaddr.AddrFormatError):
                 return False
-            return all([(octet >= 0) and (octet <= 255) for octet in octets])
-
+            else:
+                return True
         else:
             # If it wasn't required, anything else goes.
             return True
