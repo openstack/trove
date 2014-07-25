@@ -125,11 +125,25 @@ class DbaasTest(testtools.TestCase):
             options = dbaas.load_mysqld_options()
 
         self.assertEqual(5, len(options))
-        self.assertEqual(options["user"], "mysql")
-        self.assertEqual(options["port"], "3306")
-        self.assertEqual(options["basedir"], "/usr")
-        self.assertEqual(options["tmpdir"], "/tmp")
+        self.assertEqual(options["user"], ["mysql"])
+        self.assertEqual(options["port"], ["3306"])
+        self.assertEqual(options["basedir"], ["/usr"])
+        self.assertEqual(options["tmpdir"], ["/tmp"])
         self.assertTrue("skip-external-locking" in options)
+
+    def test_load_mysqld_options_contains_plugin_loads_options(self):
+        output = ("mysqld would've been started with the these args:\n"
+                  "--plugin-load=blackhole=ha_blackhole.so "
+                  "--plugin-load=federated=ha_federated.so")
+
+        with patch.object(os.path, 'isfile', return_value=True):
+            dbaas.utils.execute = Mock(return_value=(output, None))
+            options = dbaas.load_mysqld_options()
+
+        self.assertEqual(1, len(options))
+        self.assertEqual(options["plugin-load"],
+                         ["blackhole=ha_blackhole.so",
+                          "federated=ha_federated.so"])
 
     def test_load_mysqld_options_error(self):
 
@@ -1188,7 +1202,7 @@ class MySqlAppStatusTest(testtools.TestCase):
 
         mocked = Mock(side_effect=ProcessExecutionError())
         dbaas.utils.execute_with_timeout = mocked
-        dbaas.load_mysqld_options = Mock()
+        dbaas.load_mysqld_options = Mock(return_value={})
         dbaas.os.path.exists = Mock(return_value=False)
 
         self.mySqlAppStatus = MySqlAppStatus()

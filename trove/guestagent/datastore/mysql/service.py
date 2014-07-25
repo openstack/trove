@@ -19,6 +19,8 @@
 import os
 import re
 import uuid
+from collections import defaultdict
+
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy import interfaces
@@ -134,13 +136,13 @@ def load_mysqld_options():
         out, err = utils.execute(mysqld_bin, "--print-defaults",
                                  run_as_root=True, root_helper="sudo")
         arglist = re.split("\n", out)[1].split()
-        args = {}
+        args = defaultdict(list)
         for item in arglist:
             if "=" in item:
-                key, value = item.split("=")
-                args[key.lstrip("--")] = value
+                key, value = item.split("=", 1)
+                args[key.lstrip("--")].append(value)
             else:
-                args[item.lstrip("--")] = None
+                args[item.lstrip("--")].append(None)
         return args
     except exception.ProcessExecutionError:
         return {}
@@ -175,7 +177,7 @@ class MySqlAppStatus(service.BaseDbStatus):
                 LOG.exception(_("Process execution failed."))
                 mysql_args = load_mysqld_options()
                 pid_file = mysql_args.get('pid_file',
-                                          '/var/run/mysqld/mysqld.pid')
+                                          ['/var/run/mysqld/mysqld.pid'])[0]
                 if os.path.exists(pid_file):
                     LOG.info(_("MySQL Service Status is CRASHED."))
                     return rd_instance.ServiceStatuses.CRASHED
