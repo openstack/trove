@@ -324,10 +324,10 @@ class API(proxy.RpcProxy):
         LOG.debug("Applying overrides values %s." % overrides)
         self._cast("apply_overrides", overrides=overrides)
 
-    def get_replication_snapshot(self, master_config=None):
+    def get_replication_snapshot(self, snapshot_info=None):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
         return self._call("get_replication_snapshot", AGENT_HIGH_TIMEOUT,
-                          master_config=master_config)
+                          snapshot_info=snapshot_info)
 
     def attach_replication_slave(self, snapshot, slave_config=None):
         LOG.debug("Configuring instance %s to replicate from %s.",

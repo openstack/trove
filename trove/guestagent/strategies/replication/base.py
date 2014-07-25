@@ -15,8 +15,8 @@
 #
 
 import abc
-import six
 
+import six
 from trove.guestagent.strategy import Strategy
 
 
@@ -32,25 +32,26 @@ class Replication(Strategy):
         super(Replication, self).__init__()
 
     @abc.abstractmethod
-    def get_master_ref(self, mysql_service, master_config):
+    def get_master_ref(self, service, snapshot_info):
         """Get reference to master site for replication strategy."""
 
     @abc.abstractmethod
-    def snapshot_for_replication(self, mysql_service, location, master_config):
+    def snapshot_for_replication(self, context, service, location,
+                                 snapshot_info):
         """Capture snapshot of master db."""
 
     @abc.abstractmethod
-    def enable_as_master(self, mysql_service, master_config):
+    def enable_as_master(self, service, snapshot_info):
         """Configure underlying database to act as master for replication."""
 
     @abc.abstractmethod
-    def enable_as_slave(self, mysql_service, snapshot):
+    def enable_as_slave(self, service, snapshot):
         """Configure underlying database as a slave of the given master."""
 
     @abc.abstractmethod
-    def detach_slave(self, mysql_service):
+    def detach_slave(self, service):
         """Turn off replication on a slave site."""
 
     @abc.abstractmethod
-    def demote_master(self, mysql_service):
+    def demote_master(self, service):
         """Turn off replication on a master site."""

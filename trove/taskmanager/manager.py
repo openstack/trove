@@ -78,27 +78,42 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.create_backup(backup_info)
 
+    def _create_replication_slave(self, context, instance_id, name, flavor,
+                                  image_id, databases, users,
+                                  datastore_manager, packages, volume_size,
+                                  availability_zone,
+                                  root_password, nics, overrides, slave_of_id):
+        instance_tasks = FreshInstanceTasks.load(context, instance_id)
+
+        snapshot = instance_tasks.get_replication_master_snapshot(context,
+                                                                  slave_of_id)
+        instance_tasks.create_instance(flavor, image_id, databases, users,
+                                       datastore_manager, packages,
+                                       volume_size,
+                                       snapshot['dataset']['snapshot_id'],
+                                       availability_zone, root_password,
+                                       nics, overrides)
+
+        instance_tasks.attach_replication_slave(snapshot)
+
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id, availability_zone,
                         root_password, nics, overrides, slave_of_id):
-        instance_tasks = FreshInstanceTasks.load(context, instance_id)
-
         if slave_of_id:
-            # We are creating a slave of an existing instance: get a snapshot
-            # of the master so we can restore the data on the slave.
-            snapshot = instance_tasks.get_replication_master_snapshot(
-                context, slave_of_id, backup_id)
-            backup_id = snapshot['dataset']['snapshot_id']
-
-        instance_tasks.create_instance(flavor, image_id, databases, users,
-                                       datastore_manager, packages,
-                                       volume_size, backup_id,
-                                       availability_zone, root_password,
-                                       nics, overrides)
-        if slave_of_id:
-            # Enable replication on the newly created slave instance
-            instance_tasks.attach_replication_slave(snapshot)
+            self._create_replication_slave(context, instance_id, name,
+                                           flavor, image_id, databases, users,
+                                           datastore_manager, packages,
+                                           volume_size,
+                                           availability_zone, root_password,
+                                           nics, overrides, slave_of_id)
+        else:
+            instance_tasks = FreshInstanceTasks.load(context, instance_id)
+            instance_tasks.create_instance(flavor, image_id, databases, users,
+                                           datastore_manager, packages,
+                                           volume_size, backup_id,
+                                           availability_zone, root_password,
+                                           nics, overrides)
 
     def update_overrides(self, context, instance_id, overrides):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

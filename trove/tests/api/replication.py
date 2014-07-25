@@ -15,6 +15,7 @@
 from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
+from proboscis.asserts import assert_true
 from proboscis.decorators import time_out
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
@@ -36,6 +37,7 @@ class SlaveInstanceTestInfo(object):
 
 GROUP = "dbaas.api.replication"
 slave_instance = SlaveInstanceTestInfo()
+existing_db_on_master = generate_uuid()
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
@@ -43,6 +45,12 @@ slave_instance = SlaveInstanceTestInfo()
 class CreateReplicationSlave(object):
 
     @test
+    def test_create_db_on_master(self):
+        databases = [{'name': existing_db_on_master}]
+        instance_info.dbaas.databases.create(instance_info.id, databases)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+    @test(runs_after=['test_create_db_on_master'])
     def test_create_slave(self):
         result = instance_info.dbaas.instances.create(
             instance_info.name + "_slave",
@@ -66,11 +74,9 @@ class WaitForCreateSlaveToFinish(object):
             if instance.status == "ACTIVE":
                 return True
             else:
-                # If its not ACTIVE, anything but BUILD must be
-                # an error.
-                assert_equal("BUILD", instance.status)
-                if instance_info.volume is not None:
-                    assert_equal(instance.volume.get('used', None), None)
+                assert_true(instance.status in ['BUILD', 'BACKUP'])
+                # if instance_info.volume is not None:
+                #     assert_equal(instance.volume.get('used', None), None)
                 return False
         poll_until(result_is_active)
 
@@ -79,6 +85,15 @@ class WaitForCreateSlaveToFinish(object):
       depends_on=[WaitForCreateSlaveToFinish],
       groups=[GROUP])
 class VerifySlave(object):
+
+    def db_is_found(self, database_to_find):
+
+        def find_database():
+            databases = instance_info.dbaas.databases.list(slave_instance.id)
+            return (database_to_find
+                    in [d.name for d in databases])
+
+        return find_database
 
     @test
     @time_out(5 * 60)
@@ -102,13 +117,12 @@ class VerifySlave(object):
     @test(depends_on=[test_create_db_on_master])
     @time_out(5 * 60)
     def test_database_replicated_on_slave(self):
+        poll_until(self.db_is_found(slave_instance.replicated_db))
 
-        def db_is_found():
-            databases = instance_info.dbaas.databases.list(slave_instance.id)
-            return (slave_instance.replicated_db
-                    in [d.name for d in databases])
-
-        poll_until(db_is_found)
+    @test(runs_after=[test_database_replicated_on_slave])
+    @time_out(5 * 60)
+    def test_existing_db_exists_on_slave(self):
+        poll_until(self.db_is_found(existing_db_on_master))
 
 
 @test(groups=[GROUP],
