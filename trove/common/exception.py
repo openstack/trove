@@ -119,6 +119,18 @@ class DatastoresNotFound(NotFound):
     message = _("Datastores cannot be found.")
 
 
+class DatastoreFlavorAssociationNotFound(NotFound):
+
+    message = _("Datastore '%(datastore)s' version id %(version_id)s "
+                "and flavor %(flavor_id)s mapping not found.")
+
+
+class DatastoreFlavorAssociationAlreadyExists(TroveError):
+
+    message = _("Datastore '%(datastore)s' version %(datastore_version)s "
+                "and flavor %(flavor_id)s mapping already exists.")
+
+
 class DatastoreNoVersion(TroveError):
 
     message = _("Datastore '%(datastore)s' has no version '%(version)s'.")
