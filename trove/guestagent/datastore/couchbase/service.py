@@ -16,6 +16,7 @@
 import json
 import pexpect
 import os
+import subprocess
 
 from trove.common import cfg
 from trove.common import exception
@@ -271,7 +272,11 @@ class CouchbaseRootAccess(object):
         except pexpect.TIMEOUT:
             child.delayafterclose = 1
             child.delayafterterminate = 1
-            child.close(force=True)
+            try:
+                child.close(force=True)
+            except pexpect.ExceptionPexpect:
+                # Close fails to terminate a sudo process on some OSes.
+                subprocess.call(['sudo', 'kill', str(child.pid)])
 
         self.write_password_to_file(root_password)
 

@@ -18,6 +18,7 @@ Manages packages on the Guest VM.
 """
 import commands
 import re
+import subprocess
 from tempfile import NamedTemporaryFile
 
 import pexpect
@@ -79,7 +80,11 @@ class BasePackagerMixin:
     def pexpect_kill_proc(self, child):
         child.delayafterclose = 1
         child.delayafterterminate = 1
-        child.close(force=True)
+        try:
+            child.close(force=True)
+        except pexpect.ExceptionPexpect:
+            # Close fails to terminate a sudo process on some OSes.
+            subprocess.call(['sudo', 'kill', str(child.pid)])
 
     def pexpect_wait_and_close_proc(self, child):
         child.expect(pexpect.EOF)
