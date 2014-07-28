@@ -90,7 +90,34 @@ class TestConfig(object):
             "trove_volume_support": True,
             "trove_max_volumes_per_user": 100,
             "usage_endpoint": USAGE_ENDPOINT,
-            "root_on_create": False
+            "root_on_create": False,
+            "mysql": {
+                "configurations": {
+                    "valid_values": {
+                        "connect_timeout": 120,
+                        "local_infile": True,
+                        "collation_server": "latin1_swedish_ci"
+                    },
+                    "appending_values": {
+                        "join_buffer_size": 1048576,
+                        "connect_timeout": 60
+                    },
+                    "nondynamic_parameter": {
+                        "join_buffer_size": 1048576,
+                        "innodb_buffer_pool_size": 57671680
+                    },
+                    "out_of_bounds_under": {
+                        "connect_timeout": -10
+                    },
+                    "out_of_bounds_over": {
+                        "connect_timeout": 1000000
+                    },
+                    "parameters_list": [
+                        "key_buffer_size",
+                        "connect_timeout"
+                    ]
+                }
+            }
         }
         self._frozen_values = FrozenDict(self._values)
         self._users = None
