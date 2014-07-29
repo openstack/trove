@@ -760,17 +760,16 @@ class MySqlApp(object):
         LOG.info(_("Wiping ib_logfiles..."))
         for index in range(2):
             try:
-                (utils.
-                 execute_with_timeout("sudo", "rm", "%s/ib_logfile%d"
-                                                    % (MYSQL_BASE_DIR, index)))
-            except exception.ProcessExecutionError as pe:
                 # On restarts, sometimes these are wiped. So it can be a race
                 # to have MySQL start up before it's restarted and these have
-                # to be deleted. That's why its ok if they aren't found.
-                LOG.error("Could not delete logfile!")
-                LOG.error(pe)
-                if "No such file or directory" not in str(pe):
-                    raise
+                # to be deleted. That's why its ok if they aren't found and
+                # that is why we use the "-f" option to "rm".
+                (utils.
+                 execute_with_timeout("sudo", "rm", "-f", "%s/ib_logfile%d"
+                                                    % (MYSQL_BASE_DIR, index)))
+            except exception.ProcessExecutionError:
+                LOG.exception("Could not delete logfile.")
+                raise
 
     def _write_mycnf(self, admin_password, config_contents, overrides=None):
         """

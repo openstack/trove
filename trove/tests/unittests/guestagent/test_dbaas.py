@@ -583,13 +583,6 @@ class MySqlAppTest(testtools.TestCase):
         self.assertFalse(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
-    def test_wipe_ib_logfiles_no_file(self):
-
-        processexecerror = ProcessExecutionError('No such file or directory')
-        dbaas.utils.execute_with_timeout = Mock(side_effect=processexecerror)
-
-        self.mySqlApp.wipe_ib_logfiles()
-
     def test_wipe_ib_logfiles_error(self):
 
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
