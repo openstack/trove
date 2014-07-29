@@ -42,13 +42,13 @@ class Configurations(object):
 
         if context.is_admin:
             db_info = DBConfiguration.find_all(deleted=False)
-            if db_info is None:
-                LOG.debug("No configurations found")
+            if db_info.count() == 0:
+                LOG.debug("No configurations found for admin user")
         else:
             db_info = DBConfiguration.find_all(tenant_id=context.tenant,
                                                deleted=False)
-            if db_info is None:
-                LOG.debug("No configurations found for tenant % s"
+            if db_info.count() == 0:
+                LOG.debug("No configurations found for tenant %s"
                           % context.tenant)
 
         limit = int(context.limit or Configurations.DEFAULT_LIMIT)
@@ -85,9 +85,8 @@ class Configuration(object):
 
     @staticmethod
     def create_items(cfg_id, values):
-        LOG.debug("saving the values to the database")
-        LOG.debug("cfg_id: %s" % cfg_id)
-        LOG.debug("values: %s" % values)
+        LOG.debug("Saving configuration values for %s - "
+                  "values: %s" % (cfg_id, values))
         config_items = []
         for key, val in values.iteritems():
             config_item = ConfigurationParameter.create(
@@ -107,11 +106,9 @@ class Configuration(object):
 
     @staticmethod
     def remove_all_items(context, id, deleted_at):
-        LOG.debug("removing the values from the database with configuration"
-                  " %s" % id)
         items = ConfigurationParameter.find_all(configuration_id=id,
                                                 deleted=False).all()
-        LOG.debug("removing items: %s" % items)
+        LOG.debug("Removing all configuration values for %s" % id)
         for item in items:
             item.deleted = True
             item.deleted_at = deleted_at
@@ -149,7 +146,6 @@ class Configuration(object):
             datastore_manager=datastore.manager)
 
         def _get_rule(key):
-            LOG.debug("finding rule with key : %s" % key)
             for rule in rules['configuration-parameters']:
                 if str(rule.get('name')) == key:
                     return rule
@@ -186,7 +182,8 @@ class Configuration(object):
         items = Configuration.load_items(context, configuration.id)
 
         for instance in instances:
-            LOG.debug("applying to instance: %s" % instance.id)
+            LOG.debug("Configuration %s being applied to "
+                      "instance: %s" % (configuration.id, instance.id))
             overrides = {}
             for i in items:
                 overrides[i.configuration_key] = i.configuration_value

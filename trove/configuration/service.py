@@ -46,6 +46,8 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def show(self, req, tenant_id, id):
+        LOG.debug("Showing configuration group %(id)s on tenant %(tenant)s"
+                  % {"tenant": tenant_id, "id": id})
         context = req.environ[wsgi.CONTEXT_KEY]
         configuration = models.Configuration.load(context, id)
         configuration_items = models.Configuration.load_items(context, id)
@@ -86,6 +88,10 @@ class ConfigurationsController(wsgi.Controller):
         description = body['configuration'].get('description')
         values = body['configuration']['values']
 
+        msg = _("Creating configuration group on tenant "
+                "%(tenant_id)s with name: %(cfg_name)s")
+        LOG.info(msg % {"tenant_id": tenant_id, "cfg_name": name})
+
         datastore_args = body['configuration'].get('datastore', {})
         datastore, datastore_version = (
             ds_models.get_datastore_version(**datastore_args))
@@ -112,6 +118,10 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(view_data.data(), 200)
 
     def delete(self, req, tenant_id, id):
+        msg = _("Deleting configuration group %(cfg_id)s on tenant: "
+                "%(tenant_id)s")
+        LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
+
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
         instances = instances_models.DBInstance.find_all(
@@ -124,13 +134,18 @@ class ConfigurationsController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def update(self, req, body, tenant_id, id):
-        LOG.info(_("Updating configuration for tenant id %s") % tenant_id)
+        msg = _("Updating configuration group %(cfg_id)s for tenant "
+                "id %(tenant_id)s")
+        LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
+
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
         instances = instances_models.DBInstance.find_all(
             tenant_id=context.tenant,
             configuration_id=id,
             deleted=False).all()
+        LOG.debug("Loaded instances for configuration group %s on "
+                  "tenant %s: %s" % (id, tenant_id, instances))
 
         # if name/description are provided in the request body, update the
         # model with these values as well.
@@ -143,7 +158,6 @@ class ConfigurationsController(wsgi.Controller):
         items = self._configuration_items_list(group, body['configuration'])
         deleted_at = datetime.utcnow()
         models.Configuration.remove_all_items(context, group.id, deleted_at)
-        LOG.info(_("loaded configuration instances: %s") % instances)
         models.Configuration.save(context, group, items, instances)
         return wsgi.Result(None, 202)
 
@@ -154,7 +168,8 @@ class ConfigurationsController(wsgi.Controller):
             tenant_id=context.tenant,
             configuration_id=id,
             deleted=False).all()
-        LOG.info(_("loaded configuration instances: %s") % instances)
+        LOG.debug("Loaded instances for configuration group %s on "
+                  "tenant %s: %s" % (id, tenant_id, instances))
         items = self._configuration_items_list(group, body['configuration'])
         models.Configuration.save(context, group, items, instances)
 
@@ -162,7 +177,6 @@ class ConfigurationsController(wsgi.Controller):
         ds_version_id = group.datastore_version_id
         ds_version = ds_models.DatastoreVersion.load_by_uuid(ds_version_id)
         items = []
-        LOG.info(_("loaded configuration group: %s") % group)
         if 'values' in configuration:
             # validate that the values passed in are permitted by the operator.
             ConfigurationsController._validate_configuration(
@@ -179,7 +193,8 @@ class ConfigurationsController(wsgi.Controller):
         rules = configurations.get_validation_rules(
             datastore_manager=datastore_manager)
 
-        LOG.info(_("Validating configuration values"))
+        LOG.debug("Validating configuration values for group "
+                  "with manager %s" % datastore_manager)
         for k, v in values.iteritems():
             # get the validation rule dictionary, which will ensure there is a
             # rule for the given key name. An exception will be thrown if no
