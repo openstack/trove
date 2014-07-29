@@ -440,6 +440,7 @@ class PkgRPMRemoveTestCase(testtools.TestCase):
     def test_package_not_found(self):
         # test
         pexpect.spawn.expect = Mock(return_value=1)
+        pexpect.spawn.match = False
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
@@ -447,12 +448,14 @@ class PkgRPMRemoveTestCase(testtools.TestCase):
     def test_success_remove(self):
         # test
         pexpect.spawn.expect = Mock(return_value=2)
+        pexpect.spawn.match = False
         self.assertTrue(self.pkg.pkg_remove(self.pkgName, 5000) is None)
 
     def test_timeout_error(self):
         # test timeout error
         pexpect.spawn.expect = Mock(side_effect=pexpect.
                                     TIMEOUT('timeout error'))
+        pexpect.spawn.match = False
         # test and verify
         self.assertRaises(pkg.PkgTimeout, self.pkg.pkg_remove,
                           self.pkgName, 5000)
