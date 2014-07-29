@@ -29,7 +29,7 @@ from trove.tests.util import create_dbaas_client
 from trove.common.utils import poll_until
 from trove.tests.config import CONFIG
 from trove.tests.util.users import Requirements
-from trove.tests.api.instances import existing_instance
+
 
 GROUP = "dbaas.api.mgmt.accounts"
 
@@ -44,31 +44,9 @@ class AccountsBeforeInstanceCreation(object):
         self.client = create_dbaas_client(self.user)
 
     @test
-    def test_invalid_account(self):
-        raise SkipTest("Don't have a good way to know if accounts are valid.")
-        asserts.assert_raises(exceptions.NotFound, self.client.accounts.show,
-                              "asd#4#@fasdf")
-
-    @test
     def test_invalid_account_fails(self):
         account_info = self.client.accounts.show("badaccount")
         asserts.assert_not_equal(self.user.tenant_id, account_info.id)
-
-    @test
-    def test_account_zero_instances(self):
-        account_info = self.client.accounts.show(self.user.tenant_id)
-        expected_instances = 0 if not existing_instance() else 1
-        asserts.assert_equal(expected_instances, len(account_info.instances))
-        expected = self.user.tenant_id
-        if expected is None:
-            expected = "None"
-        asserts.assert_equal(expected, account_info.id)
-
-    @test
-    def test_list_empty_accounts(self):
-        accounts_info = self.client.accounts.index()
-        expected_accounts = 0 if not existing_instance() else 1
-        asserts.assert_equal(expected_accounts, len(accounts_info.accounts))
 
 
 @test(groups=[tests.INSTANCES, GROUP], depends_on_groups=["dbaas.listing"])
@@ -81,7 +59,7 @@ class AccountsAfterInstanceCreation(object):
 
     @test
     def test_account_details_available(self):
-        if test_config.auth_strategy == "fake":
+        if CONFIG.fake_mode:
             raise SkipTest("Skipping this as auth is faked anyway.")
         account_info = self.client.accounts.show(instance_info.user.tenant_id)
         # Now check the results.
@@ -90,26 +68,20 @@ class AccountsAfterInstanceCreation(object):
             expected = "None"
         print("account_id.id = '%s'" % account_info.id)
         print("expected = '%s'" % expected)
-        asserts.assert_equal(account_info.id, expected)
-        # Instances: Here we know we've only created one instance.
-        asserts.assert_equal(1, len(account_info.instances))
-        asserts.assert_is_not_none(account_info.instances[0]['host'])
-        # We know the there's only 1 instance
-        instance = account_info.instances[0]
-        print("instances in account: %s" % instance)
-        asserts.assert_equal(instance['id'], instance_info.id)
-        asserts.assert_equal(instance['name'], instance_info.name)
-        asserts.assert_equal(instance['status'], "ACTIVE")
-        asserts.assert_is_not_none(instance['host'])
+        asserts.assert_equal(expected, account_info.id)
+        # Instances: there should at least be one instance
+        asserts.assert_true(len(account_info.instance_ids) > 0)
+        # The instance id should be one of the instances for the account
+        asserts.assert_true(instance_info.id in account_info.instance_ids)
 
     @test
     def test_list_accounts(self):
-        if test_config.auth_strategy == "fake":
+        if CONFIG.fake_mode:
             raise SkipTest("Skipping this as auth is faked anyway.")
         accounts_info = self.client.accounts.index()
         asserts.assert_equal(1, len(accounts_info.accounts))
         account = accounts_info.accounts[0]
-        asserts.assert_equal(1, account['num_instances'])
+        asserts.assert_true(account['num_instances'] > 0)
         asserts.assert_equal(instance_info.user.tenant_id, account['id'])
 
 
@@ -123,9 +95,9 @@ class AccountsAfterInstanceDeletion(object):
         self.client = create_dbaas_client(self.user)
 
     @test
-    def test_no_details_empty_account(self):
+    def test_instance_id_removed_from_account(self):
         account_info = self.client.accounts.show(instance_info.user.tenant_id)
-        asserts.assert_equal(0, len(account_info.instances))
+        asserts.assert_true(instance_info.id not in account_info.instance_ids)
 
 
 @test(groups=["fake.dbaas.api.mgmt.allaccounts"],
