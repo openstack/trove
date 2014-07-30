@@ -154,3 +154,12 @@ class BaseDbStatus(object):
                 return True
         LOG.error("Time out while waiting for DB status to change!")
         return False
+
+    def report_root(self, user):
+        """Use conductor to update the root-enable status."""
+        LOG.debug("Casting report_root message to conductor.")
+        ctxt = context.TroveContext(user=CONF.nova_proxy_admin_user,
+                                    auth_token=CONF.nova_proxy_admin_pass)
+
+        conductor_api.API(ctxt).report_root(CONF.guest_id, user)
+        LOG.debug("Successfully cast report_root.")
