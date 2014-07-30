@@ -114,7 +114,8 @@ class RedhatPackagerMixin(BasePackagerMixin):
             utils.execute("rpm", "-e", "--nodeps", package_name,
                           run_as_root=True, root_helper="sudo")
         except ProcessExecutionError:
-            LOG.error(_("Error removing conflict %s") % package_name)
+            LOG.exception(_("Error removing conflict %(package)s") %
+                          package_name)
 
     def _install(self, packages, time_out):
         """Attempts to install packages.
@@ -164,6 +165,7 @@ class RedhatPackagerMixin(BasePackagerMixin):
 
         """
         cmd = "sudo yum --color=never -y remove %s" % package_name
+        LOG.debug("Running package remove command: %s" % cmd)
         output_expects = ['\[sudo\] password for .*:',
                           'No Packages marked for removal',
                           'Removed:']
@@ -210,8 +212,9 @@ class RedhatPackagerMixin(BasePackagerMixin):
             if matches:
                 line = matches.group()
                 return line
-        msg = _("version() saw unexpected output from rpm!")
-        LOG.error(msg)
+
+        LOG.error(_("Unexpected output from rpm command. (%(output)s)") %
+                  {'output': std_out})
 
     def pkg_remove(self, package_name, time_out):
         """Removes a package."""
@@ -233,7 +236,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             utils.execute("dpkg", "--configure", "-a", run_as_root=True,
                           root_helper="sudo")
         except ProcessExecutionError:
-            LOG.error(_("Error fixing dpkg"))
+            LOG.exception(_("Error fixing dpkg"))
 
     def _fix_package_selections(self, packages, config_opts):
         """
@@ -320,6 +323,7 @@ class DebianPackagerMixin(BasePackagerMixin):
                            "'sudo dpkg --configure -a'"),
                           "Unable to lock the administration directory",
                           "Removing %s*" % package_name]
+        LOG.debug("Running remove package command %s" % cmd)
         i, match = self.pexpect_run(cmd, output_expects, time_out)
         if i == 0:
             raise PkgPermissionError("Invalid permissions.")
@@ -339,7 +343,7 @@ class DebianPackagerMixin(BasePackagerMixin):
             utils.execute("apt-get", "update", run_as_root=True,
                           root_helper="sudo")
         except ProcessExecutionError:
-            LOG.error(_("Error updating the apt sources"))
+            LOG.exception(_("Error updating the apt sources"))
 
         result = self._install(packages, time_out)
         if result != OK:

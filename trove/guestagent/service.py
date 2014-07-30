@@ -13,12 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
 import routes
 
 from trove.common import wsgi
-
-LOG = logging.getLogger(__name__)
 
 
 class Controller(wsgi.Controller):

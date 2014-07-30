@@ -54,15 +54,22 @@ class VolumeDevice(object):
         """
         try:
             num_tries = CONF.num_tries
+            LOG.debug("Checking if %s exists." % self.device_path)
+
             utils.execute('sudo', 'blockdev', '--getsize64', self.device_path,
                           attempts=num_tries)
         except ProcessExecutionError:
+            LOG.exception(_("Error getting device status"))
             raise GuestError(_("InvalidDevicePath(path=%s)") %
                              self.device_path)
 
     def _check_format(self):
         """Checks that an unmounted volume is formatted."""
-        child = pexpect.spawn("sudo dumpe2fs %s" % self.device_path)
+        cmd = "sudo dumpe2fs %s" % self.device_path
+        LOG.debug("Checking whether %s is formated: %s." %
+                  (self.device_path, cmd))
+
+        child = pexpect.spawn(cmd)
         try:
             i = child.expect(['has_journal', 'Wrong magic number'])
             if i == 0:
@@ -83,6 +90,8 @@ class VolumeDevice(object):
         cmd = "sudo mkfs -t %s %s %s" % (volume_fstype,
                                          format_options, self.device_path)
         volume_format_timeout = CONF.volume_format_timeout
+        LOG.debug("Formatting %s. Executing: %s.",
+                  (self.device_path, cmd))
         child = pexpect.spawn(cmd, timeout=volume_format_timeout)
         # child.expect("(y,n)")
         # child.sendline('y')
@@ -96,6 +105,8 @@ class VolumeDevice(object):
 
     def mount(self, mount_point, write_to_fstab=True):
         """Mounts, and writes to fstab."""
+        LOG.debug("Will mount %s at %s." % (self.device_path, mount_point))
+
         mount_point = VolumeMountPoint(self.device_path, mount_point)
         mount_point.mount()
         if write_to_fstab:
@@ -111,8 +122,8 @@ class VolumeDevice(object):
                               run_as_root=True, root_helper="sudo")
             utils.execute("resize2fs", self.device_path,
                           run_as_root=True, root_helper="sudo")
-        except ProcessExecutionError as err:
-            LOG.error(err)
+        except ProcessExecutionError:
+            LOG.exception(_("Error resizing file system."))
             raise GuestError(_("Error resizing the filesystem: %s") %
                              self.device_path)
 
@@ -127,9 +138,8 @@ class VolumeDevice(object):
         mount_points = self.mount_points(device_path)
         for mnt in mount_points:
             LOG.info(_("Device %(device)s is already mounted in "
-                       "%(mount_point)s") %
+                       "%(mount_point)s. Unmounting now.") %
                      {'device': device_path, 'mount_point': mnt})
-            LOG.info(_("Unmounting %s") % mnt)
             self.unmount(mnt)
 
     def mount_points(self, device_path):
@@ -139,8 +149,8 @@ class VolumeDevice(object):
             stdout, stderr = utils.execute(cmd, shell=True)
             return stdout.strip().split('\n')
 
-        except ProcessExecutionError as err:
-            LOG.error(err)
+        except ProcessExecutionError:
+            LOG.exception(_("Error retrieving mount points"))
             raise GuestError(_("Could not obtain a list of mount points for "
                                "device: %s") % device_path)
 
