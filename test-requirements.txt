@@ -6,7 +6,7 @@ oslosphinx
 coverage>=3.6
 nose
 nosexcover
-openstack-doc-tools>=0.16.1
+openstack-doc-tools>=0.17
 openstack.nose_plugin>=0.7
 WebTest>=2.0
 wsgi_intercept>=0.6.1 # MIT License

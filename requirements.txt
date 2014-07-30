@@ -1,7 +1,7 @@
 pbr>=0.6,!=0.7,<1.0
-SQLAlchemy>=0.8.4,!=0.9.5,<=0.9.99
+SQLAlchemy>=0.8.4,<=0.8.99,>=0.9.7,<=0.9.99
 eventlet>=0.13.0
-keystonemiddleware
+keystonemiddleware>=1.0.0
 kombu>=2.4.8
 Routes>=1.12.3,!=2.0
 WebOb>=1.2.3
@@ -23,6 +23,6 @@ iso8601>=0.1.9
 jsonschema>=2.0.0,<3.0.0
 Jinja2
 pexpect>=3.1 # ISC License
-oslo.config>=1.2.1
+oslo.config>=1.4.0.0a3
 MySQL-python
 Babel>=1.3
