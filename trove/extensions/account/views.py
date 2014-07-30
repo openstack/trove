@@ -29,27 +29,9 @@ class AccountView(object):
         self.account = account
 
     def data(self):
-        instance_list = [InstanceView(instance).data()
-                         for instance in self.account.instances]
         return {
             'account': {
                 'id': self.account.id,
-                'instances': instance_list,
+                'instance_ids': self.account.instance_ids,
             }
         }
-
-
-class InstanceView(object):
-
-    def __init__(self, instance):
-        self.instance = instance
-
-    def data(self):
-        server_host = None
-        if self.instance.server is not None:
-            server_host = self.instance.server.host
-        return {'id': self.instance.id,
-                'status': self.instance.status,
-                'name': self.instance.name,
-                'host': server_host,
-                }
