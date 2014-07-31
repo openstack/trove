@@ -3,7 +3,7 @@ SQLAlchemy>=0.7.8,!=0.9.5,<=0.9.99
 eventlet>=0.13.0
 extras
 kombu>=2.4.8
-Routes>=1.12.3
+Routes>=1.12.3,!=2.0
 WebOb>=1.2.3
 PasteDeploy>=1.5.0
 Paste
