@@ -68,7 +68,7 @@ class BackupAgent(object):
             auth_token=CONF.nova_proxy_admin_pass)
         conductor = conductor_api.API(ctxt)
 
-        LOG.info(_("Running backup %(id)s") % backup_info)
+        LOG.debug("Running backup %(id)s." % backup_info)
         storage = get_storage_strategy(
             CONF.storage_strategy,
             CONF.storage_namespace)(context)
@@ -77,7 +77,8 @@ class BackupAgent(object):
         parent_metadata = {}
         if backup_info.get('parent'):
             runner = INCREMENTAL_RUNNER
-            LOG.info(_("Using incremental runner: %s") % runner.__name__)
+            LOG.debug("Using incremental backup runner: %s." %
+                      runner.__name__)
             parent = backup_info['parent']
             parent_metadata = storage.load_metadata(parent['location'],
                                                     parent['checksum'])
@@ -105,7 +106,7 @@ class BackupAgent(object):
             with runner(filename=backup_id, extra_opts=extra_opts,
                         **parent_metadata) as bkup:
                 try:
-                    LOG.info(_("Starting Backup %s"), backup_id)
+                    LOG.debug("Starting backup %s.", backup_id)
                     success, note, checksum, location = storage.save(
                         bkup.manifest,
                         bkup)
@@ -118,12 +119,12 @@ class BackupAgent(object):
                         'backup_type': bkup.backup_type,
                     })
 
-                    LOG.info(_("Backup %(backup_id)s completed status: "
-                               "%(success)s") % backup)
-                    LOG.info(_("Backup %(backup_id)s file swift checksum: "
-                               "%(checksum)s") % backup)
-                    LOG.info(_("Backup %(backup_id)s location: "
-                               "%(location)s") % backup)
+                    LOG.debug("Backup %(backup_id)s completed status: "
+                              "%(success)s." % backup)
+                    LOG.debug("Backup %(backup_id)s file swift checksum: "
+                              "%(checksum)s." % backup)
+                    LOG.debug("Backup %(backup_id)s location: "
+                              "%(location)s." % backup)
 
                     if not success:
                         raise BackupError(note)
@@ -135,7 +136,7 @@ class BackupAgent(object):
                     storage.save_metadata(location, meta)
 
                 except Exception:
-                    LOG.exception(_("Error saving %(backup_id)s Backup") %
+                    LOG.exception(_("Error saving backup %(backup_id)s.") %
                                   backup)
                     backup.update({'state': BackupState.FAILED})
                     conductor.update_backup(CONF.guest_id,
@@ -144,14 +145,14 @@ class BackupAgent(object):
                     raise
 
         except Exception:
-            LOG.exception(_("Error running backup: %(backup_id)s") % backup)
+            LOG.exception(_("Error running backup %(backup_id)s.") % backup)
             backup.update({'state': BackupState.FAILED})
             conductor.update_backup(CONF.guest_id,
                                     sent=timeutils.float_utcnow(),
                                     **backup)
             raise
         else:
-            LOG.info(_("Saving %(backup_id)s Backup Info to model") % backup)
+            LOG.info(_("Completed backup %(backup_id)s") % backup)
             backup.update({'state': BackupState.COMPLETED})
             conductor.update_backup(CONF.guest_id,
                                     sent=timeutils.float_utcnow(),
@@ -160,7 +161,7 @@ class BackupAgent(object):
     def execute_restore(self, context, backup_info, restore_location):
 
         try:
-            LOG.debug("Getting Restore Runner %(type)s", backup_info)
+            LOG.debug("Getting Restore Runner %(type)s.", backup_info)
             restore_runner = self._get_restore_runner(backup_info['type'])
 
             LOG.debug("Getting Storage Strategy")
@@ -179,10 +180,9 @@ class BackupAgent(object):
                        "to %(restore_location)s") % backup_info)
             LOG.info(_("Restore size: %s") % content_size)
 
-        except Exception as e:
-            LOG.error(e)
-            LOG.error(_("Error restoring backup %(id)s") % backup_info)
+        except Exception:
+            LOG.exception(_("Error restoring backup %(id)s") % backup_info)
             raise
 
         else:
-            LOG.info(_("Restored Backup %(id)s") % backup_info)
+            LOG.debug("Restored backup %(id)s" % backup_info)
