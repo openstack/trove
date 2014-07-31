@@ -731,7 +731,7 @@ class Instance(BuiltInstance):
                 raise exception.LocalStorageNotSupported()
             if new_flavor_size == old_flavor_size:
                 raise exception.CannotResizeToSameSize()
-        elif CONF.device_path is not None:
+        elif CONF.device_path is not None or not '':
             # ephemeral support enabled
             if new_flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=new_flavor_id)
