@@ -61,9 +61,9 @@ class Manager(periodic_task.PeriodicTasks):
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
                 config_contents=None, root_password=None, overrides=None):
-        LOG.info(_("Setting status BUILDING"))
+        LOG.info(_("Setting status of instance to BUILDING."))
         self.appStatus.begin_install()
-        LOG.info("Installing cassandra")
+        LOG.debug("Installing cassandra.")
         self.app.install_if_needed(packages)
         self.app.init_storage_structure(mount_point)
 
@@ -96,7 +96,7 @@ class Manager(periodic_task.PeriodicTasks):
             self.app.start_db()
 
         self.appStatus.end_install_or_restart()
-        LOG.info(_('"prepare" call has finished.'))
+        LOG.info(_("Completed setup of Cassandra database instance."))
 
     def change_passwords(self, context, users):
         raise exception.DatastoreOperationNotSupported(
@@ -167,38 +167,46 @@ class Manager(periodic_task.PeriodicTasks):
     def mount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.mount(mount_point, write_to_fstab=False)
-        LOG.debug("Mounted the volume.")
+        LOG.debug("Mounted the device %s at the mount point %s." %
+                  (device_path, mount_point))
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.unmount(mount_point)
-        LOG.debug("Unmounted the volume.")
+        LOG.debug("Unmounted the device %s from the mount point %s." %
+                  (device_path, mount_point))
 
     def resize_fs(self, context, device_path=None, mount_point=None):
         device = volume.VolumeDevice(device_path)
         device.resize_fs(mount_point)
-        LOG.debug("Resized the filesystem")
+        LOG.debug("Resized the filesystem at %s." % mount_point)
 
     def update_overrides(self, context, overrides, remove=False):
+        LOG.debug("Updating overrides.")
         raise exception.DatastoreOperationNotSupported(
             operation='update_overrides', datastore=MANAGER)
 
     def apply_overrides(self, context, overrides):
+        LOG.debug("Applying overrides.")
         raise exception.DatastoreOperationNotSupported(
             operation='apply_overrides', datastore=MANAGER)
 
     def get_replication_snapshot(self, master_config):
+        LOG.debug("Getting replication snapshot.")
         raise exception.DatastoreOperationNotSupported(
             operation='get_replication_snapshot', datastore=MANAGER)
 
     def attach_replication_slave(self, snapshot, slave_config):
+        LOG.debug("Attaching replication slave.")
         raise exception.DatastoreOperationNotSupported(
             operation='attach_replication_slave', datastore=MANAGER)
 
     def detach_replication_slave(self):
+        LOG.debug("Detaching replication slave.")
         raise exception.DatastoreOperationNotSupported(
             operation='detach_replication_slave', datastore=MANAGER)
 
     def demote_replication_master(self):
+        LOG.debug("Demoting replication master.")
         raise exception.DatastoreOperationNotSupported(
             operation='demote_replication_master', datastore=MANAGER)
