@@ -39,7 +39,7 @@ class InstanceView(object):
             "datastore": {"type": self.instance.datastore.name,
                           "version": self.instance.datastore_version.name},
         }
-        if CONF.trove_volume_support:
+        if self.instance.volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}
 
         if self.instance.hostname:
@@ -88,7 +88,7 @@ class InstanceDetailView(InstanceView):
         if (isinstance(self.instance, models.DetailInstance) and
                 self.instance.volume_used):
             used = self.instance.volume_used
-            if CONF.trove_volume_support:
+            if self.instance.volume_support:
                 result['instance']['volume']['used'] = used
             else:
                 # either ephemeral or root partition

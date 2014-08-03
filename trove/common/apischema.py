@@ -188,8 +188,7 @@ instance = {
         "properties": {
             "instance": {
                 "type": "object",
-                "required": ["name", "flavorRef",
-                             "volume" if CONF.trove_volume_support else None],
+                "required": ["name", "flavorRef"],
                 "additionalProperties": True,
                 "properties": {
                     "name": non_empty_string,

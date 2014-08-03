@@ -137,6 +137,27 @@ control_exchange = trove
 
 paste_config_file=api-paste.ini.test
 
+[mysql]
+volume_support = True
+device_path = /dev/vdb
+
+[redis]
+# redis uses local storage
+volume_support = False
+# default device_path = None
+
+[cassandra]
+volume_support = True
+device_path = /dev/vdb
+
+[couchbase]
+volume_support = True
+device_path = /dev/vdb
+
+[mongodb]
+volume_support = True
+device_path = /dev/vdb
+
 [composite:trove]
 use = call:trove.common.wsgi:versioned_urlmap
 /: versions

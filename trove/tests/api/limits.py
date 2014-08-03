@@ -27,7 +27,6 @@ from trove.tests.util import create_dbaas_client
 from troveclient.compat import exceptions
 from datetime import datetime
 from trove.tests.util.users import Users
-from trove.tests.config import CONFIG
 
 GROUP = "dbaas.api.limits"
 DEFAULT_RATE = 200
@@ -93,8 +92,7 @@ class Limits(object):
         assert_equal(abs_limits.verb, "ABSOLUTE")
         assert_equal(int(abs_limits.max_instances), DEFAULT_MAX_INSTANCES)
         assert_equal(int(abs_limits.max_backups), DEFAULT_MAX_BACKUPS)
-        if CONFIG.trove_volume_support:
-            assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
+        assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
 
         for k in d:
             assert_equal(d[k].verb, k)
@@ -116,8 +114,7 @@ class Limits(object):
 
         assert_equal(int(abs_limits.max_instances), DEFAULT_MAX_INSTANCES)
         assert_equal(int(abs_limits.max_backups), DEFAULT_MAX_BACKUPS)
-        if CONFIG.trove_volume_support:
-            assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
+        assert_equal(int(abs_limits.max_volumes), DEFAULT_MAX_VOLUMES)
         assert_equal(get.verb, "GET")
         assert_equal(get.unit, "MINUTE")
         assert_true(int(get.remaining) <= DEFAULT_RATE - 5)
@@ -146,9 +143,8 @@ class Limits(object):
                              DEFAULT_MAX_INSTANCES)
                 assert_equal(int(abs_limits.max_backups),
                              DEFAULT_MAX_BACKUPS)
-                if CONFIG.trove_volume_support:
-                    assert_equal(int(abs_limits.max_volumes),
-                                 DEFAULT_MAX_VOLUMES)
+                assert_equal(int(abs_limits.max_volumes),
+                             DEFAULT_MAX_VOLUMES)
 
             except exceptions.OverLimit:
                 encountered = True

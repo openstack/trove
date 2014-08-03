@@ -238,9 +238,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info.dbaas_datastore = CONFIG.dbaas_datastore
 
     def tearDown(self):
-        quota_dict = {'instances': CONFIG.trove_max_instances_per_user}
-        if VOLUME_SUPPORT:
-            quota_dict['volumes'] = CONFIG.trove_max_volumes_per_user
+        quota_dict = {'instances': CONFIG.trove_max_instances_per_user,
+                      'volumes': CONFIG.trove_max_volumes_per_user}
         dbaas_admin.quota.update(self.test_info.user.tenant_id,
                                  quota_dict)
 
@@ -408,6 +407,17 @@ class CreateInstanceFail(object):
         assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
                       volume, databases)
+        assert_equal(501, dbaas.last_http_code)
+
+    def test_create_failure_with_volume_size_and_disabled_for_datastore(self):
+        instance_name = "instance-failure-volume-size_and_volume_disabled"
+        databases = []
+        datastore = 'redis'
+        assert_equal(CONFIG.get(datastore, 'redis')['volume_support'], False)
+        volume = {'size': 2}
+        assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
+                      instance_name, instance_info.dbaas_flavor_href,
+                      volume, databases, datastore=datastore)
         assert_equal(501, dbaas.last_http_code)
 
     @test(enabled=EPHEMERAL_SUPPORT)

@@ -312,9 +312,8 @@ QUOTAS = QuotaEngine()
 
 ''' Define all kind of resources here '''
 resources = [Resource(Resource.INSTANCES, 'max_instances_per_user'),
-             Resource(Resource.BACKUPS, 'max_backups_per_user')]
-if CONF.trove_volume_support:
-    resources.append(Resource(Resource.VOLUMES, 'max_volumes_per_user'))
+             Resource(Resource.BACKUPS, 'max_backups_per_user'),
+             Resource(Resource.VOLUMES, 'max_volumes_per_user')]
 
 QUOTAS.register_resources(resources)
 

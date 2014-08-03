@@ -335,6 +335,14 @@ class SimpleInstance(object):
         return self.ds
 
     @property
+    def volume_support(self):
+        return CONF.get(self.datastore_version.manager).volume_support
+
+    @property
+    def device_path(self):
+        return CONF.get(self.datastore_version.manager).device_path
+
+    @property
     def root_password(self):
         return self.root_pass
 
@@ -510,7 +518,7 @@ class BaseInstance(SimpleInstance):
             task_api.API(self.context).delete_instance(self.id)
 
         deltas = {'instances': -1}
-        if CONF.trove_volume_support:
+        if self.volume_support:
             deltas['volumes'] = -self.volume_size
         return run_with_quotas(self.tenant_id,
                                deltas,
@@ -616,15 +624,17 @@ class Instance(BuiltInstance):
             raise exception.FlavorNotFound(uuid=flavor_id)
 
         deltas = {'instances': 1}
-        if CONF.trove_volume_support:
+        volume_support = CONF.get(datastore_version.manager).volume_support
+        if volume_support:
             validate_volume_size(volume_size)
             deltas['volumes'] = volume_size
         else:
             if volume_size is not None:
                 raise exception.VolumeNotSupported()
-            ephemeral_support = CONF.device_path
-            if ephemeral_support and flavor.ephemeral == 0:
-                raise exception.LocalStorageNotSpecified(flavor=flavor_id)
+            ephemeral_support = CONF.get(datastore_version.manager).device_path
+            if ephemeral_support:
+                if flavor.ephemeral == 0:
+                    raise exception.LocalStorageNotSpecified(flavor=flavor_id)
 
         if backup_id is not None:
             backup_info = Backup.get_by_id(context, backup_id)
@@ -726,18 +736,21 @@ class Instance(BuiltInstance):
         old_flavor = client.flavors.get(self.flavor_id)
         new_flavor_size = new_flavor.ram
         old_flavor_size = old_flavor.ram
-        if CONF.trove_volume_support:
+        if self.volume_support:
             if new_flavor.ephemeral != 0:
                 raise exception.LocalStorageNotSupported()
             if new_flavor_size == old_flavor_size:
                 raise exception.CannotResizeToSameSize()
-        elif CONF.device_path is not None:
+        elif self.device_path is not None:
             # ephemeral support enabled
             if new_flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=new_flavor_id)
             if (new_flavor_size == old_flavor_size and
                     new_flavor.ephemeral == new_flavor.ephemeral):
                 raise exception.CannotResizeToSameSize()
+        elif new_flavor_size == old_flavor_size:
+            # uses local storage
+            raise exception.CannotResizeToSameSize()
 
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)
@@ -749,9 +762,6 @@ class Instance(BuiltInstance):
         def _resize_resources():
             self.validate_can_perform_action()
             LOG.info("Resizing volume of instance %s..." % self.id)
-            if not self.volume_size:
-                raise exception.BadRequest(_("Instance %s has no volume.")
-                                           % self.id)
             old_size = self.volume_size
             if int(new_size) <= old_size:
                 raise exception.BadRequest(_("The new volume 'size' must be "
@@ -761,6 +771,9 @@ class Instance(BuiltInstance):
             self.update_db(task_status=InstanceTasks.RESIZING)
             task_api.API(self.context).resize_volume(new_size, self.id)
 
+        if not self.volume_size:
+            raise exception.BadRequest(_("Instance %s has no volume.")
+                                       % self.id)
         new_size_l = long(new_size)
         validate_volume_size(new_size_l)
         return run_with_quotas(self.tenant_id,
