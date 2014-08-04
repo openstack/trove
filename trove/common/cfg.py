@@ -37,8 +37,6 @@ common_opts = [
     cfg.IntOpt('sql_idle_timeout', default=3600),
     cfg.BoolOpt('sql_query_log', default=False),
     cfg.IntOpt('bind_port', default=8779),
-    cfg.StrOpt('api_extensions_path', default='$pybasedir/extensions/routes',
-               help='Path to extensions.'),
     cfg.StrOpt('api_paste_config',
                default="api-paste.ini",
                help='File name for the paste.deploy config for trove-api.'),

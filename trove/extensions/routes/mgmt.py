@@ -26,7 +26,7 @@ from trove.extensions.mgmt.upgrade.service import UpgradeController
 LOG = logging.getLogger(__name__)
 
 
-class Mgmt(extensions.ExtensionsDescriptor):
+class Mgmt(extensions.ExtensionDescriptor):
 
     def get_name(self):
         return "Mgmt"

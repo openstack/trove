@@ -22,7 +22,7 @@ from trove.extensions.mysql import service
 LOG = logging.getLogger(__name__)
 
 
-class Mysql(extensions.ExtensionsDescriptor):
+class Mysql(extensions.ExtensionDescriptor):
 
     def get_name(self):
         return "Mysql"
