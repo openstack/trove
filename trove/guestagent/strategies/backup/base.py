@@ -15,15 +15,12 @@
 #
 
 from trove.guestagent.strategy import Strategy
-from trove.openstack.common import log as logging
 from trove.common import cfg, utils
 from eventlet.green import subprocess
 import os
 import signal
 
 CONF = cfg.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class BackupError(Exception):
