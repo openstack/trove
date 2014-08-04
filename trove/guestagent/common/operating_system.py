@@ -14,9 +14,8 @@
 #    under the License.
 
 import os
-import fcntl
-import struct
-import socket
+
+import netifaces
 from trove.common import utils
 
 REDHAT = 'redhat'
@@ -84,21 +83,19 @@ def service_discovery(service_candidates):
     return result
 
 
-#Uses the Linux SIOCGIFADDR ioctl to find the IP address associated
-# with a network interface, given the name of that interface,
-# e.g. "eth0". The address is returned as a string containing a dotted quad.
-def get_ip_address(ifname='eth0'):
+def get_ip_address(ifname='eth0', address_family=netifaces.AF_INET):
     """
-    Retrieves IP address which assigned to given network interface
+
+    Retrieves IP address which assigned to given network interface. As
+    an interface can have multiple addresses associated with it, the
+    address_family identifies which address is sought. By default
+    this routine returns the AF_INET address.
 
     @parameter ifname network interface (ethX, wlanX, etc.)
+    @parameter address_family the address family being sought
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    return socket.inet_ntoa(fcntl.ioctl(
-        s.fileno(),
-        0x8915,  # SIOCGIFADDR
-        struct.pack('256s', ifname[:15])
-    )[20:24])
+    addresses_by_family = netifaces.ifaddresses(ifname)[address_family]
+    return addresses_by_family.pop()['addr']
 
 
 def update_owner(user, group, path):
