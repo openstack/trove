@@ -187,4 +187,4 @@ class VolumeMountPoint(object):
             tempfstab.write(fstab_content + fstab_line)
         utils.execute("sudo", "install", "-o", "root", "-g", "root", "-m",
                       "644", tempfstab.name, "/etc/fstab")
-        utils.execute("rm", tempfstab.name)
+        os.remove(tempfstab.name)
