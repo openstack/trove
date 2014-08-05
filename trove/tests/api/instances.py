@@ -27,9 +27,11 @@ GROUP_TEST = "dbaas.guest.test"
 GROUP_STOP = "dbaas.guest.shutdown"
 GROUP_USERS = "dbaas.api.users"
 GROUP_ROOT = "dbaas.api.root"
+GROUP_GUEST = "dbaas.guest.start.test"
 GROUP_DATABASES = "dbaas.api.databases"
 GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 GROUP_CREATE_INSTANCE_FAILURE = "dbaas.api.failures"
+GROUP_QUOTAS = "dbaas.quotas"
 
 TIMEOUT_INSTANCE_CREATE = 60 * 32
 TIMEOUT_INSTANCE_DELETE = 120
@@ -227,7 +229,7 @@ def test_delete_instance_not_found():
 
 
 @test(depends_on_classes=[InstanceSetup],
-      groups=[GROUP, 'dbaas_quotas'],
+      groups=[GROUP, GROUP_QUOTAS],
       runs_after_groups=[tests.PRE_INSTANCES])
 class CreateInstanceQuotaTest(unittest.TestCase):
 
@@ -316,7 +318,7 @@ class CreateInstanceQuotaTest(unittest.TestCase):
 
 @test(depends_on_classes=[InstanceSetup],
       groups=[GROUP, GROUP_CREATE_INSTANCE_FAILURE],
-      runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
+      runs_after_groups=[tests.PRE_INSTANCES, GROUP_QUOTAS])
 class CreateInstanceFail(object):
 
     def instance_in_error(self, instance_id):
@@ -613,7 +615,7 @@ def assert_unprocessable(func, *args):
 @test(depends_on_classes=[InstanceSetup],
       run_after_class=[CreateInstanceFail],
       groups=[GROUP, GROUP_START, GROUP_START_SIMPLE, tests.INSTANCES],
-      runs_after_groups=[tests.PRE_INSTANCES, 'dbaas_quotas'])
+      runs_after_groups=[tests.PRE_INSTANCES, GROUP_QUOTAS])
 class CreateInstance(object):
 
     """Test to create a Database Instance
@@ -1022,7 +1024,7 @@ class DnsTests(object):
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP, GROUP_TEST, "dbaas.guest.start.test"])
+      groups=[GROUP, GROUP_TEST, GROUP_GUEST])
 class TestAfterInstanceCreatedGuestData(object):
     """
     Test the optional parameters (databases and users) passed in to create
