@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2014.2.dev36.ge26d068\n"
+"Project-Id-Version: trove 2014.2.dev41.gd76645b\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-08-05 06:07+0000\n"
+"POT-Creation-Date: 2014-08-06 06:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1034,7 +1034,6 @@ msgid "Completed setup of Couchbase database instance."
 msgstr ""
 
 #: trove/guestagent/datastore/couchbase/manager.py:172
-#: trove/guestagent/datastore/mysql/manager.py:97
 #, python-format
 msgid "Restoring database from backup %s"
 msgstr ""
@@ -1045,7 +1044,6 @@ msgid "Error performing restore from backup %s"
 msgstr ""
 
 #: trove/guestagent/datastore/couchbase/manager.py:182
-#: trove/guestagent/datastore/mysql/manager.py:106
 msgid "Restored database successfully"
 msgstr ""
 
@@ -1177,7 +1175,6 @@ msgid "Cannot start MongoDB with configuration changes. MongoDB state == %s!"
 msgstr ""
 
 #: trove/guestagent/datastore/mongodb/service.py:143
-#: trove/guestagent/datastore/mysql/service.py:869
 #: trove/guestagent/datastore/redis/service.py:252
 msgid "Resetting configuration"
 msgstr ""
@@ -1216,103 +1213,164 @@ msgstr ""
 msgid "OS Error %s"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:133
-msgid "Securing mysql now."
+#: trove/guestagent/datastore/mysql/manager.py:97
+#, python-format
+msgid "Restoring database from backup %s."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/manager.py:101
+#, python-format
+msgid "Error performing restore from backup %s."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/manager.py:105
+msgid "Restored database successfully."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/manager.py:153
+msgid "Completed setup of MySQL database instance."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:80
+msgid "/root/.mysql_secret does not exist."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:90
+msgid "Cannot change mysql password."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:162
+msgid "MySQL Service Status is RUNNING."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:165
+msgid "Failed to get database status."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:172
+#, python-format
+msgid "MySQL Service Status %(pid)s is BLOCKED."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:176
+msgid "Process execution failed."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:181
+msgid "MySQL Service Status is CRASHED."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:184
+msgid "MySQL Service Status is SHUTDOWN."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:355
+msgid "Error Getting user information"
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:356
 #, python-format
 msgid "Username %(user)s is not valid: %(reason)s"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:387
+#: trove/guestagent/datastore/mysql/service.py:388
+msgid "Error granting access"
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:389
 #, python-format
 msgid "Grant access to %s is not allowed"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:586
-msgid "Preparing Guest as MySQL Server"
+#: trove/guestagent/datastore/mysql/service.py:588
+msgid "Preparing Guest as MySQL Server."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:597
-#: trove/guestagent/datastore/redis/service.py:149
-msgid "Dbaas install_if_needed complete"
+msgid "Finished installing MySQL server."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:603
-msgid "Generating admin password..."
+#: trove/guestagent/datastore/mysql/service.py:604
+msgid "Generating admin password."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:616
-msgid "Dbaas secure complete."
+#: trove/guestagent/datastore/mysql/service.py:621
+msgid "Preserving root access from restore."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:620
-msgid "Preserving root access from restore"
+#: trove/guestagent/datastore/mysql/service.py:654
+msgid "Error enabling MySQL start on boot."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:664
-msgid "Stopping mysql..."
+msgid "Error disabling MySQL start on boot."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:668
+msgid "Stopping MySQL."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:676
-msgid "Could not stop MySQL!"
+msgid "Error stopping MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:724
+#: trove/guestagent/datastore/mysql/service.py:681
+msgid "Could not stop MySQL."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:729
 #, python-format
-msgid "Unable to set %(key)s with value %(value)s"
+msgid "Unable to set %(key)s with value %(value)s."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:760
-msgid "Wiping ib_logfiles..."
+#: trove/guestagent/datastore/mysql/service.py:765
+msgid "Wiping ib_logfiles."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:780
+#: trove/guestagent/datastore/mysql/service.py:785
 msgid "Writing my.cnf templates."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:802
+#: trove/guestagent/datastore/mysql/service.py:807
 msgid "Writing new temp overrides.cnf file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:806
+#: trove/guestagent/datastore/mysql/service.py:811
 msgid "Moving overrides.cnf into correct location."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:810
-msgid "Setting permissions on overrides.cnf"
-msgstr ""
-
 #: trove/guestagent/datastore/mysql/service.py:815
-msgid "Removing overrides configuration file"
+msgid "Setting permissions on overrides.cnf."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:820
-msgid "Starting mysql..."
+msgid "Removing overrides configuration file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:843
-msgid "Start up of MySQL failed!"
+#: trove/guestagent/datastore/mysql/service.py:825
+msgid "Starting MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:856
-msgid "Starting mysql with conf changes..."
+#: trove/guestagent/datastore/mysql/service.py:848
+msgid "Start up of MySQL failed."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:857
-#, python-format
-msgid "inside the guest - self.status.is_mysql_running(%s)..."
+#: trove/guestagent/datastore/mysql/service.py:854
+msgid "Error killing stalled MySQL start command."
 msgstr ""
 
 #: trove/guestagent/datastore/mysql/service.py:860
-#, python-format
-msgid "Cannot execute start_db_with_conf_changes because MySQL state == %s!"
+msgid "Starting MySQL with conf changes."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:863
-#: trove/guestagent/datastore/redis/service.py:246
-msgid "Initiating config."
+#: trove/guestagent/datastore/mysql/service.py:864
+#, python-format
+msgid "Cannot execute start_db_with_conf_changes because MySQL state == %s."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:867
+#: trove/guestagent/datastore/mysql/service.py:873
+msgid "Resetting configuration."
 msgstr ""
 
 #: trove/guestagent/datastore/redis/manager.py:92
@@ -1364,6 +1422,10 @@ msgstr ""
 msgid "Installing Redis"
 msgstr ""
 
+#: trove/guestagent/datastore/redis/service.py:149
+msgid "Dbaas install_if_needed complete"
+msgstr ""
+
 #: trove/guestagent/datastore/redis/service.py:178
 msgid "Enabling Redis on boot."
 msgstr ""
@@ -1386,6 +1448,10 @@ msgstr ""
 
 #: trove/guestagent/datastore/redis/service.py:242
 msgid "Starting redis with conf changes..."
+msgstr ""
+
+#: trove/guestagent/datastore/redis/service.py:246
+msgid "Initiating config."
 msgstr ""
 
 #: trove/guestagent/datastore/redis/service.py:259
@@ -1766,66 +1832,6 @@ msgstr ""
 
 #: trove/openstack/common/processutils.py:251
 msgid "process_input not supported over SSH"
-msgstr ""
-
-#: trove/openstack/common/service.py:118 trove/openstack/common/service.py:335
-msgid "Full set of CONF:"
-msgstr ""
-
-#: trove/openstack/common/service.py:127 trove/openstack/common/service.py:217
-#, python-format
-msgid "Caught %s, exiting"
-msgstr ""
-
-#: trove/openstack/common/service.py:139
-msgid "Exception during rpc cleanup."
-msgstr ""
-
-#: trove/openstack/common/service.py:188
-msgid "Parent process has died unexpectedly, exiting"
-msgstr ""
-
-#: trove/openstack/common/service.py:223
-msgid "Unhandled exception"
-msgstr ""
-
-#: trove/openstack/common/service.py:256
-msgid "Forking too fast, sleeping"
-msgstr ""
-
-#: trove/openstack/common/service.py:278
-#, python-format
-msgid "Started child %d"
-msgstr ""
-
-#: trove/openstack/common/service.py:288
-#, python-format
-msgid "Starting %d workers"
-msgstr ""
-
-#: trove/openstack/common/service.py:305
-#, python-format
-msgid "Child %(pid)d killed by signal %(sig)d"
-msgstr ""
-
-#: trove/openstack/common/service.py:309
-#, python-format
-msgid "Child %(pid)s exited with status %(code)d"
-msgstr ""
-
-#: trove/openstack/common/service.py:313
-#, python-format
-msgid "pid %d not in child list"
-msgstr ""
-
-#: trove/openstack/common/service.py:345
-#, python-format
-msgid "Caught %s, stopping children"
-msgstr ""
-
-#: trove/openstack/common/service.py:363
-#, python-format
-msgid "Waiting on %d children to exit"
 msgstr ""
 
 #: trove/openstack/common/sslutils.py:52

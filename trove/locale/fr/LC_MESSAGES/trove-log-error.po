@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-07-11 06:07+0000\n"
+"POT-Creation-Date: 2014-08-06 06:07+0000\n"
 "PO-Revision-Date: 2014-07-07 12:52+0000\n"
 "Last-Translator: Frédéric <frosmont@free.fr>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/trove/language/"
@@ -20,5 +20,10 @@ msgstr ""
 "Generated-By: Babel 1.3\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#~ msgid "Dummy message for transifex setup."
-#~ msgstr "Message fictif pour la configuration de transifex."
+#: trove/openstack/common/service.py:188
+msgid "Exception during rpc cleanup."
+msgstr ""
+
+#: trove/openstack/common/service.py:277
+msgid "Unhandled exception"
+msgstr ""
