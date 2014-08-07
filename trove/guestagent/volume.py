@@ -90,7 +90,7 @@ class VolumeDevice(object):
         cmd = "sudo mkfs -t %s %s %s" % (volume_fstype,
                                          format_options, self.device_path)
         volume_format_timeout = CONF.volume_format_timeout
-        LOG.debug("Formatting %s. Executing: %s.",
+        LOG.debug("Formatting %s. Executing: %s." %
                   (self.device_path, cmd))
         child = pexpect.spawn(cmd, timeout=volume_format_timeout)
         # child.expect("(y,n)")
