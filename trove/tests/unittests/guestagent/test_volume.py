@@ -177,5 +177,5 @@ class VolumeMountPointTest(testtools.TestCase):
         with patch('%s.open' % volume.__name__, m, create=True):
             self.volumeMountPoint.write_to_fstab()
 
-        self.assertEqual(2, utils.execute.call_count)
+        self.assertEqual(1, utils.execute.call_count)
         utils.execute = origin_execute
