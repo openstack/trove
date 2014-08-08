@@ -175,14 +175,6 @@ common_opts = [
                default='trove.guestagent.backup.backup_types.InnoBackupEx'),
     cfg.DictOpt('backup_runner_options', default={},
                 help='Additional options to be passed to the backup runner.'),
-    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.'),
-    cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl',
-               help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl',
-               help='Namespace to load restore strategies from.'),
     cfg.BoolOpt('verify_swift_checksum_on_restore', default=True,
                 help='Enable verification of swift checksum before starting '
                 'restore; makes sure the checksum of original backup matches '
@@ -300,7 +292,9 @@ mysql_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default='MysqlBinlogReplication',
                help='Default strategy for replication.'),
     cfg.StrOpt('replication_namespace',
@@ -321,9 +315,13 @@ mysql_opts = [
     cfg.IntOpt('usage_timeout', default=400,
                help='Timeout to wait for a guest to become active.'),
     cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl'),
+               default='trove.guestagent.strategies.backup.mysql_impl',
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl'),
+               default='trove.guestagent.strategies.restore.mysql_impl',
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support',
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
@@ -351,7 +349,9 @@ percona_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default='InnoBackupEx',
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default='MysqlBinlogReplication',
                help='Default strategy for replication.'),
     cfg.StrOpt('replication_namespace',
@@ -372,9 +372,13 @@ percona_opts = [
     cfg.IntOpt('usage_timeout', default=450,
                help='Timeout to wait for a guest to become active.'),
     cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.mysql_impl'),
+               default='trove.guestagent.strategies.backup.mysql_impl',
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.mysql_impl'),
+               default='trove.guestagent.strategies.restore.mysql_impl',
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support',
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
@@ -403,7 +407,9 @@ redis_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default=None,
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.DictOpt('backup_incremental_strategy',
                 default={},
                 help='Incremental Backup Runner based on the default'
@@ -420,6 +426,14 @@ redis_opts = [
                 default=False,
                 help='Whether to provision a cinder volume for datadir.'),
     cfg.StrOpt('device_path', default=None),
+    cfg.StrOpt('backup_namespace',
+               default=None,
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('restore_namespace',
+               default=None,
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
 ]
 
 # Cassandra
@@ -436,7 +450,9 @@ cassandra_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default=None,
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.DictOpt('backup_incremental_strategy',
                 default={},
                 help='Incremental Backup Runner based on the default'
@@ -453,6 +469,14 @@ cassandra_opts = [
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb'),
+    cfg.StrOpt('backup_namespace',
+               default=None,
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('restore_namespace',
+               default=None,
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
 ]
 
 # Couchbase
@@ -471,7 +495,9 @@ couchbase_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default='CbBackup',
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.DictOpt('backup_incremental_strategy',
                 default={},
                 help='Incremental Backup Runner based on the default'
@@ -490,9 +516,13 @@ couchbase_opts = [
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
     cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.couchbase_impl'),
+               default='trove.guestagent.strategies.backup.couchbase_impl',
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.couchbase_impl'),
+               default='trove.guestagent.strategies.restore.couchbase_impl',
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
     cfg.BoolOpt('volume_support',
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
@@ -513,7 +543,9 @@ mongodb_opts = [
                      ' in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default=None,
-               help='Default strategy to perform backups.'),
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
     cfg.DictOpt('backup_incremental_strategy',
                 default={},
                 help='Incremental Backup Runner based on the default'
@@ -551,6 +583,14 @@ mongodb_opts = [
                        'MongoDbGuestAgentStrategy',
                help='Class that implements datastore-specific guest agent API '
                     'logic.'),
+    cfg.StrOpt('backup_namespace',
+               default=None,
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('restore_namespace',
+               default=None,
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
 ]
 
 # PostgreSQL
