@@ -16,6 +16,8 @@ import os
 
 import testtools
 from mock import MagicMock
+from mock import patch
+from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent.datastore.mongodb import service as mongo_service
@@ -82,13 +84,14 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         mock_app.clear_storage = MagicMock(return_value=None)
         os.path.exists = MagicMock(return_value=is_db_installed)
 
-        # invocation
-        self.manager.prepare(context=self.context, databases=None,
-                             packages=['package'],
-                             memory_mb='2048', users=None,
-                             device_path=device_path,
-                             mount_point='/var/lib/mongodb',
-                             backup_info=backup_info)
+        with patch.object(utils, 'execute_with_timeout'):
+            # invocation
+            self.manager.prepare(context=self.context, databases=None,
+                                 packages=['package'],
+                                 memory_mb='2048', users=None,
+                                 device_path=device_path,
+                                 mount_point='/var/lib/mongodb',
+                                 backup_info=backup_info)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()
