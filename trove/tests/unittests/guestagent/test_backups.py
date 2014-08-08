@@ -81,10 +81,12 @@ class GuestAgentBackupTest(testtools.TestCase):
         self.orig = mysql_impl.get_auth_password
         mysql_impl.get_auth_password = mock.Mock(
             return_value='password')
+        self.orig_exec_with_to = utils.execute_with_timeout
 
     def tearDown(self):
         super(GuestAgentBackupTest, self).tearDown()
         mysql_impl.get_auth_password = self.orig
+        utils.execute_with_timeout = self.orig_exec_with_to
 
     def test_backup_decrypted_xtrabackup_command(self):
         backupBase.BackupRunner.is_zipped = True

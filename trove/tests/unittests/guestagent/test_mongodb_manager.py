@@ -39,6 +39,7 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_db = mongo_service.MongoDBApp.stop_db
         self.origin_start_db = mongo_service.MongoDBApp.start_db
+        self.orig_exec_with_to = utils.execute_with_timeout
 
     def tearDown(self):
         super(GuestAgentMongoDBManagerTest, self).tearDown()
@@ -50,6 +51,7 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount_points = self.origin_mount_points
         mongo_service.MongoDBApp.stop_db = self.origin_stop_db
         mongo_service.MongoDBApp.start_db = self.origin_start_db
+        utils.execute_with_timeout = self.orig_exec_with_to
 
     def test_update_status(self):
         self.manager.status = MagicMock()
