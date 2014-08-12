@@ -21,6 +21,6 @@ def main(CONF):
     from trove.common import wsgi
     conf_file = CONF.find_file(CONF.api_paste_config)
     workers = CONF.trove_api_workers or processutils.get_worker_count()
-    launcher = wsgi.launch('trove', CONF.bind_port or 8779, conf_file,
-                           workers=workers)
+    launcher = wsgi.launch('trove', CONF.bind_port, conf_file,
+                           host=CONF.bind_host, workers=workers)
     launcher.wait()
