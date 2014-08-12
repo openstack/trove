@@ -161,7 +161,7 @@ class API(proxy.RpcProxy):
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users."""
         LOG.debug("Listing Users for Instance %s.", self.id)
-        return self._call("list_users", AGENT_LOW_TIMEOUT, limit=limit,
+        return self._call("list_users", AGENT_HIGH_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
     def delete_user(self, user):
