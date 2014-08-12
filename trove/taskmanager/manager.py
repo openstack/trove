@@ -17,6 +17,7 @@ from trove.common.context import TroveContext
 import trove.extensions.mgmt.instances.models as mgmtmodels
 import trove.common.cfg as cfg
 from trove.common import exception
+from trove.common import strategy
 from trove.openstack.common import log as logging
 from trove.openstack.common import importutils
 from trove.openstack.common import periodic_task
@@ -93,7 +94,7 @@ class Manager(periodic_task.PeriodicTasks):
                                        volume_size,
                                        snapshot['dataset']['snapshot_id'],
                                        availability_zone, root_password,
-                                       nics, overrides)
+                                       nics, overrides, None)
 
         instance_tasks.attach_replication_slave(snapshot)
 
@@ -115,7 +116,7 @@ class Manager(periodic_task.PeriodicTasks):
                                            datastore_manager, packages,
                                            volume_size, backup_id,
                                            availability_zone, root_password,
-                                           nics, overrides)
+                                           nics, overrides, cluster_config)
 
     def update_overrides(self, context, instance_id, overrides):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
@@ -125,6 +126,14 @@ class Manager(periodic_task.PeriodicTasks):
                                configuration_id):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.unassign_configuration(flavor, configuration_id)
+
+    def create_cluster(self, context, cluster_id):
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.create_cluster(context, cluster_id)
+
+    def delete_cluster(self, context, cluster_id):
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.delete_cluster(context, cluster_id)
 
     if CONF.exists_notification_transformer:
         @periodic_task.periodic_task(
@@ -136,3 +145,26 @@ class Manager(periodic_task.PeriodicTasks):
             """
             mgmtmodels.publish_exist_events(self.exists_transformer,
                                             self.admin_context)
+
+    def __getattr__(self, name):
+        """
+        We should only get here if Python couldn't find a "real" method.
+        """
+
+        def raise_error(msg):
+            raise AttributeError(msg)
+
+        manager, sep, method = name.partition('_')
+        if not manager:
+            raise_error('Cannot derive manager from attribute name "%s"' %
+                        name)
+
+        task_strategy = strategy.load_taskmanager_strategy(manager)
+        if not task_strategy:
+            raise_error('No task manager strategy for manager "%s"' % manager)
+
+        if method not in task_strategy.task_manager_manager_actions:
+            raise_error('No method "%s" for task manager strategy for manager'
+                        ' "%s"' % (method, manager))
+
+        return task_strategy.task_manager_manager_actions.get(method)

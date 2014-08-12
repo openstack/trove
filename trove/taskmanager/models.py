@@ -20,9 +20,13 @@ from heatclient import exc as heat_exceptions
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
+
 from trove.backup import models as bkup_models
 from trove.backup.models import BackupState
 from trove.backup.models import DBBackup
+from trove.cluster.models import Cluster
+from trove.cluster.models import DBCluster
+from trove.cluster import tasks
 from trove.common import cfg
 from trove.common import template
 from trove.common import utils
@@ -38,6 +42,7 @@ from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
 from trove.common.instance import ServiceStatuses
 from trove.common import instance as rd_instance
+from trove.common import strategy
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client
@@ -166,11 +171,40 @@ class ConfigurationMixin(object):
         return ret
 
 
+# TODO(amcreynolds): add NotifyMixin + ConfigurationMixin-like functionality
+class ClusterTasks(Cluster):
+
+    def delete_cluster(self, context, cluster_id):
+
+        LOG.debug("begin delete_cluster for id: %s" % cluster_id)
+
+        def all_instances_marked_deleted():
+            db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
+            return len(db_instances) == 0
+
+        try:
+            utils.poll_until(all_instances_marked_deleted,
+                             sleep_time=2,
+                             time_out=CONF.cluster_delete_time_out)
+        except PollTimeOut:
+            LOG.error(_("timeout for instances to be marked as deleted."))
+            return
+
+        LOG.debug("setting cluster %s as deleted." % cluster_id)
+        cluster = DBCluster.find_by(id=cluster_id)
+        cluster.deleted = True
+        cluster.deleted_at = utils.utcnow()
+        cluster.task_status = tasks.ClusterTasks.NONE
+        cluster.save()
+        LOG.debug("end delete_cluster for id: %s" % cluster_id)
+
+
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
-                        overrides):
+                        overrides, cluster_config):
 
         LOG.info(_("Creating instance %s.") % self.id)
         security_groups = None
@@ -219,6 +253,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 availability_zone,
                 nics)
 
+        # TODO(amcreynolds): need to find a way to merge cluster_config
+        # TODO(amcreynolds): into config_contents
         config = self._render_config(flavor)
         config_overrides = self._render_override_config(flavor,
                                                         overrides=overrides)
@@ -234,7 +270,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         self._guest_prepare(flavor['ram'], volume_info,
                             packages, databases, users, backup_info,
                             config.config_contents, root_password,
-                            config_overrides.config_contents)
+                            config_overrides.config_contents,
+                            cluster_config)
 
         if root_password:
             self.report_root_enabled()
@@ -365,8 +402,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         """
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
-        if status == rd_instance.ServiceStatuses.RUNNING:
-            return True
+        if (status == rd_instance.ServiceStatuses.RUNNING or
+           status == rd_instance.ServiceStatuses.BUILD_PENDING):
+                return True
         elif status not in [rd_instance.ServiceStatuses.NEW,
                             rd_instance.ServiceStatuses.BUILDING]:
             raise TroveError(_("Service not active, status: %s") % status)
@@ -388,6 +426,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                          "--tenant_id=%s\n" %
                                          (self.id, datastore_manager,
                                           self.tenant_id))}
+
             name = self.hostname or self.name
             volume_desc = ("datastore volume for %s" % self.id)
             volume_name = ("datastore-%s" % self.id)
@@ -436,8 +475,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume_heat(self, flavor, image_id,
                                    datastore_manager,
-                                   volume_size, availability_zone, nics):
-        LOG.debug("Begin _create_server_volume_heat for id: %s" % self.id)
+                                   volume_size, availability_zone,
+                                   nics):
+        LOG.debug("begin _create_server_volume_heat for id: %s" % self.id)
         try:
             client = create_heat_client(self.context)
             tcp_rules_mapping_list = self._build_sg_rules_mapping(CONF.get(
@@ -641,6 +681,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                                      "tenant_id=%s\n" %
                                      (self.id, datastore_manager,
                                       self.tenant_id))}
+
         if os.path.isfile(CONF.get('guest_config')):
             with open(CONF.get('guest_config'), "r") as f:
                 files["/etc/trove-guestagent.conf"] = f.read()
@@ -667,7 +708,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def _guest_prepare(self, flavor_ram, volume_info,
                        packages, databases, users, backup_info=None,
                        config_contents=None, root_password=None,
-                       overrides=None):
+                       overrides=None, cluster_config=None):
+        LOG.info(_("Entering guest_prepare"))
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, packages, databases, users,
                            device_path=volume_info['device_path'],
@@ -1554,3 +1596,11 @@ class MigrateAction(ResizeActionBase):
 
     def _start_datastore(self):
         self.instance.guest.restart()
+
+
+def load_cluster_tasks(context, cluster_id):
+    manager = Cluster.manager_from_cluster_id(context, cluster_id)
+    strat = strategy.load_taskmanager_strategy(manager)
+    task_manager_cluster_tasks_class = strat.task_manager_cluster_tasks_class
+    return ClusterTasks.load(context, cluster_id,
+                             task_manager_cluster_tasks_class)
