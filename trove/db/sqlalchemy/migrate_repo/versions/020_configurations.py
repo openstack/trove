@@ -14,16 +14,18 @@
 #    under the License.
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
+from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy import utils as db_utils
 from trove.openstack.common import log as logging
+
 
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 
@@ -55,22 +57,25 @@ configuration_parameters = Table(
 
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
-
-    # since the downgrade is a no-op, an upgrade after a downgrade will
-    # cause an exception because the tables already exist
-    # we will catch that case and log an info message
-    try:
-        create_tables([configurations])
-        create_tables([configuration_parameters])
-
-        instances = Table('instances', meta, autoload=True)
-        instances.create_column(Column('configuration_id', String(36),
-                                       ForeignKey("configurations.id")))
-    except OperationalError as e:
-        logger.info(e)
+    create_tables([configurations])
+    create_tables([configuration_parameters])
+    instances = Table('instances', meta, autoload=True)
+    instances.create_column(Column('configuration_id', String(36),
+                                   ForeignKey("configurations.id")))
 
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    # Not dropping the tables for concern if rollback needed would cause
-    # consumers to recreate configurations.
+    instances = Table('instances', meta, autoload=True)
+    constraint_names = db_utils.get_foreign_key_constraint_names(
+        engine=migrate_engine,
+        table='instances',
+        columns=['configuration_id'],
+        ref_table='configurations',
+        ref_columns=['id'])
+    db_utils.drop_foreign_key_constraints(
+        constraint_names=constraint_names,
+        columns=[instances.c.configuration_id],
+        ref_columns=[configurations.c.id])
+    instances.drop_column('configuration_id')
+    drop_tables([configuration_parameters, configurations])

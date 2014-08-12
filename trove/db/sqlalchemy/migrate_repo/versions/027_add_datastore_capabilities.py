@@ -58,4 +58,4 @@ def upgrade(migrate_engine):
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([capabilities, capability_overrides])
+    drop_tables([capability_overrides, capabilities])
