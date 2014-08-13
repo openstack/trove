@@ -717,7 +717,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                            backup_info=backup_info,
                            config_contents=config_contents,
                            root_password=root_password,
-                           overrides=overrides)
+                           overrides=overrides,
+                           cluster_config=cluster_config)
 
     def _create_dns_entry(self):
         dns_support = CONF.trove_dns_support

@@ -95,7 +95,9 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         self.manager.prepare(self.context, self.packages, None, 2048,
                              None, device_path=device_path,
                              mount_point='/var/lib/couchbase',
-                             backup_info=backup_info)
+                             backup_info=backup_info,
+                             overrides=None,
+                             cluster_config=None)
         #verification/assertion
         mock_status.begin_install.assert_any_call()
         couch_service.CouchbaseApp.install_if_needed.assert_any_call(

@@ -93,6 +93,7 @@ class BaseDbStatus(object):
         return (self.status is not None and
                 self.status != rd_instance.ServiceStatuses.NEW and
                 self.status != rd_instance.ServiceStatuses.BUILDING and
+                self.status != rd_instance.ServiceStatuses.BUILD_PENDING and
                 self.status != rd_instance.ServiceStatuses.FAILED)
 
     @property

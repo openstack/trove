@@ -223,7 +223,8 @@ class GuestAgentManagerTest(testtools.TestCase):
                              device_path=device_path,
                              mount_point='/var/lib/mysql',
                              backup_info=backup_info,
-                             overrides=overrides)
+                             overrides=overrides,
+                             cluster_config=None)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()

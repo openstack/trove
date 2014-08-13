@@ -93,7 +93,9 @@ class GuestAgentMongoDBManagerTest(testtools.TestCase):
                                  memory_mb='2048', users=None,
                                  device_path=device_path,
                                  mount_point='/var/lib/mongodb',
-                                 backup_info=backup_info)
+                                 backup_info=backup_info,
+                                 overrides=None,
+                                 cluster_config=None)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()

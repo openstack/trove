@@ -15,6 +15,7 @@
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common import strategy
 from trove.openstack.common.importutils import import_class
 
 from cinderclient.v2 import client as CinderClient
@@ -79,9 +80,13 @@ def dns_client(context):
     return DnsManager()
 
 
-def guest_client(context, id):
+def guest_client(context, id, manager=None):
     from trove.guestagent.api import API
-    return API(context, id)
+    if manager:
+        clazz = strategy.load_guestagent_strategy(manager).guest_client_class
+    else:
+        clazz = API
+    return clazz(context, id)
 
 
 def nova_client(context):

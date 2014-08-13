@@ -208,7 +208,7 @@ class FakeGuest(object):
 
     def prepare(self, memory_mb, packages, databases, users, device_path=None,
                 mount_point=None, backup_info=None, config_contents=None,
-                root_password=None, overrides=None):
+                root_password=None, overrides=None, cluster_config=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
         from trove.guestagent.models import AgentHeartBeat

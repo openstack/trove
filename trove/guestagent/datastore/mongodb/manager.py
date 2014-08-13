@@ -17,9 +17,10 @@ import os
 
 from trove.common import cfg
 from trove.common import exception
-from trove.guestagent.common import operating_system
+from trove.common import instance as ds_instance
 from trove.guestagent import dbaas
 from trove.guestagent import volume
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mongodb import service as mongo_service
 from trove.guestagent.datastore.mongodb import system
 from trove.openstack.common import log as logging
@@ -45,9 +46,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None, overrides=None):
+                config_contents=None, root_password=None, overrides=None,
+                cluster_config=None):
         """Makes ready DBAAS on a Guest container."""
-
         LOG.debug("Prepare MongoDB instance")
 
         self.status.begin_install()
@@ -68,14 +69,52 @@ class Manager(periodic_task.PeriodicTasks):
             LOG.debug("Mounted the volume %(path)s as %(mount)s" %
                       {'path': device_path, "mount": mount_point})
 
-        if mount_point:
-            config_contents = self.app.update_config_contents(
-                config_contents, {
-                    'dbpath': mount_point,
-                })
+        conf_changes = self.get_config_changes(cluster_config, mount_point)
+        config_contents = self.app.update_config_contents(
+            config_contents, conf_changes)
+        if cluster_config is None:
+            self.app.start_db_with_conf_changes(config_contents)
+        else:
+            if cluster_config['instance_type'] == "query_router":
+                self.app.reset_configuration({'config_contents':
+                                              config_contents})
+                self.app.write_mongos_upstart()
+                self.app.status.is_query_router = True
+                # don't start mongos until add_config_servers is invoked
 
-        self.app.start_db_with_conf_changes(config_contents)
+            elif cluster_config['instance_type'] == "config_server":
+                self.app.status.is_config_server = True
+                self.app.start_db_with_conf_changes(config_contents)
+
+            elif cluster_config['instance_type'] == "member":
+                self.app.start_db_with_conf_changes(config_contents)
+
+            else:
+                LOG.error("Bad cluster configuration; instance type given "
+                          "as %s" % cluster_config['instance_type'])
+                self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+                return
+
+            self.status.set_status(ds_instance.ServiceStatuses.BUILD_PENDING)
         LOG.info(_('"prepare" call has finished.'))
+
+    def get_config_changes(self, cluster_config, mount_point=None):
+        config_changes = {}
+        if cluster_config is not None:
+            config_changes['bind_ip'] = operating_system.get_ip_address()
+            # TODO(ramashri) remove smallfiles config at end of dev testing
+            if cluster_config["instance_type"] == "config_server":
+                config_changes["configsvr"] = "true"
+                config_changes["smallfiles"] = "true"
+            elif cluster_config["instance_type"] == "member":
+                config_changes["replSet"] = cluster_config["replica_set_name"]
+                config_changes["smallfiles"] = "true"
+        if (mount_point is not None and
+                (cluster_config is None or
+                 cluster_config['instance_type'] != "query_router")):
+            config_changes['dbpath'] = mount_point
+
+        return config_changes
 
     def restart(self, context):
         self.app.restart()
@@ -197,3 +236,39 @@ class Manager(periodic_task.PeriodicTasks):
     def demote_replication_master(self, context):
         raise exception.DatastoreOperationNotSupported(
             operation='demote_replication_master', datastore=MANAGER)
+
+    def add_members(self, context, members):
+        try:
+            LOG.debug("add_members called")
+            LOG.debug("args: members=%s" % members)
+            self.app.add_members(members)
+            LOG.debug("add_members call has finished")
+        except Exception:
+            self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+            raise
+
+    def add_config_servers(self, context, config_servers):
+        try:
+            LOG.debug("add_config_servers called")
+            LOG.debug("args: config_servers=%s" % config_servers)
+            self.app.add_config_servers(config_servers)
+            LOG.debug("add_config_servers call has finished")
+        except Exception:
+            self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+            raise
+
+    def add_shard(self, context, replica_set_name, replica_set_member):
+        try:
+            LOG.debug("add_shard called")
+            LOG.debug("args: replica_set_name=%s, replica_set_member=%s" % (
+                replica_set_name, replica_set_member))
+            self.app.add_shard(replica_set_name, replica_set_member)
+            LOG.debug("add_shard call has finished")
+        except Exception:
+            self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+            raise
+
+    def cluster_complete(self, context):
+        # Now that cluster creation is complete, start status checks
+        status = self.status._get_actual_db_status()
+        self.status.set_status(status)

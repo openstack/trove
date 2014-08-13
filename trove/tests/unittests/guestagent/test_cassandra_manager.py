@@ -131,7 +131,8 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
                              device_path=device_path,
                              mount_point="/var/lib/cassandra",
                              backup_info=backup_info,
-                             overrides=None)
+                             overrides=None,
+                             cluster_config=None)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()

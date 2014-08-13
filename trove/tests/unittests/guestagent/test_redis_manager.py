@@ -92,7 +92,9 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
                              None, '2048',
                              None, device_path=device_path,
                              mount_point=mount_point,
-                             backup_info=backup_info)
+                             backup_info=backup_info,
+                             overrides=None,
+                             cluster_config=None)
 
         self.assertEqual(redis_service.RedisAppStatus.get.call_count, 2)
         mock_status.begin_install.assert_any_call()

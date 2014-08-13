@@ -13,12 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import re
 
 from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
-from trove.common import instance as rd_instance
+from trove.common import instance as ds_instance
 from trove.common.exception import ProcessExecutionError
 from trove.guestagent.datastore import service
 from trove.guestagent.datastore.mongodb import system
@@ -45,12 +46,19 @@ class MongoDBApp(object):
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing MongoDB server"))
 
+    def _get_service(self):
+        if self.status._is_query_router() is True:
+            return (operating_system.
+                    service_discovery(system.MONGOS_SERVICE_CANDIDATES))
+        else:
+            return (operating_system.
+                    service_discovery(system.MONGOD_SERVICE_CANDIDATES))
+
     def _enable_db_on_boot(self):
         LOG.info(_("Enabling MongoDB on boot"))
         try:
-            mongodb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mongodb_service['cmd_enable'],
+            mongo_service = self._get_service()
+            utils.execute_with_timeout(mongo_service['cmd_enable'],
                                        shell=True)
         except KeyError:
             raise RuntimeError(_("MongoDB service is not discovered."))
@@ -58,9 +66,8 @@ class MongoDBApp(object):
     def _disable_db_on_boot(self):
         LOG.info(_("Disabling MongoDB on boot"))
         try:
-            mongodb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mongodb_service['cmd_disable'],
+            mongo_service = self._get_service()
+            utils.execute_with_timeout(mongo_service['cmd_disable'],
                                        shell=True)
         except KeyError:
             raise RuntimeError("MongoDB service is not discovered.")
@@ -71,15 +78,15 @@ class MongoDBApp(object):
             self._disable_db_on_boot()
 
         try:
-            mongodb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mongodb_service['cmd_stop'],
-                                       shell=True)
+            mongo_service = self._get_service()
+            # TODO(ramashri) see if hardcoded values can be removed
+            utils.execute_with_timeout(mongo_service['cmd_stop'],
+                                       shell=True, timeout=100)
         except KeyError:
             raise RuntimeError(_("MongoDB service is not discovered."))
 
         if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.SHUTDOWN,
+                ds_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop MongoDB"))
             self.status.end_install_or_restart()
@@ -100,9 +107,8 @@ class MongoDBApp(object):
         self._enable_db_on_boot()
 
         try:
-            mongodb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mongodb_service['cmd_start'],
+            mongo_service = self._get_service()
+            utils.execute_with_timeout(mongo_service['cmd_start'],
                                        shell=True)
         except ProcessExecutionError:
             pass
@@ -110,7 +116,7 @@ class MongoDBApp(object):
             raise RuntimeError("MongoDB service is not discovered.")
 
         if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.RUNNING,
+                ds_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Start up of MongoDB failed"))
             # If it won't start, but won't die either, kill it by hand so we
@@ -149,11 +155,10 @@ class MongoDBApp(object):
 
         contents = self._delete_config_parameters(config_contents,
                                                   parameters.keys())
-        for param, value in parameters.iteritems():
+        for param, value in parameters.items():
             if param and value:
                 contents = self._add_config_parameter(contents,
                                                       param, value)
-
         return contents
 
     def _write_config(self, config_contents):
@@ -202,20 +207,161 @@ class MongoDBApp(object):
         except exception.ProcessExecutionError as e:
             LOG.error(_("Process execution %s") % e)
 
+    def add_config_servers(self, config_server_hosts):
+        """
+        This method is used by query router (mongos) instances.
+        """
+        config_contents = self._read_config()
+        configdb_contents = ','.join(['%s:27019' % host
+                                      for host in config_server_hosts])
+        LOG.debug("Config server list %s" % configdb_contents)
+        # remove db path from config and update configdb
+        contents = self._delete_config_parameters(config_contents,
+                                                  ["dbpath", "nojournal",
+                                                   "smallfiles", "journal",
+                                                   "noprealloc", "configdb"])
+        contents = self._add_config_parameter(contents,
+                                              "configdb", configdb_contents)
+        LOG.info(_("Rewriting configuration"))
+        self.start_db_with_conf_changes(contents)
+
+    def write_mongos_upstart(self):
+
+        LOG.info(_("Writing %s") % system.TMP_MONGOS_UPSTART)
+        with open(system.TMP_MONGOS_UPSTART, 'w') as t:
+            t.write(system.MONGOS_UPSTART_CONTENTS)
+
+        LOG.info(_("Moving %(a)s to %(b)s")
+                 % {'a': system.TMP_MONGOS_UPSTART,
+                    'b': system.MONGOS_UPSTART})
+        utils.execute_with_timeout("mv", system.TMP_MONGOS_UPSTART,
+                                   system.MONGOS_UPSTART,
+                                   run_as_root=True, root_helper="sudo")
+        cmd = "sudo rm -f /etc/init/mongodb.conf"
+        utils.execute_with_timeout(cmd, shell=True)
+
+    def do_mongo(self, db_cmd):
+        cmd = ('mongo --host ' + operating_system.get_ip_address() +
+               ' --quiet --eval \'printjson(%s)\'' % db_cmd)
+        # TODO(ramashri) see if hardcoded values can be removed
+        out, err = utils.execute_with_timeout(cmd, shell=True, timeout=100)
+        LOG.debug(out.strip())
+        return (out, err)
+
+    def add_shard(self, replica_set_name, replica_set_member):
+        """
+        This method is used by query router (mongos) instances.
+        """
+        cmd = 'db.adminCommand({addShard: "%s/%s:27017"})' % (
+            replica_set_name, replica_set_member)
+        self.do_mongo(cmd)
+
+    def add_members(self, members):
+        """
+        This method is used by a replica-set member instance.
+        """
+        def clean_json(val):
+            """
+            This method removes from json, values that are functions like
+            ISODate(), TimeStamp().
+            """
+            return re.sub(':\s*\w+\((.*)\)', r": \1", (val))
+
+        def check_initiate_status():
+            """
+            This method is used to verify replica-set status.
+            """
+            out, err = self.do_mongo("rs.status()")
+            response = clean_json(out.strip())
+            json_data = json.loads(response)
+
+            if((json_data["ok"] == 1) and
+               (json_data["members"][0]["stateStr"] == "PRIMARY") and
+               (json_data["myState"] == 1)):
+                    return True
+            else:
+                return False
+
+        def check_rs_status():
+            """
+            This method is used to verify replica-set status.
+            """
+            out, err = self.do_mongo("rs.status()")
+            response = clean_json(out.strip())
+            json_data = json.loads(response)
+            primary_count = 0
+
+            if json_data["ok"] != 1:
+                return False
+            if len(json_data["members"]) != (len(members) + 1):
+                return False
+            for rs_member in json_data["members"]:
+                if rs_member["state"] not in [1, 2, 7]:
+                    return False
+                if rs_member["health"] != 1:
+                    return False
+                if rs_member["state"] == 1:
+                    primary_count += 1
+
+            return primary_count == 1
+
+        # initiate replica-set
+        self.do_mongo("rs.initiate()")
+        # TODO(ramashri) see if hardcoded values can be removed
+        utils.poll_until(check_initiate_status, sleep_time=60, time_out=100)
+
+        # add replica-set members
+        for member in members:
+            self.do_mongo('rs.add("' + member + '")')
+         # TODO(ramashri) see if hardcoded values can be removed
+        utils.poll_until(check_rs_status, sleep_time=60, time_out=100)
+
 
 class MongoDbAppStatus(service.BaseDbStatus):
+
+    is_config_server = None
+    is_query_router = None
+
+    def _is_config_server(self):
+        if self.is_config_server is None:
+            try:
+                cmd = ("grep '^configsvr[ \t]*=[ \t]*true$' %s"
+                       % system.CONFIG)
+                utils.execute_with_timeout(cmd, shell=True)
+                self.is_config_server = True
+            except exception.ProcessExecutionError:
+                self.is_config_server = False
+        return self.is_config_server
+
+    def _is_query_router(self):
+        if self.is_query_router is None:
+            try:
+                cmd = ("grep '^configdb[ \t]*=.*$' %s"
+                       % system.CONFIG)
+                utils.execute_with_timeout(cmd, shell=True)
+                self.is_query_router = True
+            except exception.ProcessExecutionError:
+                self.is_query_router = False
+        return self.is_query_router
+
     def _get_actual_db_status(self):
         try:
-            status_check = (system.CMD_STATUS %
-                            operating_system.get_ip_address())
+            if self._is_config_server() is True:
+                status_check = (system.CMD_STATUS %
+                                (operating_system.get_ip_address() +
+                                ' --port 27019'))
+            else:
+                status_check = (system.CMD_STATUS %
+                                operating_system.get_ip_address())
+
             out, err = utils.execute_with_timeout(status_check, shell=True)
             if not err and "connected to:" in out:
-                return rd_instance.ServiceStatuses.RUNNING
+                return ds_instance.ServiceStatuses.RUNNING
             else:
-                return rd_instance.ServiceStatuses.SHUTDOWN
+                return ds_instance.ServiceStatuses.SHUTDOWN
         except exception.ProcessExecutionError as e:
             LOG.error(_("Process execution %s") % e)
-            return rd_instance.ServiceStatuses.SHUTDOWN
+            return ds_instance.ServiceStatuses.SHUTDOWN
         except OSError as e:
             LOG.error(_("OS Error %s") % e)
-            return rd_instance.ServiceStatuses.SHUTDOWN
+            return ds_instance.ServiceStatuses.SHUTDOWN
