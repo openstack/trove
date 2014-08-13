@@ -63,6 +63,8 @@ def map(engine, models):
                Table('configuration_parameters', meta, autoload=True))
     orm.mapper(models['conductor_lastseen'],
                Table('conductor_lastseen', meta, autoload=True))
+    orm.mapper(models['clusters'],
+               Table('clusters', meta, autoload=True))
 
 
 def mapping_exists(model):

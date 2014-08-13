@@ -120,16 +120,15 @@ class DbQuotaDriver(object):
 
         return quotas
 
-    def reserve(self, tenant_id, resources, deltas):
-        """Check quotas and reserve resources for a tenant.
+    def check_quotas(self, tenant_id, resources, deltas):
+        """Check quotas for a tenant.
 
         This method checks quotas against current usage,
         reserved resources and the desired deltas.
 
         If any of the proposed values is over the defined quota, an
         QuotaExceeded exception will be raised with the sorted list of the
-        resources which are too high.  Otherwise, the method returns a
-        list of reservation objects which were created.
+        resources which are too high.
 
         :param tenant_id: The ID of the tenant reserving the resources.
         :param resources: A dictionary of the registered resources.
@@ -155,8 +154,28 @@ class DbQuotaDriver(object):
         if overs:
             raise exception.QuotaExceeded(overs=sorted(overs))
 
+    def reserve(self, tenant_id, resources, deltas):
+        """Check quotas and reserve resources for a tenant.
+
+        This method checks quotas against current usage,
+        reserved resources and the desired deltas.
+
+        If any of the proposed values is over the defined quota, an
+        QuotaExceeded exception will be raised with the sorted list of the
+        resources which are too high.  Otherwise, the method returns a
+        list of reservation objects which were created.
+
+        :param tenant_id: The ID of the tenant reserving the resources.
+        :param resources: A dictionary of the registered resources.
+        :param deltas: A dictionary of the proposed delta changes.
+        """
+
+        self.check_quotas(tenant_id, resources, deltas)
+        quota_usages = self.get_all_quota_usages_by_tenant(tenant_id,
+                                                           deltas.keys())
+
         reservations = []
-        for resource in deltas:
+        for resource in sorted(deltas):
             reserved = deltas[resource]
             usage = quota_usages[resource]
             usage.reserved += reserved
@@ -249,6 +268,9 @@ class QuotaEngine(object):
         return self._driver.get_all_quotas_by_tenant(tenant_id,
                                                      self._resources)
 
+    def check_quotas(self, tenant_id, **deltas):
+        self._driver.check_quotas(tenant_id, self._resources, deltas)
+
     def reserve(self, tenant_id, **deltas):
         """Check quotas and reserve resources.
 
@@ -331,3 +353,7 @@ def run_with_quotas(tenant_id, deltas, f):
     else:
         QUOTAS.commit(reservations)
     return result
+
+
+def check_quotas(tenant_id, deltas):
+    QUOTAS.check_quotas(tenant_id, **deltas)

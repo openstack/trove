@@ -133,7 +133,9 @@ class InstanceController(wsgi.Controller):
         LOG.info(_("Listing database instances for tenant '%s'") % tenant_id)
         LOG.debug("req : '%s'\n\n" % req)
         context = req.environ[wsgi.CONTEXT_KEY]
-        servers, marker = models.Instances.load(context)
+        clustered_q = req.GET.get('include_clustered', '').lower()
+        include_clustered = clustered_q == 'true'
+        servers, marker = models.Instances.load(context, include_clustered)
         view = views.InstancesView(servers, req=req)
         paged = pagination.SimplePaginatedDataView(req.url, 'instances', view,
                                                    marker)

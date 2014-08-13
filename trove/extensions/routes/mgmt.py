@@ -16,6 +16,7 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
+from trove.extensions.mgmt.clusters.service import ClusterController
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.quota.service import QuotaController
@@ -45,6 +46,7 @@ class Mgmt(extensions.ExtensionDescriptor):
 
     def get_resources(self):
         resources = []
+
         instances = extensions.ResourceExtension(
             '{tenant_id}/mgmt/instances',
             MgmtInstanceController(),
@@ -53,6 +55,12 @@ class Mgmt(extensions.ExtensionDescriptor):
                             'hwinfo': 'GET',
                             'action': 'POST'})
         resources.append(instances)
+
+        clusters = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/clusters',
+            ClusterController(),
+            member_actions={'action': 'POST'})
+        resources.append(clusters)
 
         hosts = extensions.ResourceExtension(
             '{tenant_id}/mgmt/hosts',

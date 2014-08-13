@@ -15,6 +15,7 @@
 import routes
 
 from trove.common import wsgi
+from trove.cluster.service import ClusterController
 from trove.configuration.service import ConfigurationsController
 from trove.configuration.service import ParametersController
 from trove.flavor.service import FlavorController
@@ -31,6 +32,7 @@ class API(wsgi.Router):
         mapper = routes.Mapper()
         super(API, self).__init__(mapper)
         self._instance_router(mapper)
+        self._cluster_router(mapper)
         self._datastore_router(mapper)
         self._flavor_router(mapper)
         self._versions_router(mapper)
@@ -93,6 +95,34 @@ class API(wsgi.Router):
                        controller=instance_resource,
                        action="configuration",
                        conditions={'method': ['GET']})
+
+    def _cluster_router(self, mapper):
+        cluster_resource = ClusterController().create_resource()
+        mapper.connect("/{tenant_id}/clusters",
+                       controller=cluster_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/clusters/{id}",
+                       controller=cluster_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/clusters",
+                       controller=cluster_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/clusters/{id}",
+                       controller=cluster_resource,
+                       action="action",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/clusters/{cluster_id}/instances/"
+                       "{instance_id}",
+                       controller=cluster_resource,
+                       action="show_instance",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/clusters/{id}",
+                       controller=cluster_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
 
     def _flavor_router(self, mapper):
         flavor_resource = FlavorController().create_resource()

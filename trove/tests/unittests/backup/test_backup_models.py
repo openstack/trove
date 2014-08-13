@@ -60,6 +60,7 @@ class BackupCreateTest(testtools.TestCase):
                 return_value=None)
             instance.datastore_version = MagicMock()
             instance.datastore_version.id = 'datastore-id-999'
+            instance.cluster_id = None
             with patch.object(models.Backup, 'validate_can_perform_action',
                               return_value=None):
                 with patch.object(models.Backup, 'verify_swift_auth_token',
@@ -96,6 +97,7 @@ class BackupCreateTest(testtools.TestCase):
                 return_value=None)
             instance.datastore_version = MagicMock()
             instance.datastore_version.id = 'datastore-id-999'
+            instance.cluster_id = None
             with patch.object(models.Backup, 'validate_can_perform_action',
                               return_value=None):
                 with patch.object(models.Backup, 'verify_swift_auth_token',
@@ -140,6 +142,7 @@ class BackupCreateTest(testtools.TestCase):
                           return_value=instance):
             instance.validate_can_perform_action = MagicMock(
                 return_value=None)
+            instance.cluster_id = None
             with patch.object(models.Backup, 'validate_can_perform_action',
                               return_value=None):
                 with patch.object(models.Backup, 'verify_swift_auth_token',

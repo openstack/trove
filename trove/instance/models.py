@@ -218,6 +218,10 @@ class SimpleInstance(object):
         return self.db_info.id
 
     @property
+    def type(self):
+        return self.db_info.type
+
+    @property
     def tenant_id(self):
         return self.db_info.tenant_id
 
@@ -366,6 +370,14 @@ class SimpleInstance(object):
                                                   deleted=False).all()
         return self.slave_list
 
+    @property
+    def cluster_id(self):
+        return self.db_info.cluster_id
+
+    @property
+    def shard_id(self):
+        return self.db_info.shard_id
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instance.
@@ -397,7 +409,7 @@ class DetailInstance(SimpleInstance):
         self._volume_total = value
 
 
-def get_db_info(context, id):
+def get_db_info(context, id, cluster_id=None):
     """
     Retrieves an instance of the managed datastore from the persisted
     storage based on the ID and Context
@@ -405,6 +417,8 @@ def get_db_info(context, id):
     :type context: trove.common.context.TroveContext
     :param id: the unique ID of the instance
     :type id: unicode or str
+    :param cluster_id: the unique ID of the cluster
+    :type cluster_id: unicode or str
     :return: a record of the instance as its state exists in persisted storage
     :rtype: trove.instance.models.DBInstance
     """
@@ -413,17 +427,22 @@ def get_db_info(context, id):
     elif id is None:
         raise TypeError("Argument id not defined.")
     try:
-        db_info = DBInstance.find_by(context=context, id=id, deleted=False)
+        if cluster_id is not None:
+            db_info = DBInstance.find_by(context=context, id=id,
+                                         cluster_id=cluster_id, deleted=False)
+        else:
+            db_info = DBInstance.find_by(context=context, id=id, deleted=False)
     except exception.NotFound:
         raise exception.NotFound(uuid=id)
     return db_info
 
 
-def load_any_instance(context, id):
+def load_any_instance(context, id, load_server=True):
     # Try to load an instance with a server.
     # If that fails, try to load it without the server.
     try:
-        return load_instance(BuiltInstance, context, id, needs_server=True)
+        return load_instance(BuiltInstance, context, id,
+                             needs_server=load_server)
     except exception.UnprocessableEntity:
         LOG.warn(_("Could not load instance %s.") % id)
         return load_instance(FreshInstance, context, id, needs_server=False)
@@ -456,8 +475,8 @@ def load_instance(cls, context, id, needs_server=False):
     return cls(context, db_info, server, service_status)
 
 
-def load_instance_with_guest(cls, context, id):
-    db_info = get_db_info(context, id)
+def load_instance_with_guest(cls, context, id, cluster_id=None):
+    db_info = get_db_info(context, id, cluster_id)
     load_simple_instance_server_status(context, db_info)
     service_status = InstanceServiceStatus.find_by(instance_id=id)
     LOG.debug("Instance %(instance_id)s service status is %(service_status)s."
@@ -529,6 +548,12 @@ class BaseInstance(SimpleInstance):
                                                     % self.id)
             LOG.debug("Deleting instance with compute id = %s." %
                       self.db_info.compute_instance_id)
+
+            from trove.cluster.models import is_cluster_deleting
+            if (self.db_info.cluster_id is not None and not
+               is_cluster_deleting(self.context, self.db_info.cluster_id)):
+                raise exception.ClusterInstanceOperationNotSupported()
+
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)
@@ -631,7 +656,7 @@ class Instance(BuiltInstance):
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None, configuration_id=None,
-               slave_of_id=None):
+               slave_of_id=None, cluster_config=None):
 
         datastore_cfg = CONF.get(datastore_version.manager)
         client = create_nova_client(context)
@@ -684,6 +709,13 @@ class Instance(BuiltInstance):
 
         def _create_resources():
 
+            if cluster_config:
+                cluster_id = cluster_config.get("id", None)
+                shard_id = cluster_config.get("shard_id", None)
+                instance_type = cluster_config.get("instance_type", None)
+            else:
+                cluster_id = shard_id = instance_type = None
+
             db_info = DBInstance.create(name=name, flavor_id=flavor_id,
                                         tenant_id=context.tenant,
                                         volume_size=volume_size,
@@ -691,7 +723,10 @@ class Instance(BuiltInstance):
                                         datastore_version.id,
                                         task_status=InstanceTasks.BUILDING,
                                         configuration_id=configuration_id,
-                                        slave_of_id=slave_of_id)
+                                        slave_of_id=slave_of_id,
+                                        cluster_id=cluster_id,
+                                        shard_id=shard_id,
+                                        type=instance_type)
             LOG.debug("Tenant %(tenant)s created new Trove instance %(db)s."
                       % {'tenant': context.tenant, 'db': db_info.id})
 
@@ -722,10 +757,9 @@ class Instance(BuiltInstance):
                                                   datastore_version.packages,
                                                   volume_size, backup_id,
                                                   availability_zone,
-                                                  root_password,
-                                                  nics,
-                                                  overrides,
-                                                  slave_of_id)
+                                                  root_password, nics,
+                                                  overrides, slave_of_id,
+                                                  cluster_config)
 
             return SimpleInstance(context, db_info, datastore_status,
                                   root_password)
@@ -752,6 +786,8 @@ class Instance(BuiltInstance):
         LOG.info(_("Resizing instance %(instance_id)s flavor to "
                    "%(flavor_id)s.")
                  % {'instance_id': self.id, 'flavor_id': new_flavor_id})
+        if self.db_info.cluster_id is not None:
+            raise exception.ClusterInstanceOperationNotSupported()
         # Validate that the flavor can be found and that it isn't the same size
         # as the current one.
         client = create_nova_client(self.context)
@@ -788,6 +824,8 @@ class Instance(BuiltInstance):
         def _resize_resources():
             self.validate_can_perform_action()
             LOG.info(_("Resizing volume of instance %s.") % self.id)
+            if self.db_info.cluster_id is not None:
+                raise exception.ClusterInstanceOperationNotSupported()
             old_size = self.volume_size
             if int(new_size) <= old_size:
                 raise exception.BadRequest(_("The new volume 'size' must be "
@@ -809,12 +847,16 @@ class Instance(BuiltInstance):
     def reboot(self):
         self.validate_can_perform_action()
         LOG.info(_("Rebooting instance %s.") % self.id)
+        if self.db_info.cluster_id is not None and not self.context.is_admin:
+            raise exception.ClusterInstanceOperationNotSupported()
         self.update_db(task_status=InstanceTasks.REBOOTING)
         task_api.API(self.context).reboot(self.id)
 
     def restart(self):
         self.validate_can_perform_action()
         LOG.info(_("Restarting datastore on instance %s.") % self.id)
+        if self.db_info.cluster_id is not None and not self.context.is_admin:
+            raise exception.ClusterInstanceOperationNotSupported()
         # Set our local status since Nova might not change it quick enough.
         #TODO(tim.simpson): Possible bad stuff can happen if this service
         #                   shuts down before it can set status to NONE.
@@ -958,7 +1000,7 @@ class Instances(object):
     DEFAULT_LIMIT = CONF.instances_page_size
 
     @staticmethod
-    def load(context):
+    def load(context, include_clustered):
 
         def load_simple_instance(context, db, status, **kwargs):
             return SimpleInstance(context, db, status)
@@ -968,7 +1010,13 @@ class Instances(object):
         client = create_nova_client(context)
         servers = client.servers.list()
 
-        db_infos = DBInstance.find_all(tenant_id=context.tenant, deleted=False)
+        if include_clustered:
+            db_infos = DBInstance.find_all(tenant_id=context.tenant,
+                                           deleted=False)
+        else:
+            db_infos = DBInstance.find_all(tenant_id=context.tenant,
+                                           cluster_id=None,
+                                           deleted=False)
         limit = int(context.limit or Instances.DEFAULT_LIMIT)
         if limit > Instances.DEFAULT_LIMIT:
             limit = Instances.DEFAULT_LIMIT
@@ -986,6 +1034,14 @@ class Instances(object):
                                              data_view.collection,
                                              find_server)
         return ret, next_marker
+
+    @staticmethod
+    def load_all_by_cluster_id(context, cluster_id, load_servers=True):
+        db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                           deleted=False)
+        return [load_any_instance(context, db_inst.id,
+                                  load_server=load_servers)
+                for db_inst in db_instances]
 
     @staticmethod
     def _load_servers_status(load_instance, context, db_items, find_server):
@@ -1031,7 +1087,8 @@ class DBInstance(dbmodels.DatabaseModelBase):
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
                     'volume_id', 'deleted', 'tenant_id',
-                    'datastore_version_id', 'configuration_id', 'slave_of_id']
+                    'datastore_version_id', 'configuration_id', 'slave_of_id',
+                    'cluster_id', 'shard_id', 'type']
 
     def __init__(self, task_status, **kwargs):
         """

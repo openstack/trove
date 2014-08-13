@@ -1,0 +1,92 @@
+# Copyright 2014 eBay Software Foundation
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+from trove.common import strategy
+from trove.common.views import create_links
+from trove.instance.views import InstanceDetailView
+from trove.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
+
+
+class ClusterView(object):
+
+    def __init__(self, cluster, req=None, load_servers=True):
+        self.cluster = cluster
+        self.req = req
+        self.load_servers = load_servers
+
+    def data(self):
+        instances, ip_list = self.build_instances()
+        cluster_dict = {
+            "id": self.cluster.id,
+            "name": self.cluster.name,
+            "task": {"id": self.cluster.task_id,
+                     "name": self.cluster.task_name,
+                     "description": self.cluster.task_description},
+            "created": self.cluster.created,
+            "updated": self.cluster.updated,
+            "links": self._build_links(),
+            "datastore": {"type": self.cluster.datastore.name,
+                          "version": self.cluster.datastore_version.name},
+            "instances": instances
+        }
+        if ip_list:
+            cluster_dict["ip"] = ip_list
+        LOG.debug(cluster_dict)
+        return {"cluster": cluster_dict}
+
+    def _build_links(self):
+        return create_links("clusters", self.req, self.cluster.id)
+
+    def build_instances(self):
+        raise NotImplementedError()
+
+    def _build_flavor_info(self, flavor_id):
+        return {
+            "id": flavor_id,
+            "links": create_links("flavors", self.req, flavor_id)
+        }
+
+
+class ClusterInstanceDetailView(InstanceDetailView):
+    def __init__(self, instance, req):
+        super(ClusterInstanceDetailView, self).__init__(instance, req=req)
+
+    def data(self):
+        result = super(ClusterInstanceDetailView, self).data()
+        return result
+
+
+class ClustersView(object):
+    def __init__(self, clusters, req=None):
+        self.clusters = clusters
+        self.req = req
+
+    def data(self):
+        data = []
+        for cluster in self.clusters:
+            data.append(self.data_for_cluster(cluster))
+        return {'clusters': data}
+
+    def data_for_cluster(self, cluster):
+        view = load_view(cluster, req=self.req, load_servers=False)
+        return view.data()['cluster']
+
+
+def load_view(cluster, req, load_servers=True):
+    manager = cluster.datastore_version.manager
+    return strategy.load_api_strategy(manager).cluster_view_class(
+        cluster, req, load_servers)

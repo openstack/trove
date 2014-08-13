@@ -56,8 +56,11 @@ class MgmtInstanceController(InstanceController):
             deleted = True
         elif deleted_q in ['false']:
             deleted = False
+        clustered_q = req.GET.get('include_clustered', '').lower()
+        include_clustered = clustered_q == 'true'
         try:
-            instances = models.load_mgmt_instances(context, deleted=deleted)
+            instances = models.load_mgmt_instances(
+                context, deleted=deleted, include_clustered=include_clustered)
         except nova_exceptions.ClientException as e:
             LOG.error(e)
             return wsgi.Result(str(e), 403)

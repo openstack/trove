@@ -80,6 +80,8 @@ class Backup(object):
             cls.validate_can_perform_action(
                 instance_model, 'backup_create')
             cls.verify_swift_auth_token(context)
+            if instance_model.cluster_id is not None:
+                raise exception.ClusterInstanceOperationNotSupported()
 
             ds = instance_model.datastore
             ds_version = instance_model.datastore_version

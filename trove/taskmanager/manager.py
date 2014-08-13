@@ -83,6 +83,7 @@ class Manager(periodic_task.PeriodicTasks):
                                   datastore_manager, packages, volume_size,
                                   availability_zone,
                                   root_password, nics, overrides, slave_of_id):
+
         instance_tasks = FreshInstanceTasks.load(context, instance_id)
 
         snapshot = instance_tasks.get_replication_master_snapshot(context,
@@ -99,7 +100,8 @@ class Manager(periodic_task.PeriodicTasks):
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id, availability_zone,
-                        root_password, nics, overrides, slave_of_id):
+                        root_password, nics, overrides, slave_of_id,
+                        cluster_config):
         if slave_of_id:
             self._create_replication_slave(context, instance_id, name,
                                            flavor, image_id, databases, users,
