@@ -297,7 +297,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def update_statuses_on_time_out(self):
 
         if CONF.update_status_on_fail:
-            #Updating service status
+            # Updating service status
             service = InstanceServiceStatus.find_by(instance_id=self.id)
             service.set_status(ServiceStatuses.
                                FAILED_TIMEOUT_GUESTAGENT)
@@ -308,8 +308,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.error(_("Service error description: %(desc)s") %
                       {'desc': ServiceStatuses.
                        FAILED_TIMEOUT_GUESTAGENT.description})
-            #Updating instance status
-            db_info = DBInstance.find_by(name=self.name)
+            # Updating instance status
+            db_info = DBInstance.find_by(id=self.id, deleted=False)
             db_info.set_task_status(InstanceTasks.
                                     BUILDING_ERROR_TIMEOUT_GA)
             db_info.save()
