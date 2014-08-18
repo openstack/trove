@@ -35,7 +35,9 @@ from trove.openstack.common import service as openstack_service
 eventlet.monkey_patch(all=True, thread=False)
 
 CONF = cfg.CONF
-CONF.register_opts([openstack_cfg.StrOpt('guest_id')])
+# The guest_id opt definition must match the one in common/cfg.py
+CONF.register_opts([openstack_cfg.StrOpt('guest_id', default=None,
+                                         help="ID of the Guest Instance.")])
 
 
 def main():
