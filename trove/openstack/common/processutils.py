@@ -18,7 +18,7 @@ System-level utilities and helper functions.
 """
 
 import errno
-import logging as stdlib_logging
+import logging
 import multiprocessing
 import os
 import random
@@ -30,7 +30,7 @@ from eventlet import greenthread
 import six
 
 from trove.openstack.common.gettextutils import _
-from trove.openstack.common import log as logging
+from trove.openstack.common import strutils
 
 
 LOG = logging.getLogger(__name__)
@@ -115,8 +115,7 @@ def execute(*cmd, **kwargs):
                             execute this command. Defaults to false.
     :type shell:            boolean
     :param loglevel:        log level for execute commands.
-    :type loglevel:         int.  (Should be stdlib_logging.DEBUG or
-                            stdlib_logging.INFO)
+    :type loglevel:         int.  (Should be logging.DEBUG or logging.INFO)
     :returns:               (stdout, stderr) from process execution
     :raises:                :class:`UnknownArgumentError` on
                             receiving unknown arguments
@@ -132,7 +131,7 @@ def execute(*cmd, **kwargs):
     run_as_root = kwargs.pop('run_as_root', False)
     root_helper = kwargs.pop('root_helper', '')
     shell = kwargs.pop('shell', False)
-    loglevel = kwargs.pop('loglevel', stdlib_logging.DEBUG)
+    loglevel = kwargs.pop('loglevel', logging.DEBUG)
 
     if isinstance(check_exit_code, bool):
         ignore_exit_code = not check_exit_code
@@ -141,8 +140,7 @@ def execute(*cmd, **kwargs):
         check_exit_code = [check_exit_code]
 
     if kwargs:
-        raise UnknownArgumentError(_('Got unknown keyword args '
-                                     'to utils.execute: %r') % kwargs)
+        raise UnknownArgumentError(_('Got unknown keyword args: %r') % kwargs)
 
     if run_as_root and hasattr(os, 'geteuid') and os.geteuid() != 0:
         if not root_helper:
@@ -157,7 +155,7 @@ def execute(*cmd, **kwargs):
         attempts -= 1
         try:
             LOG.log(loglevel, 'Running cmd (subprocess): %s',
-                    ' '.join(logging.mask_password(cmd)))
+                    strutils.mask_password(' '.join(cmd)))
             _PIPE = subprocess.PIPE  # pylint: disable=E1101
 
             if os.name == 'nt':
