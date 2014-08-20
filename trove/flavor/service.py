@@ -14,6 +14,8 @@
 #    under the License.
 
 
+import six
+
 from trove.common import exception
 from trove.common import wsgi
 from trove.flavor import models
@@ -27,7 +29,7 @@ class FlavorController(wsgi.Controller):
         """Return a single flavor."""
         context = req.environ[wsgi.CONTEXT_KEY]
         self._validate_flavor_id(id)
-        flavor = models.Flavor(context=context, flavor_id=int(id))
+        flavor = models.Flavor(context=context, flavor_id=id)
         # Pass in the request to build accurate links.
         return wsgi.Result(views.FlavorView(flavor, req).data(), 200)
 
@@ -38,6 +40,8 @@ class FlavorController(wsgi.Controller):
         return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 
     def _validate_flavor_id(self, id):
+        if isinstance(id, six.string_types):
+            return
         try:
             if int(id) != float(id):
                 raise exception.NotFound(uuid=id)

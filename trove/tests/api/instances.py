@@ -381,6 +381,18 @@ class CreateInstanceFail(object):
 
         self.delete_async(result.id)
 
+    def test_create_failure_with_empty_flavor(self):
+        instance_name = "instance-failure-with-empty-flavor"
+        databases = []
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        assert_raises(exceptions.BadRequest, dbaas.instances.create,
+                      instance_name, '',
+                      volume, databases)
+        assert_equal(400, dbaas.last_http_code)
+
     @test(enabled=VOLUME_SUPPORT)
     def test_create_failure_with_empty_volume(self):
         instance_name = "instance-failure-with-no-volume-size"
@@ -692,6 +704,54 @@ class CreateInstance(object):
             check.links(result._info['links'])
             if VOLUME_SUPPORT:
                 check.volume()
+
+
+@test(depends_on_classes=[InstanceSetup],
+      groups=[GROUP, tests.INSTANCES],
+      runs_after_groups=[tests.PRE_INSTANCES])
+class CreateInstanceFlavors(object):
+    def _result_is_active(self):
+        instance = dbaas.instances.get(self.result.id)
+        if instance.status == "ACTIVE":
+            return True
+        else:
+            # If its not ACTIVE, anything but BUILD must be
+            # an error.
+            assert_equal("BUILD", instance.status)
+            if instance_info.volume is not None:
+                assert_equal(instance.volume.get('used', None), None)
+            return False
+
+    def _delete_async(self, instance_id):
+        dbaas.instances.delete(instance_id)
+        while True:
+            try:
+                dbaas.instances.get(instance_id)
+            except exceptions.NotFound:
+                return True
+            time.sleep(1)
+
+    def _create_with_flavor(self, flavor_id):
+        if not FAKE:
+            raise SkipTest("This test only for fake mode.")
+        instance_name = "instance-with-flavor-%s" % flavor_id
+        databases = []
+        if VOLUME_SUPPORT:
+            volume = {'size': 1}
+        else:
+            volume = None
+        self.result = dbaas.instances.create(instance_name, flavor_id, volume,
+                                             databases)
+        poll_until(self._result_is_active)
+        self._delete_async(self.result.id)
+
+    @test
+    def test_create_with_int_flavor(self):
+        self._create_with_flavor(1)
+
+    @test
+    def test_create_with_str_flavor(self):
+        self._create_with_flavor('custom')
 
 
 @test(depends_on_classes=[InstanceSetup], groups=[GROUP_NEUTRON])

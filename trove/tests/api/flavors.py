@@ -65,8 +65,14 @@ def assert_link_list_is_equal(flavor):
     assert_true(hasattr(flavor, 'links'))
     assert_true(flavor.links)
 
+    if flavor.id:
+        flavor_id = str(flavor.id)
+    else:
+        flavor_id = flavor.str_id
+
     for link in flavor.links:
         href = link['href']
+
         if "self" in link['rel']:
             expected_href = os.path.join(test_config.dbaas_url, "flavors",
                                          str(flavor.id))
@@ -74,12 +80,12 @@ def assert_link_list_is_equal(flavor):
             msg = ("REL HREF %s doesn't start with %s" %
                    (href, test_config.dbaas_url))
             assert_true(href.startswith(url), msg)
-            url = os.path.join("flavors", str(flavor.id))
-            msg = "REL HREF %s doesn't end in 'flavors/id'" % href
+            url = os.path.join("flavors", flavor_id)
+            msg = "REL HREF %s doesn't end in '%s'" % (href, url)
             assert_true(href.endswith(url), msg)
         elif "bookmark" in link['rel']:
             base_url = test_config.version_url.replace('http:', 'https:', 1)
-            expected_href = os.path.join(base_url, "flavors", str(flavor.id))
+            expected_href = os.path.join(base_url, "flavors", flavor_id)
             msg = 'bookmark "href" must be %s, not %s' % (expected_href, href)
             assert_equal(href, expected_href, msg)
         else:
@@ -139,7 +145,8 @@ class Flavors(object):
 
     @test
     def test_flavor_list_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
+        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage',
+                         'str_id']
         flavors = self.rd_client.flavors.list()
         attrcheck = AttrCheck()
         for flavor in flavors:
@@ -151,7 +158,8 @@ class Flavors(object):
 
     @test
     def test_flavor_get_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
+        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage',
+                         'str_id']
         flavor = self.rd_client.flavors.get(1)
         attrcheck = AttrCheck()
         flavor_dict = flavor._info
@@ -163,4 +171,4 @@ class Flavors(object):
     @test
     def test_flavor_not_found(self):
         assert_raises(exceptions.NotFound,
-                      self.rd_client.flavors.get, "detail")
+                      self.rd_client.flavors.get, "foo")

@@ -69,6 +69,7 @@ class FakeFlavors(object):
         self._add(10, 2, "m1.rd-tiny", 512)
         self._add(11, 0, "eph.rd-tiny", 512, 1)
         self._add(12, 20, "eph.rd-smaller", 768, 2)
+        self._add("custom", 25, "custom.small", 512, 1)
         # self._add(13, 20, "m1.heat", 512)
 
     def _add(self, *args, **kwargs):
@@ -76,7 +77,11 @@ class FakeFlavors(object):
         self.db[new_flavor.id] = new_flavor
 
     def get(self, id):
-        id = int(id)
+        try:
+            id = int(id)
+        except ValueError:
+            pass
+
         if id not in self.db:
             raise nova_exceptions.NotFound(404, "Flavor id not found %s" % id)
         return self.db[id]
@@ -617,7 +622,7 @@ class FakeHost(object):
         """
         self.instances = []
         self.percentUsed = 0
-        self.totalRAM = 2004  # 16384
+        self.totalRAM = 32000  # 16384
         self.usedRAM = 0
         for server in self.servers.list():
             print(server)
@@ -629,11 +634,11 @@ class FakeHost(object):
                 'name': server.name,
                 'status': server.status
             })
-            try:
-                flavor = FLAVORS.get(server.flavor_ref)
-            except ValueError:
-                # Maybe flavor_ref isn't an int?
+            if (str(server.flavor_ref).startswith('http:') or
+               str(server.flavor_ref).startswith('https:')):
                 flavor = FLAVORS.get_by_href(server.flavor_ref)
+            else:
+                flavor = FLAVORS.get(server.flavor_ref)
             ram = flavor.ram
             self.usedRAM += ram
         decimal = float(self.usedRAM) / float(self.totalRAM)
