@@ -28,6 +28,7 @@ from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
 from trove.common import instance as rd_instance
+from trove.common.exception import PollTimeOut
 from trove.guestagent.common import operating_system
 from trove.guestagent.common import sql_query
 from trove.guestagent.db import models
@@ -47,6 +48,9 @@ TMP_MYCNF = "/tmp/my.cnf.tmp"
 MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONF = cfg.CONF
+MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
+REPLICATION_USER = CONF.get(MANAGER).replication_user
+REPLICATION_PASSWORD = CONF.get(MANAGER).replication_password
 
 INCLUDE_MARKER_OPERATORS = {
     True: ">=",
@@ -58,6 +62,8 @@ MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYCNF_OVERRIDES = "/etc/mysql/conf.d/overrides.cnf"
 MYCNF_OVERRIDES_TMP = "/tmp/overrides.cnf.tmp"
+MYCNF_REPLMASTER = "/etc/mysql/conf.d/replication.cnf"
+MYCNF_REPLMASTER_TMP = "/tmp/replication.cnf.tmp"
 
 
 # Create a package impl
@@ -798,13 +804,118 @@ class MySqlApp(object):
                                    MYCNF_OVERRIDES)
 
         LOG.info(_("Setting permissions on overrides.cnf."))
-        utils.execute_with_timeout("sudo", "chmod", "0711",
+        utils.execute_with_timeout("sudo", "chmod", "0644",
                                    MYCNF_OVERRIDES)
 
     def _remove_overrides(self):
         LOG.info(_("Removing overrides configuration file."))
         if os.path.exists(MYCNF_OVERRIDES):
             utils.execute_with_timeout("sudo", "rm", MYCNF_OVERRIDES)
+
+    def write_replication_overrides(self, overrideValues):
+        LOG.info(_("Writing replication.cnf file."))
+
+        with open(MYCNF_REPLMASTER_TMP, 'w') as overrides:
+            overrides.write(overrideValues)
+        LOG.debug("Moving temp replication.cnf into correct location.")
+        utils.execute_with_timeout("sudo", "mv", MYCNF_REPLMASTER_TMP,
+                                   MYCNF_REPLMASTER)
+
+        LOG.debug("Setting permissions on replication.cnf.")
+        utils.execute_with_timeout("sudo", "chmod", "0644",
+                                   MYCNF_REPLMASTER)
+
+    def remove_replication_overrides(self):
+        LOG.info(_("Removing replication configuration file."))
+        if os.path.exists(MYCNF_REPLMASTER):
+            utils.execute_with_timeout("sudo", "rm", MYCNF_REPLMASTER)
+
+    def grant_replication_privilege(self):
+        LOG.info(_("Granting Replication Slave privilege."))
+
+        with LocalSqlClient(get_engine()) as client:
+            g = sql_query.Grant(permissions=['REPLICATION SLAVE'],
+                                user=REPLICATION_USER,
+                                clear=REPLICATION_PASSWORD)
+
+            t = text(str(g))
+            client.execute(t)
+
+    def revoke_replication_privilege(self):
+        LOG.info(_("Revoking Replication Slave privilege."))
+
+        with LocalSqlClient(get_engine()) as client:
+            g = sql_query.Revoke(permissions=['REPLICATION SLAVE'],
+                                 user=REPLICATION_USER,
+                                 clear=REPLICATION_PASSWORD)
+
+            t = text(str(g))
+            client.execute(t)
+
+    def get_port(self):
+        with LocalSqlClient(get_engine()) as client:
+            result = client.execute('SELECT @@port').first()
+            return result[0]
+
+    def get_binlog_position(self):
+        with LocalSqlClient(get_engine()) as client:
+            result = client.execute('SHOW MASTER STATUS').first()
+            binlog_position = {
+                'log_file': result['File'],
+                'position': result['Position']
+            }
+            return binlog_position
+
+    def change_master_for_binlog(self, host, port, log_position):
+        LOG.info(_("Configuring replication from %s.") % host)
+
+        change_master_cmd = ("CHANGE MASTER TO MASTER_HOST='%(host)s', "
+                             "MASTER_PORT=%(port)s, "
+                             "MASTER_USER='%(user)s', "
+                             "MASTER_PASSWORD='%(password)s', "
+                             "MASTER_LOG_FILE='%(log_file)s', "
+                             "MASTER_LOG_POS=%(log_pos)s" %
+                             {
+                                 'host': host,
+                                 'port': port,
+                                 'user': REPLICATION_USER,
+                                 'password': REPLICATION_PASSWORD,
+                                 'log_file': log_position['log_file'],
+                                 'log_pos': log_position['position']
+                             })
+
+        with LocalSqlClient(get_engine()) as client:
+            client.execute(change_master_cmd)
+
+    def start_slave(self):
+        LOG.info(_("Starting slave replication."))
+        with LocalSqlClient(get_engine()) as client:
+            client.execute('START SLAVE')
+            self._wait_for_slave_status("ON", client, 60)
+
+    def stop_slave(self):
+        LOG.info(_("Stopping slave replication."))
+        with LocalSqlClient(get_engine()) as client:
+            client.execute('STOP SLAVE')
+            client.execute('RESET SLAVE ALL')
+            self._wait_for_slave_status("OFF", client, 30)
+
+    def _wait_for_slave_status(self, status, client, max_time):
+
+        def verify_slave_status():
+            actual_status = client.execute(
+                "SHOW GLOBAL STATUS like 'slave_running'").first()[1]
+            return actual_status.upper() == status.upper()
+
+        LOG.debug("Waiting for SLAVE_RUNNING to change to %s.", status)
+        try:
+            utils.poll_until(verify_slave_status, sleep_time=3,
+                             time_out=max_time)
+            LOG.info(_("Replication is now %s.") % status.lower())
+        except PollTimeOut:
+            raise RuntimeError(
+                _("Replication is not %(status)s after %(max)d seconds.") % {
+                    'status': status.lower(), 'max': max_time})
 
     def start_mysql(self, update_db=False):
         LOG.info(_("Starting MySQL."))

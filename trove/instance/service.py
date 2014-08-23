@@ -207,15 +207,9 @@ class InstanceController(wsgi.Controller):
         else:
             backup_id = None
 
-        if 'availability_zone' in body['instance']:
-            availability_zone = body['instance']['availability_zone']
-        else:
-            availability_zone = None
-
-        if 'nics' in body['instance']:
-            nics = body['instance']['nics']
-        else:
-            nics = None
+        availability_zone = body['instance'].get('availability_zone')
+        nics = body['instance'].get('nics')
+        slave_of_id = body['instance'].get('slave_of')
 
         if 'slave_of' in body['instance']:
             slave_of_id = body['instance']['slave_of']

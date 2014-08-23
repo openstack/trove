@@ -326,8 +326,8 @@ class API(proxy.RpcProxy):
 
     def get_replication_snapshot(self, master_config=None):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
-        self._call("get_replication_snapshot", AGENT_HIGH_TIMEOUT,
-                   master_config=master_config)
+        return self._call("get_replication_snapshot", AGENT_HIGH_TIMEOUT,
+                          master_config=master_config)
 
     def attach_replication_slave(self, snapshot, slave_config=None):
         LOG.debug("Configuring instance %s to replicate from %s.",
@@ -337,7 +337,7 @@ class API(proxy.RpcProxy):
 
     def detach_replication_slave(self):
         LOG.debug("Detaching slave %s from its master.", self.id)
-        self._call("detach_replication_slave", AGENT_LOW_TIMEOUT)
+        self._call("detach_replication_slave", AGENT_HIGH_TIMEOUT)
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)
