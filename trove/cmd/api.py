@@ -14,11 +14,13 @@
 #    under the License.
 from oslo_concurrency import processutils
 from trove.cmd.common import with_initialize
+from trove.common import profile
 
 
 @with_initialize
 def main(CONF):
     from trove.common import wsgi
+    profile.setup_profiler('api', CONF.host)
     conf_file = CONF.find_file(CONF.api_paste_config)
     workers = CONF.trove_api_workers or processutils.get_worker_count()
     launcher = wsgi.launch('trove', CONF.bind_port, conf_file,

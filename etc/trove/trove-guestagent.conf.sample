@@ -105,6 +105,11 @@ root_grant_option = True
 log_dir = /tmp/
 log_file = logfile.txt
 
+[profiler]
+# If False fully disable profiling feature.
+#enabled = False
+# If False doesn't trace SQL requests.
+#trace_sqlalchemy = True
 
 # ========== Datastore Specific Configuration Options ==========
 

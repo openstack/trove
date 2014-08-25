@@ -202,6 +202,12 @@ pydev_debug = disabled
 # its own oslo group with defined in it:
 # - tcp_ports; upd_ports;
 
+[profiler]
+# If False fully disable profiling feature.
+#enabled = False
+# If False doesn't trace SQL requests.
+#trace_sqlalchemy = True
+
 [mysql]
 # Format (single port or port range): A, B-C
 # where C greater than B
