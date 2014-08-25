@@ -255,7 +255,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # record to avoid over billing a customer for an instance that
         # fails to build properly.
         try:
-            usage_timeout = CONF.get(datastore_manager).usage_timeout
+            usage_timeout = CONF.usage_timeout
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
                              time_out=usage_timeout)

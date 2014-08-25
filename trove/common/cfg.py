@@ -279,7 +279,9 @@ common_opts = [
     cfg.StrOpt('network_driver', default='trove.network.nova.NovaNetwork',
                help="Describes the actual network manager used for "
                     "the management of network attributes "
-                    "(security groups, floating IPs, etc.)")
+                    "(security groups, floating IPs, etc.)"),
+    cfg.IntOpt('usage_timeout', default=600,
+               help='Timeout to wait for a guest to become active.'),
 ]
 
 # Datastore specific option groups
@@ -392,8 +394,6 @@ redis_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/redis',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.IntOpt('usage_timeout', default=450,
-               help='Timeout to wait for a guest to become active.'),
     cfg.BoolOpt('volume_support',
                 default=False,
                 help='Whether to provision a cinder volume for datadir.'),
@@ -420,8 +420,6 @@ cassandra_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/cassandra',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.IntOpt('usage_timeout', default=600,
-               help='Timeout to wait for a guest to become active.'),
     cfg.BoolOpt('volume_support',
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
@@ -450,8 +448,6 @@ couchbase_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/couchbase',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.IntOpt('usage_timeout', default=450,
-               help='Timeout to wait for a guest to become active.'),
     cfg.BoolOpt('root_on_create', default=True,
                 help='Enable the automatic creation of the root user for the '
                 'service during instance-create. The generated password for '
@@ -487,8 +483,6 @@ mongodb_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/mongodb',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.IntOpt('usage_timeout', default=450,
-               help='Timeout to wait for a guest to become active.'),
     cfg.BoolOpt('volume_support',
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
