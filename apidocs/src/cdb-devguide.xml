@@ -148,8 +148,8 @@
                     <para>HTTP/1.1 conventions</para>
                 </listitem>
                 <listitem>
-                    <para>JSON and/or XML data serialization
-                        formats</para>
+                    <para>JSON data serialization
+                        format</para>
                 </listitem>
             </itemizedlist>
         </section>
@@ -426,11 +426,6 @@
             <remark security="reviewer">Reviewer: Need new examples
                 that show OpenStack host.</remark>
             <example>
-                <title>List Instances Paged Request: XML</title>
-                <?dbfo keep-together="always"?>
-                <programlisting language="xml"><xi:include href="samples/db-instances-index-pagination-request-xml.txt" parse="text"/></programlisting>
-            </example>
-            <example>
                 <title>List Instances Paged Request: JSON</title>
                 <?dbfo keep-together="always"?>
                 <programlisting language="json"><xi:include href="samples/db-instances-index-pagination-request-json.txt" parse="text"/></programlisting>
@@ -443,19 +438,7 @@
                     (<code>?marker=4137d6a4-03b7-4b66-b0ef-8c7c35c470d3</code>).
                 Also a link is provided to retrieve the next 2 results
                     (<code>limit=2</code>) in the link element
-                identified by the attribute <code>rel="next"</code>
-                (XML) or <code>"rel":"next"</code> (JSON):</para>
-            <example>
-                <title>List Instances Paged Response: XML</title>
-                <?dbfo keep-together="always"?>
-                <literallayout>HTTP/1.1 200 OK
-Content-Type: application/xml
-Via: 1.1 Repose (Repose/2.6.7)
-Content-Length: 1538
-Date: Mon, 18 Mar 2013 19:09:17 GMT
-Server: Jetty(8.0.y.z-SNAPSHOT)</literallayout>
-                <programlisting language="xml"><xi:include href="samples/db-instances-index-pagination-response.xml" parse="text"/></programlisting>
-            </example>
+                identified by <code>"rel":"next"</code>:</para>
             <example>
                 <title>List Instances Paged Response: JSON</title>
                 <?dbfo keep-together="always"?>
@@ -572,15 +555,6 @@ Server: Jetty(8.0.y.z-SNAPSHOT)</literallayout>
                 cannot perform the requested operation:</para>
 
             <example>
-                <title>Example instanceFault Response: XML</title>
-                <?dbfo keep-together="always"?>
-                <literallayout>HTTP/1.1 500 Internal Server Error
-Content-Type: application/xml
-Content-Length: 121
-Date: Mon, 28 Nov 2011 18:19:37 GMT</literallayout>
-<programlisting language="xml"><xi:include href="samples/db-faults-instanceFault.xml" parse="text"/></programlisting>
-            </example>
-            <example>
                 <title>Example Fault Response: JSON</title>
                 <?dbfo keep-together="always"?>
                 <literallayout>HTTP/1.1 500 Internal Server Error
@@ -607,16 +581,6 @@ Date: Tue, 29 Nov 2011 00:33:48 GMT</literallayout>
                 the volume size is invalid:</para>
             <example>
                 <title>Example badRequest Fault on Volume Size Errors:
-                    XML</title>
-                <?dbfo keep-together="always"?>
-                <literallayout>HTTP/1.1 400 None
-Content-Type: application/xml
-Content-Length: 121
-Date: Mon, 28 Nov 2011 18:19:37 GMT</literallayout>
-<programlisting language="xml"><xi:include href="samples/db-faults-badRequest.xml" parse="text"/></programlisting>
-            </example>
-            <example>
-                <title>Example badRequest Fault on Volume Size Errors:
                     JSON</title>
                 <?dbfo keep-together="always"?>
                 <literallayout>HTTP/1.1 400 None
@@ -627,15 +591,6 @@ Date: Tue, 29 Nov 2011 00:33:48 GMT</literallayout>
             </example>
             <para>The next two examples show <code>itemNotFound</code>
                 errors:</para>
-            <example>
-                <title>Example itemNotFound Fault: XML</title>
-                <?dbfo keep-together="always"?>
-                <literallayout>HTTP/1.1 404 Not Found
-Content-Length: 147
-Content-Type: application/xml; charset=UTF-8
-Date: Mon, 28 Nov 2011 19:50:15 GMT</literallayout>
-<programlisting language="xml"><xi:include href="samples/db-faults-itemNotFound.xml" parse="text"/></programlisting>
-            </example>
             <example>
                 <title>Example itemNotFound Fault: JSON</title>
                 <?dbfo keep-together="always"?>
