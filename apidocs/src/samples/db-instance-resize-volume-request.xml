@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<resize xmlns="http://docs.openstack.org/database/api/v1.0">
-    <volume size="4"/>
-</resize>

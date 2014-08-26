@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<user name="testuser"
-    xmlns="http://docs.openstack.org/database/api/v1.0">
-    <databases>
-        <database name="exampledb"/>
-    </databases>
-</user>

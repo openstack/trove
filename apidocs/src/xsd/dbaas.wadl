@@ -121,17 +121,11 @@
                 the specified version of the API.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Version
-                        Details requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-version-request-xml.txt"/>
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Version
+                        Details requests:</para>
                     <xsdxt:code
                         href="../samples/db-version-request-json.txt"
                     />
@@ -139,20 +133,12 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Version
-                        Details responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-version-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-version-response.xml"/>
-                </doc>
-            </representation>
 
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Version
+                        Details responses:</para>
                     <xsdxt:code
                         href="../samples/db-version-response-json.txt"/>
                     <xsdxt:code
@@ -170,18 +156,11 @@
                 of the API.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Versions
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-versions-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Versions
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-versions-request-json.txt"
                     />
@@ -189,19 +168,11 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Versions
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-versions-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-versions-response.xml"/>
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Versions
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-versions-response-json.txt"/>
                     <xsdxt:code
@@ -296,7 +267,7 @@
                             for creating databases on instance
                             creation. Refer to <xref
                                 linkend="POST_createDatabase__version___accountId__instances__instanceId__databases_"
-                            /> for the required xml/json format.</td>
+                            /> for the required json format.</td>
                         <td colspan="1">No</td>
                     </tr>
                     <tr>
@@ -321,7 +292,7 @@
                             database on instance creation. Refer to
                                 <xref
                                 linkend="POST_createUser__version___accountId__instances__instanceId__users_"
-                            /> for the required xml/json format.</td>
+                            /> for the required json format.</td>
                         <td colspan="1">No</td>
                     </tr>
                     <tr>
@@ -329,7 +300,7 @@
                         <td colspan="3">Specifies password for those
                             users on instance creation. Refer to <xref
                                 linkend="POST_createUser__version___accountId__instances__instanceId__users_"
-                            /> for the required xml/json format.</td>
+                            /> for the required json format.</td>
                         <td colspan="1">No</td>
                     </tr>
                     <tr>
@@ -338,7 +309,7 @@
                             that those users can access on instance
                             creation. Refer to <xref
                                 linkend="POST_createUser__version___accountId__instances__instanceId__users_"
-                            /> for the required xml/json format.</td>
+                            /> for the required json format.</td>
                         <td colspan="1">No</td>
                     </tr>
                 </tbody>
@@ -348,21 +319,11 @@
                 may be returned.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:DatabaseInstance">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Create Database
-                        Instance requests and responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-create-instance-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-create-instance-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Create Database
+                        Instance requests and responses:</para>
                     <xsdxt:code
                         href="../samples/db-create-instance-request-json.txt"/>
                     <xsdxt:code
@@ -372,16 +333,6 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:DatabaseInstance">
-                <doc>
-                    <xsdxt:code
-                        href="../samples/db-create-instance-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-create-instance-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
                     <xsdxt:code
@@ -420,18 +371,11 @@
                 <code>BUILD</code>.</para></note>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete Database
-                        Instance requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-instance-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete Database
+                        Instance requests:</para>
                     <xsdxt:code
                         href="../samples/db-delete-instance-request-json.txt"
                     />
@@ -440,19 +384,11 @@
         </request>
         <response status="202"/> &commonFaults; <response status="422"
             xmlns="http://wadl.dev.java.net/2009/02">
-            <representation mediaType="application/xml"
-                element="dbaas:unprocessableEntity">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete Database
-                        Instance responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-instance-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete Database
+                        Instance responses:</para>
                     <xsdxt:code
                         href="../samples/db-delete-instance-response-json.txt"
                     />
@@ -472,18 +408,11 @@
                 may be returned.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List All Database
-                        Instances Detail requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-instances-index-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List All Database
+                        Instances Detail requests:</para>
                     <xsdxt:code
                         href="../samples/db-instances-index-request-json.txt"
                     />
@@ -491,20 +420,11 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List All Database
-                        Instances responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-instances-index-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-instances-index-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List All Database
+                        Instances responses:</para>
                     <xsdxt:code
                         href="../samples/db-instances-index-response-json.txt"/>
                     <xsdxt:code
@@ -548,18 +468,11 @@
                 instance.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Database
-                        Instance Status and Details requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-status-detail-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Database
+                        Instance Status and Details requests:</para>
                     <xsdxt:code
                         href="../samples/db-instance-status-detail-request-json.txt"
                     />
@@ -567,22 +480,12 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:DatabaseInstance">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Database
-                        Instance Status and Details responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-status-detail-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-instance-status-detail-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:DatabaseInstance">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Database
+                        Instance Status and Details responses:</para>
                     <xsdxt:code
                         href="../samples/db-instance-status-detail-response-json.txt"/>
                     <xsdxt:code
@@ -608,22 +511,12 @@
                 response.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Restart">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Restart Instance
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-restart-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-instance-restart-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Restart">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Restart Instance
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-instance-restart-request-json.txt"/>
                     <xsdxt:code
@@ -633,18 +526,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Restart Instance
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-restart-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Restart Instance
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-instance-restart-response-json.txt"
                     />
@@ -662,22 +548,12 @@
                 Restarts MySQL in the process.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Resize">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Resize Instance
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-instance-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-instance-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Resize">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Resize Instance
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-instance-resize-instance-request-json.txt"/>
                     <xsdxt:code
@@ -687,18 +563,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Resize Instance
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-instance-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Resize Instance
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-instance-resize-instance-response-json.txt"
                     />
@@ -724,22 +593,12 @@
                 response.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Resize">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Resize Instance
-                        Volume requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-volume-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-volume-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Resize">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Resize Instance
+                        Volume requests:</para>
                     <xsdxt:code
                         href="../samples/db-instance-resize-volume-request-json.txt"/>
                     <xsdxt:code
@@ -749,18 +608,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Resize Instance
-                        Volume responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-instance-resize-volume-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Resize Instance
+                        Volume responses:</para>
                     <xsdxt:code
                         href="../samples/db-instance-resize-volume-response-json.txt"
                     />
@@ -797,7 +649,7 @@
                         <td colspan="1">name</td>
                         <td colspan="3">Specifies the database name
                             for creating the database. Refer to the
-                            request examples for the required xml/json
+                            request examples for the required json
                             format.</td>
                         <td colspan="1">Yes</td>
                     </tr>
@@ -909,22 +761,12 @@
             </table>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Database">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Create Database
-                        requests:<?rax-fo keep-with-next?></para>
-                    <xsdxt:code
-                        href="../samples/db-create-databases-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-create-databases-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Database">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Create Database
+                        requests:<?rax-fo keep-with-next?></para>
                     <xsdxt:code
                         href="../samples/db-create-databases-request-json.txt"/>
                     <xsdxt:code
@@ -934,18 +776,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Create Database
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-create-databases-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Create Database
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-create-databases-response-json.txt"
                     />
@@ -968,39 +803,24 @@
                     administrator.</para></note>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Databases for
-                        Instance requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Databases for
+                        Instance requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-databases-request-json.txt"
                     />
                 </doc>
             </representation>
 
-            <representation mediaType="application/xml">
-                <doc
-                    title="List Databases for Instance Paged Request: XML">
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the
-                            <emphasis>paginated</emphasis> List
-                        Databases for Instance requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-pagination-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc
                     title="List Databases for Instance Paged Request: JSON">
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the
+                            <emphasis>paginated</emphasis> List
+                        Databases for Instance requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-databases-pagination-request-json.txt"
                     />
@@ -1008,22 +828,12 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:Databases">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Databases for
-                        Instance responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Databases">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Databases for
+                        Instance responses:</para>
                     <xsdxt:code
                         href="../samples/db-list-databases-response-json.txt"/>
                     <xsdxt:code
@@ -1032,25 +842,14 @@
                 </doc>
             </representation>
 
-            <representation mediaType="application/xml"
-                element="dbaas:Databases">
-                <doc
-                    title="List Databases for Instance Paged Response: XML">
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the
-                            <emphasis>paginated</emphasis> List
-                        Databases for Instance responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-pagination-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-databases-pagination-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Databases">
                 <doc
                     title="List Databases for Instance Paged Response: JSON">
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the
+                            <emphasis>paginated</emphasis> List
+                        Databases for Instance responses:</para>
                     <xsdxt:code
                         href="../samples/db-list-databases-pagination-response-json.txt"/>
                     <xsdxt:code
@@ -1070,18 +869,11 @@
                 associated with the database is also deleted.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete Database
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-databases-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete Database
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-delete-databases-request-json.txt"
                     />
@@ -1089,18 +881,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete Database
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-databases-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete Database
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-delete-databases-response-json.txt"
                     />
@@ -1136,7 +921,7 @@
                 the request again.</para>
             <para>The following table lists the required attributes
                 for Create User. Refer to the request examples for the
-                required xml/json format:</para>
+                required json format:</para>
             <table rules="all" width="500">
                 <caption>Required Attributes for Create User</caption> <thead>
                     <tr>
@@ -1277,21 +1062,11 @@
             </table>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Users">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Create User
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-create-users-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-create-users-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Create User
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-create-users-request-json.txt"/>
                     <xsdxt:code
@@ -1301,18 +1076,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Create User
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-create-users-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Create User
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-create-users-response-json.txt"
                     />
@@ -1354,39 +1122,24 @@
             </itemizedlist>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Users in
-                        Database Instance requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-users-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Users in
+                        Database Instance requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-users-request-json.txt"
                     />
                 </doc>
             </representation>
 
-            <representation mediaType="application/xml">
-                <doc
-                    title="List Users in Database Instance Paged Request: XML">
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the
-                            <emphasis>paginated</emphasis> List Users
-                        in Database Instance requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-users-pagination-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc
                     title="List Users in Database Instance Paged Request: JSON">
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the
+                            <emphasis>paginated</emphasis> List Users
+                        in Database Instance requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-users-pagination-request-json.txt"
                     />
@@ -1394,24 +1147,13 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:Users">
-                <doc
-                    title="List Users in Database Instance Response: XML">
-                    <?hard-pagebreak?>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Users in
-                        Database Instance responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-users-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-users-response.xml"/>
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Users">
                 <doc
                     title="List Users in Database Instance Response: JSON">
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following examples show the List Users in
+                        Database Instance responses:</para>
                     <xsdxt:code
                         href="../samples/db-list-users-response-json.txt"/>
                     <xsdxt:code
@@ -1420,25 +1162,14 @@
                 </doc>
             </representation>
 
-            <representation mediaType="application/xml"
-                element="dbaas:Users">
-                <doc
-                    title="List Users in Database Instance Paged Response: XML">
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the
-                            <emphasis>paginated</emphasis> List Users
-                        in Database Instance responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-users-pagination-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-users-pagination-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Users">
                 <doc
                     title="List Users in Database Instance Paged Response: JSON">
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the
+                            <emphasis>paginated</emphasis> List Users
+                        in Database Instance responses:</para>
                     <xsdxt:code
                         href="../samples/db-list-users-pagination-response-json.txt"/>
                     <xsdxt:code
@@ -1462,21 +1193,11 @@
                     /> for details.</para></note>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Users">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Change User(s)
-                        Password requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-change-users-password-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-change-users-password-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Change User(s)
+                        Password requests:</para>
                     <xsdxt:code
                         href="../samples/db-change-users-password-request-json.txt"/>
                     <xsdxt:code
@@ -1486,21 +1207,13 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml"
+            <representation mediaType="application/json"
                 element="dbaas:Users">
                 <doc>
                     <?hard-pagebreak?>
                     <para xmlns="http://docbook.org/ns/docbook">The
                         following examples show the Change User(s)
                         Password responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-change-users-password-response-xml.txt"
-                    />
-                </doc>
-            </representation>
-            <representation mediaType="application/json"
-                element="dbaas:Users">
-                <doc>
                     <xsdxt:code
                         href="../samples/db-change-users-password-response-json.txt"
                     />
@@ -1530,18 +1243,11 @@
                     in user names.</para></warning>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete User
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-users-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete User
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-delete-users-request-json.txt"
                     />
@@ -1549,18 +1255,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Delete User
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-delete-users-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Delete User
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-delete-users-response-json.txt"
                     />
@@ -1577,18 +1276,11 @@
                 list of databases that the user can access.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List User
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-user-dbs-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List User
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-user-dbs-request-json.txt"
                     />
@@ -1596,20 +1288,11 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml">
+            <representation mediaType="application/json">
                 <doc>
                     <para xmlns="http://docbook.org/ns/docbook">The
                         following examples show the List User
                         responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-user-dbs-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-user-dbs-response.xml"
-                    />
-                </doc>
-            </representation>
-            <representation mediaType="application/json">
-                <doc>
                     <xsdxt:code
                         href="../samples/db-list-user-dbs-response-json.txt"/>
                     <xsdxt:code
@@ -1628,18 +1311,11 @@
                 has access to.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List User Access
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-user-access-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List User Access
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-list-user-access-request-json.txt"
                     />
@@ -1647,20 +1323,11 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List User Access
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-list-user-access-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-list-user-access-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List User Access
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-list-user-access-response-json.txt"/>
                     <xsdxt:code
@@ -1684,21 +1351,11 @@
                 access.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml"
-                element="dbaas:Database">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Grant User Access
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-grant-user-access-request-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-grant-user-access-request.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Grant User Access
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-grant-user-access-request-json.txt"/>
                     <xsdxt:code
@@ -1708,18 +1365,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Grant User Access
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-grant-user-access-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Grant User Access
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-grant-user-access-response-json.txt"
                     />
@@ -1736,18 +1386,11 @@
                 database for the specified user.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Revoke User Access
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-revoke-user-access-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Revoke User Access
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-revoke-user-access-request-json.txt"
                     />
@@ -1755,18 +1398,11 @@
             </representation>
         </request>
         <response status="202">
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Revoke User Access
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-revoke-user-access-response-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Revoke User Access
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-revoke-user-access-response-json.txt"
                     />
@@ -1799,18 +1435,11 @@
                     access your instance, and so forth.</para></note>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Enable Root User
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-enable-root-user-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Enable Root User
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-enable-root-user-request-json.txt"
                     />
@@ -1818,23 +1447,13 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:User">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Enable Root User
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-enable-root-user-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-enable-root-user-response.xml"
-                    />
-                </doc>
-            </representation>
 
             <representation mediaType="application/json"
                 element="dbaas:User">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Enable Root User
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-enable-root-user-response-json.txt"/>
                     <xsdxt:code
@@ -1856,18 +1475,11 @@
                 database instance or False otherwise.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Check Root User
-                        Access requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-check-root-user-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Check Root User
+                        Access requests:</para>
                     <xsdxt:code
                         href="../samples/db-check-root-user-request-json.txt"
                     />
@@ -1875,22 +1487,12 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:RootEnabled">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the Check Root User
-                        Access responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-check-root-user-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-check-root-user-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:RootEnabled">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the Check Root User
+                        Access responses:</para>
                     <xsdxt:code
                         href="../samples/db-check-root-user-response-json.txt"/>
                     <xsdxt:code
@@ -1914,17 +1516,11 @@
                 property.</para>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Flavors
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-flavors-request-xml.txt"/>
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Flavors
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-flavors-request-json.txt"
                     />
@@ -1932,21 +1528,12 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:Flavors">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Flavors
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-flavors-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-flavors-response.xml"/>
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Flavors">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Flavors
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-flavors-response-json.txt"/>
                     <xsdxt:code
@@ -1976,18 +1563,11 @@
                 the Note above.</remark>
         </wadl:doc>
         <request>
-            <representation mediaType="application/xml">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Flavor By ID
-                        requests:</para>
-                    <xsdxt:code
-                        href="../samples/db-flavors-by-id-request-xml.txt"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Flavor By ID
+                        requests:</para>
                     <xsdxt:code
                         href="../samples/db-flavors-by-id-request-json.txt"
                     />
@@ -1995,22 +1575,12 @@
             </representation>
         </request>
         <response status="200">
-            <representation mediaType="application/xml"
-                element="dbaas:Flavor">
-                <doc>
-                    <para xmlns="http://docbook.org/ns/docbook">The
-                        following examples show the List Flavor By ID
-                        responses:</para>
-                    <xsdxt:code
-                        href="../samples/db-flavors-by-id-response-xml.txt"/>
-                    <xsdxt:code
-                        href="../samples/db-flavors-by-id-response.xml"
-                    />
-                </doc>
-            </representation>
             <representation mediaType="application/json"
                 element="dbaas:Flavor">
                 <doc>
+                    <para xmlns="http://docbook.org/ns/docbook">The
+                        following example shows the List Flavor By ID
+                        responses:</para>
                     <xsdxt:code
                         href="../samples/db-flavors-by-id-response-json.txt"/>
                     <xsdxt:code

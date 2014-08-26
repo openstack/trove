@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<version id="v1.0" status="CURRENT" updated="2012-01-01T00:00:00Z"
-        xmlns="http://docs.openstack.org/database/api/v1.0">
-        <links>
-                <link
-                        href="https://ord.databases.api.rackspacecloud.com/v1.0/"
-                        rel="self"/>
-        </links>
-</version>
