@@ -16,7 +16,9 @@
 import json
 import pexpect
 import os
+import stat
 import subprocess
+import tempfile
 
 from trove.common import cfg
 from trove.common import exception
@@ -279,16 +281,25 @@ class CouchbaseRootAccess(object):
         self.write_password_to_file(root_password)
 
     def write_password_to_file(self, root_password):
-        utils.execute_with_timeout('mkdir',
-                                   '-p',
-                                   system.COUCHBASE_CONF_DIR,
-                                   run_as_root=True,
-                                   root_helper='sudo')
-        utils.execute_with_timeout("sudo sh -c 'echo " +
-                                   root_password +
-                                   ' > ' +
-                                   system.pwd_file + "'",
-                                   shell=True)
+        utils.execute_with_timeout('mkdir', '-p', system.COUCHBASE_CONF_DIR,
+                                   run_as_root=True, root_helper='sudo')
+
+        try:
+            tempfd, tempname = tempfile.mkstemp()
+            os.fchmod(tempfd, stat.S_IRUSR | stat.S_IWUSR)
+            os.write(tempfd, root_password)
+            os.fchmod(tempfd, stat.S_IRUSR)
+            os.close(tempfd)
+        except OSError as err:
+            message = _("An error occurred in saving password "
+                        "(%(errno)s). %(strerror)s.") % {
+                            "errno": err.errno,
+                            "strerror": err.strerror}
+            LOG.exception(message)
+            raise RuntimeError(message)
+
+        utils.execute_with_timeout('mv', tempname, system.pwd_file,
+                                   run_as_root=True, root_helper='sudo')
 
     @staticmethod
     def get_password():

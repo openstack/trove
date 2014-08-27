@@ -12,8 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import mock
+import os
+import stat
+import tempfile
 import testtools
 from mock import MagicMock
+from mock import Mock
+from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent import backup
@@ -127,3 +133,46 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         #verification/assertion
         couch_service.CouchbaseApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
+
+    def __fake_mkstemp(self):
+        self.tempfd, self.tempname = self.original_mkstemp()
+        return self.tempfd, self.tempname
+
+    def __fake_mkstemp_raise(self):
+        raise OSError(11, 'Resource temporarily unavailable')
+
+    def __cleanup_tempfile(self):
+        if self.tempname:
+            os.unlink(self.tempname)
+
+    @mock.patch.object(utils, 'execute_with_timeout', Mock(return_value=0))
+    def test_write_password_to_file1(self):
+        self.original_mkstemp = tempfile.mkstemp
+        self.tempname = None
+
+        with mock.patch.object(tempfile,
+                               'mkstemp',
+                               self.__fake_mkstemp):
+            self.addCleanup(self.__cleanup_tempfile)
+
+            rootaccess = couch_service.CouchbaseRootAccess()
+            rootaccess.write_password_to_file('mypassword')
+
+            filepermissions = os.stat(self.tempname).st_mode
+            self.assertEqual(
+                filepermissions & 0o777, stat.S_IRUSR)
+
+    @mock.patch.object(utils, 'execute_with_timeout', Mock(return_value=0))
+    def test_write_password_to_file2(self):
+        self.original_mkstemp = tempfile.mkstemp
+        self.tempname = None
+
+        with mock.patch.object(tempfile,
+                               'mkstemp',
+                               self.__fake_mkstemp_raise):
+
+            rootaccess = couch_service.CouchbaseRootAccess()
+
+            self.assertRaises(RuntimeError,
+                              rootaccess.write_password_to_file,
+                              'mypassword')

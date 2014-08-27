@@ -217,7 +217,7 @@ class BackupAgentTest(testtools.TestCase):
         utils.execute_with_timeout = Mock(return_value=None)
         cbbackup = couchbase_impl.CbBackup('cbbackup', extra_opts='')
         self.assertIsNotNone(cbbackup)
-        str_cbbackup_cmd = ("tar cPf - /tmp/backups | "
+        str_cbbackup_cmd = ("tar cpPf - /tmp/backups | "
                             "gzip | openssl enc -aes-256-cbc -salt -pass "
                             "pass:default_aes_cbc_key")
         self.assertEqual(str_cbbackup_cmd, cbbackup.cmd)
