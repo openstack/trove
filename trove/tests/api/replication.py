@@ -19,6 +19,7 @@ from proboscis.asserts import assert_true
 from proboscis.decorators import time_out
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
+from trove.tests.api.instances import CheckInstance
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
@@ -123,6 +124,31 @@ class VerifySlave(object):
     @time_out(5 * 60)
     def test_existing_db_exists_on_slave(self):
         poll_until(self.db_is_found(existing_db_on_master))
+
+
+@test(groups=[GROUP],
+      depends_on=[WaitForCreateSlaveToFinish],
+      runs_after=[VerifySlave])
+class TestInstanceListing(object):
+    """Test replication information in instance listing."""
+
+    @test
+    def test_get_slave_instance(self):
+        instance = instance_info.dbaas.instances.get(slave_instance.id)
+        assert_equal(200, instance_info.dbaas.last_http_code)
+        instance_dict = instance._info
+        print("instance_dict=%s" % instance_dict)
+        CheckInstance(instance_dict).slave_of()
+        assert_equal(instance_info.id, instance_dict['slave_of']['id'])
+
+    @test
+    def test_get_master_instance(self):
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal(200, instance_info.dbaas.last_http_code)
+        instance_dict = instance._info
+        print("instance_dict=%s" % instance_dict)
+        CheckInstance(instance_dict).slaves()
+        assert_equal(slave_instance.id, instance_dict['slaves'][0]['id'])
 
 
 @test(groups=[GROUP],

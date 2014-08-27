@@ -60,6 +60,8 @@ class InstanceDetailViewTest(TestCase):
         self.instance.volume_used = '3'
         self.instance.root_password = 'iloveyou'
         self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
+        self.instance.slave_of_id = None
+        self.instance.slaves = []
 
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
