@@ -283,9 +283,9 @@ class ApiTest(testtools.TestCase):
     def test_get_replication_snapshot(self):
         exp_resp = REPLICATION_SNAPSHOT
         rpc.call = mock.Mock(return_value=exp_resp)
-        exp_msg = RpcMsgMatcher('get_replication_snapshot', 'master_config')
+        exp_msg = RpcMsgMatcher('get_replication_snapshot', 'snapshot_info')
         # execute
-        self.api.get_replication_snapshot()
+        self.api.get_replication_snapshot({})
         # verify
         self._verify_rpc_call(exp_msg, rpc.call)
 

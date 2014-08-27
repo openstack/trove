@@ -881,7 +881,7 @@ class MySqlApp(object):
                                  'user': REPLICATION_USER,
                                  'password': REPLICATION_PASSWORD,
                                  'log_file': log_position['log_file'],
-                                 'log_pos': log_position['position']
+                                 'log_pos': log_position['log_position']
                              })
 
         with LocalSqlClient(get_engine()) as client:

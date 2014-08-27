@@ -213,15 +213,16 @@ class Manager(periodic_task.PeriodicTasks):
         app = MySqlApp(MySqlAppStatus.get())
         app.apply_overrides(overrides)
 
-    def get_replication_snapshot(self, context, master_config):
+    def get_replication_snapshot(self, context, snapshot_info):
         LOG.debug("Getting replication snapshot.")
         app = MySqlApp(MySqlAppStatus.get())
 
         replication = REPLICATION_STRATEGY_CLASS(context)
-        replication.enable_as_master(app, master_config)
+        replication.enable_as_master(app, snapshot_info)
 
         snapshot_id, log_position = (
-            replication.snapshot_for_replication(app, None, master_config))
+            replication.snapshot_for_replication(context, app, None,
+                                                 snapshot_info))
 
         mount_point = CONF.get(MANAGER).mount_point
         volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
@@ -234,7 +235,7 @@ class Manager(periodic_task.PeriodicTasks):
                 'snapshot_id': snapshot_id
             },
             'replication_strategy': REPLICATION_STRATEGY,
-            'master': replication.get_master_ref(app, master_config),
+            'master': replication.get_master_ref(app, snapshot_info),
             'log_position': log_position
         }
 
