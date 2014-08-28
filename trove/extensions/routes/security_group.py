@@ -28,7 +28,7 @@ CONF = cfg.CONF
 # The Extensions module from openstack common expects the classname of the
 # extension to be loaded to be the exact same as the filename, except with
 # a capital first letter. That's the reason this class has such a funky name.
-class Security_group(extensions.ExtensionsDescriptor):
+class Security_group(extensions.ExtensionDescriptor):
 
     def get_name(self):
         return "SecurityGroup"

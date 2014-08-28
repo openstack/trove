@@ -22,7 +22,7 @@ from trove.extensions.account import service
 LOG = logging.getLogger(__name__)
 
 
-class Account(extensions.ExtensionsDescriptor):
+class Account(extensions.ExtensionDescriptor):
 
     def get_name(self):
         return "Account"

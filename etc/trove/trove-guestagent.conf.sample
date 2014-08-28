@@ -37,9 +37,6 @@ rabbit_password=f7999d1955c5014aa32c
 # RabbitMQ topic used for OpenStack notifications. (list value)
 #rabbit_notification_topic = ['notifications']
 
-# Path to the extensions
-api_extensions_path = trove/extensions/routes
-
 # Configuration options for talking to nova via the novaclient.
 # These options are for an admin user in your keystone config.
 # It proxies the token received from the user to send to nova via this admin users creds,
