@@ -23,6 +23,17 @@ from testtools import ExpectedException
 
 
 class TestTroveExecuteWithTimeout(testtools.TestCase):
+
+    def setUp(self):
+        super(TestTroveExecuteWithTimeout, self).setUp()
+        self.orig_utils_execute = utils.execute
+        self.orig_utils_log_error = utils.LOG.error
+
+    def tearDown(self):
+        super(TestTroveExecuteWithTimeout, self).tearDown()
+        utils.execute = self.orig_utils_execute
+        utils.LOG.error = self.orig_utils_log_error
+
     def test_throws_process_execution_error(self):
         utils.execute = Mock(
             side_effect=exception.ProcessExecutionError(

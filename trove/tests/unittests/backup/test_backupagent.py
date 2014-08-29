@@ -165,9 +165,13 @@ class BackupAgentTest(testtools.TestCase):
         mysql_impl.get_auth_password = MagicMock(return_value='123')
         backupagent.get_storage_strategy = MagicMock(return_value=MockSwift)
         os.statvfs = MagicMock(return_value=MockStats)
+        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
+        self.orig_os_get_ip_address = operating_system.get_ip_address
 
     def tearDown(self):
         super(BackupAgentTest, self).tearDown()
+        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
+        operating_system.get_ip_address = self.orig_os_get_ip_address
 
     def test_backup_impl_MySQLDump(self):
         """This test is for
