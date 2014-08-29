@@ -36,6 +36,8 @@ common_opts = [
                secret=True),
     cfg.IntOpt('sql_idle_timeout', default=3600),
     cfg.BoolOpt('sql_query_log', default=False),
+    cfg.StrOpt('bind_host', default='0.0.0.0',
+               help='The IP address the API will listen on.'),
     cfg.IntOpt('bind_port', default=8779),
     cfg.StrOpt('api_paste_config',
                default="api-paste.ini",
