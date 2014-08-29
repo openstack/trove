@@ -281,8 +281,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self.guest.attach_replication_slave(snapshot, slave_config)
         except GuestError as e:
             msg = (_("Error attaching instance %s "
-                     "as replication slave.") % self.id)
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SLAVE
+                     "as replica.") % self.id)
+            err = inst_models.InstanceTasks.BUILDING_ERROR_REPLICA
             self._log_and_raise(e, msg, err)
 
     def get_replication_master_snapshot(self, context, slave_of_id):
@@ -317,9 +317,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             return snapshot
         except TroveError as e:
             msg = (_("Error creating replication snapshot "
-                     "from instance %(master)s "
-                     "for new slave %(slave)s.") % {'master': slave_of_id,
-                                                    'slave': self.id})
+                     "from instance %(source)s "
+                     "for new replica %(replica)s.") % {'source': slave_of_id,
+                                                        'replica': self.id})
             err = inst_models.InstanceTasks.BUILDING_ERROR_SLAVE
             self._log_and_raise(e, msg, err)
 

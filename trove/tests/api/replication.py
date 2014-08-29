@@ -139,7 +139,7 @@ class TestInstanceListing(object):
         instance_dict = instance._info
         print("instance_dict=%s" % instance_dict)
         CheckInstance(instance_dict).slave_of()
-        assert_equal(instance_info.id, instance_dict['slave_of']['id'])
+        assert_equal(instance_info.id, instance_dict['replica_of']['id'])
 
     @test
     def test_get_master_instance(self):
@@ -148,7 +148,7 @@ class TestInstanceListing(object):
         instance_dict = instance._info
         print("instance_dict=%s" % instance_dict)
         CheckInstance(instance_dict).slaves()
-        assert_equal(slave_instance.id, instance_dict['slaves'][0]['id'])
+        assert_equal(slave_instance.id, instance_dict['replicas'][0]['id'])
 
 
 @test(groups=[GROUP],
