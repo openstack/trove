@@ -165,7 +165,8 @@ class MySqlAppStatus(service.BaseDbStatus):
         try:
             out, err = utils.execute_with_timeout(
                 "/usr/bin/mysqladmin",
-                "ping", run_as_root=True, root_helper="sudo")
+                "ping", run_as_root=True, root_helper="sudo",
+                log_output_on_error=True)
             LOG.info(_("MySQL Service Status is RUNNING."))
             return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
