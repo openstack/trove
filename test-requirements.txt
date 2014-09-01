@@ -1,12 +1,12 @@
 # Hacking already pins down pep8, pyflakes and flake8
 hacking>=0.8.0,<0.9
 sphinx>=1.1.2,!=1.2.0,<1.3
-oslosphinx
+oslosphinx>=2.2.0.0a2
 
 coverage>=3.6
 nose
 nosexcover
-openstack-doc-tools>=0.17
+openstack-doc-tools>=0.18.1
 openstack.nose_plugin>=0.7
 WebTest>=2.0
 wsgi_intercept>=0.6.1 # MIT License
