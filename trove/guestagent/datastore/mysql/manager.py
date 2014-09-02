@@ -252,7 +252,7 @@ class Manager(periodic_task.PeriodicTasks):
         volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
         if (volume_stats.get('total', 0.0) <
                 snapshot['dataset']['dataset_size']):
-            raise exception.InsufficientSpaceForSlave(
+            raise exception.InsufficientSpaceForReplica(
                 snapshot.update({
                     'slave_volume_size': volume_stats.get('total', 0.0)
                 }))

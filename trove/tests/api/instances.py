@@ -1460,21 +1460,22 @@ class CheckInstance(AttrCheck):
                          msg="Volume")
 
     def slave_of(self):
-        if 'slave_of' not in self.instance:
-            self.fail("'slave_of' not found in instance.")
+        if 'replica_of' not in self.instance:
+            self.fail("'replica_of' not found in instance.")
         else:
             expected_attrs = ['id', 'links']
-            self.attrs_exist(self.instance['slave_of'], expected_attrs,
-                             msg="Slave Of")
-            self.links(self.instance['slave_of']['links'])
+            self.attrs_exist(self.instance['replica_of'], expected_attrs,
+                             msg="Replica-of links not found")
+            self.links(self.instance['replica_of']['links'])
 
     def slaves(self):
-        if 'slaves' not in self.instance:
-            self.fail("'slaves' not found in instance.")
+        if 'replicas' not in self.instance:
+            self.fail("'replicas' not found in instance.")
         else:
             expected_attrs = ['id', 'links']
-            for slave in self.instance['slaves']:
-                self.attrs_exist(slave, expected_attrs, msg="Slave")
+            for slave in self.instance['replicas']:
+                self.attrs_exist(slave, expected_attrs,
+                                 msg="Replica links not found")
                 self.links(slave['links'])
 
 

@@ -19,7 +19,7 @@ from mock import MagicMock
 from mock import patch
 from testtools.matchers import Is, Equals, Not
 from trove.common.context import TroveContext
-from trove.common.exception import InsufficientSpaceForSlave
+from trove.common.exception import InsufficientSpaceForReplica
 from trove.guestagent import volume
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
@@ -328,7 +328,7 @@ class GuestAgentManagerTest(testtools.TestCase):
                     'dataset': {'dataset_size': dataset_size}}
 
         # entry point
-        self.assertRaises(InsufficientSpaceForSlave,
+        self.assertRaises(InsufficientSpaceForReplica,
                           self.manager.attach_replication_slave,
                           self.context, snapshot, None)
         # assertions

@@ -50,7 +50,7 @@ class InstanceView(object):
                 instance_dict['ip'] = ip
 
         if self.instance.slave_of_id is not None:
-            instance_dict['slave_of'] = self._build_master_info()
+            instance_dict['replica_of'] = self._build_master_info()
 
         LOG.debug(instance_dict)
         return {"instance": instance_dict}
@@ -92,7 +92,7 @@ class InstanceDetailView(InstanceView):
                                                       datastore_version.name)
 
         if self.instance.slaves:
-            result['instance']['slaves'] = self._build_slaves_info()
+            result['instance']['replicas'] = self._build_slaves_info()
 
         if self.instance.configuration is not None:
             result['instance']['configuration'] = (self.
