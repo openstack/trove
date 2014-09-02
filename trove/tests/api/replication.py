@@ -90,8 +90,6 @@ class WaitForCreateSlaveToFinish(object):
                 return True
             else:
                 assert_true(instance.status in ['BUILD', 'BACKUP'])
-                # if instance_info.volume is not None:
-                #     assert_equal(instance.volume.get('used', None), None)
                 return False
         poll_until(result_is_active)
 
@@ -114,6 +112,11 @@ class VerifySlave(object):
     @time_out(5 * 60)
     def test_correctly_started_replication(self):
         poll_until(slave_is_running())
+
+    @test(runs_after=[test_correctly_started_replication])
+    def test_backup_deleted(self):
+        backup = instance_info.dbaas.instances.backups(instance_info.id)
+        assert_equal(len(backup), 0)
 
     @test(depends_on=[test_correctly_started_replication])
     def test_create_db_on_master(self):

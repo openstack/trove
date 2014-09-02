@@ -14,10 +14,11 @@
 #    under the License.
 from trove.common.context import TroveContext
 
-import trove.extensions.mgmt.instances.models as mgmtmodels
+from trove.backup.models import Backup
 import trove.common.cfg as cfg
 from trove.common import exception
 from trove.common import strategy
+import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.openstack.common import log as logging
 from trove.openstack.common import importutils
 from trove.openstack.common import periodic_task
@@ -93,12 +94,15 @@ class Manager(periodic_task.PeriodicTasks):
 
         snapshot = instance_tasks.get_replication_master_snapshot(context,
                                                                   slave_of_id)
-        instance_tasks.create_instance(flavor, image_id, databases, users,
-                                       datastore_manager, packages,
-                                       volume_size,
-                                       snapshot['dataset']['snapshot_id'],
-                                       availability_zone, root_password,
-                                       nics, overrides, None)
+        try:
+            instance_tasks.create_instance(flavor, image_id, databases, users,
+                                           datastore_manager, packages,
+                                           volume_size,
+                                           snapshot['dataset']['snapshot_id'],
+                                           availability_zone, root_password,
+                                           nics, overrides, None)
+        finally:
+            Backup.delete(context, snapshot['dataset']['snapshot_id'])
 
         instance_tasks.attach_replication_slave(snapshot)
 

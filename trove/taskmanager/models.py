@@ -22,6 +22,7 @@ from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
 
 from trove.backup import models as bkup_models
+from trove.backup.models import Backup
 from trove.backup.models import BackupState
 from trove.backup.models import DBBackup
 from trove.cluster.models import Cluster
@@ -357,7 +358,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                      "for new replica %(replica)s.") % {'source': slave_of_id,
                                                         'replica': self.id})
             err = inst_models.InstanceTasks.BUILDING_ERROR_SLAVE
+            Backup.delete(context, snapshot_info['id'])
             self._log_and_raise(e, msg, err)
+        except Exception:
+            Backup.delete(context, snapshot_info['id'])
+            raise
 
     def report_root_enabled(self):
         mysql_models.RootHistory.create(self.context, self.id, 'root')
