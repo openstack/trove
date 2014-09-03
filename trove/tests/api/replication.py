@@ -17,6 +17,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.decorators import time_out
+from proboscis import SkipTest
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove.tests.api.instances import CheckInstance
@@ -39,6 +40,19 @@ class SlaveInstanceTestInfo(object):
 GROUP = "dbaas.api.replication"
 slave_instance = SlaveInstanceTestInfo()
 existing_db_on_master = generate_uuid()
+
+
+def slave_is_running(running=True):
+
+    def check_slave_is_running():
+        server = create_server_connection(slave_instance.id)
+        cmd = ("mysqladmin extended-status "
+               "| awk '/Slave_running/{print $4}'")
+        stdout, stderr = server.execute(cmd)
+        expected = "ON" if running else "OFF"
+        return stdout.rstrip() == expected
+
+    return check_slave_is_running
 
 
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
@@ -99,15 +113,7 @@ class VerifySlave(object):
     @test
     @time_out(5 * 60)
     def test_correctly_started_replication(self):
-
-        def slave_is_running():
-            server = create_server_connection(slave_instance.id)
-            cmd = ("mysqladmin extended-status "
-                   "| awk '/Slave_running/{print $4}'")
-            stdout, stderr = server.execute(cmd)
-            return stdout == "ON\n"
-
-        poll_until(slave_is_running)
+        poll_until(slave_is_running())
 
     @test(depends_on=[test_correctly_started_replication])
     def test_create_db_on_master(self):
@@ -154,6 +160,24 @@ class TestInstanceListing(object):
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
       runs_after=[VerifySlave])
+class DetachReplica(object):
+
+    @test
+    @time_out(5 * 60)
+    def test_detach_replica(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("Detach replica not supported in fake mode")
+
+        instance_info.dbaas.instances.edit(slave_instance.id,
+                                           detach_replica_source=True)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+        poll_until(slave_is_running(False))
+
+
+@test(groups=[GROUP],
+      depends_on=[WaitForCreateSlaveToFinish],
+      runs_after=[DetachReplica])
 class DeleteSlaveInstance(object):
 
     @test

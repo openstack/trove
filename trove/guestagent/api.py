@@ -335,9 +335,9 @@ class API(proxy.RpcProxy):
         self._cast("attach_replication_slave", snapshot=snapshot,
                    slave_config=slave_config)
 
-    def detach_replication_slave(self):
-        LOG.debug("Detaching slave %s from its master.", self.id)
-        self._call("detach_replication_slave", AGENT_HIGH_TIMEOUT)
+    def detach_replica(self):
+        LOG.debug("Detaching replica %s from its replication source.", self.id)
+        self._call("detach_replica", AGENT_HIGH_TIMEOUT)
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)

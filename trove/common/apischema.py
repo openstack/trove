@@ -219,6 +219,20 @@ instance = {
             }
         }
     },
+    "edit": {
+        "name": "instance:edit",
+        "type": "object",
+        "required": ["instance"],
+        "properties": {
+            "instance": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                    "slave_of": {},
+                }
+            }
+        }
+    },
     "action": {
         "resize": {
             "volume": {

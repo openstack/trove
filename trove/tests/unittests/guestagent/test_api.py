@@ -298,11 +298,11 @@ class ApiTest(testtools.TestCase):
         # verify
         self._verify_rpc_cast(exp_msg, rpc.cast)
 
-    def test_detach_replication_slave(self):
+    def test_detach_replica(self):
         rpc.call = mock.Mock()
-        exp_msg = RpcMsgMatcher('detach_replication_slave')
+        exp_msg = RpcMsgMatcher('detach_replica')
         # execute
-        self.api.detach_replication_slave()
+        self.api.detach_replica()
         # verify
         self._verify_rpc_call(exp_msg, rpc.call)
 

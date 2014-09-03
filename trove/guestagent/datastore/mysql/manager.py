@@ -269,8 +269,8 @@ class Manager(periodic_task.PeriodicTasks):
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)
             raise
 
-    def detach_replication_slave(self, context):
-        LOG.debug("Detaching replication snapshot.")
+    def detach_replica(self, context):
+        LOG.debug("Detaching replica.")
         app = MySqlApp(MySqlAppStatus.get())
         replication = REPLICATION_STRATEGY_CLASS(context)
         replication.detach_slave(app)

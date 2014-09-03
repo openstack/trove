@@ -880,6 +880,14 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         return run_with_quotas(self.context.tenant, {'backups': 1},
                                _get_replication_snapshot)
 
+    def detach_replica(self):
+        LOG.debug("Calling detach_replica on %s" % self.id)
+        try:
+            self.guest.detach_replica()
+            self.update_db(slave_of_id=None)
+        except (GuestError, GuestTimeout):
+            LOG.exception(_("Failed to detach replica %s.") % self.id)
+
     def reboot(self):
         try:
             LOG.debug("Stopping datastore on instance %s." % self.id)

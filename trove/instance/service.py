@@ -75,7 +75,7 @@ class InstanceController(wsgi.Controller):
         _actions = {
             'restart': self._action_restart,
             'resize': self._action_resize,
-            'reset_password': self._action_reset_password
+            'reset_password': self._action_reset_password,
         }
         selected_action = None
         action_name = None
@@ -259,6 +259,23 @@ class InstanceController(wsgi.Controller):
             instance.assign_configuration(configuration_id)
         else:
             instance.unassign_configuration()
+        return wsgi.Result(None, 202)
+
+    def edit(self, req, id, body, tenant_id):
+        """
+        Updates the instance to set or unset one or more attributes.
+        """
+        LOG.info(_("Editing instance for tenant id %s.") % tenant_id)
+        LOG.debug(logging.mask_password("req: %s"), req)
+        LOG.debug(logging.mask_password("body: %s"), body)
+        context = req.environ[wsgi.CONTEXT_KEY]
+
+        instance = models.Instance.load(context, id)
+
+        if 'slave_of' in body['instance']:
+            LOG.debug("Detaching replica from source.")
+            instance.detach_replica()
+
         return wsgi.Result(None, 202)
 
     def configuration(self, req, tenant_id, id):
