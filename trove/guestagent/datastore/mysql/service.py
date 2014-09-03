@@ -51,8 +51,6 @@ MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONF = cfg.CONF
 MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
-REPLICATION_USER = CONF.get(MANAGER).replication_user
-REPLICATION_PASSWORD = CONF.get(MANAGER).replication_password
 
 INCLUDE_MARKER_OPERATORS = {
     True: ">=",
@@ -341,11 +339,15 @@ class MySqlAdmin(object):
 
     def delete_user(self, user):
         """Delete the specified user."""
+        mysql_user = models.MySQLUser()
+        mysql_user.deserialize(user)
+        self.delete_user_by_name(mysql_user.name, mysql_user.host)
+
+    def delete_user_by_name(self, name, host='%'):
         with LocalSqlClient(get_engine()) as client:
-            mysql_user = models.MySQLUser()
-            mysql_user.deserialize(user)
-            du = sql_query.DropUser(mysql_user.name, host=mysql_user.host)
+            du = sql_query.DropUser(name, host=host)
             t = text(str(du))
+            LOG.debug("delete_user_by_name: %s", t)
             client.execute(t)
 
     def get_user(self, username, hostname):
@@ -839,13 +841,13 @@ class MySqlApp(object):
         if os.path.exists(MYCNF_REPLMASTER):
             utils.execute_with_timeout("sudo", "rm", MYCNF_REPLMASTER)
 
-    def grant_replication_privilege(self):
+    def grant_replication_privilege(self, replication_user):
         LOG.info(_("Granting Replication Slave privilege."))
 
         with LocalSqlClient(get_engine()) as client:
             g = sql_query.Grant(permissions=['REPLICATION SLAVE'],
-                                user=REPLICATION_USER,
-                                clear=REPLICATION_PASSWORD)
+                                user=replication_user['name'],
+                                clear=replication_user['password'])
 
             t = text(str(g))
             client.execute(t)
@@ -854,11 +856,13 @@ class MySqlApp(object):
         LOG.info(_("Revoking Replication Slave privilege."))
 
         with LocalSqlClient(get_engine()) as client:
-            g = sql_query.Revoke(permissions=['REPLICATION SLAVE'],
-                                 user=REPLICATION_USER,
-                                 clear=REPLICATION_PASSWORD)
+            results = client.execute('SHOW SLAVE STATUS').fetchall()
+            slave_status_info = results[0]
 
-            t = text(str(g))
+            r = sql_query.Revoke(permissions=['REPLICATION SLAVE'],
+                                 user=slave_status_info['master_user'])
+
+            t = text(str(r))
             client.execute(t)
 
     def get_port(self):
@@ -875,9 +879,10 @@ class MySqlApp(object):
             }
             return binlog_position
 
-    def change_master_for_binlog(self, host, port, log_position):
+    def change_master_for_binlog(self, host, port, logging_config):
         LOG.info(_("Configuring replication from %s.") % host)
 
+        replication_user = logging_config['replication_user']
         change_master_cmd = ("CHANGE MASTER TO MASTER_HOST='%(host)s', "
                              "MASTER_PORT=%(port)s, "
                              "MASTER_USER='%(user)s', "
@@ -887,10 +892,10 @@ class MySqlApp(object):
                              {
                                  'host': host,
                                  'port': port,
-                                 'user': REPLICATION_USER,
-                                 'password': REPLICATION_PASSWORD,
-                                 'log_file': log_position['log_file'],
-                                 'log_pos': log_position['log_position']
+                                 'user': replication_user['name'],
+                                 'password': replication_user['password'],
+                                 'log_file': logging_config['log_file'],
+                                 'log_pos': logging_config['log_position']
                              })
 
         with LocalSqlClient(get_engine()) as client:
@@ -903,11 +908,18 @@ class MySqlApp(object):
             self._wait_for_slave_status("ON", client, 60)
 
     def stop_slave(self):
+        replication_user = None
         LOG.info(_("Stopping slave replication."))
         with LocalSqlClient(get_engine()) as client:
+            result = client.execute('SHOW SLAVE STATUS')
+            replication_user = result.first()['Master_User']
             client.execute('STOP SLAVE')
             client.execute('RESET SLAVE ALL')
             self._wait_for_slave_status("OFF", client, 30)
+            client.execute('DROP USER ' + replication_user)
+        return {
+            'replication_user': replication_user
+        }
 
     def _wait_for_slave_status(self, status, client, max_time):
 

@@ -15,12 +15,15 @@
 #
 
 import csv
+import uuid
 
 from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.mysql.service import MySqlAdmin
+from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
 from trove.guestagent.strategies.storage import get_storage_strategy
@@ -65,6 +68,33 @@ class MysqlBinlogReplication(base.Replication):
         }
         return master_ref
 
+    def _create_replication_user(self):
+        replication_user = None
+        replication_password = utils.generate_random_password(16)
+
+        mysql_user = models.MySQLUser()
+        mysql_user.password = replication_password
+
+        retry_count = 0
+
+        while replication_user is None:
+            try:
+                mysql_user.name = 'slave_' + str(uuid.uuid4())[:8]
+                MySqlAdmin().create_user([mysql_user.serialize()])
+                LOG.debug("Trying to create replication user " +
+                          mysql_user.name)
+                replication_user = {
+                    'name': mysql_user.name,
+                    'password': replication_password
+                }
+            except Exception:
+                retry_count += 1
+                if retry_count > 5:
+                    LOG.error(_("Replication user retry count exceeded"))
+                    raise
+
+        return replication_user
+
     def snapshot_for_replication(self, context, service,
                                  location, snapshot_info):
         snapshot_id = snapshot_info['id']
@@ -76,29 +106,39 @@ class MysqlBinlogReplication(base.Replication):
         AGENT.stream_backup_to_storage(snapshot_info, REPL_BACKUP_RUNNER,
                                        storage, {}, REPL_EXTRA_OPTS)
 
+        replication_user = self._create_replication_user()
+        service.grant_replication_privilege(replication_user)
+
         # With streamed InnobackupEx, the log position is in
         # the stream and will be decoded by the slave
-        log_position = {}
+        log_position = {
+            'replication_user': replication_user
+        }
         return snapshot_id, log_position
 
     def enable_as_master(self, service, snapshot_info):
         service.write_replication_overrides(MASTER_CONFIG)
         service.restart()
-        service.grant_replication_privilege()
 
     def enable_as_slave(self, service, snapshot):
         service.write_replication_overrides(SLAVE_CONFIG)
         service.restart()
+        logging_config = snapshot['log_position']
+        logging_config.update(self._read_log_position())
         service.change_master_for_binlog(
             snapshot['master']['host'],
             snapshot['master']['port'],
-            self._read_log_position())
+            logging_config)
         service.start_slave()
 
     def detach_slave(self, service):
-        service.stop_slave()
+        replica_info = service.stop_slave()
         service.remove_replication_overrides()
         service.restart()
+        return replica_info
+
+    def cleanup_source_on_replica_detach(self, admin_service, replica_info):
+        admin_service.delete_user_by_name(replica_info['replication_user'])
 
     def demote_master(self, service):
         service.revoke_replication_privilege()

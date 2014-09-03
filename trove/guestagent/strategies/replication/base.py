@@ -53,5 +53,9 @@ class Replication(Strategy):
         """Turn off replication on a slave site."""
 
     @abc.abstractmethod
+    def cleanup_source_on_replica_detach(self, service, replica_info):
+        """Clean up the source on the detach of a replica."""
+
+    @abc.abstractmethod
     def demote_master(self, service):
         """Turn off replication on a master site."""

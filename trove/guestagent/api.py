@@ -338,7 +338,12 @@ class API(proxy.RpcProxy):
 
     def detach_replica(self):
         LOG.debug("Detaching replica %s from its replication source.", self.id)
-        self._call("detach_replica", AGENT_HIGH_TIMEOUT)
+        return self._call("detach_replica", AGENT_HIGH_TIMEOUT)
+
+    def cleanup_source_on_replica_detach(self, replica_info):
+        LOG.debug("Cleaning up master %s on detach of replica.", self.id)
+        self._call("cleanup_source_on_replica_detach", AGENT_HIGH_TIMEOUT,
+                   replica_info=replica_info)
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)

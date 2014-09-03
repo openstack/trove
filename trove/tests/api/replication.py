@@ -42,6 +42,14 @@ slave_instance = SlaveInstanceTestInfo()
 existing_db_on_master = generate_uuid()
 
 
+def _get_user_count(server_info):
+    cmd = ('mysql -BNq -e \\\'select count\\(*\\) from mysql.user'
+           ' where user like \\\"slave_%\\\"\\\'')
+    server = create_server_connection(server_info.id)
+    stdout, stderr = server.execute(cmd)
+    return int(stdout.rstrip())
+
+
 def slave_is_running(running=True):
 
     def check_slave_is_running():
@@ -141,6 +149,11 @@ class VerifySlave(object):
     def test_existing_db_exists_on_slave(self):
         poll_until(self.db_is_found(existing_db_on_master))
 
+    @test(depends_on=[test_existing_db_exists_on_slave])
+    def test_slave_user_exists(self):
+        assert_equal(_get_user_count(slave_instance), 1)
+        assert_equal(_get_user_count(instance_info), 1)
+
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
@@ -199,6 +212,16 @@ class DetachReplica(object):
         server = create_server_connection(slave_instance.id)
         stdout, stderr = server.execute(cmd)
         assert_equal(stdout, "0\n")
+
+    @test(depends_on=[test_detach_replica])
+    def test_slave_user_removed(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("Test not_read_only not supported in fake mode")
+
+        def _slave_user_deleted():
+            return _get_user_count(instance_info) == 0
+
+        poll_until(_slave_user_deleted)
 
 
 @test(groups=[GROUP],

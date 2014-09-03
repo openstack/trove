@@ -293,7 +293,7 @@ class MySqlAdminTest(testtools.TestCase):
 
     def test_delete_user(self):
 
-        user = {"_name": "testUser"}
+        user = {"_name": "testUser", "_host": None}
 
         self.mySqlAdmin.delete_user(user)
 
@@ -301,7 +301,7 @@ class MySqlAdminTest(testtools.TestCase):
         call_args = dbaas.LocalSqlClient.execute.call_args
         if call_args is not None:
             args, _ = call_args
-            expected = "DROP USER `testUser`;"
+            expected = "DROP USER `testUser`@`%`;"
             self.assertEqual(args[0].text, expected,
                              "Delete user queries are not the same")
 

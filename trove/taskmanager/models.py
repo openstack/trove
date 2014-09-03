@@ -928,13 +928,18 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         return run_with_quotas(self.context.tenant, {'backups': 1},
                                _get_replication_snapshot)
 
-    def detach_replica(self):
+    def detach_replica(self, master):
         LOG.debug("Calling detach_replica on %s" % self.id)
         try:
-            self.guest.detach_replica()
+            replica_info = self.guest.detach_replica()
+            master.cleanup_source_on_replica_detach(replica_info)
             self.update_db(slave_of_id=None)
         except (GuestError, GuestTimeout):
             LOG.exception(_("Failed to detach replica %s.") % self.id)
+
+    def cleanup_source_on_replica_detach(self, replica_info):
+        LOG.debug("Calling cleanup_source_on_replica_detach on %s" % self.id)
+        self.guest.cleanup_source_on_replica_detach(replica_info)
 
     def reboot(self):
         try:

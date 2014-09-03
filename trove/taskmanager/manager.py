@@ -60,8 +60,10 @@ class Manager(periodic_task.PeriodicTasks):
         instance_tasks.restart()
 
     def detach_replica(self, context, instance_id):
-        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.detach_replica()
+        slave = models.BuiltInstanceTasks.load(context, instance_id)
+        master_id = slave.slave_of_id
+        master = models.BuiltInstanceTasks.load(context, master_id)
+        slave.detach_replica(master)
 
     def migrate(self, context, instance_id, host):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
