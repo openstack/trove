@@ -79,6 +79,9 @@ class FakeAppStatus(BaseDbStatus):
     def set_next_status(self, next_status):
         self.next_fake_status = next_status
 
+    def _is_query_router(self):
+        return False
+
 
 class DbaasTest(testtools.TestCase):
 

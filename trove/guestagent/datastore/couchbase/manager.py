@@ -59,7 +59,8 @@ class Manager(periodic_task.PeriodicTasks):
 
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None, overrides=None):
+                config_contents=None, root_password=None, overrides=None,
+                cluster_config=None):
         """
         This is called when the trove instance first comes online.
         It is the first rpc message passed from the task manager.

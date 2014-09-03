@@ -22,9 +22,28 @@ CMD_STATUS = "mongostat --host %s -n 1 | grep connected"
 
 TMP_CONFIG = "/tmp/mongodb.conf.tmp"
 CONFIG = "/etc/mongodb.conf"
-SERVICE_CANDIDATES = ["mongodb", "mongod"]
+MONGOS_UPSTART = "/etc/init/mongos.conf"
+TMP_MONGOS_UPSTART = "/tmp/mongos.conf.tmp"
+MONGOS_SERVICE_CANDIDATES = ["mongos"]
+MONGOD_SERVICE_CANDIDATES = ["mongodb", "mongod"]
 MONGODB_KILL = "sudo kill %s"
-FIND_PID = "ps xau | grep mongod"
+FIND_PID = "ps xau | grep 'mongo[ds]'"
 TIME_OUT = 1000
+
+INIT_EXEC_MONGOS = ("start-stop-daemon --start --quiet --chuid mongodb "
+                    "--exec  /usr/bin/mongos -- --config %s" % CONFIG)
+
+MONGOS_UPSTART_CONTENTS = """pre-start script
+    mkdir -p /var/log/mongodb/
+end script
+
+start on runlevel [2345]
+stop on runlevel [06]
+
+script
+  ENABLE_MONGOS="yes"
+  if [ -f /etc/default/mongos ]; then . /etc/default/mongos; fi
+  if [ "x$ENABLE_MONGOS" = "xyes" ]; then exec %s; fi
+end script""" % INIT_EXEC_MONGOS
 
 PACKAGER = pkg.Package()
