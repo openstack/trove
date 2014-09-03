@@ -398,16 +398,14 @@ class DbQuotaDriverTest(testtools.TestCase):
         QuotaUsage.save = Mock()
         Reservation.create = Mock()
 
+        # Set up the deltas with the intention that after the reserve call
+        # the deltas should match usage_id + 1 for both instances and volumes
         delta = {'instances': 2, 'volumes': 3}
         self.driver.reserve(FAKE_TENANT1, resources, delta)
-        _, kw = Reservation.create.call_args_list[0]
-        self.assertEqual(1, kw['usage_id'])
-        self.assertEqual(2, kw['delta'])
-        self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
-        _, kw = Reservation.create.call_args_list[1]
-        self.assertEqual(2, kw['usage_id'])
-        self.assertEqual(3, kw['delta'])
-        self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
+
+        for _, kw in Reservation.create.call_args_list:
+            self.assertEqual(kw['usage_id'] + 1, kw['delta'])
+            self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
 
     def test_reserve_resource_unknown(self):
 
@@ -506,16 +504,14 @@ class DbQuotaDriverTest(testtools.TestCase):
         QuotaUsage.save = Mock()
         Reservation.create = Mock()
 
-        delta = {'instances': -1, 'volumes': -3}
+        # Set up the deltas with the intention that after the reserve call
+        # the deltas should match -usage_id for both instances and volumes
+        delta = {'instances': -1, 'volumes': -2}
         self.driver.reserve(FAKE_TENANT1, resources, delta)
-        _, kw = Reservation.create.call_args_list[0]
-        self.assertEqual(1, kw['usage_id'])
-        self.assertEqual(-1, kw['delta'])
-        self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
-        _, kw = Reservation.create.call_args_list[1]
-        self.assertEqual(2, kw['usage_id'])
-        self.assertEqual(-3, kw['delta'])
-        self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
+
+        for _, kw in Reservation.create.call_args_list:
+            self.assertEqual(-kw['usage_id'], kw['delta'])
+            self.assertEqual(Reservation.Statuses.RESERVED, kw['status'])
 
     def test_commit(self):
 
