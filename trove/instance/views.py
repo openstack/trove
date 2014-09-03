@@ -110,6 +110,12 @@ class InstanceDetailView(InstanceView):
         if self.instance.root_password:
             result['instance']['password'] = self.instance.root_password
 
+        if self.instance.cluster_id:
+            result['instance']['cluster_id'] = self.instance.cluster_id
+
+        if self.instance.shard_id:
+            result['instance']['shard_id'] = self.instance.shard_id
+
         return result
 
     def _build_slaves_info(self):

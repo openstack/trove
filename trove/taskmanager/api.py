@@ -119,7 +119,9 @@ class API(proxy.RpcProxy):
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id=None,
                         availability_zone=None, root_password=None,
-                        nics=None, overrides=None, slave_of_id=None):
+                        nics=None, overrides=None, slave_of_id=None,
+                        cluster_config=None):
+
         LOG.debug("Making async call to create instance %s " % instance_id)
         self.cast(self.context,
                   self.make_msg("create_instance",
@@ -137,7 +139,8 @@ class API(proxy.RpcProxy):
                                 root_password=root_password,
                                 nics=nics,
                                 overrides=overrides,
-                                slave_of_id=slave_of_id))
+                                slave_of_id=slave_of_id,
+                                cluster_config=cluster_config))
 
     def update_overrides(self, instance_id, overrides=None):
         LOG.debug("Making async call to update datastore configurations for "
@@ -157,3 +160,13 @@ class API(proxy.RpcProxy):
                                 instance_id=instance_id,
                                 flavor=self._transform_obj(flavor),
                                 configuration_id=configuration_id))
+
+    def create_cluster(self, cluster_id):
+        pass
+
+    def delete_cluster(self, cluster_id):
+        pass
+
+
+def load(context, manager=None):
+    pass

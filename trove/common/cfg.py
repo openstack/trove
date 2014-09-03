@@ -92,6 +92,7 @@ common_opts = [
     cfg.IntOpt('users_page_size', default=20),
     cfg.IntOpt('databases_page_size', default=20),
     cfg.IntOpt('instances_page_size', default=20),
+    cfg.IntOpt('clusters_page_size', default=20),
     cfg.IntOpt('backups_page_size', default=20),
     cfg.IntOpt('configurations_page_size', default=20),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root']),
@@ -99,7 +100,7 @@ common_opts = [
                                        'mysql',
                                        'information_schema']),
     cfg.IntOpt('agent_call_low_timeout', default=5),
-    cfg.IntOpt('agent_call_high_timeout', default=60),
+    cfg.IntOpt('agent_call_high_timeout', default=1000),
     cfg.StrOpt('guest_id', default=None),
     cfg.IntOpt('state_change_wait_time', default=3 * 60),
     cfg.IntOpt('agent_heartbeat_time', default=10),
@@ -148,6 +149,7 @@ common_opts = [
     cfg.IntOpt('dns_time_out', default=60 * 2),
     cfg.IntOpt('resize_time_out', default=60 * 10),
     cfg.IntOpt('revert_time_out', default=60 * 10),
+    cfg.IntOpt('cluster_delete_time_out', default=60 * 3),
     cfg.ListOpt('root_grant', default=['ALL']),
     cfg.BoolOpt('root_grant_option', default=True),
     cfg.IntOpt('default_password_length', default=36),
@@ -277,6 +279,8 @@ common_opts = [
                     "(security groups, floating IPs, etc.)"),
     cfg.IntOpt('usage_timeout', default=600,
                help='Timeout to wait for a guest to become active.'),
+    cfg.IntOpt('cluster_usage_timeout', default=675,
+               help='Timeout to wait for a cluster to become active.'),
 ]
 
 # Datastore specific option groups
@@ -497,6 +501,27 @@ mongodb_opts = [
                 default=True,
                 help='Whether to provision a cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb'),
+    cfg.IntOpt('num_config_servers_per_cluster', default=3,
+               help='The number of config servers to create per cluster.'),
+    cfg.IntOpt('num_query_routers_per_cluster', default=1,
+               help='The number of query routers (mongos) to create '
+                    'per cluster.'),
+    cfg.BoolOpt('cluster_support', default=True,
+                help='Enable clusters to be created and managed.'),
+    cfg.StrOpt('api_strategy',
+               default='trove.common.strategies.mongodb.api.'
+                       'MongoDbAPIStrategy',
+               help='Class that implements datastore-specific API logic.'),
+    cfg.StrOpt('taskmanager_strategy',
+               default='trove.common.strategies.mongodb.taskmanager.'
+                       'MongoDbTaskManagerStrategy',
+               help='Class that implements datastore-specific task manager '
+                    'logic.'),
+    cfg.StrOpt('guestagent_strategy',
+               default='trove.common.strategies.mongodb.guestagent.'
+                       'MongoDbGuestAgentStrategy',
+               help='Class that implements datastore-specific guest agent API '
+                    'logic.'),
 ]
 
 CONF = cfg.CONF

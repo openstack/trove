@@ -463,3 +463,35 @@ class InsufficientSpaceForReplica(TroveError):
     message = _("The target instance has only %(slave_volume_size)sG free, "
                 "but the replication snapshot contains %(dataset_size)sG "
                 "of data.")
+
+
+class ClusterNotFound(NotFound):
+    message = _("Cluster '%(cluster)s' cannot be found.")
+
+
+class ClusterFlavorsNotEqual(TroveError):
+    message = _("The flavor for each instance in a cluster must be equal.")
+
+
+class ClusterVolumeSizesNotEqual(TroveError):
+    message = _("The volume size for each instance in a cluster must be "
+                "equal.")
+
+
+class ClusterNumInstancesNotSupported(TroveError):
+    message = _("The number of instances for your initial cluster must "
+                "be %(num_instances)s.")
+
+
+class ClusterInstanceOperationNotSupported(TroveError):
+    message = _("Operation not supported for instances that are part of a "
+                "cluster.")
+
+
+class TroveOperationAuthError(TroveError):
+    message = _("Operation not allowed for tenant %(tenant_id)s.")
+
+
+class ClusterDatastoreNotSupported(TroveError):
+    message = _("Clusters not supported for "
+                "%(datastore)s-%(datastore_version)s.")

@@ -27,7 +27,8 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-def load_mgmt_instances(context, deleted=None, client=None):
+def load_mgmt_instances(context, deleted=None, client=None,
+                        include_clustered=None):
     if not client:
         client = remote.create_nova_client(context)
     try:
@@ -36,10 +37,13 @@ def load_mgmt_instances(context, deleted=None, client=None):
         mgmt_servers = client.servers.list(search_opts={'all_tenants': 1})
     LOG.info("Found %d servers in Nova" %
              len(mgmt_servers if mgmt_servers else []))
+    args = {}
     if deleted is not None:
-        db_infos = instance_models.DBInstance.find_all(deleted=deleted)
-    else:
-        db_infos = instance_models.DBInstance.find_all()
+        args['deleted'] = deleted
+    if not include_clustered:
+        args['cluster_id'] = None
+    db_infos = instance_models.DBInstance.find_all(**args)
+
     instances = MgmtInstances.load_status_from_existing(context, db_infos,
                                                         mgmt_servers)
     return instances

@@ -333,7 +333,8 @@ class Controller(object):
             exception.UserNotFound,
             exception.DatabaseNotFound,
             exception.QuotaResourceUnknown,
-            exception.BackupFileNotFound
+            exception.BackupFileNotFound,
+            exception.ClusterNotFound
         ],
         webob.exc.HTTPConflict: [
             exception.BackupNotCompleteError,
@@ -351,7 +352,9 @@ class Controller(object):
         webob.exc.HTTPNotImplemented: [
             exception.VolumeNotSupported,
             exception.LocalStorageNotSupported,
-            exception.DatastoreOperationNotSupported
+            exception.DatastoreOperationNotSupported,
+            exception.ClusterInstanceOperationNotSupported,
+            exception.ClusterDatastoreNotSupported
         ],
     }
 

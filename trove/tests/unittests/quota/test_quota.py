@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import testtools
 from mock import Mock, MagicMock, patch
 from trove.quota.quota import DbQuotaDriver
@@ -31,7 +32,7 @@ Unit tests for the classes and functions in DbQuotaDriver.py.
 CONF = cfg.CONF
 resources = {
     Resource.INSTANCES: Resource(Resource.INSTANCES, 'max_instances_per_user'),
-    Resource.VOLUMES: Resource(Resource.VOLUMES, 'max_volumes_per_user'),
+    Resource.VOLUMES: Resource(Resource.VOLUMES, 'max_volumes_per_user')
 }
 
 FAKE_TENANT1 = "123456"
