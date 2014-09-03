@@ -31,15 +31,19 @@ from trove.openstack.common.gettextutils import _  # noqa
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
-MANAGER = 'mysql' if not CONF.datastore_manager else CONF.datastore_manager
-STRATEGY = CONF.get(MANAGER).backup_strategy
-BACKUP_NAMESPACE = CONF.get(MANAGER).backup_namespace
-RESTORE_NAMESPACE = CONF.get(MANAGER).restore_namespace
+CONFIG_MANAGER = CONF.get('mysql'
+                          if not CONF.datastore_manager
+                          else CONF.datastore_manager)
+
+STRATEGY = CONFIG_MANAGER.backup_strategy
+BACKUP_NAMESPACE = CONFIG_MANAGER.backup_namespace
+RESTORE_NAMESPACE = CONFIG_MANAGER.restore_namespace
 RUNNER = get_backup_strategy(STRATEGY, BACKUP_NAMESPACE)
 EXTRA_OPTS = CONF.backup_runner_options.get(STRATEGY, '')
 
 # Try to get the incremental strategy or return the default 'backup_strategy'
-INCREMENTAL = CONF.backup_incremental_strategy.get(STRATEGY, STRATEGY)
+INCREMENTAL = CONFIG_MANAGER.backup_incremental_strategy.get(
+    STRATEGY, STRATEGY)
 
 INCREMENTAL_RUNNER = get_backup_strategy(INCREMENTAL, BACKUP_NAMESPACE)
 
@@ -63,7 +67,7 @@ class BackupAgent(object):
         conductor = conductor_api.API(ctxt)
 
         # Store the size of the filesystem before the backup.
-        mount_point = CONF.get(MANAGER).mount_point
+        mount_point = CONFIG_MANAGER.mount_point
         stats = get_filesystem_volume_stats(mount_point)
         backup_state = {
             'backup_id': backup_id,
