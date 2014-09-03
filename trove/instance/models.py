@@ -15,7 +15,6 @@
 #    under the License.
 
 """Model classes that form the core of instances functionality."""
-
 import re
 from datetime import datetime
 from novaclient import exceptions as nova_exceptions
@@ -674,18 +673,26 @@ class Instance(BuiltInstance):
         if volume_support:
             validate_volume_size(volume_size)
             deltas['volumes'] = volume_size
+            # Instance volume should have enough space for the backup
+            # Backup, and volume sizes are in GBs
+            target_size = volume_size
         else:
+            target_size = flavor.disk  # local_storage
             if volume_size is not None:
                 raise exception.VolumeNotSupported()
-            ephemeral_support = datastore_cfg.device_path
-            if ephemeral_support:
+            if datastore_cfg.device_path:
                 if flavor.ephemeral == 0:
                     raise exception.LocalStorageNotSpecified(flavor=flavor_id)
+                target_size = flavor.ephemeral  # ephemeral_Storage
 
         if backup_id is not None:
             backup_info = Backup.get_by_id(context, backup_id)
             if backup_info.is_running:
                 raise exception.BackupNotCompleteError(backup_id=backup_id)
+
+            if backup_info.size > target_size:
+                raise exception.BackupTooLarge(
+                    backup_size=backup_info.size, disk_size=target_size)
 
             if not backup_info.check_swift_object_exist(
                     context,
