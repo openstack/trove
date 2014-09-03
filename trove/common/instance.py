@@ -96,6 +96,7 @@ class ServiceStatuses(object):
     DELETED = ServiceStatus(0x05, 'deleted', 'DELETED')
     FAILED_TIMEOUT_GUESTAGENT = ServiceStatus(0x18, 'guestagent error',
                                               'ERROR')
+    BUILD_PENDING = ServiceStatus(0x19, 'build pending', 'BUILD')
 
 # Dissuade further additions at run-time.
 ServiceStatus.__init__ = None

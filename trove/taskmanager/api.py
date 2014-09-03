@@ -21,6 +21,7 @@ Routes all the requests to the task manager.
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common import strategy
 from trove.guestagent import models as agent_models
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common import log as logging
@@ -162,11 +163,22 @@ class API(proxy.RpcProxy):
                                 configuration_id=configuration_id))
 
     def create_cluster(self, cluster_id):
-        pass
+        LOG.debug("Making async call to create cluster %s " % cluster_id)
+        self.cast(self.context,
+                  self.make_msg("create_cluster",
+                                cluster_id=cluster_id))
 
     def delete_cluster(self, cluster_id):
-        pass
+        LOG.debug("Making async call to delete cluster %s " % cluster_id)
+        self.cast(self.context,
+                  self.make_msg("delete_cluster",
+                                cluster_id=cluster_id))
 
 
 def load(context, manager=None):
-    pass
+    if manager:
+        task_manager_api_class = (strategy.load_taskmanager_strategy(manager)
+                                  .task_manager_api_class)
+    else:
+        task_manager_api_class = API
+    return task_manager_api_class(context)
