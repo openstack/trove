@@ -78,10 +78,10 @@ class MySQLRestoreMixin(object):
                                   "mysqld did not start!"))
             LOG.info(_("Root password reset successfully."))
             LOG.debug("Cleaning up the temp mysqld process.")
-            child.delayafterclose = 1
-            child.delayafterterminate = 1
-            child.close(force=True)
-            utils.execute_with_timeout("sudo", "killall", "mysqld")
+            utils.execute_with_timeout("mysqladmin", "-uroot",
+                                       "--protocol=tcp", "shutdown")
+            utils.execute_with_timeout("killall", "mysqld_safe",
+                                       root_helper="sudo", run_as_root=True)
             self.poll_until_then_raise(
                 self.mysql_is_not_running,
                 base.RestoreError("Reset root password failed: "
