@@ -1,0 +1,24 @@
+data_directory = '/var/lib/postgresql/{{datastore['version']}}/main'
+
+hba_file = '/etc/postgresql/{{datastore['version']}}/main/pg_hba.conf'
+
+ident_file = '/etc/postgresql/{{datastore['version']}}/main/pg_ident.conf'
+
+external_pid_file = '/var/run/postgresql/postgresql.pid'
+
+listen_addresses = '*'
+
+port = 5432
+
+max_connections = 100
+
+shared_buffers = 24MB
+
+log_line_prefix = '%t '
+
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'en_US.UTF-8'
+lc_numeric = 'en_US.UTF-8'
+lc_time = 'en_US.UTF-8'
+
+default_text_search_config = 'pg_catalog.english'
