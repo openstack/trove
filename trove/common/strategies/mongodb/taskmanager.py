@@ -121,14 +121,13 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                         failed_instance_ids.append(instance_id)
             return failed_instance_ids
 
-        usage_timeout = CONF.usage_timeout
         LOG.debug("Polling until service status is ready for "
                   "instance ids: %s" % instance_ids)
         try:
             utils.poll_until(lambda: instance_ids,
                              lambda ids: _all_status_ready(ids),
                              sleep_time=USAGE_SLEEP_TIME,
-                             time_out=usage_timeout)
+                             time_out=CONF.usage_timeout)
         except PollTimeOut:
             LOG.exception(_("Timeout for all instance service statuses "
                             "to become ready."))
