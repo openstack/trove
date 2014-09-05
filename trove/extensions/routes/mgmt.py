@@ -17,6 +17,7 @@ from trove.openstack.common import log as logging
 
 from trove.common import extensions
 from trove.extensions.mgmt.clusters.service import ClusterController
+from trove.extensions.mgmt.configuration import service as conf_service
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.quota.service import QuotaController
@@ -93,5 +94,11 @@ class Mgmt(extensions.ExtensionDescriptor):
             UpgradeController(),
             member_actions={})
         resources.append(upgrade)
+
+        datastore_configuration_parameters = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/datastores/versions/{version_id}/parameters',
+            conf_service.ConfigurationsParameterController(),
+            member_actions={})
+        resources.append(datastore_configuration_parameters)
 
         return resources

@@ -196,8 +196,10 @@ class CreateConfigurations(ConfigurationsTestBase):
     def test_expected_get_configuration_parameter(self):
         # tests get on a single parameter to verify it has expected attributes
         param = 'key_buffer_size'
-        expected_config_params = ['name', 'restart_required', 'max',
-                                  'min', 'type']
+        expected_config_params = ['name', 'restart_required',
+                                  'max_size', 'min_size', 'type',
+                                  'deleted', 'deleted_at',
+                                  'datastore_version_id']
         instance_info.dbaas.configuration_parameters.get_parameter(
             instance_info.dbaas_datastore,
             instance_info.dbaas_datastore_version,
@@ -216,8 +218,14 @@ class CreateConfigurations(ConfigurationsTestBase):
     def test_configurations_create_invalid_values(self):
         """Test create configurations with invalid values."""
         values = '{"this_is_invalid": 123}'
-        assert_unprocessable(instance_info.dbaas.configurations.create,
-                             CONFIG_NAME, values, CONFIG_DESC)
+        try:
+            instance_info.dbaas.configurations.create(
+                CONFIG_NAME,
+                values,
+                CONFIG_DESC)
+        except exceptions.NotFound:
+            resp, body = instance_info.dbaas.client.last_response
+            assert_equal(resp.status, 404)
 
     @test
     def test_configurations_create_invalid_value_type(self):
@@ -587,7 +595,25 @@ class DeleteConfigurations(ConfigurationsTestBase):
                       instance_info.dbaas.configurations.delete,
                       invalid_configuration_id)
 
-    @test
+    @test(depends_on=[test_delete_invalid_configuration_not_found])
+    def test_delete_configuration_parameter_with_mgmt_api(self):
+        # delete a parameter that is used by a test
+        # connect_timeout
+        ds = instance_info.dbaas_datastore
+        ds_v = instance_info.dbaas_datastore_version
+        version = instance_info.dbaas.datastore_versions.get(
+            ds, ds_v)
+        client = instance_info.dbaas_admin.mgmt_configs
+        config_param_name = sql_variables[1]
+        client.delete(version.id, config_param_name)
+        assert_raises(
+            exceptions.NotFound,
+            instance_info.dbaas.configuration_parameters.get_parameter,
+            ds,
+            ds_v,
+            config_param_name)
+
+    @test(depends_on=[test_delete_configuration_parameter_with_mgmt_api])
     def test_unable_delete_instance_configurations(self):
         # test deleting a configuration that is assigned to
         # an instance is not allowed.

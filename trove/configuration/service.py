@@ -15,13 +15,13 @@
 
 from datetime import datetime
 from trove.common import cfg
-from trove.common import configurations
 from trove.common import exception
 from trove.common import pagination
 from trove.common import wsgi
 from trove.configuration import models
 from trove.configuration import views
-from trove.configuration.models import ConfigurationParameter
+from trove.configuration.models import DBConfigurationParameter
+from trove.configuration.models import DatastoreConfigurationParameters
 from trove.datastore import models as ds_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -101,10 +101,10 @@ class ConfigurationsController(wsgi.Controller):
             # validate that the values passed in are permitted by the operator.
             ConfigurationsController._validate_configuration(
                 body['configuration']['values'],
-                datastore_manager=datastore_version.manager)
+                datastore_version=datastore_version)
 
             for k, v in values.iteritems():
-                configItems.append(ConfigurationParameter(
+                configItems.append(DBConfigurationParameter(
                     configuration_key=k,
                     configuration_value=v))
 
@@ -180,47 +180,42 @@ class ConfigurationsController(wsgi.Controller):
         if 'values' in configuration:
             # validate that the values passed in are permitted by the operator.
             ConfigurationsController._validate_configuration(
-                configuration['values'], datastore_manager=ds_version.manager)
+                configuration['values'], datastore_version=ds_version)
             for k, v in configuration['values'].iteritems():
-                items.append(ConfigurationParameter(configuration_id=group.id,
-                                                    configuration_key=k,
-                                                    configuration_value=v,
-                                                    deleted=False))
+                items.append(DBConfigurationParameter(
+                    configuration_id=group.id,
+                    configuration_key=k,
+                    configuration_value=v,
+                    deleted=False))
         return items
 
     @staticmethod
-    def _validate_configuration(values, datastore_manager=None):
-        rules = configurations.get_validation_rules(
-            datastore_manager=datastore_manager)
-
-        LOG.debug("Validating configuration values for group "
-                  "with manager %s" % datastore_manager)
+    def _validate_configuration(values, datastore_version=None):
+        LOG.info(_("Validating configuration values"))
         for k, v in values.iteritems():
-            # get the validation rule dictionary, which will ensure there is a
-            # rule for the given key name. An exception will be thrown if no
-            # valid rule is located.
-            rule = ConfigurationsController._get_item(
-                k, rules['configuration-parameters'])
+            rule = DatastoreConfigurationParameters.load_parameter_by_name(
+                datastore_version.id, k)
 
-            if rule.get('deleted_at'):
-                raise exception.ConfigurationParameterDeleted(
-                    parameter_name=rule.get('name'),
-                    parameter_deleted_at=rule.get('deleted_at'))
+            if not rule or rule.deleted:
+                output = {"key": k}
+                msg = _("The parameter provided for the configuration "
+                        "%(key)s is not available.") % output
+                raise exception.UnprocessableEntity(message=msg)
 
             # type checking
-            valueType = rule.get('type')
+            value_type = rule.data_type
 
             if not isinstance(v, ConfigurationsController._find_type(
-                    valueType)):
-                output = {"key": k, "type": valueType}
+                    value_type)):
+                output = {"key": k, "type": value_type}
                 msg = _("The value provided for the configuration "
                         "parameter %(key)s is not of type %(type)s.") % output
                 raise exception.UnprocessableEntity(message=msg)
 
             # integer min/max checking
-            if isinstance(v, int) and not isinstance(v, bool):
+            if isinstance(v, (int, long)) and not isinstance(v, bool):
                 try:
-                    min_value = int(rule.get('min'))
+                    min_value = int(rule.min_size)
                 except ValueError:
                     raise exception.TroveError(_(
                         "Invalid or unsupported min value defined in the "
@@ -234,7 +229,7 @@ class ConfigurationsController(wsgi.Controller):
                     raise exception.UnprocessableEntity(message=message)
 
                 try:
-                    max_value = int(rule.get('max'))
+                    max_value = int(rule.max_size)
                 except ValueError:
                     raise exception.TroveError(_(
                         "Invalid or unsupported max value defined in the "
@@ -248,13 +243,13 @@ class ConfigurationsController(wsgi.Controller):
                     raise exception.UnprocessableEntity(message=message)
 
     @staticmethod
-    def _find_type(valueType):
-        if valueType == "boolean":
+    def _find_type(value_type):
+        if value_type == "boolean":
             return bool
-        elif valueType == "string":
+        elif value_type == "string":
             return basestring
-        elif valueType == "integer":
-            return int
+        elif value_type == "integer":
+            return (int, long)
         else:
             raise exception.TroveError(_(
                 "Invalid or unsupported type defined in the "
@@ -273,35 +268,27 @@ class ParametersController(wsgi.Controller):
     def index(self, req, tenant_id, datastore, id):
         ds, ds_version = ds_models.get_datastore_version(
             type=datastore, version=id)
-        rules = configurations.get_validation_rules(
-            datastore_manager=ds_version.manager)
+        rules = models.DatastoreConfigurationParameters.load_parameters(
+            ds_version.id)
         return wsgi.Result(views.ConfigurationParametersView(rules).data(),
                            200)
 
     def show(self, req, tenant_id, datastore, id, name):
         ds, ds_version = ds_models.get_datastore_version(
             type=datastore, version=id)
-        rules = configurations.get_validation_rules(
-            datastore_manager=ds_version.manager)
-        for rule in rules['configuration-parameters']:
-            if rule['name'] == name:
-                return wsgi.Result(
-                    views.ConfigurationParametersView(rule).data(), 200)
-        raise exception.ConfigKeyNotFound(key=name)
+        rule = models.DatastoreConfigurationParameters.load_parameter_by_name(
+            ds_version.id, name)
+        return wsgi.Result(views.ConfigurationParameterView(rule).data(), 200)
 
     def index_by_version(self, req, tenant_id, version):
         ds_version = ds_models.DatastoreVersion.load_by_uuid(version)
-        rules = configurations.get_validation_rules(
-            datastore_manager=ds_version.manager)
+        rules = models.DatastoreConfigurationParameters.load_parameters(
+            ds_version.id)
         return wsgi.Result(views.ConfigurationParametersView(rules).data(),
                            200)
 
     def show_by_version(self, req, tenant_id, version, name):
-        ds_version = ds_models.DatastoreVersion.load_by_uuid(version)
-        rules = configurations.get_validation_rules(
-            datastore_manager=ds_version.manager)
-        for rule in rules['configuration-parameters']:
-            if rule['name'] == name:
-                return wsgi.Result(
-                    views.ConfigurationParametersView(rule).data(), 200)
-        raise exception.ConfigKeyNotFound(key=name)
+        ds_models.DatastoreVersion.load_by_uuid(version)
+        rule = models.DatastoreConfigurationParameters.load_parameter_by_name(
+            version, name)
+        return wsgi.Result(views.ConfigurationParameterView(rule).data(), 200)

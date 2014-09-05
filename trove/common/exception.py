@@ -421,7 +421,12 @@ class ConfigurationDatastoreNotMatchInstance(TroveError):
 
 class ConfigurationParameterDeleted(TroveError):
     message = _("%(parameter_name)s parameter can no longer be "
-                " set as of %(parameter_deleted_at)s.")
+                "set as of %(parameter_deleted_at)s.")
+
+
+class ConfigurationParameterAlreadyExists(TroveError):
+    message = _("%(parameter_name)s parameter already exists "
+                "for datastore version %(datastore_version)s.")
 
 
 class ConfigurationAlreadyAttached(TroveError):

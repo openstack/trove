@@ -31,7 +31,6 @@ from trove.common import cfg
 from trove.common import template
 from trove.common import utils
 from trove.common.utils import try_recover
-from trove.common.configurations import do_configs_require_restart
 from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
 from trove.common.exception import GuestTimeout
@@ -976,9 +975,10 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                    "%s.") % self.id)
         LOG.debug("overrides: %s" % overrides)
         LOG.debug("self.ds_version: %s" % self.ds_version.__dict__)
-        # todo(cp16net) How do we know what datastore type we have?
-        need_restart = do_configs_require_restart(
-            overrides, datastore_manager=self.ds_version.manager)
+        LOG.debug("self.configuration.id: %s" % self.configuration.id)
+        # check if the configuration requires a restart of the instance
+        config = Configuration(self.context, self.configuration.id)
+        need_restart = config.does_configuration_need_restart()
         LOG.debug("do we need a restart?: %s" % need_restart)
         if need_restart:
             status = inst_models.InstanceTasks.RESTART_REQUIRED
