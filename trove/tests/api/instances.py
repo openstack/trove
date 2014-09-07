@@ -462,15 +462,16 @@ class CreateInstanceFail(object):
     def test_mgmt_get_instance_on_create(self):
         if CONFIG.test_mgmt:
             result = dbaas_admin.management.show(instance_info.id)
-            expected_attrs = ['account_id', 'addresses', 'created',
-                              'databases', 'flavor', 'guest_status', 'host',
-                              'hostname', 'id', 'name', 'datastore',
-                              'server_state_description', 'status', 'updated',
-                              'users', 'volume', 'root_enabled_at',
-                              'root_enabled_by']
+            allowed_attrs = ['account_id', 'addresses', 'created',
+                             'databases', 'flavor', 'guest_status', 'host',
+                             'hostname', 'id', 'name', 'datastore',
+                             'server_state_description', 'status', 'updated',
+                             'users', 'volume', 'root_enabled_at',
+                             'root_enabled_by']
             with CheckInstance(result._info) as check:
-                check.attrs_exist(result._info, expected_attrs,
-                                  msg="Mgmt get instance")
+                check.contains_allowed_attrs(
+                    result._info, allowed_attrs,
+                    msg="Mgmt get instance")
                 check.flavor()
                 check.datastore()
                 check.guest_status()
@@ -671,19 +672,20 @@ class CreateInstance(object):
                        "instance was actually created." % id)
 
         # Check these attrs only are returned in create response
-        expected_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
-                          'name', 'status', 'updated', 'datastore']
+        allowed_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
+                         'name', 'status', 'updated', 'datastore']
         if ROOT_ON_CREATE:
-            expected_attrs.append('password')
+            allowed_attrs.append('password')
         if VOLUME_SUPPORT:
-            expected_attrs.append('volume')
+            allowed_attrs.append('volume')
         if CONFIG.trove_dns_support:
-            expected_attrs.append('hostname')
+            allowed_attrs.append('hostname')
 
         with CheckInstance(result._info) as check:
             if create_new_instance():
-                check.attrs_exist(result._info, expected_attrs,
-                                  msg="Create response")
+                check.contains_allowed_attrs(
+                    result._info, allowed_attrs,
+                    msg="Create response")
             # Don't CheckInstance if the instance already exists.
             check.flavor()
             check.datastore()
@@ -994,9 +996,10 @@ class TestGuestProcess(object):
         if CONFIG.test_mgmt:
             hwinfo = dbaas_admin.hwinfo.get(instance_info.id)
             print("hwinfo : %r" % hwinfo._info)
-            expected_attrs = ['hwinfo']
-            CheckInstance(None).attrs_exist(hwinfo._info, expected_attrs,
-                                            msg="Hardware information")
+            allowed_attrs = ['hwinfo']
+            CheckInstance(None).contains_allowed_attrs(
+                hwinfo._info, allowed_attrs,
+                msg="Hardware information")
             # TODO(pdmars): instead of just checking that these are int's, get
             # the instance flavor and verify that the values are correct for
             # the flavor
@@ -1061,18 +1064,19 @@ class TestInstanceListing(object):
 
     @test
     def test_index_list(self):
-        expected_attrs = ['id', 'links', 'name', 'status', 'flavor',
-                          'datastore', 'ip', 'hostname']
+        allowed_attrs = ['id', 'links', 'name', 'status', 'flavor',
+                         'datastore', 'ip', 'hostname']
         if VOLUME_SUPPORT:
-            expected_attrs.append('volume')
+            allowed_attrs.append('volume')
         instances = dbaas.instances.list()
         assert_equal(200, dbaas.last_http_code)
         for instance in instances:
             instance_dict = instance._info
             with CheckInstance(instance_dict) as check:
                 print("testing instance_dict=%s" % instance_dict)
-                check.attrs_exist(instance_dict, expected_attrs,
-                                  msg="Instance Index")
+                check.contains_allowed_attrs(
+                    instance_dict, allowed_attrs,
+                    msg="Instance Index")
                 check.links(instance_dict['links'])
                 check.flavor()
                 check.datastore()
@@ -1080,20 +1084,21 @@ class TestInstanceListing(object):
 
     @test
     def test_get_instance(self):
-        expected_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
-                          'links', 'name', 'status', 'updated', 'ip',
-                          'datastore']
+        allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
+                         'links', 'name', 'status', 'updated', 'ip',
+                         'datastore']
         if VOLUME_SUPPORT:
-            expected_attrs.append('volume')
+            allowed_attrs.append('volume')
         else:
-            expected_attrs.append('local_storage')
+            allowed_attrs.append('local_storage')
         instance = dbaas.instances.get(instance_info.id)
         assert_equal(200, dbaas.last_http_code)
         instance_dict = instance._info
         print("instance_dict=%s" % instance_dict)
         with CheckInstance(instance_dict) as check:
-            check.attrs_exist(instance_dict, expected_attrs,
-                              msg="Get Instance")
+            check.contains_allowed_attrs(
+                instance_dict, allowed_attrs,
+                msg="Get Instance")
             check.flavor()
             check.datastore()
             check.links(instance_dict['links'])
@@ -1160,14 +1165,15 @@ class TestInstanceListing(object):
     @test(enabled=CONFIG.test_mgmt)
     def test_mgmt_get_instance_after_started(self):
         result = dbaas_admin.management.show(instance_info.id)
-        expected_attrs = ['account_id', 'addresses', 'created', 'databases',
-                          'flavor', 'guest_status', 'host', 'hostname', 'id',
-                          'name', 'root_enabled_at', 'root_enabled_by',
-                          'server_state_description', 'status', 'datastore',
-                          'updated', 'users', 'volume']
+        allowed_attrs = ['account_id', 'addresses', 'created', 'databases',
+                         'flavor', 'guest_status', 'host', 'hostname', 'id',
+                         'name', 'root_enabled_at', 'root_enabled_by',
+                         'server_state_description', 'status', 'datastore',
+                         'updated', 'users', 'volume']
         with CheckInstance(result._info) as check:
-            check.attrs_exist(result._info, expected_attrs,
-                              msg="Mgmt get instance")
+            check.contains_allowed_attrs(
+                result._info, allowed_attrs,
+                msg="Mgmt get instance")
             check.flavor()
             check.datastore()
             check.guest_status()
@@ -1425,18 +1431,20 @@ class CheckInstance(AttrCheck):
         if 'flavor' not in self.instance:
             self.fail("'flavor' not found in instance.")
         else:
-            expected_attrs = ['id', 'links']
-            self.attrs_exist(self.instance['flavor'], expected_attrs,
-                             msg="Flavor")
+            allowed_attrs = ['id', 'links']
+            self.contains_allowed_attrs(
+                self.instance['flavor'], allowed_attrs,
+                msg="Flavor")
             self.links(self.instance['flavor']['links'])
 
     def datastore(self):
         if 'datastore' not in self.instance:
             self.fail("'datastore' not found in instance.")
         else:
-            expected_attrs = ['type', 'version']
-            self.attrs_exist(self.instance['datastore'], expected_attrs,
-                             msg="datastore")
+            allowed_attrs = ['type', 'version']
+            self.contains_allowed_attrs(
+                self.instance['datastore'], allowed_attrs,
+                msg="datastore")
 
     def volume_key_exists(self):
         if 'volume' not in self.instance:
@@ -1448,68 +1456,76 @@ class CheckInstance(AttrCheck):
         if not VOLUME_SUPPORT:
             return
         if self.volume_key_exists():
-            expected_attrs = ['size']
+            allowed_attrs = ['size']
             if not create_new_instance():
-                expected_attrs.append('used')
-            self.attrs_exist(self.instance['volume'], expected_attrs,
-                             msg="Volumes")
+                allowed_attrs.append('used')
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
 
     def used_volume(self):
         if not VOLUME_SUPPORT:
             return
         if self.volume_key_exists():
-            expected_attrs = ['size', 'used']
+            allowed_attrs = ['size', 'used']
             print(self.instance)
-            self.attrs_exist(self.instance['volume'], expected_attrs,
-                             msg="Volumes")
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
 
     def volume_mgmt(self):
         if not VOLUME_SUPPORT:
             return
         if self.volume_key_exists():
-            expected_attrs = ['description', 'id', 'name', 'size']
-            self.attrs_exist(self.instance['volume'], expected_attrs,
-                             msg="Volumes")
+            allowed_attrs = ['description', 'id', 'name', 'size']
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
 
     def addresses(self):
-        expected_attrs = ['addr', 'version']
+        allowed_attrs = ['addr', 'version']
         print(self.instance)
         networks = ['usernet']
         for network in networks:
             for address in self.instance['addresses'][network]:
-                self.attrs_exist(address, expected_attrs,
-                                 msg="Address")
+                self.contains_allowed_attrs(
+                    address, allowed_attrs,
+                    msg="Address")
 
     def guest_status(self):
-        expected_attrs = ['created_at', 'deleted', 'deleted_at', 'instance_id',
-                          'state', 'state_description', 'updated_at']
-        self.attrs_exist(self.instance['guest_status'], expected_attrs,
-                         msg="Guest status")
+        allowed_attrs = ['created_at', 'deleted', 'deleted_at', 'instance_id',
+                         'state', 'state_description', 'updated_at']
+        self.contains_allowed_attrs(
+            self.instance['guest_status'], allowed_attrs,
+            msg="Guest status")
 
     def mgmt_volume(self):
         if not VOLUME_SUPPORT:
             return
-        expected_attrs = ['description', 'id', 'name', 'size']
-        self.attrs_exist(self.instance['volume'], expected_attrs,
-                         msg="Volume")
+        allowed_attrs = ['description', 'id', 'name', 'size']
+        self.contains_allowed_attrs(
+            self.instance['volume'], allowed_attrs,
+            msg="Volume")
 
     def slave_of(self):
         if 'replica_of' not in self.instance:
             self.fail("'replica_of' not found in instance.")
         else:
-            expected_attrs = ['id', 'links']
-            self.attrs_exist(self.instance['replica_of'], expected_attrs,
-                             msg="Replica-of links not found")
+            allowed_attrs = ['id', 'links']
+            self.contains_allowed_attrs(
+                self.instance['replica_of'], allowed_attrs,
+                msg="Replica-of links not found")
             self.links(self.instance['replica_of']['links'])
 
     def slaves(self):
         if 'replicas' not in self.instance:
             self.fail("'replicas' not found in instance.")
         else:
-            expected_attrs = ['id', 'links']
+            allowed_attrs = ['id', 'links']
             for slave in self.instance['replicas']:
-                self.attrs_exist(slave, expected_attrs,
-                                 msg="Replica links not found")
+                self.contains_allowed_attrs(
+                    slave, allowed_attrs,
+                    msg="Replica links not found")
                 self.links(slave['links'])
 
 
@@ -1596,10 +1612,11 @@ class BadInstanceStatusBug():
 
 def diagnostic_tests_helper(diagnostics):
     print("diagnostics : %r" % diagnostics._info)
-    expected_attrs = ['version', 'fdSize', 'vmSize', 'vmHwm', 'vmRss',
-                      'vmPeak', 'threads']
-    CheckInstance(None).attrs_exist(diagnostics._info, expected_attrs,
-                                    msg="Diagnostics")
+    allowed_attrs = ['version', 'fdSize', 'vmSize', 'vmHwm', 'vmRss',
+                     'vmPeak', 'threads']
+    CheckInstance(None).contains_allowed_attrs(
+        diagnostics._info, allowed_attrs,
+        msg="Diagnostics")
     assert_true(isinstance(diagnostics.fdSize, int))
     assert_true(isinstance(diagnostics.threads, int))
     assert_true(isinstance(diagnostics.vmHwm, int))

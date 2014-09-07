@@ -111,16 +111,16 @@ class AttrCheck(Check):
     def fail(self, msg):
         self.true(False, msg)
 
-    def attrs_exist(self, list, expected_attrs, msg=None):
+    def contains_allowed_attrs(self, list, allowed_attrs, msg=None):
         # Check these attrs only are returned in create response
         for attr in list:
-            if attr not in expected_attrs:
+            if attr not in allowed_attrs:
                 self.fail("%s should not contain '%s'" % (msg, attr))
 
     def links(self, links):
-        expected_attrs = ['href', 'rel']
+        allowed_attrs = ['href', 'rel']
         for link in links:
-            self.attrs_exist(link, expected_attrs, msg="Links")
+            self.contains_allowed_attrs(link, allowed_attrs, msg="Links")
 
 
 class CollectionCheck(Check):

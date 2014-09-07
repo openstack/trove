@@ -113,9 +113,10 @@ def _test_configuration_is_applied_to_instance(instance, configuration_id):
 
     # check the configs exist
     attrcheck = AttrCheck()
-    expected_attrs = [actual_key for actual_key, actual_value in actual_values]
-    attrcheck.attrs_exist(testconfig_info.values, expected_attrs,
-                          msg="Configurations parameters")
+    allowed_attrs = [actual_key for actual_key, actual_value in actual_values]
+    attrcheck.contains_allowed_attrs(
+        testconfig_info.values, allowed_attrs,
+        msg="Configurations parameters")
 
     def _get_parameter_type(name):
         instance_info.dbaas.configuration_parameters.get_parameter(
@@ -171,15 +172,16 @@ class CreateConfigurations(ConfigurationsTestBase):
     @test
     def test_expected_configurations_parameters(self):
         """Test get expected configurations parameters."""
-        expected_attrs = ["configuration-parameters"]
+        allowed_attrs = ["configuration-parameters"]
         instance_info.dbaas.configuration_parameters.parameters(
             instance_info.dbaas_datastore,
             instance_info.dbaas_datastore_version)
         resp, body = instance_info.dbaas.client.last_response
         attrcheck = AttrCheck()
         config_parameters_dict = json.loads(body)
-        attrcheck.attrs_exist(config_parameters_dict, expected_attrs,
-                              msg="Configurations parameters")
+        attrcheck.contains_allowed_attrs(
+            config_parameters_dict, allowed_attrs,
+            msg="Configurations parameters")
         # sanity check that a few options are in the list
         config_params_list = config_parameters_dict['configuration-parameters']
         config_param_keys = []
@@ -197,10 +199,10 @@ class CreateConfigurations(ConfigurationsTestBase):
     def test_expected_get_configuration_parameter(self):
         # tests get on a single parameter to verify it has expected attributes
         param_name = 'key_buffer_size'
-        expected_config_params = ['name', 'restart_required',
-                                  'max', 'min', 'type',
-                                  'deleted', 'deleted_at',
-                                  'datastore_version_id']
+        allowed_config_params = ['name', 'restart_required',
+                                 'max', 'min', 'type',
+                                 'deleted', 'deleted_at',
+                                 'datastore_version_id']
         param = instance_info.dbaas.configuration_parameters.get_parameter(
             instance_info.dbaas_datastore,
             instance_info.dbaas_datastore_version,
@@ -212,8 +214,10 @@ class CreateConfigurations(ConfigurationsTestBase):
         attrcheck = AttrCheck()
         config_parameter_dict = json.loads(body)
         print("config_parameter_dict: %s" % config_parameter_dict)
-        attrcheck.attrs_exist(config_parameter_dict, expected_config_params,
-                              msg="Get Configuration parameter")
+        attrcheck.contains_allowed_attrs(
+            config_parameter_dict,
+            allowed_config_params,
+            msg="Get Configuration parameter")
         assert_equal(param_name, config_parameter_dict['name'])
         with TypeCheck('ConfigurationParameter', param) as parameter:
             parameter.has_field('name', basestring)

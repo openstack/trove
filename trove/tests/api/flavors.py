@@ -139,23 +139,25 @@ class Flavors(object):
 
     @test
     def test_flavor_list_attrs(self):
-        expected_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
+        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
         flavors = self.rd_client.flavors.list()
         attrcheck = AttrCheck()
         for flavor in flavors:
             flavor_dict = flavor._info
-            attrcheck.attrs_exist(flavor_dict, expected_attrs,
-                                  msg="Flavors list")
+            attrcheck.contains_allowed_attrs(
+                flavor_dict, allowed_attrs,
+                msg="Flavors list")
             attrcheck.links(flavor_dict['links'])
 
     @test
     def test_flavor_get_attrs(self):
-        expected_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
+        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage']
         flavor = self.rd_client.flavors.get(1)
         attrcheck = AttrCheck()
         flavor_dict = flavor._info
-        attrcheck.attrs_exist(flavor_dict, expected_attrs,
-                              msg="Flavor Get 1")
+        attrcheck.contains_allowed_attrs(
+            flavor_dict, allowed_attrs,
+            msg="Flavor Get 1")
         attrcheck.links(flavor_dict['links'])
 
     @test

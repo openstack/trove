@@ -91,10 +91,11 @@ class StorageAfterInstanceCreation(object):
         storage = self.client.storage.index()
         print("storage : %r" % storage)
         print("instance_info.storage : %r" % instance_info.storage)
-        expected_attrs = ['name', 'type', 'used', 'provision', 'capacity']
+        allowed_attrs = ['name', 'type', 'used', 'provision', 'capacity']
         for index, device in enumerate(storage):
-            CheckInstance(None).attrs_exist(device._info, expected_attrs,
-                                            msg="Storage")
+            CheckInstance(None).contains_allowed_attrs(
+                device._info,
+                allowed_attrs, msg="Storage")
             asserts.assert_equal(device.name,
                                  instance_info.storage[index].name)
             asserts.assert_equal(device.used,
