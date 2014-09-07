@@ -19,11 +19,13 @@ from trove.openstack.common import processutils
 @with_initialize
 def main(conf):
     from trove.common.rpc import service as rpc_service
+    from trove.common.rpc import version as rpc_version
     from trove.openstack.common import service as openstack_service
 
     topic = conf.conductor_queue
-    server = rpc_service.RpcService(manager=conf.conductor_manager,
-                                    topic=topic)
+    server = rpc_service.RpcService(
+        manager=conf.conductor_manager, topic=topic,
+        rpc_api_version=rpc_version.RPC_API_VERSION)
     workers = conf.trove_conductor_workers or processutils.get_worker_count()
     launcher = openstack_service.launch(server, workers=workers)
     launcher.wait()

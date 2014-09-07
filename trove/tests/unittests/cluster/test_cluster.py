@@ -38,6 +38,7 @@ CONF = cfg.CONF
 class ClusterTest(TestCase):
     def setUp(self):
         super(ClusterTest, self).setUp()
+        task_api.API.get_client = Mock()
         self.cluster_id = str(uuid.uuid4())
         self.cluster_name = "Cluster" + self.cluster_id
         self.tenant_id = "23423432"

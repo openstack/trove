@@ -12,49 +12,62 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+from oslo import messaging
+from trove import rpc
 from trove.common import cfg
-from trove.openstack.common.rpc import proxy
+from trove.common.rpc import version as rpc_version
 from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-RPC_API_VERSION = "1.0"
 
 
-class API(proxy.RpcProxy):
+class API(object):
     """API for interacting with trove conductor."""
 
     def __init__(self, context):
         self.context = context
-        super(API, self).__init__(self._get_routing_key(), RPC_API_VERSION)
+        super(API, self).__init__()
 
-    def _get_routing_key(self):
-        """Create the routing key for conductor."""
-        return CONF.conductor_queue
+        target = messaging.Target(topic=CONF.conductor_queue,
+                                  version=rpc_version.RPC_API_VERSION)
+
+        self.version_cap = rpc_version.VERSION_ALIASES.get(
+            CONF.upgrade_levels.conductor)
+        self.client = self.get_client(target, self.version_cap)
+
+    def get_client(self, target, version_cap, serializer=None):
+        return rpc.get_client(target,
+                              version_cap=version_cap,
+                              serializer=serializer)
 
     def heartbeat(self, instance_id, payload, sent=None):
         LOG.debug("Making async call to cast heartbeat for instance: %s"
                   % instance_id)
-        self.cast(self.context, self.make_msg("heartbeat",
-                                              instance_id=instance_id,
-                                              sent=sent,
-                                              payload=payload))
+
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "heartbeat",
+                   instance_id=instance_id,
+                   sent=sent,
+                   payload=payload)
 
     def update_backup(self, instance_id, backup_id, sent=None,
                       **backup_fields):
         LOG.debug("Making async call to cast update_backup for instance: %s"
                   % instance_id)
-        self.cast(self.context, self.make_msg("update_backup",
-                                              instance_id=instance_id,
-                                              backup_id=backup_id,
-                                              sent=sent,
-                                              **backup_fields))
+
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "update_backup",
+                   instance_id=instance_id,
+                   backup_id=backup_id,
+                   sent=sent,
+                   **backup_fields)
 
     def report_root(self, instance_id, user):
         LOG.debug("Making async call to cast report_root for instance: %s"
                   % instance_id)
-        self.cast(self.context, self.make_msg("report_root",
-                                              instance_id=instance_id,
-                                              user=user))
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "report_root",
+                   instance_id=instance_id,
+                   user=user)

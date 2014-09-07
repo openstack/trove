@@ -12,10 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo import messaging
+
 from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import exception
 from trove.common.instance import ServiceStatus
+from trove.common.rpc import version as rpc_version
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
@@ -24,11 +27,12 @@ from trove.openstack.common import periodic_task
 from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
-RPC_API_VERSION = "1.0"
 CONF = cfg.CONF
 
 
 class Manager(periodic_task.PeriodicTasks):
+
+    target = messaging.Target(version=rpc_version.RPC_API_VERSION)
 
     def __init__(self):
         super(Manager, self).__init__()

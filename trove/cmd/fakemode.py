@@ -47,7 +47,7 @@ def main(conf):
 
 def start_fake_taskmanager(conf):
     topic = conf.taskmanager_queue
-    from trove.openstack.common.rpc import service as rpc_service
+    from trove.common.rpc import service as rpc_service
     from trove.taskmanager import manager
     manager_impl = manager.Manager()
     taskman_service = rpc_service.Service(None, topic=topic,

@@ -21,10 +21,12 @@ extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
 
 def startup(conf, topic):
     from trove.common.rpc import service as rpc_service
+    from trove.common.rpc import version as rpc_version
     from trove.openstack.common import service as openstack_service
 
-    server = rpc_service.RpcService(manager=conf.taskmanager_manager,
-                                    topic=topic)
+    server = rpc_service.RpcService(
+        manager=conf.taskmanager_manager, topic=topic,
+        rpc_api_version=rpc_version.RPC_API_VERSION)
     launcher = openstack_service.launch(server)
     launcher.wait()
 

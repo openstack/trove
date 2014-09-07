@@ -43,9 +43,15 @@ def initialize(extra_opts=None, pre_logging=None):
     logging.setup(None)
     debug_utils.setup()
 
-    # Patch 'thread' module if debug is disabled
+    # Patch 'thread' module if debug is disabled.
     if not debug_utils.enabled():
         eventlet.monkey_patch(thread=True)
+
+    # rpc module must be loaded after decision about thread monkeypatching
+    # because if thread module is not monkeypatched we can't use eventlet
+    # executor from oslo.messaging library.
+    from trove import rpc
+    rpc.init(conf)
 
     # Initialize Trove database.
     from trove.db import get_db_api

@@ -138,9 +138,6 @@ class FakeGuest(object):
         if database['_name'] in self.dbs:
             del self.dbs[database['_name']]
 
-    def delete_queue(self):
-        pass
-
     def enable_root(self):
         self.root_was_enabled = True
         return self._create_user({

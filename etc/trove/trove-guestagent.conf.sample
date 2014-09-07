@@ -1,5 +1,20 @@
 [DEFAULT]
 
+#=========== RPC Configuration ======================
+
+# URL representing the messaging driver to use and its full configuration.
+# If not set, we fall back to the 'rpc_backend' option and driver specific
+# configuration.
+#transport_url=<None>
+
+# The messaging driver to use. Options include rabbit, qpid and zmq.
+# Default is rabbit. (string value)
+#rpc_backend=rabbit
+
+# The default exchange under which topics are scoped. May be
+# overridden by an exchange name specified in the 'transport_url option.
+#control_exchange=openstack
+
 # ========== Sample RabbitMQ Configuration ==========
 
 # The RabbitMQ broker address where a single node is used.
@@ -24,10 +39,6 @@ rabbit_password=f7999d1955c5014aa32c
 
 # The RabbitMQ virtual host. (string value)
 # rabbit_virtual_host=/
-
-# RabbitMQ topic used for OpenStack notifications. (list value)
-# rabbit_notification_topic = ['notifications']
-
 
 # ========== Configuration options for Swift ==========
 

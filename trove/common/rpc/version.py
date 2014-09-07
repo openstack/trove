@@ -13,23 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
+# based on configured release version
+RPC_API_VERSION = "1.0"
 
-from trove.openstack.common import jsonutils
-from trove.openstack.common import log as logging
-
-
-CONF = cfg.CONF
-
-
-def notify(_context, message):
-    """Notifies the recipient of the desired event given the model.
-    Log notifications using openstack's default logging system"""
-
-    priority = message.get('priority',
-                           CONF.default_notification_level)
-    priority = priority.lower()
-    logger = logging.getLogger(
-        'trove.openstack.common.notification.%s' %
-        message['event_type'])
-    getattr(logger, priority)(jsonutils.dumps(message))
+# API version history:
+#
+# 1.0 - Initial version.  (We started keeping track at icehouse-3)
+# 1.1 -
+# 1.2 - ...
+VERSION_ALIASES = {
+    'icehouse': '1.0'
+}

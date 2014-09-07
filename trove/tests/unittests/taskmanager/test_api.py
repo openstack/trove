@@ -22,6 +22,7 @@ from trove.taskmanager import api as task_api
 
 class TestAPI(TestCase):
     def test_load_api(self):
+        task_api.API.get_client = Mock()
         context = Mock()
         manager = 'mongodb'
 

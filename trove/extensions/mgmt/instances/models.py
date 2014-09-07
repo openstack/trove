@@ -17,11 +17,11 @@ from trove.common import cfg
 from trove.common import remote
 from trove.common import utils
 from trove.openstack.common import log as logging
-from trove.openstack.common.notifier import api as notifier
 from trove.instance import models as imodels
 from trove.instance.models import load_instance, InstanceServiceStatus
 from trove.instance import models as instance_models
 from trove.extensions.mysql import models as mysql_models
+from trove import rpc
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -166,15 +166,12 @@ def _load_servers(instances, find_server):
 
 
 def publish_exist_events(transformer, admin_context):
+    notifier = rpc.get_notifier("taskmanager")
     notifications = transformer()
     # clear out admin_context.auth_token so it does not get logged
     admin_context.auth_token = None
     for notification in notifications:
-        notifier.notify(admin_context,
-                        CONF.host,
-                        "trove.instance.exists",
-                        'INFO',
-                        notification)
+        notifier.info(admin_context, "trove.instance.exists", notification)
 
 
 class NotificationTransformer(object):

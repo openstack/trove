@@ -36,7 +36,7 @@ def mocked_conf(manager):
 
 
 class NoopManager(object):
-    pass
+    RPC_API_VERSION = 1.0
 
 
 class ConductorConfTests(testtools.TestCase):

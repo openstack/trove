@@ -15,6 +15,23 @@ bind_port = 8779
 # be the number of CPUs available. (integer value)
 #trove_api_workers=None
 
+#===================== RPC Configuration =================================
+
+# URL representing the messaging driver to use and its full configuration.
+# If not set, we fall back to the 'rpc_backend' option and driver specific
+# configuration.
+#transport_url=<None>
+
+# The messaging driver to use. Options include rabbit, qpid and zmq.
+# Default is rabbit. (string value)
+#rpc_backend=rabbit
+
+# The default exchange under which topics are scoped. May be
+# overridden by an exchange name specified in the 'transport_url option.
+#control_exchange=openstack
+
+# ==================== RabbitMQ Configuration =======================
+
 # The RabbitMQ broker address where a single node is used.
 # (string value)
 #rabbit_host=localhost
@@ -37,11 +54,6 @@ rabbit_password=f7999d1955c5014aa32c
 
 # The RabbitMQ virtual host. (string value)
 #rabbit_virtual_host=/
-
-# RabbitMQ topic used for OpenStack notifications. (list value)
-#rabbit_notification_topic = ['notifications']
-
-rpc_backend = trove.openstack.common.rpc.impl_kombu
 
 # SQLAlchemy connection string for the reference implementation
 # registry server. Any valid SQLAlchemy connection string is fine.
@@ -162,7 +174,14 @@ reboot_time_out = 60
 api_paste_config = api-paste.ini
 
 
-# ============ notifer queue kombu connection options ========================
+# ============ Notification System configuration ===========================
+
+# Sets the notification driver used by oslo.messaging. Options include
+# messaging, messagingv2, log and routing. Default is 'noop'
+# notification_driver=noop
+
+# Topics used for OpenStack notifications, list value. Default is 'notifications'.
+# notification_topics=['notifications', ]
 
 control_exchange = trove
 

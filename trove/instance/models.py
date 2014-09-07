@@ -577,12 +577,6 @@ class BaseInstance(SimpleInstance):
         deleted_at = datetime.utcnow()
         self._delete_resources(deleted_at)
         LOG.debug("Setting instance %s to be deleted.", self.id)
-        # Delete guest queue.
-        try:
-            guest = self.get_guest()
-            guest.delete_queue()
-        except Exception as ex:
-            LOG.warn(ex)
         self.update_db(deleted=True, deleted_at=deleted_at,
                        task_status=InstanceTasks.NONE)
         self.set_servicestatus_deleted()
