@@ -16,9 +16,10 @@ from mock import Mock
 from testtools import TestCase
 from trove.common import cfg
 from trove.common import exception
-from trove.common.instance import ServiceStatuses
 from trove.backup import models as backup_models
 from trove.datastore import models as datastore_models
+from trove.datastore.models import DBDatastoreVersion
+from trove.common.instance import ServiceStatuses
 from trove.instance.models import filter_ips
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import DBInstance
@@ -27,8 +28,6 @@ from trove.instance.models import SimpleInstance
 from trove.instance import models
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
-
-
 from trove.tests.fakes import nova
 from trove.tests.unittests.util import util
 
@@ -39,11 +38,11 @@ class SimpleInstanceTest(TestCase):
 
     def setUp(self):
         super(SimpleInstanceTest, self).setUp()
-        db_info = DBInstance(InstanceTasks.BUILDING, name="TestInstance")
-        self.instance = SimpleInstance(None, db_info,
-                                       InstanceServiceStatus(
-                                           ServiceStatuses.BUILDING),
-                                       ds_version=Mock(), ds=Mock())
+        db_info = DBInstance(
+            InstanceTasks.BUILDING, name="TestInstance")
+        self.instance = SimpleInstance(
+            None, db_info, InstanceServiceStatus(
+                ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock())
         db_info.addresses = {"private": [{"addr": "123.123.123.123"}],
                              "internal": [{"addr": "10.123.123.123"}],
                              "public": [{"addr": "15.123.123.123"}]}
@@ -57,7 +56,8 @@ class SimpleInstanceTest(TestCase):
         CONF.ip_start = None
 
     def test_get_root_on_create(self):
-        root_on_create_val = Instance.get_root_on_create('redis')
+        root_on_create_val = Instance.get_root_on_create(
+            'redis')
         self.assertFalse(root_on_create_val)
 
     def test_filter_ips_white_list(self):
@@ -65,7 +65,8 @@ class SimpleInstanceTest(TestCase):
         CONF.ip_regex = '^(15.|123.)'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = filter_ips(ip, CONF.ip_regex, CONF.black_list_regex)
+        ip = filter_ips(
+            ip, CONF.ip_regex, CONF.black_list_regex)
         self.assertTrue(len(ip) == 2)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
@@ -75,7 +76,8 @@ class SimpleInstanceTest(TestCase):
         CONF.ip_regex = '.*'
         CONF.black_list_regex = '^10.123.123.*'
         ip = self.instance.get_visible_ip_addresses()
-        ip = filter_ips(ip, CONF.ip_regex, CONF.black_list_regex)
+        ip = filter_ips(
+            ip, CONF.ip_regex, CONF.black_list_regex)
         self.assertTrue(len(ip) == 2)
         self.assertTrue('10.123.123.123' not in ip)
 
@@ -207,3 +209,41 @@ class CreateInstanceTest(TestCase):
             self.volume_size, self.backup_id,
             self.az, self.nics, self.configuration)
         self.assertIsNotNone(instance)
+
+
+class TestReplication(TestCase):
+
+    def setUp(self):
+        util.init_db()
+        self.replica_datastore_version = Mock(spec=DBDatastoreVersion)
+        self.replica_datastore_version.id = "UUID"
+        self.replica_datastore_version.manager = 'mysql'
+        self.root_info = DBInstance(
+            InstanceTasks.NONE,
+            id="Another_instance",
+            name="TestInstance",
+            datastore_version_id=self.replica_datastore_version.id)
+        self.root_info.save()
+        self.replica_info = DBInstance(
+            InstanceTasks.NONE,
+            id="UUID",
+            name="TestInstance",
+            datastore_version_id=self.replica_datastore_version.id,
+            slave_of_id="Another_instance")
+        self.replica_info.save()
+        self.safe_nova = models.create_nova_client
+        models.create_nova_client = nova.fake_create_nova_client
+
+        super(TestReplication, self).setUp()
+
+    def tearDown(self):
+        models.create_nova_client = self.safe_nova
+        self.replica_info.delete()
+        self.root_info.delete()
+        super(TestReplication, self).tearDown()
+
+    def test_create_replica_from_replica(self):
+        self.assertRaises(exception.Forbidden, Instance.create,
+                          None, 'name', 2, "UUID", [], [], None,
+                          self.replica_datastore_version, 1,
+                          None, slave_of_id=self.replica_info.id)

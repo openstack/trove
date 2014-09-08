@@ -714,6 +714,22 @@ class Instance(BuiltInstance):
             if not replication_support:
                 raise exception.ReplicationNotSupported(
                     datastore=datastore.name)
+            try:
+                # looking for replica source
+                replica_source = DBInstance.find_by(
+                    context,
+                    id=slave_of_id,
+                    deleted=False)
+                if replica_source.slave_of_id:
+                    raise exception.Forbidden(
+                        _("Cannot create a replica of a replica %(id)s.")
+                        % {'id': slave_of_id})
+            except exception.ModelNotFoundError:
+                LOG.exception(
+                    _("Cannot create a replica of %(id)s "
+                      "as that instance could not be found.")
+                    % {'id': slave_of_id})
+                raise exception.NotFound(uuid=slave_of_id)
 
         if not nics:
             nics = []
