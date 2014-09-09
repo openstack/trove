@@ -571,6 +571,7 @@ CONF.register_group(redis_group)
 CONF.register_group(cassandra_group)
 CONF.register_group(couchbase_group)
 CONF.register_group(mongodb_group)
+CONF.register_group(postgresql_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
