@@ -250,7 +250,7 @@ def poll_until(retriever, condition=lambda value: value,
         obj = retriever()
         if condition(obj):
             raise LoopingCallDone(retvalue=obj)
-        if time_out is not None and time.time() > start_time + time_out:
+        if time_out is not None and time.time() - start_time > time_out:
             raise exception.PollTimeOut
     lc = LoopingCall(f=poll_and_check).start(sleep_time, True)
     return lc.wait()

@@ -33,6 +33,7 @@ CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 AGENT_LOW_TIMEOUT = CONF.agent_call_low_timeout
 AGENT_HIGH_TIMEOUT = CONF.agent_call_high_timeout
+AGENT_SNAPSHOT_TIMEOUT = CONF.agent_replication_snapshot_timeout
 RPC_API_VERSION = "1.0"
 
 
@@ -326,7 +327,7 @@ class API(proxy.RpcProxy):
 
     def get_replication_snapshot(self, snapshot_info=None):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
-        return self._call("get_replication_snapshot", AGENT_HIGH_TIMEOUT,
+        return self._call("get_replication_snapshot", AGENT_SNAPSHOT_TIMEOUT,
                           snapshot_info=snapshot_info)
 
     def attach_replication_slave(self, snapshot, slave_config=None):
