@@ -14,9 +14,8 @@
 #    under the License.
 
 import testtools
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock, patch
 import pexpect
-from trove.common import utils
 from trove.guestagent import pkg
 import commands
 import re
@@ -30,75 +29,75 @@ class PkgDEBInstallTestCase(testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBInstallTestCase, self).setUp()
-        self.utils_execute = utils.execute
-        self.pexpect_spawn_init = pexpect.spawn.__init__
-        self.pexpect_spawn_closed = pexpect.spawn.close
         self.pkg = pkg.DebianPackagerMixin()
         self.pkg_fix = self.pkg._fix
         self.pkg_fix_package_selections = self.pkg._fix_package_selections
-        utils.execute = Mock()
-        pexpect.spawn.__init__ = Mock(return_value=None)
-        pexpect.spawn.closed = Mock(return_value=None)
+
+        p0 = patch('pexpect.spawn')
+        p0.start()
+        self.addCleanup(p0.stop)
+
+        p1 = patch('trove.common.utils.execute')
+        p1.start()
+        self.addCleanup(p1.stop)
+
         self.pkg._fix = Mock(return_value=None)
         self.pkg._fix_package_selections = Mock(return_value=None)
         self.pkgName = 'packageName'
 
     def tearDown(self):
         super(PkgDEBInstallTestCase, self).tearDown()
-        utils.execute = self.utils_execute
-        pexpect.spawn.__init__ = self.pexpect_spawn_init
-        pexpect.spawn.close = self.pexpect_spawn_closed
         self.pkg._fix = self.pkg_fix
         self.pkg._fix_package_selections = self.pkg_fix_package_selections
 
-    def test_pkg_is_instaled_no_packages(self):
+    def test_pkg_is_installed_no_packages(self):
         packages = []
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
-    def test_pkg_is_instaled_yes(self):
+    def test_pkg_is_installed_yes(self):
         packages = ["package1=1.0", "package2"]
         self.pkg.pkg_version = MagicMock(side_effect=["1.0", "2.0"])
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
-    def test_pkg_is_instaled_no(self):
+    def test_pkg_is_installed_no(self):
         packages = ["package1=1.0", "package2", "package3=3.1"]
         self.pkg.pkg_version = MagicMock(side_effect=["1.0", "2.0", "3.0"])
         self.assertFalse(self.pkg.pkg_is_installed(packages))
 
     def test_success_install(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=7)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 7
+        pexpect.spawn.return_value.match = False
         self.assertTrue(self.pkg.pkg_install(self.pkgName, {}, 5000) is None)
 
     def test_permission_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=0)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 0
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPermissionError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_not_found_1(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=1)
-        pexpect.spawn.match = re.match('(.*)', self.pkgName)
+        pexpect.spawn.return_value.expect.return_value = 1
+        pexpect.spawn.return_value.match = re.match('(.*)', self.pkgName)
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_not_found_2(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=2)
-        pexpect.spawn.match = re.match('(.*)', self.pkgName)
+        pexpect.spawn.return_value.expect.return_value = 2
+        pexpect.spawn.return_value.match = re.match('(.*)', self.pkgName)
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_run_DPKG_bad_State(self):
         # test _fix method is called and PackageStateError is thrown
-        pexpect.spawn.expect = Mock(return_value=4)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 4
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPackageStateError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
@@ -106,23 +105,23 @@ class PkgDEBInstallTestCase(testtools.TestCase):
 
     def test_admin_lock_error(self):
         # test 'Unable to lock the administration directory' error
-        pexpect.spawn.expect = Mock(return_value=5)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 5
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgAdminLockError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_broken_error(self):
-        pexpect.spawn.expect = Mock(return_value=6)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 6
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgBrokenError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_timeout_error(self):
         # test timeout error
-        pexpect.spawn.expect = Mock(side_effect=pexpect.
-                                    TIMEOUT('timeout error'))
+        pexpect.spawn.return_value.expect.side_effect = (
+            pexpect.TIMEOUT('timeout error'))
         # test and verify
         self.assertRaises(pkg.PkgTimeout, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
@@ -132,17 +131,19 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBRemoveTestCase, self).setUp()
-        self.utils_execute = utils.execute
-        self.pexpect_spawn_init = pexpect.spawn.__init__
-        self.pexpect_spawn_closed = pexpect.spawn.close
         self.pkg = pkg.DebianPackagerMixin()
         self.pkg_version = self.pkg.pkg_version
         self.pkg_install = self.pkg._install
         self.pkg_fix = self.pkg._fix
 
-        utils.execute = Mock()
-        pexpect.spawn.__init__ = Mock(return_value=None)
-        pexpect.spawn.closed = Mock(return_value=None)
+        p0 = patch('pexpect.spawn')
+        p0.start()
+        self.addCleanup(p0.stop)
+
+        p1 = patch('trove.common.utils.execute')
+        p1.start()
+        self.addCleanup(p1.stop)
+
         self.pkg.pkg_version = Mock(return_value="OK")
         self.pkg._install = Mock(return_value=None)
         self.pkg._fix = Mock(return_value=None)
@@ -151,39 +152,36 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
 
     def tearDown(self):
         super(PkgDEBRemoveTestCase, self).tearDown()
-        utils.execute = self.utils_execute
-        pexpect.spawn.__init__ = self.pexpect_spawn_init
-        pexpect.spawn.close = self.pexpect_spawn_closed
         self.pkg.pkg_version = self.pkg_version
         self.pkg._install = self.pkg_install
         self.pkg._fix = self.pkg_fix
 
     def test_success_remove(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=6)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 6
+        pexpect.spawn.return_value.match = False
         self.assertTrue(self.pkg.pkg_remove(self.pkgName, 5000) is None)
 
     def test_permission_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=0)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 0
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPermissionError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
     def test_package_not_found(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=1)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 1
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
     def test_package_reinstall_first_1(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=2)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 2
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPackageStateError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
@@ -192,8 +190,8 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
 
     def test_package_reinstall_first_2(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=3)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 3
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPackageStateError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
@@ -202,8 +200,8 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
 
     def test_package_DPKG_first(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=4)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 4
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPackageStateError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
@@ -212,16 +210,16 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
 
     def test_admin_lock_error(self):
         # test 'Unable to lock the administration directory' error
-        pexpect.spawn.expect = Mock(return_value=5)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 5
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgAdminLockError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
     def test_timeout_error(self):
         # test timeout error
-        pexpect.spawn.expect = Mock(side_effect=pexpect.
-                                    TIMEOUT('timeout error'))
+        pexpect.spawn.return_value.expect.side_effect = (
+            pexpect.TIMEOUT('timeout error'))
         # test and verify
         self.assertRaises(pkg.PkgTimeout, self.pkg.pkg_remove,
                           self.pkgName, 5000)
@@ -286,32 +284,31 @@ class PkgRPMInstallTestCase(testtools.TestCase):
 
     def setUp(self):
         super(PkgRPMInstallTestCase, self).setUp()
-        self.utils_execute = utils.execute
-        self.pexpect_spawn_init = pexpect.spawn.__init__
-        self.pexpect_spawn_closed = pexpect.spawn.close
         self.pkg = pkg.RedhatPackagerMixin()
-        utils.execute = Mock()
-        pexpect.spawn.__init__ = Mock(return_value=None)
-        pexpect.spawn.closed = Mock(return_value=None)
         self.pkgName = 'packageName'
+
+        p0 = patch('pexpect.spawn')
+        p0.start()
+        self.addCleanup(p0.stop)
+
+        p1 = patch('trove.common.utils.execute')
+        p1.start()
+        self.addCleanup(p1.stop)
 
     def tearDown(self):
         super(PkgRPMInstallTestCase, self).tearDown()
-        utils.execute = self.utils_execute
-        pexpect.spawn.__init__ = self.pexpect_spawn_init
-        pexpect.spawn.close = self.pexpect_spawn_closed
 
-    def test_pkg_is_instaled_no_packages(self):
+    def test_pkg_is_installed_no_packages(self):
         packages = []
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
-    def test_pkg_is_instaled_yes(self):
+    def test_pkg_is_installed_yes(self):
         packages = ["package1=1.0", "package2"]
         commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
                                                            "package2=2.0"})
         self.assertTrue(self.pkg.pkg_is_installed(packages))
 
-    def test_pkg_is_instaled_no(self):
+    def test_pkg_is_installed_no(self):
         packages = ["package1=1.0", "package2", "package3=3.0"]
         commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
                                                            "package2=2.0"})
@@ -319,24 +316,24 @@ class PkgRPMInstallTestCase(testtools.TestCase):
 
     def test_permission_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=0)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 0
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPermissionError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_not_found(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=1)
-        pexpect.spawn.match = re.match('(.*)', self.pkgName)
+        pexpect.spawn.return_value.expect.return_value = 1
+        pexpect.spawn.return_value.match = re.match('(.*)', self.pkgName)
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_conflict_remove(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=2)
-        pexpect.spawn.match = re.match('(.*)', self.pkgName)
+        pexpect.spawn.return_value.expect.return_value = 2
+        pexpect.spawn.return_value.match = re.match('(.*)', self.pkgName)
         self.pkg._rpm_remove_nodeps = Mock()
         # test and verify
         self.pkg._install(self.pkgName, 5000)
@@ -344,62 +341,62 @@ class PkgRPMInstallTestCase(testtools.TestCase):
 
     def test_package_scriptlet_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=5)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 5
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgScriptletError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_http_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=6)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 6
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgDownloadError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_nomirrors_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=7)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 7
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgDownloadError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_sign_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=8)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 8
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgSignError, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
 
     def test_package_already_installed(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=9)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 9
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertTrue(self.pkg.pkg_install(self.pkgName, {}, 5000) is None)
 
     def test_package_success_updated(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=10)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 10
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertTrue(self.pkg.pkg_install(self.pkgName, {}, 5000) is None)
 
     def test_package_success_installed(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=11)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 11
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertTrue(self.pkg.pkg_install(self.pkgName, {}, 5000) is None)
 
     def test_timeout_error(self):
         # test timeout error
-        pexpect.spawn.expect = Mock(side_effect=pexpect.
-                                    TIMEOUT('timeout error'))
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.side_effect = (
+            pexpect.TIMEOUT('timeout error'))
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgTimeout, self.pkg.pkg_install,
                           self.pkgName, {}, 5000)
@@ -409,53 +406,54 @@ class PkgRPMRemoveTestCase(testtools.TestCase):
 
     def setUp(self):
         super(PkgRPMRemoveTestCase, self).setUp()
-        self.utils_execute = utils.execute
-        self.pexpect_spawn_init = pexpect.spawn.__init__
-        self.pexpect_spawn_closed = pexpect.spawn.close
         self.pkg = pkg.RedhatPackagerMixin()
         self.pkg_version = self.pkg.pkg_version
         self.pkg_install = self.pkg._install
-        utils.execute = Mock()
-        pexpect.spawn.__init__ = Mock(return_value=None)
-        pexpect.spawn.closed = Mock(return_value=None)
+
+        p0 = patch('pexpect.spawn')
+        p0.start()
+        self.addCleanup(p0.stop)
+
+        p1 = patch('trove.common.utils.execute')
+        p1.start()
+        self.addCleanup(p1.stop)
+
         self.pkg.pkg_version = Mock(return_value="OK")
         self.pkg._install = Mock(return_value=None)
         self.pkgName = 'packageName'
 
     def tearDown(self):
         super(PkgRPMRemoveTestCase, self).tearDown()
-        utils.execute = self.utils_execute
-        pexpect.spawn.__init__ = self.pexpect_spawn_init
-        pexpect.spawn.close = self.pexpect_spawn_closed
         self.pkg.pkg_version = self.pkg_version
         self.pkg._install = self.pkg_install
 
     def test_permission_error(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=0)
+        pexpect.spawn.return_value.expect.return_value = 0
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgPermissionError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
     def test_package_not_found(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=1)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 1
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgNotFoundError, self.pkg.pkg_remove,
                           self.pkgName, 5000)
 
     def test_success_remove(self):
         # test
-        pexpect.spawn.expect = Mock(return_value=2)
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.return_value = 2
+        pexpect.spawn.return_value.match = False
         self.assertTrue(self.pkg.pkg_remove(self.pkgName, 5000) is None)
 
     def test_timeout_error(self):
         # test timeout error
-        pexpect.spawn.expect = Mock(side_effect=pexpect.
-                                    TIMEOUT('timeout error'))
-        pexpect.spawn.match = False
+        pexpect.spawn.return_value.expect.side_effect = (
+            pexpect.TIMEOUT('timeout error'))
+        pexpect.spawn.return_value.match = False
         # test and verify
         self.assertRaises(pkg.PkgTimeout, self.pkg.pkg_remove,
                           self.pkgName, 5000)
