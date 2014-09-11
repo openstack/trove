@@ -39,6 +39,7 @@ SLAVE_CONFIG = """
 [mysqld]
 log_bin = /var/lib/mysql/mysql-bin.log
 relay_log = /var/lib/mysql/mysql-relay-bin.log
+read_only = true
 """
 
 REPL_BACKUP_NAMESPACE = 'trove.guestagent.strategies.backup.mysql_impl'

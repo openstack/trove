@@ -116,6 +116,13 @@ class VerifySlave(object):
         poll_until(slave_is_running())
 
     @test(depends_on=[test_correctly_started_replication])
+    def test_slave_is_read_only(self):
+        cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
+        server = create_server_connection(slave_instance.id)
+        stdout, stderr = server.execute(cmd)
+        assert_equal(stdout, "1\n")
+
+    @test(depends_on=[test_slave_is_read_only])
     def test_create_db_on_master(self):
         databases = [{'name': slave_instance.replicated_db}]
         instance_info.dbaas.databases.create(instance_info.id, databases)
@@ -173,6 +180,16 @@ class DetachReplica(object):
         assert_equal(202, instance_info.dbaas.last_http_code)
 
         poll_until(slave_is_running(False))
+
+    @test(depends_on=[test_detach_replica])
+    def test_slave_is_not_read_only(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("Test not_read_only not supported in fake mode")
+
+        cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
+        server = create_server_connection(slave_instance.id)
+        stdout, stderr = server.execute(cmd)
+        assert_equal(stdout, "0\n")
 
 
 @test(groups=[GROUP],
