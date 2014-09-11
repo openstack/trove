@@ -29,6 +29,12 @@ def get_os():
         return DEBIAN
 
 
+def file_discovery(file_candidates):
+    for file in file_candidates:
+        if os.path.isfile(file):
+            return file
+
+
 def service_discovery(service_candidates):
     """
     This function discovering how to start, stop, enable, disable service

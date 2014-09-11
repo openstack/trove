@@ -30,6 +30,8 @@ from trove.openstack.common.gettextutils import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+CONFIG_FILE = (operating_system.
+               file_discovery(system.CONFIG_CANDIDATES))
 
 
 class MongoDBApp(object):
@@ -174,11 +176,10 @@ class MongoDBApp(object):
                     t.write(config_contents)
 
                 LOG.info(_("Moving %(a)s to %(b)s")
-                         % {'a': system.TMP_CONFIG,
-                            'b': system.CONFIG})
+                         % {'a': system.TMP_CONFIG, 'b': CONFIG_FILE})
                 utils.execute_with_timeout("mv",
                                            system.TMP_CONFIG,
-                                           system.CONFIG,
+                                           CONFIG_FILE,
                                            run_as_root=True,
                                            root_helper="sudo")
             except Exception:
@@ -189,10 +190,10 @@ class MongoDBApp(object):
 
     def _read_config(self):
         try:
-            with open(system.CONFIG, 'r') as f:
+            with open(CONFIG_FILE, 'r') as f:
                 return f.read()
         except IOError:
-            LOG.info(_("Config file %s not found") % system.CONFIG)
+            LOG.info(_("Config file %s not found") % CONFIG_FILE)
             return ''
 
     def _delete_config_parameters(self, config_contents, parameters):
@@ -235,10 +236,11 @@ class MongoDBApp(object):
         self.start_db_with_conf_changes(contents)
 
     def write_mongos_upstart(self):
-
+        upstart_contents = (system.MONGOS_UPSTART_CONTENTS.
+                            format(config_file_placeholder=CONFIG_FILE))
         LOG.info(_("Writing %s") % system.TMP_MONGOS_UPSTART)
         with open(system.TMP_MONGOS_UPSTART, 'w') as t:
-            t.write(system.MONGOS_UPSTART_CONTENTS)
+            t.write(upstart_contents)
 
         LOG.info(_("Moving %(a)s to %(b)s")
                  % {'a': system.TMP_MONGOS_UPSTART,
@@ -335,7 +337,7 @@ class MongoDbAppStatus(service.BaseDbStatus):
         if self.is_config_server is None:
             try:
                 cmd = ("grep '^configsvr[ \t]*=[ \t]*true$' %s"
-                       % system.CONFIG)
+                       % CONFIG_FILE)
                 utils.execute_with_timeout(cmd, shell=True)
                 self.is_config_server = True
             except exception.ProcessExecutionError:
@@ -346,7 +348,7 @@ class MongoDbAppStatus(service.BaseDbStatus):
         if self.is_query_router is None:
             try:
                 cmd = ("grep '^configdb[ \t]*=.*$' %s"
-                       % system.CONFIG)
+                       % CONFIG_FILE)
                 utils.execute_with_timeout(cmd, shell=True)
                 self.is_query_router = True
             except exception.ProcessExecutionError:
