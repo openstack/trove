@@ -265,7 +265,7 @@ class MongoDBApp(object):
             This method removes from json, values that are functions like
             ISODate(), TimeStamp().
             """
-            return re.sub(':\s*\w+\((.*)\)', r": \1", (val))
+            return re.sub(':\s*\w+\(\"?(.*?)\"?\)', r': "\1"', val)
 
         def check_initiate_status():
             """
