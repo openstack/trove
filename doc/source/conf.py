@@ -13,8 +13,7 @@
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.intersphinx',
-              'sphinx.ext.todo',
+extensions = ['sphinx.ext.todo',
               'sphinx.ext.viewcode',
               'oslosphinx']
 
@@ -315,7 +314,3 @@ epub_copyright = u'2013, OpenStack Foundation'
 
 # If false, no index is generated.
 #epub_use_index = True
-
-
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None}
