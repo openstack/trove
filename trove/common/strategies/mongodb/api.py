@@ -93,6 +93,8 @@ class MongoDbCluster(models.Cluster):
                         if instance.get('volume_size', None)]
         volume_size = None
         if mongo_conf.volume_support:
+            if len(volume_sizes) != num_instances:
+                raise exception.ClusterVolumeSizeRequired()
             if len(set(volume_sizes)) != 1:
                 raise exception.ClusterVolumeSizesNotEqual()
             volume_size = volume_sizes[0]
