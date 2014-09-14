@@ -27,6 +27,7 @@ from trove.datastore import models as datastore_models
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 from trove.openstack.common import log as logging
+from trove.openstack.common import strutils
 from trove.openstack.common.gettextutils import _
 import trove.common.apischema as apischema
 
@@ -178,8 +179,8 @@ class InstanceController(wsgi.Controller):
     def create(self, req, body, tenant_id):
         # TODO(hub-cap): turn this into middleware
         LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
-        LOG.info(logging.mask_password(_("req : '%s'\n\n") % req))
-        LOG.info(logging.mask_password(_("body : '%s'\n\n") % body))
+        LOG.info(strutils.mask_password(_("req : '%s'\n\n") % req))
+        LOG.info(strutils.mask_password(_("body : '%s'\n\n") % body))
         context = req.environ[wsgi.CONTEXT_KEY]
         datastore_args = body['instance'].get('datastore', {})
         datastore, datastore_version = (
