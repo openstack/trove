@@ -73,24 +73,27 @@ def initialize_trove(config_file):
 def datastore_init():
     # Adds the datastore for mysql (needed to make most calls work).
     from trove.datastore import models
+    from trove.configuration.models import DatastoreConfigurationParameters
 
     models.DBDatastore.create(id=CONFIG.dbaas_datastore_id,
                               name=CONFIG.dbaas_datastore,
                               default_version_id=
                               CONFIG.dbaas_datastore_version_id)
+
     models.DBDatastore.create(id=CONFIG.dbaas_datastore_id_no_versions,
                               name='Test_Datastore_1',
                               default_version_id=None)
 
-    models.DBDatastoreVersion.create(id=CONFIG.dbaas_datastore_version_id,
-                                     datastore_id=
-                                     CONFIG.dbaas_datastore_id,
-                                     name=CONFIG.dbaas_datastore_version,
-                                     manager="mysql",
-                                     image_id=
-                                     'c00000c0-00c0-0c00-00c0-000c000000cc',
-                                     packages='test packages',
-                                     active=1)
+    main_dsv = models.DBDatastoreVersion.create(
+        id=CONFIG.dbaas_datastore_version_id,
+        datastore_id=
+        CONFIG.dbaas_datastore_id,
+        name=CONFIG.dbaas_datastore_version,
+        manager="mysql",
+        image_id=
+        'c00000c0-00c0-0c00-00c0-000c000000cc',
+        packages='test packages',
+        active=1)
     models.DBDatastoreVersion.create(id="d00000d0-00d0-0d00-00d0-000d000000dd",
                                      datastore_id=
                                      CONFIG.dbaas_datastore_id,
@@ -99,6 +102,25 @@ def datastore_init():
                                      image_id=
                                      'c00000c0-00c0-0c00-00c0-000c000000cc',
                                      packages=None, active=0)
+
+    def add_parm(name, data_type, max_size, min_size=0, restart_required=0):
+        DatastoreConfigurationParameters.create(
+            datastore_version_id=main_dsv.id,
+            name=name,
+            restart_required=restart_required,
+            max_size=max_size,
+            min_size=0,
+            data_type=data_type,
+            deleted=0,
+            deleted_at=None)
+
+    add_parm('key_buffer_size', 'integer', 4294967296)
+    add_parm('connect_timeout', 'integer', 65535)
+    add_parm('join_buffer_size', 'integer', 4294967296)
+    add_parm('local_infile', 'integer', 1)
+    add_parm('collation_server', 'string', None, None)
+    add_parm('innodb_buffer_pool_size', 'integer', 57671680,
+             restart_required=1)
 
 
 def initialize_database():
@@ -172,6 +194,7 @@ if __name__ == "__main__":
         from trove.tests.api import instances_delete  # noqa
         from trove.tests.api import instances_mysql_down  # noqa
         from trove.tests.api import instances_resize  # noqa
+        from trove.tests.api import configurations  # noqa
         from trove.tests.api import databases  # noqa
         from trove.tests.api import datastores  # noqa
         from trove.tests.api import replication  # noqa

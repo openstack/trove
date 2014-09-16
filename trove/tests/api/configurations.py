@@ -33,7 +33,6 @@ from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
-from trove.tests.util import test_config
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import CollectionCheck
 from trove.tests.util.check import TypeCheck
@@ -279,7 +278,8 @@ class CreateConfigurations(ConfigurationsTestBase):
         expected_configs = self.expected_default_datastore_configs()
         values = json.dumps(expected_configs.get('appending_values'))
         # ensure updated timestamp is different than created
-        sleep(1)
+        if not CONFIG.fake_mode:
+            sleep(1)
         instance_info.dbaas.configurations.edit(configuration_info.id,
                                                 values)
         resp, body = instance_info.dbaas.client.last_response
@@ -358,7 +358,8 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
         # check that created and updated timestamps differ, since
         # test_appending_to_existing_configuration should have changed the
         # updated timestamp
-        assert_not_equal(result.created, result.updated)
+        if not CONFIG.fake_mode:
+            assert_not_equal(result.created, result.updated)
 
         assert_equal(result.instance_count, 1)
 
@@ -520,9 +521,6 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
     @test
     def test_start_instance_with_configuration(self):
         # test that a new instance will apply the configuration on create
-        if test_config.auth_strategy == "fake":
-            raise SkipTest("Skipping instance start with configuration "
-                           "test for fake mode.")
         global configuration_instance
         databases = []
         databases.append({"name": "firstdbconfig", "character_set": "latin2",
@@ -558,9 +556,6 @@ class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
     @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_instance_with_configuration_active(self):
         # wait for the instance to become active
-        if test_config.auth_strategy == "fake":
-            raise SkipTest("Skipping instance start with configuration "
-                           "test for fake mode.")
 
         def result_is_active():
             instance = instance_info.dbaas.instances.get(
