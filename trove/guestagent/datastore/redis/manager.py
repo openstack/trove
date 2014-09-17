@@ -215,7 +215,8 @@ class Manager(periodic_task.PeriodicTasks):
         raise exception.DatastoreOperationNotSupported(
             operation='is_root_enabled', datastore=MANAGER)
 
-    def get_replication_snapshot(self, context, snapshot_info):
+    def get_replication_snapshot(self, context, snapshot_info,
+                                 replica_source_config=None):
         raise exception.DatastoreOperationNotSupported(
             operation='get_replication_snapshot', datastore=MANAGER)
 

@@ -64,7 +64,7 @@ MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYCNF_OVERRIDES = "/etc/mysql/conf.d/overrides.cnf"
 MYCNF_OVERRIDES_TMP = "/tmp/overrides.cnf.tmp"
-MYCNF_REPLMASTER = "/etc/mysql/conf.d/replication.cnf"
+MYCNF_REPLMASTER = "/etc/mysql/conf.d/0replication.cnf"
 MYCNF_REPLMASTER_TMP = "/tmp/replication.cnf.tmp"
 
 

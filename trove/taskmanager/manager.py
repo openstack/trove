@@ -104,7 +104,7 @@ class Manager(periodic_task.PeriodicTasks):
         finally:
             Backup.delete(context, snapshot['dataset']['snapshot_id'])
 
-        instance_tasks.attach_replication_slave(snapshot)
+        instance_tasks.attach_replication_slave(snapshot, flavor)
 
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,

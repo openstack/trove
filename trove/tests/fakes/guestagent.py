@@ -323,7 +323,8 @@ class FakeGuest(object):
     def apply_overrides(self, overrides):
         self.overrides = overrides
 
-    def get_replication_snapshot(self, snapshot_info):
+    def get_replication_snapshot(self, snapshot_info,
+                                 replica_source_config=None):
         self.create_backup(snapshot_info)
         return {
             'dataset':

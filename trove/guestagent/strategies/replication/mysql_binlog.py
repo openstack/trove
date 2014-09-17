@@ -81,13 +81,17 @@ class MysqlBinlogReplication(base.Replication):
         log_position = {}
         return snapshot_id, log_position
 
-    def enable_as_master(self, service, snapshot_info):
-        service.write_replication_overrides(MASTER_CONFIG)
+    def enable_as_master(self, service, snapshot_info, master_config):
+        if not master_config:
+            master_config = MASTER_CONFIG
+        service.write_replication_overrides(master_config)
         service.restart()
         service.grant_replication_privilege()
 
-    def enable_as_slave(self, service, snapshot):
-        service.write_replication_overrides(SLAVE_CONFIG)
+    def enable_as_slave(self, service, snapshot, slave_config):
+        if not slave_config:
+            slave_config = SLAVE_CONFIG
+        service.write_replication_overrides(slave_config)
         service.restart()
         service.change_master_for_binlog(
             snapshot['master']['host'],

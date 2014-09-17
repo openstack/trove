@@ -325,16 +325,18 @@ class API(proxy.RpcProxy):
         LOG.debug("Applying overrides values %s." % overrides)
         self._cast("apply_overrides", overrides=overrides)
 
-    def get_replication_snapshot(self, snapshot_info=None):
+    def get_replication_snapshot(self, snapshot_info=None,
+                                 replica_source_config=None):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
         return self._call("get_replication_snapshot", AGENT_SNAPSHOT_TIMEOUT,
-                          snapshot_info=snapshot_info)
+                          snapshot_info=snapshot_info,
+                          replica_source_config=replica_source_config)
 
-    def attach_replication_slave(self, snapshot, slave_config=None):
+    def attach_replication_slave(self, snapshot, replica_config=None):
         LOG.debug("Configuring instance %s to replicate from %s.",
                   self.id, snapshot.get('master').get('id'))
         self._cast("attach_replication_slave", snapshot=snapshot,
-                   slave_config=slave_config)
+                   slave_config=replica_config)
 
     def detach_replica(self):
         LOG.debug("Detaching replica %s from its replication source.", self.id)

@@ -163,6 +163,18 @@ class ConfigurationMixin(object):
         config.render(overrides=overrides)
         return config
 
+    def _render_replica_source_config(self, flavor):
+        config = template.ReplicaSourceConfigTemplate(
+            self.datastore_version, flavor, self.id)
+        config.render()
+        return config
+
+    def _render_replica_config(self, flavor):
+        config = template.ReplicaConfigTemplate(
+            self.datastore_version, flavor, self.id)
+        config.render()
+        return config
+
     def _render_config_dict(self, flavor):
         config = template.SingleInstanceConfigTemplate(
             self.datastore_version, flavor, self.id)
@@ -313,10 +325,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.exception(_("Failed to send usage create-event for "
                             "instance %s.") % self.id)
 
-    def attach_replication_slave(self, snapshot, slave_config=None):
+    def attach_replication_slave(self, snapshot, flavor):
         LOG.debug("Calling attach_replication_slave for %s.", self.id)
         try:
-            self.guest.attach_replication_slave(snapshot, slave_config)
+            replica_config = self._render_replica_config(flavor)
+            self.guest.attach_replication_slave(snapshot,
+                                                replica_config.config_contents)
         except GuestError as e:
             msg = (_("Error attaching instance %s "
                      "as replica.") % self.id)
@@ -351,7 +365,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 'datastore': master.datastore.name,
                 'datastore_version': master.datastore_version.name,
             })
-            snapshot = master.get_replication_snapshot(snapshot_info)
+            snapshot = master.get_replication_snapshot(
+                snapshot_info, flavor=master.flavor_id)
             return snapshot
         except TroveError as e:
             msg = (_("Error creating replication snapshot "
@@ -912,12 +927,14 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         LOG.info(_("Initiating backup for instance %s.") % self.id)
         self.guest.create_backup(backup_info)
 
-    def get_replication_snapshot(self, snapshot_info):
+    def get_replication_snapshot(self, snapshot_info, flavor):
 
         def _get_replication_snapshot():
             LOG.debug("Calling get_replication_snapshot on %s.", self.id)
             try:
-                result = self.guest.get_replication_snapshot(snapshot_info)
+                rep_source_config = self._render_replica_source_config(flavor)
+                result = self.guest.get_replication_snapshot(
+                    snapshot_info, rep_source_config.config_contents)
                 LOG.debug("Got replication snapshot from guest successfully.")
                 return result
             except (GuestError, GuestTimeout):

@@ -135,3 +135,11 @@ def load_heat_template(datastore_manager):
             {"s_datastore_manager": datastore_manager})
         LOG.error(msg)
         raise exception.TroveError(msg)
+
+
+class ReplicaSourceConfigTemplate(SingleInstanceConfigTemplate):
+    template_name = "replica_source.config.template"
+
+
+class ReplicaConfigTemplate(SingleInstanceConfigTemplate):
+    template_name = "replica.config.template"

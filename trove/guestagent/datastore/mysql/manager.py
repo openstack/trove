@@ -214,12 +214,14 @@ class Manager(periodic_task.PeriodicTasks):
         app = MySqlApp(MySqlAppStatus.get())
         app.apply_overrides(overrides)
 
-    def get_replication_snapshot(self, context, snapshot_info):
+    def get_replication_snapshot(self, context, snapshot_info,
+                                 replica_source_config=None):
         LOG.debug("Getting replication snapshot.")
         app = MySqlApp(MySqlAppStatus.get())
 
         replication = REPLICATION_STRATEGY_CLASS(context)
-        replication.enable_as_master(app, snapshot_info)
+        replication.enable_as_master(app, snapshot_info,
+                                     replica_source_config)
 
         snapshot_id, log_position = (
             replication.snapshot_for_replication(context, app, None,
@@ -264,7 +266,7 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             self._validate_slave_for_replication(context, snapshot)
             replication = REPLICATION_STRATEGY_CLASS(context)
-            replication.enable_as_slave(app, snapshot)
+            replication.enable_as_slave(app, snapshot, slave_config)
         except Exception:
             LOG.exception("Error enabling replication.")
             app.status.set_status(rd_instance.ServiceStatuses.FAILED)

@@ -281,11 +281,12 @@ class GuestAgentManagerTest(testtools.TestCase):
             'log_position': log_position
         }
 
-        master_config = None
+        snapshot_info = None
+        replica_source_config = None
         # entry point
         replication_snapshot = (
-            self.manager.get_replication_snapshot(self.context,
-                                                  master_config))
+            self.manager.get_replication_snapshot(self.context, snapshot_info,
+                                                  replica_source_config))
         # assertions
         self.assertEqual(expected_replication_snapshot, replication_snapshot)
         self.assertEqual(mock_replication.enable_as_master.call_count, 1)

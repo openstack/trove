@@ -34,14 +34,18 @@ class TemplateTest(testtools.TestCase):
     def tearDown(self):
         super(TemplateTest, self).tearDown()
 
-    def validate_template(self, contents, teststr, test_flavor, server_id):
-        # expected query_cache_size = {{ 8 * flavor_multiplier }}M
-        flavor_multiplier = test_flavor['ram'] / 512
+    def _find_in_template(self, contents, teststr):
         found_group = None
         for line in contents.split('\n'):
             m = re.search('^%s.*' % teststr, line)
             if m:
                 found_group = m.group(0)
+        return found_group
+
+    def validate_template(self, contents, teststr, test_flavor, server_id):
+        # expected query_cache_size = {{ 8 * flavor_multiplier }}M
+        flavor_multiplier = test_flavor['ram'] / 512
+        found_group = self._find_in_template(contents, teststr)
         if not found_group:
             raise "Could not find text in template"
         # Check that the last group has been rendered
@@ -80,6 +84,26 @@ class TemplateTest(testtools.TestCase):
                                                        self.server_id)
         self.validate_template(config.render(), "hyper",
                                {'ram': 0}, self.server_id)
+
+    def test_replica_source_config_rendering(self):
+        datastore = Mock(spec=DatastoreVersion)
+        datastore.datastore_name = 'MySql'
+        datastore.name = 'mysql-5.6'
+        datastore.manager = 'mysql'
+        config = template.ReplicaSourceConfigTemplate(datastore,
+                                                      self.flavor_dict,
+                                                      self.server_id)
+        self.assertTrue(self._find_in_template(config.render(), "log_bin"))
+
+    def test_replica_config_rendering(self):
+        datastore = Mock(spec=DatastoreVersion)
+        datastore.datastore_name = 'MySql'
+        datastore.name = 'mysql-5.6'
+        datastore.manager = 'mysql'
+        config = template.ReplicaConfigTemplate(datastore,
+                                                self.flavor_dict,
+                                                self.server_id)
+        self.assertTrue(self._find_in_template(config.render(), "relay_log"))
 
 
 class HeatTemplateLoadTest(testtools.TestCase):
