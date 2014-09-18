@@ -392,13 +392,18 @@ def create_or_update_datastore_configuration_parameter(name,
         get_db_api().save(config)
 
 
-def load_datastore_configuration_parameters(datastore_version_id, config_file):
+def load_datastore_configuration_parameters(datastore,
+                                            datastore_version,
+                                            config_file):
+    get_db_api().configure_db(CONF)
+    (ds, ds_v) = dstore_models.get_datastore_version(
+        type=datastore, version=datastore_version)
     with open(config_file) as f:
         config = json.load(f)
         for param in config['configuration-parameters']:
             create_or_update_datastore_configuration_parameter(
                 param['name'],
-                datastore_version_id,
+                ds_v.id,
                 param['restart_required'],
                 param['type'],
                 param.get('max'),

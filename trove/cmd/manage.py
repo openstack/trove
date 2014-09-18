@@ -82,12 +82,13 @@ class Commands(object):
         self.db_sync(repo_path)
 
     def db_load_datastore_config_parameters(self,
-                                            datastore_version_id,
+                                            datastore,
+                                            datastore_version,
                                             config_file_location):
-        print("Loading config parameters for datastore version: %s"
-              % datastore_version_id)
+        print("Loading config parameters for datastore (%s) version (%s)"
+              % (datastore, datastore_version))
         config_models.load_datastore_configuration_parameters(
-            datastore_version_id, config_file_location)
+            datastore, datastore_version, config_file_location)
 
     def params_of(self, command_name):
         if Commands.has(command_name):
@@ -157,8 +158,11 @@ def main():
             description='Loads configuration group parameter validation rules '
             'for a datastore version into the database.')
         parser.add_argument(
-            'datastore_version_id',
-            help='UUID of the datastore version.')
+            'datastore',
+            help='Name of the datastore.')
+        parser.add_argument(
+            'datastore_version',
+            help='Name of the datastore version.')
         parser.add_argument(
             'config_file_location',
             help='Fully qualified file path to the configuration group '
