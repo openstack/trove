@@ -297,10 +297,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # record to avoid over billing a customer for an instance that
         # fails to build properly.
         try:
-            usage_timeout = CONF.usage_timeout
+            timeout = (CONF.restore_usage_timeout if backup_info
+                       else CONF.usage_timeout)
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
-                             time_out=usage_timeout)
+                             time_out=timeout)
             LOG.info(_("Created instance %s successfully.") % self.id)
             self.send_usage_event('create', instance_size=flavor['ram'])
         except PollTimeOut:
@@ -357,7 +358,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                      "from instance %(source)s "
                      "for new replica %(replica)s.") % {'source': slave_of_id,
                                                         'replica': self.id})
-            err = inst_models.InstanceTasks.BUILDING_ERROR_SLAVE
+            err = inst_models.InstanceTasks.BUILDING_ERROR_REPLICA
             Backup.delete(context, snapshot_info['id'])
             self._log_and_raise(e, msg, err)
         except Exception:
