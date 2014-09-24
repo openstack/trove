@@ -207,7 +207,7 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
 
         delay, error = self._limiter.check_for_delay(verb, url, tenant_id)
 
-        if delay:
+        if delay and self.enabled():
             msg = _("This request was rate-limited.")
             retry = time.time() + delay
             return base_wsgi.OverLimitFault(msg, error, retry)
@@ -215,6 +215,9 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
         req.environ["trove.limits"] = self._limiter.get_limits(tenant_id)
 
         return self.application
+
+    def enabled(self):
+        return True
 
 
 class Limiter(object):
