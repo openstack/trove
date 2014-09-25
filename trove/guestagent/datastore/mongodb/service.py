@@ -16,6 +16,7 @@
 import json
 import re
 
+import os
 from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
@@ -168,13 +169,21 @@ class MongoDBApp(object):
         LOG.info(_("Updating MongoDB config"))
         if config_contents:
             LOG.info(_("Writing %s") % system.TMP_CONFIG)
-            with open(system.TMP_CONFIG, 'w') as t:
-                t.write(config_contents)
+            try:
+                with open(system.TMP_CONFIG, 'w') as t:
+                    t.write(config_contents)
 
-            LOG.info(_("Moving %(a)s to %(b)s")
-                     % {'a': system.TMP_CONFIG, 'b': system.CONFIG})
-            utils.execute_with_timeout("mv", system.TMP_CONFIG, system.CONFIG,
-                                       run_as_root=True, root_helper="sudo")
+                LOG.info(_("Moving %(a)s to %(b)s")
+                         % {'a': system.TMP_CONFIG,
+                            'b': system.CONFIG})
+                utils.execute_with_timeout("mv",
+                                           system.TMP_CONFIG,
+                                           system.CONFIG,
+                                           run_as_root=True,
+                                           root_helper="sudo")
+            except Exception:
+                os.unlink(system.TMP_CONFIG)
+                raise
         else:
             LOG.info(_("Empty config_contents. Do nothing"))
 

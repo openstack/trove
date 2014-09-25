@@ -490,6 +490,8 @@ class MySqlAppTest(testtools.TestCase):
         super(MySqlAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = dbaas.utils.execute_with_timeout
         self.orig_time_sleep = time.sleep
+        self.orig_unlink = os.unlink
+        self.orig_get_auth_password = dbaas.get_auth_password
         util.init_db()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
@@ -505,11 +507,15 @@ class MySqlAppTest(testtools.TestCase):
         dbaas.operating_system.service_discovery = Mock(return_value=
                                                         mysql_service)
         time.sleep = Mock()
+        os.unlink = Mock()
+        dbaas.get_auth_password = Mock()
 
     def tearDown(self):
         super(MySqlAppTest, self).tearDown()
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
+        os.unlink = self.orig_unlink
+        dbaas.get_auth_password = self.orig_get_auth_password
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
@@ -679,6 +685,31 @@ class MySqlAppTest(testtools.TestCase):
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         dbaas.utils.execute_with_timeout = mocked
         self.assertRaises(ProcessExecutionError, self.mySqlApp.start_mysql)
+
+    def test_mysql_error_in_write_config_verify_unlink(self):
+        configuration = {'config_contents': 'some junk'}
+        from trove.common.exception import ProcessExecutionError
+        dbaas.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('something')))
+
+        self.assertRaises(ProcessExecutionError,
+                          self.mySqlApp.reset_configuration,
+                          configuration=configuration)
+        self.assertEqual(dbaas.utils.execute_with_timeout.call_count, 1)
+        self.assertEqual(os.unlink.call_count, 1)
+        self.assertEqual(dbaas.get_auth_password.call_count, 1)
+
+    def test_mysql_error_in_write_config(self):
+        configuration = {'config_contents': 'some junk'}
+        from trove.common.exception import ProcessExecutionError
+        dbaas.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('something')))
+
+        self.assertRaises(ProcessExecutionError,
+                          self.mySqlApp.reset_configuration,
+                          configuration=configuration)
+        self.assertEqual(dbaas.utils.execute_with_timeout.call_count, 1)
+        self.assertEqual(dbaas.get_auth_password.call_count, 1)
 
 
 class MySqlAppInstallTest(MySqlAppTest):
@@ -1415,6 +1446,8 @@ class CassandraDBAppTest(testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
         self.cassandra = cass_service.CassandraApp(self.appStatus)
+        self.orig_unlink = os.unlink
+        os.unlink = Mock()
 
     def tearDown(self):
 
@@ -1425,6 +1458,7 @@ class CassandraDBAppTest(testtools.TestCase):
         cass_service.packager.pkg_version = self.pkg_version
         cass_service.packager = self.pkg
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        os.unlink = self.orig_unlink
 
     def assert_reported_status(self, expected_status):
         service_status = InstanceServiceStatus.find_by(
@@ -1537,6 +1571,29 @@ class CassandraDBAppTest(testtools.TestCase):
                           ['cassandra=1.2.10'])
 
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_cassandra_error_in_write_config_verify_unlink(self):
+        from trove.common.exception import ProcessExecutionError
+        cass_service.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('some exception')))
+        configuration = 'this is my configuration'
+
+        self.assertRaises(ProcessExecutionError,
+                          self.cassandra.write_config,
+                          config_contents=configuration)
+        self.assertEqual(cass_service.utils.execute_with_timeout.call_count, 1)
+        self.assertEqual(os.unlink.call_count, 1)
+
+    def test_cassandra_error_in_write_config(self):
+        from trove.common.exception import ProcessExecutionError
+        cass_service.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('some exception')))
+        configuration = 'this is my configuration'
+
+        self.assertRaises(ProcessExecutionError,
+                          self.cassandra.write_config,
+                          config_contents=configuration)
+        self.assertEqual(cass_service.utils.execute_with_timeout.call_count, 1)
 
 
 class CouchbaseAppTest(testtools.TestCase):
@@ -1657,6 +1714,7 @@ class MongoDBAppTest(testtools.TestCase):
         self.orig_time_sleep = time.sleep
         self.orig_packager = mongo_system.PACKAGER
         self.orig_service_discovery = operating_system.service_discovery
+        self.orig_os_unlink = os.unlink
 
         operating_system.service_discovery = (
             self.fake_mongodb_service_discovery)
@@ -1668,6 +1726,7 @@ class MongoDBAppTest(testtools.TestCase):
                                        rd_instance.ServiceStatuses.NEW)
         self.mongoDbApp = mongo_service.MongoDBApp(self.appStatus)
         time.sleep = Mock()
+        os.unlink = Mock()
 
     def tearDown(self):
         super(MongoDBAppTest, self).tearDown()
@@ -1676,6 +1735,7 @@ class MongoDBAppTest(testtools.TestCase):
         time.sleep = self.orig_time_sleep
         mongo_system.PACKAGER = self.orig_packager
         operating_system.service_discovery = self.orig_service_discovery
+        os.unlink = self.orig_os_unlink
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
@@ -1762,6 +1822,31 @@ class MongoDBAppTest(testtools.TestCase):
         mongo_service.utils.execute_with_timeout = mocked
 
         self.assertRaises(RuntimeError, self.mongoDbApp.start_db)
+
+    def test_mongodb_error_in_write_config_verify_unlink(self):
+        configuration = {'config_contents': 'some junk'}
+        from trove.common.exception import ProcessExecutionError
+        mongo_service.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('some exception')))
+
+        self.assertRaises(ProcessExecutionError,
+                          self.mongoDbApp.reset_configuration,
+                          configuration=configuration)
+        self.assertEqual(
+            mongo_service.utils.execute_with_timeout.call_count, 1)
+        self.assertEqual(os.unlink.call_count, 1)
+
+    def test_mongodb_error_in_write_config(self):
+        configuration = {'config_contents': 'some junk'}
+        from trove.common.exception import ProcessExecutionError
+        mongo_service.utils.execute_with_timeout = (
+            Mock(side_effect=ProcessExecutionError('some exception')))
+
+        self.assertRaises(ProcessExecutionError,
+                          self.mongoDbApp.reset_configuration,
+                          configuration=configuration)
+        self.assertEqual(
+            mongo_service.utils.execute_with_timeout.call_count, 1)
 
     def test_start_db_with_conf_changes_db_is_running(self):
 

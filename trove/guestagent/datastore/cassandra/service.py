@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import yaml
 from trove.common import cfg
 from trove.common import utils
@@ -119,12 +120,19 @@ class CassandraApp(object):
     def write_config(self, config_contents):
         LOG.debug('Defining temp config holder at %s.' %
                   system.CASSANDRA_TEMP_CONF)
-        with open(system.CASSANDRA_TEMP_CONF, 'w+') as conf:
-            conf.write(config_contents)
-        LOG.info(_('Writing new config.'))
-        utils.execute_with_timeout("sudo", "mv",
-                                   system.CASSANDRA_TEMP_CONF,
-                                   system.CASSANDRA_CONF)
+
+        try:
+            with open(system.CASSANDRA_TEMP_CONF, 'w+') as conf:
+                conf.write(config_contents)
+
+            LOG.info(_('Writing new config.'))
+
+            utils.execute_with_timeout("sudo", "mv",
+                                       system.CASSANDRA_TEMP_CONF,
+                                       system.CASSANDRA_CONF)
+        except Exception:
+            os.unlink(system.CASSANDRA_TEMP_CONF)
+            raise
 
     def read_conf(self):
         """Returns cassandra.yaml in dict structure."""

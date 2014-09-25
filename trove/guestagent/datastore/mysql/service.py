@@ -780,16 +780,22 @@ class MySqlApp(object):
         if admin_password is None:
             admin_password = get_auth_password()
 
-        with open(TMP_MYCNF, 'w') as t:
-            t.write(config_contents)
-        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   MYSQL_CONFIG)
+        try:
+            with open(TMP_MYCNF, 'w') as t:
+                t.write(config_contents)
 
-        self._write_temp_mycnf_with_admin_account(MYSQL_CONFIG,
-                                                  TMP_MYCNF,
-                                                  admin_password)
-        utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                   MYSQL_CONFIG)
+            utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
+                                       MYSQL_CONFIG)
+
+            self._write_temp_mycnf_with_admin_account(MYSQL_CONFIG,
+                                                      TMP_MYCNF,
+                                                      admin_password)
+
+            utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
+                                       MYSQL_CONFIG)
+        except Exception:
+            os.unlink(TMP_MYCNF)
+            raise
 
         self.wipe_ib_logfiles()
 
