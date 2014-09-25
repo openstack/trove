@@ -14,8 +14,12 @@
 
 
 import mock
+import os
 import pkg_resources
 import testtools
+import trove
+
+import ConfigParser as config_parser
 
 from trove.common import extensions
 from trove.extensions.routes.account import Account
@@ -71,7 +75,19 @@ class TestExtensionLoading(testtools.TestCase):
             for clazz in DEFAULT_EXTENSION_MAP[alias]:
                 self.assertIsInstance(ext, clazz, "Improper extension class")
 
-    def test_default_extensions(self):
+    @mock.patch("pkg_resources.iter_entry_points")
+    def test_default_extensions(self, mock_iter_eps):
+        trove_base = os.path.abspath(os.path.join(
+            os.path.dirname(trove.__file__), ".."))
+        setup_path = "%s/setup.cfg" % trove_base
+        # check if we are running as unit test without module installed
+        if os.path.isfile(setup_path):
+            parser = config_parser.ConfigParser()
+            parser.read(setup_path)
+            entry_points = parser.get(
+                'entry_points', extensions.ExtensionManager.EXT_NAMESPACE)
+            eps = pkg_resources.EntryPoint.parse_group('plugins', entry_points)
+            mock_iter_eps.return_value = eps.values()
         extension_mgr = extensions.ExtensionManager()
         self.assertEqual(DEFAULT_EXTENSION_MAP.keys().sort(),
                          extension_mgr.extensions.keys().sort(),
