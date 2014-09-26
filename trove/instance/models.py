@@ -553,6 +553,11 @@ class BaseInstance(SimpleInstance):
                is_cluster_deleting(self.context, self.db_info.cluster_id)):
                 raise exception.ClusterInstanceOperationNotSupported()
 
+            if self.slaves:
+                msg = _("Detach replicas before deleting replica source.")
+                LOG.warn(msg)
+                raise exception.ReplicaSourceDeleteForbidden(msg)
+
             self.update_db(task_status=InstanceTasks.DELETING,
                            configuration_id=None)
             task_api.API(self.context).delete_instance(self.id)

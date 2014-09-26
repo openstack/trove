@@ -317,6 +317,9 @@ class Controller(object):
             exception.Forbidden,
             exception.SwiftAuthError,
         ],
+        webob.exc.HTTPForbidden: [
+            exception.ReplicaSourceDeleteForbidden,
+        ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,
             exception.BadRequest,

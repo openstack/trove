@@ -173,6 +173,12 @@ class TestInstanceListing(object):
 class DetachReplica(object):
 
     @test
+    def delete_before_detach_replica(self):
+        assert_raises(exceptions.Forbidden,
+                      instance_info.dbaas.instances.delete,
+                      instance_info.id)
+
+    @test
     @time_out(5 * 60)
     def test_detach_replica(self):
         if CONFIG.fake_mode:
