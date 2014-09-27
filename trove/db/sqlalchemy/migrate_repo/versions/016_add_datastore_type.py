@@ -22,6 +22,7 @@ from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy import utils as db_utils
 
 
 meta = MetaData()
@@ -65,9 +66,19 @@ def upgrade(migrate_engine):
 
 def downgrade(migrate_engine):
     meta.bind = migrate_engine
-    drop_tables([datastores, datastore_versions])
     instances = Table('instances', meta, autoload=True)
+    constraint_names = db_utils.get_foreign_key_constraint_names(
+        engine=migrate_engine,
+        table='instances',
+        columns=['datastore_version_id'],
+        ref_table='datastore_versions',
+        ref_columns=['id'])
+    db_utils.drop_foreign_key_constraints(
+        constraint_names=constraint_names,
+        columns=[instances.c.datastore_version_id],
+        ref_columns=[datastore_versions.c.id])
     instances.drop_column('datastore_version_id')
     service_type = Column('service_type', String(36))
     instances.create_column(service_type)
     instances.update().values({'service_type': 'mysql'}).execute()
+    drop_tables([datastore_versions, datastores])

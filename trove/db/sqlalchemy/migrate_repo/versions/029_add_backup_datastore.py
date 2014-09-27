@@ -18,6 +18,7 @@ from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy import utils as db_utils
 
 
 def upgrade(migrate_engine):
@@ -34,4 +35,15 @@ def downgrade(migrate_engine):
     meta = MetaData()
     meta.bind = migrate_engine
     backups = Table('backups', meta, autoload=True)
+    datastore_versions = Table('datastore_versions', meta, autoload=True)
+    constraint_names = db_utils.get_foreign_key_constraint_names(
+        engine=migrate_engine,
+        table='backups',
+        columns=['datastore_version_id'],
+        ref_table='datastore_versions',
+        ref_columns=['id'])
+    db_utils.drop_foreign_key_constraints(
+        constraint_names=constraint_names,
+        columns=[backups.c.datastore_version_id],
+        ref_columns=[datastore_versions.c.id])
     backups.drop_column('datastore_version_id')
