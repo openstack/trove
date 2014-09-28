@@ -150,12 +150,12 @@ def execute(*cmd, **kwargs):
         cmd = shlex.split(root_helper) + list(cmd)
 
     cmd = map(str, cmd)
+    sanitized_cmd = strutils.mask_password(' '.join(cmd))
 
     while attempts > 0:
         attempts -= 1
         try:
-            LOG.log(loglevel, 'Running cmd (subprocess): %s',
-                    strutils.mask_password(' '.join(cmd)))
+            LOG.log(loglevel, _('Running cmd (subprocess): %s'), sanitized_cmd)
             _PIPE = subprocess.PIPE  # pylint: disable=E1101
 
             if os.name == 'nt':
@@ -192,16 +192,18 @@ def execute(*cmd, **kwargs):
             LOG.log(loglevel, 'Result was %s' % _returncode)
             if not ignore_exit_code and _returncode not in check_exit_code:
                 (stdout, stderr) = result
+                sanitized_stdout = strutils.mask_password(stdout)
+                sanitized_stderr = strutils.mask_password(stderr)
                 raise ProcessExecutionError(exit_code=_returncode,
-                                            stdout=stdout,
-                                            stderr=stderr,
-                                            cmd=' '.join(cmd))
+                                            stdout=sanitized_stdout,
+                                            stderr=sanitized_stderr,
+                                            cmd=sanitized_cmd)
             return result
         except ProcessExecutionError:
             if not attempts:
                 raise
             else:
-                LOG.log(loglevel, '%r failed. Retrying.', cmd)
+                LOG.log(loglevel, _('%r failed. Retrying.'), sanitized_cmd)
                 if delay_on_retry:
                     greenthread.sleep(random.randint(20, 200) / 100.0)
         finally:
@@ -240,7 +242,8 @@ def trycmd(*args, **kwargs):
 
 def ssh_execute(ssh, cmd, process_input=None,
                 addl_env=None, check_exit_code=True):
-    LOG.debug('Running cmd (SSH): %s', cmd)
+    sanitized_cmd = strutils.mask_password(cmd)
+    LOG.debug('Running cmd (SSH): %s', sanitized_cmd)
     if addl_env:
         raise InvalidArgumentError(_('Environment not supported over SSH'))
 
@@ -254,7 +257,10 @@ def ssh_execute(ssh, cmd, process_input=None,
     # NOTE(justinsb): This seems suspicious...
     # ...other SSH clients have buffering issues with this approach
     stdout = stdout_stream.read()
+    sanitized_stdout = strutils.mask_password(stdout)
     stderr = stderr_stream.read()
+    sanitized_stderr = strutils.mask_password(stderr)
+
     stdin_stream.close()
 
     exit_status = channel.recv_exit_status()
@@ -264,11 +270,11 @@ def ssh_execute(ssh, cmd, process_input=None,
         LOG.debug('Result was %s' % exit_status)
         if check_exit_code and exit_status != 0:
             raise ProcessExecutionError(exit_code=exit_status,
-                                        stdout=stdout,
-                                        stderr=stderr,
-                                        cmd=cmd)
+                                        stdout=sanitized_stdout,
+                                        stderr=sanitized_stderr,
+                                        cmd=sanitized_cmd)
 
-    return (stdout, stderr)
+    return (sanitized_stdout, sanitized_stderr)
 
 
 def get_worker_count():
