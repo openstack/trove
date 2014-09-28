@@ -23,8 +23,8 @@ from novaclient import exceptions as nova_exceptions
 
 from trove.backup import models as bkup_models
 from trove.backup.models import Backup
-from trove.backup.models import BackupState
 from trove.backup.models import DBBackup
+from trove.backup.state import BackupState
 from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
 from trove.cluster import tasks

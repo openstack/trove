@@ -73,27 +73,6 @@ class ApiTest(testtools.TestCase):
         self.assertEqual('guestagent.' + self.FAKE_ID,
                          self.api._get_routing_key())
 
-    @mock.patch('trove.guestagent.models.AgentHeartBeat')
-    def test_check_for_heartbeat_positive(self, mock_agent):
-        self.assertTrue(self.api._check_for_hearbeat())
-
-    @mock.patch('trove.guestagent.models.AgentHeartBeat')
-    def test_check_for_heartbeat_exception(self, mock_agent):
-        # TODO(juice): maybe it would be ok to extend the test to validate
-        # the is_active method on the heartbeat
-        mock_agent.find_by.side_effect = exception.ModelNotFoundError("Uh Oh!")
-        # execute
-        self.assertRaises(exception.GuestTimeout, self.api._check_for_hearbeat)
-        # validate
-        self.assertEqual(mock_agent.is_active.call_count, 0)
-
-    @mock.patch('trove.guestagent.models.AgentHeartBeat')
-    def test_check_for_heartbeat_negative(self, mock_agent):
-        # TODO(juice): maybe it would be ok to extend the test to validate
-        # the is_active method on the heartbeat
-        mock_agent.is_active.return_value = False
-        self.assertRaises(exception.GuestTimeout, self.api._check_for_hearbeat)
-
     def test_delete_queue(self):
         trove_rpc.delete_queue = mock.Mock()
         # execute

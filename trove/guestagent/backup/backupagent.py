@@ -15,7 +15,7 @@
 #
 
 import logging
-from trove.backup.models import BackupState
+from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
 from trove.conductor import api as conductor_api

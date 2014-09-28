@@ -28,6 +28,7 @@ import trove.db.models
 from trove.taskmanager import models as taskmanager_models
 import trove.guestagent.api
 from trove.backup import models as backup_models
+from trove.backup import state
 from trove.common import remote
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
@@ -595,7 +596,7 @@ class BackupTasksTest(testtools.TestCase):
         self.backup.created = 'yesterday'
         self.backup.updated = 'today'
         self.backup.size = 2.0
-        self.backup.state = backup_models.BackupState.NEW
+        self.backup.state = state.BackupState.NEW
         self.container_content = (None,
                                   [{'name': 'first'},
                                    {'name': 'second'},
@@ -636,7 +637,7 @@ class BackupTasksTest(testtools.TestCase):
                     'dummy context', self.backup.id)
                 self.assertFalse(backup_models.Backup.delete.called)
                 self.assertEqual(
-                    backup_models.BackupState.DELETE_FAILED,
+                    state.BackupState.DELETE_FAILED,
                     self.backup.state,
                     "backup should be in DELETE_FAILED status")
 
@@ -649,7 +650,7 @@ class BackupTasksTest(testtools.TestCase):
                 'dummy context', self.backup.id)
             self.assertFalse(backup_models.Backup.delete.called)
             self.assertEqual(
-                backup_models.BackupState.DELETE_FAILED,
+                state.BackupState.DELETE_FAILED,
                 self.backup.state,
                 "backup should be in DELETE_FAILED status")
 
