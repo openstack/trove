@@ -470,6 +470,11 @@ class InsufficientSpaceForReplica(TroveError):
                 "of data.")
 
 
+class ReplicaSourceDeleteForbidden(Forbidden):
+    message = _("The replica source cannot be deleted without detaching the "
+                "replicas.")
+
+
 class ClusterNotFound(NotFound):
     message = _("Cluster '%(cluster)s' cannot be found.")
 
