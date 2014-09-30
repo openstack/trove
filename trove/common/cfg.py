@@ -364,6 +364,9 @@ common_opts = [
     cfg.IntOpt('usage_timeout', default=600,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
+    cfg.IntOpt('restore_usage_timeout', default=36000,
+               help='Maximum time (in seconds) to wait for a Guest instance '
+                    'restored from a backup to become active.'),
     cfg.IntOpt('cluster_usage_timeout', default=675,
                help='Maximum time (in seconds) to wait for a cluster to '
                     'become active.'),

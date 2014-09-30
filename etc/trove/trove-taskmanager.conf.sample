@@ -7,6 +7,8 @@ debug = True
 
 # Update the service and instance statuses if the instances fails to become
 # active within the configured usage_timeout.
+# usage_timeout = 600
+# restore_usage_timeout = 36000
 update_status_on_fail = True
 
 # The RabbitMQ broker address where a single node is used.
