@@ -139,6 +139,9 @@ common_opts = [
     cfg.IntOpt('agent_call_high_timeout', default=60,
                help="Maximum time (in seconds) to wait for Guest Agent 'slow' "
                     "requests (such as restarting the database)."),
+    cfg.IntOpt('agent_replication_snapshot_timeout', default=36000,
+               help='Maximum time (in seconds) to wait for taking a Guest '
+                    'Agent replication snapshot.'),
     # The guest_id opt definition must match the one in cmd/guest.py
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
     cfg.IntOpt('state_change_wait_time', default=3 * 60,
