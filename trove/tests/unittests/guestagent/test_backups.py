@@ -69,9 +69,9 @@ PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql "
            "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
 CRYPTO_KEY = "default_aes_cbc_key"
 
-CBBACKUP_CMD = "tar cPf - /tmp/backups"
+CBBACKUP_CMD = "tar cpPf - /tmp/backups"
 
-CBBACKUP_RESTORE = "sudo tar xPf -"
+CBBACKUP_RESTORE = "sudo tar xpPf -"
 
 
 class GuestAgentBackupTest(testtools.TestCase):

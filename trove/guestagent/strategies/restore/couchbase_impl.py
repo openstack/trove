@@ -35,7 +35,7 @@ class CbBackup(base.RestoreRunner):
     Implementation of Restore Strategy for Couchbase.
     """
     __strategy_name__ = 'cbbackup'
-    base_restore_cmd = 'sudo tar xPf -'
+    base_restore_cmd = 'sudo tar xpPf -'
 
     def __init__(self, *args, **kwargs):
         super(CbBackup, self).__init__(*args, **kwargs)
