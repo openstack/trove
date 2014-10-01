@@ -18,6 +18,7 @@ Model classes that extend the instances functionality for MySQL instances.
 """
 
 from trove.openstack.common import log as logging
+from trove.openstack.common.gettextutils import _
 
 from trove.common import exception
 from trove.instance.models import DBInstance
@@ -71,13 +72,13 @@ class DetailedHost(object):
                 instance['status'] = instance_info.status
             except exception.TroveError as re:
                 LOG.error(re)
-                LOG.error("Compute Instance ID found with no associated RD "
-                          "instance: %s" % instance['server_id'])
+                LOG.error(_("Compute Instance ID found with no associated RD "
+                          "instance: %s.") % instance['server_id'])
                 instance['id'] = None
 
     def update_all(self, context):
         num_i = len(self.instances)
-        LOG.debug("Host %s has %s instances to update" % (self.name, num_i))
+        LOG.debug("Host %s has %s instances to update." % (self.name, num_i))
         failed_instances = []
         for instance in self.instances:
             client = create_guest_client(context, instance['id'])
@@ -85,10 +86,10 @@ class DetailedHost(object):
                 client.update_guest()
             except exception.TroveError as re:
                 LOG.error(re)
-                LOG.error("Unable to update instance: %s" % instance['id'])
+                LOG.error(_("Unable to update instance: %s.") % instance['id'])
                 failed_instances.append(instance['id'])
         if len(failed_instances) > 0:
-            msg = "Failed to update instances: %s" % failed_instances
+            msg = _("Failed to update instances: %s.") % failed_instances
             raise exception.UpdateGuestError(msg)
 
     @staticmethod
