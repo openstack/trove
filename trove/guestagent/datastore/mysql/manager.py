@@ -276,7 +276,14 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Detaching replica.")
         app = MySqlApp(MySqlAppStatus.get())
         replication = REPLICATION_STRATEGY_CLASS(context)
-        replication.detach_slave(app)
+        replica_info = replication.detach_slave(app)
+        return replica_info
+
+    def cleanup_source_on_replica_detach(self, context, replica_info):
+        LOG.debug("Cleaning up the source on the detach of a replica.")
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.cleanup_source_on_replica_detach(MySqlAdmin(),
+                                                     replica_info)
 
     def demote_replication_master(self, context):
         LOG.debug("Demoting replication master.")

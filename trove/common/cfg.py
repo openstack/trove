@@ -396,10 +396,6 @@ mysql_opts = [
     cfg.StrOpt('replication_namespace',
                default='trove.guestagent.strategies.replication.mysql_binlog',
                help='Namespace to load replication strategies from.'),
-    cfg.StrOpt('replication_user', default='slave_user',
-               help='Userid for replication slave.', secret=True),
-    cfg.StrOpt('replication_password', default='NETOU7897NNLOU',
-               help='Password for replication slave user.', secret=True),
     cfg.StrOpt('mount_point', default='/var/lib/mysql',
                help="Filesystem path for mounting "
                     "volumes if volume support is enabled."),
