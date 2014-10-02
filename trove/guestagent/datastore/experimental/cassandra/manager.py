@@ -40,6 +40,10 @@ class Manager(periodic_task.PeriodicTasks):
         """Update the status of the Cassandra service."""
         self.appStatus.update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def restart(self, context):
         self.app.restart()
 

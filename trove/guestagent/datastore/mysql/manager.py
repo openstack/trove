@@ -47,6 +47,10 @@ class Manager(periodic_task.PeriodicTasks):
         """Update the status of the MySQL service."""
         MySqlAppStatus.get().update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def change_passwords(self, context, users):
         return MySqlAdmin().change_passwords(users)
 

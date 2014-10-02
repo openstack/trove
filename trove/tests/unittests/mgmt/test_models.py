@@ -28,6 +28,7 @@ from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common import remote
 from trove.datastore import models as datastore_models
+from trove.guestagent.api import API
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
@@ -425,3 +426,21 @@ class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
                                           id=deleted_instance.id,
                                           deleted=True)
             self.assertEqual(instance.id, deleted_instance.id)
+
+
+class TestMgmtInstancePing(MockMgmtInstanceTest):
+
+    def test_rpc_ping(self):
+        status = rd_instance.ServiceStatuses.RUNNING.api_status
+        instance, service_status = self.build_db_instance(
+            status, task_status=InstanceTasks.NONE)
+        mgmt_instance = mgmtmodels.MgmtInstance(instance,
+                                                instance,
+                                                None,
+                                                service_status)
+
+        with patch.object(API, 'rpc_ping', return_value=True):
+            with patch.object(API, 'get_client'):
+                self.assertTrue(mgmt_instance.rpc_ping())
+
+        self.addCleanup(self.do_cleanup, instance, service_status)

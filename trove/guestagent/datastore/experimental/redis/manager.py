@@ -48,6 +48,10 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Update status called.")
         RedisAppStatus.get().update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def change_passwords(self, context, users):
         """
         Changes the redis instance password,

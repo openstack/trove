@@ -49,6 +49,10 @@ class Manager(
     def update_status(self, context):
         PgSqlAppStatus.get().update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def prepare(
             self,
             context,

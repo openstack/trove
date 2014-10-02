@@ -137,6 +137,9 @@ class MgmtInstance(imodels.Instance):
     def get_hwinfo(self):
         return self.get_guest().get_hwinfo()
 
+    def rpc_ping(self):
+        return self.get_guest().rpc_ping()
+
 
 class MgmtInstances(imodels.Instances):
     @staticmethod

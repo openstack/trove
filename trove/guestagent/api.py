@@ -209,6 +209,11 @@ class API(object):
         return self._call("get_diagnostics", AGENT_LOW_TIMEOUT,
                           self.version_cap)
 
+    def rpc_ping(self):
+        """Make a synchronous RPC call to check if we can ping the instance."""
+        LOG.debug("Check RPC ping on instance %s.", self.id)
+        return self._call("rpc_ping", AGENT_LOW_TIMEOUT, self.version_cap)
+
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
                 backup_info=None, config_contents=None, root_password=None,

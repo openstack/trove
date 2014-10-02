@@ -54,6 +54,7 @@ class Mgmt(extensions.ExtensionDescriptor):
             member_actions={'root': 'GET',
                             'diagnostics': 'GET',
                             'hwinfo': 'GET',
+                            'rpc_ping': 'GET',
                             'action': 'POST'})
         resources.append(instances)
 

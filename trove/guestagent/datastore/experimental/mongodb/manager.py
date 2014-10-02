@@ -45,6 +45,10 @@ class Manager(periodic_task.PeriodicTasks):
         """Update the status of the MongoDB service."""
         self.status.update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
                 config_contents=None, root_password=None, overrides=None,

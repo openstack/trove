@@ -50,6 +50,10 @@ class Manager(periodic_task.PeriodicTasks):
         """
         self.appStatus.update()
 
+    def rpc_ping(self, context):
+        LOG.debug("Responding to RPC ping.")
+        return True
+
     def change_passwords(self, context, users):
         raise exception.DatastoreOperationNotSupported(
             operation='change_passwords', datastore=MANAGER)

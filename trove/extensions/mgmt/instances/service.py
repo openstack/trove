@@ -191,3 +191,14 @@ class MgmtInstanceController(InstanceController):
 
         diagnostics = instance.get_diagnostics()
         return wsgi.Result(DiagnosticsView(id, diagnostics).data(), 200)
+
+    @admin_context
+    def rpc_ping(self, req, tenant_id, id):
+        """Checks if instance is reachable via rpc."""
+        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.info(_("id : '%s'\n\n") % id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.MgmtInstance.load(context=context, id=id)
+
+        instance.rpc_ping()
+        return wsgi.Result(None, 204)
