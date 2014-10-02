@@ -22,6 +22,7 @@ from nose.tools import assert_true
 from proboscis import before_class
 from proboscis import test
 
+from trove.common import cfg
 from trove.openstack.common import timeutils
 from trove.tests.util import create_dbaas_client
 from troveclient.compat import exceptions
@@ -29,11 +30,14 @@ from datetime import datetime
 from trove.tests.util.users import Users
 from trove.tests.fakes import limits as fake_limits
 
+
+CONF = cfg.CONF
+
 GROUP = "dbaas.api.limits"
-DEFAULT_RATE = 200
-DEFAULT_MAX_VOLUMES = 100
-DEFAULT_MAX_INSTANCES = 55
-DEFAULT_MAX_BACKUPS = 5
+DEFAULT_RATE = CONF.http_get_rate
+DEFAULT_MAX_VOLUMES = CONF.max_volumes_per_user
+DEFAULT_MAX_INSTANCES = CONF.max_instances_per_user
+DEFAULT_MAX_BACKUPS = CONF.max_backups_per_user
 
 
 def ensure_limits_are_not_faked(func):
