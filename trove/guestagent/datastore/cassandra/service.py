@@ -174,6 +174,7 @@ class CassandraApp(object):
     def make_host_reachable(self):
         updates = {
             'rpc_address': "0.0.0.0",
+            'broadcast_rpc_address': operating_system.get_ip_address(),
             'listen_address': operating_system.get_ip_address(),
             'seed': operating_system.get_ip_address()
         }
