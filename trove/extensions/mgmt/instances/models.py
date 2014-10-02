@@ -57,10 +57,16 @@ def load_mgmt_instance(cls, context, id):
             server = client.rdservers.get(instance.server_id)
         except AttributeError:
             server = client.servers.get(instance.server_id)
-        instance.server.host = server.host
-        instance.server.deleted = server.deleted
-        instance.server.deleted_at = server.deleted_at
-        instance.server.local_id = server.local_id
+        if hasattr(server, 'host'):
+            instance.server.host = server.host
+        elif hasattr(server, 'hostId'):
+            instance.server.host = server.hostId
+        if hasattr(server, 'deleted'):
+            instance.server.deleted = server.deleted
+        if hasattr(server, 'deleted_at'):
+            instance.server.deleted_at = server.deleted_at
+        if hasattr(server, 'local_id'):
+            instance.server.local_id = server.local_id
         assert instance.server is not None
     except Exception as e:
         LOG.error(e)
