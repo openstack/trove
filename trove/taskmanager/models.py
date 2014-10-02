@@ -29,6 +29,7 @@ from trove.cluster.models import Cluster
 from trove.cluster.models import DBCluster
 from trove.cluster import tasks
 from trove.common import cfg
+from trove.common import exception
 from trove.common import template
 from trove.common import utils
 from trove.common.utils import try_recover
@@ -938,8 +939,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 LOG.debug("Got replication snapshot from guest successfully.")
                 return result
             except (GuestError, GuestTimeout):
-                LOG.exception(_("Failed to get replication snapshot from %s") %
-                              self.id)
+                LOG.exception(_("Failed to get replication snapshot from %s")
+                              % self.id)
                 raise
 
         return run_with_quotas(self.context.tenant, {'backups': 1},
@@ -955,11 +956,29 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
 
     def reboot(self):
         try:
+            # Issue a guest stop db call to shutdown the db if running
             LOG.debug("Stopping datastore on instance %s." % self.id)
-            self.guest.stop_db()
+            try:
+                self.guest.stop_db()
+            except (exception.GuestError, exception.GuestTimeout) as e:
+                # Acceptable to be here if db was already in crashed state
+                # Also we check guest state before issuing reboot
+                LOG.debug(str(e))
+
+            self._refresh_datastore_status()
+            if not (self.datastore_status_matches(
+                    rd_instance.ServiceStatuses.SHUTDOWN) or
+                    self.datastore_status_matches(
+                    rd_instance.ServiceStatuses.CRASHED)):
+                # We will bail if db did not get stopped or is blocked
+                LOG.error(_("Cannot reboot instance. DB status is %s.")
+                          % self.datastore_status.status)
+                return
+            LOG.debug("The guest service status is %s."
+                      % self.datastore_status.status)
+
             LOG.info(_("Rebooting instance %s.") % self.id)
             self.server.reboot()
-
             # Poll nova until instance is active
             reboot_time_out = CONF.reboot_time_out
 
