@@ -190,7 +190,7 @@ paste.filter_factory = trove.common.wsgi:ContextMiddleware.factory
 paste.filter_factory = trove.common.wsgi:FaultWrapper.factory
 
 [filter:ratelimit]
-paste.filter_factory = trove.common.limits:RateLimitingMiddleware.factory
+paste.filter_factory = trove.tests.fakes.limits:FakeRateLimitingMiddleware.factory
 
 [app:troveapp]
 paste.app_factory = trove.common.api:app_factory

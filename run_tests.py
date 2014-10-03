@@ -16,6 +16,7 @@
 #    under the License.
 #
 
+import functools
 import gettext
 import os
 import urllib
@@ -34,6 +35,7 @@ import eventlet
 eventlet.monkey_patch(thread=False)
 
 CONF = cfg.CONF
+original_excepthook = sys.excepthook
 
 
 def add_support_for_localization():
@@ -153,18 +155,76 @@ def initialize_fakes(app):
                                       wsgi_interceptor)
     from trove.tests.util import event_simulator
     event_simulator.monkey_patch()
+    from trove.tests.fakes import taskmanager
+    taskmanager.monkey_patch()
 
 
 def parse_args_for_test_config():
+    test_conf = 'etc/tests/localhost.test.conf'
+    repl = False
+    new_argv = []
     for index in range(len(sys.argv)):
         arg = sys.argv[index]
         print(arg)
         if arg[:14] == "--test-config=":
-            del sys.argv[index]
-            return arg[14:]
-    return 'etc/tests/localhost.test.conf'
+            test_conf = arg[14:]
+        elif arg == "--repl":
+            repl = True
+        else:
+            new_argv.append(arg)
+    sys.argv = new_argv
+    return test_conf, repl
 
-if __name__ == "__main__":
+
+def run_tests(repl):
+    """Runs all of the tests."""
+
+    if repl:
+        # Actually show errors in the repl.
+        sys.excepthook = original_excepthook
+
+        def no_thanks(exit_code):
+            print("Tests finished with exit code %d." % exit_code)
+        sys.exit = no_thanks
+
+    proboscis.TestProgram().run_and_exit()
+
+    if repl:
+        import code
+        code.interact()
+
+
+def import_tests():
+    # F401 unused imports needed for tox tests
+    from trove.tests.api import backups  # noqa
+    from trove.tests.api import header  # noqa
+    from trove.tests.api import limits  # noqa
+    from trove.tests.api import flavors  # noqa
+    from trove.tests.api import versions  # noqa
+    from trove.tests.api import instances as rd_instances  # noqa
+    from trove.tests.api import instances_actions as rd_actions  # noqa
+    from trove.tests.api import instances_delete  # noqa
+    from trove.tests.api import instances_mysql_down  # noqa
+    from trove.tests.api import instances_resize  # noqa
+    from trove.tests.api import configurations  # noqa
+    from trove.tests.api import databases  # noqa
+    from trove.tests.api import datastores  # noqa
+    from trove.tests.api import replication  # noqa
+    from trove.tests.api import root  # noqa
+    from trove.tests.api import root_on_create  # noqa
+    from trove.tests.api import users  # noqa
+    from trove.tests.api import user_access  # noqa
+    from trove.tests.api.mgmt import accounts  # noqa
+    from trove.tests.api.mgmt import admin_required  # noqa
+    from trove.tests.api.mgmt import hosts  # noqa
+    from trove.tests.api.mgmt import instances as mgmt_instances  # noqa
+    from trove.tests.api.mgmt import instances_actions as mgmt_actions  # noqa
+    from trove.tests.api.mgmt import storage  # noqa
+    from trove.tests.api.mgmt import malformed_json  # noqa
+    from trove.tests.db import migrations  # noqa
+
+
+def main(import_func):
     try:
         wsgi_install()
         add_support_for_localization()
@@ -175,44 +235,25 @@ if __name__ == "__main__":
         app = initialize_trove(config_file)
         # Initialize sqlite database.
         initialize_database()
-        # Swap out WSGI, httplib, and several sleep functions
-        # with test doubles.
+        # Swap out WSGI, httplib, and other components with test doubles.
         initialize_fakes(app)
 
         # Initialize the test configuration.
-        test_config_file = parse_args_for_test_config()
+        test_config_file, repl = parse_args_for_test_config()
         CONFIG.load_from_file(test_config_file)
 
-        # F401 unused imports needed for tox tests
-        from trove.tests.api import backups  # noqa
-        from trove.tests.api import header  # noqa
-        from trove.tests.api import limits  # noqa
-        from trove.tests.api import flavors  # noqa
-        from trove.tests.api import versions  # noqa
-        from trove.tests.api import instances as rd_instances  # noqa
-        from trove.tests.api import instances_actions as rd_actions  # noqa
-        from trove.tests.api import instances_delete  # noqa
-        from trove.tests.api import instances_mysql_down  # noqa
-        from trove.tests.api import instances_resize  # noqa
-        from trove.tests.api import configurations  # noqa
-        from trove.tests.api import databases  # noqa
-        from trove.tests.api import datastores  # noqa
-        from trove.tests.api import replication  # noqa
-        from trove.tests.api import root  # noqa
-        from trove.tests.api import root_on_create  # noqa
-        from trove.tests.api import users  # noqa
-        from trove.tests.api import user_access  # noqa
-        from trove.tests.api.mgmt import accounts  # noqa
-        from trove.tests.api.mgmt import admin_required  # noqa
-        from trove.tests.api.mgmt import hosts  # noqa
-        from trove.tests.api.mgmt import instances as mgmt_instances  # noqa
-        from trove.tests.api.mgmt import instances_actions as mgmt_actions  # noqa
-        from trove.tests.api.mgmt import storage  # noqa
-        from trove.tests.api.mgmt import malformed_json  # noqa
-        from trove.tests.db import migrations  # noqa
+        import_func()
+
+        from trove.tests.util import event_simulator
+        event_simulator.run_main(functools.partial(run_tests, repl))
+
     except Exception as e:
+        # Printing the error manually like this is necessary due to oddities
+        # with sys.excepthook.
         print("Run tests failed: %s" % e)
         traceback.print_exc()
         raise
 
-    proboscis.TestProgram().run_and_exit()
+
+if __name__ == "__main__":
+    main(import_tests)

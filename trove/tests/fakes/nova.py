@@ -297,7 +297,7 @@ class FakeServers(object):
                                                       "available.")
 
         server.schedule_status("ACTIVE", 1)
-        LOG.info(_("FAKE_SERVERS_DB : %s") % str(FAKE_SERVERS_DB))
+        LOG.info("FAKE_SERVERS_DB : %s" % str(FAKE_SERVERS_DB))
         return server
 
     def _get_volumes_from_bdm(self, block_device_mapping):
@@ -733,6 +733,9 @@ class FakeSecurityGroups(object):
         secGrp = FakeSecurityGroup(name, description)
         self.securityGroups[secGrp.get_id()] = secGrp
         return secGrp
+
+    def delete(self, group_id):
+        pass
 
     def list(self):
         pass

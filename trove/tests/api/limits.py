@@ -27,12 +27,22 @@ from trove.tests.util import create_dbaas_client
 from troveclient.compat import exceptions
 from datetime import datetime
 from trove.tests.util.users import Users
+from trove.tests.fakes import limits as fake_limits
 
 GROUP = "dbaas.api.limits"
 DEFAULT_RATE = 200
 DEFAULT_MAX_VOLUMES = 100
 DEFAULT_MAX_INSTANCES = 55
 DEFAULT_MAX_BACKUPS = 5
+
+
+def ensure_limits_are_not_faked(func):
+    def _cd(*args, **kwargs):
+        fake_limits.ENABLED = True
+        try:
+            return func(*args, **kwargs)
+        finally:
+            fake_limits.ENABLED = False
 
 
 @test(groups=[GROUP])
@@ -81,6 +91,7 @@ class Limits(object):
         return d
 
     @test
+    @ensure_limits_are_not_faked
     def test_limits_index(self):
         """Test_limits_index."""
 
@@ -101,6 +112,7 @@ class Limits(object):
             assert_true(d[k].nextAvailable is not None)
 
     @test
+    @ensure_limits_are_not_faked
     def test_limits_get_remaining(self):
         """Test_limits_get_remaining."""
 
@@ -121,6 +133,7 @@ class Limits(object):
         assert_true(get.nextAvailable is not None)
 
     @test
+    @ensure_limits_are_not_faked
     def test_limits_exception(self):
         """Test_limits_exception."""
 
