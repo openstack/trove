@@ -191,7 +191,7 @@ There are several configuration files for Trove:
 
 - <service_type>.cloudinit -- cloudinit scripts for different service types. For now only 'mysql' and 'percona' are recognized as valid service types. NOTE: file names must exactly follow the pattern, e.g. 'mysql.cloudinit'
 
-Samples of the above are available in $TROVE/trove/etc/trove/ as *.conf.sample files.
+Samples of the above are available in $TROVE/trove/etc/trove/ as \*.conf.sample files.
 
 If a vanilla Ubuntu image used as a source image for Trove instances, then it is cloudinit script's responsibility
 to install and run Trove guestagent in the instance.
@@ -248,9 +248,9 @@ Run Trove
 Troubleshooting
 ===============
 
--------------
+---------------------------------------------------------
 No instance IPs in the output of 'trove-cli instance get'
--------------
+---------------------------------------------------------
 
 If Trove instance is created properly, is in the state ACTIVE, and is known for sure to be working,
 but there are no IP addresses for the instance in the output of 'trove-cli instance get <id>', then make sure
