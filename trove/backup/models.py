@@ -17,6 +17,7 @@
 from sqlalchemy import desc
 from swiftclient.client import ClientException
 
+from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import exception
 from trove.db.models import DatabaseModelBase
@@ -31,17 +32,6 @@ from trove.openstack.common.gettextutils import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-
-
-class BackupState(object):
-    NEW = "NEW"
-    BUILDING = "BUILDING"
-    SAVING = "SAVING"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    DELETE_FAILED = "DELETE_FAILED"
-    RUNNING_STATES = [NEW, BUILDING, SAVING]
-    END_STATES = [COMPLETED, FAILED, DELETE_FAILED]
 
 
 class Backup(object):

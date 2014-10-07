@@ -22,7 +22,6 @@ from eventlet import Timeout
 from trove.common import cfg
 from trove.common import exception
 from trove.common import rpc as rd_rpc
-from trove.guestagent import models as agent_models
 from trove.openstack.common import rpc
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import proxy
@@ -104,16 +103,6 @@ class API(proxy.RpcProxy):
     def _get_routing_key(self):
         """Create the routing key based on the container id."""
         return "guestagent.%s" % self.id
-
-    def _check_for_hearbeat(self):
-        """Preemptively raise GuestTimeout if heartbeat is old."""
-        try:
-            agent = agent_models.AgentHeartBeat.find_by(instance_id=self.id)
-            if agent_models.AgentHeartBeat.is_active(agent):
-                return True
-        except exception.ModelNotFoundError as mnfe:
-            LOG.warn(mnfe)
-        raise exception.GuestTimeout()
 
     def change_passwords(self, users):
         """Make an asynchronous call to change the passwords of one or more
@@ -278,7 +267,6 @@ class API(proxy.RpcProxy):
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container."""
         LOG.debug("Check Volume Info on Instance %s.", self.id)
-        # self._check_for_hearbeat()
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path=None)
 

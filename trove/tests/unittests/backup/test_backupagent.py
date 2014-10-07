@@ -26,7 +26,7 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.backup import couchbase_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
-from trove.backup.models import BackupState
+from trove.backup.state import BackupState
 from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType

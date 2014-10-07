@@ -15,6 +15,7 @@
 from mox3 import mox
 import trove.common.instance as tr_instance
 from trove.backup import models as backup_models
+from trove.backup import state
 from trove.common.context import TroveContext
 from trove.instance.tasks import InstanceTasks
 from trove.instance import models as imodels
@@ -153,7 +154,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             name="forever_new",
             description="forever new",
             tenant_id=self.tenant_id,
-            state=backup_models.BackupState.NEW,
+            state=state.BackupState.NEW,
             instance_id=self.db_info.id,
             deleted=False)
 
@@ -161,7 +162,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             name="forever_build",
             description="forever build",
             tenant_id=self.tenant_id,
-            state=backup_models.BackupState.BUILDING,
+            state=state.BackupState.BUILDING,
             instance_id=self.db_info.id,
             deleted=False)
 
@@ -169,7 +170,7 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             name="forever_completed",
             description="forever completed",
             tenant_id=self.tenant_id,
-            state=backup_models.BackupState.COMPLETED,
+            state=state.BackupState.COMPLETED,
             instance_id=self.db_info.id,
             deleted=False)
 
@@ -190,9 +191,9 @@ class RestartTaskStatusTests(MgmtInstanceBase):
         for backup in result:
             if backup.name == 'forever_completed':
                 assert_equal(backup.status,
-                             backup_models.BackupState.COMPLETED)
+                             state.BackupState.COMPLETED)
             else:
-                assert_equal(backup.status, backup_models.BackupState.FAILED)
+                assert_equal(backup.status, state.BackupState.FAILED)
 
     @test(runs_after=[mgmt_reset_task_status_clears_backups])
     def clear_test_backups(self):

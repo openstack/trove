@@ -17,6 +17,7 @@ from mock import MagicMock, patch
 import testtools
 
 from trove.backup import models
+from trove.backup import state
 from trove.common import context
 from trove.common import exception
 from trove.common import utils
@@ -73,7 +74,7 @@ class BackupCreateTest(testtools.TestCase):
                     self.assertEqual(BACKUP_NAME, bu.name)
                     self.assertEqual(BACKUP_DESC, bu.description)
                     self.assertEqual(self.instance_id, bu.instance_id)
-                    self.assertEqual(models.BackupState.NEW, bu.state)
+                    self.assertEqual(state.BackupState.NEW, bu.state)
 
                     db_record = models.DBBackup.find_by(id=bu.id)
                     self.assertEqual(bu.id, db_record['id'])
@@ -81,7 +82,7 @@ class BackupCreateTest(testtools.TestCase):
                     self.assertEqual(BACKUP_DESC, db_record['description'])
                     self.assertEqual(self.instance_id,
                                      db_record['instance_id'])
-                    self.assertEqual(models.BackupState.NEW,
+                    self.assertEqual(state.BackupState.NEW,
                                      db_record['state'])
                     self.assertEqual(instance.datastore_version.id,
                                      db_record['datastore_version_id'])
@@ -124,7 +125,7 @@ class BackupCreateTest(testtools.TestCase):
                                          db_record['description'])
                         self.assertEqual(self.instance_id,
                                          db_record['instance_id'])
-                        self.assertEqual(models.BackupState.NEW,
+                        self.assertEqual(state.BackupState.NEW,
                                          db_record['state'])
                         self.assertEqual('parent_uuid',
                                          db_record['parent_id'])
@@ -278,12 +279,12 @@ class BackupORMTest(testtools.TestCase):
         self.assertTrue(self.backup.is_running)
 
     def test_is_done(self):
-        self.backup.state = models.BackupState.COMPLETED
+        self.backup.state = state.BackupState.COMPLETED
         self.backup.save()
         self.assertTrue(self.backup.is_done)
 
     def test_not_is_running(self):
-        self.backup.state = models.BackupState.COMPLETED
+        self.backup.state = state.BackupState.COMPLETED
         self.backup.save()
         self.assertFalse(self.backup.is_running)
 
