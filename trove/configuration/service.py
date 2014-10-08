@@ -21,7 +21,6 @@ from trove.common import wsgi
 from trove.configuration import models
 from trove.configuration import views
 from trove.configuration.models import DBConfigurationParameter
-from trove.configuration.models import DatastoreConfigurationParameters
 from trove.datastore import models as ds_models
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
@@ -101,7 +100,9 @@ class ConfigurationsController(wsgi.Controller):
             # validate that the values passed in are permitted by the operator.
             ConfigurationsController._validate_configuration(
                 body['configuration']['values'],
-                datastore_version=datastore_version)
+                datastore_version,
+                models.DatastoreConfigurationParameters.load_parameters(
+                    datastore_version.id))
 
             for k, v in values.iteritems():
                 configItems.append(DBConfigurationParameter(
@@ -180,7 +181,10 @@ class ConfigurationsController(wsgi.Controller):
         if 'values' in configuration:
             # validate that the values passed in are permitted by the operator.
             ConfigurationsController._validate_configuration(
-                configuration['values'], datastore_version=ds_version)
+                configuration['values'],
+                ds_version,
+                models.DatastoreConfigurationParameters.load_parameters(
+                    ds_version.id))
             for k, v in configuration['values'].iteritems():
                 items.append(DBConfigurationParameter(
                     configuration_id=group.id,
@@ -190,17 +194,35 @@ class ConfigurationsController(wsgi.Controller):
         return items
 
     @staticmethod
-    def _validate_configuration(values, datastore_version=None):
+    def _validate_configuration(values, datastore_version, config_rules):
         LOG.info(_("Validating configuration values"))
-        for k, v in values.iteritems():
-            rule = DatastoreConfigurationParameters.load_parameter_by_name(
-                datastore_version.id, k)
 
-            if not rule or rule.deleted:
-                output = {"key": k}
-                msg = _("The parameter provided for the configuration "
-                        "%(key)s is not available.") % output
+        # create rules dictionary based on parameter name
+        rules_lookup = {}
+        for item in config_rules:
+            rules_lookup[item.name.lower()] = item
+
+        # checking if there are any rules for the datastore
+        if not rules_lookup:
+            output = {"version": datastore_version.name,
+                      "name": datastore_version.datastore_name}
+            msg = _("Configuration groups are not supported for this "
+                    "datastore: %(name)s %(version)s") % output
+            raise exception.UnprocessableEntity(message=msg)
+
+        for k, v in values.iteritems():
+            key = k.lower()
+            # parameter name validation
+            if key not in rules_lookup:
+                output = {"key": k,
+                          "version": datastore_version.name,
+                          "name": datastore_version.datastore_name}
+                msg = _("The configuration parameter %(key)s is not "
+                        "supported for this datastore: "
+                        "%(name)s %(version)s.") % output
                 raise exception.UnprocessableEntity(message=msg)
+
+            rule = rules_lookup[key]
 
             # type checking
             value_type = rule.data_type

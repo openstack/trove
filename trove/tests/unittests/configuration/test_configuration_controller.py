@@ -19,6 +19,8 @@ from testtools import TestCase
 from trove.configuration.service import ConfigurationsController
 from trove.extensions.mgmt.configuration import service
 from trove.common import configurations
+from trove.common.exception import UnprocessableEntity
+from mock import MagicMock
 
 
 class TestConfigurationParser(TestCase):
@@ -125,6 +127,43 @@ class TestConfigurationController(TestCase):
         self.assertIsNotNone(schema)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
+
+    def _test_validate_configuration(self, input_values, config_rules=None):
+        if config_rules is None:
+            config_val1 = MagicMock()
+            config_val1.name = 'max_connections'
+            config_val1.restart_required = 'false'
+            config_val1.datastore_version_id = 5.5
+            config_val1.max_size = 1
+            config_val1.min_size = 0
+            config_val1.data_type = 'integer'
+            config_rules = [config_val1]
+
+        data_version = MagicMock()
+        data_version.id = 42
+        data_version.name = 5.5
+        data_version.datastore_name = 'test'
+
+        self.assertRaises(UnprocessableEntity,
+                          ConfigurationsController._validate_configuration,
+                          input_values,
+                          data_version,
+                          config_rules)
+
+    def test_validate_configuration_with_no_rules(self):
+        self._test_validate_configuration({'max_connections': 5}, [])
+
+    def test_validate_configuration_with_invalid_param(self):
+        self._test_validate_configuration({'test': 5})
+
+    def test_validate_configuration_with_invalid_type(self):
+        self._test_validate_configuration({'max_connections': '1'})
+
+    def test_validate_configuration_with_invalid_max(self):
+        self._test_validate_configuration({'max_connections': 5})
+
+    def test_validate_configuration_with_invalid_min(self):
+        self._test_validate_configuration({'max_connections': -1})
 
 
 class TestConfigurationsParameterController(TestCase):
