@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 from trove.common.views import create_links
 from trove.instance.views import InstanceDetailView
 from trove.openstack.common import log as logging

@@ -678,16 +678,16 @@ mongodb_opts = [
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.StrOpt('api_strategy',
-               default='trove.common.strategies.mongodb.api.'
+               default='trove.common.strategies.cluster.mongodb.api.'
                        'MongoDbAPIStrategy',
                help='Class that implements datastore-specific API logic.'),
     cfg.StrOpt('taskmanager_strategy',
-               default='trove.common.strategies.mongodb.taskmanager.'
+               default='trove.common.strategies.cluster.mongodb.taskmanager.'
                        'MongoDbTaskManagerStrategy',
                help='Class that implements datastore-specific task manager '
                     'logic.'),
     cfg.StrOpt('guestagent_strategy',
-               default='trove.common.strategies.mongodb.guestagent.'
+               default='trove.common.strategies.cluster.mongodb.guestagent.'
                        'MongoDbGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
