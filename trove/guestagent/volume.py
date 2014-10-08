@@ -118,7 +118,7 @@ class VolumeDevice(object):
         try:
             # check if the device is mounted at mount_point before e2fsck
             if not os.path.ismount(mount_point):
-                utils.execute("e2fsck", "-f", "-p", self.device_path,
+                utils.execute("e2fsck", "-f", "-n", self.device_path,
                               run_as_root=True, root_helper="sudo")
             utils.execute("resize2fs", self.device_path,
                           run_as_root=True, root_helper="sudo")
