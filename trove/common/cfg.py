@@ -1,4 +1,4 @@
-# Copyright 2011 OpenStack Foundation
+# copyright 2011 OpenStack Foundation
 # Copyright 2014 Rackspace Hosting
 # All Rights Reserved.
 #
@@ -342,9 +342,18 @@ common_opts = [
                     'expression.'),
     cfg.StrOpt('cloudinit_location', default='/etc/trove/cloudinit',
                help='Path to folder with cloudinit scripts.'),
+    cfg.StrOpt('injected_config_location', default='/etc/trove/conf.d',
+               help='Path to folder on the Guest where config files will be '
+                    'injected during instance creation.'),
     cfg.StrOpt('guest_config',
-               default='$pybasedir/etc/trove/trove-guestagent.conf.sample',
-               help='Path to the Guest Agent config file.'),
+               default='/etc/trove/trove-guestagent.conf',
+               help='Path to the Guest Agent config file to be injected '
+                    'during instance creation.'),
+    cfg.StrOpt('guest_info',
+               default='guest_info.conf',
+               help='The guest info filename found in the injected config '
+                    'location.  If a full path is specified then it will '
+                    'be used as the path to the guest info file'),
     cfg.DictOpt('datastore_registry_ext', default=dict(),
                 help='Extension for default datastore managers. '
                      'Allows the use of custom managers for each of '

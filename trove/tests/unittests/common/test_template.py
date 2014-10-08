@@ -168,7 +168,8 @@ class HeatTemplateLoadTest(testtools.TestCase):
             volume_support=True,
             ifaces=[], ports=[],
             tcp_rules=tcp_rules,
-            udp_rules=[])
+            udp_rules=[],
+            files={})
         self.assertIsNotNone(output)
         self.assertIn('FromPort: "3306"', output)
         self.assertIn('ToPort: "3309"', output)
@@ -182,7 +183,8 @@ class HeatTemplateLoadTest(testtools.TestCase):
             volume_support=True,
             ifaces=[], ports=[],
             tcp_rules=[],
-            udp_rules=[])
+            udp_rules=[],
+            files={})
         self.assertIsNotNone(output)
         self.assertNotIn('- IpProtocol: "tcp"', output)
         self.assertNotIn('- IpProtocol: "udp"', output)

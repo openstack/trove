@@ -194,7 +194,11 @@ pydev_debug = disabled
 #pydev_path = <path>
 
 # ================= Guestagent related ========================
-#guest_config = $pybasedir/etc/trove/trove-guestagent.conf.sample
+#guest_config = /etc/trove/trove-guestagent.conf
+# Use 'guest_info = /etc/guest_info' for pre-Kilo compatibility
+#guest_info = guest_info.conf
+# Use 'injected_config_location = /etc/trove' for pre-Kilo compatibility
+#injected_config_location = /etc/trove/conf.d
 #cloudinit_location = /etc/trove/cloudinit
 
 # ================= Security groups related ========================

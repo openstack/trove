@@ -226,16 +226,48 @@ class FreshInstanceTasksTest(testtools.TestCase):
         def fake_conf_getter(*args, **kwargs):
             if args[0] == 'guest_config':
                 return self.guestconfig
+            if args[0] == 'guest_info':
+                return 'guest_info.conf'
+            if args[0] == 'injected_config_location':
+                return '/etc/trove/conf.d'
             else:
                 return ''
+
         mock_conf.get.side_effect = fake_conf_getter
         # execute
-        server = self.freshinstancetasks._create_server(
-            None, None, None, "test", None, None, None)
+        files = self.freshinstancetasks._get_injected_files("test")
         # verify
-        self.assertTrue('/etc/trove-guestagent.conf' in server.files)
-        self.assertEqual(server.files['/etc/trove-guestagent.conf'],
-                         self.guestconfig_content)
+        self.assertTrue(
+            '/etc/trove/conf.d/guest_info.conf' in files)
+        self.assertTrue(
+            '/etc/trove/conf.d/trove-guestagent.conf' in files)
+        self.assertEqual(
+            files['/etc/trove/conf.d/trove-guestagent.conf'],
+            self.guestconfig_content)
+
+    @patch('trove.taskmanager.models.CONF')
+    def test_create_instance_guestconfig_compat(self, mock_conf):
+        def fake_conf_getter(*args, **kwargs):
+            if args[0] == 'guest_config':
+                return self.guestconfig
+            if args[0] == 'guest_info':
+                return '/etc/guest_info'
+            if args[0] == 'injected_config_location':
+                return '/etc'
+            else:
+                return ''
+
+        mock_conf.get.side_effect = fake_conf_getter
+        # execute
+        files = self.freshinstancetasks._get_injected_files("test")
+        # verify
+        self.assertTrue(
+            '/etc/guest_info' in files)
+        self.assertTrue(
+            '/etc/trove-guestagent.conf' in files)
+        self.assertEqual(
+            files['/etc/trove-guestagent.conf'],
+            self.guestconfig_content)
 
     @patch('trove.taskmanager.models.CONF')
     def test_create_instance_with_az_kwarg(self, mock_conf):

@@ -1,4 +1,4 @@
 These conf files are read and used by the guest to provide extra
 information to the guest. The first example of this is the
-guest_info which will have the uuid of the instance so that
+guest_info.conf which will have the uuid of the instance so that
 the guest can report back things to the infra.
