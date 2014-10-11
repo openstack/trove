@@ -118,10 +118,12 @@ class ConfigurationParameterView(object):
         self.config = config
 
     def data(self):
+        # v1 api expects this to be a 'true' or 'false' string instead of 1/0
+        restart_required = 'true' if self.config.restart_required else 'false'
         ret = {
             "name": self.config.name,
             "datastore_version_id": self.config.datastore_version_id,
-            "restart_required": self.config.restart_required,
+            "restart_required": restart_required,
             "type": self.config.data_type,
         }
         if self.config.max_size:
