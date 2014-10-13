@@ -118,8 +118,8 @@ class ConfigurationParameterView(object):
         self.config = config
 
     def data(self):
-        # v1 api expects this to be a 'true' or 'false' string instead of 1/0
-        restart_required = 'true' if self.config.restart_required else 'false'
+        # v1 api is to be a 'true' or 'false' json boolean instead of 1/0
+        restart_required = True if self.config.restart_required else False
         ret = {
             "name": self.config.name,
             "datastore_version_id": self.config.datastore_version_id,

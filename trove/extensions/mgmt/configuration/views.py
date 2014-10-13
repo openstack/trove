@@ -24,10 +24,12 @@ class MgmtConfigurationParameterView(object):
         self.config = config
 
     def data(self):
+        # v1 api is to be a 'true' or 'false' json boolean instead of 1/0
+        restart_required = True if self.config.restart_required else False
         ret = {
             "name": self.config.name,
             "datastore_version_id": self.config.datastore_version_id,
-            "restart_required": self.config.restart_required,
+            "restart_required": restart_required,
             "type": self.config.data_type,
             "deleted": self.config.deleted,
             "deleted_at": self.config.deleted_at,
