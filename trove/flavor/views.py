@@ -29,7 +29,7 @@ class FlavorView(object):
     def data(self):
 
         flavor = {
-            'id': int(self.flavor.id),
+            'id': self.flavor.id,
             'links': self._build_links(),
             'name': self.flavor.name,
             'ram': self.flavor.ram,
