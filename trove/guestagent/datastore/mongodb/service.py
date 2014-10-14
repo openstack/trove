@@ -43,11 +43,11 @@ class MongoDBApp(object):
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a MongoDB installation."""
-        LOG.info(_("Preparing Guest as MongoDB"))
+        LOG.info(_("Preparing Guest as MongoDB."))
         if not system.PACKAGER.pkg_is_installed(packages):
-            LOG.debug("Installing packages: %s" % str(packages))
+            LOG.debug("Installing packages: %s." % str(packages))
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
-        LOG.info(_("Finished installing MongoDB server"))
+        LOG.info(_("Finished installing MongoDB server."))
 
     def _get_service(self):
         if self.status._is_query_router() is True:
@@ -58,7 +58,7 @@ class MongoDBApp(object):
                     service_discovery(system.MONGOD_SERVICE_CANDIDATES))
 
     def _enable_db_on_boot(self):
-        LOG.info(_("Enabling MongoDB on boot"))
+        LOG.info(_("Enabling MongoDB on boot."))
         try:
             mongo_service = self._get_service()
             utils.execute_with_timeout(mongo_service['cmd_enable'],
@@ -67,7 +67,7 @@ class MongoDBApp(object):
             raise RuntimeError(_("MongoDB service is not discovered."))
 
     def _disable_db_on_boot(self):
-        LOG.info(_("Disabling MongoDB on boot"))
+        LOG.info(_("Disabling MongoDB on boot."))
         try:
             mongo_service = self._get_service()
             utils.execute_with_timeout(mongo_service['cmd_disable'],
@@ -76,7 +76,7 @@ class MongoDBApp(object):
             raise RuntimeError("MongoDB service is not discovered.")
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        LOG.info(_("Stopping MongoDB"))
+        LOG.info(_("Stopping MongoDB."))
         if do_not_start_on_reboot:
             self._disable_db_on_boot()
 
@@ -91,12 +91,12 @@ class MongoDBApp(object):
         if not self.status.wait_for_real_status_to_change_to(
                 ds_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Could not stop MongoDB"))
+            LOG.error(_("Could not stop MongoDB."))
             self.status.end_install_or_restart()
             raise RuntimeError(_("Could not stop MongoDB"))
 
     def restart(self):
-        LOG.info(_("Restarting MongoDB"))
+        LOG.info(_("Restarting MongoDB."))
         try:
             self.status.begin_restart()
             self.stop_db()
@@ -105,7 +105,7 @@ class MongoDBApp(object):
             self.status.end_install_or_restart()
 
     def start_db(self, update_db=False):
-        LOG.info(_("Starting MongoDB"))
+        LOG.info(_("Starting MongoDB."))
 
         self._enable_db_on_boot()
 
@@ -121,7 +121,7 @@ class MongoDBApp(object):
         if not self.status.wait_for_real_status_to_change_to(
                 ds_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of MongoDB failed"))
+            LOG.error(_("Start up of MongoDB failed."))
             # If it won't start, but won't die either, kill it by hand so we
             # don't let a rouge process wander around.
             try:
@@ -130,29 +130,29 @@ class MongoDBApp(object):
                 pid = "".join(out.split(" ")[1:2])
                 utils.execute_with_timeout(
                     system.MONGODB_KILL % pid, shell=True)
-            except exception.ProcessExecutionError as p:
-                LOG.error("Error killing stalled MongoDB start command.")
-                LOG.error(p)
+            except exception.ProcessExecutionError:
+                LOG.exception(_("Error killing MongoDB start command."))
                 # There's nothing more we can do...
             self.status.end_install_or_restart()
-            raise RuntimeError("Could not start MongoDB")
+            raise RuntimeError("Could not start MongoDB.")
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting MongoDB with configuration changes"))
-        LOG.info(_("Configuration contents:\n %s") % config_contents)
+        LOG.info(_("Starting MongoDB with configuration changes."))
+        LOG.info(_("Configuration contents:\n %s.") % config_contents)
         if self.status.is_running:
             LOG.error(_("Cannot start MongoDB with configuration changes. "
-                        "MongoDB state == %s!") % self.status)
+                        "MongoDB state == %s.") % self.status)
             raise RuntimeError("MongoDB is not stopped.")
         self._write_config(config_contents)
         self.start_db(True)
 
     def reset_configuration(self, configuration):
         config_contents = configuration['config_contents']
-        LOG.info(_("Resetting configuration"))
+        LOG.info(_("Resetting configuration."))
         self._write_config(config_contents)
 
     def update_config_contents(self, config_contents, parameters):
+        LOG.info(_("Updating configuration contents."))
         if not config_contents:
             config_contents = self._read_config()
 
@@ -168,14 +168,14 @@ class MongoDBApp(object):
         """
         Update contents of MongoDB configuration file
         """
-        LOG.info(_("Updating MongoDB config"))
+        LOG.info(_("Updating MongoDB config."))
         if config_contents:
-            LOG.info(_("Writing %s") % system.TMP_CONFIG)
+            LOG.info(_("Writing %s.") % system.TMP_CONFIG)
             try:
                 with open(system.TMP_CONFIG, 'w') as t:
                     t.write(config_contents)
 
-                LOG.info(_("Moving %(a)s to %(b)s")
+                LOG.info(_("Moving %(a)s to %(b)s.")
                          % {'a': system.TMP_CONFIG, 'b': CONFIG_FILE})
                 utils.execute_with_timeout("mv",
                                            system.TMP_CONFIG,
@@ -186,14 +186,14 @@ class MongoDBApp(object):
                 os.unlink(system.TMP_CONFIG)
                 raise
         else:
-            LOG.info(_("Empty config_contents. Do nothing"))
+            LOG.debug("Empty config_contents. Do nothing.")
 
     def _read_config(self):
         try:
             with open(CONFIG_FILE, 'r') as f:
                 return f.read()
         except IOError:
-            LOG.info(_("Config file %s not found") % CONFIG_FILE)
+            LOG.info(_("Config file %s not found.") % CONFIG_FILE)
             return ''
 
     def _delete_config_parameters(self, config_contents, parameters):
@@ -211,11 +211,12 @@ class MongoDBApp(object):
 
     def clear_storage(self):
         mount_point = "/var/lib/mongodb/*"
+        LOG.debug("Clearing storage at %s." % mount_point)
         try:
             cmd = "sudo rm -rf %s" % mount_point
             utils.execute_with_timeout(cmd, shell=True)
-        except exception.ProcessExecutionError as e:
-            LOG.error(_("Process execution %s") % e)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error clearing storage."))
 
     def add_config_servers(self, config_server_hosts):
         """
@@ -224,7 +225,7 @@ class MongoDBApp(object):
         config_contents = self._read_config()
         configdb_contents = ','.join(['%s:27019' % host
                                       for host in config_server_hosts])
-        LOG.debug("Config server list %s" % configdb_contents)
+        LOG.debug("Config server list %s." % configdb_contents)
         # remove db path from config and update configdb
         contents = self._delete_config_parameters(config_contents,
                                                   ["dbpath", "nojournal",
@@ -232,17 +233,19 @@ class MongoDBApp(object):
                                                    "noprealloc", "configdb"])
         contents = self._add_config_parameter(contents,
                                               "configdb", configdb_contents)
-        LOG.info(_("Rewriting configuration"))
+        LOG.info(_("Rewriting configuration."))
         self.start_db_with_conf_changes(contents)
 
     def write_mongos_upstart(self):
         upstart_contents = (system.MONGOS_UPSTART_CONTENTS.
                             format(config_file_placeholder=CONFIG_FILE))
-        LOG.info(_("Writing %s") % system.TMP_MONGOS_UPSTART)
+
+        LOG.info(_("Writing %s.") % system.TMP_MONGOS_UPSTART)
+
         with open(system.TMP_MONGOS_UPSTART, 'w') as t:
             t.write(upstart_contents)
 
-        LOG.info(_("Moving %(a)s to %(b)s")
+        LOG.info(_("Moving %(a)s to %(b)s.")
                  % {'a': system.TMP_MONGOS_UPSTART,
                     'b': system.MONGOS_UPSTART})
         utils.execute_with_timeout("mv", system.TMP_MONGOS_UPSTART,
@@ -371,8 +374,8 @@ class MongoDbAppStatus(service.BaseDbStatus):
             else:
                 return ds_instance.ServiceStatuses.SHUTDOWN
         except exception.ProcessExecutionError as e:
-            LOG.error(_("Process execution %s") % e)
+            LOG.exception(_("Process execution %s.") % e)
             return ds_instance.ServiceStatuses.SHUTDOWN
         except OSError as e:
-            LOG.error(_("OS Error %s") % e)
+            LOG.exception(_("OS Error %s.") % e)
             return ds_instance.ServiceStatuses.SHUTDOWN
