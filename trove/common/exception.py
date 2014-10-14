@@ -483,6 +483,10 @@ class ClusterFlavorsNotEqual(TroveError):
     message = _("The flavor for each instance in a cluster must be equal.")
 
 
+class ClusterVolumeSizeRequired(TroveError):
+    message = _("A volume size is required for each instance in the cluster.")
+
+
 class ClusterVolumeSizesNotEqual(TroveError):
     message = _("The volume size for each instance in a cluster must be "
                 "equal.")
