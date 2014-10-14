@@ -71,6 +71,8 @@ class MgmtInstanceDetailView(MgmtInstanceView):
             server = self.instance.server
             result['instance']['server'].update(
                 {'addresses': server.addresses})
+        elif self.instance.server_id:
+            result['instance']['server'] = {"id": self.instance.server_id}
         if self.root_history:
             result['instance']['root_enabled'] = self.root_history.created
             result['instance']['root_enabled_by'] = self.root_history.user
@@ -86,6 +88,8 @@ class MgmtInstanceDetailView(MgmtInstanceView):
                 "used": self.instance.volume_used or None,
                 "total": self.instance.volume_total or None,
             }
+        elif self.instance.volume_id:
+            result['instance']['volume'] = {"id": self.instance.volume_id}
         else:
             result['instance']['volume'] = None
         description = self.instance.datastore_status.status.description
