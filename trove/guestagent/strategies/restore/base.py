@@ -15,7 +15,6 @@
 #
 from trove.guestagent.strategy import Strategy
 from trove.common import cfg
-from trove.common import exception
 from trove.common import utils
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _  # noqa
@@ -27,15 +26,6 @@ CHUNK_SIZE = CONF.backup_chunk_size
 BACKUP_USE_GZIP = CONF.backup_use_gzip_compression
 BACKUP_USE_OPENSSL = CONF.backup_use_openssl_encryption
 BACKUP_DECRYPT_KEY = CONF.backup_aes_cbc_key
-
-
-def exec_with_root_helper(*cmd):
-    try:
-        out, err = utils.execute_with_timeout(
-            *cmd, run_as_root=True, root_helper="sudo")
-        return True
-    except exception.ProcessExecutionError:
-        return False
 
 
 class RestoreError(Exception):
