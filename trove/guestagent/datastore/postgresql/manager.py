@@ -62,6 +62,7 @@ class Manager(
             config_contents=None,
             root_password=None,
             overrides=None,
+            cluster_config=None
     ):
         self.install(context, packages)
         PgSqlAppStatus.get().begin_restart()
