@@ -229,19 +229,53 @@ class CouchbaseAppStatus(service.BaseDbStatus):
     """
     def _get_actual_db_status(self):
         self.ip_address = operating_system.get_ip_address()
+        pwd = None
         try:
             pwd = CouchbaseRootAccess.get_password()
-            out, err = utils.execute_with_timeout(
-                (system.cmd_couchbase_status %
-                 {'IP': self.ip_address, 'PWD': pwd}),
-                shell=True)
-            server_stats = json.loads(out)
-            if not err and server_stats["clusterMembership"] == "active":
-                return rd_instance.ServiceStatuses.RUNNING
-            else:
-                return rd_instance.ServiceStatuses.SHUTDOWN
+            return self._get_status_from_couchbase(pwd)
         except exception.ProcessExecutionError:
-            LOG.exception(_("Error getting Couchbase status."))
+            # log the exception, but continue with native config approach
+            LOG.exception(_("Error getting the Couchbase status."))
+
+        try:
+            out, err = utils.execute_with_timeout(
+                system.cmd_get_password_from_config, shell=True)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error getting the root password from the "
+                            "native Couchbase config file."))
+            return rd_instance.ServiceStatuses.SHUTDOWN
+
+        config_pwd = out.strip() if out is not None else None
+        if not config_pwd or config_pwd == pwd:
+            LOG.debug("The root password from the native Couchbase config "
+                      "file is either empty or already matches the "
+                      "stored value.")
+            return rd_instance.ServiceStatuses.SHUTDOWN
+
+        try:
+            status = self._get_status_from_couchbase(config_pwd)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error getting Couchbase status using the "
+                            "password parsed from the native Couchbase "
+                            "config file."))
+            return rd_instance.ServiceStatuses.SHUTDOWN
+
+        # if the parsed root password worked, update the stored value to
+        # avoid having to consult/parse the couchbase config file again.
+        LOG.debug("Updating the stored value for the Couchbase "
+                  "root password.")
+        CouchbaseRootAccess().write_password_to_file(config_pwd)
+        return status
+
+    def _get_status_from_couchbase(self, pwd):
+        out, err = utils.execute_with_timeout(
+            (system.cmd_couchbase_status %
+             {'IP': self.ip_address, 'PWD': pwd}),
+            shell=True)
+        server_stats = json.loads(out)
+        if not err and server_stats["clusterMembership"] == "active":
+            return rd_instance.ServiceStatuses.RUNNING
+        else:
             return rd_instance.ServiceStatuses.SHUTDOWN
 
 
