@@ -468,7 +468,7 @@ class DatastoreVersions(object):
             yield item
 
 
-def get_datastore_version(type=None, version=None):
+def get_datastore_version(type=None, version=None, return_inactive=False):
     datastore = type or CONF.default_datastore
     if not datastore:
         raise exception.DatastoreDefaultDatastoreNotFound()
@@ -481,7 +481,7 @@ def get_datastore_version(type=None, version=None):
     if datastore_version.datastore_id != datastore.id:
         raise exception.DatastoreNoVersion(datastore=datastore.name,
                                            version=datastore_version.name)
-    if not datastore_version.active:
+    if not datastore_version.active and not return_inactive:
         raise exception.DatastoreVersionInactive(version=
                                                  datastore_version.name)
     return (datastore, datastore_version)
