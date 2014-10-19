@@ -125,7 +125,7 @@ class RedhatPackagerMixin(BasePackagerMixin):
         Raises an exception if a non-recoverable error or timeout occurs.
 
         """
-        cmd = "sudo yum --color=never -y install %s" % packages
+        cmd = "sudo yum --color=never -y install %s" % " ".join(packages)
         output_expects = ['\[sudo\] password for .*:',
                           'No package (.*) available.',
                           ('file .* from install of .* conflicts with file'
