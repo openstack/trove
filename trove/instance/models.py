@@ -969,7 +969,6 @@ class Instance(BuiltInstance):
 
         config = Configuration(self.context, configuration.id)
         LOG.debug("Config config is %s." % config)
-        self.update_db(configuration_id=configuration.id)
         self.update_overrides(config)
 
     def update_overrides(self, config):

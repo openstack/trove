@@ -312,6 +312,32 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
 
+    @test
+    def test_assign_name_to_instance_using_patch(self):
+        # test assigning a name to an instance
+        new_name = 'new_name_1'
+        report = CONFIG.get_report()
+        report.log("instance_info.id: %s" % instance_info.id)
+        report.log("instance name:%s" % instance_info.name)
+        report.log("instance new name:%s" % new_name)
+        instance_info.dbaas.instances.edit(instance_info.id, name=new_name)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        check = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal(200, instance_info.dbaas.last_http_code)
+        assert_equal(check.name, new_name)
+        # Restore instance name
+        instance_info.dbaas.instances.edit(instance_info.id,
+                                           name=instance_info.name)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+    @test
+    def test_assign_configuration_to_invalid_instance_using_patch(self):
+        # test assign config group to an invalid instance
+        invalid_id = "invalid-inst-id"
+        assert_raises(exceptions.NotFound,
+                      instance_info.dbaas.instances.edit,
+                      invalid_id, configuration=configuration_info.id)
+
     @test(depends_on=[test_assign_configuration_to_valid_instance])
     def test_assign_configuration_to_instance_with_config(self):
         # test assigning a configuration to an instance that
@@ -324,14 +350,15 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
     @test(depends_on=[test_assign_configuration_to_valid_instance])
     @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
-        # validate that the configuraiton was applied correctly to the instance
+        # validate that the configuration was applied correctly to the instance
+        print("instance_info.id: %s" % instance_info.id)
         inst = instance_info.dbaas.instances.get(instance_info.id)
         configuration_id = inst.configuration['id']
+        print("configuration_info: %s" % configuration_id)
         assert_not_equal(None, inst.configuration['id'])
         _test_configuration_is_applied_to_instance(instance_info,
                                                    configuration_id)
 
-    @test
     def test_configurations_get(self):
         # test that the instance shows up on the assigned configuration
         result = instance_info.dbaas.configurations.get(configuration_info.id)
@@ -664,14 +691,6 @@ class DeleteConfigurations(ConfigurationsTestBase):
         print(configuration_instance.id)
         print(instance_info.id)
 
-    @test(depends_on=[test_no_instances_on_configuration])
-    def test_delete_unassigned_configuration(self):
-        # test that we can delete the configuration after no instances are
-        # assigned to it any longer
-        instance_info.dbaas.configurations.delete(configuration_info.id)
-        resp, body = instance_info.dbaas.client.last_response
-        assert_equal(resp.status, 202)
-
     @test(depends_on=[test_unassign_configuration_from_instances])
     @time_out(120)
     def test_restart_service_after_unassign_return_active(self):
@@ -710,6 +729,98 @@ class DeleteConfigurations(ConfigurationsTestBase):
                 assert_equal("REBOOT", instance.status)
                 return False
         poll_until(result_is_active)
+
+    @test(depends_on=[test_restart_service_should_return_active])
+    def test_assign_config_and_name_to_instance_using_patch(self):
+        # test assigning a configuration and name to an instance
+        new_name = 'new_name'
+        report = CONFIG.get_report()
+        report.log("instance_info.id: %s" % instance_info.id)
+        report.log("configuration_info: %s" % configuration_info)
+        report.log("configuration_info.id: %s" % configuration_info.id)
+        report.log("instance name:%s" % instance_info.name)
+        report.log("instance new name:%s" % new_name)
+        saved_name = instance_info.name
+        config_id = configuration_info.id
+        instance_info.dbaas.instances.edit(instance_info.id,
+                                           configuration=config_id,
+                                           name=new_name)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        check = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal(200, instance_info.dbaas.last_http_code)
+        assert_equal(check.name, new_name)
+
+        # restore instance name
+        instance_info.dbaas.instances.edit(instance_info.id,
+                                           name=saved_name)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal('RESTART_REQUIRED', instance.status)
+        # restart to be sure configuration is applied
+        instance_info.dbaas.instances.restart(instance_info.id)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        sleep(2)
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                assert_equal("REBOOT", instance.status)
+                return False
+        poll_until(result_is_active)
+        # test assigning a configuration to an instance that
+        # already has an assigned configuration with patch
+        config_id = configuration_info.id
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.edit,
+                      instance_info.id, configuration=config_id)
+
+    @test(runs_after=[test_assign_config_and_name_to_instance_using_patch])
+    def test_unassign_configuration_after_patch(self):
+        # remove the configuration from the instance
+        instance_info.dbaas.instances.edit(instance_info.id,
+                                           remove_configuration=True)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        instance = instance_info.dbaas.instances.get(instance_info.id)
+        assert_equal('RESTART_REQUIRED', instance.status)
+        # restart to be sure configuration has been unassigned
+        instance_info.dbaas.instances.restart(instance_info.id)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        sleep(2)
+
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(
+                instance_info.id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                assert_equal("REBOOT", instance.status)
+                return False
+        poll_until(result_is_active)
+        result = instance_info.dbaas.configurations.get(configuration_info.id)
+        assert_equal(result.instance_count, 0)
+
+    @test
+    def test_unassign_configuration_from_invalid_instance_using_patch(self):
+        # test unassign config group from an invalid instance
+        invalid_id = "invalid-inst-id"
+        try:
+            instance_info.dbaas.instances.edit(invalid_id,
+                                               remove_configuration=True)
+        except exceptions.NotFound:
+            resp, body = instance_info.dbaas.client.last_response
+            assert_equal(resp.status, 404)
+
+    @test(runs_after=[test_unassign_configuration_after_patch])
+    def test_delete_unassigned_configuration(self):
+        # test that we can delete the configuration after no instances are
+        # assigned to it any longer
+        instance_info.dbaas.configurations.delete(configuration_info.id)
+        resp, body = instance_info.dbaas.client.last_response
+        assert_equal(resp.status, 202)
 
     @test(depends_on=[test_delete_unassigned_configuration])
     @time_out(TIMEOUT_INSTANCE_DELETE)

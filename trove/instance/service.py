@@ -250,17 +250,20 @@ class InstanceController(wsgi.Controller):
 
         instance = models.Instance.load(context, id)
 
-        # if configuration is set, then we will update the instance to use
-        # the new configuration.  If configuration is empty, we want to
-        # disassociate the instance from the configuration group and remove the
-        # active overrides file.
+        # If configuration is set, then we will update the instance to use the
+        # new configuration. If configuration is empty, we want to disassociate
+        # the instance from the configuration group and remove the active
+        # overrides file.
 
+        update_args = {}
         configuration_id = self._configuration_parse(context, body)
-
         if configuration_id:
             instance.assign_configuration(configuration_id)
         else:
             instance.unassign_configuration()
+
+        update_args['configuration_id'] = configuration_id
+        instance.update_db(**update_args)
         return wsgi.Result(None, 202)
 
     def edit(self, req, id, body, tenant_id):
@@ -277,6 +280,27 @@ class InstanceController(wsgi.Controller):
         if 'slave_of' in body['instance']:
             LOG.debug("Detaching replica from source.")
             instance.detach_replica()
+
+        # If configuration is set, then we will update the instance to
+        # use the new configuration. If configuration is empty, we
+        # want to disassociate the instance from the configuration
+        # group and remove the active overrides file.
+        # If instance name is set, then we will update the instance name.
+
+        edit_args = {}
+        if 'configuration' in body['instance']:
+            configuration_id = self._configuration_parse(context, body)
+            if configuration_id:
+                instance.assign_configuration(configuration_id)
+            else:
+                instance.unassign_configuration()
+            edit_args['configuration_id'] = configuration_id
+
+        if 'name' in body['instance']:
+            edit_args['name'] = body['instance']['name']
+
+        if edit_args:
+            instance.update_db(**edit_args)
 
         return wsgi.Result(None, 202)
 

@@ -303,6 +303,8 @@ instance = {
                 "required": [],
                 "properties": {
                     "slave_of": {},
+                    "name": non_empty_string,
+                    "configuration_id": configuration_id,
                 }
             }
         }
