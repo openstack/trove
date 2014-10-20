@@ -179,6 +179,7 @@ class TestClusterController(TestCase):
 
         mock_cluster = Mock()
         mock_cluster.instances = []
+        mock_cluster.instances_without_server = []
         mock_cluster.datastore_version.manager = 'mongodb'
         mock_cluster_create.return_value = mock_cluster
 
@@ -199,6 +200,7 @@ class TestClusterController(TestCase):
 
         mock_cluster = Mock()
         mock_cluster.instances = []
+        mock_cluster.instances_without_server = []
         mock_cluster.datastore_version.manager = 'mongodb'
         mock_cluster_load.return_value = mock_cluster
 

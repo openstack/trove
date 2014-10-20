@@ -104,13 +104,10 @@ class Manager(periodic_task.PeriodicTasks):
         config_changes = {}
         if cluster_config is not None:
             config_changes['bind_ip'] = operating_system.get_ip_address()
-            # TODO(ramashri) remove smallfiles config at end of dev testing
             if cluster_config["instance_type"] == "config_server":
                 config_changes["configsvr"] = "true"
-                config_changes["smallfiles"] = "true"
             elif cluster_config["instance_type"] == "member":
                 config_changes["replSet"] = cluster_config["replica_set_name"]
-                config_changes["smallfiles"] = "true"
         if (mount_point is not None and
                 (cluster_config is None or
                  cluster_config['instance_type'] != "query_router")):

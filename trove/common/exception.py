@@ -480,7 +480,7 @@ class ClusterNotFound(NotFound):
 
 
 class ClusterFlavorsNotEqual(TroveError):
-    message = _("The flavor for each instance in a cluster must be equal.")
+    message = _("The flavor for each instance in a cluster must be the same.")
 
 
 class ClusterVolumeSizeRequired(TroveError):
@@ -489,7 +489,7 @@ class ClusterVolumeSizeRequired(TroveError):
 
 class ClusterVolumeSizesNotEqual(TroveError):
     message = _("The volume size for each instance in a cluster must be "
-                "equal.")
+                "the same.")
 
 
 class ClusterNumInstancesNotSupported(TroveError):

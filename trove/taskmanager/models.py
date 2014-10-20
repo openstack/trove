@@ -183,7 +183,6 @@ class ConfigurationMixin(object):
         return ret
 
 
-# TODO(amcreynolds): add NotifyMixin + ConfigurationMixin-like functionality
 class ClusterTasks(Cluster):
 
     def delete_cluster(self, context, cluster_id):
@@ -265,8 +264,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 availability_zone,
                 nics)
 
-        # TODO(amcreynolds): need to find a way to merge cluster_config
-        # TODO(amcreynolds): into config_contents
         config = self._render_config(flavor)
         config_overrides = self._render_override_config(flavor,
                                                         overrides=overrides)
@@ -729,7 +726,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        packages, databases, users, backup_info=None,
                        config_contents=None, root_password=None,
                        overrides=None, cluster_config=None):
-        LOG.info(_("Entering guest_prepare"))
+        LOG.debug("Entering guest_prepare")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, packages, databases, users,
                            device_path=volume_info['device_path'],
