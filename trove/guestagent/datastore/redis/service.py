@@ -41,6 +41,7 @@ def _load_redis_options():
     So: 'foo bar baz' becomes {'foo' : 'bar baz'}
     """
     options = {}
+    LOG.debug("Loading Redis options.")
     with open(system.REDIS_CONFIG, 'r') as fd:
         for opt in fd.readlines():
             opt = opt.rstrip().split(' ')
@@ -83,7 +84,7 @@ class RedisAppStatus(service.BaseDbStatus):
         err = ""
         try:
             if 'requirepass' in options:
-                LOG.info(_('Password is set running ping with password'))
+                LOG.debug('Password is set, running ping with password.')
                 out, err = utils.execute_with_timeout(
                     system.REDIS_CLI,
                     '-a',
@@ -92,33 +93,32 @@ class RedisAppStatus(service.BaseDbStatus):
                     run_as_root=True,
                     root_helper='sudo')
             else:
-                LOG.info(_('Password not set running ping without password'))
+                LOG.debug('Password not set, running ping without password.')
                 out, err = utils.execute_with_timeout(
                     system.REDIS_CLI,
                     'PING',
                     run_as_root=True,
                     root_helper='sudo')
-            LOG.info(_('Redis is RUNNING.'))
+            LOG.info(_('Redis Service Status is RUNNING.'))
             return rd_instance.ServiceStatuses.RUNNING
         except exception.ProcessExecutionError:
-            LOG.error(_('Process execution error on redis-cli'))
+            LOG.exception(_('Process execution error on redis-cli.'))
         if 'PONG' not in out:
             try:
                 out, err = utils.execute_with_timeout('/bin/ps', '-C',
                                                       'redis-server', 'h')
                 pid = out.split()[0]
-                msg = _('Redis pid: %s') % (pid)
-                LOG.info(msg)
-                LOG.info(_('Service Status is BLOCKED.'))
+                LOG.debug('Redis pid: %s.' % (pid))
+                LOG.info(_('Redis Service Status is BLOCKED.'))
                 return rd_instance.ServiceStatuses.BLOCKED
             except exception.ProcessExecutionError:
                 pid_file = options.get('pidfile',
                                        '/var/run/redis/redis-server.pid')
                 if os.path.exists(pid_file):
-                    LOG.info(_('Service Status is CRASHED.'))
+                    LOG.info(_('Redis Service Status is CRASHED.'))
                     return rd_instance.ServiceStatuses.CRASHED
                 else:
-                    LOG.info(_('Service Status is SHUTDOWN.'))
+                    LOG.info(_('Redis Service Status is SHUTDOWN.'))
                     return rd_instance.ServiceStatuses.SHUTDOWN
 
 
@@ -142,24 +142,25 @@ class RedisApp(object):
         """
         Install redis if needed do nothing if it is already installed.
         """
-        LOG.info(_('Preparing Guest as Redis Server'))
+        LOG.info(_('Preparing Guest as Redis Server.'))
         if not packager.pkg_is_installed(packages):
-            LOG.info(_('Installing Redis'))
+            LOG.info(_('Installing Redis.'))
             self._install_redis(packages)
-        LOG.info(_('Dbaas install_if_needed complete'))
+        LOG.info(_('Redis installed completely.'))
 
     def complete_install_or_restart(self):
         """
         finalize status updates for install or restart.
         """
+        LOG.debug("Complete install or restart called.")
         self.status.end_install_or_restart()
 
     def _install_redis(self, packages):
         """
         Install the redis server.
         """
-        LOG.debug('Installing redis server')
-        msg = "Creating %s" % system.REDIS_CONF_DIR
+        LOG.debug('Installing redis server.')
+        msg = "Creating %s." % system.REDIS_CONF_DIR
         LOG.debug(msg)
         utils.execute_with_timeout('mkdir',
                                    '-p',
@@ -169,7 +170,7 @@ class RedisApp(object):
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, TIME_OUT)
         self.start_redis()
-        LOG.debug('Finished installing redis server')
+        LOG.debug('Finished installing redis server.')
 
     def _enable_redis_on_boot(self):
         """
@@ -203,7 +204,7 @@ class RedisApp(object):
         """
         Stops the redis application on the trove instance.
         """
-        LOG.info(_('Stopping redis...'))
+        LOG.info(_('Stopping redis.'))
         if do_not_start_on_reboot:
             self._disable_redis_on_boot()
         cmd = 'sudo %s' % (system.REDIS_CMD_STOP)
@@ -212,13 +213,14 @@ class RedisApp(object):
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
-            LOG.error(_('Could not stop Redis!'))
+            LOG.error(_('Could not stop Redis.'))
             self.status.end_install_or_restart()
 
     def restart(self):
         """
         Restarts the redis daemon.
         """
+        LOG.debug("Restarting Redis daemon.")
         try:
             self.status.begin_restart()
             self.stop_db()
@@ -230,6 +232,7 @@ class RedisApp(object):
         """
         Write the redis config.
         """
+        LOG.debug("Writing Redis config.")
         with open(TMP_REDIS_CONF, 'w') as fd:
             fd.write(config_contents)
         utils.execute_with_timeout('mv',
@@ -239,24 +242,25 @@ class RedisApp(object):
                                    root_helper='sudo')
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_('Starting redis with conf changes...'))
+        LOG.info(_('Starting redis with conf changes.'))
         if self.status.is_running:
-            raise RuntimeError('Cannot start_db_with_conf_changes because '
-                               'status is %s' % self.status)
+            format = 'Cannot start_db_with_conf_changes because status is %s.'
+            LOG.debug(format, self.status)
+            raise RuntimeError(format % self.status)
         LOG.info(_("Initiating config."))
         self.write_config(config_contents)
         self.start_redis(True)
 
     def reset_configuration(self, configuration):
         config_contents = configuration['config_contents']
-        LOG.info(_("Resetting configuration"))
+        LOG.info(_("Resetting configuration."))
         self.write_config(config_contents)
 
     def start_redis(self, update_db=False):
         """
         Start the redis daemon.
         """
-        LOG.info(_("Starting redis..."))
+        LOG.info(_("Starting redis."))
         self._enable_redis_on_boot()
         try:
             cmd = 'sudo %s' % (system.REDIS_CMD_START)
@@ -267,13 +271,12 @@ class RedisApp(object):
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of redis failed!"))
+            LOG.error(_("Start up of redis failed."))
             try:
                 utils.execute_with_timeout('pkill', '-9',
                                            'redis-server',
                                            run_as_root=True,
                                            root_helper='sudo')
-            except exception.ProcessExecutionError as p:
-                LOG.error('Error killing stalled redis start command.')
-                LOG.error(p)
+            except exception.ProcessExecutionError:
+                LOG.exception(_('Error killing stalled redis start command.'))
             self.status.end_install_or_restart()
