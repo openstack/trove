@@ -222,9 +222,9 @@ class CreateConfigurations(ConfigurationsTestBase):
                 CONFIG_NAME,
                 values,
                 CONFIG_DESC)
-        except exceptions.NotFound:
+        except exceptions.UnprocessableEntity:
             resp, body = instance_info.dbaas.client.last_response
-            assert_equal(resp.status, 404)
+            assert_equal(resp.status, 422)
 
     @test
     def test_configurations_create_invalid_value_type(self):
