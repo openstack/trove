@@ -17,6 +17,8 @@
 import json
 from time import sleep
 from datetime import datetime
+from proboscis import after_class
+from proboscis import before_class
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
@@ -194,24 +196,32 @@ class CreateConfigurations(ConfigurationsTestBase):
     @test
     def test_expected_get_configuration_parameter(self):
         # tests get on a single parameter to verify it has expected attributes
-        param = 'key_buffer_size'
+        param_name = 'key_buffer_size'
         expected_config_params = ['name', 'restart_required',
                                   'max_size', 'min_size', 'type',
                                   'deleted', 'deleted_at',
                                   'datastore_version_id']
-        instance_info.dbaas.configuration_parameters.get_parameter(
+        param = instance_info.dbaas.configuration_parameters.get_parameter(
             instance_info.dbaas_datastore,
             instance_info.dbaas_datastore_version,
-            param)
+            param_name)
         resp, body = instance_info.dbaas.client.last_response
-        print(resp)
-        print(body)
+        print("params: %s" % param)
+        print("resp: %s" % resp)
+        print("body: %s" % body)
         attrcheck = AttrCheck()
         config_parameter_dict = json.loads(body)
-        print(config_parameter_dict)
+        print("config_parameter_dict: %s" % config_parameter_dict)
         attrcheck.attrs_exist(config_parameter_dict, expected_config_params,
                               msg="Get Configuration parameter")
-        assert_equal(param, config_parameter_dict['name'])
+        assert_equal(param_name, config_parameter_dict['name'])
+        with TypeCheck('ConfigurationParameter', param) as parameter:
+            parameter.has_field('name', basestring)
+            parameter.has_field('restart_required', bool)
+            parameter.has_field('max_size', basestring)
+            parameter.has_field('min_size', basestring)
+            parameter.has_field('type', basestring)
+            parameter.has_field('datastore_version_id', unicode)
 
     @test
     def test_configurations_create_invalid_values(self):
@@ -609,6 +619,35 @@ class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
 @test(runs_after=[WaitForConfigurationInstanceToFinish], groups=[GROUP])
 class DeleteConfigurations(ConfigurationsTestBase):
 
+    @before_class
+    def setUp(self):
+        # need to store the parameter details that will be deleted
+        config_param_name = sql_variables[1]
+        instance_info.dbaas.configuration_parameters.get_parameter(
+            instance_info.dbaas_datastore,
+            instance_info.dbaas_datastore_version,
+            config_param_name)
+        resp, body = instance_info.dbaas.client.last_response
+        print(resp)
+        print(body)
+        self.config_parameter_dict = json.loads(body)
+
+    @after_class(always_run=True)
+    def tearDown(self):
+        # need to "undelete" the parameter that was deleted from the mgmt call
+        ds = instance_info.dbaas_datastore
+        ds_v = instance_info.dbaas_datastore_version
+        version = instance_info.dbaas.datastore_versions.get(
+            ds, ds_v)
+        client = instance_info.dbaas_admin.mgmt_configs
+        print(self.config_parameter_dict)
+        client.create(version.id,
+                      self.config_parameter_dict['name'],
+                      self.config_parameter_dict['restart_required'],
+                      self.config_parameter_dict['type'],
+                      self.config_parameter_dict['max_size'],
+                      self.config_parameter_dict['min_size'])
+
     @test
     def test_delete_invalid_configuration_not_found(self):
         # test deleting a configuration that does not exist throws exception
@@ -619,14 +658,15 @@ class DeleteConfigurations(ConfigurationsTestBase):
 
     @test(depends_on=[test_delete_invalid_configuration_not_found])
     def test_delete_configuration_parameter_with_mgmt_api(self):
-        # delete a parameter that is used by a test
-        # connect_timeout
+        # testing a param that is assigned to an instance can be deleted
+        # and doesnt affect an unassign later. So we delete a parameter
+        # that is used by a test (connect_timeout)
         ds = instance_info.dbaas_datastore
         ds_v = instance_info.dbaas_datastore_version
         version = instance_info.dbaas.datastore_versions.get(
             ds, ds_v)
         client = instance_info.dbaas_admin.mgmt_configs
-        config_param_name = sql_variables[1]
+        config_param_name = self.config_parameter_dict['name']
         client.delete(version.id, config_param_name)
         assert_raises(
             exceptions.NotFound,
