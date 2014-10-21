@@ -583,6 +583,30 @@ class BuiltInstanceTasksTest(testtools.TestCase):
                             Is(InstanceTasks.NONE))
             self.assertThat(self.db_instance.flavor_id, Is('6'))
 
+    @patch.object(utils, 'poll_until')
+    def test_reboot(self, mock_poll):
+        self.instance_task.datastore_status_matches = Mock(return_value=True)
+        self.instance_task._refresh_datastore_status = Mock()
+        self.instance_task.server.reboot = Mock()
+        self.instance_task.set_datastore_status_to_paused = Mock()
+        self.instance_task.reboot()
+        self.instance_task._guest.stop_db.assert_any_call()
+        self.instance_task._refresh_datastore_status.assert_any_call()
+        self.instance_task.server.reboot.assert_any_call()
+        self.instance_task.set_datastore_status_to_paused.assert_any_call()
+
+    @patch.object(utils, 'poll_until')
+    def test_reboot_datastore_not_ready(self, mock_poll):
+        self.instance_task.datastore_status_matches = Mock(return_value=False)
+        self.instance_task._refresh_datastore_status = Mock()
+        self.instance_task.server.reboot = Mock()
+        self.instance_task.set_datastore_status_to_paused = Mock()
+        self.instance_task.reboot()
+        self.instance_task._guest.stop_db.assert_any_call()
+        self.instance_task._refresh_datastore_status.assert_any_call()
+        assert not self.instance_task.server.reboot.called
+        assert not self.instance_task.set_datastore_status_to_paused.called
+
 
 class BackupTasksTest(testtools.TestCase):
     def setUp(self):
