@@ -56,7 +56,7 @@ class SecurityGroup(DatabaseModelBase):
 
             if not remote_sec_group:
                 raise exception.SecurityGroupCreationError(
-                    "Failed to create Security Group")
+                    _("Failed to create Security Group."))
             else:
                 return cls.create(
                     id=remote_sec_group.data()['id'],
@@ -66,7 +66,7 @@ class SecurityGroup(DatabaseModelBase):
                     tenant_id=context.tenant)
 
         except exception.SecurityGroupCreationError as e:
-            LOG.exception("Failed to create remote security group")
+            LOG.exception(_("Failed to create remote security group."))
             raise e
 
     @classmethod
@@ -111,7 +111,7 @@ class SecurityGroup(DatabaseModelBase):
             super(SecurityGroup, self).delete()
 
         except exception.TroveError:
-            LOG.exception('Failed to delete security group')
+            LOG.exception(_('Failed to delete security group.'))
             raise exception.TroveError("Failed to delete Security Group")
 
     @classmethod
@@ -163,7 +163,7 @@ class SecurityGroupRule(DatabaseModelBase):
                     group_id=sec_group['id'])
 
         except exception.SecurityGroupRuleCreationError as e:
-            LOG.exception("Failed to create remote security group")
+            LOG.exception(_("Failed to create remote security group."))
             raise e
 
     def get_security_group(self, tenant_id):
@@ -177,7 +177,7 @@ class SecurityGroupRule(DatabaseModelBase):
             RemoteSecurityGroup.delete_rule(self.id, context)
             super(SecurityGroupRule, self).delete()
         except exception.TroveError:
-            LOG.exception('Failed to delete security group')
+            LOG.exception(_('Failed to delete security group.'))
             raise exception.SecurityGroupRuleDeletionError(
                 "Failed to delete Security Group")
 
@@ -211,7 +211,7 @@ class RemoteSecurityGroup(NetworkRemoteModelBase):
 
     def __init__(self, security_group=None, id=None, context=None):
         if id is None and security_group is None:
-            msg = "Security Group does not have id defined!"
+            msg = _("Security Group does not have id defined!")
             raise exception.InvalidModelError(msg)
         elif security_group is None:
             driver = self.get_driver(context)
