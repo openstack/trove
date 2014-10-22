@@ -117,6 +117,12 @@ class CreateBackups(object):
 class AfterBackupCreation(object):
 
     @test
+    def test_restore_instance_from_not_completed_backup(self):
+        assert_raises(exceptions.Conflict,
+                      RestoreUsingBackup._restore, backup_info.id)
+        assert_equal(409, instance_info.dbaas.last_http_code)
+
+    @test
     def test_instance_action_right_after_backup_create(self):
         """Test any instance action while backup is running."""
         assert_unprocessable(instance_info.dbaas.instances.resize_instance,

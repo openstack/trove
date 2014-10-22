@@ -363,7 +363,7 @@ class MalformedSecurityGroupRuleError(TroveError):
 class BackupNotCompleteError(TroveError):
 
     message = _("Unable to create instance because backup %(backup_id)s is "
-                "not completed.")
+                "not completed. Actual state: %(state)s.")
 
 
 class BackupFileNotFound(NotFound):

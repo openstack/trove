@@ -275,6 +275,10 @@ class DBBackup(DatabaseModelBase):
         return self.state in BackupState.END_STATES
 
     @property
+    def is_done_successfuly(self):
+        return self.state == BackupState.COMPLETED
+
+    @property
     def filename(self):
         if self.location:
             last_slash = self.location.rfind("/")
