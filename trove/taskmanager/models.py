@@ -845,6 +845,13 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("Begin _delete_resources for instance %s" % self.id)
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
+        LOG.debug("Stopping datastore on instance %s before deleting any "
+                  "resources." % self.id)
+        try:
+            self.guest.stop_db()
+        except Exception:
+            LOG.exception(_("Error stopping the datastore before attempting "
+                            "to delete instance id %s.") % self.id)
         try:
             if use_heat:
                 # Delete the server via heat
