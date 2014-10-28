@@ -28,6 +28,7 @@ from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+from trove.openstack.common.gettextutils import _LI
 import trove.common.apischema as apischema
 
 
@@ -67,7 +68,7 @@ class InstanceController(wsgi.Controller):
         :param tenant_id: the tenant id for whom owns the instance
         :param id: ???
         """
-        LOG.debug("instance action req : '%s'\n\n" % req)
+        LOG.debug("instance action req : '%s'\n\n", req)
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -83,10 +84,10 @@ class InstanceController(wsgi.Controller):
             if key in _actions:
                 selected_action = _actions[key]
                 action_name = key
-        LOG.info(_("Performing %(action_name)s action against "
-                   "instance %(instance_id)s for tenant '%(tenant_id)s'")
-                 % {'action_name': action_name, 'instance_id': id,
-                    'tenant_id': tenant_id})
+        LOG.info(_LI("Performing %(action_name)s action against "
+                     "instance %(instance_id)s for tenant '%(tenant_id)s'"),
+                 {'action_name': action_name, 'instance_id': id,
+                  'tenant_id': tenant_id})
         return selected_action(instance, body)
 
     def _action_restart(self, instance, body):
@@ -130,8 +131,8 @@ class InstanceController(wsgi.Controller):
 
     def index(self, req, tenant_id):
         """Return all instances."""
-        LOG.info(_("Listing database instances for tenant '%s'") % tenant_id)
-        LOG.debug("req : '%s'\n\n" % req)
+        LOG.info(_LI("Listing database instances for tenant '%s'"), tenant_id)
+        LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         clustered_q = req.GET.get('include_clustered', '').lower()
         include_clustered = clustered_q == 'true'
@@ -143,9 +144,9 @@ class InstanceController(wsgi.Controller):
 
     def backups(self, req, tenant_id, id):
         """Return all backups for the specified instance."""
-        LOG.info(_("Listing backups for instance '%s'") %
+        LOG.info(_LI("Listing backups for instance '%s'"),
                  id)
-        LOG.debug("req : '%s'\n\n" % req)
+        LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         backups, marker = backup_model.list_for_instance(context, id)
         view = backup_views.BackupViews(backups)
@@ -155,10 +156,10 @@ class InstanceController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        LOG.info(_("Showing database instance '%(instance_id)s' for tenant "
-                   "'%(tenant_id)s'") %
+        LOG.info(_LI("Showing database instance '%(instance_id)s' for tenant "
+                     "'%(tenant_id)s'"),
                  {'instance_id': id, 'tenant_id': tenant_id})
-        LOG.debug("req : '%s'\n\n" % req)
+        LOG.debug("req : '%s'\n\n", req)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         server = models.load_instance_with_guest(models.DetailInstance,
@@ -168,10 +169,10 @@ class InstanceController(wsgi.Controller):
 
     def delete(self, req, tenant_id, id):
         """Delete a single instance."""
-        LOG.info(_("Deleting database instance '%(instance_id)s' for tenant "
-                   "'%(tenant_id)s'") %
+        LOG.info(_LI("Deleting database instance '%(instance_id)s' for tenant "
+                     "'%(tenant_id)s'"),
                  {'instance_id': id, 'tenant_id': tenant_id})
-        LOG.debug("req : '%s'\n\n" % req)
+        LOG.debug("req : '%s'\n\n", req)
         # TODO(hub-cap): turn this into middleware
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.load_any_instance(context, id)
@@ -181,9 +182,10 @@ class InstanceController(wsgi.Controller):
 
     def create(self, req, body, tenant_id):
         # TODO(hub-cap): turn this into middleware
-        LOG.info(_("Creating a database instance for tenant '%s'") % tenant_id)
-        LOG.debug(logging.mask_password("req : '%s'\n\n" % req))
-        LOG.debug(logging.mask_password("body : '%s'\n\n" % body))
+        LOG.info(_LI("Creating a database instance for tenant '%s'"),
+                 tenant_id)
+        LOG.debug(logging.mask_password("req : '%s'\n\n", req))
+        LOG.debug(logging.mask_password("body : '%s'\n\n", body))
         context = req.environ[wsgi.CONTEXT_KEY]
         datastore_args = body['instance'].get('datastore', {})
         datastore, datastore_version = (
@@ -241,11 +243,11 @@ class InstanceController(wsgi.Controller):
 
     def update(self, req, id, body, tenant_id):
         """Updates the instance to attach/detach configuration."""
-        LOG.info(_("Updating database instance '%(instance_id)s' for tenant "
-                   "'%(tenant_id)s'") %
+        LOG.info(_LI("Updating database instance '%(instance_id)s' for tenant "
+                     "'%(tenant_id)s'"),
                  {'instance_id': id, 'tenant_id': tenant_id})
-        LOG.debug("req: %s" % req)
-        LOG.debug("body: %s" % body)
+        LOG.debug("req: %s", req)
+        LOG.debug("body: %s", body)
         context = req.environ[wsgi.CONTEXT_KEY]
 
         instance = models.Instance.load(context, id)
@@ -270,7 +272,7 @@ class InstanceController(wsgi.Controller):
         """
         Updates the instance to set or unset one or more attributes.
         """
-        LOG.info(_("Editing instance for tenant id %s.") % tenant_id)
+        LOG.info(_LI("Editing instance for tenant id %s."), tenant_id)
         LOG.debug(logging.mask_password("req: %s"), req)
         LOG.debug(logging.mask_password("body: %s"), body)
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -308,12 +310,12 @@ class InstanceController(wsgi.Controller):
         """
         Returns the default configuration template applied to the instance.
         """
-        LOG.info(_("Getting default configuration for instance %s") % id)
+        LOG.info(_LI("Getting default configuration for instance %s"), id)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
-        LOG.debug("Server: %s" % instance)
+        LOG.debug("Server: %s", instance)
         config = instance.get_default_configuration_template()
-        LOG.debug("Default config for instance %(instance_id)s is %(config)s" %
+        LOG.debug("Default config for instance %(instance_id)s is %(config)s",
                   {'instance_id': id, 'config': config})
         return wsgi.Result(views.DefaultConfigurationView(
                            config).data(), 200)

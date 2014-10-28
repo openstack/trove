@@ -40,8 +40,10 @@ from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.openstack.common import gettextutils
 
+(_, _LE, _LI, _LW) = (gettextutils._, gettextutils._LE, gettextutils._LI,
+                      gettextutils._LW)
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -71,7 +73,7 @@ def load_server(context, instance_id, server_id):
     try:
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound:
-        LOG.error(_("Could not find nova server_id(%s).") % server_id)
+        LOG.error(_LE("Could not find nova server_id(%s)."), server_id)
         raise exception.ComputeInstanceNotFound(instance_id=instance_id,
                                                 server_id=server_id)
     except nova_exceptions.ClientException as e:
@@ -306,8 +308,8 @@ class SimpleInstance(object):
             if self.db_info.server_status in ["ACTIVE", "SHUTDOWN", "DELETED"]:
                 return InstanceStatus.SHUTDOWN
             else:
-                LOG.error(_("While shutting down instance (%(instance)s): "
-                            "server had status (%(status)s).") %
+                LOG.error(_LE("While shutting down instance (%(instance)s): "
+                              "server had status (%(status)s)."),
                           {'instance': self.id,
                            'status': self.db_info.server_status})
                 return InstanceStatus.ERROR
@@ -443,7 +445,7 @@ def load_any_instance(context, id, load_server=True):
         return load_instance(BuiltInstance, context, id,
                              needs_server=load_server)
     except exception.UnprocessableEntity:
-        LOG.warn(_("Could not load instance %s.") % id)
+        LOG.warn(_LW("Could not load instance %s."), id)
         return load_instance(FreshInstance, context, id, needs_server=False)
 
 
@@ -463,14 +465,14 @@ def load_instance(cls, context, id, needs_server=False):
             db_info.server_status = server.status
             db_info.addresses = server.addresses
         except exception.ComputeInstanceNotFound:
-            LOG.error(_("Could not load compute instance %s.") %
+            LOG.error(_LE("Could not load compute instance %s."),
                       db_info.compute_instance_id)
             raise exception.UnprocessableEntity("Instance %s is not ready." %
                                                 id)
 
     service_status = InstanceServiceStatus.find_by(instance_id=id)
-    LOG.debug("Instance %(instance_id)s service status is %(service_status)s."
-              % {'instance_id': id, 'service_status': service_status.status})
+    LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
+              {'instance_id': id, 'service_status': service_status.status})
     return cls(context, db_info, server, service_status)
 
 
@@ -478,8 +480,8 @@ def load_instance_with_guest(cls, context, id, cluster_id=None):
     db_info = get_db_info(context, id, cluster_id)
     load_simple_instance_server_status(context, db_info)
     service_status = InstanceServiceStatus.find_by(instance_id=id)
-    LOG.debug("Instance %(instance_id)s service status is %(service_status)s."
-              % {'instance_id': id, 'service_status': service_status.status})
+    LOG.debug("Instance %(instance_id)s service status is %(service_status)s.",
+              {'instance_id': id, 'service_status': service_status.status})
     instance = cls(context, db_info, service_status)
     load_guest_info(instance, context, id)
     return instance
@@ -545,7 +547,7 @@ class BaseInstance(SimpleInstance):
             if self.is_building:
                 raise exception.UnprocessableEntity("Instance %s is not ready."
                                                     % self.id)
-            LOG.debug("Deleting instance with compute id = %s." %
+            LOG.debug("Deleting instance with compute id = %s.",
                       self.db_info.compute_instance_id)
 
             from trove.cluster.models import is_cluster_deleting
@@ -576,7 +578,7 @@ class BaseInstance(SimpleInstance):
     def delete_async(self):
         deleted_at = datetime.utcnow()
         self._delete_resources(deleted_at)
-        LOG.debug("Setting instance %s to be deleted." % self.id)
+        LOG.debug("Setting instance %s to be deleted.", self.id)
         # Delete guest queue.
         try:
             guest = self.get_guest()
@@ -621,7 +623,8 @@ class BaseInstance(SimpleInstance):
         return self._volume_client
 
     def reset_task_status(self):
-        LOG.info(_("Resetting task status to NONE on instance %s.") % self.id)
+        LOG.info(_LI("Resetting task status to NONE on instance %s."),
+                 self.id)
         self.update_db(task_status=InstanceTasks.NONE)
 
 
@@ -652,8 +655,8 @@ class Instance(BuiltInstance):
             return root_on_create
         except NoSuchOptError:
             LOG.debug("root_on_create not configured for %s,"
-                      " hence defaulting the value to False."
-                      % datastore_manager)
+                      " hence defaulting the value to False.",
+                      datastore_manager)
             return False
 
     @classmethod
@@ -731,8 +734,8 @@ class Instance(BuiltInstance):
                                         cluster_id=cluster_id,
                                         shard_id=shard_id,
                                         type=instance_type)
-            LOG.debug("Tenant %(tenant)s created new Trove instance %(db)s."
-                      % {'tenant': context.tenant, 'db': db_info.id})
+            LOG.debug("Tenant %(tenant)s created new Trove instance %(db)s.",
+                      {'tenant': context.tenant, 'db': db_info.id})
 
             # if a configuration group is associated with an instance,
             # generate an overrides dict to pass into the instance creation
@@ -779,7 +782,7 @@ class Instance(BuiltInstance):
     def get_default_configuration_template(self):
         flavor = self.get_flavor()
         LOG.debug("Getting default config template for datastore version "
-                  "%(ds_version)s and flavor %(flavor)s." %
+                  "%(ds_version)s and flavor %(flavor)s.",
                   {'ds_version': self.ds_version, 'flavor': flavor})
         config = template.SingleInstanceConfigTemplate(
             self.ds_version, flavor, id)
@@ -787,9 +790,9 @@ class Instance(BuiltInstance):
 
     def resize_flavor(self, new_flavor_id):
         self.validate_can_perform_action()
-        LOG.info(_("Resizing instance %(instance_id)s flavor to "
-                   "%(flavor_id)s.")
-                 % {'instance_id': self.id, 'flavor_id': new_flavor_id})
+        LOG.info(_LI("Resizing instance %(instance_id)s flavor to "
+                     "%(flavor_id)s."),
+                 {'instance_id': self.id, 'flavor_id': new_flavor_id})
         if self.db_info.cluster_id is not None:
             raise exception.ClusterInstanceOperationNotSupported()
         # Validate that the flavor can be found and that it isn't the same size
@@ -820,14 +823,14 @@ class Instance(BuiltInstance):
 
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)
-        LOG.debug("Instance %s set to RESIZING." % self.id)
+        LOG.debug("Instance %s set to RESIZING.", self.id)
         task_api.API(self.context).resize_flavor(self.id, old_flavor,
                                                  new_flavor)
 
     def resize_volume(self, new_size):
         def _resize_resources():
             self.validate_can_perform_action()
-            LOG.info(_("Resizing volume of instance %s.") % self.id)
+            LOG.info(_LI("Resizing volume of instance %s."), self.id)
             if self.db_info.cluster_id is not None:
                 raise exception.ClusterInstanceOperationNotSupported()
             old_size = self.volume_size
@@ -850,7 +853,7 @@ class Instance(BuiltInstance):
 
     def reboot(self):
         self.validate_can_perform_action()
-        LOG.info(_("Rebooting instance %s.") % self.id)
+        LOG.info(_LI("Rebooting instance %s."), self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
         self.update_db(task_status=InstanceTasks.REBOOTING)
@@ -858,7 +861,7 @@ class Instance(BuiltInstance):
 
     def restart(self):
         self.validate_can_perform_action()
-        LOG.info(_("Restarting datastore on instance %s.") % self.id)
+        LOG.info(_LI("Restarting datastore on instance %s."), self.id)
         if self.db_info.cluster_id is not None and not self.context.is_admin:
             raise exception.ClusterInstanceOperationNotSupported()
         # Set our local status since Nova might not change it quick enough.
@@ -872,8 +875,8 @@ class Instance(BuiltInstance):
 
     def detach_replica(self):
         self.validate_can_perform_action()
-        LOG.info(_("Detaching instance %s from its replication source.")
-                 % self.id)
+        LOG.info(_LI("Detaching instance %s from its replication source."),
+                 self.id)
         if not self.slave_of_id:
             raise exception.BadRequest(_("Instance %s is not a replica.")
                                        % self.id)
@@ -881,9 +884,9 @@ class Instance(BuiltInstance):
 
     def migrate(self, host=None):
         self.validate_can_perform_action()
-        LOG.info(_("Migrating instance id = %(instance_id)s "
-                   "to host = %(host)s.")
-                 % {'instance_id': self.id, 'host': host})
+        LOG.info(_LI("Migrating instance id = %(instance_id)s "
+                     "to host = %(host)s."),
+                 {'instance_id': self.id, 'host': host})
         self.update_db(task_status=InstanceTasks.MIGRATING)
         task_api.API(self.context).migrate(self.id, host)
 
@@ -934,11 +937,11 @@ class Instance(BuiltInstance):
                                                  status=status)
 
     def unassign_configuration(self):
-        LOG.debug("Unassigning the configuration from the instance %s."
-                  % self.id)
+        LOG.debug("Unassigning the configuration from the instance %s.",
+                  self.id)
         if self.configuration and self.configuration.id:
-            LOG.debug("Unassigning the configuration id %s."
-                      % self.configuration.id)
+            LOG.debug("Unassigning the configuration id %s.",
+                      self.configuration.id)
             flavor = self.get_flavor()
             config_id = self.configuration.id
             LOG.debug("Configuration being unassigned; "
@@ -968,16 +971,17 @@ class Instance(BuiltInstance):
                 instance_datastore_version=inst_ds_v)
 
         config = Configuration(self.context, configuration.id)
-        LOG.debug("Config config is %s." % config)
+        LOG.debug("Config config is %s.", config)
+        self.update_db(configuration_id=configuration.id)
         self.update_overrides(config)
 
     def update_overrides(self, config):
-        LOG.debug("Updating or removing overrides for instance %s."
-                  % self.id)
+        LOG.debug("Updating or removing overrides for instance %s.",
+                  self.id)
         overrides = config.get_configuration_overrides()
         need_restart = config.does_configuration_need_restart()
         LOG.debug("Config overrides has non-dynamic settings, "
-                  "requires a restart: %s." % need_restart)
+                  "requires a restart: %s.", need_restart)
         if need_restart:
             self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
         task_api.API(self.context).update_overrides(self.id, overrides)
@@ -997,9 +1001,9 @@ def create_server_list_matcher(server_list):
                 instance_id=instance_id, server_id=server_id)
         else:
             # Should never happen, but never say never.
-            LOG.error(_("Server %(server)s for instance %(instance)s was "
-                        "found twice!") % {'server': server_id,
-                                           'instance': instance_id})
+            LOG.error(_LE("Server %(server)s for instance %(instance)s was "
+                          "found twice!"), {'server': server_id,
+                                            'instance': instance_id})
             raise exception.TroveError(uuid=instance_id)
 
     return find_server
@@ -1037,7 +1041,7 @@ class Instances(object):
         find_server = create_server_list_matcher(servers)
         for db in db_infos:
             LOG.debug("Checking for db [id=%(db_id)s, "
-                      "compute_instance_id=%(instance_id)s]." %
+                      "compute_instance_id=%(instance_id)s].",
                       {'db_id': db.id, 'instance_id': db.compute_instance_id})
         ret = Instances._load_servers_status(load_simple_instance, context,
                                              data_view.collection,
@@ -1076,14 +1080,14 @@ class Instances(object):
                 datastore_status = InstanceServiceStatus.find_by(
                     instance_id=db.id)
                 if not datastore_status.status:  # This should never happen.
-                    LOG.error(_("Server status could not be read for "
-                                "instance id(%s).") % db.id)
+                    LOG.error(_LE("Server status could not be read for "
+                                  "instance id(%s)."), db.id)
                     continue
-                LOG.debug("Server api_status(%s)." %
+                LOG.debug("Server api_status(%s).",
                           datastore_status.status.api_status)
             except exception.ModelNotFoundError:
-                LOG.error(_("Server status could not be read for "
-                            "instance id(%s).") % db.id)
+                LOG.error(_LE("Server status could not be read for "
+                              "instance id(%s)."), db.id)
                 continue
             ret.append(load_instance(context, db, datastore_status,
                                      server=server))
