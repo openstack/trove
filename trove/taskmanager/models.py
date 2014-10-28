@@ -942,8 +942,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                     snapshot_info, rep_source_config.config_contents)
                 LOG.debug("Got replication snapshot from guest successfully.")
                 return result
-            except (GuestError, GuestTimeout):
-                LOG.exception(_("Failed to get replication snapshot from %s")
+            except Exception:
+                LOG.exception(_("Failed to get replication snapshot from %s.")
                               % self.id)
                 raise
 
