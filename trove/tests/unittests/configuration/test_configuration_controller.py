@@ -165,6 +165,18 @@ class TestConfigurationController(TestCase):
     def test_validate_configuration_with_invalid_min(self):
         self._test_validate_configuration({'max_connections': -1})
 
+    def test_validate_long_value(self):
+        config_val1 = MagicMock()
+        config_val1.name = 'myisam_sort_buffer_size'
+        config_val1.max_size = 18446744073709551615
+        config_val1.min_size = 4096
+        config_val1.data_type = 'integer'
+        config_rules = [config_val1]
+
+        ConfigurationsController._validate_configuration(
+            {'myisam_sort_buffer_size': 18446744073709551615},
+            None, config_rules)
+
 
 class TestConfigurationsParameterController(TestCase):
     def setUp(self):
