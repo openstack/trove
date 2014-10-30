@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-10-20 06:09+0000\n"
-"PO-Revision-Date: 2014-10-08 04:45+0000\n"
-"Last-Translator: Mario Cho <hephaex@gmail.com>\n"
+"POT-Creation-Date: 2014-10-30 06:07+0000\n"
+"PO-Revision-Date: 2014-10-28 09:02+0000\n"
+"Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: Korean (Korea) (http://www.transifex.com/projects/p/trove/"
 "language/ko_KR/)\n"
 "Language: ko_KR\n"
@@ -19,6 +19,32 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: trove/instance/models.py:76
+#, python-format
+msgid "Could not find nova server_id(%s)."
+msgstr ""
+
+#: trove/instance/models.py:311
+#, python-format
+msgid ""
+"While shutting down instance (%(instance)s): server had status (%(status)s)."
+msgstr ""
+
+#: trove/instance/models.py:468
+#, python-format
+msgid "Could not load compute instance %s."
+msgstr ""
+
+#: trove/instance/models.py:1004
+#, python-format
+msgid "Server %(server)s for instance %(instance)s was found twice!"
+msgstr ""
+
+#: trove/instance/models.py:1083 trove/instance/models.py:1089
+#, python-format
+msgid "Server status could not be read for instance id(%s)."
+msgstr ""
 
 #: trove/openstack/common/service.py:188
 msgid "Exception during rpc cleanup."

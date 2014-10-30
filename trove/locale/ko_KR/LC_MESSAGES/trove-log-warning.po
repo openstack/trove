@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-10-20 06:09+0000\n"
-"PO-Revision-Date: 2014-10-08 04:46+0000\n"
-"Last-Translator: Mario Cho <hephaex@gmail.com>\n"
+"POT-Creation-Date: 2014-10-30 06:07+0000\n"
+"PO-Revision-Date: 2014-10-28 09:02+0000\n"
+"Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: Korean (Korea) (http://www.transifex.com/projects/p/trove/"
 "language/ko_KR/)\n"
 "Language: ko_KR\n"
@@ -19,6 +19,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: trove/instance/models.py:448
+#, python-format
+msgid "Could not load instance %s."
+msgstr ""
 
 #: trove/openstack/common/service.py:364
 #, python-format
