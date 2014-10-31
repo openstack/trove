@@ -59,16 +59,16 @@ class CbBackup(base.BackupRunner):
                                    shell=True, timeout=300)
 
     def _backup(self, password):
-        utils.execute_with_timeout(['/opt/couchbase/bin/cbbackup',
-                                    system.COUCHBASE_REST_API,
-                                    system.COUCHBASE_DUMP_DIR,
-                                    '-u', 'root', '-p', password],
+        utils.execute_with_timeout('/opt/couchbase/bin/cbbackup',
+                                   system.COUCHBASE_REST_API,
+                                   system.COUCHBASE_DUMP_DIR,
+                                   '-u', 'root', '-p', password,
                                    timeout=600)
 
     def _run_pre_backup(self):
         try:
             for cmd in self.pre_backup_commands:
-                utils.execute_with_timeout(cmd)
+                utils.execute_with_timeout(*cmd)
             root = service.CouchbaseRootAccess()
             pw = root.get_password()
             self._save_buckets_config(pw)
@@ -87,13 +87,13 @@ class CbBackup(base.BackupRunner):
                     else:
                         LOG.info(_("All buckets are memcached.  "
                                    "Skipping backup."))
-            utils.execute_with_timeout(['mv', OUTFILE,
-                                        system.COUCHBASE_DUMP_DIR])
+            utils.execute_with_timeout('mv', OUTFILE,
+                                       system.COUCHBASE_DUMP_DIR)
             if pw != "password":
                 # Not default password, backup generated root password
-                utils.execute_with_timeout(['cp', '-p',
-                                            system.pwd_file,
-                                            system.COUCHBASE_DUMP_DIR],
+                utils.execute_with_timeout('cp', '-p',
+                                           system.pwd_file,
+                                           system.COUCHBASE_DUMP_DIR,
                                            run_as_root=True,
                                            root_helper='sudo')
         except exception.ProcessExecutionError as p:
@@ -103,7 +103,7 @@ class CbBackup(base.BackupRunner):
     def _run_post_backup(self):
         try:
             for cmd in self.post_backup_commands:
-                utils.execute_with_timeout(cmd)
+                utils.execute_with_timeout(*cmd)
         except exception.ProcessExecutionError as p:
             LOG.error(p)
             raise p
