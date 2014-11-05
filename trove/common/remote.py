@@ -97,7 +97,8 @@ def nova_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.nova_compute_service_type,
-                           endpoint_region=CONF.os_region_name)
+                           endpoint_region=CONF.os_region_name,
+                           endpoint_type=CONF.nova_compute_endpoint_type)
 
     client = Client(context.user, context.auth_token,
                     project_id=context.tenant, auth_url=PROXY_AUTH_URL)
@@ -124,7 +125,8 @@ def cinder_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.cinder_service_type,
-                           endpoint_region=CONF.os_region_name)
+                           endpoint_region=CONF.os_region_name,
+                           endpoint_type=CONF.cinder_endpoint_type)
 
     client = CinderClient.Client(context.user, context.auth_token,
                                  project_id=context.tenant,
@@ -142,7 +144,8 @@ def heat_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.heat_service_type,
-                           endpoint_region=CONF.os_region_name)
+                           endpoint_region=CONF.os_region_name,
+                           endpoint_type=CONF.heat_endpoint_type)
 
     client = HeatClient.Client(token=context.auth_token,
                                os_no_client_auth=True,
@@ -158,7 +161,8 @@ def swift_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.swift_service_type,
-                           endpoint_region=CONF.os_region_name)
+                           endpoint_region=CONF.os_region_name,
+                           endpoint_type=CONF.swift_endpoint_type)
 
     client = Connection(preauthurl=url,
                         preauthtoken=context.auth_token,
@@ -175,7 +179,8 @@ def neutron_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.neutron_service_type,
-                           endpoint_region=CONF.os_region_name)
+                           endpoint_region=CONF.os_region_name,
+                           endpoint_type=CONF.neutron_endpoint_type)
 
     client = NeutronClient.Client(token=context.auth_token,
                                   endpoint_url=url)
