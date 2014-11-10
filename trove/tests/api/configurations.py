@@ -198,7 +198,7 @@ class CreateConfigurations(ConfigurationsTestBase):
         # tests get on a single parameter to verify it has expected attributes
         param_name = 'key_buffer_size'
         expected_config_params = ['name', 'restart_required',
-                                  'max_size', 'min_size', 'type',
+                                  'max', 'min', 'type',
                                   'deleted', 'deleted_at',
                                   'datastore_version_id']
         param = instance_info.dbaas.configuration_parameters.get_parameter(
@@ -218,8 +218,8 @@ class CreateConfigurations(ConfigurationsTestBase):
         with TypeCheck('ConfigurationParameter', param) as parameter:
             parameter.has_field('name', basestring)
             parameter.has_field('restart_required', bool)
-            parameter.has_field('max_size', basestring)
-            parameter.has_field('min_size', basestring)
+            parameter.has_field('max', basestring)
+            parameter.has_field('min', basestring)
             parameter.has_field('type', basestring)
             parameter.has_field('datastore_version_id', unicode)
 
@@ -645,8 +645,8 @@ class DeleteConfigurations(ConfigurationsTestBase):
                       self.config_parameter_dict['name'],
                       self.config_parameter_dict['restart_required'],
                       self.config_parameter_dict['type'],
-                      self.config_parameter_dict['max_size'],
-                      self.config_parameter_dict['min_size'])
+                      self.config_parameter_dict['max'],
+                      self.config_parameter_dict['min'])
 
     @test
     def test_delete_invalid_configuration_not_found(self):

@@ -82,8 +82,8 @@ class ConfigGroupsSetupBeforeInstanceCreation(object):
         asserts.assert_equal(name, param.name)
         asserts.assert_equal(restart_required, param.restart_required)
         asserts.assert_equal(data_type, param.type)
-        asserts.assert_equal(max_size, param.max_size)
-        asserts.assert_equal(min_size, param.min_size)
+        asserts.assert_equal(max_size, param.max)
+        asserts.assert_equal(min_size, param.min)
         client.delete(self.datastore_version_id, name)
 
         # test show deleted params work
@@ -95,8 +95,8 @@ class ConfigGroupsSetupBeforeInstanceCreation(object):
         asserts.assert_equal(name, param.name)
         asserts.assert_equal(restart_required, param.restart_required)
         asserts.assert_equal(data_type, param.type)
-        asserts.assert_equal(int(max_size), int(param.max_size))
-        asserts.assert_equal(int(min_size), int(param.min_size))
+        asserts.assert_equal(int(max_size), int(param.max))
+        asserts.assert_equal(int(min_size), int(param.min))
         asserts.assert_equal(True, param.deleted)
         asserts.assert_true(param.deleted_at)
 

@@ -134,8 +134,8 @@ class TestConfigurationController(TestCase):
             config_val1.name = 'max_connections'
             config_val1.restart_required = 'false'
             config_val1.datastore_version_id = 5.5
-            config_val1.max_size = 1
-            config_val1.min_size = 0
+            config_val1.max = 1
+            config_val1.min = 0
             config_val1.data_type = 'integer'
             config_rules = [config_val1]
 
@@ -177,8 +177,8 @@ class TestConfigurationsParameterController(TestCase):
                 'name': 'test',
                 'restart_required': 1,
                 'data_type': 'string',
-                'min_size': '0',
-                'max_size': '255'
+                'min': '0',
+                'max': '255'
             }
         }
         schema = self.controller.get_schema('create', body)
@@ -192,8 +192,8 @@ class TestConfigurationsParameterController(TestCase):
                 'name': 'test',
                 'restart_required': 5,
                 'data_type': 'string',
-                'min_size': 0,
-                'max_size': 255
+                'min': 0,
+                'max': 255
             }
         }
         schema = self.controller.get_schema('create', body)
@@ -212,8 +212,8 @@ class TestConfigurationsParameterController(TestCase):
                 'name': 'test',
                 'restart_required': -1,
                 'data_type': 'string',
-                'min_size': '0',
-                'max_size': '255'
+                'min': '0',
+                'max': '255'
             }
         }
         schema = self.controller.get_schema('create', body)
@@ -230,8 +230,8 @@ class TestConfigurationsParameterController(TestCase):
                 'name': 'test',
                 'restart_required': 'yes',
                 'data_type': 'string',
-                'min_size': '0',
-                'max_size': '255'
+                'min': '0',
+                'max': '255'
             }
         }
         schema = self.controller.get_schema('create', body)
