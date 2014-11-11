@@ -108,55 +108,63 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to change the passwords of one or more
            users.
         """
-        LOG.debug("Changing passwords for users on Instance %s.", self.id)
+        LOG.debug("Changing passwords for users on instance %s.", self.id)
         self._cast("change_passwords", users=users)
 
     def update_attributes(self, username, hostname, user_attrs):
         """Update user attributes."""
-        LOG.debug("Changing user attributes on Instance %s.", self.id)
+        LOG.debug("Changing user attributes on instance %s.", self.id)
         self._cast("update_attributes", username=username, hostname=hostname,
                    user_attrs=user_attrs)
 
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
-        LOG.debug("Creating Users for Instance %s.", self.id)
+        LOG.debug("Creating Users for instance %s.", self.id)
         self._cast("create_user", users=users)
 
     def get_user(self, username, hostname):
         """Make an asynchronous call to get a single database user."""
-        LOG.debug("Getting a user on Instance %s.", self.id)
-        LOG.debug("User name is %s." % username)
+        LOG.debug("Getting a user %(username)s on instance %(id)s.",
+                  {'username': username, 'id': self.id})
         return self._call("get_user", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname)
 
     def list_access(self, username, hostname):
         """Show all the databases to which a user has more than USAGE."""
-        LOG.debug("Showing user grants on Instance %s.", self.id)
-        LOG.debug("User name is %s." % username)
+        LOG.debug("Showing user %(username)s grants on instance %(id)s.",
+                  {'username': username, 'id': self.id})
         return self._call("list_access", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname)
 
     def grant_access(self, username, hostname, databases):
         """Grant a user permission to use a given database."""
+        LOG.debug("Granting access to databases %(databases)s for user "
+                  "%(username)s on instance %(id)s.", {'username': username,
+                                                       'databases': databases,
+                                                       'id': self.id})
         return self._call("grant_access", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname,
                           databases=databases)
 
     def revoke_access(self, username, hostname, database):
         """Remove a user's permission to use a given database."""
+        LOG.debug("Revoking access from database %(database)s for user "
+                  "%(username)s on instance %(id)s.", {'username': username,
+                                                       'database': database,
+                                                       'id': self.id})
         return self._call("revoke_access", AGENT_LOW_TIMEOUT,
                           username=username, hostname=hostname,
                           database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users."""
-        LOG.debug("Listing Users for Instance %s.", self.id)
+        LOG.debug("Listing Users for instance %s.", self.id)
         return self._call("list_users", AGENT_HIGH_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user."""
-        LOG.debug("Deleting user %(user)s for Instance %(instance_id)s." %
+        LOG.debug("Deleting user %(user)s for instance %(instance_id)s." %
                   {'user': user, 'instance_id': self.id})
         self._cast("delete_user", user=user)
 
@@ -164,12 +172,12 @@ class API(proxy.RpcProxy):
         """Make an asynchronous call to create a new database
            within the specified container
         """
-        LOG.debug("Creating databases for Instance %s.", self.id)
+        LOG.debug("Creating databases for instance %s.", self.id)
         self._cast("create_database", databases=databases)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list databases."""
-        LOG.debug("Listing databases for Instance %s.", self.id)
+        LOG.debug("Listing databases for instance %s.", self.id)
         return self._call("list_databases", AGENT_LOW_TIMEOUT, limit=limit,
                           marker=marker, include_marker=include_marker)
 
@@ -178,7 +186,7 @@ class API(proxy.RpcProxy):
            within the specified container
         """
         LOG.debug("Deleting database %(database)s for "
-                  "Instance %(instance_id)s." % {'database': database,
+                  "instance %(instance_id)s." % {'database': database,
                                                  'instance_id': self.id})
         self._cast("delete_database", database=database)
 
@@ -186,31 +194,31 @@ class API(proxy.RpcProxy):
         """Make a synchronous call to enable the root user for
            access from anywhere
         """
-        LOG.debug("Enable root user for Instance %s.", self.id)
+        LOG.debug("Enable root user for instance %s.", self.id)
         return self._call("enable_root", AGENT_HIGH_TIMEOUT)
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere
         """
-        LOG.debug("Disable root user for Instance %s.", self.id)
+        LOG.debug("Disable root user for instance %s.", self.id)
         return self._call("disable_root", AGENT_LOW_TIMEOUT)
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
            available for the container
         """
-        LOG.debug("Check root access for Instance %s.", self.id)
+        LOG.debug("Check root access for instance %s.", self.id)
         return self._call("is_root_enabled", AGENT_LOW_TIMEOUT)
 
     def get_hwinfo(self):
         """Make a synchronous call to get hardware info for the container"""
-        LOG.debug("Check hwinfo on Instance %s.", self.id)
+        LOG.debug("Check hwinfo on instance %s.", self.id)
         return self._call("get_hwinfo", AGENT_LOW_TIMEOUT)
 
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
-        LOG.debug("Check diagnostics on Instance %s.", self.id)
+        LOG.debug("Check diagnostics on instance %s.", self.id)
         return self._call("get_diagnostics", AGENT_LOW_TIMEOUT)
 
     def prepare(self, memory_mb, packages, databases, users,
@@ -266,18 +274,19 @@ class API(proxy.RpcProxy):
 
     def get_volume_info(self):
         """Make a synchronous call to get volume info for the container."""
-        LOG.debug("Check Volume Info on Instance %s.", self.id)
+        LOG.debug("Check Volume Info on instance %s.", self.id)
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
                           fs_path=None)
 
     def update_guest(self):
         """Make a synchronous call to update the guest agent."""
+        LOG.debug("Updating guest agent on instance %s.", self.id)
         self._call("update_guest", AGENT_HIGH_TIMEOUT)
 
     def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance."""
         LOG.debug("Create Backup %(backup_id)s "
-                  "for Instance %(instance_id)s." %
+                  "for instance %(instance_id)s." %
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
         self._cast("create_backup", backup_info=backup_info)
 
@@ -304,13 +313,13 @@ class API(proxy.RpcProxy):
 
     def update_overrides(self, overrides, remove=False):
         """Update the overrides."""
-        LOG.debug("Updating overrides on Instance %s.", self.id)
-        LOG.debug("Updating overrides values %s." % overrides)
+        LOG.debug("Updating overrides values %(overrides)s on instance "
+                  "%(id)s.", {'overrides': overrides, 'id': self.id})
         self._cast("update_overrides", overrides=overrides, remove=remove)
 
     def apply_overrides(self, overrides):
-        LOG.debug("Applying overrides on Instance %s.", self.id)
-        LOG.debug("Applying overrides values %s." % overrides)
+        LOG.debug("Applying overrides values %(overrides)s on instance "
+                  "%(id)s.", {'overrides': overrides, 'id': self.id})
         self._cast("apply_overrides", overrides=overrides)
 
     def get_replication_snapshot(self, snapshot_info=None,
