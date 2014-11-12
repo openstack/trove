@@ -1,0 +1,58 @@
+{
+    "instances": [
+        {
+            "created": "2014-10-30T12:30:00",
+            "datastore": {
+                "type": "mysql",
+                "version": "5.5"
+            },
+            "deleted": false,
+            "deleted_at": null,
+            "flavor": {
+                "id": "3",
+                "links": [
+                    {
+                        "href": "https://troveapi.org/v1.0/1234/flavors/3",
+                        "rel": "self"
+                    },
+                    {
+                        "href": "https://troveapi.org/flavors/3",
+                        "rel": "bookmark"
+                    }
+                ]
+            },
+            "hostname": "e09ad9a3f73309469cf1f43d11e79549caf9acf2.troveexampledb.com",
+            "id": "44b277eb-39be-4921-be31-3d61b43651d7",
+            "links": [
+                {
+                    "href": "https://troveapi.org/v1.0/1234/instances/44b277eb-39be-4921-be31-3d61b43651d7",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://troveapi.org/instances/44b277eb-39be-4921-be31-3d61b43651d7",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "json_rack_instance",
+            "server": {
+                "deleted": false,
+                "deleted_at": null,
+                "host": "hostname_1",
+                "id": "44b277eb-39be-4921-be31-3d61b43651d7",
+                "local_id": 0,
+                "name": "44b277eb-39be-4921-be31-3d61b43651d7-lay",
+                "status": "ACTIVE",
+                "tenant_id": "3000"
+            },
+            "service_status": "ACTIVE",
+            "status": "ACTIVE",
+            "task_description": "No tasks for the instance.",
+            "tenant_id": "3000",
+            "updated": "2014-10-30T12:30:00",
+            "volume": {
+                "size": 4
+            }
+        }
+    ]
+}
+

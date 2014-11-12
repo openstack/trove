@@ -1,7 +1,11 @@
 {
     "users": [
         {
-            "database": "databaseA",
+            "databases": [
+                {
+                    "name": "databaseA"
+                }
+            ],
             "name": "dbuser1",
             "password": "password"
         },
@@ -18,9 +22,14 @@
             "password": "password"
         },
         {
-            "database": "databaseD",
+            "databases": [
+                {
+                    "name": "databaseD"
+                }
+            ],
             "name": "dbuser3",
             "password": "password"
         }
     ]
 }
+

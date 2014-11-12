@@ -1,0 +1,52 @@
+{
+    "configuration-parameters": [
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "min_size": "0",
+            "name": "collation_server",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "max_size": "65535",
+            "min_size": "0",
+            "name": "connect_timeout",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "max_size": "57671680",
+            "min_size": "0",
+            "name": "innodb_buffer_pool_size",
+            "restart_required": true,
+            "type": "integer"
+        },
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "max_size": "4294967296",
+            "min_size": "0",
+            "name": "join_buffer_size",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "max_size": "4294967296",
+            "min_size": "0",
+            "name": "key_buffer_size",
+            "restart_required": false,
+            "type": "integer"
+        },
+        {
+            "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "max_size": "1",
+            "min_size": "0",
+            "name": "local_infile",
+            "restart_required": false,
+            "type": "integer"
+        }
+    ]
+}
+

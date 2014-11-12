@@ -1,0 +1,22 @@
+{
+    "backups": [
+        {
+            "created": "2014-10-30T12:30:00",
+            "datastore": {
+                "type": "mysql",
+                "version": "5.5",
+                "version_id": "b00000b0-00b0-0b00-00b0-000b000000bb"
+            },
+            "description": "My Backup",
+            "id": "a9832168-7541-4536-b8d9-a8a9b79cf1b4",
+            "instance_id": "44b277eb-39be-4921-be31-3d61b43651d7",
+            "locationRef": "http://localhost/path/to/backup",
+            "name": "snapshot",
+            "parent_id": null,
+            "size": null,
+            "status": "COMPLETED",
+            "updated": "2014-10-30T12:30:00"
+        }
+    ]
+}
+

@@ -1,0 +1,20 @@
+{
+    "versions": [
+        {
+            "datastore": "a00000a0-00a0-0a00-00a0-000a000000aa",
+            "id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+            "links": [
+                {
+                    "href": "https://troveapi.org/v1.0/1234/datastores/versions/b00000b0-00b0-0b00-00b0-000b000000bb",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://troveapi.org/datastores/versions/b00000b0-00b0-0b00-00b0-000b000000bb",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "5.5"
+        }
+    ]
+}
+
