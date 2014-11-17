@@ -1,0 +1,12 @@
+{
+    "diagnostics": {
+        "fdSize": 64,
+        "threads": 2,
+        "version": "1",
+        "vmHwm": 2872,
+        "vmPeak": 29160,
+        "vmRss": 2872,
+        "vmSize": 29096
+    }
+}
+

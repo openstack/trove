@@ -1,0 +1,18 @@
+{
+    "host": {
+        "instances": [
+            {
+                "id": "44b277eb-39be-4921-be31-3d61b43651d7",
+                "name": "44b277eb-39be-4921-be31-3d61b43651d7-lay",
+                "server_id": "44b277eb-39be-4921-be31-3d61b43651d7",
+                "status": "ACTIVE",
+                "tenant_id": "3000"
+            }
+        ],
+        "name": "hostname_1",
+        "percentUsed": 204,
+        "totalRAM": 2004,
+        "usedRAM": 4096
+    }
+}
+

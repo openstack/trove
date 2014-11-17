@@ -1,0 +1,44 @@
+{
+    "instance": {
+        "configuration": {
+            "basedir": "/usr",
+            "connect_timeout": "15",
+            "datadir": "/var/lib/mysql",
+            "default_storage_engine": "innodb",
+            "innodb_buffer_pool_size": "150M",
+            "innodb_data_file_path": "ibdata1:10M:autoextend",
+            "innodb_file_per_table": "1",
+            "innodb_log_buffer_size": "25M",
+            "innodb_log_file_size": "50M",
+            "innodb_log_files_in_group": "2",
+            "join_buffer_size": "1M",
+            "key_buffer_size": "50M",
+            "local-infile": "0",
+            "max_allowed_packet": "1M",
+            "max_connections": "100",
+            "max_heap_table_size": "16M",
+            "max_user_connections": "100",
+            "myisam-recover": "BACKUP",
+            "open_files_limit": "512",
+            "pid_file": "/var/run/mysqld/mysqld.pid",
+            "port": "3306",
+            "query_cache_limit": "1M",
+            "query_cache_size": "8M",
+            "query_cache_type": "1",
+            "read_buffer_size": "512K",
+            "read_rnd_buffer_size": "512K",
+            "server_id": "271898715",
+            "skip-external-locking": "1",
+            "sort_buffer_size": "1M",
+            "table_definition_cache": "256",
+            "table_open_cache": "256",
+            "thread_cache_size": "4",
+            "thread_stack": "192K",
+            "tmp_table_size": "16M",
+            "tmpdir": "/var/tmp",
+            "user": "mysql",
+            "wait_timeout": "120"
+        }
+    }
+}
+

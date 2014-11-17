@@ -1,7 +1,12 @@
 {
     "users": [
         {
-            "databases": [],
+            "databases": [
+                {
+                    "name": "databaseA"
+                }
+            ],
+            "host": "%",
             "name": "dbuser1"
         },
         {
@@ -13,10 +18,16 @@
                     "name": "databaseC"
                 }
             ],
+            "host": "%",
             "name": "dbuser2"
         },
         {
-            "databases": [],
+            "databases": [
+                {
+                    "name": "databaseD"
+                }
+            ],
+            "host": "%",
             "name": "dbuser3"
         },
         {
@@ -25,7 +36,9 @@
                     "name": "sampledb"
                 }
             ],
+            "host": "%",
             "name": "demouser"
         }
     ]
 }
+

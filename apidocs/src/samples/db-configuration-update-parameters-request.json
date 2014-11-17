@@ -1,0 +1,11 @@
+{
+    "configuration": {
+        "description": "example updated description",
+        "name": "example-updated-name",
+        "values": {
+            "collation_server": "utf8_unicode_ci",
+            "connect_timeout": 150
+        }
+    }
+}
+

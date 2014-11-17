@@ -3,15 +3,16 @@
         "id": 1,
         "links": [
             {
-                "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1",
+                "href": "https://troveapi.org/v1.0/1234/flavors/1",
                 "rel": "self"
             },
             {
-                "href": "https://ord.databases.api.rackspacecloud.com/flavors/1",
+                "href": "https://troveapi.org/flavors/1",
                 "rel": "bookmark"
             }
         ],
-        "name": "512MB Instance",
+        "name": "m1.tiny",
         "ram": 512
     }
 }
+

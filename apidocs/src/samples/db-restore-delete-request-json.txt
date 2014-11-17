@@ -1,0 +1,7 @@
+DELETE /v1.0/1234/instances/d5a9db64-7ef7-41c5-8e1e-4013166874bc HTTP/1.1
+User-Agent: python-troveclient
+Host: troveapi.org
+X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
+Accept: application/json
+Content-Type: application/json
+
