@@ -439,23 +439,21 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                               availability_zone, nics):
         LOG.debug("Begin _create_server_volume for id: %s" % self.id)
         try:
-            files = {"/etc/guest_info": ("[DEFAULT]\n--guest_id="
-                                         "%s\n--datastore_manager=%s\n"
-                                         "--tenant_id=%s\n" %
-                                         (self.id, datastore_manager,
-                                          self.tenant_id))}
-
+            files, userdata = self._prepare_file_and_userdata(
+                datastore_manager)
             name = self.hostname or self.name
             volume_desc = ("datastore volume for %s" % self.id)
             volume_name = ("datastore-%s" % self.id)
             volume_ref = {'size': volume_size, 'name': volume_name,
                           'description': volume_desc}
-
+            config_drive = CONF.use_nova_server_config_drive
             server = self.nova_client.servers.create(
                 name, image_id, flavor_id,
                 files=files, volume=volume_ref,
                 security_groups=security_groups,
-                availability_zone=availability_zone, nics=nics)
+                availability_zone=availability_zone,
+                nics=nics, config_drive=config_drive,
+                userdata=userdata)
             LOG.debug("Created new compute instance %(server_id)s "
                       "for id: %(id)s" %
                       {'server_id': server.id, 'id': self.id})
@@ -691,15 +689,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                        'volumes': created_volumes}
         return volume_info
 
-    def _create_server(self, flavor_id, image_id, security_groups,
-                       datastore_manager, block_device_mapping,
-                       availability_zone, nics):
+    def _prepare_file_and_userdata(self, datastore_manager):
         files = {"/etc/guest_info": ("[DEFAULT]\nguest_id=%s\n"
                                      "datastore_manager=%s\n"
                                      "tenant_id=%s\n" %
                                      (self.id, datastore_manager,
                                       self.tenant_id))}
-
         if os.path.isfile(CONF.get('guest_config')):
             with open(CONF.get('guest_config'), "r") as f:
                 files["/etc/trove-guestagent.conf"] = f.read()
@@ -709,6 +704,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if os.path.isfile(cloudinit):
             with open(cloudinit, "r") as f:
                 userdata = f.read()
+        return files, userdata
+
+    def _create_server(self, flavor_id, image_id, security_groups,
+                       datastore_manager, block_device_mapping,
+                       availability_zone, nics):
+        files, userdata = self._prepare_file_and_userdata(
+            datastore_manager)
         name = self.hostname or self.name
         bdmap = block_device_mapping
         config_drive = CONF.use_nova_server_config_drive
