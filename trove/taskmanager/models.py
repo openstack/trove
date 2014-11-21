@@ -350,7 +350,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         try:
             db_info = DBBackup.create(**snapshot_info)
-        except InvalidModelError as e:
+        except InvalidModelError:
             msg = (_("Unable to create replication snapshot record for "
                      "instance: %s") % self.id)
             LOG.exception(msg)
@@ -366,17 +366,31 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             snapshot = master.get_replication_snapshot(
                 snapshot_info, flavor=master.flavor_id)
             return snapshot
-        except TroveError as e:
-            msg = (_("Error creating replication snapshot "
-                     "from instance %(source)s "
-                     "for new replica %(replica)s.") % {'source': slave_of_id,
-                                                        'replica': self.id})
+        except Exception as e_create:
+            msg_create = (
+                _("Error creating replication snapshot from "
+                  "instance %(source)s for new replica %(replica)s.") %
+                {'source': slave_of_id, 'replica': self.id})
             err = inst_models.InstanceTasks.BUILDING_ERROR_REPLICA
-            Backup.delete(context, snapshot_info['id'])
-            self._log_and_raise(e, msg, err)
-        except Exception:
-            Backup.delete(context, snapshot_info['id'])
-            raise
+            # if the delete of the 'bad' backup fails, it'll mask the
+            # create exception, so we trap it here
+            try:
+                Backup.delete(context, snapshot_info['id'])
+            except Exception as e_delete:
+                LOG.error(msg_create)
+                # Make sure we log any unexpected errors from the create
+                if not isinstance(e_create, TroveError):
+                    LOG.error(e_create)
+                msg_delete = (
+                    _("An error occurred while deleting a bad "
+                      "replication snapshot from instance %(source)s.") %
+                    {'source': slave_of_id})
+                # we've already logged the create exception, so we'll raise
+                # the delete (otherwise the create will be logged twice)
+                self._log_and_raise(e_delete, msg_delete, err)
+
+            # the delete worked, so just log the original problem with create
+            self._log_and_raise(e_create, msg_create, err)
 
     def report_root_enabled(self):
         mysql_models.RootHistory.create(self.context, self.id, 'root')
