@@ -2,12 +2,12 @@
 # Arguments: Use --pid_file to specify a pid file location.
 
 
-if [ ! -d ".tox/py26" ]; then
-    tox -epy26
+if [ ! -d ".tox/py27" ]; then
+    tox -epy27
 fi
 
 function run() {
-    .tox/py26/bin/python $@
+    .tox/py27/bin/python $@
 }
 run bin/trove-manage \
     --config-file=etc/trove/trove.conf.test db_recreate \
