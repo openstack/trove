@@ -70,6 +70,8 @@ class CreateReplicationSlave(object):
     @test
     def test_create_db_on_master(self):
         databases = [{'name': existing_db_on_master}]
+        # Ensure that the auth_token in the dbaas client is not stale
+        instance_info.dbaas.authenticate()
         instance_info.dbaas.databases.create(instance_info.id, databases)
         assert_equal(202, instance_info.dbaas.last_http_code)
 
