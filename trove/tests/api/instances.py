@@ -1354,14 +1354,15 @@ class DeleteInstance(object):
     @test(enabled=VOLUME_SUPPORT,
           depends_on=[test_delete])
     def test_volume_is_deleted(self):
-        raise SkipTest("Cannot test volume is deleted from db.")
         try:
             while True:
-                db.volume_get(instance_info.user_context,
-                              instance_info.volume_id)
+                instance = dbaas.instances.get(instance_info.id)
+                assert_equal(instance.volume['status'], "available")
                 time.sleep(1)
-        except backend_exception.VolumeNotFound:
+        except exceptions.NotFound:
             pass
+        except Exception as ex:
+            fail("Failure: %s" % str(ex))
 
     #TODO(tim-simpson): make sure that the actual instance, volume,
     # guest status, and DNS entries are deleted.

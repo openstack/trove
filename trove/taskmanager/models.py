@@ -914,6 +914,19 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                             "Timeout deleting compute server %(server_id)s") %
                           {'instance_id': self.id, 'server_id': server_id})
 
+        # If volume has been resized it must be manually removed in cinder
+        try:
+            if self.volume_id:
+                volume_client = create_cinder_client(self.context)
+                volume = volume_client.volumes.get(self.volume_id)
+                if volume.status == "available":
+                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s.")
+                             % {'v': self.volume_id, 'i': self.id})
+                    volume.delete()
+        except Exception:
+            LOG.exception(_("Error deleting volume of instance %(id)s.") %
+                          {'id': self.db_info.id})
+
         self.send_usage_event('delete',
                               deleted_at=timeutils.isotime(deleted_at),
                               server=old_server)
