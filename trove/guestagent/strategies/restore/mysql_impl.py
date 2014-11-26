@@ -37,18 +37,20 @@ class MySQLRestoreMixin(object):
                                 "'root'@'localhost'=PASSWORD('');")
 
     def mysql_is_running(self):
-        if base.exec_with_root_helper("/usr/bin/mysqladmin", "ping"):
+        try:
+            utils.execute_with_timeout("/usr/bin/mysqladmin", "ping")
             LOG.debug("MySQL is up and running.")
             return True
-        else:
+        except exception.ProcessExecutionError:
             LOG.debug("MySQL is not running.")
             return False
 
     def mysql_is_not_running(self):
-        if base.exec_with_root_helper("/usr/bin/pgrep", "mysqld"):
+        try:
+            utils.execute_with_timeout("/usr/bin/pgrep", "mysqld")
             LOG.info("MySQL is still running.")
             return False
-        else:
+        except exception.ProcessExecutionError:
             LOG.debug("MySQL is not running.")
             return True
 
