@@ -19,6 +19,7 @@ from proboscis.asserts import fail
 from proboscis import test
 from proboscis import SkipTest
 from proboscis.decorators import time_out
+from trove.common import cfg
 from trove.common.utils import poll_until
 from trove.common.utils import generate_uuid
 from trove.common import exception
@@ -136,9 +137,63 @@ class AfterBackupCreation(object):
         assert_unprocessable(instance_info.dbaas.backups.delete, backup.id)
 
 
+class BackupRestoreMixin():
+
+    def verify_backup(self, backup_id):
+        def result_is_active():
+            backup = instance_info.dbaas.backups.get(backup_id)
+            if backup.status == "COMPLETED":
+                return True
+            else:
+                assert_not_equal("FAILED", backup.status)
+                return False
+
+        poll_until(result_is_active)
+
+    def instance_is_totally_gone(self, instance_id):
+
+        def instance_is_gone():
+            try:
+                instance_info.dbaas.instances.get(
+                    instance_id)
+                return False
+            except exceptions.NotFound:
+                return True
+
+        poll_until(
+            instance_is_gone, time_out=TIMEOUT_INSTANCE_DELETE)
+
+    def backup_is_totally_gone(self, backup_id):
+        def backup_is_gone():
+            try:
+                instance_info.dbaas.backups.get(backup_id)
+                return False
+            except exceptions.NotFound:
+                return True
+
+        poll_until(backup_is_gone, time_out=TIMEOUT_BACKUP_DELETE)
+
+    def verify_instance_is_active(self, instance_id):
+        # This version just checks the REST API status.
+        def result_is_active():
+            instance = instance_info.dbaas.instances.get(instance_id)
+            if instance.status == "ACTIVE":
+                return True
+            else:
+                # If its not ACTIVE, anything but BUILD must be
+                # an error.
+                assert_equal("BUILD", instance.status)
+                if instance_info.volume is not None:
+                    assert_equal(instance.volume.get('used', None), None)
+                return False
+
+        poll_until(result_is_active, sleep_time=5,
+                   time_out=TIMEOUT_INSTANCE_CREATE)
+
+
 @test(runs_after=[AfterBackupCreation],
       groups=[GROUP, tests.INSTANCES])
-class WaitForBackupCreateToFinish(object):
+class WaitForBackupCreateToFinish(BackupRestoreMixin):
     """
         Wait until the backup create is finished.
     """
@@ -147,15 +202,7 @@ class WaitForBackupCreateToFinish(object):
     @time_out(TIMEOUT_BACKUP_CREATE)
     def test_backup_created(self):
         # This version just checks the REST API status.
-        def result_is_active():
-            backup = instance_info.dbaas.backups.get(backup_info.id)
-            if backup.status == "COMPLETED":
-                return True
-            else:
-                assert_not_equal("FAILED", backup.status)
-                return False
-
-        poll_until(result_is_active)
+        self.verify_backup(backup_info.id)
 
 
 @test(depends_on=[WaitForBackupCreateToFinish],
@@ -176,7 +223,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list_filter_datastore(self):
-        """test list backups and filter by datastore."""
+        """Test list backups and filter by datastore."""
         result = instance_info.dbaas.backups.list(
             datastore=instance_info.dbaas_datastore)
         assert_equal(backup_count_prior_to_create + 1, len(result))
@@ -189,7 +236,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list_filter_different_datastore(self):
-        """test list backups and filter by datastore."""
+        """Test list backups and filter by datastore."""
         result = instance_info.dbaas.backups.list(
             datastore='Test_Datastore_1')
         # There should not be any backups for this datastore
@@ -197,7 +244,7 @@ class ListBackups(object):
 
     @test
     def test_backup_list_filter_datastore_not_found(self):
-        """test list backups and filter by datastore."""
+        """Test list backups and filter by datastore."""
         assert_raises(exceptions.BadRequest, instance_info.dbaas.backups.list,
                       datastore='NOT_FOUND')
 
@@ -248,7 +295,7 @@ class ListBackups(object):
 @test(runs_after=[ListBackups],
       depends_on=[WaitForBackupCreateToFinish],
       groups=[GROUP, tests.INSTANCES])
-class IncrementalBackups(object):
+class IncrementalBackups(BackupRestoreMixin):
 
     @test
     def test_create_db(self):
@@ -270,15 +317,7 @@ class IncrementalBackups(object):
         assert_equal(202, instance_info.dbaas.last_http_code)
 
         # Wait for the backup to finish
-        def result_is_active():
-            backup = instance_info.dbaas.backups.get(incremental_info.id)
-            if backup.status == "COMPLETED":
-                return True
-            else:
-                assert_not_equal("FAILED", backup.status)
-                return False
-
-        poll_until(result_is_active, time_out=TIMEOUT_BACKUP_CREATE)
+        self.verify_backup(incremental_info.id)
         assert_equal(backup_info.id, incremental_info.parent_id)
 
 
@@ -457,3 +496,73 @@ class DeleteBackups(object):
             raise SkipTest("Incremental Backup not created")
         assert_raises(exceptions.NotFound, instance_info.dbaas.backups.get,
                       incremental_info.id)
+
+
+@test(depends_on=[WaitForGuestInstallationToFinish],
+      runs_after=[DeleteBackups])
+class FakeTestHugeBackupOnSmallInstance(BackupRestoreMixin):
+
+    report = CONFIG.get_report()
+
+    def tweak_fake_guest(self, size):
+        from trove.tests.fakes import guestagent
+        guestagent.BACKUP_SIZE = size
+
+    @test
+    def test_load_mysql_with_data(self):
+        if not CONFIG.fake_mode:
+            raise SkipTest("Must run in fake mode.")
+        self.tweak_fake_guest(1.9)
+
+    @test(depends_on=[test_load_mysql_with_data])
+    def test_create_huge_backup(self):
+        if not CONFIG.fake_mode:
+            raise SkipTest("Must run in fake mode.")
+        self.new_backup = instance_info.dbaas.backups.create(
+            BACKUP_NAME,
+            instance_info.id,
+            BACKUP_DESC)
+
+        assert_equal(202, instance_info.dbaas.last_http_code)
+
+    @test(depends_on=[test_create_huge_backup])
+    def test_verify_huge_backup_completed(self):
+        if not CONFIG.fake_mode:
+            raise SkipTest("Must run in fake mode.")
+        self.verify_backup(self.new_backup.id)
+
+    @test(depends_on=[test_verify_huge_backup_completed])
+    def test_try_to_restore_on_small_instance_with_volume(self):
+        if not CONFIG.fake_mode:
+            raise SkipTest("Must run in fake mode.")
+        assert_raises(exceptions.Forbidden,
+                      instance_info.dbaas.instances.create,
+                      instance_info.name + "_restore",
+                      instance_info.dbaas_flavor_href,
+                      {'size': 1},
+                      datastore=instance_info.dbaas_datastore,
+                      datastore_version=(instance_info.
+                                         dbaas_datastore_version),
+                      restorePoint={"backupRef": self.new_backup.id})
+        assert_equal(403, instance_info.dbaas.last_http_code)
+
+    @test(depends_on=[test_verify_huge_backup_completed])
+    def test_try_to_restore_on_small_instance_with_flavor_only(self):
+        if not CONFIG.fake_mode:
+            raise SkipTest("Must run in fake mode.")
+        self.orig_conf_value = cfg.CONF.get(
+            instance_info.dbaas_datastore).volume_support
+        cfg.CONF.get(instance_info.dbaas_datastore).volume_support = False
+
+        assert_raises(exceptions.Forbidden,
+                      instance_info.dbaas.instances.create,
+                      instance_info.name + "_restore", 11,
+                      datastore=instance_info.dbaas_datastore,
+                      datastore_version=(instance_info.
+                                         dbaas_datastore_version),
+                      restorePoint={"backupRef": self.new_backup.id})
+
+        assert_equal(403, instance_info.dbaas.last_http_code)
+        cfg.CONF.get(
+            instance_info.dbaas_datastore
+        ).volume_support = self.orig_conf_value

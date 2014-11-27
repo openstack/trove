@@ -319,6 +319,7 @@ class Controller(object):
         ],
         webob.exc.HTTPForbidden: [
             exception.ReplicaSourceDeleteForbidden,
+            exception.BackupTooLarge,
         ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,
