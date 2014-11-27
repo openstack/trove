@@ -17,7 +17,7 @@ proboscis==1.2.5.3
 http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
 mock>=1.0
 mox3>=0.7.0
-testtools>=0.9.34
+testtools>=0.9.34,!=1.4.0
 discover
 testrepository>=0.0.18
 
