@@ -13,7 +13,7 @@
             "locationRef": "http://localhost/path/to/backup",
             "name": "snapshot",
             "parent_id": null,
-            "size": null,
+            "size": 0.14,
             "status": "COMPLETED",
             "updated": "2014-10-30T12:30:00"
         }

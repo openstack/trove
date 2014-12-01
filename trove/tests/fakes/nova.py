@@ -22,6 +22,11 @@ from trove.tests.fakes.common import authorize
 import eventlet
 import uuid
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 LOG = logging.getLogger(__name__)
 FAKE_HOSTS = ["fake_host_1", "fake_host_2"]
 
@@ -638,7 +643,9 @@ class FakeHost(object):
 class FakeHosts(object):
 
     def __init__(self, servers):
-        self.hosts = {}
+        # Use an ordered dict to make the results of the fake api call
+        # return in the same order for the example generator.
+        self.hosts = OrderedDict()
         for host in FAKE_HOSTS:
             self.add_host(FakeHost(host, servers))
 

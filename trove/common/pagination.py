@@ -16,6 +16,11 @@
 import urllib
 import six.moves.urllib.parse as urlparse
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 
 def url_quote(s):
     if s is None:
@@ -88,7 +93,8 @@ class AppUrl(object):
         # then add &foo=bar to the URL.
         parsed_url = urlparse.urlparse(self.url)
         # Build a dictionary out of the query parameters in the URL
-        query_params = dict(urlparse.parse_qsl(parsed_url.query))
+        # with an OrderedDict to preserve the order of the URL.
+        query_params = OrderedDict(urlparse.parse_qsl(parsed_url.query))
         # Use kwargs to change or update any values in the query dict.
         query_params.update(kwargs)
 

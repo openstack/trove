@@ -166,32 +166,47 @@ class SnippetWriter(object):
                     file.write("%s\n" % line)
 
         def assert_output_matches():
-            # If this test is failing for you, comment out this next
             if os.path.isfile(filename):
                 with open(filename, 'r') as original_file:
                     original = original_file.read()
-                if empty:
-                    fail('Error: output missing in new snippet generation '
-                         'for %s. Old content follows:\n"""%s"""'
-                         % (filename, original))
-                expected = original.split('\n')
-                # Remove the last item which will look like a duplicated
-                # file ending newline
-                expected.pop()
-                diff = '\n'.join(goofy_diff(expected, actual))
-                if diff:
-                    fail('Error: output files differ for %s:\n%s'
-                         % (filename, diff))
+                    if empty:
+                        fail('Error: output missing in new snippet generation '
+                             'for %s. Old content follows:\n"""%s"""'
+                             % (filename, original))
+                    elif filename.endswith('.json'):
+                        assert_json_matches(original)
+                    else:
+                        assert_file_matches(original)
             elif not empty:
                 fail('Error: new file necessary where there was no file '
                      'before. Filename=%s\nContent follows:\n"""%s"""'
                      % (filename, output))
 
-        # If this test is failing for you, comment out this line, generate
-        # the files, and then commit the changed files as part of your review.
-        #assert_output_matches()
+        def assert_file_matches(original):
+            expected = original.split('\n')
+            # Remove the last item which will look like a duplicated
+            # file ending newline
+            expected.pop()
+            diff = '\n'.join(goofy_diff(expected, actual))
+            if diff:
+                fail('Error: output files differ for %s:\n%s'
+                     % (filename, diff))
 
-        if not empty:
+        def assert_json_matches(original):
+            try:
+                expected = json.loads(original)
+                actual = json.loads(output)
+            except ValueError:
+                fail('Invalid json!\nExpected: %s\nActual: %s'
+                     % (original, output))
+
+            if expected != actual:
+                # Re-Use the same failure output if the json is different
+                assert_file_matches(original)
+
+        if not os.environ.get('TESTS_FIX_EXAMPLES'):
+            assert_output_matches()
+        elif not empty:
             write_actual_file()
 
 

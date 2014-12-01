@@ -15,6 +15,7 @@
 import json
 import time
 import logging
+import functools
 
 from proboscis import before_class
 from proboscis import test
@@ -37,6 +38,7 @@ trove_client._logger.setLevel(logging.CRITICAL)
 
 FAKE_INFO = {'m': 30, 's': 0, 'uuid': 'abcdef00-aaaa-aaaa-aaaa-bbbbbbbbbbbb'}
 EXAMPLE_BACKUP_ID = "a9832168-7541-4536-b8d9-a8a9b79cf1b4"
+EXAMPLE_BACKUP_INCREMENTAL_ID = "2e351a71-dd28-4bcb-a7d6-d36a5b487173"
 EXAMPLE_CONFIG_ID = "43a6ea86-e959-4735-9e46-a6a5d4a2d80f"
 EXAMPLE_INSTANCE_ID = "44b277eb-39be-4921-be31-3d61b43651d7"
 EXAMPLE_INSTANCE_ID_2 = "d5a9db64-7ef7-41c5-8e1e-4013166874bc"
@@ -821,18 +823,31 @@ class Backups(ActiveMixin):
     @test
     def create_backup(self):
         set_fake_stuff(uuid=EXAMPLE_BACKUP_ID)
-
-        def create_backup(client):
-            backup = client.backups.create(name='snapshot',
-                                           instance=json_instance.id,
-                                           description="My Backup")
-            with open("/tmp/mario", 'a') as f:
-                f.write("BACKUP = %s\n" % backup.id)
-            return backup
-
         results = self.snippet(
             "backup_create", "/backups", "POST", 202, "Accepted",
-            create_backup)
+            lambda client: client.backups.create(
+                name='snapshot',
+                instance=json_instance.id,
+                description="My Backup"
+            )
+        )
+        self._wait_for_active("BACKUP")
+        assert_equal(len(results), 1)
+        self.json_backup = results[JSON_INDEX]
+
+    @test
+    def create_incremental_backup(self):
+        set_fake_stuff(uuid=EXAMPLE_BACKUP_INCREMENTAL_ID)
+        results = self.snippet(
+            "backup_create_incremental", "/backups", "POST", 202, "Accepted",
+            lambda client: client.backups.create(
+                name='Incremental Snapshot',
+                instance=json_instance.id,
+                parent_id=EXAMPLE_BACKUP_ID,
+                description="My Incremental Backup"
+            )
+        )
+
         self._wait_for_active("BACKUP")
         assert_equal(len(results), 1)
         self.json_backup = results[JSON_INDEX]
@@ -1076,6 +1091,7 @@ class MgmtAccount(Example):
 
 
 def for_both(func):
+    @functools.wraps(func)
     def both(self):
         for result in self.results:
             func(self, result)
