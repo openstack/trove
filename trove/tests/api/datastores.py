@@ -88,16 +88,16 @@ class Datastores(object):
     @test
     def test_datastore_with_no_active_versions_is_hidden(self):
         datastores = self.rd_client.datastores.list()
-        id_list = [datastore.id for datastore in datastores]
-        id_no_versions = test_config.dbaas_datastore_id_no_versions
-        assert_true(id_no_versions not in id_list)
+        name_list = [datastore.name for datastore in datastores]
+        name_no_versions = test_config.dbaas_datastore_name_no_versions
+        assert_true(name_no_versions not in name_list)
 
     @test
     def test_datastore_with_no_active_versions_is_visible_for_admin(self):
         datastores = self.rd_admin.datastores.list()
-        id_list = [datastore.id for datastore in datastores]
-        id_no_versions = test_config.dbaas_datastore_id_no_versions
-        assert_true(id_no_versions in id_list)
+        name_list = [datastore.name for datastore in datastores]
+        name_no_versions = test_config.dbaas_datastore_name_no_versions
+        assert_true(name_no_versions in name_list)
 
 
 @test(groups=[tests.DBAAS_API, GROUP, tests.PRE_INSTANCES],
