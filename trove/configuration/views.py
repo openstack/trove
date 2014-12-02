@@ -127,9 +127,9 @@ class ConfigurationParameterView(object):
             "type": self.config.data_type,
         }
         if self.config.max_size:
-            ret["max"] = self.config.max_size
+            ret["max"] = int(self.config.max_size)
         if self.config.min_size:
-            ret["min"] = self.config.min_size
+            ret["min"] = int(self.config.min_size)
         return ret
 
 
