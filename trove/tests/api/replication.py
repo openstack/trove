@@ -206,14 +206,21 @@ class DetachReplica(object):
         poll_until(slave_is_running(False))
 
     @test(depends_on=[test_detach_replica])
+    @time_out(5 * 60)
     def test_slave_is_not_read_only(self):
         if CONFIG.fake_mode:
             raise SkipTest("Test not_read_only not supported in fake mode")
 
-        cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
-        server = create_server_connection(slave_instance.id)
-        stdout, stderr = server.execute(cmd)
-        assert_equal(stdout, "0\n")
+        # wait until replica is no longer read only
+        def check_not_read_only():
+            cmd = "mysql -BNq -e \\\'select @@read_only\\\'"
+            server = create_server_connection(slave_instance.id)
+            stdout, stderr = server.execute(cmd)
+            if (stdout.rstrip() != "0"):
+                return False
+            else:
+                return True
+        poll_until(check_not_read_only)
 
     @test(depends_on=[test_detach_replica])
     def test_slave_user_removed(self):
