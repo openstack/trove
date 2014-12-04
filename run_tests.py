@@ -24,6 +24,7 @@ import sys
 import traceback
 
 from trove.common import cfg
+from trove.common import utils
 from trove.openstack.common import log as logging
 from trove.tests.config import CONFIG
 from wsgi_intercept.httplib2_intercept import install as wsgi_install
@@ -82,8 +83,8 @@ def datastore_init():
                               default_version_id=
                               CONFIG.dbaas_datastore_version_id)
 
-    models.DBDatastore.create(id=CONFIG.dbaas_datastore_id_no_versions,
-                              name='Test_Datastore_1',
+    models.DBDatastore.create(id=utils.generate_uuid(),
+                              name=CONFIG.dbaas_datastore_name_no_versions,
                               default_version_id=None)
 
     main_dsv = models.DBDatastoreVersion.create(

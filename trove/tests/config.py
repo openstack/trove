@@ -72,8 +72,7 @@ class TestConfig(object):
             'nova_url': "http://localhost:8774/v1.1",
             'dbaas_datastore': "mysql",
             'dbaas_datastore_id': "a00000a0-00a0-0a00-00a0-000a000000aa",
-            'dbaas_datastore_id_no_versions': "10000000-0000-0000-0000-"
-                                              "000000000001",
+            'dbaas_datastore_name_no_versions': "Test_Datastore_1",
             'dbaas_datastore_version': "5.5",
             'dbaas_datastore_version_id': "b00000b0-00b0-0b00-00b0-"
                                           "000b000000bb",

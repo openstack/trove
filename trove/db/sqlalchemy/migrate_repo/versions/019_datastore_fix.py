@@ -89,7 +89,7 @@ def upgrade(migrate_engine):
 
     instance_table = Table('instances', meta, autoload=True)
 
-    if has_instances_wo_datastore_version:
+    if has_instances_wo_datastore_version(instance_table):
         instances = find_all_instances_wo_datastore_version(instance_table)
         image_id = find_image("mysql")
 
