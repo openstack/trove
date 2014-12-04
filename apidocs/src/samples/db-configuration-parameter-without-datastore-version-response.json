@@ -1,6 +1,6 @@
 {
     "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
-    "min_size": "0",
+    "min": "0",
     "name": "collation_server",
     "restart_required": false,
     "type": "string"

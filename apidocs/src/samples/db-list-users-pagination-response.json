@@ -1,7 +1,7 @@
 {
     "links": [
         {
-            "href": "https://troveapi.org/v1.0/1234/instances/44b277eb-39be-4921-be31-3d61b43651d7/users?marker=dbuser2%2540%2525&limit=2",
+            "href": "https://troveapi.org/v1.0/1234/instances/44b277eb-39be-4921-be31-3d61b43651d7/users?limit=2&marker=dbuser2%2540%2525",
             "rel": "next"
         }
     ],

@@ -32,3 +32,4 @@ MySQL-python
 Babel>=1.3
 six>=1.7.0
 stevedore>=1.1.0  # Apache-2.0
+ordereddict

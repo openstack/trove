@@ -1,12 +1,12 @@
 {
     "hosts": [
         {
-            "instanceCount": 0,
-            "name": "hostname_2"
-        },
-        {
             "instanceCount": 1,
             "name": "hostname_1"
+        },
+        {
+            "instanceCount": 0,
+            "name": "hostname_2"
         }
     ]
 }
