@@ -40,8 +40,8 @@ def die(message, *args):
 
 
 def check_python_version():
-    if sys.version_info < (2, 6):
-        die("Need Python Version >= 2.6")
+    if sys.version_info < (2, 7):
+        die("Need Python Version >= 2.7")
 
 
 def run_command(cmd, redirect_output=True, check_exit_code=True):
