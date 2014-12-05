@@ -216,6 +216,7 @@ class DetachReplica(object):
         assert_equal(stdout, "0\n")
 
     @test(depends_on=[test_detach_replica])
+    @time_out(3 * 60)
     def test_slave_user_removed(self):
         if CONFIG.fake_mode:
             raise SkipTest("Test not_read_only not supported in fake mode")
