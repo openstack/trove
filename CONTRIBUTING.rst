@@ -1,13 +1,13 @@
 If you would like to contribute to the development of OpenStack,
 you must follow the steps documented at:
 
-   http://wiki.openstack.org/HowToContribute#If_you.27re_a_developer
+   http://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 Once those steps have been completed, changes to OpenStack
 should be submitted for review via the Gerrit tool, following
 the workflow documented at:
 
-   http://wiki.openstack.org/GerritWorkflow
+   http://docs.openstack.org/infra/manual/developers.html#development-workflow
 
 Pull requests submitted through GitHub will be ignored.
 
@@ -67,7 +67,7 @@ Some other reviewing guidelines:
 Other references:
 
    - https://wiki.openstack.org/wiki/CodeReviewGuidelines
-   - https://wiki.openstack.org/wiki/How_To_Contribute
+   - http://docs.openstack.org/infra/manual/developers.html
    - https://wiki.openstack.org/wiki/ReviewChecklist
    - https://wiki.openstack.org/wiki/GitCommitMessages
    - http://docs.openstack.org/developer/hacking/
