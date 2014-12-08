@@ -17,15 +17,12 @@
 import datetime
 import inspect
 import jinja2
-import sys
 import time
 import six.moves.urllib.parse as urlparse
 import uuid
 import os
 import shutil
 
-from eventlet import event
-from eventlet import greenthread
 from eventlet.timeout import Timeout
 from passlib import utils as passlib_utils
 
@@ -33,6 +30,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.openstack.common import importutils
 from trove.openstack.common import log as logging
+from trove.openstack.common import loopingcall
 from trove.openstack.common import processutils
 from trove.openstack.common import timeutils
 from trove.openstack.common import utils as openstack_utils
@@ -175,67 +173,6 @@ class MethodInspector(object):
         return "%s %s" % (self._func.__name__, args_str)
 
 
-class LoopingCallDone(Exception):
-    """Exception to break out and stop a LoopingCall.
-
-    The poll-function passed to LoopingCall can raise this exception to
-    break out of the loop normally. This is somewhat analogous to
-    StopIteration.
-
-    An optional return-value can be included as the argument to the exception;
-    this return-value will be returned by LoopingCall.wait()
-
-    """
-
-    def __init__(self, retvalue=True):
-        """:param retvalue: Value that LoopingCall.wait() should return."""
-        super(LoopingCallDone, self).__init__()
-        self.retvalue = retvalue
-
-
-class LoopingCall(object):
-    """Nabbed from nova."""
-    def __init__(self, f=None, *args, **kw):
-        self.args = args
-        self.kw = kw
-        self.f = f
-        self._running = False
-
-    def start(self, interval, now=True):
-        self._running = True
-        done = event.Event()
-
-        def _inner():
-            if not now:
-                greenthread.sleep(interval)
-            try:
-                while self._running:
-                    self.f(*self.args, **self.kw)
-                    if not self._running:
-                        break
-                    greenthread.sleep(interval)
-            except LoopingCallDone as e:
-                self.stop()
-                done.send(e.retvalue)
-            except Exception:
-                LOG.exception(_('In looping call.'))
-                done.send_exception(*sys.exc_info())
-                return
-            else:
-                done.send(True)
-
-        self.done = done
-
-        greenthread.spawn(_inner)
-        return self.done
-
-    def stop(self):
-        self._running = False
-
-    def wait(self):
-        return self.done.wait()
-
-
 def poll_until(retriever, condition=lambda value: value,
                sleep_time=1, time_out=None):
     """Retrieves object until it passes condition, then returns it.
@@ -249,10 +186,10 @@ def poll_until(retriever, condition=lambda value: value,
     def poll_and_check():
         obj = retriever()
         if condition(obj):
-            raise LoopingCallDone(retvalue=obj)
+            raise loopingcall.LoopingCallDone(retvalue=obj)
         if time_out is not None and time.time() - start_time > time_out:
             raise exception.PollTimeOut
-    lc = LoopingCall(f=poll_and_check).start(sleep_time, True)
+    lc = loopingcall.LoopingCall(f=poll_and_check).start(sleep_time, True)
     return lc.wait()
 
 
