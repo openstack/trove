@@ -26,9 +26,10 @@ import shutil
 from eventlet.timeout import Timeout
 from passlib import utils as passlib_utils
 
+from oslo.utils import importutils
+
 from trove.common import cfg
 from trove.common import exception
-from trove.openstack.common import importutils
 from trove.openstack.common import log as logging
 from trove.openstack.common import loopingcall
 from trove.openstack.common import processutils

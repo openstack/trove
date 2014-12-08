@@ -15,11 +15,12 @@
 
 """Quotas for DB instances and resources."""
 
+from oslo.config import cfg
+from oslo.utils import importutils
+
 from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
-from oslo.config import cfg
 from trove.common import exception
-from trove.openstack.common import importutils
 from trove.quota.models import Quota
 from trove.quota.models import QuotaUsage
 from trove.quota.models import Reservation

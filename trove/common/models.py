@@ -15,7 +15,7 @@
 
 """Model classes that form the core of instances functionality."""
 
-from trove.openstack.common.importutils import import_class
+from oslo.utils.importutils import import_class
 from trove.common import remote
 from trove.common import cfg
 

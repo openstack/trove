@@ -14,13 +14,14 @@
 #    under the License.
 from trove.common.context import TroveContext
 
+from oslo.utils import importutils
+
 from trove.backup.models import Backup
 import trove.common.cfg as cfg
 from trove.common import exception
 from trove.common import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.openstack.common import log as logging
-from trove.openstack.common import importutils
 from trove.openstack.common import periodic_task
 from trove.taskmanager import models
 from trove.taskmanager.models import FreshInstanceTasks

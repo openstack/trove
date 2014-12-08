@@ -19,7 +19,7 @@
 import inspect
 import os
 
-from trove.openstack.common import importutils
+from oslo.utils import importutils
 from trove.openstack.common import loopingcall
 from trove.openstack.common.rpc import service as rpc_service
 from trove.common import cfg

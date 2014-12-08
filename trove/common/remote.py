@@ -13,10 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo.utils.importutils import import_class
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common import strategy
-from trove.openstack.common.importutils import import_class
 
 from cinderclient.v2 import client as CinderClient
 from heatclient.v1 import client as HeatClient
