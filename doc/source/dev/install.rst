@@ -6,7 +6,7 @@ Trove Installation
 
 Trove is constantly under development. The easiest way to install
 Trove is using the Trove integration scripts that can be found in
-github in the `Trove Integration Repository`_.
+git in the `Trove Integration Repository`_.
 
 
 Steps to set up a Trove Developer Environment
@@ -22,7 +22,7 @@ Installing trove-integration
 * Make sure we have git installed::
 
     # apt-get update
-    # apt-get install git-core -y
+    # apt-get install git -y
 
 * Add a user named ubuntu if you do not already have one::
 
@@ -41,7 +41,7 @@ Installing trove-integration
 
 * Clone this repo::
 
-    # git clone https://github.com/openstack/trove-integration.git
+    # git clone https://git.openstack.org/openstack/trove-integration.git
 
 * cd into the scripts directory::
 
@@ -105,5 +105,5 @@ trove-integration scripts, please look at the `README documentation`_
 in the `Trove Integration Repository`_.
 
 
-.. _Trove Integration Repository: https://www.github.com/openstack/trove-integration
-.. _README documentation: https://github.com/openstack/trove-integration/blob/master/README.md
+.. _Trove Integration Repository: https://git.openstack.org/cgit/openstack/trove-integration
+.. _README documentation: https://git.openstack.org/cgit/openstack/trove-integration/plain/README.md

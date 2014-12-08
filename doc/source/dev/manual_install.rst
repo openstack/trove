@@ -107,8 +107,8 @@ Obtain Trove
 ------------
 * Get Trove's sources from git::
 
-    # git clone https://github.com/openstack/trove.git
-    # git clone https://github.com/openstack/python-troveclient.git
+    # git clone https://git.openstack.org/openstack/trove.git
+    # git clone https://git.openstack.org/openstack/python-troveclient.git
 
 -------------
 Install Trove
@@ -120,13 +120,13 @@ Install Trove
 
 * Resolve dependency conflicts (if there are any)
 
-Trove is being built and tested against latest versions of OpenStack components that can be obtained from GitHub.
+Trove is being built and tested against latest versions of OpenStack components that can be obtained from git.
 But setup downloads dependencies from PyPI which may contain outdated versions. This may cause a dependency conflicts.
 E.g. for now python-cinderclient from PyPI requires older 'requests' than one installed by default, so fix it manually::
 
     # pip install --upgrade 'requests<1.2.3'
 
-or consider manual installing fresh OpenStack components from GitHub
+or consider manual installing fresh OpenStack components from git
 
 * Install Trove itself::
 
