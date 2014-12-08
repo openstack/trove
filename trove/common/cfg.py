@@ -57,7 +57,7 @@ common_opts = [
                 help='Set the service and instance task statuses to ERROR '
                      'when an instance fails to become active within the '
                      'configured usage_timeout.'),
-    cfg.StrOpt('os_region_name',
+    cfg.StrOpt('os_region_name', default='RegionOne',
                help='Region name of this node. Used when searching catalog.'),
     cfg.StrOpt('nova_compute_url', help='URL without the tenant segment.'),
     cfg.StrOpt('nova_compute_service_type', default='compute',

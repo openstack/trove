@@ -439,13 +439,6 @@ class InvalidInstanceState(TroveError):
                 "the instance status is currently: %(status)s.")
 
 
-class RegionAmbiguity(TroveError):
-    """Found more than one matching endpoint in Service Catalog."""
-    message = _("Multiple matches for service_type=%(service_type)s and "
-                "endpoint_region=%(endpoint_region)s. This generally means "
-                "that a region is required and you have not supplied one.")
-
-
 class NoServiceEndpoint(TroveError):
     """Could not find requested endpoint in Service Catalog."""
     message = _("Endpoint not found for service_type=%(service_type)s, "

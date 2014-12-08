@@ -39,16 +39,16 @@ def normalize_url(url):
         return url
 
 
-def get_endpoint(service_catalog, service_type=None, endpoint_region=None,
+def get_endpoint(service_catalog, service_type=None,
+                 endpoint_region=CONF.os_region_name,
                  endpoint_type='publicURL'):
     """
     Select an endpoint from the service catalog
 
     We search the full service catalog for services
-    matching both type and region. If the client
-    supplied no region then any endpoint matching service_type
-    is considered a match. There must be one -- and
-    only one -- successful match in the catalog,
+    matching both type and region. The client is expected to
+    supply the region matching the service_type. There must
+    be one -- and only one -- successful match in the catalog,
     otherwise we will raise an exception.
 
     Some parts copied from glance/common/auth.py.
@@ -68,10 +68,6 @@ def get_endpoint(service_catalog, service_type=None, endpoint_region=None,
         raise exception.NoServiceEndpoint(service_type=service_type,
                                           endpoint_region=endpoint_region,
                                           endpoint_type=endpoint_type)
-
-    if len(urls) > 1:
-        raise exception.RegionAmbiguity(service_type=service_type,
-                                        endpoint_region=endpoint_region)
 
     return urls[0]
 
