@@ -27,11 +27,11 @@ import webob.dec
 import webob.exc
 
 from oslo.utils import importutils
+from oslo.serialization import jsonutils
 
 from trove.common import cfg
-from trove.common import wsgi as base_wsgi
-from oslo.serialization import jsonutils
-from trove.openstack.common import wsgi
+from trove.common import wsgi
+from trove.common import base_wsgi
 from trove.common.i18n import _
 
 
@@ -157,7 +157,7 @@ DEFAULT_LIMITS = [
 ]
 
 
-class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
+class RateLimitingMiddleware(wsgi.TroveMiddleware):
     """
     Rate-limits requests passing through this middleware. All limit information
     is stored in memory for this implementation.
@@ -174,7 +174,7 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
 
         Other parameters are passed to the constructor for the limiter.
         """
-        base_wsgi.Middleware.__init__(self, application)
+        wsgi.Middleware.__init__(self, application)
 
         # Select the limiter class
         if limiter is None:
@@ -188,7 +188,7 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
 
         self._limiter = limiter(limits or DEFAULT_LIMITS, **kwargs)
 
-    @webob.dec.wsgify(RequestClass=wsgi.Request)
+    @webob.dec.wsgify(RequestClass=base_wsgi.Request)
     def __call__(self, req):
         """
         Represents a single call through this middleware. We should record the
@@ -200,7 +200,7 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
         """
         verb = req.method
         url = req.url
-        context = req.environ.get(base_wsgi.CONTEXT_KEY)
+        context = req.environ.get(wsgi.CONTEXT_KEY)
 
         tenant_id = None
         if context:
@@ -211,7 +211,7 @@ class RateLimitingMiddleware(base_wsgi.TroveMiddleware):
         if delay and self.enabled():
             msg = _("This request was rate-limited.")
             retry = time.time() + delay
-            return base_wsgi.OverLimitFault(msg, error, retry)
+            return wsgi.OverLimitFault(msg, error, retry)
 
         req.environ["trove.limits"] = self._limiter.get_limits(tenant_id)
 
@@ -354,7 +354,7 @@ class WsgiLimiter(object):
         """
         self._limiter = Limiter(limits or DEFAULT_LIMITS)
 
-    @webob.dec.wsgify(RequestClass=wsgi.Request)
+    @webob.dec.wsgify(RequestClass=base_wsgi.Request)
     def __call__(self, request):
         """
         Handles a call to this application. Returns 204 if the request is

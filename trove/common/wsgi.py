@@ -34,16 +34,16 @@ from oslo.serialization import jsonutils
 
 from trove.openstack.common import pastedeploy
 from trove.openstack.common import service
-from trove.openstack.common import wsgi as openstack_wsgi
+from trove.common import base_wsgi
 from trove.openstack.common import log as logging
 from trove.common import cfg
 
 CONTEXT_KEY = 'trove.context'
-Router = openstack_wsgi.Router
-Debug = openstack_wsgi.Debug
-Middleware = openstack_wsgi.Middleware
-JSONDictSerializer = openstack_wsgi.JSONDictSerializer
-RequestDeserializer = openstack_wsgi.RequestDeserializer
+Router = base_wsgi.Router
+Debug = base_wsgi.Debug
+Middleware = base_wsgi.Middleware
+JSONDictSerializer = base_wsgi.JSONDictSerializer
+RequestDeserializer = base_wsgi.RequestDeserializer
 
 CONF = cfg.CONF
 # Raise the default from 8192 to accommodate large tokens
@@ -78,8 +78,8 @@ def launch(app_name, port, paste_config_file, data={},
 
     """
     app = pastedeploy.paste_deploy_app(paste_config_file, app_name, data)
-    server = openstack_wsgi.Service(app, port, host=host,
-                                    backlog=backlog, threads=threads)
+    server = base_wsgi.Service(app, port, host=host,
+                               backlog=backlog, threads=threads)
     return service.launch(server, workers)
 
 
@@ -149,7 +149,7 @@ class VersionedURLMap(object):
         return app(environ, start_response)
 
 
-class Router(openstack_wsgi.Router):
+class Router(base_wsgi.Router):
     # Original router did not allow for serialization of the 404 error.
     # To fix this the _dispatch was modified to use Fault() objects.
     @staticmethod
@@ -168,7 +168,7 @@ class Router(openstack_wsgi.Router):
         return app
 
 
-class Request(openstack_wsgi.Request):
+class Request(base_wsgi.Request):
     @property
     def params(self):
         return utils.stringify_keys(super(Request, self).params)
@@ -229,7 +229,7 @@ class Result(object):
         return self._data
 
 
-class Resource(openstack_wsgi.Resource):
+class Resource(base_wsgi.Resource):
     def __init__(self, controller, deserializer, serializer,
                  exception_map=None):
         exception_map = exception_map or {}
@@ -413,9 +413,9 @@ class Controller(object):
                      if key in ["limit", "marker"]])
 
 
-class TroveResponseSerializer(openstack_wsgi.ResponseSerializer):
+class TroveResponseSerializer(base_wsgi.ResponseSerializer):
     def serialize_body(self, response, data, content_type, action):
-        """Overrides body serialization in openstack_wsgi.ResponseSerializer.
+        """Overrides body serialization in base_wsgi.ResponseSerializer.
 
         If the "data" argument is the Result class, its data
         method is called and *that* is passed to the superclass implementation
@@ -499,7 +499,7 @@ class Fault(webob.exc.HTTPException):
 
         content_type = req.best_match_content_type()
         serializer = {
-            'application/json': openstack_wsgi.JSONDictSerializer(),
+            'application/json': base_wsgi.JSONDictSerializer(),
         }[content_type]
 
         self.wrapped_exc.body = serializer.serialize(fault_data, content_type)
@@ -507,7 +507,7 @@ class Fault(webob.exc.HTTPException):
         return self.wrapped_exc
 
 
-class ContextMiddleware(openstack_wsgi.Middleware):
+class ContextMiddleware(base_wsgi.Middleware):
     def __init__(self, application):
         self.admin_roles = CONF.admin_roles
         super(ContextMiddleware, self).__init__(application)
@@ -554,10 +554,10 @@ class ContextMiddleware(openstack_wsgi.Middleware):
         return _factory
 
 
-class FaultWrapper(openstack_wsgi.Middleware):
+class FaultWrapper(base_wsgi.Middleware):
     """Calls down the middleware stack, making exceptions into faults."""
 
-    @webob.dec.wsgify(RequestClass=openstack_wsgi.Request)
+    @webob.dec.wsgify(RequestClass=base_wsgi.Request)
     def __call__(self, req):
         try:
             resp = req.get_response(self.application)

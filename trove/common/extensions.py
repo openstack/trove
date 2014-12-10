@@ -20,7 +20,7 @@ import stevedore
 import webob.dec
 import webob.exc
 
-import trove.openstack.common.wsgi as os_wsgi
+from trove.common import base_wsgi
 
 from lxml import etree
 from trove.openstack.common import log as logging
@@ -175,7 +175,7 @@ class ExtensionsResource(wsgi.Resource):
     def __init__(self, extension_manager):
         self.extension_manager = extension_manager
         body_serializers = {'application/xml': ExtensionsXMLSerializer()}
-        serializer = os_wsgi.ResponseSerializer(
+        serializer = base_wsgi.ResponseSerializer(
             body_serializers=body_serializers)
         super(ExtensionsResource, self).__init__(self, None, serializer)
 
@@ -462,7 +462,7 @@ class BaseResourceExtension(object):
         self.serializer = serializer
 
 
-class ExtensionsXMLSerializer(os_wsgi.XMLDictSerializer):
+class ExtensionsXMLSerializer(base_wsgi.XMLDictSerializer):
 
     def __init__(self):
         self.nsmap = {None: DEFAULT_XMLNS, 'atom': XMLNS_ATOM}
