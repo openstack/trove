@@ -1,4 +1,4 @@
-from trove.openstack.common import timeutils
+from oslo.utils import timeutils
 from datetime import datetime
 
 

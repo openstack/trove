@@ -14,7 +14,7 @@
 #    under the License.
 
 import datetime
-from trove.openstack.common import timeutils
+from oslo.utils import timeutils
 
 
 class LimitView(object):

@@ -19,11 +19,12 @@
 from nose.tools import assert_equal
 from nose.tools import assert_true
 
+from oslo.utils import timeutils
+
 from proboscis import before_class
 from proboscis import test
 
 from trove.common import cfg
-from trove.openstack.common import timeutils
 from trove.tests.util import create_dbaas_client
 from troveclient.compat import exceptions
 from datetime import datetime
