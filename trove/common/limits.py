@@ -30,7 +30,7 @@ from oslo.utils import importutils
 
 from trove.common import cfg
 from trove.common import wsgi as base_wsgi
-from trove.openstack.common import jsonutils
+from oslo.serialization import jsonutils
 from trove.openstack.common import wsgi
 from trove.openstack.common.gettextutils import _
 
