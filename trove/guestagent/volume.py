@@ -22,7 +22,7 @@ from trove.common import utils
 from trove.common.exception import GuestError
 from trove.common.exception import ProcessExecutionError
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 TMP_MOUNT_POINT = "/mnt/volume"
 

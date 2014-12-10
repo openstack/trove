@@ -24,7 +24,7 @@ from trove.datastore import models as dstore_models
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.taskmanager import api as task_api
 
 

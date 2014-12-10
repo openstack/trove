@@ -24,7 +24,7 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mongodb import service as mongo_service
 from trove.guestagent.datastore.mongodb import system
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import periodic_task
 
 

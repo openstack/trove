@@ -20,7 +20,7 @@ from trove.common import cfg
 from trove.common import pagination
 from trove.common import wsgi
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

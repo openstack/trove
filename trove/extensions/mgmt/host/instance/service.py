@@ -18,7 +18,7 @@ from trove.common import exception
 from trove.common import wsgi
 from trove.extensions.mgmt.host import models
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

@@ -26,7 +26,7 @@ from trove.openstack.common import rpc
 from trove.openstack.common import log as logging
 from trove.openstack.common.rpc import proxy
 from trove.openstack.common.rpc import common
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

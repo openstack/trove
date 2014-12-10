@@ -21,7 +21,7 @@ from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 RPC_API_VERSION = "1.0"

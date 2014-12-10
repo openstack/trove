@@ -21,7 +21,7 @@ from trove.configuration import models as config_models
 from trove.datastore import models as ds_models
 from trove.extensions.mgmt.configuration import views
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 

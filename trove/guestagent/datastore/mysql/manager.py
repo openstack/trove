@@ -28,7 +28,7 @@ from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.strategies.replication import get_replication_strategy
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import periodic_task
 
 

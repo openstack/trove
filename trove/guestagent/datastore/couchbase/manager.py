@@ -25,7 +25,7 @@ from trove.guestagent.datastore.couchbase import service
 from trove.guestagent.datastore.couchbase import system
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)

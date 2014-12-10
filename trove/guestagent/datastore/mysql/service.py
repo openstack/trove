@@ -37,7 +37,7 @@ from trove.guestagent.db import models
 from trove.guestagent import pkg
 from trove.guestagent.datastore import service
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)

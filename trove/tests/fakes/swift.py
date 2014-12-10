@@ -26,7 +26,7 @@ from mock import MagicMock
 
 from swiftclient import client as swift
 
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 

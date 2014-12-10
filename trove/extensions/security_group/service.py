@@ -22,7 +22,7 @@ from trove.extensions.security_group import models
 from trove.extensions.security_group import views
 from trove.instance import models as instance_models
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

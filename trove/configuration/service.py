@@ -23,7 +23,7 @@ from trove.configuration import views
 from trove.configuration.models import DBConfigurationParameter
 from trove.datastore import models as ds_models
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.instance import models as instances_models
 import trove.common.apischema as apischema
 

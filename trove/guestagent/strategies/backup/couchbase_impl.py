@@ -21,7 +21,7 @@ from trove.common import utils
 from trove.guestagent.datastore.couchbase import service
 from trove.guestagent.datastore.couchbase import system
 from trove.guestagent.strategies.backup import base
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import log as logging
 
 

@@ -19,7 +19,7 @@ from trove.common import models
 from trove.common import pagination
 from trove.common import utils
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

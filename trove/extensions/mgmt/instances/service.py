@@ -28,7 +28,7 @@ from trove.extensions.mgmt.instances.views import HwInfoView
 from trove.extensions.mysql import models as mysql_models
 from trove.instance.service import InstanceController
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 

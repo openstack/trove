@@ -26,7 +26,7 @@ from trove.extensions.mysql import models
 from trove.extensions.mysql import views
 from trove.guestagent.db import models as guest_models
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 

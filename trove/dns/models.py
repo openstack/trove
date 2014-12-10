@@ -22,7 +22,7 @@ from trove.db import get_db_api
 from trove.common import exception
 from trove.common.models import ModelBase
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

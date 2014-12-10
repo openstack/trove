@@ -21,7 +21,7 @@ from trove.guestagent import volume
 from trove.guestagent.datastore.cassandra import service
 from trove.openstack.common import periodic_task
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.guestagent import dbaas
 
 CONF = cfg.CONF

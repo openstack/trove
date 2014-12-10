@@ -27,8 +27,8 @@ from trove.datastore import models as datastore_models
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
-from trove.openstack.common.gettextutils import _LI
+from trove.common.i18n import _
+from trove.common.i18n import _LI
 import trove.common.apischema as apischema
 
 

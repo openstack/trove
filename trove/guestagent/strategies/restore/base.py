@@ -17,7 +17,7 @@ from trove.guestagent.strategy import Strategy
 from trove.common import cfg
 from trove.common import utils
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 from eventlet.green import subprocess
 
 LOG = logging.getLogger(__name__)

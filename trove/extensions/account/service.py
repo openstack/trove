@@ -19,7 +19,7 @@ from trove.common import wsgi
 from trove.common.auth import admin_context
 from trove.extensions.account import models
 from trove.extensions.account import views
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 LOG = logging.getLogger(__name__)

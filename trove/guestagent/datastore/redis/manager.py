@@ -22,7 +22,7 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.redis.service import RedisAppStatus
 from trove.guestagent.datastore.redis.service import RedisApp
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import periodic_task
 
 

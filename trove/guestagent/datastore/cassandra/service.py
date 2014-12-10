@@ -24,7 +24,7 @@ from trove.guestagent.datastore.cassandra import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)

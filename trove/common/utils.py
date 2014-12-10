@@ -35,7 +35,7 @@ from trove.openstack.common import log as logging
 from trove.openstack.common import loopingcall
 from trove.openstack.common import processutils
 from trove.openstack.common import utils as openstack_utils
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

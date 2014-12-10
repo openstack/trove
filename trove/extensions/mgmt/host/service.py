@@ -20,7 +20,7 @@ from trove.extensions.mgmt.host import models
 from trove.extensions.mgmt.host import views
 from trove.instance.service import InstanceController
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

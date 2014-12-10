@@ -28,7 +28,7 @@ import os
 from trove.openstack.common import log
 from itertools import chain
 from trove.common import cfg
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 LOG = log.getLogger(__name__)

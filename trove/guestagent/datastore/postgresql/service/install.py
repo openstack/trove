@@ -19,7 +19,7 @@ from trove.guestagent import pkg
 from trove.guestagent.datastore.postgresql.service.process import PgSqlProcess
 from trove.guestagent.datastore.postgresql.service.status import PgSqlAppStatus
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

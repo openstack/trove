@@ -18,7 +18,7 @@ import hashlib
 
 from trove.guestagent.strategies.storage import base
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 from trove.common.remote import create_swift_client
 from trove.common import cfg
 

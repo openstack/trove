@@ -21,7 +21,7 @@ from trove.common.auth import admin_context
 from trove.extensions.mgmt.clusters import models
 from trove.extensions.mgmt.clusters import views
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 LOG = logging.getLogger(__name__)

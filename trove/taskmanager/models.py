@@ -64,7 +64,7 @@ from trove.instance.tasks import InstanceTasks
 from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common.notifier import api as notifier
 from trove.quota.quota import run_with_quotas
 import trove.common.remote as remote

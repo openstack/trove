@@ -26,7 +26,7 @@ from trove.guestagent.datastore import service
 from trove.guestagent.datastore.mongodb import system
 from trove.openstack.common import log as logging
 from trove.guestagent.common import operating_system
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

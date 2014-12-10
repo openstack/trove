@@ -20,7 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 from trove.common import cfg
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.db.sqlalchemy import mappers
 
 _ENGINE = None

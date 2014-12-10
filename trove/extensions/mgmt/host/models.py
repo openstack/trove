@@ -18,7 +18,7 @@ Model classes that extend the instances functionality for MySQL instances.
 """
 
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 from trove.common import exception
 from trove.instance.models import DBInstance

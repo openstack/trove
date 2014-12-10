@@ -28,7 +28,7 @@ from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import log as logging
 from trove.quota.quota import check_quotas
 from trove.taskmanager import api as task_api

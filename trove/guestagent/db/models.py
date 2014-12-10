@@ -19,7 +19,7 @@ import string
 import netaddr
 
 from trove.common import cfg
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 CONF = cfg.CONF
 

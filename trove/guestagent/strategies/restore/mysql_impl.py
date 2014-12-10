@@ -24,7 +24,7 @@ from trove.openstack.common import log as logging
 from trove.common import exception
 from trove.common import utils
 import trove.guestagent.datastore.mysql.service as dbaas
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 

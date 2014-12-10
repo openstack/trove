@@ -27,7 +27,7 @@ from trove.taskmanager import api
 from trove.common.remote import create_swift_client
 from trove.common import utils
 from trove.quota.quota import run_with_quotas
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 CONF = cfg.CONF

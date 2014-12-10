@@ -20,7 +20,7 @@ import re
 from trove.openstack.common import log as logging
 from trove.openstack.common import exception as openstack_exception
 from trove.openstack.common import processutils
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 ClientConnectionError = openstack_exception.ClientConnectionError

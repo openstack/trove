@@ -28,7 +28,7 @@ from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
 from trove.guestagent.strategies.storage import get_storage_strategy
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 AGENT = BackupAgent()
 CONF = cfg.CONF

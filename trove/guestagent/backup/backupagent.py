@@ -26,7 +26,7 @@ from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage import get_storage_strategy
 from trove.guestagent.strategies.backup import get_backup_strategy
 from trove.guestagent.strategies.restore import get_restore_strategy
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

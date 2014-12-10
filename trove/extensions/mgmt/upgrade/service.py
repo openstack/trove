@@ -17,7 +17,7 @@ from trove.common import wsgi
 from trove.common.auth import admin_context
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 import trove.common.apischema as apischema
 
 

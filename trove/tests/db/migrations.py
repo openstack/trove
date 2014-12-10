@@ -38,7 +38,7 @@ import sqlalchemy
 import sqlalchemy.exc
 
 import trove.db.sqlalchemy.migrate_repo
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import log as logging
 from trove.openstack.common import processutils
 from trove.tests.util import event_simulator

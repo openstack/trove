@@ -19,7 +19,7 @@ from trove.common.auth import admin_context
 from trove.extensions.mgmt.volume import models
 from trove.extensions.mgmt.volume import views
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

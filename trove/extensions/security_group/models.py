@@ -22,7 +22,7 @@ from trove.common import exception
 from trove.db.models import DatabaseModelBase
 from trove.common.models import NetworkRemoteModelBase
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 
 CONF = cfg.CONF

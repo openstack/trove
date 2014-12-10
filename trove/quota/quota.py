@@ -19,7 +19,7 @@ from oslo.config import cfg
 from oslo.utils import importutils
 
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.common import exception
 from trove.quota.models import Quota
 from trove.quota.models import QuotaUsage

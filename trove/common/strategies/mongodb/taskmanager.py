@@ -25,7 +25,7 @@ from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 from trove.openstack.common import log as logging
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models

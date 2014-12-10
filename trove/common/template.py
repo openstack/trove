@@ -22,7 +22,7 @@ from trove.common import configurations
 from trove.common import exception
 from trove.common import utils
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

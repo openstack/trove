@@ -27,7 +27,7 @@ from trove.openstack.common import log as logging
 from trove.openstack.common import exception
 from trove.common import cfg
 from trove.common import wsgi
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

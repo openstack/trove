@@ -21,7 +21,7 @@ from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 

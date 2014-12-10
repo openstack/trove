@@ -17,7 +17,7 @@ import itertools
 from trove.common import cfg
 from trove.guestagent.datastore.postgresql import pgutil
 from trove.openstack.common import log as logging
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
