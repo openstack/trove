@@ -18,7 +18,7 @@
 import re
 
 from trove.openstack.common import log as logging
-from trove.openstack.common import exception as openstack_exception
+from trove.common import base_exception as openstack_exception
 from trove.openstack.common import processutils
 from trove.common.i18n import _
 

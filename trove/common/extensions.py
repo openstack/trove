@@ -24,7 +24,7 @@ import trove.openstack.common.wsgi as os_wsgi
 
 from lxml import etree
 from trove.openstack.common import log as logging
-from trove.openstack.common import exception
+from trove.common import base_exception as exception
 from trove.common import cfg
 from trove.common import wsgi
 from trove.common.i18n import _  # noqa
