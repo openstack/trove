@@ -12,8 +12,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from oslo_concurrency import processutils
 from trove.cmd.common import with_initialize
-from trove.openstack.common import processutils
 
 
 @with_initialize

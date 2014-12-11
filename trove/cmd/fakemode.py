@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo.config import cfg as openstack_cfg
+from oslo_concurrency import processutils
 from trove.cmd.common import with_initialize
-from trove.openstack.common import processutils
 
 
 opts = [
