@@ -28,21 +28,22 @@ from passlib import utils as passlib_utils
 
 from oslo.utils import importutils
 from oslo.utils import timeutils
+from oslo.utils import strutils
 from oslo_concurrency import processutils
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.openstack.common import log as logging
 from trove.openstack.common import loopingcall
-from trove.openstack.common import utils as openstack_utils
-from trove.common.i18n import _
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 import_class = importutils.import_class
 import_object = importutils.import_object
 import_module = importutils.import_module
-bool_from_string = openstack_utils.bool_from_string
+bool_from_string = strutils.bool_from_string
 execute = processutils.execute
 isotime = timeutils.isotime
 
