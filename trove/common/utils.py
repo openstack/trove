@@ -191,7 +191,11 @@ def poll_until(retriever, condition=lambda value: value,
             raise loopingcall.LoopingCallDone(retvalue=obj)
         if time_out is not None and time.time() - start_time > time_out:
             raise exception.PollTimeOut
-    lc = loopingcall.LoopingCall(f=poll_and_check).start(sleep_time, True)
+
+    lc = loopingcall.FixedIntervalLoopingCall(
+        f=poll_and_check).start(
+            sleep_time, True)
+
     return lc.wait()
 
 

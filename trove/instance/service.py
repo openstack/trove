@@ -15,6 +15,8 @@
 
 import webob.exc
 
+from oslo.utils import strutils
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common import pagination
@@ -184,8 +186,8 @@ class InstanceController(wsgi.Controller):
         # TODO(hub-cap): turn this into middleware
         LOG.info(_LI("Creating a database instance for tenant '%s'"),
                  tenant_id)
-        LOG.debug("req : '%s'\n\n", logging.mask_password(req))
-        LOG.debug("body : '%s'\n\n", logging.mask_password(body))
+        LOG.debug("req : '%s'\n\n", strutils.mask_password(req))
+        LOG.debug("body : '%s'\n\n", strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
         datastore_args = body['instance'].get('datastore', {})
         datastore, datastore_version = (
@@ -273,8 +275,8 @@ class InstanceController(wsgi.Controller):
         Updates the instance to set or unset one or more attributes.
         """
         LOG.info(_LI("Editing instance for tenant id %s."), tenant_id)
-        LOG.debug("req: %s", logging.mask_password(req))
-        LOG.debug("body: %s", logging.mask_password(body))
+        LOG.debug("req: %s", strutils.mask_password(req))
+        LOG.debug("body: %s", strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
 
         instance = models.Instance.load(context, id)

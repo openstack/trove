@@ -38,7 +38,7 @@ from eventlet import event
 from oslo.config import cfg
 
 from trove.openstack.common import eventlet_backdoor
-from trove.openstack.common.gettextutils import _LE, _LI, _LW
+from trove.openstack.common._i18n import _LE, _LI, _LW
 from trove.openstack.common import log as logging
 from trove.openstack.common import systemd
 from trove.openstack.common import threadgroup

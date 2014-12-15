@@ -15,6 +15,8 @@
 
 import webob.exc
 
+from oslo.utils import strutils
+
 from trove.common import exception
 from trove.common import pagination
 from trove.common import wsgi
@@ -82,8 +84,8 @@ class UserController(wsgi.Controller):
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of users."""
         LOG.info(_("Creating users for instance '%s'") % instance_id)
-        LOG.info(_("req : '%s'\n\n") % logging.mask_password(req))
-        LOG.info(_("body : '%s'\n\n") % logging.mask_password(body))
+        LOG.info(_("req : '%s'\n\n") % strutils.mask_password(req))
+        LOG.info(_("body : '%s'\n\n") % strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
         users = body['users']
         try:
@@ -135,7 +137,7 @@ class UserController(wsgi.Controller):
     def update(self, req, body, tenant_id, instance_id, id):
         """Change attributes for one user."""
         LOG.info(_("Updating user attributes for instance '%s'") % instance_id)
-        LOG.info(_("req : '%s'\n\n") % logging.mask_password(req))
+        LOG.info(_("req : '%s'\n\n") % strutils.mask_password(req))
         context = req.environ[wsgi.CONTEXT_KEY]
         id = correct_id_with_req(id, req)
         username, hostname = unquote_user_host(id)
@@ -157,7 +159,7 @@ class UserController(wsgi.Controller):
     def update_all(self, req, body, tenant_id, instance_id):
         """Change the password of one or more users."""
         LOG.info(_("Updating user passwords for instance '%s'") % instance_id)
-        LOG.info(_("req : '%s'\n\n") % logging.mask_password(req))
+        LOG.info(_("req : '%s'\n\n") % strutils.mask_password(req))
         context = req.environ[wsgi.CONTEXT_KEY]
         users = body['users']
         model_users = []

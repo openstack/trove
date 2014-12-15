@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright (c) 2012 OpenStack Foundation.
 # Administrator of the National Aeronautics and Space Administration.
 # All Rights Reserved.
@@ -18,6 +16,7 @@
 
 from __future__ import print_function
 
+import copy
 import errno
 import gc
 import os
@@ -31,7 +30,7 @@ import eventlet.backdoor
 import greenlet
 from oslo.config import cfg
 
-from trove.openstack.common.gettextutils import _  # noqa
+from trove.openstack.common._i18n import _LI
 from trove.openstack.common import log as logging
 
 help_for_backdoor_port = (
@@ -43,13 +42,18 @@ help_for_backdoor_port = (
     "chosen port is displayed in the service's log file.")
 eventlet_backdoor_opts = [
     cfg.StrOpt('backdoor_port',
-               default=None,
                help="Enable eventlet backdoor.  %s" % help_for_backdoor_port)
 ]
 
 CONF = cfg.CONF
 CONF.register_opts(eventlet_backdoor_opts)
 LOG = logging.getLogger(__name__)
+
+
+def list_opts():
+    """Entry point for oslo.config-generator.
+    """
+    return [(None, copy.deepcopy(eventlet_backdoor_opts))]
 
 
 class EventletBackdoorConfigValueError(Exception):
@@ -66,7 +70,7 @@ def _dont_use_this():
 
 
 def _find_objects(t):
-    return filter(lambda o: isinstance(o, t), gc.get_objects())
+    return [o for o in gc.get_objects() if isinstance(o, t)]
 
 
 def _print_greenthreads():
@@ -139,8 +143,10 @@ def initialize_if_enabled():
     # In the case of backdoor port being zero, a port number is assigned by
     # listen().  In any case, pull the port number out here.
     port = sock.getsockname()[1]
-    LOG.info(_('Eventlet backdoor listening on %(port)s for process %(pid)d') %
-             {'port': port, 'pid': os.getpid()})
+    LOG.info(
+        _LI('Eventlet backdoor listening on %(port)s for process %(pid)d') %
+        {'port': port, 'pid': os.getpid()}
+    )
     eventlet.spawn_n(eventlet.backdoor.backdoor_server, sock,
                      locals=backdoor_locals)
     return port
