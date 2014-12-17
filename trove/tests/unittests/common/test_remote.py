@@ -45,7 +45,8 @@ class TestRemote(testtools.TestCase):
         mock_resp = MagicMock()
         swiftclient.client.Connection.get_container = MagicMock(
             return_value=["text", mock_resp])
-        service_catalog = [{'endpoints': [{'publicURL': 'example.com'}],
+        service_catalog = [{'endpoints': [{'region': 'RegionOne',
+                                           'publicURL': 'example.com'}],
                             'type': 'object-store'}]
         client = remote.create_swift_client(TroveContext(
             tenant='123',
@@ -580,12 +581,6 @@ class TestEndpoints(testtools.TestCase):
                                        endpoint_type='internalURL',
                                        endpoint_region='RegionOne')
         self.assertEqual('http://internalURL/', endpoint)
-
-    def test_get_endpoint_raises_with_ambiguous_endpoint_region(self):
-        self.assertRaises(exception.RegionAmbiguity,
-                          remote.get_endpoint,
-                          self.service_catalog,
-                          service_type='object-store')
 
     def test_get_endpoint_raises_with_invalid_service_type(self):
         self.assertRaises(exception.NoServiceEndpoint,
