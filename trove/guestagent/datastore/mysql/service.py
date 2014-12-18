@@ -422,6 +422,9 @@ class MySqlAdmin(object):
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance."""
         LOG.debug("---Listing Databases---")
+        ignored_database_names = "'%s'" % "', '".join(CONF.ignore_dbs)
+        LOG.debug("The following database names are on ignore list and will "
+                  "be omitted from the listing: %s" % ignored_database_names)
         databases = []
         with LocalSqlClient(get_engine()) as client:
             # If you have an external volume mounted at /var/lib/mysql
@@ -435,10 +438,7 @@ class MySqlAdmin(object):
                 'default_collation_name as collation',
             ]
             q.tables = ['information_schema.schemata']
-            q.where = ["schema_name NOT IN ("
-                       "'mysql', 'information_schema', "
-                       "'lost+found', '#mysql50#lost+found'"
-                       ")"]
+            q.where = ["schema_name NOT IN (" + ignored_database_names + ")"]
             q.order = ['schema_name ASC']
             if limit:
                 q.limit = limit + 1

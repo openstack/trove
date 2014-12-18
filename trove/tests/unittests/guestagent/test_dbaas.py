@@ -26,6 +26,7 @@ import testtools
 from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
+from trove.common import cfg
 from trove.common.exception import ProcessExecutionError
 from trove.common import utils
 from trove.common import instance as rd_instance
@@ -66,6 +67,8 @@ from trove.guestagent.db import models
 from trove.guestagent.volume import VolumeDevice
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
+
+CONF = cfg.CONF
 
 
 """
@@ -345,10 +348,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ("
-                     "'mysql', 'information_schema', "
-                     "'lost+found', '#mysql50#lost+found'"
-                     ")"),
+                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
+                     "')"),
                     "ORDER BY schema_name ASC",
                     ]
         for text in expected:
@@ -363,10 +364,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ("
-                     "'mysql', 'information_schema', "
-                     "'lost+found', '#mysql50#lost+found'"
-                     ")"),
+                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
+                     "')"),
                     "ORDER BY schema_name ASC",
                     ]
         for text in expected:
@@ -382,10 +381,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ("
-                     "'mysql', 'information_schema', "
-                     "'lost+found', '#mysql50#lost+found'"
-                     ")"),
+                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
+                     "')"),
                     "ORDER BY schema_name ASC",
                     ]
 
@@ -404,10 +401,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ("
-                     "'mysql', 'information_schema', "
-                     "'lost+found', '#mysql50#lost+found'"
-                     ")"),
+                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
+                     "')"),
                     "ORDER BY schema_name ASC",
                     ]
         for text in expected:
