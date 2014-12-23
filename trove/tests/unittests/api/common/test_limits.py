@@ -29,7 +29,7 @@ from trove.common import limits
 from trove.common.limits import Limit
 from trove.limits import views
 from trove.limits.service import LimitsController
-from trove.openstack.common import jsonutils
+from oslo.serialization import jsonutils
 from trove.quota.quota import QUOTAS
 
 TEST_LIMITS = [
