@@ -69,14 +69,14 @@ def create_method_args_string(*args, **kwargs):
 def stringify_keys(dictionary):
     if dictionary is None:
         return None
-    return dict((str(key), value) for key, value in dictionary.iteritems())
+    return {str(key): value for key, value in dictionary.iteritems()}
 
 
 def exclude(key_values, *exclude_keys):
     if key_values is None:
         return None
-    return dict((key, value) for key, value in key_values.iteritems()
-                if key not in exclude_keys)
+    return {key: value for key, value in key_values.iteritems()
+            if key not in exclude_keys}
 
 
 def generate_uuid():

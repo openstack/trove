@@ -42,7 +42,7 @@ class ModelBase(object):
     def data(self, **options):
         """Called to serialize object to a dictionary."""
         data_fields = self._data_fields + self._auto_generated_attrs
-        return dict([(field, self[field]) for field in data_fields])
+        return {field: self[field] for field in data_fields}
 
     def is_valid(self):
         """Called when persisting data to ensure the format is correct."""
@@ -84,8 +84,7 @@ class RemoteModelBase(ModelBase):
 
     def _data_item(self, data_object):
         data_fields = self._data_fields + self._auto_generated_attrs
-        return dict([(field, getattr(data_object, field))
-                     for field in data_fields])
+        return {field: getattr(data_object, field) for field in data_fields}
 
     # data magic that will allow for a list of _data_object or a single item
     # if the object is a list, it will turn it into a list of hash's again
