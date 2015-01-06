@@ -20,6 +20,7 @@ from proboscis import test
 
 from novaclient.exceptions import BadRequest
 from novaclient.v1_1.servers import Server
+from oslo.messaging._drivers.common import RPCException
 
 from trove.common.exception import PollTimeOut
 from trove.common import template
@@ -31,7 +32,6 @@ from trove.guestagent import api as guest
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
-from trove.openstack.common.rpc.common import RPCException
 from trove.taskmanager import models as models
 from trove.tests.fakes import nova
 from trove.tests.util import test_config

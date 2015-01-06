@@ -64,6 +64,7 @@ FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_databases": [FAKE_DB]}]
 
 
+conductor_api.API.get_client = Mock()
 conductor_api.API.heartbeat = Mock()
 
 

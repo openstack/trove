@@ -43,6 +43,7 @@ from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
 from trove.tests.unittests.util import util
 from trove.common import utils
+from trove import rpc
 from swiftclient.client import ClientException
 from tempfile import NamedTemporaryFile
 import os
@@ -467,6 +468,8 @@ class BuiltInstanceTasksTest(testtools.TestCase):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
         stub_nova_server = MagicMock()
+        rpc.get_notifier = MagicMock()
+        rpc.get_client = MagicMock()
         db_instance = DBInstance(InstanceTasks.NONE,
                                  id=INST_ID,
                                  name='resize-inst-name',

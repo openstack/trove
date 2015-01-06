@@ -33,6 +33,10 @@ class TroveContext(context.RequestContext):
         self.limit = kwargs.pop('limit', None)
         self.marker = kwargs.pop('marker', None)
         self.service_catalog = kwargs.pop('service_catalog', None)
+        self.user_identity = kwargs.pop('user_identity', None)
+
+        # TODO(esp): not sure we need this
+        self.timeout = kwargs.pop('timeout', None)
         super(TroveContext, self).__init__(**kwargs)
 
         if not hasattr(local.store, 'context'):

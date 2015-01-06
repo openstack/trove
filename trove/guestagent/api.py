@@ -18,43 +18,52 @@ Handles all request to the Platform or Guest VM
 """
 
 from eventlet import Timeout
+from oslo.messaging.rpc.client import RemoteError
+from oslo import messaging
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import rpc as rd_rpc
-from trove.openstack.common import rpc
-from trove.openstack.common import log as logging
-from trove.openstack.common.rpc import proxy
-from trove.openstack.common.rpc import common
 from trove.common.i18n import _
+import trove.common.rpc.version as rpc_version
+from trove.openstack.common import log as logging
+from trove import rpc
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 AGENT_LOW_TIMEOUT = CONF.agent_call_low_timeout
 AGENT_HIGH_TIMEOUT = CONF.agent_call_high_timeout
 AGENT_SNAPSHOT_TIMEOUT = CONF.agent_replication_snapshot_timeout
-RPC_API_VERSION = "1.0"
 
 
-class API(proxy.RpcProxy):
+class API(object):
     """API for interacting with the guest manager."""
 
     def __init__(self, context, id):
         self.context = context
         self.id = id
-        super(API, self).__init__(self._get_routing_key(),
-                                  RPC_API_VERSION)
+        super(API, self).__init__()
 
-    def _call(self, method_name, timeout_sec, **kwargs):
-        LOG.debug("Calling %s with timeout %s." % (method_name, timeout_sec))
+        target = messaging.Target(topic=self._get_routing_key(),
+                                  version=rpc_version.RPC_API_VERSION)
+
+        self.version_cap = rpc_version.VERSION_ALIASES.get(
+            CONF.upgrade_levels.guestagent)
+        self.client = self.get_client(target, self.version_cap)
+
+    def get_client(self, target, version_cap, serializer=None):
+        return rpc.get_client(target,
+                              version_cap=version_cap,
+                              serializer=serializer)
+
+    def _call(self, method_name, timeout_sec, version, **kwargs):
+        LOG.debug("Calling %s with timeout %s" % (method_name, timeout_sec))
         try:
-            result = self.call(self.context,
-                               self.make_msg(method_name, **kwargs),
-                               timeout=timeout_sec)
+            cctxt = self.client.prepare(version=version, timeout=timeout_sec)
+            result = cctxt.call(self.context, method_name, **kwargs)
 
             LOG.debug("Result is %s." % result)
             return result
-        except common.RemoteError as r:
+        except RemoteError as r:
             LOG.exception(_("Error calling %s") % method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
@@ -63,42 +72,17 @@ class API(proxy.RpcProxy):
         except Timeout:
             raise exception.GuestTimeout()
 
-    def _cast(self, method_name, **kwargs):
-        LOG.debug("Casting %s." % method_name)
+    def _cast(self, method_name, version, **kwargs):
+        LOG.debug("Casting %s" % method_name)
         try:
-            self.cast(self.context, self.make_msg(method_name, **kwargs),
-                      topic=kwargs.get('topic'),
-                      version=kwargs.get('version'))
-        except common.RemoteError as r:
+            cctxt = self.client.prepare(version=version)
+            cctxt.cast(self.context, method_name, **kwargs)
+        except RemoteError as r:
             LOG.exception(_("Error calling %s") % method_name)
             raise exception.GuestError(original_message=r.value)
         except Exception as e:
             LOG.exception(_("Error calling %s") % method_name)
             raise exception.GuestError(original_message=str(e))
-
-    def _cast_with_consumer(self, method_name, **kwargs):
-        conn = None
-        try:
-            conn = rpc.create_connection(new=True)
-            conn.create_consumer(self._get_routing_key(), None, fanout=False)
-        except common.RemoteError as r:
-            LOG.exception(_("Error calling %s") % method_name)
-            raise exception.GuestError(original_message=r.value)
-        except Exception as e:
-            LOG.exception(_("Error calling %s") % method_name)
-            raise exception.GuestError(original_message=str(e))
-        finally:
-            if conn:
-                conn.close()
-
-        # leave the cast call out of the hackity consumer create
-        self._cast(method_name, **kwargs)
-
-    def delete_queue(self):
-        """Deletes the queue."""
-        topic = self._get_routing_key()
-        LOG.debug("Deleting queue with name %s." % topic)
-        rd_rpc.delete_queue(self.context, topic)
 
     def _get_routing_key(self):
         """Create the routing key based on the container id."""
@@ -109,31 +93,31 @@ class API(proxy.RpcProxy):
            users.
         """
         LOG.debug("Changing passwords for users on instance %s.", self.id)
-        self._cast("change_passwords", users=users)
+        self._cast("change_passwords", self.version_cap, users=users)
 
     def update_attributes(self, username, hostname, user_attrs):
         """Update user attributes."""
         LOG.debug("Changing user attributes on instance %s.", self.id)
-        self._cast("update_attributes", username=username, hostname=hostname,
-                   user_attrs=user_attrs)
+        self._cast("update_attributes", self.version_cap, username=username,
+                   hostname=hostname, user_attrs=user_attrs)
 
     def create_user(self, users):
         """Make an asynchronous call to create a new database user"""
         LOG.debug("Creating Users for instance %s.", self.id)
-        self._cast("create_user", users=users)
+        self._cast("create_user", self.version_cap, users=users)
 
     def get_user(self, username, hostname):
         """Make an asynchronous call to get a single database user."""
         LOG.debug("Getting a user %(username)s on instance %(id)s.",
                   {'username': username, 'id': self.id})
-        return self._call("get_user", AGENT_LOW_TIMEOUT,
+        return self._call("get_user", AGENT_LOW_TIMEOUT, self.version_cap,
                           username=username, hostname=hostname)
 
     def list_access(self, username, hostname):
         """Show all the databases to which a user has more than USAGE."""
         LOG.debug("Showing user %(username)s grants on instance %(id)s.",
                   {'username': username, 'id': self.id})
-        return self._call("list_access", AGENT_LOW_TIMEOUT,
+        return self._call("list_access", AGENT_LOW_TIMEOUT, self.version_cap,
                           username=username, hostname=hostname)
 
     def grant_access(self, username, hostname, databases):
@@ -142,7 +126,7 @@ class API(proxy.RpcProxy):
                   "%(username)s on instance %(id)s.", {'username': username,
                                                        'databases': databases,
                                                        'id': self.id})
-        return self._call("grant_access", AGENT_LOW_TIMEOUT,
+        return self._call("grant_access", AGENT_LOW_TIMEOUT, self.version_cap,
                           username=username, hostname=hostname,
                           databases=databases)
 
@@ -152,34 +136,36 @@ class API(proxy.RpcProxy):
                   "%(username)s on instance %(id)s.", {'username': username,
                                                        'database': database,
                                                        'id': self.id})
-        return self._call("revoke_access", AGENT_LOW_TIMEOUT,
+        return self._call("revoke_access", AGENT_LOW_TIMEOUT, self.version_cap,
                           username=username, hostname=hostname,
                           database=database)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list database users."""
         LOG.debug("Listing Users for instance %s.", self.id)
-        return self._call("list_users", AGENT_HIGH_TIMEOUT, limit=limit,
-                          marker=marker, include_marker=include_marker)
+        return self._call("list_users", AGENT_HIGH_TIMEOUT, self.version_cap,
+                          limit=limit, marker=marker,
+                          include_marker=include_marker)
 
     def delete_user(self, user):
         """Make an asynchronous call to delete an existing database user."""
         LOG.debug("Deleting user %(user)s for instance %(instance_id)s." %
                   {'user': user, 'instance_id': self.id})
-        self._cast("delete_user", user=user)
+        self._cast("delete_user", self.version_cap, user=user)
 
     def create_database(self, databases):
         """Make an asynchronous call to create a new database
            within the specified container
         """
         LOG.debug("Creating databases for instance %s.", self.id)
-        self._cast("create_database", databases=databases)
+        self._cast("create_database", self.version_cap, databases=databases)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Make an asynchronous call to list databases."""
         LOG.debug("Listing databases for instance %s.", self.id)
-        return self._call("list_databases", AGENT_LOW_TIMEOUT, limit=limit,
-                          marker=marker, include_marker=include_marker)
+        return self._call("list_databases", AGENT_LOW_TIMEOUT,
+                          self.version_cap, limit=limit, marker=marker,
+                          include_marker=include_marker)
 
     def delete_database(self, database):
         """Make an asynchronous call to delete an existing database
@@ -188,38 +174,40 @@ class API(proxy.RpcProxy):
         LOG.debug("Deleting database %(database)s for "
                   "instance %(instance_id)s." % {'database': database,
                                                  'instance_id': self.id})
-        self._cast("delete_database", database=database)
+        self._cast("delete_database", self.version_cap, database=database)
 
     def enable_root(self):
         """Make a synchronous call to enable the root user for
            access from anywhere
         """
         LOG.debug("Enable root user for instance %s.", self.id)
-        return self._call("enable_root", AGENT_HIGH_TIMEOUT)
+        return self._call("enable_root", AGENT_HIGH_TIMEOUT, self.version_cap)
 
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere
         """
         LOG.debug("Disable root user for instance %s.", self.id)
-        return self._call("disable_root", AGENT_LOW_TIMEOUT)
+        return self._call("disable_root", AGENT_LOW_TIMEOUT, self.version_cap)
 
     def is_root_enabled(self):
         """Make a synchronous call to check if root access is
            available for the container
         """
         LOG.debug("Check root access for instance %s.", self.id)
-        return self._call("is_root_enabled", AGENT_LOW_TIMEOUT)
+        return self._call("is_root_enabled", AGENT_LOW_TIMEOUT,
+                          self.version_cap)
 
     def get_hwinfo(self):
         """Make a synchronous call to get hardware info for the container"""
         LOG.debug("Check hwinfo on instance %s.", self.id)
-        return self._call("get_hwinfo", AGENT_LOW_TIMEOUT)
+        return self._call("get_hwinfo", AGENT_LOW_TIMEOUT, self.version_cap)
 
     def get_diagnostics(self):
         """Make a synchronous call to get diagnostics for the container"""
         LOG.debug("Check diagnostics on instance %s.", self.id)
-        return self._call("get_diagnostics", AGENT_LOW_TIMEOUT)
+        return self._call("get_diagnostics", AGENT_LOW_TIMEOUT,
+                          self.version_cap)
 
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
@@ -229,25 +217,50 @@ class API(proxy.RpcProxy):
            as a database container optionally includes a backup id for restores
         """
         LOG.debug("Sending the call to prepare the Guest.")
+
+        # Taskmanager is a publisher, guestagent is a consumer. Usually
+        # consumer creates a queue, but in this case we have to make sure
+        # "prepare" doesn't get lost if for some reason guest was delayed and
+        # didn't create a queue on time.
+        self._create_guest_queue()
+
         packages = packages.split()
-        self._cast_with_consumer(
-            "prepare", packages=packages, databases=databases,
-            memory_mb=memory_mb, users=users, device_path=device_path,
-            mount_point=mount_point, backup_info=backup_info,
-            config_contents=config_contents, root_password=root_password,
-            overrides=overrides, cluster_config=cluster_config)
+        self._cast(
+            "prepare", self.version_cap, packages=packages,
+            databases=databases, memory_mb=memory_mb, users=users,
+            device_path=device_path, mount_point=mount_point,
+            backup_info=backup_info, config_contents=config_contents,
+            root_password=root_password, overrides=overrides,
+            cluster_config=cluster_config)
+
+    def _create_guest_queue(self):
+        """Call to construct, start and immediately stop rpc server in order
+           to create a queue to communicate with the guestagent. This is
+           method do nothing in case a queue is already created by
+           the guest
+        """
+        server = None
+        target = messaging.Target(topic=self._get_routing_key(),
+                                  server=self.id,
+                                  version=rpc_version.RPC_API_VERSION)
+        try:
+            server = rpc.get_server(target, [])
+            server.start()
+        finally:
+            if server is not None:
+                server.stop()
 
     def restart(self):
         """Restart the MySQL server."""
         LOG.debug("Sending the call to restart MySQL on the Guest.")
-        self._call("restart", AGENT_HIGH_TIMEOUT)
+        self._call("restart", AGENT_HIGH_TIMEOUT, self.version_cap)
 
     def start_db_with_conf_changes(self, config_contents):
         """Start the MySQL server."""
         LOG.debug("Sending the call to start MySQL on the Guest with "
                   "a timeout of %s." % AGENT_HIGH_TIMEOUT)
         self._call("start_db_with_conf_changes", AGENT_HIGH_TIMEOUT,
-                   config_contents=config_contents)
+                   self.version_cap, config_contents=config_contents)
 
     def reset_configuration(self, configuration):
         """Ignore running state of MySQL, and just change the config file
@@ -256,18 +269,18 @@ class API(proxy.RpcProxy):
         LOG.debug("Sending the call to change MySQL conf file on the Guest "
                   "with a timeout of %s." % AGENT_HIGH_TIMEOUT)
         self._call("reset_configuration", AGENT_HIGH_TIMEOUT,
-                   configuration=configuration)
+                   self.version_cap, configuration=configuration)
 
     def stop_db(self, do_not_start_on_reboot=False):
         """Stop the MySQL server."""
         LOG.debug("Sending the call to stop MySQL on the Guest.")
-        self._call("stop_db", AGENT_HIGH_TIMEOUT,
+        self._call("stop_db", AGENT_HIGH_TIMEOUT, self.version_cap,
                    do_not_start_on_reboot=do_not_start_on_reboot)
 
     def upgrade(self, instance_version, location, metadata=None):
         """Make an asynchronous call to self upgrade the guest agent."""
         LOG.debug("Sending an upgrade call to nova-guest.")
-        self._cast("upgrade",
+        self._cast("upgrade", self.version_cap,
                    instance_version=instance_version,
                    location=location,
                    metadata=metadata)
@@ -276,74 +289,77 @@ class API(proxy.RpcProxy):
         """Make a synchronous call to get volume info for the container."""
         LOG.debug("Check Volume Info on instance %s.", self.id)
         return self._call("get_filesystem_stats", AGENT_LOW_TIMEOUT,
-                          fs_path=None)
+                          self.version_cap, fs_path=None)
 
     def update_guest(self):
         """Make a synchronous call to update the guest agent."""
         LOG.debug("Updating guest agent on instance %s.", self.id)
-        self._call("update_guest", AGENT_HIGH_TIMEOUT)
+        self._call("update_guest", AGENT_HIGH_TIMEOUT, self.version_cap)
 
     def create_backup(self, backup_info):
         """Make async call to create a full backup of this instance."""
         LOG.debug("Create Backup %(backup_id)s "
                   "for instance %(instance_id)s." %
                   {'backup_id': backup_info['id'], 'instance_id': self.id})
-        self._cast("create_backup", backup_info=backup_info)
+        self._cast("create_backup", self.version_cap, backup_info=backup_info)
 
     def mount_volume(self, device_path=None, mount_point=None):
         """Mount the volume."""
         LOG.debug("Mount volume %(mount)s on instance %(id)s." % {
             'mount': mount_point, 'id': self.id})
-        self._call("mount_volume", AGENT_LOW_TIMEOUT,
+        self._call("mount_volume", AGENT_LOW_TIMEOUT, self.version_cap,
                    device_path=device_path, mount_point=mount_point)
 
     def unmount_volume(self, device_path=None, mount_point=None):
         """Unmount the volume."""
         LOG.debug("Unmount volume %(device)s on instance %(id)s." % {
             'device': device_path, 'id': self.id})
-        self._call("unmount_volume", AGENT_LOW_TIMEOUT,
+        self._call("unmount_volume", AGENT_LOW_TIMEOUT, self.version_cap,
                    device_path=device_path, mount_point=mount_point)
 
     def resize_fs(self, device_path=None, mount_point=None):
         """Resize the filesystem."""
         LOG.debug("Resize device %(device)s on instance %(id)s." % {
             'device': device_path, 'id': self.id})
-        self._call("resize_fs", AGENT_HIGH_TIMEOUT, device_path=device_path,
-                   mount_point=mount_point)
+        self._call("resize_fs", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   device_path=device_path, mount_point=mount_point)
 
     def update_overrides(self, overrides, remove=False):
         """Update the overrides."""
         LOG.debug("Updating overrides values %(overrides)s on instance "
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
-        self._cast("update_overrides", overrides=overrides, remove=remove)
+        self._cast("update_overrides", self.version_cap, overrides=overrides,
+                   remove=remove)
 
     def apply_overrides(self, overrides):
         LOG.debug("Applying overrides values %(overrides)s on instance "
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
-        self._cast("apply_overrides", overrides=overrides)
+        self._cast("apply_overrides", self.version_cap, overrides=overrides)
 
     def get_replication_snapshot(self, snapshot_info=None,
                                  replica_source_config=None):
         LOG.debug("Retrieving replication snapshot from instance %s.", self.id)
         return self._call("get_replication_snapshot", AGENT_SNAPSHOT_TIMEOUT,
-                          snapshot_info=snapshot_info,
+                          self.version_cap, snapshot_info=snapshot_info,
                           replica_source_config=replica_source_config)
 
     def attach_replication_slave(self, snapshot, replica_config=None):
         LOG.debug("Configuring instance %s to replicate from %s.",
                   self.id, snapshot.get('master').get('id'))
-        self._cast("attach_replication_slave", snapshot=snapshot,
-                   slave_config=replica_config)
+        self._cast("attach_replication_slave", self.version_cap,
+                   snapshot=snapshot, slave_config=replica_config)
 
     def detach_replica(self):
         LOG.debug("Detaching replica %s from its replication source.", self.id)
-        return self._call("detach_replica", AGENT_HIGH_TIMEOUT)
+        return self._call("detach_replica", AGENT_HIGH_TIMEOUT,
+                          self.version_cap)
 
     def cleanup_source_on_replica_detach(self, replica_info):
         LOG.debug("Cleaning up master %s on detach of replica.", self.id)
         self._call("cleanup_source_on_replica_detach", AGENT_HIGH_TIMEOUT,
-                   replica_info=replica_info)
+                   self.version_cap, replica_info=replica_info)
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)
-        self._call("demote_replication_master", AGENT_LOW_TIMEOUT)
+        self._call("demote_replication_master", AGENT_LOW_TIMEOUT,
+                   self.version_cap)

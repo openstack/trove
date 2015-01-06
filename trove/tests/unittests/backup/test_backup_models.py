@@ -39,6 +39,8 @@ BACKUP_DESC = 'Backup test'
 BACKUP_FILENAME = '45a3d8cb-ade8-484c-a8a5-0c3c7286fb2f.xbstream.gz'
 BACKUP_LOCATION = 'https://hpcs.com/tenant/database_backups/' + BACKUP_FILENAME
 
+api.API.get_client = MagicMock()
+
 
 class BackupCreateTest(testtools.TestCase):
     def setUp(self):

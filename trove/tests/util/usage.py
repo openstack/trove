@@ -70,11 +70,10 @@ class FakeVerifier(object):
         pass
 
 
-def notify(context, message):
+def notify(event_type, payload):
     """Simple test notify function which saves the messages to global list."""
-    LOG.debug('Received Usage Notification: %s' % message)
-    payload = message.get('payload', None)
-    payload['event_type'] = message['event_type']
+    LOG.debug('Received Usage Notification: %s' % event_type)
+    payload['event_type'] = event_type
     resource_id = payload['instance_id']
     global MESSAGE_QUEUE
     MESSAGE_QUEUE[resource_id].append(payload)

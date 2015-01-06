@@ -32,6 +32,7 @@ from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
 
+conductor_api.API.get_client = Mock()
 conductor_api.API.update_backup = Mock()
 
 

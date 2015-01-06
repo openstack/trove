@@ -14,40 +14,54 @@
 #    under the License.
 #
 
+from collections import defaultdict
 import eventlet
-from trove.taskmanager import api
+
+import trove.openstack.common.log as logging
+from trove.taskmanager.api import API
 from trove.taskmanager.manager import Manager
+import trove.tests.util.usage as usage
+from trove import rpc
+
+LOG = logging.getLogger(__name__)
+MESSAGE_QUEUE = defaultdict(list)
 
 
-class FakeApi(api.API):
+class FakeRpcClient(object):
 
-    def __init__(self, context):
-        self.context = context
+    def call(self, context, method_name, *args, **kwargs):
+        manager, method = self._get_tm_method(method_name)
+        return method(manager, context, *args, **kwargs)
 
-    def make_msg(self, method_name, *args, **kwargs):
-        return {"name": method_name, "args": args, "kwargs": kwargs}
-
-    def call(self, context, msg):
-        manager, method = self.get_tm_method(msg['name'])
-        return method(manager, context, *msg['args'], **msg['kwargs'])
-
-    def cast(self, context, msg):
-        manager, method = self.get_tm_method(msg['name'])
+    def cast(self, context, method_name, *args, **kwargs):
+        manager, method = self._get_tm_method(method_name)
 
         def func():
-            method(manager, context, *msg['args'], **msg['kwargs'])
+            method(manager, context, *args, **kwargs)
 
         eventlet.spawn_after(0.1, func)
 
-    def get_tm_method(self, method_name):
+    def _get_tm_method(self, method_name):
         manager = Manager()
         method = getattr(Manager, method_name)
         return manager, method
 
+    def prepare(self, *args, **kwargs):
+        return self
+
+
+class FakeNotifier:
+
+    def info(self, ctxt, event_type, payload):
+        usage.notify(event_type, payload)
+
 
 def monkey_patch():
-    api.API = FakeApi
+    def fake_get_client(self, *args, **kwargs):
+        return FakeRpcClient()
 
-    def fake_load(context, manager=None):
-        return FakeApi(context)
-    api.load = fake_load
+    def fake_get_notifier(service=None, host=None, publisher_id=None):
+        return FakeNotifier()
+
+    API.get_client = fake_get_client
+    rpc.get_notifier = fake_get_notifier

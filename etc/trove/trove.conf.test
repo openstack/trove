@@ -7,7 +7,10 @@ remote_swift_client = trove.tests.fakes.swift.fake_create_swift_client
 remote_cinder_client = trove.tests.fakes.nova.fake_create_cinder_client
 
 # Fake out the RPC implementation
-rpc_backend = trove.common.rpc.impl_fake
+rpc_backend = fake
+
+# Skip running periodic tasks
+report_interval = 0
 
 # Fake out DNS.
 trove_dns_support = True

@@ -14,25 +14,22 @@
 #    under the License.
 
 import eventlet
-
-import gettext
-import sys
-
-
-gettext.install('trove', unicode=1)
-
-
-from trove.common import cfg
-from trove.common import debug_utils
-from trove.common.rpc import service as rpc_service
-from oslo.config import cfg as openstack_cfg
-from trove.openstack.common import log as logging
-from trove.openstack.common import service as openstack_service
-
 # Apply whole eventlet.monkey_patch excluding 'thread' module.
 # Decision for 'thread' module patching will be made
 # after debug_utils setting up
 eventlet.monkey_patch(all=True, thread=False)
+
+import gettext
+gettext.install('trove', unicode=1)
+
+import sys
+
+from oslo.config import cfg as openstack_cfg
+
+from trove.common import cfg
+from trove.common import debug_utils
+from trove.openstack.common import log as logging
+from trove.openstack.common import service as openstack_service
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
@@ -42,7 +39,6 @@ CONF.register_opts([openstack_cfg.StrOpt('guest_id', default=None,
 
 def main():
     cfg.parse_args(sys.argv)
-    from trove.guestagent import dbaas
     logging.setup(None)
 
     debug_utils.setup()
@@ -51,11 +47,24 @@ def main():
     if not debug_utils.enabled():
         eventlet.monkey_patch(thread=True)
 
+    from trove.guestagent import dbaas
     manager = dbaas.datastore_registry().get(CONF.datastore_manager)
     if not manager:
         msg = ("Manager class not registered for datastore manager %s" %
                CONF.datastore_manager)
         raise RuntimeError(msg)
-    server = rpc_service.RpcService(manager=manager, host=CONF.guest_id)
+
+    # rpc module must be loaded after decision about thread monkeypatching
+    # because if thread module is not monkeypatched we can't use eventlet
+    # executor from oslo.messaging library.
+    from trove import rpc
+    rpc.init(CONF)
+
+    from trove.common.rpc import service as rpc_service
+    from trove.common.rpc import version as rpc_version
+    server = rpc_service.RpcService(
+        manager=manager, host=CONF.guest_id,
+        rpc_api_version=rpc_version.RPC_API_VERSION)
+
     launcher = openstack_service.launch(server)
     launcher.wait()

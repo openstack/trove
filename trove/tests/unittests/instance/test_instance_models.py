@@ -32,6 +32,7 @@ from trove.tests.fakes import nova
 from trove.tests.unittests.util import util
 
 CONF = cfg.CONF
+task_api.API.get_client = Mock()
 
 
 class SimpleInstanceTest(TestCase):
