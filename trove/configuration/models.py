@@ -397,7 +397,7 @@ def load_datastore_configuration_parameters(datastore,
                                             config_file):
     get_db_api().configure_db(CONF)
     (ds, ds_v) = dstore_models.get_datastore_version(
-        type=datastore, version=datastore_version)
+        type=datastore, version=datastore_version, return_inactive=True)
     with open(config_file) as f:
         config = json.load(f)
         for param in config['configuration-parameters']:
