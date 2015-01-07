@@ -13,7 +13,7 @@
 
 # The default exchange under which topics are scoped. May be
 # overridden by an exchange name specified in the 'transport_url option.
-#control_exchange=openstack
+control_exchange = trove
 
 # ========== Sample RabbitMQ Configuration ==========
 
@@ -92,12 +92,6 @@ root_grant_option = True
 # backup_use_snet = False
 # backup_chunk_size = 65536
 # backup_segment_max_size = 2147483648
-
-# ========== Configuration for communication with trove-conductor ==========
-
-# Control Exchange used to communicate with trove-conductor
-control_exchange = trove
-
 
 # ========== Sample Logging Configuration ==========
 

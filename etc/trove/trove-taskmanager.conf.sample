@@ -24,7 +24,7 @@ update_status_on_fail = True
 
 # The default exchange under which topics are scoped. May be
 # overridden by an exchange name specified in the 'transport_url option.
-#control_exchange=openstack
+control_exchange = trove
 
 # ================ RabbitMQ Configuration ===========================
 
@@ -173,8 +173,6 @@ template_path = /etc/trove/templates/
 
 # Topics used for OpenStack notifications, list value. Default is 'notifications'.
 # notification_topics=['notifications', ]
-
-control_exchange=trove
 
 # ============ Logging information =============================
 #log_dir = /integration/report
