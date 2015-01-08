@@ -315,8 +315,9 @@ class MongoDbTaskManagerAPI(task_api.API):
     def mongodb_add_shard_cluster(self, cluster_id, shard_id,
                                   replica_set_name):
         LOG.debug("Making async call to add shard cluster %s " % cluster_id)
-        self.cast(self.context,
-                  self.make_msg("mongodb_add_shard_cluster",
-                                cluster_id=cluster_id,
-                                shard_id=shard_id,
-                                replica_set_name=replica_set_name))
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context,
+                   "mongodb_add_shard_cluster",
+                   cluster_id=cluster_id,
+                   shard_id=shard_id,
+                   replica_set_name=replica_set_name)
