@@ -39,6 +39,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
                   'replica_set_member': replica_set_member,
                   'id': self.id})
         return self._call("add_shard", guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap,
                           replica_set_name=replica_set_name,
                           replica_set_member=replica_set_member)
 
@@ -46,15 +47,16 @@ class MongoDbGuestAgentAPI(guest_api.API):
         LOG.debug("Adding members %(members)s on instance %(id)s" % {
             'members': members, 'id': self.id})
         return self._call("add_members", guest_api.AGENT_HIGH_TIMEOUT,
-                          members=members)
+                          self.version_cap, members=members)
 
     def add_config_servers(self, config_servers):
         LOG.debug("Adding config servers %(config_servers)s for instance "
                   "%(id)s" % {'config_servers': config_servers,
                               'id': self.id})
         return self._call("add_config_servers", guest_api.AGENT_HIGH_TIMEOUT,
-                          config_servers=config_servers)
+                          self.version_cap, config_servers=config_servers)
 
     def cluster_complete(self):
         LOG.debug("Notify regarding cluster install completion")
-        return self._call("cluster_complete", guest_api.AGENT_LOW_TIMEOUT)
+        return self._call("cluster_complete", guest_api.AGENT_LOW_TIMEOUT,
+                          self.version_cap)
