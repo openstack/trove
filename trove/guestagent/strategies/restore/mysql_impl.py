@@ -82,12 +82,22 @@ class MySQLRestoreMixin(object):
             LOG.debug("Cleaning up the temp mysqld process.")
             utils.execute_with_timeout("mysqladmin", "-uroot",
                                        "--protocol=tcp", "shutdown")
-            utils.execute_with_timeout("killall", "mysqld_safe",
-                                       root_helper="sudo", run_as_root=True)
-            self.poll_until_then_raise(
-                self.mysql_is_not_running,
-                base.RestoreError("Reset root password failed: "
-                                  "mysqld did not stop!"))
+            LOG.debug("Polling for shutdown to complete.")
+            try:
+                utils.poll_until(self.mysql_is_not_running,
+                                 sleep_time=self.RESET_ROOT_SLEEP_INTERVAL,
+                                 time_out=self.RESET_ROOT_RETRY_TIMEOUT)
+                LOG.debug("Database successfully shutdown")
+            except exception.PollTimeOut:
+                LOG.debug("Timeout shutting down database "
+                          "- performing killall on mysqld_safe.")
+                utils.execute_with_timeout("killall", "mysqld_safe",
+                                           root_helper="sudo",
+                                           run_as_root=True)
+                self.poll_until_then_raise(
+                    self.mysql_is_not_running,
+                    base.RestoreError("Reset root password failed: "
+                                      "mysqld did not stop!"))
 
     def reset_root_password(self):
         #Create temp file with reset root password
