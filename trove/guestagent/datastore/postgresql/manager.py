@@ -71,8 +71,7 @@ class Manager(
             device = volume.VolumeDevice(device_path)
             device.format()
             if os.path.exists(mount_point):
-                if not backup_info:
-                    device.migrate_data(mount_point)
+                device.migrate_data(mount_point)
             device.mount(mount_point)
         self.reset_configuration(context, config_contents)
         self.set_db_to_listen(context)
