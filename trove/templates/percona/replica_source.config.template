@@ -1,5 +1,5 @@
 [mysqld]
-log_bin = /var/lib/mysql/mysql-bin.log
+log_bin = /var/lib/mysql/data/mysql-bin.log
 binlog_format = MIXED
 enforce_gtid_consistency = ON
 gtid_mode = ON

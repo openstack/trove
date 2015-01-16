@@ -25,6 +25,7 @@ from trove.common.exception import InsufficientSpaceForReplica
 from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
 from trove.guestagent import backup
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as base_dbaas
@@ -47,8 +48,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_mysql = dbaas.MySqlApp.stop_db
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
+        self.origin_update_overrides = dbaas.MySqlApp.update_overrides
         self.origin_pkg_is_installed = pkg.Package.pkg_is_installed
         self.origin_os_path_exists = os.path.exists
+        self.origin_chown = operating_system.chown
         # set up common mock objects, etc. for replication testing
         self.patcher_gfvs = patch(
             'trove.guestagent.dbaas.get_filesystem_volume_stats')
@@ -71,6 +74,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount_points = self.origin_mount_points
         dbaas.MySqlApp.stop_db = self.origin_stop_mysql
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
+        dbaas.MySqlApp.update_overrides = self.origin_update_overrides
+        operating_system.chown = self.origin_chown
         pkg.Package.pkg_is_installed = self.origin_pkg_is_installed
         os.path.exists = self.origin_os_path_exists
         # teardown the replication mock objects
@@ -220,6 +225,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         VolumeDevice.unmount = MagicMock(return_value=None)
         dbaas.MySqlApp.stop_db = MagicMock(return_value=None)
         dbaas.MySqlApp.start_mysql = MagicMock(return_value=None)
+        dbaas.MySqlApp.update_overrides = MagicMock(return_value=None)
         dbaas.MySqlApp.install_if_needed = MagicMock(return_value=None)
         backup.restore = MagicMock(return_value=None)
         dbaas.MySqlApp.secure = MagicMock(return_value=None)
@@ -231,6 +237,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         dbaas.MySqlAdmin.create_user = MagicMock(return_value=None)
         dbaas.MySqlAdmin.create_database = MagicMock(return_value=None)
         dbaas.MySqlAdmin.enable_root = MagicMock(return_value=None)
+        operating_system.chown = MagicMock(return_value=None)
         os.path.exists = MagicMock(return_value=True)
         mock_replication = MagicMock()
         mock_replication.enable_as_slave = MagicMock()
@@ -263,7 +270,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         if backup_info:
             backup.restore.assert_any_call(self.context,
                                            backup_info,
-                                           '/var/lib/mysql')
+                                           '/var/lib/mysql/data')
         dbaas.MySqlApp.install_if_needed.assert_any_call(None)
         # We don't need to make sure the exact contents are there
         dbaas.MySqlApp.secure.assert_any_call(None, None)

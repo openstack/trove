@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import hashlib
+import mock
 import os
 
 from mock import Mock, MagicMock, patch, ANY
@@ -203,16 +204,18 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(mysql_dump.manifest)
         self.assertEqual('abc.gz.enc', mysql_dump.manifest)
 
-    def test_backup_impl_InnoBackupEx(self):
+    @mock.patch('trove.guestagent.strategies.backup.mysql_impl.get_datadir')
+    def test_backup_impl_InnoBackupEx(self, mock_datadir):
         """This test is for
            guestagent/strategies/backup/impl
         """
+        mock_datadir.return_value = '/var/lib/mysql/data'
         inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex', extra_opts='')
         self.assertIsNotNone(inno_backup_ex.cmd)
         str_innobackup_cmd = ('sudo innobackupex'
                               ' --stream=xbstream'
                               ' %(extra_opts)s'
-                              ' /var/lib/mysql 2>/tmp/innobackupex.log'
+                              ' /var/lib/mysql/data 2>/tmp/innobackupex.log'
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
                               '-pass pass:default_aes_cbc_key')
@@ -394,7 +397,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                              }
                 agent.execute_restore(TroveContext(),
                                       bkup_info,
-                                      '/var/lib/mysql')
+                                      '/var/lib/mysql/data')
 
     def test_restore_unknown(self):
         with patch.object(backupagent, 'get_restore_strategy',
@@ -410,7 +413,7 @@ class BackupAgentTest(trove_testtools.TestCase):
 
             self.assertRaises(UnknownBackupType, agent.execute_restore,
                               context=None, backup_info=bkup_info,
-                              restore_location='/var/lib/mysql')
+                              restore_location='/var/lib/mysql/data')
 
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(MockSwift, 'load_metadata', return_value={'lsn': '54321'})
@@ -440,7 +443,7 @@ class BackupAgentTest(trove_testtools.TestCase):
 
             agent.execute_backup(TroveContext(),
                                  bkup_info,
-                                 '/var/lib/mysql')
+                                 '/var/lib/mysql/data')
 
             self.assertTrue(MockStorage.save_metadata.called_once_with(
                             ANY,

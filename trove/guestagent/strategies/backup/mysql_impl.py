@@ -19,6 +19,7 @@ import re
 
 from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
 from trove.guestagent.datastore.mysql.service import get_auth_password
+from trove.guestagent.datastore.mysql.service import get_datadir
 from trove.guestagent.strategies.backup import base
 from trove.openstack.common import log as logging
 
@@ -51,8 +52,9 @@ class InnoBackupEx(base.BackupRunner):
     def cmd(self):
         cmd = ('sudo innobackupex'
                ' --stream=xbstream'
-               ' %(extra_opts)s'
-               ' /var/lib/mysql 2>/tmp/innobackupex.log'
+               ' %(extra_opts)s '
+               + get_datadir() +
+               ' 2>/tmp/innobackupex.log'
                )
         return cmd + self.zip_cmd + self.encrypt_cmd
 
@@ -105,8 +107,8 @@ class InnoBackupExIncremental(InnoBackupEx):
                ' --stream=xbstream'
                ' --incremental'
                ' --incremental-lsn=%(lsn)s'
-               ' %(extra_opts)s'
-               ' /var/lib/mysql'
+               ' %(extra_opts)s '
+               + get_datadir() +
                ' 2>/tmp/innobackupex.log')
         return cmd + self.zip_cmd + self.encrypt_cmd
 

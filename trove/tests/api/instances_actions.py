@@ -235,7 +235,7 @@ class RebootTestBase(ActionTestBase):
     def mess_up_mysql(self):
         """Ruin MySQL's ability to restart."""
         server = create_server_connection(self.instance_id)
-        cmd = "sudo cp /dev/null /var/lib/mysql/ib_logfile%d"
+        cmd = "sudo cp /dev/null /var/lib/mysql/data/ib_logfile%d"
         instance_info.dbaas_admin.management.stop(self.instance_id)
         for index in range(2):
             server.execute(cmd % index)
@@ -244,7 +244,7 @@ class RebootTestBase(ActionTestBase):
         """Fix MySQL's ability to restart."""
         if not FAKE_MODE:
             server = create_server_connection(self.instance_id)
-            cmd = "sudo rm /var/lib/mysql/ib_logfile%d"
+            cmd = "sudo rm /var/lib/mysql/data/ib_logfile%d"
             # We want to stop mysql so that upstart does not keep trying to
             # respawn it and block the guest agent from accessing the logs.
             instance_info.dbaas_admin.management.stop(self.instance_id)
