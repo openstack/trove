@@ -109,13 +109,13 @@ class DatabaseQuery(object):
     def create(cls, name, encoding=None, collation=None):
         """Query to create a database."""
 
-        statement = "CREATE DATABASE {name}".format(name=name)
+        statement = "CREATE DATABASE \"{name}\"".format(name=name)
         if encoding is not None:
-            statement += " ENCODING = {encoding}".format(
+            statement += " ENCODING = '{encoding}'".format(
                 encoding=encoding,
             )
         if collation is not None:
-            statement += " LC_COLLATE = {collation}".format(
+            statement += " LC_COLLATE = '{collation}'".format(
                 collation=collation,
             )
 
@@ -125,7 +125,7 @@ class DatabaseQuery(object):
     def drop(cls, name):
         """Query to drop a database."""
 
-        return "DROP DATABASE IF EXISTS {name}".format(name=name)
+        return "DROP DATABASE IF EXISTS \"{name}\"".format(name=name)
 
 
 class UserQuery(object):
@@ -170,7 +170,7 @@ class UserQuery(object):
     def create(cls, name, password):
         """Query to create a user with a password."""
 
-        return "CREATE USER {name} WITH PASSWORD '{password}'".format(
+        return "CREATE USER \"{name}\" WITH PASSWORD '{password}'".format(
             name=name,
             password=password,
         )
@@ -179,7 +179,7 @@ class UserQuery(object):
     def update_password(cls, name, password):
         """Query to update the password for a user."""
 
-        return "ALTER USER {name} WITH PASSWORD '{password}'".format(
+        return "ALTER USER \"{name}\" WITH PASSWORD '{password}'".format(
             name=name,
             password=password,
         )
@@ -188,13 +188,16 @@ class UserQuery(object):
     def update_name(cls, old, new):
         """Query to update the name of a user."""
 
-        return "ALTER USER {old} RENAME TO {new}".format(old=old, new=new)
+        return "ALTER USER \"{old}\" RENAME TO '{new}'".format(
+            old=old,
+            new=new,
+        )
 
     @classmethod
     def drop(cls, name):
         """Query to drop a user."""
 
-        return "DROP USER {name}".format(name=name)
+        return "DROP USER \"{name}\"".format(name=name)
 
 
 class AccessQuery(object):
@@ -214,7 +217,7 @@ class AccessQuery(object):
     def grant(cls, user, database):
         """Query to grant user access to a database."""
 
-        return "GRANT ALL ON DATABASE {database} TO {user}".format(
+        return "GRANT ALL ON DATABASE \"{database}\" TO \"{user}\"".format(
             database=database,
             user=user,
         )
@@ -223,7 +226,7 @@ class AccessQuery(object):
     def revoke(cls, user, database):
         """Query to revoke user access to a database."""
 
-        return "REVOKE ALL ON DATABASE {database} FROM {user}".format(
+        return "REVOKE ALL ON DATABASE \"{database}\" FROM \"{user}\"".format(
             database=database,
             user=user,
         )
