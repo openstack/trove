@@ -154,14 +154,14 @@
         <repository>
           <id>rackspace-research</id>
           <name>Rackspace Research Repository</name>
-          <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>
+          <url>https://maven.research.rackspacecloud.com/content/groups/public/</url>
         </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
           <id>rackspace-research</id>
           <name>Rackspace Research Repository</name>
-          <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>
+          <url>https://maven.research.rackspacecloud.com/content/groups/public/</url>
         </pluginRepository>
       </pluginRepositories>
     </profile>
