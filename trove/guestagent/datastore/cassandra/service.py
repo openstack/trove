@@ -14,6 +14,7 @@
 #    under the License.
 
 import os
+import tempfile
 import yaml
 from trove.common import cfg
 from trove.common import utils
@@ -117,22 +118,34 @@ class CassandraApp(object):
         packager.pkg_install(packages, None, system.INSTALL_TIMEOUT)
         LOG.debug("Finished installing Cassandra server")
 
-    def write_config(self, config_contents):
-        LOG.debug('Defining temp config holder at %s.' %
-                  system.CASSANDRA_TEMP_CONF)
+    def write_config(self, config_contents,
+                     execute_function=utils.execute_with_timeout,
+                     mkstemp_function=tempfile.mkstemp,
+                     unlink_function=os.unlink):
 
+        # first securely create a temp file. mkstemp() will set
+        # os.O_EXCL on the open() call, and we get a file with
+        # permissions of 600 by default.
+        (conf_fd, conf_path) = mkstemp_function()
+
+        LOG.debug('Storing temporary configuration at %s.' % conf_path)
+
+        # write config and close the file, delete it if there is an
+        # error. only unlink if there is a problem. In normal course,
+        # we move the file.
         try:
-            with open(system.CASSANDRA_TEMP_CONF, 'w+') as conf:
-                conf.write(config_contents)
-
-            LOG.info(_('Writing new config.'))
-
-            utils.execute_with_timeout("sudo", "mv",
-                                       system.CASSANDRA_TEMP_CONF,
-                                       system.CASSANDRA_CONF)
+            os.write(conf_fd, config_contents)
+            execute_function("sudo", "mv", conf_path, system.CASSANDRA_CONF)
         except Exception:
-            os.unlink(system.CASSANDRA_TEMP_CONF)
+            LOG.exception(
+                _("Exception generating Cassandra configuration %s.") %
+                conf_path)
+            unlink_function(conf_path)
             raise
+        finally:
+            os.close(conf_fd)
+
+        LOG.info(_('Wrote new Cassandra configuration.'))
 
     def read_conf(self):
         """Returns cassandra.yaml in dict structure."""
