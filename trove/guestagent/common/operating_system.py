@@ -82,9 +82,11 @@ def service_discovery(service_candidates):
             # replacing a symlink with its real path
             if os.path.islink(service_path):
                 real_path = os.path.realpath(service_path)
-                result['cmd_enable'] = "sudo systemctl enable %s" % real_path
+                unit_file_name = os.path.basename(real_path)
+                result['cmd_enable'] = ("sudo systemctl enable %s" %
+                                        unit_file_name)
                 result['cmd_disable'] = ("sudo systemctl disable %s" %
-                                         real_path)
+                                         unit_file_name)
             else:
                 result['cmd_enable'] = "sudo systemctl enable %s" % service
                 result['cmd_disable'] = "sudo systemctl disable %s" % service
