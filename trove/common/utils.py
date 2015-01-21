@@ -28,12 +28,12 @@ from passlib import utils as passlib_utils
 
 from oslo.utils import importutils
 from oslo.utils import timeutils
+from oslo_concurrency import processutils
 
 from trove.common import cfg
 from trove.common import exception
 from trove.openstack.common import log as logging
 from trove.openstack.common import loopingcall
-from trove.openstack.common import processutils
 from trove.openstack.common import utils as openstack_utils
 from trove.common.i18n import _
 
