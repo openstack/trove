@@ -76,7 +76,7 @@ class RedisAppStatus(service.BaseDbStatus):
         running ps.
         We attempt to locate the PID file and see if the process
         is crashed or shutdown.
-        Remeber by default execute_with_timeout raises this exception
+        Remember by default execute_with_timeout raises this exception
         if a non 0 status code is returned from the cmd called.
         """
         options = _load_redis_options()

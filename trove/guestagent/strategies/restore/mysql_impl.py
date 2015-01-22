@@ -213,7 +213,7 @@ class InnoBackupExIncremental(InnoBackupEx):
             self._incremental_restore(parent_location, parent_checksum)
             # for *this* backup set the incremental_dir
             # just use the checksum for the incremental path as it is
-            # sufficently unique /var/lib/mysql/<checksum>
+            # sufficiently unique /var/lib/mysql/<checksum>
             incremental_dir = os.path.join(self.restore_location, checksum)
             utils.execute("mkdir", "-p", incremental_dir,
                           root_helper="sudo",
