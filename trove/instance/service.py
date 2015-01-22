@@ -184,8 +184,8 @@ class InstanceController(wsgi.Controller):
         # TODO(hub-cap): turn this into middleware
         LOG.info(_LI("Creating a database instance for tenant '%s'"),
                  tenant_id)
-        LOG.debug(logging.mask_password("req : '%s'\n\n", req))
-        LOG.debug(logging.mask_password("body : '%s'\n\n", body))
+        LOG.debug("req : '%s'\n\n", logging.mask_password(req))
+        LOG.debug("body : '%s'\n\n", logging.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
         datastore_args = body['instance'].get('datastore', {})
         datastore, datastore_version = (
@@ -273,8 +273,8 @@ class InstanceController(wsgi.Controller):
         Updates the instance to set or unset one or more attributes.
         """
         LOG.info(_LI("Editing instance for tenant id %s."), tenant_id)
-        LOG.debug(logging.mask_password("req: %s"), req)
-        LOG.debug(logging.mask_password("body: %s"), body)
+        LOG.debug("req: %s", logging.mask_password(req))
+        LOG.debug("body: %s", logging.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
 
         instance = models.Instance.load(context, id)
