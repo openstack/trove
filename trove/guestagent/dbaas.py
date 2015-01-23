@@ -47,6 +47,8 @@ defaults = {
     'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
     'postgresql':
     'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
+    'couchdb':
+    'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
 }
 CONF = cfg.CONF
 

@@ -325,7 +325,8 @@ common_opts = [
                          'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed',
                          'couchbase': 'fa62fe68-74d9-4779-a24e-36f19602c415',
                          'mongodb': 'c8c907af-7375-456f-b929-b637ff9209ee',
-                         'postgresql': 'ac277e0d-4f21-40aa-b347-1ea31e571720'},
+                         'postgresql': 'ac277e0d-4f21-40aa-b347-1ea31e571720',
+                         'couchdb': 'f0a9ab7b-66f7-4352-93d7-071521d44c7c'},
                 help='Unique ID to tag notification events.'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
                help="Admin username used to connect to Nova.", secret=True),
@@ -766,6 +767,46 @@ postgresql_opts = [
     cfg.ListOpt('ignore_dbs', default=['postgres']),
 ]
 
+# Apache CouchDB
+couchdb_group = cfg.OptGroup(
+    'couchdb', title='CouchDB options',
+    help="Oslo option group designed for CouchDB datastore")
+couchdb_opts = [
+    cfg.ListOpt('tcp_ports',
+                default=["5984"],
+                help='List of TCP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.StrOpt('mount_point', default='/var/lib/couchdb',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled."),
+    cfg.BoolOpt('volume_support', default=True,
+                help='Whether to provision a Cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb',
+               help='Device path for volume if volume support is enabled.'),
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('replication_strategy', default=None,
+               help='Default strategy for replication.'),
+    cfg.StrOpt('backup_namespace', default=None,
+               help='Namespace to load backup strategies from.'),
+    cfg.StrOpt('restore_namespace', default=None,
+               help='Namespace to load restore strategies from.'),
+    cfg.DictOpt('backup_incremental_strategy', default={},
+                help='Incremental Backup Runner based on the default '
+                'strategy. For strategies that do not implement an '
+                'incremental, the runner will use the default full backup.'),
+    cfg.BoolOpt('root_on_create', default=False,
+                help='Enable the automatic creation of the root user for the '
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                'instance-create as the "password" field.'),
+]
+
 # RPC version groups
 upgrade_levels = cfg.OptGroup(
     'upgrade_levels',
@@ -799,6 +840,7 @@ CONF.register_group(cassandra_group)
 CONF.register_group(couchbase_group)
 CONF.register_group(mongodb_group)
 CONF.register_group(postgresql_group)
+CONF.register_group(couchdb_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
@@ -807,6 +849,7 @@ CONF.register_opts(cassandra_opts, cassandra_group)
 CONF.register_opts(couchbase_opts, couchbase_group)
 CONF.register_opts(mongodb_opts, mongodb_group)
 CONF.register_opts(postgresql_opts, postgresql_group)
+CONF.register_opts(couchdb_opts, couchdb_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 
