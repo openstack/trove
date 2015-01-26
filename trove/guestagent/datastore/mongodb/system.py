@@ -34,7 +34,13 @@ INIT_EXEC_MONGOS = ("start-stop-daemon --start --quiet --chuid mongodb "
                     "--exec  /usr/bin/mongos -- "
                     "--config {config_file_placeholder}")
 
-MONGOS_UPSTART_CONTENTS = """pre-start script
+MONGOS_UPSTART_CONTENTS = """limit fsize unlimited unlimited  # (file size)
+limit cpu unlimited unlimited    # (cpu time)
+limit as unlimited unlimited     # (virtual memory size)
+limit nofile 64000 64000         # (open files)
+limit nproc 64000 64000          # (processes/threads)
+
+pre-start script
     mkdir -p /var/log/mongodb/
 end script
 
