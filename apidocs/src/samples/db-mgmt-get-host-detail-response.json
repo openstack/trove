@@ -10,9 +10,8 @@
             }
         ],
         "name": "hostname_1",
-        "percentUsed": 204,
-        "totalRAM": 2004,
+        "percentUsed": 12,
+        "totalRAM": 32000,
         "usedRAM": 4096
     }
 }
-

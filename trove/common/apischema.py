@@ -30,6 +30,13 @@ boolean_string = {
     "maximum": 1
 }
 
+non_empty_string = {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 255,
+    "pattern": "^.*[0-9a-zA-Z]+.*$"
+}
+
 configuration_data_types = {
     "type": "string",
     "minLength": 1,
@@ -51,12 +58,7 @@ configuration_non_empty_string = {
 
 flavorref = {
     'oneOf': [
-        url_ref,
-        {
-            "type": "string",
-            "maxLength": 5,
-            "pattern": "[0-9]+"
-        },
+        non_empty_string,
         {
             "type": "integer"
         }]
@@ -73,13 +75,6 @@ volume_size = {
             "minLength": 1,
             "pattern": "[0-9]+"
         }]
-}
-
-non_empty_string = {
-    "type": "string",
-    "minLength": 1,
-    "maxLength": 255,
-    "pattern": "^.*[0-9a-zA-Z]+.*$"
 }
 
 host_string = {

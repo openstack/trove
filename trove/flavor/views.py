@@ -28,11 +28,19 @@ class FlavorView(object):
 
     def data(self):
 
+        # If the flavor id cannot be cast to an int, we simply return
+        # no id and rely on str_id instead.
+        try:
+            f_id = int(self.flavor.id)
+        except ValueError:
+            f_id = None
+
         flavor = {
-            'id': int(self.flavor.id),
+            'id': f_id,
             'links': self._build_links(),
             'name': self.flavor.name,
             'ram': self.flavor.ram,
+            'str_id': str(self.flavor.id),
         }
 
         if not CONF.trove_volume_support and CONF.device_path is not None:

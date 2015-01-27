@@ -131,7 +131,7 @@ class MalformedJson(object):
 
         poll_until(_check_instance_status)
         try:
-            self.dbaas.instances.resize_instance(self.instance.id, "bad data")
+            self.dbaas.instances.resize_instance(self.instance.id, "")
         except Exception as e:
             resp, body = self.dbaas.client.last_response
             httpCode = resp.status
