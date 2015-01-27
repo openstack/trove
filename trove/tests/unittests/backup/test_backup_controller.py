@@ -35,6 +35,28 @@ class TestBackupController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
+    def test_validate_create_with_blankname(self):
+        body = {"backup": {"instance": self.uuid,
+                           "name": ' '}}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("' ' does not match '^.*[0-9a-zA-Z]+.*$'",
+                      errors[0].message)
+
+    def test_validate_create_with_invalidname(self):
+        body = {"backup": {"instance": self.uuid,
+                           "name": '$#@&?'}}
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("'$#@&?' does not match '^.*[0-9a-zA-Z]+.*$'",
+                      errors[0].message)
+
     def test_validate_create_invalid_uuid(self):
         body = {"backup": {"instance": self.invalid_uuid,
                            "name": "testback-backup"}}
