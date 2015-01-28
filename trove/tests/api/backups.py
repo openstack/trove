@@ -245,7 +245,7 @@ class ListBackups(object):
     @test
     def test_backup_list_filter_datastore_not_found(self):
         """Test list backups and filter by datastore."""
-        assert_raises(exceptions.BadRequest, instance_info.dbaas.backups.list,
+        assert_raises(exceptions.NotFound, instance_info.dbaas.backups.list,
                       datastore='NOT_FOUND')
 
     @test
