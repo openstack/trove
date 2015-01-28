@@ -56,7 +56,7 @@ class Limit(object):
         60 * 60 * 24: "DAY",
     }
 
-    UNIT_MAP = dict([(v, k) for k, v in UNITS.items()])
+    UNIT_MAP = {v: k for k, v in UNITS.items()}
 
     def __init__(self, verb, uri, regex, value, unit):
         """

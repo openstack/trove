@@ -409,8 +409,8 @@ class Controller(object):
             self.exception_map)
 
     def _extract_limits(self, params):
-        return dict([(key, params[key]) for key in params.keys()
-                     if key in ["limit", "marker"]])
+        return {key: params[key] for key in params.keys()
+                if key in ["limit", "marker"]}
 
 
 class TroveResponseSerializer(base_wsgi.ResponseSerializer):
@@ -513,8 +513,8 @@ class ContextMiddleware(base_wsgi.Middleware):
         super(ContextMiddleware, self).__init__(application)
 
     def _extract_limits(self, params):
-        return dict([(key, params[key]) for key in params.keys()
-                     if key in ["limit", "marker"]])
+        return {key: params[key] for key in params.keys()
+                if key in ["limit", "marker"]}
 
     def process_request(self, request):
         service_catalog = None

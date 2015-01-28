@@ -23,7 +23,7 @@ class UnprocessableEntity(exceptions.ClientException):
     message = "Unprocessable Entity"
 
 
-_code_map = dict((c.http_status, c) for c in [UnprocessableEntity])
+_code_map = {c.http_status: c for c in [UnprocessableEntity]}
 
 
 def from_response(response, body):

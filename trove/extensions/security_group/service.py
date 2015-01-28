@@ -39,7 +39,7 @@ class SecurityGroupController(wsgi.Controller):
                                                      deleted=False)
 
         # Construct the mapping from Security Groups to Security Group Rules
-        rules_map = dict([(g.id, g.get_rules()) for g in sec_groups])
+        rules_map = {g.id: g.get_rules() for g in sec_groups}
 
         return wsgi.Result(
             views.SecurityGroupsView(sec_groups,

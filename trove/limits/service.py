@@ -28,7 +28,7 @@ class LimitsController(wsgi.Controller):
         Return all absolute and rate limit information.
         """
         quotas = QUOTAS.get_all_quotas_by_tenant(tenant_id)
-        abs_limits = dict((k, v['hard_limit']) for k, v in quotas.items())
+        abs_limits = {k: v['hard_limit'] for k, v in quotas.items()}
         rate_limits = req.environ.get("trove.limits", [])
 
         return wsgi.Result(views.LimitViews(abs_limits,
