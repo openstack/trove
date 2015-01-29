@@ -91,5 +91,6 @@ datastore_group = [
     versions.GROUP,
     instances.GROUP_START_SIMPLE,
 ]
-proboscis.register(groups=["cassandra", "couchbase", "mongodb", "postgresql"],
+proboscis.register(groups=["cassandra", "couchbase", "mongodb", "postgresql",
+                           "redis"],
                    depends_on_groups=datastore_group)
