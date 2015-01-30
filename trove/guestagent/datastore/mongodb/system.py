@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from trove.guestagent.common import operating_system
 from trove.guestagent import pkg
+
+OS_NAME = operating_system.get_os()
 
 MONGODB_MOUNT_POINT = "/var/lib/mongodb"
 # After changing bind address mongodb accepts connection
@@ -30,9 +33,13 @@ MONGODB_KILL = "sudo kill %s"
 FIND_PID = "ps xau | grep 'mongo[ds]'"
 TIME_OUT = 1000
 
-INIT_EXEC_MONGOS = ("start-stop-daemon --start --quiet --chuid mongodb "
+MONGO_USER = {operating_system.REDHAT: "mongod",
+              operating_system.DEBIAN: "mongodb",
+              operating_system.SUSE: "mongod"}[OS_NAME]
+
+INIT_EXEC_MONGOS = ("start-stop-daemon --start --quiet --chuid %s "
                     "--exec  /usr/bin/mongos -- "
-                    "--config {config_file_placeholder}")
+                    "--config {config_file_placeholder}" % MONGO_USER)
 
 MONGOS_UPSTART_CONTENTS = """pre-start script
     mkdir -p /var/log/mongodb/
