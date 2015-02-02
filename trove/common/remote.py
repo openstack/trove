@@ -17,7 +17,7 @@ from oslo.utils.importutils import import_class
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 
 from cinderclient.v2 import client as CinderClient
 from heatclient.v1 import client as HeatClient

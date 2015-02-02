@@ -24,7 +24,7 @@ from trove.cluster.models import DBCluster
 from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
-from trove.common.strategies.mongodb import api as mongodb_api
+from trove.common.strategies.cluster.mongodb import api as mongodb_api
 from trove.datastore import models as datastore_models
 from trove.instance import models as inst_models
 from trove.instance.models import DBInstance

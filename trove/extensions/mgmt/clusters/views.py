@@ -14,7 +14,7 @@
 #    under the License.
 
 from trove.cluster.views import ClusterView
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 
 
 class MgmtClusterView(ClusterView):

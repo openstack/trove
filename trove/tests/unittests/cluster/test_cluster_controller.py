@@ -26,7 +26,7 @@ from trove.cluster.service import ClusterController
 from trove.cluster import views
 import trove.common.cfg as cfg
 from trove.common import exception
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.datastore import models as datastore_models
 

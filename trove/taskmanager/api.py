@@ -21,7 +21,7 @@ Routes all the requests to the task manager.
 from oslo import messaging
 from trove.common import cfg
 from trove.common import exception
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 import trove.common.rpc.version as rpc_version
 from trove.guestagent import models as agent_models
 from trove import rpc

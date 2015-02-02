@@ -21,7 +21,7 @@ from trove.backup.models import Backup
 import trove.common.cfg as cfg
 import trove.common.rpc.version as rpc_version
 from trove.common import exception
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task

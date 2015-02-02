@@ -19,7 +19,7 @@ from trove.common import cfg
 from trove.common.exception import PollTimeOut
 from trove.common.instance import ServiceStatuses
 from trove.common.remote import create_guest_client
-from trove.common.strategies import base
+from trove.common.strategies.cluster import base
 from trove.common import utils
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance

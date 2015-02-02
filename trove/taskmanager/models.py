@@ -45,7 +45,7 @@ from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
 from trove.common.instance import ServiceStatuses
 from trove.common import instance as rd_instance
-from trove.common import strategy
+from trove.common.strategies.cluster import strategy
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_heat_client
 from trove.common.remote import create_cinder_client

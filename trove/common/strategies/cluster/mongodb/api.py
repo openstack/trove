@@ -21,7 +21,7 @@ from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
-from trove.common.strategies import base
+from trove.common.strategies.cluster import base
 from trove.common import utils
 from trove.common.views import create_links
 from trove.common import wsgi
