@@ -338,7 +338,8 @@ class Controller(object):
             exception.DatabaseNotFound,
             exception.QuotaResourceUnknown,
             exception.BackupFileNotFound,
-            exception.ClusterNotFound
+            exception.ClusterNotFound,
+            exception.DatastoreNotFound,
         ],
         webob.exc.HTTPConflict: [
             exception.BackupNotCompleteError,
