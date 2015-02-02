@@ -2,7 +2,7 @@
     "configuration-parameters": [
         {
             "name": "innodb_file_per_table",
-            "restart_required": true,
+            "restart_required": false,
             "max": 1,
             "min": 0,
             "type": "integer"
@@ -24,36 +24,36 @@
         {
             "name": "key_buffer_size",
             "restart_required": false,
-            "max": 4294967296,
-            "min": 0,
+            "max": 4294967295,
+            "min": 8,
             "type": "integer"
         },
         {
             "name": "connect_timeout",
             "restart_required": false,
-            "max": 65535,
-            "min": 1,
+            "max": 31536000,
+            "min": 2,
             "type": "integer"
         },
         {
             "name": "join_buffer_size",
             "restart_required": false,
-            "max": 4294967296,
-            "min": 0,
+            "max": 18446744073709547520,
+            "min": 128,
             "type": "integer"
         },
         {
             "name": "sort_buffer_size",
             "restart_required": false,
-            "max": 18446744073709547520,
+            "max": 18446744073709551615,
             "min": 32768,
             "type": "integer"
         },
         {
             "name": "innodb_buffer_pool_size",
             "restart_required": true,
-            "max": 68719476736,
-            "min": 0,
+            "max": 18446744073709551615,
+            "min": 5242880,
             "type": "integer"
         },
         {
@@ -66,14 +66,14 @@
         {
             "name": "innodb_log_buffer_size",
             "restart_required": true,
-            "max": 4294967296,
-            "min": 1048576,
+            "max": 4294967295,
+            "min": 262144,
             "type": "integer"
         },
         {
             "name": "innodb_open_files",
             "restart_required": true,
-            "max": 4294967296,
+            "max": 4294967295,
             "min": 10,
             "type": "integer"
         },
@@ -87,7 +87,7 @@
         {
             "name": "sync_binlog",
             "restart_required": false,
-            "max": 18446744073709547520,
+            "max": 4294967295,
             "min": 0,
             "type": "integer"
         },
@@ -108,15 +108,15 @@
         {
             "name": "bulk_insert_buffer_size",
             "restart_required": false,
-            "max": 18446744073709547520,
+            "max": 18446744073709551615,
             "min": 0,
             "type": "integer"
         },
         {
             "name": "expire_logs_days",
             "restart_required": false,
-            "max": 65535,
-            "min": 1,
+            "max": 99,
+            "min": 0,
             "type": "integer"
         },
         {
@@ -136,36 +136,36 @@
         {
             "name": "max_connect_errors",
             "restart_required": false,
-            "max": 18446744073709547520,
+            "max": 18446744073709551615,
             "min": 1,
             "type": "integer"
         },
         {
             "name": "max_connections",
             "restart_required": false,
-            "max": 65535,
+            "max": 100000,
             "min": 1,
             "type": "integer"
         },
         {
             "name": "myisam_sort_buffer_size",
             "restart_required": false,
-            "max": 18446744073709547520,
-            "min": 4,
+            "max": 18446744073709551615,
+            "min": 4096,
             "type": "integer"
         },
         {
             "name": "max_user_connections",
             "restart_required": false,
-            "max": 100000,
-            "min": 1,
+            "max": 4294967295,
+            "min": 0,
             "type": "integer"
         },
         {
             "name": "server_id",
-            "restart_required": true,
-            "max": 100000,
-            "min": 1,
+            "restart_required": false,
+            "max": 4294967295,
+            "min": 0,
             "type": "integer"
         },
         {
