@@ -68,9 +68,7 @@ The Trove project encourages the guidelines (below).
      * The subject matter of the change (not the commit message)
        violates some well understood OpenStack procedure(s),
      * The change contains content that is demonstrably inappropriate,
-     * The test cases do not exercise the change(s) being proposed,
-     * You believe that the patch needs further work before it can be
-       merged.
+     * The test cases do not exercise the change(s) being proposed.
 
 
 Some other reviewing guidelines:
