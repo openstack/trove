@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2015.1.dev21\n"
+"Project-Id-Version: trove 2015.1.dev3\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-01-21 06:08+0000\n"
+"POT-Creation-Date: 2015-02-08 06:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,6 +42,14 @@ msgstr ""
 #: trove/instance/models.py:1099 trove/instance/models.py:1105
 #, python-format
 msgid "Server status could not be read for instance id(%s)."
+msgstr ""
+
+#: trove/openstack/common/loopingcall.py:95
+msgid "in fixed duration looping call"
+msgstr ""
+
+#: trove/openstack/common/loopingcall.py:138
+msgid "in dynamic looping call"
 msgstr ""
 
 #: trove/openstack/common/service.py:269

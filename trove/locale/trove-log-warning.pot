@@ -1,14 +1,14 @@
 # Translations template for trove.
-# Copyright (C) 2014 ORGANIZATION
+# Copyright (C) 2015 ORGANIZATION
 # This file is distributed under the same license as the trove project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2014.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2015.1.dev63.g0953449\n"
+"Project-Id-Version: trove 2015.1.dev3\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2014-10-30 06:07+0000\n"
+"POT-Creation-Date: 2015-02-08 06:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 
-#: trove/instance/models.py:448
+#: trove/instance/models.py:446
 #, python-format
 msgid "Could not load instance %s."
 msgstr ""
 
-#: trove/openstack/common/service.py:364
+#: trove/openstack/common/loopingcall.py:87
+#, python-format
+msgid "task %(func_name)s run outlasted interval by %(delay).2f sec"
+msgstr ""
+
+#: trove/openstack/common/service.py:356
 #, python-format
 msgid "pid %d not in child list"
 msgstr ""
