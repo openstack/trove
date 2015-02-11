@@ -681,10 +681,11 @@ class Instance(BuiltInstance):
                     raise exception.LocalStorageNotSpecified(flavor=flavor_id)
                 target_size = flavor.ephemeral  # ephemeral_Storage
 
-        if backup_id is not None:
+        if backup_id:
             backup_info = Backup.get_by_id(context, backup_id)
-            if backup_info.is_running:
-                raise exception.BackupNotCompleteError(backup_id=backup_id)
+            if not backup_info.is_done_successfuly:
+                raise exception.BackupNotCompleteError(
+                    backup_id=backup_id, state=backup_info.state)
 
             if backup_info.size > target_size:
                 raise exception.BackupTooLarge(
