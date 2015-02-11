@@ -1620,9 +1620,16 @@ class CassandraDBAppTest(testtools.TestCase):
                                     execute_function=mock_execute,
                                     mkstemp_function=mock_mkstemp)
 
-        mock_execute.assert_called_with("sudo", "mv",
-                                        temp_config_name,
-                                        cass_system.CASSANDRA_CONF)
+        mv, chown, chmod = mock_execute.call_args_list
+
+        mv.assert_called_with("sudo", "mv",
+                              temp_config_name,
+                              cass_system.CASSANDRA_CONF)
+        chown.assert_called_with("sudo", "chown", "cassandra:cassandra",
+                                 cass_system.CASSANDRA_CONF)
+        chmod.assert_called_with("sudo", "chmod", "a+r",
+                                 cass_system.CASSANDRA_CONF)
+
         mock_mkstemp.assert_called_once()
 
         with open(temp_config_name, 'r') as config_file:

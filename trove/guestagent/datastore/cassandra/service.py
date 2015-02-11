@@ -136,6 +136,12 @@ class CassandraApp(object):
         try:
             os.write(conf_fd, config_contents)
             execute_function("sudo", "mv", conf_path, system.CASSANDRA_CONF)
+            #TODO(denis_makogon): figure out the dynamic way to discover
+            # configs owner since it can cause errors if there is
+            # no cassandra user in operating system
+            execute_function("sudo", "chown",
+                             "cassandra:cassandra", system.CASSANDRA_CONF)
+            execute_function("sudo", "chmod", "a+r", system.CASSANDRA_CONF)
         except Exception:
             LOG.exception(
                 _("Exception generating Cassandra configuration %s.") %
