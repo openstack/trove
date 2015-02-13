@@ -340,6 +340,7 @@ class Controller(object):
             exception.BackupFileNotFound,
             exception.ClusterNotFound,
             exception.DatastoreNotFound,
+            exception.SwiftNotFound,
         ],
         webob.exc.HTTPConflict: [
             exception.BackupNotCompleteError,
