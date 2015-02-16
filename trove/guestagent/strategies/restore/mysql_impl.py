@@ -17,6 +17,7 @@
 import glob
 import os
 import pexpect
+import re
 import tempfile
 
 from trove.guestagent.strategies.restore import base
@@ -33,8 +34,19 @@ class MySQLRestoreMixin(object):
     """Common utils for restoring MySQL databases."""
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
-    RESET_ROOT_MYSQL_COMMAND = ("SET PASSWORD FOR"
-                                "'root'@'localhost'=PASSWORD('');")
+
+    # Reset the root password in a single transaction with 'FLUSH PRIVILEGES'
+    # to ensure we never leave database wide open without 'grant tables'.
+    RESET_ROOT_MYSQL_COMMANDS = ("START TRANSACTION;",
+                                 "UPDATE `mysql`.`user` SET"
+                                 " `password`=PASSWORD('')"
+                                 " WHERE `user`='root';",
+                                 "FLUSH PRIVILEGES;",
+                                 "COMMIT;")
+    # This is a suffix MySQL appends to the file name given in
+    # the '--log-error' startup parameter.
+    _ERROR_LOG_SUFFIX = '.err'
+    _ERROR_MESSAGE_PATTERN = re.compile("^ERROR:\s+.+$")
 
     def mysql_is_running(self):
         try:
@@ -62,9 +74,14 @@ class MySQLRestoreMixin(object):
         except exception.PollTimeOut:
             raise exc
 
-    def _spawn_with_init_file(self, temp_file):
-        child = pexpect.spawn("sudo mysqld_safe --init-file=%s" %
-                              temp_file.name)
+    def _start_mysqld_safe_with_init_file(self, init_file, err_log_file):
+        child = pexpect.spawn("sudo mysqld_safe"
+                              " --skip-grant-tables"
+                              " --skip-networking"
+                              " --init-file='%s'"
+                              " --log-error='%s'" %
+                              (init_file.name, err_log_file.name)
+                              )
         try:
             i = child.expect(['Starting mysqld daemon'])
             if i == 0:
@@ -74,14 +91,21 @@ class MySQLRestoreMixin(object):
         finally:
             # There is a race condition here where we kill mysqld before
             # the init file been executed. We need to ensure mysqld is up.
+            #
+            # mysqld_safe will start even if init-file statement(s) fail.
+            # We therefore also check for errors in the log file.
             self.poll_until_then_raise(
                 self.mysql_is_running,
-                base.RestoreError("Reset root password failed: "
-                                  "mysqld did not start!"))
+                base.RestoreError("Reset root password failed:"
+                                  " mysqld did not start!"))
+            first_err_message = self._find_first_error_message(err_log_file)
+            if first_err_message:
+                raise base.RestoreError("Reset root password failed: %s"
+                                        % first_err_message)
+
             LOG.info(_("Root password reset successfully."))
             LOG.debug("Cleaning up the temp mysqld process.")
-            utils.execute_with_timeout("mysqladmin", "-uroot",
-                                       "--protocol=tcp", "shutdown")
+            utils.execute_with_timeout("mysqladmin", "-uroot", "shutdown")
             LOG.debug("Polling for shutdown to complete.")
             try:
                 utils.poll_until(self.mysql_is_not_running,
@@ -100,12 +124,37 @@ class MySQLRestoreMixin(object):
                                       "mysqld did not stop!"))
 
     def reset_root_password(self):
-        #Create temp file with reset root password
-        with tempfile.NamedTemporaryFile() as fp:
-            fp.write(self.RESET_ROOT_MYSQL_COMMAND)
-            fp.flush()
-            utils.execute_with_timeout("sudo", "chmod", "a+r", fp.name)
-            self._spawn_with_init_file(fp)
+        with tempfile.NamedTemporaryFile() as init_file:
+            utils.execute_with_timeout("sudo", "chmod", "a+r", init_file.name)
+            self._writelines_one_per_line(init_file,
+                                          self.RESET_ROOT_MYSQL_COMMANDS)
+            with tempfile.NamedTemporaryFile(
+                    suffix=self._ERROR_LOG_SUFFIX) as err_log_file:
+                self._start_mysqld_safe_with_init_file(init_file, err_log_file)
+
+    def _writelines_one_per_line(self, fp, lines):
+        fp.write(os.linesep.join(lines))
+        fp.flush()
+
+    def _find_first_error_message(self, fp):
+        if MySQLRestoreMixin._is_non_zero_file(fp):
+                return MySQLRestoreMixin._find_first_pattern_match(
+                    fp,
+                    self._ERROR_MESSAGE_PATTERN
+                )
+        return None
+
+    @classmethod
+    def _is_non_zero_file(self, fp):
+        file_path = fp.name
+        return os.path.isfile(file_path) and (os.path.getsize(file_path) > 0)
+
+    @classmethod
+    def _find_first_pattern_match(self, fp, pattern):
+        for line in fp:
+            if pattern.match(line):
+                return line
+        return None
 
 
 class MySQLDump(base.RestoreRunner, MySQLRestoreMixin):
