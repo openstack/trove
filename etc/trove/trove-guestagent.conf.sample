@@ -102,7 +102,7 @@ root_grant_option = True
 # debug = True
 
 # Directory and path for log files
-log_dir = /tmp/
+log_dir = /var/log/trove/
 log_file = logfile.txt
 
 
