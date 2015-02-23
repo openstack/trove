@@ -107,4 +107,4 @@ class TestDbMigrationUtils(testtools.TestCase):
                     call(columns=test_columns,
                          refcolumns=test_refcolumns,
                          name='constraint2')]
-        self.assertEqual(mock_constraint.call_args_list, expected)
+        self.assertEqual(expected, mock_constraint.call_args_list)

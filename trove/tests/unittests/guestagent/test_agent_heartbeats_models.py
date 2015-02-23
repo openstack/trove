@@ -80,11 +80,11 @@ class AgentHeartBeatTest(testtools.TestCase):
         heartbeat_found = AgentHeartBeat.find_by_instance_id(
             instance_id=instance_id)
         self.assertIsNotNone(heartbeat_found)
-        self.assertEqual(heartbeat_found.id, heartbeat.id)
-        self.assertEqual(heartbeat_found.instance_id, heartbeat.instance_id)
-        self.assertEqual(heartbeat_found.updated_at, heartbeat.updated_at)
-        self.assertEqual(
-            heartbeat_found.guest_agent_version, heartbeat.guest_agent_version)
+        self.assertEqual(heartbeat.id, heartbeat_found.id)
+        self.assertEqual(heartbeat.instance_id, heartbeat_found.instance_id)
+        self.assertEqual(heartbeat.updated_at, heartbeat_found.updated_at)
+        self.assertEqual(heartbeat.guest_agent_version,
+                         heartbeat_found.guest_agent_version)
 
     def test_find_by_instance_id_none(self):
         """
@@ -186,11 +186,11 @@ class AgentHeartBeatTest(testtools.TestCase):
         heartbeat_found = AgentHeartBeat.find_by_instance_id(
             instance_id=instance_id)
         self.assertIsNotNone(heartbeat_found)
-        self.assertEqual(heartbeat_found.id, heartbeat.id)
-        self.assertEqual(heartbeat_found.instance_id, heartbeat.instance_id)
-        self.assertEqual(heartbeat_found.updated_at, heartbeat.updated_at)
-        self.assertEqual(
-            heartbeat_found.guest_agent_version, heartbeat.guest_agent_version)
+        self.assertEqual(heartbeat.id, heartbeat_found.id)
+        self.assertEqual(heartbeat.instance_id, heartbeat_found.instance_id)
+        self.assertEqual(heartbeat.updated_at, heartbeat_found.updated_at)
+        self.assertEqual(heartbeat.guest_agent_version,
+                         heartbeat_found.guest_agent_version)
 
         # update
         AgentHeartBeat().update(id=heartbeat_found.id,
@@ -201,9 +201,9 @@ class AgentHeartBeatTest(testtools.TestCase):
         updated_heartbeat = AgentHeartBeat.find_by_instance_id(
             instance_id=instance_id)
         self.assertIsNotNone(updated_heartbeat)
-        self.assertEqual(updated_heartbeat.id, heartbeat.id)
-        self.assertEqual(updated_heartbeat.instance_id, heartbeat.instance_id)
-        self.assertEqual(
-            heartbeat_found.guest_agent_version, heartbeat.guest_agent_version)
+        self.assertEqual(heartbeat.id, updated_heartbeat.id)
+        self.assertEqual(heartbeat.instance_id, updated_heartbeat.instance_id)
+        self.assertEqual(heartbeat.guest_agent_version,
+                         updated_heartbeat.guest_agent_version)
 
-        self.assertEqual(heartbeat_found.updated_at, heartbeat.updated_at)
+        self.assertEqual(heartbeat.updated_at, updated_heartbeat.updated_at)

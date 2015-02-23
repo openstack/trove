@@ -28,4 +28,4 @@ class TestDatastore(TestDatastoreBase):
 
     def test_load_datastore(self):
         datastore = Datastore.load(self.ds_name)
-        self.assertEqual(datastore.name, self.ds_name)
+        self.assertEqual(self.ds_name, datastore.name)

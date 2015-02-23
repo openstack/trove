@@ -41,9 +41,9 @@ class TestConfigurationParser(TestCase):
         parsed = cfg_parser.parse()
         d_parsed = dict(parsed)
         self.assertIsNotNone(d_parsed)
-        self.assertEqual(d_parsed["pid-file"], "/var/run/mysqld/mysqld.pid")
-        self.assertEqual(d_parsed["connect_timeout"], '15')
-        self.assertEqual(d_parsed["skip-external-locking"], '1')
+        self.assertEqual("/var/run/mysqld/mysqld.pid", d_parsed["pid-file"])
+        self.assertEqual('15', d_parsed["connect_timeout"])
+        self.assertEqual('1', d_parsed["skip-external-locking"])
 
 
 class TestConfigurationController(TestCase):

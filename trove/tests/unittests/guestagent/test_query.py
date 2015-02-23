@@ -265,38 +265,38 @@ class RevokeTest(QueryTestBase):
     def test_defaults(self):
         r = sql_query.Revoke()
         # Technically, this isn't valid for MySQL.
-        self.assertEqual(str(r), "REVOKE ALL ON *.* FROM ``@`%`;")
+        self.assertEqual("REVOKE ALL ON *.* FROM ``@`%`;", str(r))
 
     def test_permissions(self):
         r = sql_query.Revoke()
         r.user = 'x'
         r.permissions = ['CREATE', 'DELETE', 'DROP']
-        self.assertEqual(str(r),
-                         "REVOKE CREATE, DELETE, DROP ON *.* FROM `x`@`%`;")
+        self.assertEqual("REVOKE CREATE, DELETE, DROP ON *.* FROM `x`@`%`;",
+                         str(r))
 
     def test_database(self):
         r = sql_query.Revoke()
         r.user = 'x'
         r.database = 'foo'
-        self.assertEqual(str(r), "REVOKE ALL ON `foo`.* FROM `x`@`%`;")
+        self.assertEqual("REVOKE ALL ON `foo`.* FROM `x`@`%`;", str(r))
 
     def test_table(self):
         r = sql_query.Revoke()
         r.user = 'x'
         r.database = 'foo'
         r.table = 'bar'
-        self.assertEqual(str(r), "REVOKE ALL ON `foo`.'bar' FROM `x`@`%`;")
+        self.assertEqual("REVOKE ALL ON `foo`.'bar' FROM `x`@`%`;", str(r))
 
     def test_user(self):
         r = sql_query.Revoke()
         r.user = 'x'
-        self.assertEqual(str(r), "REVOKE ALL ON *.* FROM `x`@`%`;")
+        self.assertEqual("REVOKE ALL ON *.* FROM `x`@`%`;", str(r))
 
     def test_user_host(self):
         r = sql_query.Revoke()
         r.user = 'x'
         r.host = 'y'
-        self.assertEqual(str(r), "REVOKE ALL ON *.* FROM `x`@`y`;")
+        self.assertEqual("REVOKE ALL ON *.* FROM `x`@`y`;", str(r))
 
 
 class CreateDatabaseTest(QueryTestBase):
@@ -308,19 +308,19 @@ class CreateDatabaseTest(QueryTestBase):
 
     def test_defaults(self):
         cd = sql_query.CreateDatabase('foo')
-        self.assertEqual(str(cd), "CREATE DATABASE IF NOT EXISTS `foo`;")
+        self.assertEqual("CREATE DATABASE IF NOT EXISTS `foo`;", str(cd))
 
     def test_charset(self):
         cd = sql_query.CreateDatabase('foo')
         cd.charset = "foo"
-        self.assertEqual(str(cd), ("CREATE DATABASE IF NOT EXISTS `foo` "
-                                   "CHARACTER SET = 'foo';"))
+        self.assertEqual(("CREATE DATABASE IF NOT EXISTS `foo` "
+                          "CHARACTER SET = 'foo';"), str(cd))
 
     def test_collate(self):
         cd = sql_query.CreateDatabase('foo')
         cd.collate = "bar"
-        self.assertEqual(str(cd), ("CREATE DATABASE IF NOT EXISTS `foo` "
-                                   "COLLATE = 'bar';"))
+        self.assertEqual(("CREATE DATABASE IF NOT EXISTS `foo` "
+                          "COLLATE = 'bar';"), str(cd))
 
 
 class DropDatabaseTest(QueryTestBase):
@@ -332,7 +332,7 @@ class DropDatabaseTest(QueryTestBase):
 
     def test_defaults(self):
         dd = sql_query.DropDatabase('foo')
-        self.assertEqual(str(dd), "DROP DATABASE `foo`;")
+        self.assertEqual("DROP DATABASE `foo`;", str(dd))
 
 
 class CreateUserTest(QueryTestBase):
@@ -347,8 +347,8 @@ class CreateUserTest(QueryTestBase):
         hostname = 'localhost'
         password = 'password123'
         cu = sql_query.CreateUser(user=username, host=hostname, clear=password)
-        self.assertEqual(str(cu), "CREATE USER :user@:host "
-                                  "IDENTIFIED BY 'password123';")
+        self.assertEqual("CREATE USER :user@:host "
+                         "IDENTIFIED BY 'password123';", str(cu))
 
 
 class UpdateUserTest(QueryTestBase):
@@ -364,9 +364,9 @@ class UpdateUserTest(QueryTestBase):
         new_user = 'root123'
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   new_user=new_user)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123' "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET User='root123' "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
     def test_change_password(self):
         username = 'root'
@@ -374,10 +374,10 @@ class UpdateUserTest(QueryTestBase):
         new_password = 'password123'
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   clear=new_password)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET "
-                                  "Password=PASSWORD('password123') "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET "
+                         "Password=PASSWORD('password123') "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
     def test_change_host(self):
         username = 'root'
@@ -385,9 +385,9 @@ class UpdateUserTest(QueryTestBase):
         new_host = '%'
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   new_host=new_host)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET Host='%' "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET Host='%' "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
     def test_change_password_and_username(self):
         username = 'root'
@@ -396,10 +396,10 @@ class UpdateUserTest(QueryTestBase):
         new_password = 'password123'
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   clear=new_password, new_user=new_user)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
-                                  "Password=PASSWORD('password123') "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET User='root123', "
+                         "Password=PASSWORD('password123') "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
     def test_change_username_password_hostname(self):
         username = 'root'
@@ -410,11 +410,11 @@ class UpdateUserTest(QueryTestBase):
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   clear=new_password, new_user=new_user,
                                   new_host=new_host)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
-                                  "Host='%', "
-                                  "Password=PASSWORD('password123') "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET User='root123', "
+                         "Host='%', "
+                         "Password=PASSWORD('password123') "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
     def test_change_username_and_hostname(self):
         username = 'root'
@@ -423,10 +423,10 @@ class UpdateUserTest(QueryTestBase):
         new_host = '%'
         uu = sql_query.UpdateUser(user=username, host=hostname,
                                   new_host=new_host, new_user=new_user)
-        self.assertEqual(str(uu), "UPDATE mysql.user SET User='root123', "
-                                  "Host='%' "
-                                  "WHERE User = 'root' "
-                                  "AND Host = 'localhost';")
+        self.assertEqual("UPDATE mysql.user SET User='root123', "
+                         "Host='%' "
+                         "WHERE User = 'root' "
+                         "AND Host = 'localhost';", str(uu))
 
 
 class DropUserTest(QueryTestBase):
@@ -440,4 +440,4 @@ class DropUserTest(QueryTestBase):
         username = 'root'
         hostname = 'localhost'
         du = sql_query.DropUser(user=username, host=hostname)
-        self.assertEqual(str(du), "DROP USER `root`@`localhost`;")
+        self.assertEqual("DROP USER `root`@`localhost`;", str(du))

@@ -50,7 +50,7 @@ class TemplateTest(testtools.TestCase):
             raise "Could not find text in template"
         # Check that the last group has been rendered
         memsize = found_group.split(" ")[2]
-        self.assertEqual(memsize, "%sM" % (8 * flavor_multiplier))
+        self.assertEqual("%sM" % (8 * flavor_multiplier), memsize)
         self.assertIsNotNone(server_id)
         self.assertTrue(server_id > 1)
 
@@ -149,12 +149,12 @@ class HeatTemplateLoadTest(testtools.TestCase):
         self.assertIsNotNone(mongo_tmpl)
         self.assertIsNotNone(percona_tmpl)
         self.assertIsNotNone(couchbase_tmpl)
-        self.assertEqual(mysql_tmpl.name, self.default)
-        self.assertEqual(redis_tmpl.name, self.default)
-        self.assertEqual(cassandra_tmpl.name, self.default)
-        self.assertEqual(mongo_tmpl.name, self.default)
-        self.assertEqual(percona_tmpl.name, self.default)
-        self.assertEqual(couchbase_tmpl.name, self.default)
+        self.assertEqual(self.default, mysql_tmpl.name)
+        self.assertEqual(self.default, redis_tmpl.name)
+        self.assertEqual(self.default, cassandra_tmpl.name)
+        self.assertEqual(self.default, mongo_tmpl.name)
+        self.assertEqual(self.default, percona_tmpl.name)
+        self.assertEqual(self.default, couchbase_tmpl.name)
 
     def test_render_templates_with_ports_from_config(self):
         mysql_tmpl = template.load_heat_template('mysql')
