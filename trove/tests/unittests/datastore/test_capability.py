@@ -27,9 +27,9 @@ class TestCapabilities(TestDatastoreBase):
 
     def test_capability(self):
         cap = Capability.load(self.capability_name)
-        self.assertEqual(cap.name, self.capability_name)
-        self.assertEqual(cap.description, self.capability_desc)
-        self.assertEqual(cap.enabled, self.capability_enabled)
+        self.assertEqual(self.capability_name, cap.name)
+        self.assertEqual(self.capability_desc, cap.description)
+        self.assertEqual(self.capability_enabled, cap.enabled)
 
     def test_ds_capability_create_disabled(self):
         self.ds_cap = CapabilityOverride.create(

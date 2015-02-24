@@ -147,8 +147,9 @@ class SecurityGroupDeleteTest(testtools.TestCase):
 
         sec_mod.SecurityGroupInstanceAssociation.find_by = Mock(
             return_value=new_fake_RemoteSecGrAssoc())
-        self.assertEqual(sec_mod.SecurityGroup.delete_for_instance(
-            i_id, self.context), None)
+        self.assertEqual(None,
+                         sec_mod.SecurityGroup.delete_for_instance(
+                             i_id, self.context))
 
     def test_delete_secgr_assoc_with_db_exception(self):
 

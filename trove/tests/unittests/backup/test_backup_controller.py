@@ -42,7 +42,7 @@ class TestBackupController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(1, len(errors))
         self.assertIn("' ' does not match '^.*[0-9a-zA-Z]+.*$'",
                       errors[0].message)
 
@@ -53,7 +53,7 @@ class TestBackupController(TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(1, len(errors))
         self.assertIn("'$#@&?' does not match '^.*[0-9a-zA-Z]+.*$'",
                       errors[0].message)
 

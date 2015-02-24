@@ -191,9 +191,9 @@ class BackupAgentTest(testtools.TestCase):
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
                               '-pass pass:default_aes_cbc_key')
-        self.assertEqual(mysql_dump.cmd, str_mysql_dump_cmd)
+        self.assertEqual(str_mysql_dump_cmd, mysql_dump.cmd)
         self.assertIsNotNone(mysql_dump.manifest)
-        self.assertEqual(mysql_dump.manifest, 'abc.gz.enc')
+        self.assertEqual('abc.gz.enc', mysql_dump.manifest)
 
     def test_backup_impl_InnoBackupEx(self):
         """This test is for
@@ -208,10 +208,10 @@ class BackupAgentTest(testtools.TestCase):
                               ' | gzip |'
                               ' openssl enc -aes-256-cbc -salt '
                               '-pass pass:default_aes_cbc_key')
-        self.assertEqual(inno_backup_ex.cmd, str_innobackup_cmd)
+        self.assertEqual(str_innobackup_cmd, inno_backup_ex.cmd)
         self.assertIsNotNone(inno_backup_ex.manifest)
         str_innobackup_manifest = 'innobackupex.xbstream.gz.enc'
-        self.assertEqual(inno_backup_ex.manifest, str_innobackup_manifest)
+        self.assertEqual(str_innobackup_manifest, inno_backup_ex.manifest)
 
     def test_backup_impl_CbBackup(self):
         operating_system.get_ip_address = Mock(return_value="1.1.1.1")
@@ -232,14 +232,14 @@ class BackupAgentTest(testtools.TestCase):
         BackupRunner.cmd = "%s"
         backup_runner = BackupRunner('sample', cmd='echo command')
         if backup_runner.is_zipped:
-            self.assertEqual(backup_runner.zip_manifest, '.gz')
+            self.assertEqual('.gz', backup_runner.zip_manifest)
             self.assertIsNotNone(backup_runner.zip_manifest)
             self.assertIsNotNone(backup_runner.zip_cmd)
-            self.assertEqual(backup_runner.zip_cmd, ' | gzip')
+            self.assertEqual(' | gzip', backup_runner.zip_cmd)
         else:
             self.assertIsNone(backup_runner.zip_manifest)
             self.assertIsNone(backup_runner.zip_cmd)
-        self.assertEqual(backup_runner.backup_type, 'BackupRunner')
+        self.assertEqual('BackupRunner', backup_runner.backup_type)
 
     def test_execute_backup(self):
         """This test should ensure backup agent
