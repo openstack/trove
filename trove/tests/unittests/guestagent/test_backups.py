@@ -37,9 +37,9 @@ BACKUP_SQLDUMP_CLS = ("trove.guestagent.strategies.backup."
 RESTORE_SQLDUMP_CLS = ("trove.guestagent.strategies.restore."
                        "mysql_impl.MySQLDump")
 BACKUP_CBBACKUP_CLS = ("trove.guestagent.strategies.backup."
-                       "couchbase_impl.CbBackup")
+                       "experimental.couchbase_impl.CbBackup")
 RESTORE_CBBACKUP_CLS = ("trove.guestagent.strategies.restore."
-                        "couchbase_impl.CbBackup")
+                        "experimental.couchbase_impl.CbBackup")
 PIPE = " | "
 ZIP = "gzip"
 UNZIP = "gzip -d -c"

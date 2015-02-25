@@ -18,7 +18,7 @@ import os
 from trove.common import cfg
 from trove.common import exception
 from trove.guestagent import volume
-from trove.guestagent.datastore.cassandra import service
+from trove.guestagent.datastore.experimental.cassandra import service
 from trove.openstack.common import periodic_task
 from trove.openstack.common import log as logging
 from trove.common.i18n import _

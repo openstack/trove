@@ -21,7 +21,7 @@ from mock import patch
 
 from trove.cluster.models import ClusterTasks as ClusterTaskStatus
 from trove.cluster.models import DBCluster
-from trove.common.strategies.cluster.mongodb.taskmanager import (
+from trove.common.strategies.cluster.experimental.mongodb.taskmanager import (
     MongoDbClusterTasks as ClusterTasks)
 from trove.datastore import models as datastore_models
 from trove.instance.models import BaseInstance

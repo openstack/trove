@@ -36,19 +36,24 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.service import BaseDbStatus
-from trove.guestagent.datastore.redis import service as rservice
-from trove.guestagent.datastore.redis.service import RedisApp
-from trove.guestagent.datastore.redis import system as RedisSystem
-from trove.guestagent.datastore.cassandra import service as cass_service
-from trove.guestagent.datastore.cassandra import system as cass_system
+from trove.guestagent.datastore.experimental.redis import service as rservice
+from trove.guestagent.datastore.experimental.redis.service import RedisApp
+from trove.guestagent.datastore.experimental.redis import system as RedisSystem
+from trove.guestagent.datastore.experimental.cassandra import (
+    service as cass_service)
+from trove.guestagent.datastore.experimental.cassandra import (
+    system as cass_system)
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import KeepAliveConnection
-from trove.guestagent.datastore.couchbase import service as couchservice
-from trove.guestagent.datastore.mongodb import service as mongo_service
-from trove.guestagent.datastore.mongodb import system as mongo_system
+from trove.guestagent.datastore.experimental.couchbase import (
+    service as couchservice)
+from trove.guestagent.datastore.experimental.mongodb import (
+    service as mongo_service)
+from trove.guestagent.datastore.experimental.mongodb import (
+    system as mongo_system)
 from trove.guestagent.db import models
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
@@ -977,15 +982,15 @@ class ServiceRegistryTest(testtools.TestCase):
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.redis.'
+                         'trove.guestagent.datastore.experimental.redis.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.cassandra.'
+                         'trove.guestagent.datastore.experimental.cassandra.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.couchbase.manager'
-                         '.Manager')
-        self.assertEqual('trove.guestagent.datastore.mongodb.'
+                         'trove.guestagent.datastore.experimental.'
+                         'couchbase.manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
 
@@ -1004,14 +1009,16 @@ class ServiceRegistryTest(testtools.TestCase):
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.redis.manager.Manager')
+                         'trove.guestagent.datastore.experimental.redis.'
+                         'manager.Manager')
         self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.cassandra.'
+                         'trove.guestagent.datastore.experimental.cassandra.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.couchbase.manager'
-                         '.Manager')
-        self.assertEqual('trove.guestagent.datastore.mongodb.manager.Manager',
+                         'trove.guestagent.datastore.experimental.couchbase.'
+                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
+                         'manager.Manager',
                          test_dict.get('mongodb'))
 
     def test_datastore_registry_with_blank_dict(self):
@@ -1026,14 +1033,16 @@ class ServiceRegistryTest(testtools.TestCase):
                          'trove.guestagent.datastore.mysql.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.redis.manager.Manager')
+                         'trove.guestagent.datastore.experimental.redis.'
+                         'manager.Manager')
         self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.cassandra.'
+                         'trove.guestagent.datastore.experimental.cassandra.'
                          'manager.Manager')
         self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.couchbase.manager'
-                         '.Manager')
-        self.assertEqual('trove.guestagent.datastore.mongodb.manager.Manager',
+                         'trove.guestagent.datastore.experimental.couchbase.'
+                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
+                         'manager.Manager',
                          test_dict.get('mongodb'))
 
 

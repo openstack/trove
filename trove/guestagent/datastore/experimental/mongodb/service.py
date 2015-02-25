@@ -23,7 +23,7 @@ from trove.common import exception
 from trove.common import instance as ds_instance
 from trove.common.exception import ProcessExecutionError
 from trove.guestagent.datastore import service
-from trove.guestagent.datastore.mongodb import system
+from trove.guestagent.datastore.experimental.mongodb import system
 from trove.openstack.common import log as logging
 from trove.guestagent.common import operating_system
 from trove.common.i18n import _

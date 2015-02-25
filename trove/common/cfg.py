@@ -623,12 +623,14 @@ couchbase_opts = [
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
     cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.couchbase_impl',
+               default='trove.guestagent.strategies.backup.experimental.'
+               'couchbase_impl',
                help='Namespace to load backup strategies from.',
                deprecated_name='backup_namespace',
                deprecated_group='DEFAULT'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.couchbase_impl',
+               default='trove.guestagent.strategies.restore.experimental.'
+               'couchbase_impl',
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
@@ -678,17 +680,17 @@ mongodb_opts = [
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.StrOpt('api_strategy',
-               default='trove.common.strategies.cluster.mongodb.api.'
-                       'MongoDbAPIStrategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'mongodb.api.MongoDbAPIStrategy',
                help='Class that implements datastore-specific API logic.'),
     cfg.StrOpt('taskmanager_strategy',
-               default='trove.common.strategies.cluster.mongodb.taskmanager.'
-                       'MongoDbTaskManagerStrategy',
+               default='trove.common.strategies.cluster.experimental.mongodb.'
+               'taskmanager.MongoDbTaskManagerStrategy',
                help='Class that implements datastore-specific task manager '
                     'logic.'),
     cfg.StrOpt('guestagent_strategy',
-               default='trove.common.strategies.cluster.mongodb.guestagent.'
-                       'MongoDbGuestAgentStrategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'mongodb.guestagent.MongoDbGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
     cfg.StrOpt('backup_namespace', default=None,
@@ -729,10 +731,12 @@ postgresql_opts = [
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
     cfg.StrOpt('backup_namespace',
-               default='trove.guestagent.strategies.backup.postgresql_impl',
+               default='trove.guestagent.strategies.backup.experimental.'
+               'postgresql_impl',
                help='Namespace to load backup strategies from.'),
     cfg.StrOpt('restore_namespace',
-               default='trove.guestagent.strategies.restore.postgresql_impl',
+               default='trove.guestagent.strategies.restore.experimental.'
+               'postgresql_impl',
                help='Namespace to load restore strategies from.'),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),

@@ -18,7 +18,7 @@ from trove.common import utils
 from trove.common import exception
 from trove.common import instance
 from trove.guestagent.datastore import service
-from trove.guestagent.datastore.postgresql import pgutil
+from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)

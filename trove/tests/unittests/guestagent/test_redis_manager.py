@@ -15,8 +15,10 @@
 import testtools
 from mock import MagicMock
 from trove.common.context import TroveContext
-from trove.guestagent.datastore.redis.manager import Manager as RedisManager
-import trove.guestagent.datastore.redis.service as redis_service
+from trove.guestagent.datastore.experimental.redis.manager import (
+    Manager as RedisManager)
+from trove.guestagent.datastore.experimental.redis import (
+    service as redis_service)
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.volume import VolumeDevice

@@ -21,9 +21,10 @@ from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.mongodb import service as mongo_service
-from trove.guestagent.datastore.mongodb.manager import Manager
-from trove.guestagent.datastore.mongodb.service import MongoDBApp
+from trove.guestagent.datastore.experimental.mongodb import (
+    service as mongo_service)
+from trove.guestagent.datastore.experimental.mongodb.manager import Manager
+from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
 
 
 class GuestAgentMongoDBClusterManagerTest(testtools.TestCase):

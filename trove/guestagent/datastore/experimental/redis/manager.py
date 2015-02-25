@@ -19,8 +19,10 @@ from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.common import instance as rd_instance
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.redis.service import RedisAppStatus
-from trove.guestagent.datastore.redis.service import RedisApp
+from trove.guestagent.datastore.experimental.redis.service import (
+    RedisAppStatus)
+from trove.guestagent.datastore.experimental.redis.service import (
+    RedisApp)
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
 from trove.openstack.common import periodic_task

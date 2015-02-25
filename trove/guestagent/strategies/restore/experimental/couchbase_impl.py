@@ -21,8 +21,8 @@ import time
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent import dbaas
-from trove.guestagent.datastore.couchbase import service
-from trove.guestagent.datastore.couchbase import system
+from trove.guestagent.datastore.experimental.couchbase import service
+from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.strategies.restore import base
 from trove.openstack.common import log as logging
 

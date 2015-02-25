@@ -16,9 +16,11 @@
 import re
 from trove.common import cfg
 from trove.common import utils
-from trove.guestagent.datastore.postgresql import pgutil
-from trove.guestagent.datastore.postgresql.service.process import PgSqlProcess
-from trove.guestagent.datastore.postgresql.service.status import PgSqlAppStatus
+from trove.guestagent.datastore.experimental.postgresql import pgutil
+from trove.guestagent.datastore.experimental.postgresql.service.process import(
+    PgSqlProcess)
+from trove.guestagent.datastore.experimental.postgresql.service.status import(
+    PgSqlAppStatus)
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
 
