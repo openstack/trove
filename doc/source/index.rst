@@ -46,6 +46,7 @@ functionality, the following resources are provided.
   dev/design
   dev/install
   dev/manual_install.rst
+  dev/building_guest_images.rst
 
 * Source Code Repositories
 
@@ -55,6 +56,17 @@ functionality, the following resources are provided.
 
 * `Trove Wiki`_ on OpenStack
 * `Trove API Documentation`_ on docs.openstack.org
+
+
+Guest Images
+============
+
+In order to use Trove, you need to have Guest Images for each
+datastore and version. These images are loaded into Glance and
+registered with Trove.
+
+For those wishing to develop guest images, please refer to the
+:doc:`dev/building_guest_images.rst` page.
 
 
 Search Trove Documentation
