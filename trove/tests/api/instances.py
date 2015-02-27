@@ -509,7 +509,8 @@ class CreateInstanceFail(object):
                           volume, databases, users)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
-                         "Please specify datastore.")
+                         "Please specify datastore. Default datastore "
+                         "cannot be found.")
         datastore_models.CONF.default_datastore = \
             origin_default_datastore
 

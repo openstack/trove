@@ -131,7 +131,8 @@ class DatastoreVersionInactive(TroveError):
 
 class DatastoreDefaultDatastoreNotFound(TroveError):
 
-    message = _("Please specify datastore.")
+    message = _("Please specify datastore. Default datastore "
+                "cannot be found.")
 
 
 class DatastoreDefaultVersionNotFound(TroveError):
