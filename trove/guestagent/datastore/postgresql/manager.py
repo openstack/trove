@@ -92,7 +92,32 @@ class Manager(
             self.create_user(context, users)
 
     def get_filesystem_stats(self, context, fs_path):
-        return dbaas.get_filesystem_volume_stats(fs_path)
+        mount_point = CONF.get(CONF.datastore_manager).mount_point
+        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
         backup.backup(context, backup_info)
+
+    def mount_volume(self, context, device_path=None, mount_point=None):
+        """Mount the volume as specified by device_path to mount_point."""
+        device = volume.VolumeDevice(device_path)
+        device.mount(mount_point, write_to_fstab=False)
+        LOG.debug(
+            "Mounted device {device} at mount point {mount}.".format(
+                device=device_path, mount=mount_point))
+
+    def unmount_volume(self, context, device_path=None, mount_point=None):
+        """Unmount the volume as specified by device_path from mount_point."""
+        device = volume.VolumeDevice(device_path)
+        device.unmount(mount_point)
+        LOG.debug(
+            "Unmounted device {device} from mount point {mount}.".format(
+                device=device_path, mount=mount_point))
+
+    def resize_fs(self, context, device_path=None, mount_point=None):
+        """Resize the filesystem as specified by device_path at mount_point."""
+        device = volume.VolumeDevice(device_path)
+        device.resize_fs(mount_point)
+        LOG.debug(
+            "Resized the filesystem at {mount}.".format(
+                mount=mount_point))

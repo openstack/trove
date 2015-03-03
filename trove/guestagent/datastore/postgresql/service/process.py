@@ -18,7 +18,6 @@ from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.postgresql.service.status import PgSqlAppStatus
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -30,6 +29,7 @@ class PgSqlProcess(object):
     """Mixin that manages the PgSql process."""
 
     def start_db(self, context):
+        self._enable_pgsql_on_boot()
         """Start the PgSql service."""
         cmd = operating_system.service_discovery(PGSQL_SERVICE_CANDIDATES)
         LOG.info(
@@ -44,8 +44,30 @@ class PgSqlProcess(object):
             timeout=30
         )
 
-    def stop_db(self, context):
+    def _enable_pgsql_on_boot(self):
+        try:
+            pgsql_service = operating_system.service_discovery(
+                PGSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(pgsql_service['cmd_enable'],
+                                       shell=True)
+        except KeyError:
+            LOG.exception(_("Error enabling PostgreSQL start on boot."))
+            raise RuntimeError("Service is not discovered.")
+
+    def _disable_pgsql_on_boot(self):
+        try:
+            pgsql_service = operating_system.service_discovery(
+                PGSQL_SERVICE_CANDIDATES)
+            utils.execute_with_timeout(pgsql_service['cmd_disable'],
+                                       shell=True)
+        except KeyError:
+            LOG.exception(_("Error disabling PostgreSQL start on boot."))
+            raise RuntimeError("Service is not discovered.")
+
+    def stop_db(self, context, do_not_start_on_reboot=False):
         """Stop the PgSql service."""
+        if do_not_start_on_reboot:
+            self._disable_pgsql_on_boot()
         cmd = operating_system.service_discovery(PGSQL_SERVICE_CANDIDATES)
         LOG.info(
             _("{guest_id}: Stopping database engine with command ({command}).")
