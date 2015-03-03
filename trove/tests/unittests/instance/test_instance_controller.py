@@ -19,6 +19,7 @@ from testtools.matchers import Is, Equals
 from testtools.testcase import skip
 from trove.common import apischema
 from trove.instance.service import InstanceController
+from mock import Mock
 
 
 class TestInstanceController(TestCase):
@@ -223,3 +224,79 @@ class TestInstanceController(TestCase):
         self.assertFalse(validator.is_valid(body))
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
         self.verify_errors(errors, ["'' is too short"], ["flavorRef"])
+
+    def _setup_modify_instance_mocks(self):
+        instance = Mock()
+        instance.detach_replica = Mock()
+        instance.assign_configuration = Mock()
+        instance.unassign_configuration = Mock()
+        instance.update_db = Mock()
+        return instance
+
+    def test_modify_instance_with_empty_args(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.detach_replica.call_count, 0)
+        self.assertEqual(instance.unassign_configuration.call_count, 0)
+        self.assertEqual(instance.assign_configuration.call_count, 0)
+        self.assertEqual(instance.update_db.call_count, 0)
+
+    def test_modify_instance_with_nonempty_args_calls_update_db(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['any'] = 'anything'
+
+        self.controller._modify_instance(instance, **args)
+
+        instance.update_db.assert_called_once_with(**args)
+
+    def test_modify_instance_with_False_detach_replica_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['detach_replica'] = False
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.detach_replica.call_count, 0)
+
+    def test_modify_instance_with_True_detach_replica_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['detach_replica'] = True
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.detach_replica.call_count, 1)
+
+    def test_modify_instance_with_configuration_id_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['configuration_id'] = 'some_id'
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.assign_configuration.call_count, 1)
+
+    def test_modify_instance_with_None_configuration_id_arg(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['configuration_id'] = None
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.unassign_configuration.call_count, 1)
+
+    def test_modify_instance_with_all_args(self):
+        instance = self._setup_modify_instance_mocks()
+        args = {}
+        args['detach_replica'] = True
+        args['configuration_id'] = 'some_id'
+
+        self.controller._modify_instance(instance, **args)
+
+        self.assertEqual(instance.detach_replica.call_count, 1)
+        self.assertEqual(instance.assign_configuration.call_count, 1)
+        instance.update_db.assert_called_once_with(**args)

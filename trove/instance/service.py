@@ -243,6 +243,27 @@ class InstanceController(wsgi.Controller):
                 configuration_id = utils.get_id_from_href(configuration_ref)
                 return configuration_id
 
+    def _modify_instance(self, instance, **kwargs):
+        """Modifies the instance using the specified keyword arguments
+        'detach_replica': ignored if not present or False, if True,
+        specifies the instance is a replica that will be detached from
+        its master
+        'configuration_id': Ignored if not present, if None, detaches an
+        an attached configuration group, if not None, attaches the
+        specified configuration group
+        """
+
+        if 'detach_replica' in kwargs and kwargs['detach_replica']:
+            LOG.debug("Detaching replica from source.")
+            instance.detach_replica()
+        if 'configuration_id' in kwargs:
+            if kwargs['configuration_id']:
+                instance.assign_configuration(kwargs['configuration_id'])
+            else:
+                instance.unassign_configuration()
+        if kwargs:
+            instance.update_db(**kwargs)
+
     def update(self, req, id, body, tenant_id):
         """Updates the instance to attach/detach configuration."""
         LOG.info(_LI("Updating database instance '%(instance_id)s' for tenant "
@@ -254,20 +275,10 @@ class InstanceController(wsgi.Controller):
 
         instance = models.Instance.load(context, id)
 
-        # If configuration is set, then we will update the instance to use the
-        # new configuration. If configuration is empty, we want to disassociate
-        # the instance from the configuration group and remove the active
-        # overrides file.
-
-        update_args = {}
-        configuration_id = self._configuration_parse(context, body)
-        if configuration_id:
-            instance.assign_configuration(configuration_id)
-        else:
-            instance.unassign_configuration()
-
-        update_args['configuration_id'] = configuration_id
-        instance.update_db(**update_args)
+        # Make sure args contains a 'configuration_id' argument,
+        args = {}
+        args['configuration_id'] = self._configuration_parse(context, body)
+        self._modify_instance(instance, **args)
         return wsgi.Result(None, 202)
 
     def edit(self, req, id, body, tenant_id):
@@ -281,31 +292,13 @@ class InstanceController(wsgi.Controller):
 
         instance = models.Instance.load(context, id)
 
-        if 'slave_of' in body['instance']:
-            LOG.debug("Detaching replica from source.")
-            instance.detach_replica()
-
-        # If configuration is set, then we will update the instance to
-        # use the new configuration. If configuration is empty, we
-        # want to disassociate the instance from the configuration
-        # group and remove the active overrides file.
-        # If instance name is set, then we will update the instance name.
-
-        edit_args = {}
-        if 'configuration' in body['instance']:
-            configuration_id = self._configuration_parse(context, body)
-            if configuration_id:
-                instance.assign_configuration(configuration_id)
-            else:
-                instance.unassign_configuration()
-            edit_args['configuration_id'] = configuration_id
-
+        args = {}
+        args['detach_replica'] = 'slave_of' in body['instance']
         if 'name' in body['instance']:
-            edit_args['name'] = body['instance']['name']
-
-        if edit_args:
-            instance.update_db(**edit_args)
-
+            args['name'] = body['instance']['name']
+        if 'configuration' in body['instance']:
+            args['configuration_id'] = self._configuration_parse(context, body)
+        self._modify_instance(instance, **args)
         return wsgi.Result(None, 202)
 
     def configuration(self, req, tenant_id, id):
