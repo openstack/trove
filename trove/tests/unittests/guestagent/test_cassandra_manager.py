@@ -20,8 +20,10 @@ from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import volume
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.cassandra import service as cass_service
-from trove.guestagent.datastore.cassandra import manager as cass_manager
+from trove.guestagent.datastore.experimental.cassandra import (
+    service as cass_service)
+from trove.guestagent.datastore.experimental.cassandra import (
+    manager as cass_manager)
 from trove.guestagent import pkg as pkg
 
 

@@ -21,7 +21,7 @@ from trove.common import utils
 from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.cassandra import system
+from trove.guestagent.datastore.experimental.cassandra import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 from trove.openstack.common import log as logging

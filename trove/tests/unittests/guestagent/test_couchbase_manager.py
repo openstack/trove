@@ -24,8 +24,10 @@ from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.couchbase import service as couch_service
-from trove.guestagent.datastore.couchbase import manager as couch_manager
+from trove.guestagent.datastore.experimental.couchbase import (
+    service as couch_service)
+from trove.guestagent.datastore.experimental.couchbase import (
+    manager as couch_manager)
 
 
 class GuestAgentCouchbaseManagerTest(testtools.TestCase):

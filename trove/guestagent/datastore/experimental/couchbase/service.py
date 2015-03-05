@@ -27,7 +27,7 @@ from trove.common import utils as utils
 from trove.guestagent import pkg
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import service
-from trove.guestagent.datastore.couchbase import system
+from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.db import models
 from trove.openstack.common import log as logging
 from trove.common.i18n import _

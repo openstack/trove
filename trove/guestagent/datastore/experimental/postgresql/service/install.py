@@ -16,8 +16,10 @@
 from trove.common import cfg
 from trove.common import instance
 from trove.guestagent import pkg
-from trove.guestagent.datastore.postgresql.service.process import PgSqlProcess
-from trove.guestagent.datastore.postgresql.service.status import PgSqlAppStatus
+from trove.guestagent.datastore.experimental.postgresql.service.process import(
+    PgSqlProcess)
+from trove.guestagent.datastore.experimental.postgresql.service.status import(
+    PgSqlAppStatus)
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
 

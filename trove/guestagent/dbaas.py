@@ -33,13 +33,20 @@ from trove.common.i18n import _
 
 LOG = log.getLogger(__name__)
 defaults = {
-    'mysql': 'trove.guestagent.datastore.mysql.manager.Manager',
-    'percona': 'trove.guestagent.datastore.mysql.manager.Manager',
-    'redis': 'trove.guestagent.datastore.redis.manager.Manager',
-    'cassandra': 'trove.guestagent.datastore.cassandra.manager.Manager',
-    'couchbase': 'trove.guestagent.datastore.couchbase.manager.Manager',
-    'mongodb': 'trove.guestagent.datastore.mongodb.manager.Manager',
-    'postgresql': 'trove.guestagent.datastore.postgresql.manager.Manager',
+    'mysql':
+    'trove.guestagent.datastore.mysql.manager.Manager',
+    'percona':
+    'trove.guestagent.datastore.mysql.manager.Manager',
+    'redis':
+    'trove.guestagent.datastore.experimental.redis.manager.Manager',
+    'cassandra':
+    'trove.guestagent.datastore.experimental.cassandra.manager.Manager',
+    'couchbase':
+    'trove.guestagent.datastore.experimental.couchbase.manager.Manager',
+    'mongodb':
+    'trove.guestagent.datastore.experimental.mongodb.manager.Manager',
+    'postgresql':
+    'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
 }
 CONF = cfg.CONF
 

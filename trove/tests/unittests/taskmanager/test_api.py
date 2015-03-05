@@ -16,7 +16,7 @@
 from mock import Mock
 from testtools import TestCase
 
-from trove.common.strategies.cluster.mongodb.taskmanager import (
+from trove.common.strategies.cluster.experimental.mongodb.taskmanager import (
     MongoDbTaskManagerAPI)
 from trove.taskmanager import api as task_api
 

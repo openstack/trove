@@ -24,7 +24,7 @@ from trove.common.context import TroveContext
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.backup import mysql_impl
-from trove.guestagent.strategies.backup import couchbase_impl
+from trove.guestagent.strategies.backup.experimental import couchbase_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.backup.state import BackupState
 from trove.guestagent.backup import backupagent

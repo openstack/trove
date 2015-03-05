@@ -15,7 +15,7 @@
 
 import itertools
 from trove.common import cfg
-from trove.guestagent.datastore.postgresql import pgutil
+from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
 

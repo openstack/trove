@@ -21,8 +21,9 @@ from trove.common import instance as ds_instance
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.mongodb import service as mongo_service
-from trove.guestagent.datastore.mongodb import system
+from trove.guestagent.datastore.experimental.mongodb import (
+    service as mongo_service)
+from trove.guestagent.datastore.experimental.mongodb import system
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
 from trove.openstack.common import periodic_task

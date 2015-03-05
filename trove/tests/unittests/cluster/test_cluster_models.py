@@ -17,7 +17,8 @@ from mock import Mock, patch
 from testtools import TestCase
 
 from trove.cluster import models
-from trove.common.strategies.cluster.mongodb.api import MongoDbCluster
+from trove.common.strategies.cluster.experimental.mongodb.api import (
+    MongoDbCluster)
 from trove.datastore import models as datastore_models
 
 
