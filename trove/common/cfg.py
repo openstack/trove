@@ -326,7 +326,8 @@ common_opts = [
                          'couchbase': 'fa62fe68-74d9-4779-a24e-36f19602c415',
                          'mongodb': 'c8c907af-7375-456f-b929-b637ff9209ee',
                          'postgresql': 'ac277e0d-4f21-40aa-b347-1ea31e571720',
-                         'couchdb': 'f0a9ab7b-66f7-4352-93d7-071521d44c7c'},
+                         'couchdb': 'f0a9ab7b-66f7-4352-93d7-071521d44c7c',
+                         'vertica': 'a8d805ae-a3b2-c4fd-gb23-b62cee5201ae'},
                 help='Unique ID to tag notification events.'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
                help="Admin username used to connect to Nova.", secret=True),
@@ -807,6 +808,42 @@ couchdb_opts = [
                 'instance-create as the "password" field.'),
 ]
 
+# Vertica
+vertica_group = cfg.OptGroup(
+    'vertica', title='Vertica options',
+    help="Oslo option group designed for Vertica datastore")
+vertica_opts = [
+    cfg.ListOpt('tcp_ports', default=["5433"],
+                help='List of TCP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.ListOpt('udp_ports', default=["5433"],
+                help='List of UDP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.StrOpt('backup_strategy', default=None,
+               help='Default strategy to perform backups.'),
+    cfg.DictOpt('backup_incremental_strategy', default={},
+                help='Incremental Backup Runner based on the default '
+                'strategy. For strategies that do not implement an '
+                'incremental, the runner will use the default full backup.'),
+    cfg.StrOpt('replication_strategy', default=None,
+               help='Default strategy for replication.'),
+    cfg.StrOpt('mount_point', default='/var/lib/vertica',
+               help="Filesystem path for mounting "
+               "volumes if volume support is enabled."),
+    cfg.BoolOpt('volume_support', default=True,
+                help='Whether to provision a Cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb',
+               help='Device path for volume if volume support is enabled.'),
+    cfg.StrOpt('backup_namespace', default=None,
+               help='Namespace to load backup strategies from.'),
+    cfg.StrOpt('restore_namespace', default=None,
+               help='Namespace to load restore strategies from.'),
+    cfg.IntOpt('readahead_size', default=2048,
+               help='Size(MB) to be set as readahead_size for data volume'),
+]
+
 # RPC version groups
 upgrade_levels = cfg.OptGroup(
     'upgrade_levels',
@@ -841,6 +878,7 @@ CONF.register_group(couchbase_group)
 CONF.register_group(mongodb_group)
 CONF.register_group(postgresql_group)
 CONF.register_group(couchdb_group)
+CONF.register_group(vertica_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
@@ -850,6 +888,7 @@ CONF.register_opts(couchbase_opts, couchbase_group)
 CONF.register_opts(mongodb_opts, mongodb_group)
 CONF.register_opts(postgresql_opts, postgresql_group)
 CONF.register_opts(couchdb_opts, couchdb_group)
+CONF.register_opts(vertica_opts, vertica_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 

@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ConfigParser
 import os
 import tempfile
 from uuid import uuid4
@@ -56,7 +57,13 @@ from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb import (
     system as mongo_system)
+from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
+from trove.guestagent.datastore.experimental.vertica.service import (
+    VerticaAppStatus)
+from trove.guestagent.datastore.experimental.vertica import (
+    system as vertica_system)
 from trove.guestagent.db import models
+from trove.guestagent.volume import VolumeDevice
 from trove.instance.models import InstanceServiceStatus
 from trove.tests.unittests.util import util
 
@@ -1028,6 +1035,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchdb'),
                          'trove.guestagent.datastore.experimental.couchdb.'
                          'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
+                         'manager.Manager',
+                         test_dict.get('vertica'))
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -1055,6 +1065,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchdb'),
                          'trove.guestagent.datastore.experimental.couchdb.'
                          'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
+                         'manager.Manager',
+                         test_dict.get('vertica'))
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -2029,3 +2042,238 @@ class MongoDBAppTest(testtools.TestCase):
         self.mongoDbApp.install_if_needed(['package'])
         packager_mock.pkg_install.assert_any_call(ANY, {}, ANY)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+
+class VerticaAppStatusTest(testtools.TestCase):
+
+    def setUp(self):
+        super(VerticaAppStatusTest, self).setUp()
+        util.init_db()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+
+    def tearDown(self):
+
+        super(VerticaAppStatusTest, self).tearDown()
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+
+    def test_get_actual_db_status(self):
+        self.verticaAppStatus = VerticaAppStatus()
+        with patch.object(vertica_system, 'shell_execute',
+                          MagicMock(return_value=['db_srvr', None])):
+            status = self.verticaAppStatus._get_actual_db_status()
+        self.assertEqual(rd_instance.ServiceStatuses.RUNNING, status)
+
+    def test_get_actual_db_status_shutdown(self):
+        self.verticaAppStatus = VerticaAppStatus()
+        with patch.object(vertica_system, 'shell_execute',
+                          MagicMock(side_effect=[['', None],
+                                                 ['db_srvr', None]])):
+            status = self.verticaAppStatus._get_actual_db_status()
+        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN, status)
+
+    def test_get_actual_db_status_error_crashed(self):
+        self.verticaAppStatus = VerticaAppStatus()
+        with patch.object(vertica_system, 'shell_execute',
+                          MagicMock(side_effect=ProcessExecutionError('problem'
+                                                                      ))):
+            status = self.verticaAppStatus._get_actual_db_status()
+        self.assertEqual(rd_instance.ServiceStatuses.CRASHED, status)
+
+    def test_get_actual_db_status_error_unknown(self):
+        self.verticaAppStatus = VerticaAppStatus()
+        with patch.object(vertica_system, 'shell_execute',
+                          MagicMock(return_value=['', None])):
+            status = self.verticaAppStatus._get_actual_db_status()
+        self.assertEqual(rd_instance.ServiceStatuses.UNKNOWN, status)
+
+
+class VerticaAppTest(testtools.TestCase):
+
+    def setUp(self):
+        super(VerticaAppTest, self).setUp()
+        self.FAKE_ID = 1000
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.app = VerticaApp(self.appStatus)
+        self.setread = VolumeDevice.set_readahead_size
+        vertica_system.shell_execute = MagicMock(return_value=('', ''))
+
+        VolumeDevice.set_readahead_size = Mock()
+        self.test_config = ConfigParser.ConfigParser()
+        self.test_config.add_section('credentials')
+        self.test_config.set('credentials',
+                             'dbadmin_password', 'some_password')
+
+    def tearDown(self):
+        super(VerticaAppTest, self).tearDown()
+        self.app = None
+        VolumeDevice.set_readahead_size = self.setread
+
+    def test_install_if_needed_installed(self):
+        with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):
+            with patch.object(pkg.Package, 'pkg_install', return_value=None):
+                self.app.install_if_needed('vertica')
+                pkg.Package.pkg_is_installed.assert_any_call('vertica')
+                self.assertEqual(pkg.Package.pkg_install.call_count, 0)
+
+    def test_install_if_needed_not_installed(self):
+        with patch.object(pkg.Package, 'pkg_is_installed', return_value=False):
+            with patch.object(pkg.Package, 'pkg_install', return_value=None):
+                self.app.install_if_needed('vertica')
+                pkg.Package.pkg_is_installed.assert_any_call('vertica')
+                self.assertEqual(pkg.Package.pkg_install.call_count, 1)
+
+    def test_prepare_for_install_vertica(self):
+        self.app.prepare_for_install_vertica()
+        arguments = vertica_system.shell_execute.call_args_list[0]
+        self.assertEqual(VolumeDevice.set_readahead_size.call_count, 1)
+        expected_command = (
+            "VERT_DBA_USR=dbadmin VERT_DBA_HOME=/home/dbadmin "
+            "VERT_DBA_GRP=verticadba /opt/vertica/oss/python/bin/python"
+            " -m vertica.local_coerce")
+        arguments.assert_called_with(expected_command)
+
+    def test_install_vertica(self):
+        with patch.object(self.app, 'write_config',
+                          return_value=None):
+            self.app.install_vertica(members='10.0.0.2')
+        arguments = vertica_system.shell_execute.call_args_list[0]
+        expected_command = (
+            vertica_system.INSTALL_VERTICA % ('10.0.0.2', '/var/lib/vertica'))
+        arguments.assert_called_with(expected_command)
+
+    def test_create_db(self):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            self.app.create_db(members='10.0.0.2')
+        arguments = vertica_system.shell_execute.call_args_list[0]
+        expected_command = (vertica_system.CREATE_DB % ('10.0.0.2', 'db_srvr',
+                                                        '/var/lib/vertica',
+                                                        '/var/lib/vertica',
+                                                        'some_password'))
+        arguments.assert_called_with(expected_command, 'dbadmin')
+
+    def test_vertica_write_config(self):
+        temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
+        mock_mkstemp = MagicMock(return_value=(temp_file_handle))
+        mock_unlink = Mock(return_value=0)
+        self.app.write_config(config=self.test_config,
+                              temp_function=mock_mkstemp,
+                              unlink_function=mock_unlink)
+
+        arguments = vertica_system.shell_execute.call_args_list[0]
+        expected_command = (
+            ("install -o root -g root -m 644 %(source)s %(target)s"
+             ) % {'source': temp_file_handle.name,
+                  'target': vertica_system.VERTICA_CONF})
+        arguments.assert_called_with(expected_command)
+        mock_mkstemp.assert_called_once()
+
+        configuration_data = ConfigParser.ConfigParser()
+        configuration_data.read(temp_file_handle.name)
+        self.assertEqual(
+            self.test_config.get('credentials', 'dbadmin_password'),
+            configuration_data.get('credentials', 'dbadmin_password'))
+        self.assertEqual(mock_unlink.call_count, 1)
+        # delete the temporary_config_file
+        os.unlink(temp_file_handle.name)
+
+    def test_vertica_error_in_write_config_verify_unlink(self):
+        mock_unlink = Mock(return_value=0)
+        temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
+        mock_mkstemp = MagicMock(return_value=temp_file_handle)
+
+        with patch.object(vertica_system, 'shell_execute',
+                          side_effect=ProcessExecutionError('some exception')):
+            self.assertRaises(ProcessExecutionError,
+                              self.app.write_config,
+                              config=self.test_config,
+                              temp_function=mock_mkstemp,
+                              unlink_function=mock_unlink)
+
+        self.assertEqual(mock_unlink.call_count, 1)
+
+        # delete the temporary_config_file
+        os.unlink(temp_file_handle.name)
+
+    def test_restart(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        mock_status.begin_restart = MagicMock(return_value=None)
+        with patch.object(VerticaApp, 'stop_db', return_value=None):
+            with patch.object(VerticaApp, 'start_db', return_value=None):
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+                app.restart()
+                mock_status.begin_restart.assert_any_call()
+                VerticaApp.stop_db.assert_any_call()
+                VerticaApp.start_db.assert_any_call()
+                mock_status.end_install_or_restart.assert_any_call()
+
+    def test_start_db(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_enable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=True)
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+
+                app.start_db()
+
+                arguments = vertica_system.shell_execute.call_args_list[0]
+                expected_cmd = (vertica_system.START_DB % ('db_srvr',
+                                                           'some_password'))
+                self.assertTrue(
+                    mock_status.wait_for_real_status_to_change_to.called)
+                arguments.assert_called_with(expected_cmd, 'dbadmin')
+
+    def test_start_db_failure(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_enable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=None)
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+                self.assertRaises(RuntimeError, app.start_db)
+
+    def test_stop_db(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_disable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=True)
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+
+                app.stop_db()
+
+                arguments = vertica_system.shell_execute.call_args_list[0]
+                expected_command = (vertica_system.STOP_DB % ('db_srvr',
+                                                              'some_password'))
+                self.assertTrue(
+                    mock_status.wait_for_real_status_to_change_to.called)
+                arguments.assert_called_with(expected_command, 'dbadmin')
+
+    def test_stop_db_failure(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_disable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    return_value=None)
+                mock_status.end_install_or_restart = MagicMock(
+                    return_value=None)
+                self.assertRaises(RuntimeError, app.stop_db)

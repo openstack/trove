@@ -156,6 +156,20 @@ class VolumeDevice(object):
             raise GuestError(_("Could not obtain a list of mount points for "
                                "device: %s") % device_path)
 
+    def set_readahead_size(self, readahead_size,
+                           execute_function=utils.execute):
+        """Set the readahead size of disk."""
+        self._check_device_exists()
+        try:
+            execute_function("sudo", "blockdev", "--setra",
+                             readahead_size, self.device_path)
+        except ProcessExecutionError:
+            LOG.exception(_("Error setting readhead size to %(size)s "
+                            "for device %(device)s.") %
+                          {'size': readahead_size, 'device': self.device_path})
+            raise GuestError(_("Error setting readhead size: %s.") %
+                             self.device_path)
+
 
 class VolumeMountPoint(object):
 

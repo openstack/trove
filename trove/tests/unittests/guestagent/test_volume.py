@@ -145,6 +145,19 @@ class VolumeDeviceTest(testtools.TestCase):
         self.assertEqual(COUNT, fake_spawn.expect.call_count)
         os.path.exists = origin_
 
+    def test_set_readahead_size(self):
+        origin_check_device_exists = self.volumeDevice._check_device_exists
+        self.volumeDevice._check_device_exists = MagicMock()
+        mock_execute = MagicMock(return_value=None)
+        readahead_size = 2048
+        self.volumeDevice.set_readahead_size(readahead_size,
+                                             execute_function=mock_execute)
+        blockdev = mock_execute.call_args_list[0]
+
+        blockdev.assert_called_with("sudo", "blockdev", "--setra",
+                                    readahead_size, "/dev/vdb")
+        self.volumeDevice._check_device_exists = origin_check_device_exists
+
 
 class VolumeMountPointTest(testtools.TestCase):
     def setUp(self):

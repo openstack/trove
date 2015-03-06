@@ -49,6 +49,8 @@ defaults = {
     'trove.guestagent.datastore.experimental.postgresql.manager.Manager',
     'couchdb':
     'trove.guestagent.datastore.experimental.couchdb.manager.Manager',
+    'vertica':
+    'trove.guestagent.datastore.experimental.vertica.manager.Manager',
 }
 CONF = cfg.CONF
 
