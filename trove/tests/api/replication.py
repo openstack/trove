@@ -28,6 +28,7 @@ from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.util.server_connection import create_server_connection
 from troveclient.compat import exceptions
+from time import sleep
 
 
 class SlaveInstanceTestInfo(object):
@@ -63,6 +64,44 @@ def slave_is_running(running=True):
     return check_slave_is_running
 
 
+def instance_is_active(id):
+    instance = instance_info.dbaas.instances.get(id)
+    if instance.status == "ACTIVE":
+        return True
+    else:
+        assert_true(instance.status in ['PROMOTE', 'EJECT', 'BUILD', 'BACKUP'])
+        return False
+
+
+def create_slave():
+    result = instance_info.dbaas.instances.create(
+        instance_info.name + "_slave",
+        instance_info.dbaas_flavor_href,
+        instance_info.volume,
+        slave_of=instance_info.id)
+    assert_equal(200, instance_info.dbaas.last_http_code)
+    assert_equal("BUILD", result.status)
+    return result.id
+
+
+def validate_slave(master, slave):
+    new_slave = instance_info.dbaas.instances.get(slave.id)
+    assert_equal(200, instance_info.dbaas.last_http_code)
+    ns_dict = new_slave._info
+    CheckInstance(ns_dict).slave_of()
+    assert_equal(master.id, ns_dict['replica_of']['id'])
+
+
+def validate_master(master, slaves):
+    new_master = instance_info.dbaas.instances.get(master.id)
+    assert_equal(200, instance_info.dbaas.last_http_code)
+    nm_dict = new_master._info
+    CheckInstance(nm_dict).slaves()
+    master_ids = set([replica['id'] for replica in nm_dict['replicas']])
+    asserted_ids = set([slave.id for slave in slaves])
+    assert_true(asserted_ids.issubset(master_ids))
+
+
 @test(depends_on_classes=[WaitForGuestInstallationToFinish],
       groups=[GROUP])
 class CreateReplicationSlave(object):
@@ -77,14 +116,7 @@ class CreateReplicationSlave(object):
 
     @test(runs_after=['test_create_db_on_master'])
     def test_create_slave(self):
-        result = instance_info.dbaas.instances.create(
-            instance_info.name + "_slave",
-            instance_info.dbaas_flavor_href,
-            instance_info.volume,
-            slave_of=instance_info.id)
-        assert_equal(200, instance_info.dbaas.last_http_code)
-        assert_equal("BUILD", result.status)
-        slave_instance.id = result.id
+        slave_instance.id = create_slave()
 
 
 @test(groups=[GROUP])
@@ -94,14 +126,7 @@ class WaitForCreateSlaveToFinish(object):
     @test(depends_on=[CreateReplicationSlave.test_create_slave])
     @time_out(TIMEOUT_INSTANCE_CREATE)
     def test_slave_created(self):
-        def result_is_active():
-            instance = instance_info.dbaas.instances.get(slave_instance.id)
-            if instance.status == "ACTIVE":
-                return True
-            else:
-                assert_true(instance.status in ['BUILD', 'BACKUP'])
-                return False
-        poll_until(result_is_active)
+        poll_until(lambda: instance_is_active(slave_instance.id))
 
 
 @test(enabled=(not CONFIG.fake_mode),
@@ -165,26 +190,114 @@ class TestInstanceListing(object):
 
     @test
     def test_get_slave_instance(self):
-        instance = instance_info.dbaas.instances.get(slave_instance.id)
-        assert_equal(200, instance_info.dbaas.last_http_code)
-        instance_dict = instance._info
-        print("instance_dict=%s" % instance_dict)
-        CheckInstance(instance_dict).slave_of()
-        assert_equal(instance_info.id, instance_dict['replica_of']['id'])
+        validate_slave(instance_info, slave_instance)
 
     @test
     def test_get_master_instance(self):
-        instance = instance_info.dbaas.instances.get(instance_info.id)
-        assert_equal(200, instance_info.dbaas.last_http_code)
-        instance_dict = instance._info
-        print("instance_dict=%s" % instance_dict)
-        CheckInstance(instance_dict).slaves()
-        assert_equal(slave_instance.id, instance_dict['replicas'][0]['id'])
+        validate_master(instance_info, [slave_instance])
 
 
 @test(groups=[GROUP],
       depends_on=[WaitForCreateSlaveToFinish],
-      runs_after=[VerifySlave])
+      runs_after=[TestInstanceListing])
+class TestReplicationFailover(object):
+    """Test replication failover functionality."""
+
+    @staticmethod
+    def promote(master, slave):
+        if CONFIG.fake_mode:
+            raise SkipTest("promote_replica_source not supported in fake mode")
+
+        instance_info.dbaas.instances.promote_to_replica_source(slave)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        poll_until(lambda: instance_is_active(slave.id))
+        validate_master(slave, [master])
+        validate_slave(slave, master)
+
+    @test
+    def test_promote_master(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("promote_master not supported in fake mode")
+
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.promote_to_replica_source,
+                      instance_info.id)
+
+    @test
+    def test_eject_slave(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("eject_replica_source not supported in fake mode")
+
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.eject_replica_source,
+                      slave_instance.id)
+
+    @test
+    def test_eject_valid_master(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("eject_replica_source not supported in fake mode")
+
+        assert_raises(exceptions.BadRequest,
+                      instance_info.dbaas.instances.eject_replica_source,
+                      instance_info.id)
+
+    @test(depends_on=[test_promote_master, test_eject_slave,
+                      test_eject_valid_master])
+    def test_promote_to_replica_source(self):
+        TestReplicationFailover.promote(instance_info, slave_instance)
+
+    @test(depends_on=[test_promote_to_replica_source])
+    def test_promote_back_to_replica_source(self):
+        TestReplicationFailover.promote(slave_instance, instance_info)
+
+    @test(depends_on=[test_promote_back_to_replica_source], enabled=False)
+    def add_second_slave(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("three site promote not supported in fake mode")
+
+        self._third_slave = SlaveInstanceTestInfo()
+        self._third_slave.id = create_slave()
+        poll_until(lambda: instance_is_active(self._third_slave.id))
+        poll_until(slave_is_running())
+        sleep(30)
+        validate_master(instance_info, [slave_instance, self._third_slave])
+        validate_slave(instance_info, self._third_slave)
+
+    @test(depends_on=[add_second_slave], enabled=False)
+    def test_three_site_promote(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("three site promote not supported in fake mode")
+
+        TestReplicationFailover.promote(instance_info, self._third_slave)
+        validate_master(self._third_slave, [slave_instance, instance_info])
+        validate_slave(self._third_slave, instance_info)
+
+    @test(depends_on=[test_three_site_promote], enabled=False)
+    def disable_master(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("eject_replica_source not supported in fake mode")
+
+        cmd = "sudo service trove-guestagent stop"
+        server = create_server_connection(self._third_slave.id)
+        stdout, stderr = server.execute(cmd)
+        assert_equal(stdout, "1\n")
+
+    @test(depends_on=[disable_master], enabled=False)
+    def test_eject_replica_master(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("eject_replica_source not supported in fake mode")
+
+        sleep(90)
+        instance_info.dbaas.instances.eject_replica_source(self._third_slave)
+        assert_equal(202, instance_info.dbaas.last_http_code)
+        poll_until(lambda: instance_is_active(self._third_slave.id))
+        validate_master(instance_info, [slave_instance])
+        validate_slave(instance_info, slave_instance)
+
+
+@test(groups=[GROUP],
+      depends_on=[WaitForCreateSlaveToFinish],
+      runs_after=[TestReplicationFailover])
 class DetachReplica(object):
 
     @test
@@ -221,17 +334,6 @@ class DetachReplica(object):
             else:
                 return True
         poll_until(check_not_read_only)
-
-    @test(depends_on=[test_detach_replica])
-    @time_out(3 * 60)
-    def test_slave_user_removed(self):
-        if CONFIG.fake_mode:
-            raise SkipTest("Test not_read_only not supported in fake mode")
-
-        def _slave_user_deleted():
-            return _get_user_count(instance_info) == 0
-
-        poll_until(_slave_user_deleted)
 
 
 @test(groups=[GROUP],

@@ -78,7 +78,7 @@ class Manager(periodic_task.PeriodicTasks):
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
                 config_contents=None, root_password=None, overrides=None,
-                cluster_config=None):
+                cluster_config=None, snapshot=None):
         """
         This is called when the trove instance first comes online.
         It is the first rpc message passed from the task manager.
@@ -254,10 +254,34 @@ class Manager(periodic_task.PeriodicTasks):
         raise exception.DatastoreOperationNotSupported(
             operation='attach_replication_slave', datastore=MANAGER)
 
-    def detach_replica(self, context):
+    def detach_replica(self, context, for_failover=False):
         LOG.debug("Detaching replica.")
         raise exception.DatastoreOperationNotSupported(
             operation='detach_replica', datastore=MANAGER)
+
+    def get_replica_context(self, context):
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_replica_context', datastore=MANAGER)
+
+    def make_read_only(self, context, read_only):
+        raise exception.DatastoreOperationNotSupported(
+            operation='make_read_only', datastore=MANAGER)
+
+    def enable_as_master(self, context, replica_source_config):
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_as_master', datastore=MANAGER)
+
+    def get_txn_count(self):
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_txn_count', datastore=MANAGER)
+
+    def get_latest_txn_id(self):
+        raise exception.DatastoreOperationNotSupported(
+            operation='get_latest_txn_id', datastore=MANAGER)
+
+    def wait_for_txn(self, txn):
+        raise exception.DatastoreOperationNotSupported(
+            operation='wait_for_txn', datastore=MANAGER)
 
     def demote_replication_master(self, context):
         LOG.debug("Demoting replica source.")

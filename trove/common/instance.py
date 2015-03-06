@@ -91,6 +91,8 @@ class ServiceStatuses(object):
     CRASHED = ServiceStatus(0x06, 'crashed', 'SHUTDOWN')
     FAILED = ServiceStatus(0x08, 'failed to spawn', 'FAILED')
     BUILDING = ServiceStatus(0x09, 'building', 'BUILD')
+    PROMOTING = ServiceStatus(0x10, 'promoting replica', 'PROMOTE')
+    EJECTING = ServiceStatus(0x11, 'ejecting replica source', 'EJECT')
     UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
     NEW = ServiceStatus(0x17, 'new', 'NEW')
     DELETED = ServiceStatus(0x05, 'deleted', 'DELETED')

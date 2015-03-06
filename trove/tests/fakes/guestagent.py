@@ -206,7 +206,8 @@ class FakeGuest(object):
 
     def prepare(self, memory_mb, packages, databases, users, device_path=None,
                 mount_point=None, backup_info=None, config_contents=None,
-                root_password=None, overrides=None, cluster_config=None):
+                root_password=None, overrides=None, cluster_config=None,
+                snapshot=None):
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
         from trove.guestagent.models import AgentHeartBeat
@@ -227,7 +228,7 @@ class FakeGuest(object):
             AgentHeartBeat.create(instance_id=self.id)
         eventlet.spawn_after(1.0, update_db)
 
-    def _set_status(self, new_status='RUNNING'):
+    def _set_task_status(self, new_status='RUNNING'):
         from trove.instance.models import InstanceServiceStatus
         print("Setting status to %s" % new_status)
         states = {'RUNNING': rd_instance.ServiceStatuses.RUNNING,
@@ -243,7 +244,7 @@ class FakeGuest(object):
         # take a nap.
         print("Sleeping for a second.")
         time.sleep(1)
-        self._set_status('RUNNING')
+        self._set_task_status('RUNNING')
 
     def reset_configuration(self, config):
         # There's nothing to do here, since there is no config to update.
@@ -251,10 +252,10 @@ class FakeGuest(object):
 
     def start_db_with_conf_changes(self, config_contents):
         time.sleep(2)
-        self._set_status('RUNNING')
+        self._set_task_status('RUNNING')
 
     def stop_db(self, do_not_start_on_reboot=False):
-        self._set_status('SHUTDOWN')
+        self._set_task_status('SHUTDOWN')
 
     def get_volume_info(self):
         """Return used and total volume filesystem information in GB."""

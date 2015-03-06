@@ -65,8 +65,9 @@ MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYCNF_OVERRIDES = "/etc/mysql/conf.d/overrides.cnf"
 MYCNF_OVERRIDES_TMP = "/tmp/overrides.cnf.tmp"
-MYCNF_REPLMASTER = "/etc/mysql/conf.d/0replication.cnf"
-MYCNF_REPLMASTER_TMP = "/tmp/replication.cnf.tmp"
+MYCNF_REPLMASTER = "/etc/mysql/conf.d/0replmaster.cnf"
+MYCNF_REPLSLAVE = "/etc/mysql/conf.d/1replslave.cnf"
+MYCNF_REPLCONFIG_TMP = "/tmp/replication.cnf.tmp"
 
 
 # Create a package impl
@@ -742,6 +743,11 @@ class MySqlApp(object):
                     LOG.exception(_("Unable to set %(key)s with value "
                                     "%(value)s.") % output)
 
+    def make_read_only(self, read_only):
+        with LocalSqlClient(get_engine()) as client:
+            q = "set global read_only = %s" % read_only
+            client.execute(text(str(q)))
+
     def _write_temp_mycnf_with_admin_account(self, original_file_path,
                                              temp_file_path, password):
         mycnf_file = open(original_file_path, 'r')
@@ -826,26 +832,39 @@ class MySqlApp(object):
         if os.path.exists(MYCNF_OVERRIDES):
             utils.execute_with_timeout("sudo", "rm", MYCNF_OVERRIDES)
 
-    def write_replication_overrides(self, overrideValues):
+    def _write_replication_overrides(self, overrideValues, cnf_file):
         LOG.info(_("Writing replication.cnf file."))
 
-        with open(MYCNF_REPLMASTER_TMP, 'w') as overrides:
+        with open(MYCNF_REPLCONFIG_TMP, 'w') as overrides:
             overrides.write(overrideValues)
         LOG.debug("Moving temp replication.cnf into correct location.")
-        utils.execute_with_timeout("sudo", "mv", MYCNF_REPLMASTER_TMP,
-                                   MYCNF_REPLMASTER)
+        utils.execute_with_timeout("sudo", "mv", MYCNF_REPLCONFIG_TMP,
+                                   cnf_file)
 
         LOG.debug("Setting permissions on replication.cnf.")
-        utils.execute_with_timeout("sudo", "chmod", "0644",
-                                   MYCNF_REPLMASTER)
+        utils.execute_with_timeout("sudo", "chmod", "0644", cnf_file)
 
-    def remove_replication_overrides(self):
+    def _remove_replication_overrides(self, cnf_file):
         LOG.info(_("Removing replication configuration file."))
-        if os.path.exists(MYCNF_REPLMASTER):
-            utils.execute_with_timeout("sudo", "rm", MYCNF_REPLMASTER)
+        if os.path.exists(cnf_file):
+            utils.execute_with_timeout("sudo", "rm", cnf_file)
+
+    def write_replication_source_overrides(self, overrideValues):
+        self._write_replication_overrides(overrideValues, MYCNF_REPLMASTER)
+
+    def write_replication_replica_overrides(self, overrideValues):
+        self._write_replication_overrides(overrideValues, MYCNF_REPLSLAVE)
+
+    def remove_replication_source_overrides(self):
+        self._remove_replication_overrides(MYCNF_REPLMASTER)
+
+    def remove_replication_replica_overrides(self):
+        self._remove_replication_overrides(MYCNF_REPLSLAVE)
 
     def grant_replication_privilege(self, replication_user):
         LOG.info(_("Granting Replication Slave privilege."))
+
+        LOG.debug("grant_replication_privilege: %s" % replication_user)
 
         with LocalSqlClient(get_engine()) as client:
             g = sql_query.Grant(permissions=['REPLICATION SLAVE'],
@@ -853,19 +872,6 @@ class MySqlApp(object):
                                 clear=replication_user['password'])
 
             t = text(str(g))
-            client.execute(t)
-
-    def revoke_replication_privilege(self):
-        LOG.info(_("Revoking Replication Slave privilege."))
-
-        with LocalSqlClient(get_engine()) as client:
-            results = client.execute('SHOW SLAVE STATUS').fetchall()
-            slave_status_info = results[0]
-
-            r = sql_query.Revoke(permissions=['REPLICATION SLAVE'],
-                                 user=slave_status_info['master_user'])
-
-            t = text(str(r))
             client.execute(t)
 
     def get_port(self):
@@ -882,27 +888,10 @@ class MySqlApp(object):
             }
             return binlog_position
 
-    def change_master_for_binlog(self, host, port, logging_config):
-        LOG.info(_("Configuring replication from %s.") % host)
-
-        replication_user = logging_config['replication_user']
-        change_master_cmd = ("CHANGE MASTER TO MASTER_HOST='%(host)s', "
-                             "MASTER_PORT=%(port)s, "
-                             "MASTER_USER='%(user)s', "
-                             "MASTER_PASSWORD='%(password)s', "
-                             "MASTER_LOG_FILE='%(log_file)s', "
-                             "MASTER_LOG_POS=%(log_pos)s" %
-                             {
-                                 'host': host,
-                                 'port': port,
-                                 'user': replication_user['name'],
-                                 'password': replication_user['password'],
-                                 'log_file': logging_config['log_file'],
-                                 'log_pos': logging_config['log_position']
-                             })
-
+    def execute_on_client(self, sql_statement):
+        LOG.debug("Executing SQL: %s" % sql_statement)
         with LocalSqlClient(get_engine()) as client:
-            client.execute(change_master_cmd)
+            return client.execute(sql_statement)
 
     def start_slave(self):
         LOG.info(_("Starting slave replication."))
@@ -910,7 +899,7 @@ class MySqlApp(object):
             client.execute('START SLAVE')
             self._wait_for_slave_status("ON", client, 60)
 
-    def stop_slave(self):
+    def stop_slave(self, for_failover):
         replication_user = None
         LOG.info(_("Stopping slave replication."))
         with LocalSqlClient(get_engine()) as client:
@@ -919,10 +908,16 @@ class MySqlApp(object):
             client.execute('STOP SLAVE')
             client.execute('RESET SLAVE ALL')
             self._wait_for_slave_status("OFF", client, 30)
-            client.execute('DROP USER ' + replication_user)
+            if not for_failover:
+                client.execute('DROP USER ' + replication_user)
         return {
             'replication_user': replication_user
         }
+
+    def stop_master(self):
+        LOG.info(_("Stopping replication master."))
+        with LocalSqlClient(get_engine()) as client:
+            client.execute('RESET MASTER')
 
     def _wait_for_slave_status(self, status, client, max_time):
 
@@ -992,6 +987,32 @@ class MySqlApp(object):
         config_contents = configuration['config_contents']
         LOG.info(_("Resetting configuration."))
         self._write_mycnf(None, config_contents)
+
+    def get_txn_count(self):
+        LOG.info(_("Retrieving latest txn id."))
+        txn_count = 0
+        with LocalSqlClient(get_engine()) as client:
+            result = client.execute('SELECT @@global.gtid_executed').first()
+            for uuid_set in result[0].split(','):
+                for interval in uuid_set.split(':')[1:]:
+                    if '-' in interval:
+                        iparts = interval.split('-')
+                        txn_count += int(iparts[1]) - int(iparts[0])
+                    else:
+                        txn_count += 1
+        return txn_count
+
+    def get_latest_txn_id(self):
+        LOG.info(_("Retrieving latest txn id."))
+        with LocalSqlClient(get_engine()) as client:
+            result = client.execute('SELECT @@global.gtid_executed').first()
+            return result[0]
+
+    def wait_for_txn(self, txn):
+        LOG.info(_("Waiting on txn '%s'.") % txn)
+        with LocalSqlClient(get_engine()) as client:
+            client.execute("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')"
+                           % txn)
 
 
 class MySqlRootAccess(object):

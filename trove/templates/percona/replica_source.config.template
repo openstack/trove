@@ -1,2 +1,7 @@
 [mysqld]
 log_bin = /var/lib/mysql/mysql-bin.log
+binlog_format = MIXED
+enforce_gtid_consistency = ON
+gtid_mode = ON
+log_slave_updates = ON
+enforce_storage_engine = InnoDB

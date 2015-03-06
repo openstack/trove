@@ -217,6 +217,7 @@ class ClusterTasks(Cluster):
 
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
+
     def _get_injected_files(self, datastore_manager):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
@@ -243,10 +244,32 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         return files
 
+    def wait_for_instance(self, timeout, flavor):
+        # Make sure the service becomes active before sending a usage
+        # record to avoid over billing a customer for an instance that
+        # fails to build properly.
+        try:
+            utils.poll_until(self._service_is_active,
+                             sleep_time=USAGE_SLEEP_TIME,
+                             time_out=timeout)
+            LOG.info(_("Created instance %s successfully.") % self.id)
+            self.send_usage_event('create', instance_size=flavor['ram'])
+        except PollTimeOut:
+            LOG.error(_("Failed to create instance %s. "
+                        "Timeout waiting for instance to become active. "
+                        "No usage create-event was sent.") % self.id)
+            self.update_statuses_on_time_out()
+        except Exception:
+            LOG.exception(_("Failed to send usage create-event for "
+                            "instance %s.") % self.id)
+
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
-                        overrides, cluster_config):
+                        overrides, cluster_config, snapshot=None):
+        # It is the caller's responsibility to ensure that
+        # FreshInstanceTasks.wait_for_instance is called after
+        # create_instance to ensure that the proper usage event gets sent
 
         LOG.info(_("Creating instance %s.") % self.id)
         security_groups = None
@@ -316,7 +339,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                             packages, databases, users, backup_info,
                             config.config_contents, root_password,
                             config_overrides.config_contents,
-                            cluster_config)
+                            cluster_config, snapshot)
 
         if root_password:
             self.report_root_enabled()
@@ -338,26 +361,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.debug("Successfully created DNS entry for instance: %s" %
                       self.id)
 
-        # Make sure the service becomes active before sending a usage
-        # record to avoid over billing a customer for an instance that
-        # fails to build properly.
-        try:
-            timeout = (CONF.restore_usage_timeout if backup_info
-                       else CONF.usage_timeout)
-            utils.poll_until(self._service_is_active,
-                             sleep_time=USAGE_SLEEP_TIME,
-                             time_out=timeout)
-            LOG.info(_("Created instance %s successfully.") % self.id)
-            self.send_usage_event('create', instance_size=flavor['ram'])
-        except PollTimeOut:
-            LOG.error(_("Failed to create instance %s. "
-                        "Timeout waiting for instance to become active. "
-                        "No usage create-event was sent.") % self.id)
-            self.update_statuses_on_time_out()
-        except Exception:
-            LOG.exception(_("Failed to send usage create-event for "
-                            "instance %s.") % self.id)
-
     def attach_replication_slave(self, snapshot, flavor):
         LOG.debug("Calling attach_replication_slave for %s.", self.id)
         try:
@@ -370,36 +373,65 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             err = inst_models.InstanceTasks.BUILDING_ERROR_REPLICA
             self._log_and_raise(e, msg, err)
 
-    def get_replication_master_snapshot(self, context, slave_of_id):
+    def get_replication_master_snapshot(self, context, slave_of_id, flavor,
+                                        backup_id=None, replica_number=1):
+        # if we aren't passed in a backup id, look it up to possibly do
+        # an incremental backup, thus saving time
+        if not backup_id:
+            backup = Backup.get_last_completed(
+                context, slave_of_id, include_incremental=True)
+            if backup:
+                backup_id = backup.id
         snapshot_info = {
-            'name': "Replication snapshot of %s" % self.id,
+            'name': "Replication snapshot for %s" % self.id,
             'description': "Backup image used to initialize "
-            "replication slave",
+                           "replication slave",
             'instance_id': slave_of_id,
-            'parent_id': None,
+            'parent_id': backup_id,
             'tenant_id': self.tenant_id,
             'state': BackupState.NEW,
             'datastore_version_id': self.datastore_version.id,
-            'deleted': False
+            'deleted': False,
+            'replica_number': replica_number,
         }
 
-        try:
-            db_info = DBBackup.create(**snapshot_info)
-        except InvalidModelError:
-            msg = (_("Unable to create replication snapshot record for "
-                     "instance: %s") % self.id)
-            LOG.exception(msg)
-            raise BackupCreationError(msg)
+        # Only do a backup if it's the first replica
+        if replica_number == 1:
+            try:
+                db_info = DBBackup.create(**snapshot_info)
+                replica_backup_id = db_info.id
+            except InvalidModelError:
+                msg = (_("Unable to create replication snapshot record for "
+                         "instance: %s") % self.id)
+                LOG.exception(msg)
+                raise BackupCreationError(msg)
+            if backup_id:
+                # Look up the parent backup  info or fail early if not found or
+                # if the user does not have access to the parent.
+                _parent = Backup.get_by_id(context, backup_id)
+                parent = {
+                    'location': _parent.location,
+                    'checksum': _parent.checksum,
+                }
+                snapshot_info.update({
+                    'parent': parent,
+                })
+        else:
+            # we've been passed in the actual replica backup id, so just use it
+            replica_backup_id = backup_id
 
         try:
             master = BuiltInstanceTasks.load(context, slave_of_id)
             snapshot_info.update({
-                'id': db_info['id'],
+                'id': replica_backup_id,
                 'datastore': master.datastore.name,
                 'datastore_version': master.datastore_version.name,
             })
             snapshot = master.get_replication_snapshot(
                 snapshot_info, flavor=master.flavor_id)
+            snapshot.update({
+                'config': self._render_replica_config(flavor).config_contents
+            })
             return snapshot
         except Exception as e_create:
             msg_create = (
@@ -410,7 +442,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             # if the delete of the 'bad' backup fails, it'll mask the
             # create exception, so we trap it here
             try:
-                Backup.delete(context, snapshot_info['id'])
+                # Only try to delete the backup if it's the first replica
+                if replica_number == 1:
+                    Backup.delete(context, replica_backup_id)
             except Exception as e_delete:
                 LOG.error(msg_create)
                 # Make sure we log any unexpected errors from the create
@@ -767,7 +801,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def _guest_prepare(self, flavor_ram, volume_info,
                        packages, databases, users, backup_info=None,
                        config_contents=None, root_password=None,
-                       overrides=None, cluster_config=None):
+                       overrides=None, cluster_config=None, snapshot=None):
         LOG.debug("Entering guest_prepare")
         # Now wait for the response from the create to do additional work
         self.guest.prepare(flavor_ram, packages, databases, users,
@@ -777,7 +811,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                            config_contents=config_contents,
                            root_password=root_password,
                            overrides=overrides,
-                           cluster_config=cluster_config)
+                           cluster_config=cluster_config,
+                           snapshot=snapshot)
 
     def _create_dns_entry(self):
         dns_support = CONF.trove_dns_support
@@ -1004,18 +1039,94 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         return run_with_quotas(self.context.tenant, {'backups': 1},
                                _get_replication_snapshot)
 
-    def detach_replica(self, master):
+    def detach_replica(self, master, for_failover=False):
         LOG.debug("Calling detach_replica on %s" % self.id)
         try:
-            replica_info = self.guest.detach_replica()
-            master.cleanup_source_on_replica_detach(replica_info)
+            self.guest.detach_replica(for_failover)
             self.update_db(slave_of_id=None)
+            self.slave_list = None
         except (GuestError, GuestTimeout):
             LOG.exception(_("Failed to detach replica %s.") % self.id)
+            raise
+
+    def attach_replica(self, master):
+        LOG.debug("Calling attach_replica on %s" % self.id)
+        try:
+            replica_info = master.guest.get_replica_context()
+            flavor = self.nova_client.flavors.get(self.flavor_id)
+            slave_config = self._render_replica_config(flavor).config_contents
+            self.guest.attach_replica(replica_info, slave_config)
+            self.update_db(slave_of_id=master.id)
+            self.slave_list = None
+        except (GuestError, GuestTimeout):
+            LOG.exception(_("Failed to attach replica %s.") % self.id)
+            raise
+
+    def make_read_only(self, read_only):
+        LOG.debug("Calling make_read_only on %s" % self.id)
+        self.guest.make_read_only(read_only)
+
+    def _get_floating_ips(self):
+        """Returns floating ips as a dict indexed by the ip."""
+        floating_ips = {}
+        for ip in self.nova_client.floating_ips.list():
+            floating_ips.update({ip.ip: ip})
+        return floating_ips
+
+    def detach_public_ips(self):
+        LOG.debug("Begin detach_public_ips for instance %s" % self.id)
+        removed_ips = []
+        server_id = self.db_info.compute_instance_id
+        nova_instance = self.nova_client.servers.get(server_id)
+        floating_ips = self._get_floating_ips()
+        for ip in self.get_visible_ip_addresses():
+            if ip in floating_ips:
+                nova_instance.remove_floating_ip(ip)
+                removed_ips.append(ip)
+        return removed_ips
+
+    def attach_public_ips(self, ips):
+        LOG.debug("Begin attach_public_ips for instance %s" % self.id)
+        server_id = self.db_info.compute_instance_id
+        nova_instance = self.nova_client.servers.get(server_id)
+        for ip in ips:
+            nova_instance.add_floating_ip(ip)
+
+    def enable_as_master(self):
+        LOG.debug("Calling enable_as_master on %s" % self.id)
+        flavor = self.nova_client.flavors.get(self.flavor_id)
+        replica_source_config = self._render_replica_source_config(flavor)
+        self.update_db(slave_of_id=None)
+        self.slave_list = None
+        self.guest.enable_as_master(replica_source_config.config_contents)
+
+    def get_txn_count(self):
+        LOG.debug("Calling get_txn_count on %s" % self.id)
+        return self.guest.get_txn_count()
+
+    def get_latest_txn_id(self):
+        LOG.debug("Calling get_latest_txn_id on %s" % self.id)
+        return self.guest.get_latest_txn_id()
+
+    def wait_for_txn(self, txn):
+        LOG.debug("Calling wait_for_txn on %s" % self.id)
+        if txn:
+            self.guest.wait_for_txn(txn)
+
+    def switch_master(self, new_master):
+        LOG.debug("calling switch_master on %s" % self.id)
+
+        self.guest.switch_master(new_master)
+        self.update_db(slave_of_id=new_master.id)
+        self.slave_list = None
 
     def cleanup_source_on_replica_detach(self, replica_info):
         LOG.debug("Calling cleanup_source_on_replica_detach on %s" % self.id)
         self.guest.cleanup_source_on_replica_detach(replica_info)
+
+    def demote_replication_master(self):
+        LOG.debug("Calling demote_replication_master on %s" % self.id)
+        self.guest.demote_replication_master()
 
     def reboot(self):
         try:
