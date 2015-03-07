@@ -68,6 +68,16 @@ def slave_is_running(running=True):
 class CreateReplicationSlave(object):
 
     @test
+    def test_replica_provisioning_with_missing_replica_source(self):
+        assert_raises(exceptions.NotFound,
+                      instance_info.dbaas.instances.create,
+                      instance_info.name + "_slave",
+                      instance_info.dbaas_flavor_href,
+                      instance_info.volume,
+                      slave_of="Missing replica source")
+        assert_equal(404, instance_info.dbaas.last_http_code)
+
+    @test
     def test_create_db_on_master(self):
         databases = [{'name': existing_db_on_master}]
         # Ensure that the auth_token in the dbaas client is not stale
