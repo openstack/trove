@@ -399,6 +399,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if backup_id is not None:
                 backup = bkup_models.Backup.get_by_id(self.context, backup_id)
                 backup_info = {'id': backup_id,
+                               'instance_id': backup.instance_id,
                                'location': backup.location,
                                'type': backup.backup_type,
                                'checksum': backup.checksum,

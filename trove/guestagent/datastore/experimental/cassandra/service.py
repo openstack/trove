@@ -62,7 +62,6 @@ class CassandraApp(object):
     CASSANDRA_KILL_CMD = "sudo killall java  || true"
 
     def __init__(self):
-        """By default login with root no password for initial setup."""
         self.state_change_wait_time = CONF.state_change_wait_time
         self.status = CassandraAppStatus(self.get_current_superuser())
 
@@ -133,10 +132,10 @@ class CassandraApp(object):
         except exception.ProcessExecutionError:
             LOG.exception(_("Error while initiating storage structure."))
 
-    def start_db(self, update_db=False):
+    def start_db(self, update_db=False, enable_on_boot=True):
         self.status.start_db_service(
             self.service_candidates, self.state_change_wait_time,
-            enable_on_boot=True, update_db=update_db)
+            enable_on_boot=enable_on_boot, update_db=update_db)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         self.status.stop_db_service(
@@ -152,6 +151,102 @@ class CassandraApp(object):
         LOG.debug("Installing Cassandra server.")
         packager.pkg_install(packages, None, 10000)
         LOG.debug("Finished installing Cassandra server")
+
+    def _remove_system_tables(self):
+        """
+        Clean up the system keyspace.
+
+        System tables are initialized on the first boot.
+        They store certain properties, such as 'cluster_name',
+        that cannot be easily changed once afterwards.
+        The system keyspace needs to be cleaned up first. The
+        tables will be regenerated on the next startup.
+        Make sure to also cleanup the commitlog and caches to avoid
+        startup errors due to inconsistencies.
+
+        The service should not be running at this point.
+        """
+        if self.status.is_running:
+            raise RuntimeError(_("Cannot remove system tables. "
+                                 "The service is still running."))
+
+        LOG.info(_('Removing existing system tables.'))
+        system_keyspace_dir = guestagent_utils.build_file_path(
+            self.cassandra_data_dir, 'system')
+        commitlog_file = guestagent_utils.build_file_path(
+            self.cassandra_working_dir, 'commitlog')
+        chaches_dir = guestagent_utils.build_file_path(
+            self.cassandra_working_dir, 'saved_caches')
+
+        operating_system.remove(system_keyspace_dir,
+                                force=True, recursive=True, as_root=True)
+        operating_system.remove(commitlog_file,
+                                force=True, recursive=True, as_root=True)
+        operating_system.remove(chaches_dir,
+                                force=True, recursive=True, as_root=True)
+
+        operating_system.create_directory(
+            system_keyspace_dir,
+            user=self.cassandra_owner, group=self.cassandra_owner,
+            force=True, as_root=True)
+        operating_system.create_directory(
+            commitlog_file,
+            user=self.cassandra_owner, group=self.cassandra_owner,
+            force=True, as_root=True)
+        operating_system.create_directory(
+            chaches_dir,
+            user=self.cassandra_owner, group=self.cassandra_owner,
+            force=True, as_root=True)
+
+    def _apply_post_restore_updates(self, backup_info):
+        """The service should not be running at this point.
+
+        The restored database files carry some properties over from the
+        original instance that need to be updated with appropriate
+        values for the new instance.
+        These include:
+
+            - Reset the 'cluster_name' property to match the new unique
+              ID of this instance.
+              This is to ensure that the restored instance is a part of a new
+              single-node cluster rather than forming a one with the
+              original node.
+            - Reset the administrator's password.
+              The original password from the parent instance may be
+              compromised or long lost.
+
+        A general procedure is:
+            - update the configuration property with the current value
+              so that the service can start up
+            - reset the superuser password
+            - restart the service
+            - change the cluster name
+            - restart the service
+
+        :seealso: _reset_admin_password
+        :seealso: change_cluster_name
+        """
+
+        if self.status.is_running:
+            raise RuntimeError(_("Cannot reset the cluster name. "
+                                 "The service is still running."))
+
+        LOG.debug("Applying post-restore updates to the database.")
+
+        try:
+            # Change the 'cluster_name' property to the current in-database
+            # value so that the database can start up.
+            self._update_cluster_name_property(backup_info['instance_id'])
+
+            # Reset the superuser password so that we can log-in.
+            self._reset_admin_password()
+
+            # Start the database and update the 'cluster_name' to the
+            # new value.
+            self.start_db(update_db=False)
+            self.change_cluster_name(CONF.guest_id)
+        finally:
+            self.stop_db()  # Always restore the initial state of the service.
 
     def secure(self, update_user=None):
         """Configure the Trove administrative user.
@@ -183,6 +278,98 @@ class CassandraApp(object):
         self.status = CassandraAppStatus(os_admin)
 
         return os_admin
+
+    def _reset_admin_password(self):
+        """
+        Reset the password of the Trove's administrative superuser.
+
+        The service should not be running at this point.
+
+        A general password reset procedure is:
+            - disable user authentication and remote access
+            - restart the service
+            - update the password in the 'system_auth.credentials' table
+            - re-enable authentication and make the host reachable
+            - restart the service
+        """
+        if self.status.is_running:
+            raise RuntimeError(_("Cannot reset the administrative password. "
+                                 "The service is still running."))
+
+        try:
+            # Disable automatic startup in case the node goes down before
+            # we have the superuser secured.
+            operating_system.disable_service_on_boot(self.service_candidates)
+
+            self.__disable_remote_access()
+            self.__disable_authentication()
+
+            # We now start up the service and immediately re-enable
+            # authentication in the configuration file (takes effect after
+            # restart).
+            # Then we reset the superuser password to its default value
+            # and restart the service to get user functions back.
+            self.start_db(update_db=False, enable_on_boot=False)
+            self.__enable_authentication()
+            os_admin = self.__reset_user_password_to_default(self._ADMIN_USER)
+            self.status = CassandraAppStatus(os_admin)
+            self.restart()
+
+            # Now change the administrative password to a new secret value.
+            self.secure(update_user=os_admin)
+        finally:
+            self.stop_db()  # Always restore the initial state of the service.
+
+        # At this point, we should have a secured database with new Trove-only
+        # superuser password.
+        # Proceed to re-enable remote access and automatic startup.
+        self.__enable_remote_access()
+        operating_system.enable_service_on_boot(self.service_candidates)
+
+    def __reset_user_password_to_default(self, username):
+        LOG.debug("Resetting the password of user '%s' to '%s'."
+                  % (username, self.default_superuser_password))
+
+        user = models.CassandraUser(username, self.default_superuser_password)
+        with CassandraLocalhostConnection(user) as client:
+            client.execute(
+                "UPDATE system_auth.credentials SET salted_hash=%s "
+                "WHERE username='{}';", (user.name,),
+                (self.default_superuser_pwd_hash,))
+
+            return user
+
+    def change_cluster_name(self, cluster_name):
+        """Change the 'cluster_name' property of an exesting running instance.
+        Cluster name is stored in the database and is required to match the
+        configuration value. Cassandra fails to start otherwise.
+        """
+
+        if not self.status.is_running:
+            raise RuntimeError(_("Cannot change the cluster name. "
+                                 "The service is not running."))
+
+        LOG.debug("Changing the cluster name to '%s'." % cluster_name)
+
+        # Update the in-database value.
+        self.__reset_cluster_name(cluster_name)
+
+        # Update the configuration property.
+        self._update_cluster_name_property(cluster_name)
+
+        self.restart()
+
+    def __reset_cluster_name(self, cluster_name):
+        # Reset the in-database value stored locally on this node.
+        current_superuser = self.get_current_superuser()
+        with CassandraLocalhostConnection(current_superuser) as client:
+            client.execute(
+                "UPDATE system.local SET cluster_name = '{}' "
+                "WHERE key='local';", (cluster_name,))
+
+        # Newer version of Cassandra require a flush to ensure the changes
+        # to the local system keyspace persist.
+        self.flush_tables('system', 'local')
 
     def __create_cqlsh_config(self, sections):
         config_path = self._get_cqlsh_conf_path()
@@ -224,15 +411,25 @@ class CassandraApp(object):
             config[self._CONF_AUTH_SEC][self._CONF_PWD_KEY]
         )
 
-    def apply_initial_guestagent_configuration(self):
+    def apply_initial_guestagent_configuration(self, cluster_name=None):
+        """Update guestagent-controlled configuration properties.
+        These changes to the default template are necessary in order to make
+        the database service bootable and accessible in the guestagent context.
+
+        :param cluster_name:  The 'cluster_name' configuration property.
+                              Use the unique guest id by default.
+        :type cluster_name:   string
+        """
+        self.configuration_manager.apply_system_override(
+            {'data_file_directories': [self.cassandra_data_dir]})
+        self._make_host_reachable()
+        self._update_cluster_name_property(cluster_name or CONF.guest_id)
+
+    def _make_host_reachable(self):
         """
         Some of these settings may be overriden by user defined
         configuration groups.
 
-        cluster_name
-            - Use the unique guest id by default.
-            - Prevents nodes from one logical cluster from talking
-              to another. All nodes in a cluster must have the same value.
         authenticator and authorizer
             - Necessary to enable users and permissions.
         rpc_address - Enable remote connections on all interfaces.
@@ -244,10 +441,11 @@ class CassandraApp(object):
                          other nodes. Can never be 0.0.0.0.
         seed_provider - A list of discovery contact points.
         """
+        self.__enable_authentication()
+        self.__enable_remote_access()
+
+    def __enable_remote_access(self):
         updates = {
-            'cluster_name': CONF.guest_id,
-            'authenticator': 'org.apache.cassandra.auth.PasswordAuthenticator',
-            'authorizer': 'org.apache.cassandra.auth.CassandraAuthorizer',
             'rpc_address': "0.0.0.0",
             'broadcast_rpc_address': netutils.get_my_ipv4(),
             'listen_address': netutils.get_my_ipv4(),
@@ -257,6 +455,41 @@ class CassandraApp(object):
         }
 
         self.configuration_manager.apply_system_override(updates)
+
+    def __disable_remote_access(self):
+        updates = {
+            'rpc_address': "127.0.0.1",
+            'listen_address': '127.0.0.1',
+            'seed_provider': {'parameters':
+                              [{'seeds': '127.0.0.1'}]
+                              }
+        }
+
+        self.configuration_manager.apply_system_override(updates)
+
+    def __enable_authentication(self):
+        updates = {
+            'authenticator': 'org.apache.cassandra.auth.PasswordAuthenticator',
+            'authorizer': 'org.apache.cassandra.auth.CassandraAuthorizer'
+        }
+
+        self.configuration_manager.apply_system_override(updates)
+
+    def __disable_authentication(self):
+        updates = {
+            'authenticator': 'org.apache.cassandra.auth.AllowAllAuthenticator',
+            'authorizer': 'org.apache.cassandra.auth.AllowAllAuthorizer'
+        }
+
+        self.configuration_manager.apply_system_override(updates)
+
+    def _update_cluster_name_property(self, name):
+        """This 'cluster_name' property prevents nodes from one
+        logical cluster from talking to another.
+        All nodes in a cluster must have the same value.
+        """
+        self.configuration_manager.apply_system_override({'cluster_name':
+                                                          name})
 
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
@@ -284,6 +517,23 @@ class CassandraApp(object):
     def _get_cqlsh_conf_path(self):
         return os.path.expanduser(self.cqlsh_conf_path)
 
+    def flush_tables(self, keyspace, *tables):
+        """Flushes one or more tables from the memtable.
+        """
+        LOG.debug("Flushing tables.")
+        # nodetool -h <HOST> -p <PORT> -u <USER> -pw <PASSWORD> flush --
+        # <keyspace> ( <table> ... )
+        self._run_nodetool_command('flush', keyspace, *tables)
+
+    def _run_nodetool_command(self, cmd, *args, **kwargs):
+        """Execute a nodetool command on this node.
+        """
+        cassandra = self.get_current_superuser()
+        return utils.execute('nodetool',
+                             '-h', 'localhost',
+                             '-u', cassandra.name,
+                             '-pw', cassandra.password, cmd, *args, **kwargs)
+
 
 class CassandraAppStatus(service.BaseDbStatus):
 
@@ -295,9 +545,6 @@ class CassandraAppStatus(service.BaseDbStatus):
         """
         super(CassandraAppStatus, self).__init__()
         self.__user = superuser
-
-    def set_superuser(self, user):
-        self.__user = user
 
     def _get_actual_db_status(self):
         try:

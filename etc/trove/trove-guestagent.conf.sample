@@ -120,7 +120,6 @@ rabbit_password=f7999d1955c5014aa32c
 # backup_strategy = InnoBackupEx
 # backup_namespace = trove.guestagent.strategies.backup.mysql_impl
 # restore_namespace = trove.guestagent.strategies.restore.mysql_impl
-
 # Default configuration for mysql replication
 # replication_strategy = MysqlBinlogReplication
 # replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
@@ -144,3 +143,15 @@ rabbit_password=f7999d1955c5014aa32c
 # backup_strategy = RedisBackup
 # backup_namespace = trove.guestagent.strategies.backup.experimental.redis_impl
 # restore_namespace = trove.guestagent.strategies.restore.experimental.redis_impl
+
+[percona]
+backup_namespace = trove.guestagent.strategies.backup.mysql_impl
+restore_namespace = trove.guestagent.strategies.restore.mysql_impl
+
+[couchbase]
+backup_namespace = trove.guestagent.strategies.backup.experimental.couchbase_impl
+restore_namespace = trove.guestagent.strategies.restore.experimental.couchbase_impl
+
+[cassandra]
+backup_namespace = trove.guestagent.strategies.backup.experimental.cassandra_impl
+restore_namespace = trove.guestagent.strategies.restore.experimental.cassandra_impl

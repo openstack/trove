@@ -12,13 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import mock
-from mock import ANY, DEFAULT, Mock, patch
+from mock import ANY, DEFAULT, Mock, patch, PropertyMock
 from testtools.testcase import ExpectedException
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.experimental.cassandra import (
+    service as cass_service
+)
 from trove.guestagent.strategies.backup import base as backupBase
 from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore import base as restoreBase
@@ -49,6 +52,10 @@ BACKUP_REDIS_CLS = ("trove.guestagent.strategies.backup."
                     "experimental.redis_impl.RedisBackup")
 RESTORE_REDIS_CLS = ("trove.guestagent.strategies.restore."
                      "experimental.redis_impl.RedisBackup")
+BACKUP_NODETOOLSNAPSHOT_CLS = ("trove.guestagent.strategies.backup."
+                               "experimental.cassandra_impl.NodetoolSnapshot")
+RESTORE_NODETOOLSNAPSHOT_CLS = ("trove.guestagent.strategies.restore."
+                                "experimental.cassandra_impl.NodetoolSnapshot")
 
 PIPE = " | "
 ZIP = "gzip"
@@ -410,6 +417,113 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + REDISBACKUP_RESTORE)
+
+
+class CassandraBackupTest(trove_testtools.TestCase):
+
+    _BASE_BACKUP_CMD = ('sudo tar --transform="s#snapshots/%s/##" -cpPf - '
+                        '-C "%s" "%s"')
+    _BASE_RESTORE_CMD = 'sudo tar -xpPf - -C "%(restore_location)s"'
+    _DATA_DIR = 'data_dir'
+    _SNAPSHOT_NAME = 'snapshot_name'
+    _SNAPSHOT_FILES = {'foo.db', 'bar.db'}
+    _RESTORE_LOCATION = {'restore_location': '/var/lib/cassandra'}
+
+    def setUp(self):
+        super(CassandraBackupTest, self).setUp()
+        self.app_status_patcher = patch(
+            'trove.guestagent.datastore.experimental.cassandra.service.'
+            'CassandraAppStatus')
+        self.addCleanup(self.app_status_patcher.stop)
+        self.app_status_patcher.start()
+        self.get_data_dirs_patcher = patch.object(
+            cass_service.CassandraApp, 'cassandra_data_dir',
+            new_callable=PropertyMock)
+        self.addCleanup(self.get_data_dirs_patcher.stop)
+        data_dir_mock = self.get_data_dirs_patcher.start()
+        data_dir_mock.return_value = self._DATA_DIR
+        self.os_list_patcher = patch.object(
+            operating_system, 'list_files_in_directory',
+            return_value=self._SNAPSHOT_FILES)
+        self.addCleanup(self.os_list_patcher.stop)
+        self.os_list_patcher.start()
+
+    def tearDown(self):
+        super(CassandraBackupTest, self).tearDown()
+
+    def test_backup_encrypted_zipped_nodetoolsnapshot_command(self):
+        bkp = self._build_backup_runner(True, True)
+        bkp._run_pre_backup()
+        self.assertIsNotNone(bkp)
+        self.assertEqual(self._BASE_BACKUP_CMD % (
+            self._SNAPSHOT_NAME,
+            self._DATA_DIR,
+            '" "'.join(self._SNAPSHOT_FILES)
+        ) + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn(".gz.enc", bkp.manifest)
+
+    def test_backup_not_encrypted_not_zipped_nodetoolsnapshot_command(self):
+        bkp = self._build_backup_runner(False, False)
+        bkp._run_pre_backup()
+        self.assertIsNotNone(bkp)
+        self.assertEqual(self._BASE_BACKUP_CMD % (
+            self._SNAPSHOT_NAME,
+            self._DATA_DIR,
+            '" "'.join(self._SNAPSHOT_FILES)
+        ), bkp.command)
+        self.assertNotIn(".gz.enc", bkp.manifest)
+
+    def test_backup_not_encrypted_but_zipped_nodetoolsnapshot_command(self):
+        bkp = self._build_backup_runner(False, True)
+        bkp._run_pre_backup()
+        self.assertIsNotNone(bkp)
+        self.assertEqual(self._BASE_BACKUP_CMD % (
+            self._SNAPSHOT_NAME,
+            self._DATA_DIR,
+            '" "'.join(self._SNAPSHOT_FILES)
+        ) + PIPE + ZIP, bkp.command)
+        self.assertIn(".gz", bkp.manifest)
+        self.assertNotIn(".enc", bkp.manifest)
+
+    def test_backup_encrypted_but_not_zipped_nodetoolsnapshot_command(self):
+        bkp = self._build_backup_runner(True, False)
+        bkp._run_pre_backup()
+        self.assertIsNotNone(bkp)
+        self.assertEqual(self._BASE_BACKUP_CMD % (
+            self._SNAPSHOT_NAME,
+            self._DATA_DIR,
+            '" "'.join(self._SNAPSHOT_FILES)
+        ) + PIPE + ENCRYPT, bkp.command)
+        self.assertIn(".enc", bkp.manifest)
+        self.assertNotIn(".gz", bkp.manifest)
+
+    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    def test_restore_encrypted_but_not_zipped_nodetoolsnapshot_command(
+            self, _):
+        restoreBase.RestoreRunner.is_zipped = False
+        restoreBase.RestoreRunner.is_encrypted = True
+        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_NODETOOLSNAPSHOT_CLS)
+        rstr = RunnerClass(None, restore_location=self._RESTORE_LOCATION,
+                           location="filename", checksum="md5")
+        self.assertIsNotNone(rstr)
+        self.assertEqual(self._BASE_RESTORE_CMD % self._RESTORE_LOCATION,
+                         rstr.base_restore_cmd % self._RESTORE_LOCATION)
+
+    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    def _build_backup_runner(self, is_encrypted, is_zipped, _):
+        backupBase.BackupRunner.is_zipped = is_zipped
+        backupBase.BackupRunner.is_encrypted = is_encrypted
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_NODETOOLSNAPSHOT_CLS)
+        runner = RunnerClass(self._SNAPSHOT_NAME)
+        runner._remove_snapshot = mock.MagicMock()
+        runner._snapshot_all_keyspaces = mock.MagicMock()
+        runner._find_in_subdirectories = mock.MagicMock(
+            return_value=self._SNAPSHOT_FILES
+        )
+
+        return runner
 
 
 class CouchbaseBackupTests(trove_testtools.TestCase):

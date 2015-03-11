@@ -200,7 +200,7 @@ class BackupAgentTest(trove_testtools.TestCase):
 
     def test_backup_impl_MySQLDump(self):
         """This test is for
-           guestagent/strategies/backup/impl
+           guestagent/strategies/backup/mysql_impl
         """
         mysql_dump = mysql_impl.MySQLDump(
             'abc', extra_opts='')
@@ -223,7 +223,7 @@ class BackupAgentTest(trove_testtools.TestCase):
         MySqlApp, 'get_data_dir', return_value='/var/lib/mysql/data')
     def test_backup_impl_InnoBackupEx(self, mock_datadir):
         """This test is for
-           guestagent/strategies/backup/impl
+           guestagent/strategies/backup/mysql_impl
         """
         inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex', extra_opts='')
         self.assertIsNotNone(inno_backup_ex.cmd)

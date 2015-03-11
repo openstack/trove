@@ -18,6 +18,10 @@ import os
 
 from oslo_log import log as logging
 
+from trove.common import cfg
+from trove.common.i18n import _
+from trove.common import instance as trove_instance
+from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.cassandra import service
 from trove.guestagent.datastore.experimental.cassandra.service import (
     CassandraAdmin
@@ -27,6 +31,7 @@ from trove.guestagent import volume
 
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class Manager(manager.Manager):
@@ -72,14 +77,32 @@ class Manager(manager.Manager):
         self.app.install_if_needed(packages)
         self.app.init_storage_structure(mount_point)
 
-        if config_contents or device_path:
-            # Stop the db while we configure
-            # FIXME(amrith) Once the cassandra bug
+        if config_contents or device_path or backup_info:
+
+            # FIXME(pmalik) Once the cassandra bug
             # https://issues.apache.org/jira/browse/CASSANDRA-2356
             # is fixed, this code may have to be revisited.
-            LOG.debug("Stopping database prior to initial configuration.")
-            self.app.stop_db()
+            #
+            # Cassandra generates system keyspaces on the first start.
+            # The stored properties include the 'cluster_name', which once
+            # saved cannot be easily changed without removing the system
+            # tables. It is crucial that the service does not boot up in
+            # the middle of the configuration procedure.
+            # We wait here for the service to come up, stop it properly and
+            # remove the generated keyspaces before proceeding with
+            # configuration. If it does not start up within the time limit
+            # we assume it is not going to and proceed with configuration
+            # right away.
+            LOG.debug("Waiting for database first boot.")
+            if (self.app.status.wait_for_real_status_to_change_to(
+                    trove_instance.ServiceStatuses.RUNNING,
+                    CONF.state_change_wait_time,
+                    False)):
+                LOG.debug("Stopping database prior to initial configuration.")
+                self.app.stop_db()
+                self.app._remove_system_tables()
 
+            LOG.debug("Starting initial configuration.")
             if config_contents:
                 LOG.debug("Applying configuration.")
                 self.app.configuration_manager.save_configuration(
@@ -99,6 +122,9 @@ class Manager(manager.Manager):
                 # mount the volume
                 LOG.debug("Mounting new volume.")
                 device.mount(mount_point)
+
+            if backup_info:
+                self._perform_restore(backup_info, context, mount_point)
 
             LOG.debug("Starting database with configuration changes.")
             self.app.start_db(update_db=False)
@@ -148,6 +174,30 @@ class Manager(manager.Manager):
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
         return self.admin.list_users(context, limit, marker, include_marker)
+
+    def _perform_restore(self, backup_info, context, restore_location):
+        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        try:
+            backup.restore(context, backup_info, restore_location)
+            self.app._apply_post_restore_updates(backup_info)
+        except Exception as e:
+            LOG.error(e)
+            LOG.error(_("Error performing restore from backup %s.") %
+                      backup_info['id'])
+            self.app.status.set_status(trove_instance.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully."))
+
+    def create_backup(self, context, backup_info):
+        """
+        Entry point for initiating a backup for this instance.
+        The call currently blocks guestagent until the backup is finished.
+
+        :param backup_info: a dictionary containing the db instance id of the
+                            backup task, location, type, and other data.
+        """
+
+        backup.backup(context, backup_info)
 
     def update_overrides(self, context, overrides, remove=False):
         LOG.debug("Updating overrides.")

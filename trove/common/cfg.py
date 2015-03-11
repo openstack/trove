@@ -784,16 +784,16 @@ cassandra_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.DictOpt('backup_incremental_strategy', default={},
+                help='Incremental strategy based on the default backup '
+                'strategy. For strategies that do not implement incremental '
+                'backups, the runner performs full backup instead.',
+                deprecated_name='backup_incremental_strategy',
+                deprecated_group='DEFAULT'),
+    cfg.StrOpt('backup_strategy', default="NodetoolSnapshot",
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
-                help='Incremental Backup Runner based on the default '
-                'strategy. For strategies that do not implement an '
-                'incremental, the runner will use the default full backup.',
-                deprecated_name='backup_incremental_strategy',
-                deprecated_group='DEFAULT'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
     cfg.StrOpt('mount_point', default='/var/lib/cassandra',
@@ -803,11 +803,15 @@ cassandra_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_namespace', default=None,
+    cfg.StrOpt('backup_namespace',
+               default="trove.guestagent.strategies.backup.experimental."
+               "cassandra_impl",
                help='Namespace to load backup strategies from.',
                deprecated_name='backup_namespace',
                deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace', default=None,
+    cfg.StrOpt('restore_namespace',
+               default="trove.guestagent.strategies.restore.experimental."
+               "cassandra_impl",
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
