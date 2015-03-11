@@ -34,16 +34,14 @@ Resources:
       AWS::CloudFormation::Init:
         config:
           files:
-            /etc/guest_info:
-              content:
-                Fn::Join:
-                - ''
-                - ["[DEFAULT]\nguest_id=", {Ref: InstanceId},
-                  "\ndatastore_manager=", {Ref: DatastoreManager},
-                  "\ntenant_id=", {Ref: TenantId}]
+{% for file, content in files.iteritems() %}
+            {{ file }}:
+              content: |
+                {{ content | indent(16) }}
               mode: '000644'
               owner: root
               group: root
+{% endfor %}
     Properties:
       ImageId: {Ref: ImageId}
       InstanceType: {Ref: Flavor}
