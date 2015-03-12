@@ -200,12 +200,90 @@ def service_discovery(service_candidates):
     return result
 
 
-def update_owner(user, group, path):
+def create_directory(dir_path, user=None, group=None, force=True, **kwargs):
+    """Create a given directory and update its ownership
+    (recursively) to the given user and group if any.
+
+    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+
+    :param dir_path:        Path to the created directory.
+    :type dir_path:         string
+
+    :param user:            Owner.
+    :type user:             string
+
+    :param group:           Group.
+    :type group:            string
+
+    :param force:           No error if existing, make parent directories
+                            as needed.
+    :type force:            boolean
+
+    :raises:                :class:`UnprocessableEntity` if dir_path not given.
     """
-       Changes the owner and group for the path (recursively)
+
+    if dir_path:
+        _create_directory(dir_path, force, **kwargs)
+        if user or group:
+            chown(dir_path, user, group, **kwargs)
+    else:
+        raise exception.UnprocessableEntity(
+            _("Cannot create a blank directory."))
+
+
+def chown(path, user, group, recursive=True, force=False, **kwargs):
+    """Changes the owner and group of a given file.
+
+    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+
+    :param path:         Path to the modified file.
+    :type path:          string
+
+    :param user:         Owner.
+    :type user:          string
+
+    :param group:        Group.
+    :type group:         string
+
+    :param recursive:    Operate on files and directories recursively.
+    :type recursive:     boolean
+
+    :param force:        Suppress most error messages.
+    :type force:         boolean
+
+    :raises:             :class:`UnprocessableEntity` if path not given.
+    :raises:             :class:`UnprocessableEntity` if owner/group not given.
     """
-    utils.execute_with_timeout("chown", "-R", "%s:%s" % (user, group), path,
-                               run_as_root=True, root_helper="sudo")
+
+    if not path:
+        raise exception.UnprocessableEntity(
+            _("Cannot change ownership of a blank file or directory."))
+    if not user and not group:
+        raise exception.UnprocessableEntity(
+            _("Please specify owner or group, or both."))
+
+    owner_group_modifier = _build_user_group_pair(user, group)
+    options = (('f', force), ('R', recursive))
+    _execute_shell_cmd('chown', options, owner_group_modifier, path, **kwargs)
+
+
+def _build_user_group_pair(user, group):
+    return "%s:%s" % tuple((v if v else '') for v in (user, group))
+
+
+def _create_directory(dir_path, force=True, **kwargs):
+    """Create a given directory.
+
+    :param dir_path:        Path to the created directory.
+    :type dir_path:         string
+
+    :param force:           No error if existing, make parent directories
+                            as needed.
+    :type force:            boolean
+    """
+
+    options = (('p', force),)
+    _execute_shell_cmd('mkdir', options, dir_path, **kwargs)
 
 
 def chmod(path, mode, recursive=True, force=False, **kwargs):

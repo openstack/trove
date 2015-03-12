@@ -207,12 +207,12 @@ class VolumeMountPointTest(testtools.TestCase):
         os.path.exists = MagicMock(return_value=False)
         fake_spawn = _setUp_fake_spawn()
 
-        utils.execute = Mock()
+        utils.execute_with_timeout = Mock()
 
         self.volumeMountPoint.mount()
 
         self.assertEqual(1, os.path.exists.call_count)
-        self.assertEqual(1, utils.execute.call_count)
+        self.assertEqual(1, utils.execute_with_timeout.call_count)
         self.assertEqual(1, fake_spawn.expect.call_count)
 
         os.path.exists = origin_

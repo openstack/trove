@@ -654,8 +654,7 @@ class MySqlApp(object):
     def _create_mysql_confd_dir(self):
         conf_dir = "/etc/mysql/conf.d"
         LOG.debug("Creating %s." % conf_dir)
-        command = "sudo mkdir -p %s" % conf_dir
-        utils.execute_with_timeout(command, shell=True)
+        operating_system.create_directory(conf_dir, as_root=True)
 
     def _enable_mysql_on_boot(self):
         LOG.debug("Enabling MySQL on boot.")

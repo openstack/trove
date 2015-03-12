@@ -216,10 +216,8 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 
     def post_restore(self):
         self._run_prepare()
-        utils.execute_with_timeout("chown", "-R", "-f", "mysql",
-                                   self.restore_location,
-                                   root_helper="sudo",
-                                   run_as_root=True)
+        operating_system.chown(self.restore_location, 'mysql', None,
+                               force=True, as_root=True)
         self._delete_old_binlogs()
         self.reset_root_password()
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
@@ -296,9 +294,7 @@ class InnoBackupExIncremental(InnoBackupEx):
             # just use the checksum for the incremental path as it is
             # sufficiently unique /var/lib/mysql/<checksum>
             incremental_dir = os.path.join(self.restore_location, checksum)
-            utils.execute("mkdir", "-p", incremental_dir,
-                          root_helper="sudo",
-                          run_as_root=True)
+            operating_system.create_directory(incremental_dir, as_root=True)
             command = self._incremental_restore_cmd(incremental_dir)
         else:
             # The parent (full backup) use the same command from InnobackupEx

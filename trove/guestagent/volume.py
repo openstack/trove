@@ -23,6 +23,7 @@ from trove.common.exception import GuestError
 from trove.common.exception import ProcessExecutionError
 from trove.openstack.common import log as logging
 from trove.common.i18n import _
+from trove.guestagent.common import operating_system
 
 TMP_MOUNT_POINT = "/mnt/volume"
 
@@ -181,7 +182,7 @@ class VolumeMountPoint(object):
 
     def mount(self):
         if not os.path.exists(self.mount_point):
-            utils.execute("sudo", "mkdir", "-p", self.mount_point)
+            operating_system.create_directory(self.mount_point, as_root=True)
         LOG.debug("Mounting volume. Device path:{0}, mount_point:{1}, "
                   "volume_type:{2}, mount options:{3}".format(
                       self.device_path, self.mount_point, self.volume_fstype,

@@ -69,10 +69,8 @@ class PgSqlConfig(PgSqlProcess):
         )
         with open('/tmp/pgsql_config', 'w+') as config_file:
             config_file.write(configuration)
-        utils.execute_with_timeout(
-            'sudo', 'chown', 'postgres', '/tmp/pgsql_config',
-            timeout=30,
-        )
+        operating_system.chown('/tmp/pgsql_config', 'postgres', None,
+                               recursive=False, as_root=True)
         operating_system.move('/tmp/pgsql_config', config_location, timeout=30,
                               as_root=True)
 
@@ -95,10 +93,8 @@ class PgSqlConfig(PgSqlProcess):
             config_file.write(out)
             config_file.write("host    all     all     0.0.0.0/0   md5\n")
 
-        utils.execute_with_timeout(
-            'sudo', 'chown', 'postgres', '/tmp/pgsql_hba_config',
-            timeout=30,
-        )
+        operating_system.chown('/tmp/pgsql_hba_config',
+                               'postgres', None, recursive=False, as_root=True)
         operating_system.move('/tmp/pgsql_hba_config', PGSQL_HBA_CONFIG.format(
             version=self._get_psql_version(),
         ), timeout=30, as_root=True)

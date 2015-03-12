@@ -68,9 +68,8 @@ class CouchbaseApp(object):
         mount_point = CONF.couchbase.mount_point
         try:
             LOG.info(_('Couchbase Server change data dir path.'))
-            operating_system.update_owner('couchbase',
-                                          'couchbase',
-                                          mount_point)
+            operating_system.chown(mount_point, 'couchbase', 'couchbase',
+                                   as_root=True)
             pwd = CouchbaseRootAccess.get_password()
             utils.execute_with_timeout(
                 (system.cmd_node_init
@@ -104,11 +103,8 @@ class CouchbaseApp(object):
         """
         LOG.debug('Installing Couchbase Server. Creating %s' %
                   system.COUCHBASE_CONF_DIR)
-        utils.execute_with_timeout('mkdir',
-                                   '-p',
-                                   system.COUCHBASE_CONF_DIR,
-                                   run_as_root=True,
-                                   root_helper='sudo')
+        operating_system.create_directory(system.COUCHBASE_CONF_DIR,
+                                          as_root=True)
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, system.TIME_OUT)
         self.start_db()
@@ -316,9 +312,8 @@ class CouchbaseRootAccess(object):
         self.write_password_to_file(root_password)
 
     def write_password_to_file(self, root_password):
-        utils.execute_with_timeout('mkdir', '-p', system.COUCHBASE_CONF_DIR,
-                                   run_as_root=True, root_helper='sudo')
-
+        operating_system.create_directory(system.COUCHBASE_CONF_DIR,
+                                          as_root=True)
         try:
             tempfd, tempname = tempfile.mkstemp()
             os.fchmod(tempfd, stat.S_IRUSR | stat.S_IWUSR)

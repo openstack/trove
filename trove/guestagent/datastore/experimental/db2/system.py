@@ -23,9 +23,6 @@ START_DB2 = "db2start"
 STOP_DB2 = "db2 force application all; db2 terminate; db2stop"
 DB2_STATUS = ("ps -ef | grep " + DB2_INSTANCE_OWNER + " | grep db2sysc |"
               "grep -v grep | wc -l")
-CHANGE_DB_DIR_OWNER = "sudo chown " + DB2_INSTANCE_OWNER + " %(datadir)s"
-CHANGE_DB_DIR_GROUP_OWNER = (
-    "sudo chgrp " + DB2_INSTANCE_OWNER + " %(datadir)s")
 CREATE_DB_COMMAND = "db2 create database %(dbname)s"
 DELETE_DB_COMMAND = "db2 drop database %(dbname)s"
 LIST_DB_COMMAND = (

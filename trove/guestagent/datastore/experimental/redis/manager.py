@@ -97,7 +97,8 @@ class Manager(periodic_task.PeriodicTasks):
                 device.unmount_device(device_path)
                 device.format()
                 device.mount(mount_point)
-                operating_system.update_owner('redis', 'redis', mount_point)
+                operating_system.chown(mount_point, 'redis', 'redis',
+                                       as_root=True)
                 LOG.debug('Mounted the volume.')
             app.install_if_needed(packages)
             LOG.info(_('Writing redis configuration.'))

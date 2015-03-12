@@ -82,7 +82,7 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisApp.start_redis = MagicMock(return_value=None)
         redis_service.RedisApp.install_if_needed = MagicMock(return_value=None)
         redis_service.RedisApp.write_config = MagicMock(return_value=None)
-        operating_system.update_owner = MagicMock(return_value=None)
+        operating_system.chown = MagicMock(return_value=None)
         redis_service.RedisApp.restart = MagicMock(return_value=None)
         mock_status.begin_install = MagicMock(return_value=None)
         VolumeDevice.format = MagicMock(return_value=None)
@@ -103,8 +103,8 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         VolumeDevice.format.assert_any_call()
         redis_service.RedisApp.install_if_needed.assert_any_call(self.packages)
         redis_service.RedisApp.write_config.assert_any_call(None)
-        operating_system.update_owner.assert_any_call(
-            'redis', 'redis', mount_point)
+        operating_system.chown.assert_any_call(
+            mount_point, 'redis', 'redis', as_root=True)
         redis_service.RedisApp.restart.assert_any_call()
 
     def test_restart(self):

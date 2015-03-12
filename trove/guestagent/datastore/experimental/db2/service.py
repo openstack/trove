@@ -17,6 +17,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common import utils as utils
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import service
 from trove.guestagent.datastore.experimental.db2 import system
 from trove.guestagent.db import models
@@ -55,12 +56,10 @@ class DB2App(object):
         """
         LOG.debug("Changing ownership of the DB2 data directory.")
         try:
-            utils.execute_with_timeout(
-                system.CHANGE_DB_DIR_OWNER % {'datadir': mount_point},
-                shell=True)
-            utils.execute_with_timeout(
-                system.CHANGE_DB_DIR_GROUP_OWNER % {'datadir': mount_point},
-                shell=True)
+            operating_system.chown(mount_point,
+                                   system.DB2_INSTANCE_OWNER,
+                                   system.DB2_INSTANCE_OWNER,
+                                   recursive=False, as_root=True)
         except exception.ProcessExecutionError:
             raise RuntimeError(_(
                 "Command to change ownership of  DB2 data directory failed."))

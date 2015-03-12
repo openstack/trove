@@ -78,17 +78,17 @@ class CouchDBApp(object):
         """
         try:
             LOG.debug("Changing permissions.")
-            operating_system.update_owner(
-                'couchdb', 'couchdb', COUCHDB_LIB_DIR
+            operating_system.chown(
+                COUCHDB_LIB_DIR, 'couchdb', 'couchdb', as_root=True
             )
-            operating_system.update_owner(
-                'couchdb', 'couchdb', COUCHDB_LOG_DIR
+            operating_system.chown(
+                COUCHDB_LOG_DIR, 'couchdb', 'couchdb', as_root=True
             )
-            operating_system.update_owner(
-                'couchdb', 'couchdb', COUCHDB_BIN_DIR
+            operating_system.chown(
+                COUCHDB_BIN_DIR, 'couchdb', 'couchdb', as_root=True
             )
-            operating_system.update_owner(
-                'couchdb', 'couchdb', COUCHDB_CONFIG_DIR
+            operating_system.chown(
+                COUCHDB_CONFIG_DIR, 'couchdb', 'couchdb', as_root=True
             )
             operating_system.chmod(COUCHDB_LIB_DIR, FileMode.ADD_GRP_RW,
                                    as_root=True)

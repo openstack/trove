@@ -64,8 +64,7 @@ class CassandraApp(object):
 
     def init_storage_structure(self, mount_point):
         try:
-            cmd = system.INIT_FS % mount_point
-            utils.execute_with_timeout(cmd, shell=True)
+            operating_system.create_directory(mount_point, as_root=True)
         except exception.ProcessExecutionError:
             LOG.exception(_("Error while initiating storage structure."))
 
@@ -142,8 +141,9 @@ class CassandraApp(object):
             #TODO(denis_makogon): figure out the dynamic way to discover
             # configs owner since it can cause errors if there is
             # no cassandra user in operating system
-            execute_function("sudo", "chown",
-                             "cassandra:cassandra", system.CASSANDRA_CONF)
+            operating_system.chown(system.CASSANDRA_CONF,
+                                   'cassandra', 'cassandra', recursive=False,
+                                   as_root=True)
             operating_system.chmod(system.CASSANDRA_CONF,
                                    FileMode.ADD_READ_ALL, as_root=True)
         except Exception:

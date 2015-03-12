@@ -162,11 +162,7 @@ class RedisApp(object):
         LOG.debug('Installing redis server.')
         msg = "Creating %s." % system.REDIS_CONF_DIR
         LOG.debug(msg)
-        utils.execute_with_timeout('mkdir',
-                                   '-p',
-                                   system.REDIS_CONF_DIR,
-                                   run_as_root=True,
-                                   root_helper='sudo')
+        operating_system.create_directory(system.REDIS_CONF_DIR, as_root=True)
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, TIME_OUT)
         self.start_redis()

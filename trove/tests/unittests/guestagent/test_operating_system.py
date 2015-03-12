@@ -334,6 +334,192 @@ class TestOperatingSystem(testtools.TestCase):
                               "Got unknown keyword args: {'_unknown_kw': 0}"),
             'source', 'destination', _unknown_kw=0)
 
+    def test_chown(self):
+        self._assert_execute_call(
+            [['chown', '-R', 'usr:grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None, 'path', 'usr', 'grp', as_root=True)
+
+        self._assert_execute_call(
+            [['chown', 'usr:grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None,
+            'path', 'usr', 'grp', recursive=False, as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-f', '-R', 'usr:grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None,
+            'path', 'usr', 'grp', force=True, as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-R', ':grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None, 'path', '', 'grp', as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None, 'path', 'usr', '', as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-R', ':grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None, 'path', None, 'grp', as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chown, None, 'path', 'usr', None, as_root=True)
+
+        self._assert_execute_call(
+            [['chown', '-R', 'usr:', 'path']],
+            [{'timeout': 100}],
+            operating_system.chown, None,
+            'path', 'usr', None, timeout=100)
+
+        self._assert_execute_call(
+            [['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo',
+              'timeout': None}],
+            operating_system.chown, None,
+            'path', 'usr', None, timeout=None, as_root=True)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot change ownership of a blank file."),
+            '', 'usr', 'grp')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot change ownership of a blank file."),
+            None, 'usr', 'grp')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Please specify owner or group, or both."),
+            'path', '', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Please specify owner or group, or both."),
+            'path', None, None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot change ownership of a blank file."),
+            None, None, None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot change ownership of a blank file."),
+            '', '', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.chown,
+            ExpectedException(UnknownArgumentError,
+                              "Got unknown keyword args: {'_unknown_kw': 0}"),
+            'path', 'usr', None, _unknown_kw=0)
+
+    def test_create_directory(self):
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None, 'path', as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None, 'path', force=False,
+            as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', 'usr:grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'},
+             {'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None,
+            'path', user='usr', group='grp', as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', ':grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'},
+             {'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None, 'path', group='grp',
+            as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'},
+             {'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None, 'path', user='usr',
+            as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', 'usr:', 'path']],
+            [{'timeout': 100}, {'timeout': 100}],
+            operating_system.create_directory, None,
+            'path', user='usr', timeout=100)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo', 'timeout': None},
+             {'run_as_root': True, 'root_helper': 'sudo', 'timeout': None}],
+            operating_system.create_directory, None,
+            'path', user='usr', timeout=None, as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', 'usr:', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'},
+             {'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None,
+            'path', user='usr', group='', as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path'], ['chown', '-R', ':grp', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'},
+             {'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None,
+            'path', user='', group='grp', as_root=True)
+
+        self._assert_execute_call(
+            [['mkdir', '-p', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.create_directory, None, 'path', user='', group='',
+            as_root=True)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.create_directory,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot create a blank directory."),
+            '', user='usr', group='grp')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.create_directory,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Cannot create a blank directory."), None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.create_directory,
+            ExpectedException(UnknownArgumentError,
+                              "Got unknown keyword args: {'_unknown_kw': 0}"),
+            'path', _unknown_kw=0)
+
     def _assert_execute_call(self, exec_args, exec_kwargs,
                              fun, return_value, *args, **kwargs):
         """

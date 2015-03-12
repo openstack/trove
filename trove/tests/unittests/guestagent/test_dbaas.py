@@ -1341,12 +1341,10 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertEqual(remove_expected, remove_root[0].text,
                          "Remove root queries are not the same")
 
-    @patch.object(utils, 'execute_with_timeout')
-    def test__create_mysql_confd_dir(self, mock_execute):
+    @patch.object(operating_system, 'create_directory')
+    def test__create_mysql_confd_dir(self, mkdir_mock):
         self.mySqlApp._create_mysql_confd_dir()
-        self.assertEqual(1, mock_execute.call_count)
-        mock_execute.assert_called_with('sudo mkdir -p /etc/mysql/conf.d',
-                                        shell=True)
+        mkdir_mock.assert_called_once_with('/etc/mysql/conf.d', as_root=True)
 
     @patch.object(operating_system, 'move')
     def test__clear_mysql_config(self, mock_move):
@@ -2237,8 +2235,6 @@ class CassandraDBAppTest(testtools.TestCase):
         # this test verifies not only that the write_config
         # method properly invoked execute, but also that it properly
         # attempted to unlink the file (as a result of the exception)
-        execute_with_timeout = Mock(
-            side_effect=ProcessExecutionError('some exception'))
 
         mock_unlink = Mock(return_value=0)
 
@@ -2249,11 +2245,12 @@ class CassandraDBAppTest(testtools.TestCase):
 
         configuration = 'this is my configuration'
 
-        with patch('trove.guestagent.common.operating_system.move'):
+        with patch('trove.guestagent.common.operating_system.move',
+                   side_effect=ProcessExecutionError('some exception')):
             self.assertRaises(ProcessExecutionError,
                               self.cassandra.write_config,
                               config_contents=configuration,
-                              execute_function=execute_with_timeout,
+                              execute_function=Mock(),
                               mkstemp_function=mock_mkstemp,
                               unlink_function=mock_unlink)
 
@@ -2263,8 +2260,8 @@ class CassandraDBAppTest(testtools.TestCase):
         os.unlink(temp_config_name)
 
     @patch.multiple('trove.guestagent.common.operating_system',
-                    chmod=DEFAULT, move=DEFAULT)
-    def test_cassandra_write_config(self, chmod, move):
+                    chown=DEFAULT, chmod=DEFAULT, move=DEFAULT)
+    def test_cassandra_write_config(self, chown, chmod, move):
         # ensure that write_config creates a temporary file, and then
         # moves the file to the final place. Also validate the
         # contents of the file written.
@@ -2284,8 +2281,9 @@ class CassandraDBAppTest(testtools.TestCase):
 
         move.assert_called_with(temp_config_name, cass_system.CASSANDRA_CONF,
                                 as_root=True)
-        mock_execute.assert_called_with("sudo", "chown", "cassandra:cassandra",
-                                        cass_system.CASSANDRA_CONF)
+        chown.assert_called_with(cass_system.CASSANDRA_CONF,
+                                 "cassandra", "cassandra", recursive=False,
+                                 as_root=True)
         chmod.assert_called_with(
             cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL, as_root=True)
 
