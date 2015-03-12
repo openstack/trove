@@ -392,6 +392,18 @@ common_opts = [
                     'become active.'),
 ]
 
+# Profiling specific option groups
+
+profiler_group = cfg.OptGroup(
+    'profiler', title='Profiler options',
+    help="Oslo option group designed for profiler")
+profiler_opts = [
+    cfg.BoolOpt("enabled", default=False,
+                help="If False fully disable profiling feature."),
+    cfg.BoolOpt("trace_sqlalchemy", default=True,
+                help="If False doesn't trace SQL requests.")
+]
+
 # Datastore specific option groups
 
 # Mysql
@@ -776,6 +788,9 @@ CONF = cfg.CONF
 
 CONF.register_opts(path_opts)
 CONF.register_opts(common_opts)
+
+CONF.register_group(profiler_group)
+CONF.register_opts(profiler_opts, profiler_group)
 
 CONF.register_group(mysql_group)
 CONF.register_group(percona_group)

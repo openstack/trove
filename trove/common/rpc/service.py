@@ -20,13 +20,16 @@ import inspect
 import os
 from oslo import messaging
 from oslo.utils import importutils
+from osprofiler import profiler
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import log as logging
 from trove.openstack.common import loopingcall
 from trove.openstack.common import service
 
 from trove.common import cfg
+from trove.common import profile
 from trove import rpc
+
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -40,10 +43,12 @@ class RpcService(service.Service):
         self.host = host or CONF.host
         self.binary = binary or os.path.basename(inspect.stack()[-1][1])
         self.topic = topic or self.binary.rpartition('trove-')[2]
-        self.manager_impl = importutils.import_object(manager)
+        _manager = importutils.import_object(manager)
+        self.manager_impl = profiler.trace_cls("rpc")(_manager)
         self.report_interval = CONF.report_interval
         self.rpc_api_version = rpc_api_version or \
             self.manager_impl.RPC_API_VERSION
+        profile.setup_profiler(self.binary, self.host)
 
     def start(self):
         LOG.debug("Creating RPC server for service %s", self.topic)

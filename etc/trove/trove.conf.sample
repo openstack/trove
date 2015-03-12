@@ -194,6 +194,12 @@ api_paste_config = api-paste.ini
 # accessible. The existence of those setting and files will
 # enable SSL.
 
+[profiler]
+# If False fully disable profiling feature.
+#enabled = False
+# If False doesn't trace SQL requests.
+#trace_sqlalchemy = True
+
 [ssl]
 
 #cert_file = /path/to/server.crt

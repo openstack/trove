@@ -14,6 +14,8 @@
 #    under the License.
 
 import contextlib
+import osprofiler.sqlalchemy
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
@@ -77,7 +79,10 @@ def _create_engine(options):
         "echo": CONF.sql_query_log
     }
     LOG.info(_("Creating SQLAlchemy engine with args: %s") % engine_args)
-    return create_engine(options['sql_connection'], **engine_args)
+    db_engine = create_engine(options['sql_connection'], **engine_args)
+    if CONF.profiler.enabled and CONF.profiler.trace_sqlalchemy:
+        osprofiler.sqlalchemy.add_tracing(sqlalchemy, db_engine, "db")
+    return db_engine
 
 
 def get_session(autocommit=True, expire_on_commit=False):

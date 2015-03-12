@@ -46,3 +46,9 @@ rabbit_password=f7999d1955c5014aa32c
 
 # The manager class to use for conductor. (string value)
 conductor_manager = trove.conductor.manager.Manager
+
+[profiler]
+# If False fully disable profiling feature.
+#enabled = False
+# If False doesn't trace SQL requests.
+#trace_sqlalchemy = True
