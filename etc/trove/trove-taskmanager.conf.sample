@@ -112,7 +112,7 @@ use_nova_server_config_drive = False
 # basically acting like the client via that proxy token.
 nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
-nova_proxy_admin_tenant_name = admin
+nova_proxy_admin_tenant_id =
 
 # Manager impl for the taskmanager
 taskmanager_manager=trove.taskmanager.manager.Manager
