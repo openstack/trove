@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: trove\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-02-08 06:04+0000\n"
-"PO-Revision-Date: 2015-02-04 02:21+0000\n"
+"POT-Creation-Date: 2015-03-13 06:10+0000\n"
+"PO-Revision-Date: 2015-03-12 10:28+0000\n"
 "Last-Translator: openstackjenkins <jenkins@openstack.org>\n"
 "Language-Team: Korean (Korea) (http://www.transifex.com/projects/p/trove/"
 "language/ko_KR/)\n"
@@ -19,6 +19,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 1.3\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: trove/common/profile.py:38
+msgid ""
+"The OpenStack Profiler is enabled. Using one of the hmac_keys specified in "
+"the api-paste.ini file (typically in /etc/trove), a trace can be made of all "
+"requests. Only an admin user can retrieve the trace information, however.\n"
+"To disable the profiler, add the following to the configuration file:\n"
+"[profiler]\n"
+"enabled=false"
+msgstr ""
 
 #: trove/instance/models.py:446
 #, python-format
