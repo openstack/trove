@@ -27,6 +27,7 @@ from testtools.matchers import Is
 from testtools.matchers import Equals
 from testtools.matchers import Not
 from trove.common.exception import ProcessExecutionError
+from trove.common.exception import GuestError
 from trove.common import utils
 from trove.common import instance as rd_instance
 from trove.conductor import api as conductor_api
@@ -62,6 +63,8 @@ from trove.guestagent.datastore.experimental.vertica.service import (
     VerticaAppStatus)
 from trove.guestagent.datastore.experimental.vertica import (
     system as vertica_system)
+from trove.guestagent.datastore.experimental.db2 import (
+    service as db2service)
 from trove.guestagent.db import models
 from trove.guestagent.volume import VolumeDevice
 from trove.instance.models import InstanceServiceStatus
@@ -78,7 +81,6 @@ FAKE_DB_2 = {"_name": "testDB2", "_character_set": "latin2",
              "_collate": "latin2_general_ci"}
 FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_databases": [FAKE_DB]}]
-
 
 conductor_api.API.get_client = Mock()
 conductor_api.API.heartbeat = Mock()
@@ -1005,6 +1007,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual(test_dict.get('couchdb'),
                          'trove.guestagent.datastore.experimental.couchdb.'
                          'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.db2.'
+                         'manager.Manager',
+                         test_dict.get('db2'))
 
     def test_datastore_registry_with_existing_manager(self):
         datastore_registry_ext_test = {
@@ -1038,6 +1043,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
                          'manager.Manager',
                          test_dict.get('vertica'))
+        self.assertEqual('trove.guestagent.datastore.experimental.db2.'
+                         'manager.Manager',
+                         test_dict.get('db2'))
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -1068,6 +1076,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
                          'manager.Manager',
                          test_dict.get('vertica'))
+        self.assertEqual('trove.guestagent.datastore.experimental.db2.'
+                         'manager.Manager',
+                         test_dict.get('db2'))
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -2314,3 +2325,189 @@ class VerticaAppTest(testtools.TestCase):
         # Verifying nu,ber of shell calls,
         # as command has already been tested in preceeding tests
         self.assertEqual(vertica_system.shell_execute.call_count, 5)
+
+
+class DB2AppTest(testtools.TestCase):
+    def setUp(self):
+        super(DB2AppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = (
+            db2service.utils.execute_with_timeout)
+        util.init_db()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.db2App = db2service.DB2App(self.appStatus)
+        dbaas.CONF.guest_id = self.FAKE_ID
+
+    def tearDown(self):
+        super(DB2AppTest, self).tearDown()
+        db2service.utils.execute_with_timeout = (
+            self.orig_utils_execute_with_timeout)
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        dbaas.CONF.guest_id = None
+        self.db2App = None
+
+    def assert_reported_status(self, expected_status):
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
+        self.assertEqual(expected_status, service_status.status)
+
+    def test_stop_db(self):
+        db2service.utils.execute_with_timeout = MagicMock(return_value=None)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.db2App.stop_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_restart_server(self):
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        mock_status = MagicMock(return_value=None)
+        app = db2service.DB2App(mock_status)
+        mock_status.begin_restart = MagicMock(return_value=None)
+        app.stop_db = MagicMock(return_value=None)
+        app.start_db = MagicMock(return_value=None)
+        app.restart()
+
+        self.assertTrue(mock_status.begin_restart.called)
+        self.assertTrue(app.stop_db.called)
+        self.assertTrue(app.start_db.called)
+
+    def test_start_db(self):
+        db2service.utils.execute_with_timeout = MagicMock(return_value=None)
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        with patch.object(self.db2App, '_enable_db_on_boot',
+                          return_value=None):
+            self.db2App.start_db()
+            self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+
+class DB2AdminTest(testtools.TestCase):
+    def setUp(self):
+        super(DB2AdminTest, self).setUp()
+        self.db2Admin = db2service.DB2Admin()
+        self.orig_utils_execute_with_timeout = (
+            db2service.utils.execute_with_timeout)
+
+    def tearDown(self):
+        super(DB2AdminTest, self).tearDown()
+        db2service.utils.execute_with_timeout = (
+            self.orig_utils_execute_with_timeout)
+
+    def test_delete_database(self):
+        with patch.object(
+            db2service, 'run_command',
+            MagicMock(
+                return_value=None,
+                side_effect=ProcessExecutionError('Error'))):
+            self.assertRaises(GuestError,
+                              self.db2Admin.delete_database,
+                              FAKE_DB)
+            self.assertTrue(db2service.run_command.called)
+            args, _ = db2service.run_command.call_args_list[0]
+            expected = "db2 drop database testDB"
+            self.assertEqual(args[0], expected,
+                             "Delete database queries are not the same")
+
+    def test_list_databases(self):
+        with patch.object(db2service, 'run_command', MagicMock(
+                          side_effect=ProcessExecutionError('Error'))):
+            self.db2Admin.list_databases()
+            self.assertTrue(db2service.run_command.called)
+            args, _ = db2service.run_command.call_args_list[0]
+            expected = "db2 list database directory " \
+                "| grep -B6 -i indirect | grep 'Database name' | " \
+                "sed 's/.*= //'"
+            self.assertEqual(args[0], expected,
+                             "Delete database queries are not the same")
+
+    def test_create_users(self):
+        with patch.object(db2service, 'run_command', MagicMock(
+                          return_value=None)):
+            db2service.utils.execute_with_timeout = MagicMock(
+                return_value=None)
+            self.db2Admin.create_user(FAKE_USER)
+            self.assertTrue(db2service.utils.execute_with_timeout.called)
+            self.assertTrue(db2service.run_command.called)
+            args, _ = db2service.run_command.call_args_list[0]
+            expected = "db2 connect to testDB; " \
+                "db2 GRANT DBADM,CREATETAB,BINDADD,CONNECT,DATAACCESS " \
+                "ON DATABASE TO USER random; db2 connect reset"
+            self.assertEqual(
+                args[0], expected,
+                "Granting database access queries are not the same")
+            self.assertEqual(db2service.run_command.call_count, 1)
+
+    def test_delete_users_with_db(self):
+        with patch.object(db2service, 'run_command',
+                          MagicMock(return_value=None)):
+            with patch.object(db2service.DB2Admin, 'list_access',
+                              MagicMock(return_value=None)):
+                utils.execute_with_timeout = MagicMock(return_value=None)
+                self.db2Admin.delete_user(FAKE_USER[0])
+                self.assertTrue(db2service.run_command.called)
+                self.assertTrue(db2service.utils.execute_with_timeout.called)
+                self.assertFalse(db2service.DB2Admin.list_access.called)
+                args, _ = db2service.run_command.call_args_list[0]
+                expected = "db2 connect to testDB; " \
+                    "db2 REVOKE DBADM,CREATETAB,BINDADD,CONNECT,DATAACCESS " \
+                    "ON DATABASE FROM USER random; db2 connect reset"
+                self.assertEqual(
+                    args[0], expected,
+                    "Revoke database access queries are not the same")
+                self.assertEqual(db2service.run_command.call_count, 1)
+
+    def test_delete_users_without_db(self):
+        FAKE_USER.append(
+            {"_name": "random2", "_password": "guesswhat", "_databases": []})
+        with patch.object(db2service, 'run_command',
+                          MagicMock(return_value=None)):
+                with patch.object(db2service.DB2Admin, 'list_access',
+                                  MagicMock(return_value=[FAKE_DB])):
+                    utils.execute_with_timeout = MagicMock(return_value=None)
+                    self.db2Admin.delete_user(FAKE_USER[1])
+                    self.assertTrue(db2service.run_command.called)
+                    self.assertTrue(db2service.DB2Admin.list_access.called)
+                    self.assertTrue(
+                        db2service.utils.execute_with_timeout.called)
+                    args, _ = db2service.run_command.call_args_list[0]
+                    expected = "db2 connect to testDB; " \
+                        "db2 REVOKE DBADM,CREATETAB,BINDADD,CONNECT," \
+                        "DATAACCESS ON DATABASE FROM USER random2; " \
+                        "db2 connect reset"
+                    self.assertEqual(
+                        args[0], expected,
+                        "Revoke database access queries are not the same")
+                    self.assertEqual(db2service.run_command.call_count, 1)
+
+    def test_list_users(self):
+        databases = []
+        databases.append(FAKE_DB)
+        with patch.object(db2service, 'run_command', MagicMock(
+                          side_effect=ProcessExecutionError('Error'))):
+            with patch.object(self.db2Admin, "list_databases",
+                              MagicMock(return_value=(databases, None))):
+                self.db2Admin.list_users()
+                self.assertTrue(db2service.run_command.called)
+                args, _ = db2service.run_command.call_args_list[0]
+                expected = "db2 +o  connect to testDB; " \
+                    "db2 -x  select grantee, dataaccessauth " \
+                    "from sysibm.sysdbauth; db2 connect reset"
+            self.assertEqual(args[0], expected,
+                             "List database queries are not the same")
+
+    def test_get_user(self):
+        databases = []
+        databases.append(FAKE_DB)
+        with patch.object(db2service, 'run_command', MagicMock(
+                          side_effect=ProcessExecutionError('Error'))):
+            with patch.object(self.db2Admin, "list_databases",
+                              MagicMock(return_value=(databases, None))):
+                self.db2Admin._get_user('random', None)
+                self.assertTrue(db2service.run_command.called)
+                args, _ = db2service.run_command.call_args_list[0]
+                expected = "db2 +o  connect to testDB; " \
+                    "db2 -x  select grantee, dataaccessauth " \
+                    "from sysibm.sysdbauth; db2 connect reset"
+                self.assertEqual(args[0], expected,
+                                 "Delete database queries are not the same")
