@@ -49,6 +49,13 @@ configuration_integer_size = {
     "pattern": "[0-9]+"
 }
 
+configuration_positive_integer = {
+    "type": "string",
+    "maxLength": 40,
+    "minLength": 1,
+    "pattern": "^[0-9]+$"
+}
+
 configuration_non_empty_string = {
     "type": "string",
     "minLength": 1,
@@ -70,11 +77,7 @@ volume_size = {
             "type": "integer",
             "minimum": 0
         },
-        {
-            "type": "string",
-            "minLength": 1,
-            "pattern": "[0-9]+"
-        }]
+        configuration_positive_integer]
 }
 
 host_string = {
