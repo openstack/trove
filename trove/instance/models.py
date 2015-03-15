@@ -847,31 +847,28 @@ class Instance(BuiltInstance):
                  {'instance_id': self.id, 'flavor_id': new_flavor_id})
         if self.db_info.cluster_id is not None:
             raise exception.ClusterInstanceOperationNotSupported()
-        # Validate that the flavor can be found and that it isn't the same size
-        # as the current one.
+
+        # Validate that the old and new flavor IDs are not the same, new flavor
+        # can be found and has ephemeral/volume support if required by the
+        # current flavor.
+        if self.flavor_id == new_flavor_id:
+            raise exception.BadRequest(_("The new flavor id must be different "
+                                         "than the current flavor id of '%s'.")
+                                       % self.flavor_id)
         client = create_nova_client(self.context)
         try:
             new_flavor = client.flavors.get(new_flavor_id)
         except nova_exceptions.NotFound:
             raise exception.FlavorNotFound(uuid=new_flavor_id)
+
         old_flavor = client.flavors.get(self.flavor_id)
-        new_flavor_size = new_flavor.ram
-        old_flavor_size = old_flavor.ram
         if self.volume_support:
             if new_flavor.ephemeral != 0:
                 raise exception.LocalStorageNotSupported()
-            if new_flavor_size == old_flavor_size:
-                raise exception.CannotResizeToSameSize()
         elif self.device_path is not None:
             # ephemeral support enabled
             if new_flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=new_flavor_id)
-            if (new_flavor_size == old_flavor_size and
-                    new_flavor.ephemeral == new_flavor.ephemeral):
-                raise exception.CannotResizeToSameSize()
-        elif new_flavor_size == old_flavor_size:
-            # uses local storage
-            raise exception.CannotResizeToSameSize()
 
         # Set the task to RESIZING and begin the async call before returning.
         self.update_db(task_status=InstanceTasks.RESIZING)
