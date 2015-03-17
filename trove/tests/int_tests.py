@@ -185,6 +185,7 @@ register(["user"], user_actions_groups)
 register(["db2_supported"], common_groups,
          database_actions_groups, user_actions_groups)
 register(["cassandra_supported"], common_groups,
+         user_actions_groups, database_actions_groups,
          backup_groups, configuration_groups)
 register(["couchbase_supported"], common_groups, backup_groups,
          root_actions_groups)
