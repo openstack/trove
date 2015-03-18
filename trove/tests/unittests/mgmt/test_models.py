@@ -24,13 +24,14 @@ from novaclient.v1_1.servers import Server, ServerManager
 from oslo.config import cfg
 from trove.backup.models import Backup
 from trove.common.context import TroveContext
+from trove.common import exception
 from trove.common import instance as rd_instance
+from trove.common import remote
 from trove.datastore import models as datastore_models
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
 import trove.extensions.mgmt.instances.models as mgmtmodels
-from trove.common import remote
 from trove.tests.unittests.util import util
 from trove import rpc
 
@@ -389,3 +390,38 @@ class TestMgmtInstanceTasks(MockMgmtInstanceTest):
                                                   ANY)
                     self.assertThat(self.context.auth_token, Is(None))
         self.addCleanup(self.do_cleanup, instance, service_status)
+
+
+class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
+
+    def test_show_deleted_mgmt_instances(self):
+        args = {'deleted': 0, 'cluster_id': None}
+        db_infos_active = DBInstance.find_all(**args)
+        args = {'deleted': 1, 'cluster_id': None}
+        db_infos_deleted = DBInstance.find_all(**args)
+        args = {'cluster_id': None}
+        db_infos_all = DBInstance.find_all(**args)
+
+        self.assertTrue(db_infos_all.count() ==
+                        db_infos_active.count() +
+                        db_infos_deleted.count())
+
+        with patch.object(self.context, 'is_admin', return_value=True):
+            deleted_instance = db_infos_deleted.all()[0]
+            active_instance = db_infos_active.all()[0]
+
+            instance = DBInstance.find_by(context=self.context,
+                                          id=active_instance.id)
+            self.assertEqual(instance.id, active_instance.id)
+
+            self.assertRaises(
+                exception.ModelNotFoundError,
+                DBInstance.find_by,
+                context=self.context,
+                id=deleted_instance.id,
+                deleted=False)
+
+            instance = DBInstance.find_by(context=self.context,
+                                          id=deleted_instance.id,
+                                          deleted=True)
+            self.assertEqual(instance.id, deleted_instance.id)

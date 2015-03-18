@@ -49,9 +49,10 @@ def load_mgmt_instances(context, deleted=None, client=None,
     return instances
 
 
-def load_mgmt_instance(cls, context, id):
+def load_mgmt_instance(cls, context, id, include_deleted):
     try:
-        instance = load_instance(cls, context, id, needs_server=True)
+        instance = load_instance(cls, context, id, needs_server=True,
+                                 include_deleted=include_deleted)
         client = remote.create_nova_client(context)
         try:
             server = client.rdservers.get(instance.server_id)
@@ -70,7 +71,8 @@ def load_mgmt_instance(cls, context, id):
         assert instance.server is not None
     except Exception as e:
         LOG.error(e)
-        instance = load_instance(cls, context, id, needs_server=False)
+        instance = load_instance(cls, context, id, needs_server=False,
+                                 include_deleted=include_deleted)
     return instance
 
 
@@ -94,8 +96,8 @@ class SimpleMgmtInstance(imodels.BaseInstance):
         return self.db_info.deleted_at
 
     @classmethod
-    def load(cls, context, id):
-        return load_mgmt_instance(cls, context, id)
+    def load(cls, context, id, include_deleted=False):
+        return load_mgmt_instance(cls, context, id, include_deleted)
 
     @property
     def task_description(self):
@@ -111,8 +113,8 @@ class DetailedMgmtInstance(SimpleMgmtInstance):
         self.root_history = None
 
     @classmethod
-    def load(cls, context, id):
-        instance = load_mgmt_instance(cls, context, id)
+    def load(cls, context, id, include_deleted=False):
+        instance = load_mgmt_instance(cls, context, id, include_deleted)
         client = remote.create_cinder_client(context)
         try:
             instance.volume = client.volumes.get(instance.volume_id)
