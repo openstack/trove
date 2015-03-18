@@ -62,9 +62,16 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.debug("Mounted the volume.")
             self.app.install_if_needed(packages)
             self.app.prepare_for_install_vertica()
-            self.app.install_vertica()
-            self.app.create_db()
-            self.app.complete_install_or_restart()
+            if cluster_config is None:
+                self.app.install_vertica()
+                self.app.create_db()
+                self.app.complete_install_or_restart()
+            elif cluster_config['instance_type'] == "member":
+                self.appStatus.set_status(rd_ins.ServiceStatuses.BUILD_PENDING)
+            else:
+                LOG.error(_("Bad cluster configuration; instance type "
+                            "given as %s.") % cluster_config['instance_type'])
+                raise
             LOG.info(_('Completed setup of Vertica database instance.'))
         except Exception:
             LOG.exception(_('Cannot prepare Vertica database instance.'))
@@ -191,3 +198,26 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Starting with configuration changes.")
         raise exception.DatastoreOperationNotSupported(
             operation='start_db_with_conf_changes', datastore=MANAGER)
+
+    def get_public_keys(self, context, user):
+        LOG.debug("Retrieving public keys for %s." % user)
+        return self.app.get_public_keys(user)
+
+    def authorize_public_keys(self, context, user, public_keys):
+        LOG.debug("Authorizing public keys for %s." % user)
+        return self.app.authorize_public_keys(user, public_keys)
+
+    def install_cluster(self, context, members):
+        try:
+            LOG.debug("Installing cluster on members: %s." % members)
+            self.app.install_cluster(members)
+            LOG.debug("install_cluster call has finished.")
+        except Exception:
+            LOG.exception(_('Cluster installation failed.'))
+            self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
+            raise
+
+    def cluster_complete(self, context):
+        LOG.debug("Cluster creation complete, starting status checks.")
+        status = self.appStatus._get_actual_db_status()
+        self.appStatus.set_status(status)

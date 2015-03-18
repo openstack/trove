@@ -24,6 +24,11 @@ STATUS_ACTIVE_DB = "/opt/vertica/bin/adminTools -t show_active_db"
 STATUS_DB_DOWN = "/opt/vertica/bin/adminTools -t db_status -s DOWN"
 SET_RESTART_POLICY = ("/opt/vertica/bin/adminTools -t set_restart_policy "
                       "-d %s -p '%s'")
+SEND_CONF_TO_SERVER = ("rsync -v -e 'ssh -o "
+                       "UserKnownHostsFile=/dev/null -o "
+                       "StrictHostKeyChecking=no' --perms --owner --group "
+                       "%s %s:%s")
+SSH_KEY_GEN = "ssh-keygen -f %s/.ssh/id_rsa -t rsa -N ''"
 VERTICA_CONF = "/etc/vertica.cnf"
 INSTALL_TIMEOUT = 1000
 

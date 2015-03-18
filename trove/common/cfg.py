@@ -822,11 +822,13 @@ vertica_group = cfg.OptGroup(
     'vertica', title='Vertica options',
     help="Oslo option group designed for Vertica datastore")
 vertica_opts = [
-    cfg.ListOpt('tcp_ports', default=["5433"],
+    cfg.ListOpt('tcp_ports',
+                default=["5433", "5434", "22", "5444", "5450", "4803"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=["5433"],
+    cfg.ListOpt('udp_ports',
+                default=["5433", "4803", "4804", "6453"],
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -851,6 +853,24 @@ vertica_opts = [
                help='Namespace to load restore strategies from.'),
     cfg.IntOpt('readahead_size', default=2048,
                help='Size(MB) to be set as readahead_size for data volume'),
+    cfg.BoolOpt('cluster_support', default=True,
+                help='Enable clusters to be created and managed.'),
+    cfg.IntOpt('cluster_member_count', default=3,
+               help='Number of members in Vertica cluster.'),
+    cfg.StrOpt('api_strategy',
+               default='trove.common.strategies.cluster.experimental.vertica.'
+                       'api.VerticaAPIStrategy',
+               help='Class that implements datastore-specific API logic.'),
+    cfg.StrOpt('taskmanager_strategy',
+               default='trove.common.strategies.cluster.experimental.vertica.'
+                       'taskmanager.VerticaTaskManagerStrategy',
+               help='Class that implements datastore-specific task manager '
+                    'logic.'),
+    cfg.StrOpt('guestagent_strategy',
+               default='trove.common.strategies.cluster.experimental.vertica.'
+                       'guestagent.VerticaGuestAgentStrategy',
+               help='Class that implements datastore-specific Guest Agent API '
+                    'logic.'),
 ]
 
 # RPC version groups

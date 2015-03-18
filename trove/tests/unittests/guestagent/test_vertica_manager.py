@@ -13,10 +13,14 @@
 
 import testtools
 from mock import MagicMock
+from mock import patch
+from trove.common import instance as rd_instance
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent.datastore.experimental.vertica.manager import Manager
 from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
+from trove.guestagent.datastore.experimental.vertica.service import (
+    VerticaAppStatus)
 from trove.guestagent.volume import VolumeDevice
 
 
@@ -144,3 +148,48 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.manager.stop_db(self.context)
         #verification/assertion
         VerticaApp.stop_db.assert_any_call(do_not_start_on_reboot=False)
+
+    @patch.object(VerticaApp, 'install_vertica')
+    @patch.object(VerticaApp, '_export_conf_to_members')
+    @patch.object(VerticaApp, 'create_db')
+    def test_install_cluster(self, mock_install, mock_export, mock_create_db):
+        members = ['test1', 'test2']
+        self.manager.install_cluster(self.context, members)
+        mock_install.assert_called_with('test1,test2')
+        mock_export.assert_called_with(members)
+        mock_create_db.assert_called_with('test1,test2')
+
+    @patch.object(VerticaAppStatus, 'set_status')
+    @patch.object(VerticaApp, 'install_cluster',
+                  side_effect=RuntimeError("Boom!"))
+    def test_install_cluster_failure(self, mock_install, mock_set_status):
+        members = ["test1", "test2"]
+        self.assertRaises(RuntimeError, self.manager.install_cluster,
+                          self.context, members)
+        mock_set_status.assert_called_with(rd_instance.ServiceStatuses.FAILED)
+
+    @patch.object(volume.VolumeDevice, 'mount_points', return_value=[])
+    @patch.object(volume.VolumeDevice, 'unmount_device', return_value=None)
+    @patch.object(volume.VolumeDevice, 'mount', return_value=None)
+    @patch.object(volume.VolumeDevice, 'migrate_data', return_value=None)
+    @patch.object(volume.VolumeDevice, 'format', return_value=None)
+    @patch.object(VerticaApp, 'prepare_for_install_vertica')
+    @patch.object(VerticaApp, 'install_if_needed')
+    @patch.object(VerticaAppStatus, 'begin_install')
+    def _prepare_method(self, instance_id, instance_type, *args):
+        cluster_config = {"id": instance_id,
+                          "instance_type": instance_type}
+
+        # invocation
+        self.manager.prepare(context=self.context, databases=None,
+                             packages=['vertica'],
+                             memory_mb='2048', users=None,
+                             mount_point='/var/lib/vertica',
+                             overrides=None,
+                             cluster_config=cluster_config)
+
+    @patch.object(VerticaAppStatus, 'set_status')
+    def test_prepare_member(self, mock_set_status):
+        self._prepare_method("test-instance-3", "member")
+        mock_set_status.assert_called_with(
+            rd_instance.ServiceStatuses.BUILD_PENDING)

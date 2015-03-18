@@ -243,3 +243,11 @@ device_path = /dev/vdb
 [mongodb]
 volume_support = True
 device_path = /dev/vdb
+
+[vertica]
+tcp_ports = 5433, 5434, 22, 5444, 5450, 4803
+udp_ports = 5433, 4803, 4804, 6453
+volume_support = True
+device_path = /dev/vdb
+mount_point = /var/lib/vertica
+taskmanager_strategy = trove.common.strategies.cluster.experimental.vertica.taskmanager.VerticaTaskManagerStrategy
