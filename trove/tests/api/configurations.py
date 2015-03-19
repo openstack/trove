@@ -663,7 +663,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
     @test(depends_on=[test_delete_invalid_configuration_not_found])
     def test_delete_configuration_parameter_with_mgmt_api(self):
         # testing a param that is assigned to an instance can be deleted
-        # and doesnt affect an unassign later. So we delete a parameter
+        # and doesn't affect an unassign later. So we delete a parameter
         # that is used by a test (connect_timeout)
         ds = instance_info.dbaas_datastore
         ds_v = instance_info.dbaas_datastore_version
