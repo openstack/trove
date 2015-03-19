@@ -50,6 +50,8 @@ from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import KeepAliveConnection
 from trove.guestagent.datastore.experimental.couchbase import (
     service as couchservice)
+from trove.guestagent.datastore.experimental.couchdb import (
+    service as couchdb_service)
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb import (
@@ -993,6 +995,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
+        self.assertEqual(test_dict.get('couchdb'),
+                         'trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager')
 
     def test_datastore_registry_with_existing_manager(self):
         datastore_registry_ext_test = {
@@ -1020,6 +1025,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
+        self.assertEqual(test_dict.get('couchdb'),
+                         'trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager')
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -1044,6 +1052,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
+        self.assertEqual(test_dict.get('couchdb'),
+                         'trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager')
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
@@ -1748,6 +1759,99 @@ class CouchbaseAppTest(testtools.TestCase):
 
         self.couchbaseApp.install_if_needed(["package"])
         self.assertTrue(couchservice.packager.pkg_is_installed.called)
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+
+class CouchDBAppTest(testtools.TestCase):
+
+    def fake_couchdb_service_discovery(self, candidates):
+        return {
+            'cmd_start': 'start',
+            'cmd_stop': 'stop',
+            'cmd_enable': 'enable',
+            'cmd_disable': 'disable'
+        }
+
+    def setUp(self):
+        super(CouchDBAppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = (
+            couchdb_service.utils.execute_with_timeout)
+        self.orig_time_sleep = time.sleep
+        time.sleep = Mock()
+        self.orig_service_discovery = operating_system.service_discovery
+        operating_system.service_discovery = (
+            self.fake_couchdb_service_discovery)
+        operating_system.get_ip_address = Mock()
+        util.init_db()
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.couchdbApp = couchdb_service.CouchDBApp(self.appStatus)
+        dbaas.CONF.guest_id = self.FAKE_ID
+
+    def tearDown(self):
+        super(CouchDBAppTest, self).tearDown()
+        couchdb_service.utils.execute_with_timeout = (
+            self.orig_utils_execute_with_timeout)
+        operating_system.service_discovery = self.orig_service_discovery
+        time.sleep = self.orig_time_sleep
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        dbaas.CONF.guest_id = None
+
+    def assert_reported_status(self, expected_status):
+        service_status = InstanceServiceStatus.find_by(
+            instance_id=self.FAKE_ID)
+        self.assertEqual(expected_status, service_status.status)
+
+    def test_stop_db(self):
+        couchdb_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.couchdbApp.stop_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_stop_db_error(self):
+        couchdb_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchdbApp.state_change_wait_time = 1
+
+        self.assertRaises(RuntimeError, self.couchdbApp.stop_db)
+
+    def test_restart(self):
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchdbApp.stop_db = Mock()
+        self.couchdbApp.start_db = Mock()
+
+        self.couchdbApp.restart()
+
+        self.assertTrue(self.couchdbApp.stop_db.called)
+        self.assertTrue(self.couchdbApp.start_db.called)
+        self.assertTrue(conductor_api.API.heartbeat.called)
+
+    def test_start_db(self):
+        couchdb_service.utils.execute_with_timeout = Mock()
+        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.couchdbApp._enable_db_on_boot = Mock()
+
+        self.couchdbApp.start_db()
+        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    def test_start_db_error(self):
+        from trove.common.exception import ProcessExecutionError
+        couchdb_service.utils.execute_with_timeout = Mock(
+            side_effect=ProcessExecutionError('Error'))
+        self.couchdbApp._enable_db_on_boot = Mock()
+
+        self.assertRaises(RuntimeError, self.couchdbApp.start_db)
+
+    def test_install_when_couchdb_installed(self):
+        couchdb_service.packager.pkg_is_installed = Mock(return_value=True)
+        couchdb_service.utils.execute_with_timeout = Mock()
+
+        self.couchdbApp.install_if_needed(["package"])
+        self.assertTrue(couchdb_service.packager.pkg_is_installed.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
 
