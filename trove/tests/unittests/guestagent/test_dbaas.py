@@ -14,11 +14,13 @@
 
 import ConfigParser
 import os
+import subprocess
 import tempfile
 from uuid import uuid4
 import time
 from mock import Mock
 from mock import MagicMock
+from mock import PropertyMock
 from mock import patch
 from mock import ANY
 import sqlalchemy
@@ -2098,13 +2100,6 @@ class VerticaAppStatusTest(testtools.TestCase):
             status = self.verticaAppStatus._get_actual_db_status()
         self.assertEqual(rd_instance.ServiceStatuses.CRASHED, status)
 
-    def test_get_actual_db_status_error_unknown(self):
-        self.verticaAppStatus = VerticaAppStatus()
-        with patch.object(vertica_system, 'shell_execute',
-                          MagicMock(return_value=['', None])):
-            status = self.verticaAppStatus._get_actual_db_status()
-        self.assertEqual(rd_instance.ServiceStatuses.UNKNOWN, status)
-
 
 class VerticaAppTest(testtools.TestCase):
 
@@ -2115,9 +2110,11 @@ class VerticaAppTest(testtools.TestCase):
                                        rd_instance.ServiceStatuses.NEW)
         self.app = VerticaApp(self.appStatus)
         self.setread = VolumeDevice.set_readahead_size
+        self.Popen = subprocess.Popen
         vertica_system.shell_execute = MagicMock(return_value=('', ''))
 
         VolumeDevice.set_readahead_size = Mock()
+        subprocess.Popen = Mock()
         self.test_config = ConfigParser.ConfigParser()
         self.test_config.add_section('credentials')
         self.test_config.set('credentials',
@@ -2127,6 +2124,7 @@ class VerticaAppTest(testtools.TestCase):
         super(VerticaAppTest, self).tearDown()
         self.app = None
         VolumeDevice.set_readahead_size = self.setread
+        subprocess.Popen = self.Popen
 
     def test_install_if_needed_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):
@@ -2227,71 +2225,84 @@ class VerticaAppTest(testtools.TestCase):
                 mock_status.begin_restart.assert_any_call()
                 VerticaApp.stop_db.assert_any_call()
                 VerticaApp.start_db.assert_any_call()
-                mock_status.end_install_or_restart.assert_any_call()
 
     def test_start_db(self):
         mock_status = MagicMock()
+        type(mock_status)._is_restarting = PropertyMock(return_value=False)
         app = VerticaApp(mock_status)
         with patch.object(app, '_enable_db_on_boot', return_value=None):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=True)
                 mock_status.end_install_or_restart = MagicMock(
                     return_value=None)
-
                 app.start_db()
-
-                arguments = vertica_system.shell_execute.call_args_list[0]
-                expected_cmd = (vertica_system.START_DB % ('db_srvr',
-                                                           'some_password'))
-                self.assertTrue(
-                    mock_status.wait_for_real_status_to_change_to.called)
-                arguments.assert_called_with(expected_cmd, 'dbadmin')
+                agent_start, db_start = subprocess.Popen.call_args_list
+                agent_expected_command = [
+                    'sudo', 'su', '-', 'root', '-c',
+                    (vertica_system.VERTICA_AGENT_SERVICE_COMMAND % 'start')]
+                db_expected_cmd = [
+                    'sudo', 'su', '-', 'dbadmin', '-c',
+                    (vertica_system.START_DB % ('db_srvr', 'some_password'))]
+                self.assertTrue(mock_status.end_install_or_restart.called)
+                agent_start.assert_called_with(agent_expected_command)
+                db_start.assert_called_with(db_expected_cmd)
 
     def test_start_db_failure(self):
         mock_status = MagicMock()
         app = VerticaApp(mock_status)
-        with patch.object(app, '_enable_db_on_boot', return_value=None):
+        with patch.object(app, '_enable_db_on_boot',
+                          side_effect=RuntimeError()):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=None)
-                mock_status.end_install_or_restart = MagicMock(
-                    return_value=None)
                 self.assertRaises(RuntimeError, app.start_db)
 
     def test_stop_db(self):
         mock_status = MagicMock()
+        type(mock_status)._is_restarting = PropertyMock(return_value=False)
         app = VerticaApp(mock_status)
         with patch.object(app, '_disable_db_on_boot', return_value=None):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=True)
-                mock_status.end_install_or_restart = MagicMock(
-                    return_value=None)
+                with patch.object(vertica_system, 'shell_execute',
+                                  MagicMock(side_effect=[['', ''],
+                                                         ['db_srvr', None],
+                                                         ['', '']])):
+                    mock_status.wait_for_real_status_to_change_to = MagicMock(
+                        return_value=True)
+                    mock_status.end_install_or_restart = MagicMock(
+                        return_value=None)
+                    app.stop_db()
 
-                app.stop_db()
-
-                arguments = vertica_system.shell_execute.call_args_list[0]
-                expected_command = (vertica_system.STOP_DB % ('db_srvr',
+                    self.assertEqual(vertica_system.shell_execute.call_count,
+                                     3)
+                    # There are 3 shell-executions:
+                    # a) stop vertica-agent service
+                    # b) check daatabase status
+                    # c) stop_db
+                    # We are matcing that 3rd command called was stop_db
+                    arguments = vertica_system.shell_execute.call_args_list[2]
+                    expected_cmd = (vertica_system.STOP_DB % ('db_srvr',
                                                               'some_password'))
-                self.assertTrue(
-                    mock_status.wait_for_real_status_to_change_to.called)
-                arguments.assert_called_with(expected_command, 'dbadmin')
+                    self.assertTrue(
+                        mock_status.wait_for_real_status_to_change_to.called)
+                    arguments.assert_called_with(expected_cmd, 'dbadmin')
 
     def test_stop_db_failure(self):
         mock_status = MagicMock()
+        type(mock_status)._is_restarting = PropertyMock(return_value=False)
         app = VerticaApp(mock_status)
         with patch.object(app, '_disable_db_on_boot', return_value=None):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=None)
-                mock_status.end_install_or_restart = MagicMock(
-                    return_value=None)
-                self.assertRaises(RuntimeError, app.stop_db)
+                with patch.object(vertica_system, 'shell_execute',
+                                  MagicMock(side_effect=[['', ''],
+                                                         ['db_srvr', None],
+                                                         ['', '']])):
+                    mock_status.wait_for_real_status_to_change_to = MagicMock(
+                        return_value=None)
+                    mock_status.end_install_or_restart = MagicMock(
+                        return_value=None)
+                    self.assertRaises(RuntimeError, app.stop_db)
 
     def test_export_conf_to_members(self):
         self.app._export_conf_to_members(members=['member1', 'member2'])

@@ -71,12 +71,11 @@ class Manager(periodic_task.PeriodicTasks):
             else:
                 LOG.error(_("Bad cluster configuration; instance type "
                             "given as %s.") % cluster_config['instance_type'])
-                raise
+                raise RuntimeError("Bad cluster configuration.")
             LOG.info(_('Completed setup of Vertica database instance.'))
         except Exception:
             LOG.exception(_('Cannot prepare Vertica database instance.'))
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
-            raise
 
     def restart(self, context):
         LOG.debug("Restarting the database.")
@@ -196,8 +195,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def start_db_with_conf_changes(self, context, config_contents):
         LOG.debug("Starting with configuration changes.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='start_db_with_conf_changes', datastore=MANAGER)
+        self.app.start_db_with_conf_changes(config_contents)
 
     def get_public_keys(self, context, user):
         LOG.debug("Retrieving public keys for %s." % user)
