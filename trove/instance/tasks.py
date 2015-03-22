@@ -75,6 +75,10 @@ class InstanceTasks(object):
     MIGRATING = InstanceTask(0x06, 'MIGRATING', 'Migrating the instance.')
     RESTART_REQUIRED = InstanceTask(0x07, 'RESTART_REQUIRED',
                                     'Instance requires a restart.')
+    PROMOTING = InstanceTask(0x08, 'PROMOTING',
+                             'Promoting the instance to replica source.')
+    EJECTING = InstanceTask(0x09, 'EJECTING',
+                            'Ejecting the replica source.')
 
     BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
                                       is_error=True)
@@ -95,6 +99,12 @@ class InstanceTasks(object):
     BUILDING_ERROR_REPLICA = InstanceTask(0x54, 'BUILDING',
                                           'Build error: Replica.',
                                           is_error=True)
+    PROMOTION_ERROR = InstanceTask(0x55, 'PROMOTING',
+                                         'Replica Promotion Error.',
+                                         is_error=True)
+    EJECTION_ERROR = InstanceTask(0x56, 'EJECTING',
+                                        'Replica Source Ejection Error.',
+                                        is_error=True)
 
 # Dissuade further additions at run-time.
 InstanceTask.__init__ = None

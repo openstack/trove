@@ -53,7 +53,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.mock_gfvs_class = self.patcher_gfvs.start()
         self.mock_rs_class = self.patcher_rs.start()
         self.repl_datastore_manager = 'mysql'
-        self.repl_replication_strategy = 'MysqlBinlogReplication'
+        self.repl_replication_strategy = 'MysqlGTIDReplication'
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
@@ -310,7 +310,7 @@ class GuestAgentManagerTest(testtools.TestCase):
                     'dataset': {'dataset_size': dataset_size}}
 
         # entry point
-        self.manager.attach_replication_slave(self.context, snapshot, None)
+        self.manager.attach_replica(self.context, snapshot, None)
         # assertions
         self.assertEqual(mock_replication.enable_as_slave.call_count, 1)
 
@@ -331,7 +331,7 @@ class GuestAgentManagerTest(testtools.TestCase):
 
         # entry point
         self.assertRaises(InsufficientSpaceForReplica,
-                          self.manager.attach_replication_slave,
+                          self.manager.attach_replica,
                           self.context, snapshot, None)
         # assertions
         self.assertEqual(mock_replication.enable_as_slave.call_count, 0)

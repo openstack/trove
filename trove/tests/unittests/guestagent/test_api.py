@@ -256,7 +256,57 @@ class ApiTest(testtools.TestCase):
         self.api.detach_replica()
         # verify
         self._verify_rpc_prepare_before_call()
-        self._verify_call('detach_replica')
+        self._verify_call('detach_replica', for_failover=False)
+
+    def test_get_replica_context(self):
+        # execute
+        self.api.get_replica_context()
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('get_replica_context')
+
+    def test_attach_replica(self):
+        # execute
+        self.api.attach_replica(REPLICATION_SNAPSHOT, slave_config=None)
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('attach_replica',
+                          replica_info=REPLICATION_SNAPSHOT, slave_config=None)
+
+    def test_make_read_only(self):
+        # execute
+        self.api.make_read_only(True)
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('make_read_only', read_only=True)
+
+    def test_enable_as_master(self):
+        # execute
+        self.api.enable_as_master({})
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('enable_as_master', replica_source_config={})
+
+    def test_get_txn_count(self):
+        # execute
+        self.api.get_txn_count()
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('get_txn_count')
+
+    def test_get_latest_txn_id(self):
+        # execute
+        self.api.get_latest_txn_id()
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('get_latest_txn_id')
+
+    def test_wait_for_txn(self):
+        # execute
+        self.api.wait_for_txn("")
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('wait_for_txn', txn="")
 
     def test_demote_replication_master(self):
         # execute
@@ -277,7 +327,8 @@ class ApiTest(testtools.TestCase):
             memory_mb='2048', users='user1', device_path='/dev/vdt',
             mount_point='/mnt/opt', backup_info=None,
             config_contents='cont', root_password='1-2-3-4',
-            overrides='override', cluster_config={'id': '2-3-4-5'})
+            overrides='override', cluster_config={'id': '2-3-4-5'},
+            snapshot=None)
 
     def test_prepare_with_backup(self):
         self.api._create_guest_queue = mock.Mock()
@@ -292,7 +343,8 @@ class ApiTest(testtools.TestCase):
             memory_mb='2048', users='user1', device_path='/dev/vdt',
             mount_point='/mnt/opt', backup_info=backup,
             config_contents='cont', root_password='1-2-3-4',
-            overrides='overrides', cluster_config={'id': '2-3-4-5'})
+            overrides='overrides', cluster_config={'id': '2-3-4-5'},
+            snapshot=None)
 
     def test_upgrade(self):
         instance_version = "v1.0.1"

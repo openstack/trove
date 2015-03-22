@@ -19,14 +19,17 @@ from oslo.utils import importutils
 
 from trove.backup.models import Backup
 import trove.common.cfg as cfg
+from trove.common.i18n import _
 import trove.common.rpc.version as rpc_version
 from trove.common import exception
+from trove.common.exception import ReplicationSlaveAttachError
 from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
+from trove.instance.tasks import InstanceTasks
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
 from trove.taskmanager import models
-from trove.taskmanager.models import FreshInstanceTasks
+from trove.taskmanager.models import FreshInstanceTasks, BuiltInstanceTasks
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -69,6 +72,159 @@ class Manager(periodic_task.PeriodicTasks):
         master = models.BuiltInstanceTasks.load(context, master_id)
         slave.detach_replica(master)
 
+    def _set_task_status(self, instances, status):
+        for instance in instances:
+            setattr(instance.db_info, 'task_status', status)
+            instance.db_info.save()
+
+    def promote_to_replica_source(self, context, instance_id):
+
+        def _promote_to_replica_source(old_master, master_candidate,
+                                       replica_models):
+            # First, we transition from the old master to new as quickly as
+            # possible to minimize the scope of unrecoverable error
+            old_master.make_read_only(True)
+            master_ips = old_master.detach_public_ips()
+            slave_ips = master_candidate.detach_public_ips()
+            latest_txn_id = old_master.get_latest_txn_id()
+            master_candidate.wait_for_txn(latest_txn_id)
+            master_candidate.detach_replica(old_master, for_failover=True)
+            master_candidate.enable_as_master()
+            old_master.attach_replica(master_candidate)
+            master_candidate.attach_public_ips(master_ips)
+            master_candidate.make_read_only(False)
+            old_master.attach_public_ips(slave_ips)
+
+            # At this point, should something go wrong, there
+            # should be a working master with some number of working slaves,
+            # and possibly some number of "orphaned" slaves
+
+            exception_replicas = []
+            for replica in replica_models:
+                try:
+                    replica.wait_for_txn(latest_txn_id)
+                    if replica.id != master_candidate.id:
+                        replica.detach_replica(old_master, for_failover=True)
+                        replica.attach_replica(master_candidate)
+                except exception.TroveError:
+                    msg = _("promote-to-replica-source: Unable to migrate "
+                            "replica %(slave)s from old replica source "
+                            "%(old_master)s to new source %(new_master)s.")
+                    msg_values = {
+                        "slave": replica.id,
+                        "old_master": old_master.id,
+                        "new_master": master_candidate.id
+                    }
+                    LOG.exception(msg % msg_values)
+                    exception_replicas.append(replica.id)
+
+            try:
+                old_master.demote_replication_master()
+            except Exception:
+                LOG.exception(_("Exception demoting old replica source"))
+                exception_replicas.append(old_master)
+
+            self._set_task_status([old_master] + replica_models,
+                                  InstanceTasks.NONE)
+            if exception_replicas:
+                self._set_task_status(exception_replicas,
+                                      InstanceTasks.PROMOTION_ERROR)
+                msg = _("promote-to-replica-source %(id)s: The following "
+                        "replicas may not have been switched: %(replicas)s")
+                msg_values = {
+                    "id": master_candidate.id,
+                    "replicas": exception_replicas
+                }
+                raise ReplicationSlaveAttachError(msg % msg_values)
+
+        master_candidate = BuiltInstanceTasks.load(context, instance_id)
+        old_master = BuiltInstanceTasks.load(context,
+                                             master_candidate.slave_of_id)
+        replicas = []
+        for replica_dbinfo in old_master.slaves:
+            if replica_dbinfo.id == instance_id:
+                replica = master_candidate
+            else:
+                replica = BuiltInstanceTasks.load(context, replica_dbinfo.id)
+            replicas.append(replica)
+
+        try:
+            _promote_to_replica_source(old_master, master_candidate, replicas)
+        except ReplicationSlaveAttachError:
+            raise
+        except Exception:
+            self._set_task_status([old_master] + replicas,
+                                  InstanceTasks.PROMOTION_ERROR)
+            raise
+
+    def eject_replica_source(self, context, instance_id):
+
+        def _eject_replica_source(old_master, replica_models):
+
+            # Select the slave with the greatest number of transactions to
+            # be the new master.
+            # TODO(mwj): Replace this heuristic with code to store the
+            # site id of the master then use it to determine which slave
+            # has the most recent txn from that master.
+            master_candidate = None
+            max_txn_count = 0
+            for replica in replica_models:
+                txn_count = replica.get_txn_count()
+                if txn_count > max_txn_count:
+                    master_candidate = replica
+                    max_txn_count = txn_count
+
+            master_ips = old_master.detach_public_ips()
+            slave_ips = master_candidate.detach_public_ips()
+            master_candidate.detach_replica(old_master, for_failover=True)
+            master_candidate.enable_as_master()
+            master_candidate.attach_public_ips(master_ips)
+            master_candidate.make_read_only(False)
+            old_master.attach_public_ips(slave_ips)
+
+            exception_replicas = []
+            for replica in replica_models:
+                try:
+                    if replica.id != master_candidate.id:
+                        replica.detach_replica(old_master, for_failover=True)
+                        replica.attach_replica(master_candidate)
+                except exception.TroveError:
+                    msg = _("eject-replica-source: Unable to migrate "
+                            "replica %(slave)s from old replica source "
+                            "%(old_master)s to new source %(new_master)s.")
+                    msg_values = {
+                        "slave": replica.id,
+                        "old_master": old_master.id,
+                        "new_master": master_candidate.id
+                    }
+                    LOG.exception(msg % msg_values)
+                    exception_replicas.append(replica.id)
+
+            self._set_task_status([old_master] + replica_models,
+                                  InstanceTasks.NONE)
+            if exception_replicas:
+                self._set_task_status(exception_replicas,
+                                      InstanceTasks.EJECTION_ERROR)
+                msg = _("eject-replica-source %(id)s: The following "
+                        "replicas may not have been switched: %(replicas)s")
+                msg_values = {
+                    "id": master_candidate.id,
+                    "replicas": exception_replicas
+                }
+                raise ReplicationSlaveAttachError(msg % msg_values)
+
+        master = BuiltInstanceTasks.load(context, instance_id)
+        replicas = [BuiltInstanceTasks.load(context, dbinfo.id)
+                    for dbinfo in master.slaves]
+        try:
+            _eject_replica_source(master, replicas)
+        except ReplicationSlaveAttachError:
+            raise
+        except Exception:
+            self._set_task_status([master] + replicas,
+                                  InstanceTasks.EJECTION_ERROR)
+            raise
+
     def migrate(self, context, instance_id, host):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
         instance_tasks.migrate(host)
@@ -93,24 +249,53 @@ class Manager(periodic_task.PeriodicTasks):
     def _create_replication_slave(self, context, instance_id, name, flavor,
                                   image_id, databases, users,
                                   datastore_manager, packages, volume_size,
-                                  availability_zone,
-                                  root_password, nics, overrides, slave_of_id):
+                                  availability_zone, root_password, nics,
+                                  overrides, slave_of_id, backup_id):
 
-        instance_tasks = FreshInstanceTasks.load(context, instance_id)
+        if type(instance_id) in [list]:
+            ids = instance_id
+            root_passwords = root_password
+        else:
+            ids = [instance_id]
+            root_passwords = [root_password]
+        replica_number = 0
+        replica_backup_id = backup_id
+        replica_backup_created = False
+        replicas = []
 
-        snapshot = instance_tasks.get_replication_master_snapshot(context,
-                                                                  slave_of_id)
         try:
-            instance_tasks.create_instance(flavor, image_id, databases, users,
-                                           datastore_manager, packages,
-                                           volume_size,
-                                           snapshot['dataset']['snapshot_id'],
-                                           availability_zone, root_password,
-                                           nics, overrides, None)
-        finally:
-            Backup.delete(context, snapshot['dataset']['snapshot_id'])
+            for replica_index in range(0, len(ids)):
+                try:
+                    replica_number += 1
+                    LOG.debug("Creating replica %d of %d."
+                              % (replica_number, len(ids)))
+                    instance_tasks = FreshInstanceTasks.load(
+                        context, ids[replica_index])
+                    snapshot = instance_tasks.get_replication_master_snapshot(
+                        context, slave_of_id, flavor, replica_backup_id,
+                        replica_number=replica_number)
+                    replica_backup_id = snapshot['dataset']['snapshot_id']
+                    replica_backup_created = True
+                    instance_tasks.create_instance(
+                        flavor, image_id, databases, users, datastore_manager,
+                        packages, volume_size, replica_backup_id,
+                        availability_zone, root_passwords[replica_index],
+                        nics, overrides, None, snapshot)
+                    replicas.append(instance_tasks)
+                except Exception:
+                    # if it's the first replica, then we shouldn't continue
+                    LOG.exception(_(
+                        "Could not create replica %(num)d of %(count)d.")
+                        % {'num': replica_number, 'count': len(instance_id)})
+                    if replica_number == 1:
+                        raise
 
-        instance_tasks.attach_replication_slave(snapshot, flavor)
+            for replica in replicas:
+                replica.wait_for_instance(CONF.restore_usage_timeout, flavor)
+
+        finally:
+            if replica_backup_created:
+                Backup.delete(context, replica_backup_id)
 
     def create_instance(self, context, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
@@ -123,14 +308,21 @@ class Manager(periodic_task.PeriodicTasks):
                                            datastore_manager, packages,
                                            volume_size,
                                            availability_zone, root_password,
-                                           nics, overrides, slave_of_id)
+                                           nics, overrides, slave_of_id,
+                                           backup_id)
         else:
+            if type(instance_id) in [list]:
+                raise AttributeError(_(
+                    "Cannot create multiple non-replica instances."))
             instance_tasks = FreshInstanceTasks.load(context, instance_id)
             instance_tasks.create_instance(flavor, image_id, databases, users,
                                            datastore_manager, packages,
                                            volume_size, backup_id,
                                            availability_zone, root_password,
                                            nics, overrides, cluster_config)
+            timeout = (CONF.restore_usage_timeout if backup_id
+                       else CONF.usage_timeout)
+            instance_tasks.wait_for_instance(timeout, flavor)
 
     def update_overrides(self, context, instance_id, overrides):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

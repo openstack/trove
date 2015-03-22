@@ -1,4 +1,10 @@
 [mysqld]
 log_bin = /var/lib/mysql/mysql-bin.log
 relay_log = /var/lib/mysql/mysql-relay-bin.log
+relay_log_info_repository = TABLE
+relay_log_recovery = 1
+relay_log_purge = 1
+enforce_gtid_consistency = ON
+gtid_mode = ON
+log_slave_updates = ON
 read_only = true

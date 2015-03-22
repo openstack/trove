@@ -260,6 +260,11 @@ class ReplicationNotSupported(TroveError):
                 "the '%(datastore)s' datastore.")
 
 
+class ReplicationSlaveAttachError(TroveError):
+
+    message = _("Exception encountered attaching slave to new replica source.")
+
+
 class TaskManagerError(TroveError):
 
     message = _("An error occurred communicating with the task manager: "

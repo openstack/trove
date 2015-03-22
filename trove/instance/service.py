@@ -79,6 +79,9 @@ class InstanceController(wsgi.Controller):
             'restart': self._action_restart,
             'resize': self._action_resize,
             'reset_password': self._action_reset_password,
+            'promote_to_replica_source':
+            self._action_promote_to_replica_source,
+            'eject_replica_source': self._action_eject_replica_source,
         }
         selected_action = None
         action_name = None
@@ -130,6 +133,14 @@ class InstanceController(wsgi.Controller):
 
     def _action_reset_password(self, instance, body):
         raise webob.exc.HTTPNotImplemented()
+
+    def _action_promote_to_replica_source(self, instance, body):
+        instance.promote_to_replica_source()
+        return wsgi.Result(None, 202)
+
+    def _action_eject_replica_source(self, instance, body):
+        instance.eject_replica_source()
+        return wsgi.Result(None, 202)
 
     def index(self, req, tenant_id):
         """Return all instances."""
@@ -225,13 +236,14 @@ class InstanceController(wsgi.Controller):
         slave_of_id = body['instance'].get('replica_of',
                                            # also check for older name
                                            body['instance'].get('slave_of'))
-
+        replica_count = body['instance'].get('replica_count')
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           datastore, datastore_version,
                                           volume_size, backup_id,
                                           availability_zone, nics,
-                                          configuration, slave_of_id)
+                                          configuration, slave_of_id,
+                                          replica_count=replica_count)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

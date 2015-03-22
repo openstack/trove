@@ -207,6 +207,28 @@ class Backup(object):
         return cls._paginate(context, query)
 
     @classmethod
+    def get_last_completed(cls, context, instance_id,
+                           include_incremental=True):
+        """
+        returns last completed backup
+        :param cls:
+        :param instance_id:
+        :param include_incremental:
+        :return:
+        """
+        last_backup = None
+        backups, marker = cls.list_for_instance(context, instance_id)
+        # we don't care about the marker since we only want the first backup
+        # and they are ordered descending based on date (what we want)
+        for backup in backups:
+            if backup.state == BackupState.COMPLETED and (
+                    include_incremental or not backup.parent_id):
+                if not last_backup or backup.updated > last_backup.updated:
+                    last_backup = backup
+
+        return last_backup
+
+    @classmethod
     def fail_for_instance(cls, instance_id):
         query = DBBackup.query()
         query = query.filter(DBBackup.instance_id == instance_id,

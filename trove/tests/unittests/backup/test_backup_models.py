@@ -34,7 +34,12 @@ def _prep_conf(current_time):
 
 BACKUP_NAME = 'WORKS'
 BACKUP_NAME_2 = 'IT-WORKS'
-BACKUP_STATE = "NEW"
+BACKUP_NAME_3 = 'SECOND-LAST-ONE'
+BACKUP_NAME_4 = 'LAST-ONE-FULL'
+BACKUP_NAME_5 = 'LAST-ONE-INCREMENTAL'
+BACKUP_NAME_6 = 'LAST-ONE-DELETED'
+BACKUP_STATE = state.BackupState.NEW
+BACKUP_STATE_COMPLETED = state.BackupState.COMPLETED
 BACKUP_DESC = 'Backup test'
 BACKUP_FILENAME = '45a3d8cb-ade8-484c-a8a5-0c3c7286fb2f.xbstream.gz'
 BACKUP_LOCATION = 'https://hpcs.com/tenant/database_backups/' + BACKUP_FILENAME
@@ -263,6 +268,41 @@ class BackupORMTest(testtools.TestCase):
                                                           self.instance_id)
         self.assertIsNone(marker)
         self.assertEqual(2, len(backups))
+
+    def test_get_last_completed(self):
+        models.DBBackup.create(tenant_id=self.context.tenant,
+                               name=BACKUP_NAME_3,
+                               state=BACKUP_STATE_COMPLETED,
+                               instance_id=self.instance_id,
+                               size=2.0,
+                               deleted=False)
+        models.DBBackup.create(tenant_id=self.context.tenant,
+                               name=BACKUP_NAME_4,
+                               state=BACKUP_STATE_COMPLETED,
+                               instance_id=self.instance_id,
+                               size=2.0,
+                               deleted=False)
+        models.DBBackup.create(tenant_id=self.context.tenant,
+                               name=BACKUP_NAME_5,
+                               state=BACKUP_STATE_COMPLETED,
+                               instance_id=self.instance_id,
+                               parent_id='parent_uuid',
+                               size=2.0,
+                               deleted=False)
+        models.DBBackup.create(tenant_id=self.context.tenant,
+                               name=BACKUP_NAME_6,
+                               state=BACKUP_STATE_COMPLETED,
+                               instance_id=self.instance_id,
+                               size=2.0,
+                               deleted=True)
+
+        backup = models.Backup.get_last_completed(
+            self.context, self.instance_id, include_incremental=True)
+        self.assertEqual(BACKUP_NAME_5, backup.name)
+
+        backup = models.Backup.get_last_completed(
+            self.context, self.instance_id, include_incremental=False)
+        self.assertEqual(BACKUP_NAME_4, backup.name)
 
     def test_running(self):
         running = models.Backup.running(instance_id=self.instance_id)

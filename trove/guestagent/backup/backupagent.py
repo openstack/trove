@@ -129,7 +129,8 @@ class BackupAgent(object):
                           backup_id, backup_state)
 
     def execute_backup(self, context, backup_info,
-                       runner=RUNNER, extra_opts=EXTRA_OPTS):
+                       runner=RUNNER, extra_opts=EXTRA_OPTS,
+                       incremental_runner=INCREMENTAL_RUNNER):
 
         LOG.debug("Running backup %(id)s.", backup_info)
         storage = get_storage_strategy(
@@ -139,7 +140,7 @@ class BackupAgent(object):
         # Check if this is an incremental backup and grab the parent metadata
         parent_metadata = {}
         if backup_info.get('parent'):
-            runner = INCREMENTAL_RUNNER
+            runner = incremental_runner
             LOG.debug("Using incremental backup runner: %s.", runner.__name__)
             parent = backup_info['parent']
             parent_metadata = storage.load_metadata(parent['location'],

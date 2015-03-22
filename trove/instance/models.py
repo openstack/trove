@@ -13,10 +13,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from __builtin__ import setattr
 
 """Model classes that form the core of instances functionality."""
 import re
 from datetime import datetime
+from datetime import timedelta
 from novaclient import exceptions as nova_exceptions
 from oslo.config.cfg import NoSuchOptError
 from trove.common import cfg
@@ -90,6 +92,8 @@ class InstanceStatus(object):
     SHUTDOWN = "SHUTDOWN"
     ERROR = "ERROR"
     RESTART_REQUIRED = "RESTART_REQUIRED"
+    PROMOTE = "PROMOTE"
+    EJECT = "EJECT"
 
 
 def validate_volume_size(size):
@@ -120,7 +124,7 @@ def load_simple_instance_server_status(context, db_info):
 
 
 # Invalid states to contact the agent
-AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE"]
+AGENT_INVALID_STATUSES = ["BUILD", "REBOOT", "RESIZE", "PROMOTE", "EJECT"]
 
 
 class SimpleInstance(object):
@@ -286,6 +290,10 @@ class SimpleInstance(object):
             return InstanceStatus.RESIZE
         if 'RESTART_REQUIRED' == action:
             return InstanceStatus.RESTART_REQUIRED
+        if InstanceTasks.PROMOTING.action == action:
+            return InstanceStatus.PROMOTE
+        if InstanceTasks.EJECTING.action == action:
+            return InstanceStatus.EJECT
 
         ### Check for server status.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
@@ -658,7 +666,7 @@ class Instance(BuiltInstance):
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None, configuration_id=None,
-               slave_of_id=None, cluster_config=None):
+               slave_of_id=None, cluster_config=None, replica_count=None):
 
         datastore_cfg = CONF.get(datastore_version.manager)
         client = create_nova_client(context)
@@ -727,6 +735,12 @@ class Instance(BuiltInstance):
                       "as that instance could not be found.")
                     % {'id': slave_of_id})
                 raise exception.NotFound(uuid=slave_of_id)
+        elif replica_count and replica_count != 1:
+            raise exception.Forbidden(_(
+                "Replica count only valid when creating replicas. Cannot "
+                "create %(count)d instances.") % {'count': replica_count})
+        multi_replica = slave_of_id and replica_count and replica_count > 1
+        instance_count = replica_count if multi_replica else 1
 
         if not nics:
             nics = []
@@ -743,50 +757,68 @@ class Instance(BuiltInstance):
             else:
                 cluster_id = shard_id = instance_type = None
 
-            db_info = DBInstance.create(name=name, flavor_id=flavor_id,
-                                        tenant_id=context.tenant,
-                                        volume_size=volume_size,
-                                        datastore_version_id=
-                                        datastore_version.id,
-                                        task_status=InstanceTasks.BUILDING,
-                                        configuration_id=configuration_id,
-                                        slave_of_id=slave_of_id,
-                                        cluster_id=cluster_id,
-                                        shard_id=shard_id,
-                                        type=instance_type)
-            LOG.debug("Tenant %(tenant)s created new Trove instance %(db)s.",
-                      {'tenant': context.tenant, 'db': db_info.id})
-
-            # if a configuration group is associated with an instance,
-            # generate an overrides dict to pass into the instance creation
-            # method
-
-            config = Configuration(context, configuration_id)
-            overrides = config.get_configuration_overrides()
-            service_status = InstanceServiceStatus.create(
-                instance_id=db_info.id,
-                status=tr_instance.ServiceStatuses.NEW)
-
-            if CONF.trove_dns_support:
-                dns_client = create_dns_client(context)
-                hostname = dns_client.determine_hostname(db_info.id)
-                db_info.hostname = hostname
-                db_info.save()
-
+            ids = []
+            names = []
+            root_passwords = []
             root_password = None
-            if cls.get_root_on_create(
-                    datastore_version.manager) and not backup_id:
-                root_password = utils.generate_random_password()
+            for instance_index in range(0, instance_count):
+                db_info = DBInstance.create(name=name, flavor_id=flavor_id,
+                                            tenant_id=context.tenant,
+                                            volume_size=volume_size,
+                                            datastore_version_id=
+                                            datastore_version.id,
+                                            task_status=InstanceTasks.BUILDING,
+                                            configuration_id=configuration_id,
+                                            slave_of_id=slave_of_id,
+                                            cluster_id=cluster_id,
+                                            shard_id=shard_id,
+                                            type=instance_type)
+                LOG.debug("Tenant %(tenant)s created new Trove instance "
+                          "%(db)s.",
+                          {'tenant': context.tenant, 'db': db_info.id})
 
-            task_api.API(context).create_instance(db_info.id, name, flavor,
-                                                  image_id, databases, users,
-                                                  datastore_version.manager,
-                                                  datastore_version.packages,
-                                                  volume_size, backup_id,
-                                                  availability_zone,
-                                                  root_password, nics,
-                                                  overrides, slave_of_id,
-                                                  cluster_config)
+                instance_id = db_info.id
+                instance_name = name
+                ids.append(instance_id)
+                names.append(instance_name)
+                root_passwords.append(None)
+                # change the name to be name + replica_number if more than one
+                if multi_replica:
+                    replica_number = instance_index + 1
+                    names[instance_index] += '-' + str(replica_number)
+                    setattr(db_info, 'name', names[instance_index])
+                    db_info.save()
+
+                # if a configuration group is associated with an instance,
+                # generate an overrides dict to pass into the instance creation
+                # method
+
+                config = Configuration(context, configuration_id)
+                overrides = config.get_configuration_overrides()
+                service_status = InstanceServiceStatus.create(
+                    instance_id=instance_id,
+                    status=tr_instance.ServiceStatuses.NEW)
+
+                if CONF.trove_dns_support:
+                    dns_client = create_dns_client(context)
+                    hostname = dns_client.determine_hostname(instance_id)
+                    db_info.hostname = hostname
+                    db_info.save()
+
+                if cls.get_root_on_create(
+                        datastore_version.manager) and not backup_id:
+                    root_password = utils.generate_random_password()
+                    root_passwords[instance_index] = root_password
+
+            if instance_count > 1:
+                instance_id = ids
+                instance_name = names
+                root_password = root_passwords
+            task_api.API(context).create_instance(
+                instance_id, instance_name, flavor, image_id, databases, users,
+                datastore_version.manager, datastore_version.packages,
+                volume_size, backup_id, availability_zone, root_password,
+                nics, overrides, slave_of_id, cluster_config)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password)
@@ -901,6 +933,44 @@ class Instance(BuiltInstance):
             raise exception.BadRequest(_("Instance %s is not a replica.")
                                        % self.id)
         task_api.API(self.context).detach_replica(self.id)
+
+    def promote_to_replica_source(self):
+        self.validate_can_perform_action()
+        LOG.info(_LI("Promoting instance %s to replication source."), self.id)
+        if not self.slave_of_id:
+            raise exception.BadRequest(_("Instance %s is not a replica.")
+                                       % self.id)
+
+        # Update task status of master and all slaves
+        master = BuiltInstance.load(self.context, self.slave_of_id)
+        for dbinfo in [master.db_info] + master.slaves:
+            setattr(dbinfo, 'task_status', InstanceTasks.PROMOTING)
+            dbinfo.save()
+
+        task_api.API(self.context).promote_to_replica_source(self.id)
+
+    def eject_replica_source(self):
+        self.validate_can_perform_action()
+        LOG.info(_LI("Ejecting replica source %s from it's replication set."),
+                 self.id)
+
+        if not self.slaves:
+            raise exception.BadRequest(_("Instance %s is not a replica"
+                                       " source.") % self.id)
+        service = InstanceServiceStatus.find_by(instance_id=self.id)
+        last_heartbeat_delta = datetime.now() - service.updated_at
+        agent_expiry_interval = timedelta(seconds=CONF.agent_heartbeat_expiry)
+        if last_heartbeat_delta < agent_expiry_interval:
+            raise exception.BadRequest(_("Replica Source %s cannot be ejected"
+                                         " as it has a current heartbeat")
+                                       % self.id)
+
+        # Update task status of master and all slaves
+        for dbinfo in [self.db_info] + self.slaves:
+            setattr(dbinfo, 'task_status', InstanceTasks.EJECTING)
+            dbinfo.save()
+
+        task_api.API(self.context).eject_replica_source(self.id)
 
     def migrate(self, host=None):
         self.validate_can_perform_action()

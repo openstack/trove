@@ -217,7 +217,7 @@ class API(object):
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
                 backup_info=None, config_contents=None, root_password=None,
-                overrides=None, cluster_config=None):
+                overrides=None, cluster_config=None, snapshot=None):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
@@ -236,7 +236,7 @@ class API(object):
             device_path=device_path, mount_point=mount_point,
             backup_info=backup_info, config_contents=config_contents,
             root_password=root_password, overrides=overrides,
-            cluster_config=cluster_config)
+            cluster_config=cluster_config, snapshot=snapshot)
 
     def _create_guest_queue(self):
         """Call to construct, start and immediately stop rpc server in order
@@ -354,10 +354,45 @@ class API(object):
         self._cast("attach_replication_slave", self.version_cap,
                    snapshot=snapshot, slave_config=replica_config)
 
-    def detach_replica(self):
+    def detach_replica(self, for_failover=False):
         LOG.debug("Detaching replica %s from its replication source.", self.id)
         return self._call("detach_replica", AGENT_HIGH_TIMEOUT,
-                          self.version_cap)
+                          self.version_cap, for_failover=for_failover)
+
+    def get_replica_context(self):
+        LOG.debug("Getting replica context.")
+        return self._call("get_replica_context",
+                          AGENT_HIGH_TIMEOUT, self.version_cap)
+
+    def attach_replica(self, replica_info, slave_config):
+        LOG.debug("Attaching replica %s." % replica_info)
+        self._call("attach_replica", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   replica_info=replica_info, slave_config=slave_config)
+
+    def make_read_only(self, read_only):
+        LOG.debug("Executing make_read_only(%s)" % read_only)
+        self._call("make_read_only", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   read_only=read_only)
+
+    def enable_as_master(self, replica_source_config):
+        LOG.debug("Executing enable_as_master")
+        self._call("enable_as_master", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   replica_source_config=replica_source_config)
+
+    def get_txn_count(self):
+        LOG.debug("Executing get_txn_count.")
+        return self._call("get_txn_count",
+                          AGENT_HIGH_TIMEOUT, self.version_cap)
+
+    def get_latest_txn_id(self):
+        LOG.debug("Executing get_latest_txn_id.")
+        return self._call("get_latest_txn_id",
+                          AGENT_HIGH_TIMEOUT, self.version_cap)
+
+    def wait_for_txn(self, txn):
+        LOG.debug("Executing wait_for_txn.")
+        self._call("wait_for_txn", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   txn=txn)
 
     def cleanup_source_on_replica_detach(self, replica_info):
         LOG.debug("Cleaning up master %s on detach of replica.", self.id)
@@ -366,5 +401,5 @@ class API(object):
 
     def demote_replication_master(self):
         LOG.debug("Demoting instance %s to non-master.", self.id)
-        self._call("demote_replication_master", AGENT_LOW_TIMEOUT,
+        self._call("demote_replication_master", AGENT_HIGH_TIMEOUT,
                    self.version_cap)
