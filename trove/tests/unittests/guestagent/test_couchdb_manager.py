@@ -16,6 +16,7 @@ import os
 
 import testtools
 from mock import MagicMock
+from mock import patch
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import volume
@@ -124,11 +125,12 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
     def test_restart(self):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
-        couchdb_service.CouchDBApp.restart = MagicMock(return_value=None)
-        #invocation
-        self.manager.restart(self.context)
-        #verification/assertion
-        couchdb_service.CouchDBApp.restart.assert_any_call()
+        with patch.object(couchdb_service.CouchDBApp, 'restart',
+                          return_value=None):
+            #invocation
+            self.manager.restart(self.context)
+            #verification/assertion
+            couchdb_service.CouchDBApp.restart.assert_any_call()
 
     def test_stop_db(self):
         mock_status = MagicMock()
