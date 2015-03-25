@@ -38,7 +38,7 @@ class MySQLConfParser(object):
                 continue
             elif line_clean.startswith(';'):
                 continue
-            # python 2.6 configparser doesnt like params without values
+            # python 2.6 ConfigParser doesn't like params without values
             elif line_clean.startswith('[') and line_clean.endswith(']'):
                 ret.append(line_clean)
             elif line_clean and "=" not in line_clean:
