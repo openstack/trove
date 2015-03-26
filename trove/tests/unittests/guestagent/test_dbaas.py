@@ -2281,3 +2281,36 @@ class VerticaAppTest(testtools.TestCase):
                 mock_status.end_install_or_restart = MagicMock(
                     return_value=None)
                 self.assertRaises(RuntimeError, app.stop_db)
+
+    def test_export_conf_to_members(self):
+        self.app._export_conf_to_members(members=['member1', 'member2'])
+        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+
+    def test_authorize_public_keys(self):
+        user = 'test_user'
+        keys = ['test_key@machine1', 'test_key@machine2']
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+                self.app.authorize_public_keys(user=user, public_keys=keys)
+        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        vertica_system.shell_execute.assert_any_call(
+            'cat ' + '/home/' + user + '/.ssh/authorized_keys')
+
+    def test_get_public_keys(self):
+        user = 'test_user'
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+            self.app.get_public_keys(user=user)
+        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        vertica_system.shell_execute.assert_any_call(
+            (vertica_system.SSH_KEY_GEN % ('/home/' + user)), user)
+        vertica_system.shell_execute.assert_any_call(
+            'cat ' + '/home/' + user + '/.ssh/id_rsa.pub')
+
+    def test_install_cluster(self):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            self.app.install_cluster(members=['member1', 'member2'])
+        # Verifying nu,ber of shell calls,
+        # as command has already been tested in preceeding tests
+        self.assertEqual(vertica_system.shell_execute.call_count, 5)

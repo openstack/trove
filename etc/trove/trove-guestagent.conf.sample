@@ -125,3 +125,9 @@ log_file = logfile.txt
 # replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
 # replication_user = slave_user
 # replication_password = slave_password
+
+[vertica]
+# For vertica, following are the defaults needed:
+# mount_point = /var/lib/vertica
+# readahead_size = 2048
+# guestagent_strategy = trove.common.strategies.cluster.experimental.vertica.guestagent.VerticaGuestAgentStrategy

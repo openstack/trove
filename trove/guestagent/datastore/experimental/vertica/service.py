@@ -219,3 +219,72 @@ class VerticaApp(object):
         except exception.ProcessExecutionError:
             LOG.exception(_("Failed to prepare for install_vertica."))
             raise
+
+    def get_public_keys(self, user):
+        """Generates key (if not found), and sends public key for user."""
+        LOG.debug("Public keys requested for user: %s." % user)
+        user_home_directory = os.path.expanduser('~' + user)
+        public_key_file_name = user_home_directory + '/.ssh/id_rsa.pub'
+
+        try:
+            key_generate_command = (system.SSH_KEY_GEN % user_home_directory)
+            system.shell_execute(key_generate_command, user)
+        except exception.ProcessExecutionError:
+            LOG.debug("Cannot generate key.")
+
+        try:
+            read_key_cmd = ("cat %(file)s" % {'file': public_key_file_name})
+            out, err = system.shell_execute(read_key_cmd)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Cannot read public key."))
+            raise
+        return out.strip()
+
+    def authorize_public_keys(self, user, public_keys):
+        """Adds public key to authorized_keys for user."""
+        LOG.debug("public keys to be added for user: %s." % (user))
+        user_home_directory = os.path.expanduser('~' + user)
+        authorized_file_name = user_home_directory + '/.ssh/authorized_keys'
+
+        try:
+            read_key_cmd = ("cat %(file)s" % {'file': authorized_file_name})
+            out, err = system.shell_execute(read_key_cmd)
+            public_keys.append(out.strip())
+        except exception.ProcessExecutionError:
+            LOG.debug("Cannot read authorized_keys.")
+        all_keys = '\n'.join(public_keys) + "\n"
+
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as tempkeyfile:
+                tempkeyfile.write(all_keys)
+            copy_key_cmd = (("install -o %(user)s -m 600 %(source)s %(target)s"
+                             ) % {'user': user, 'source': tempkeyfile.name,
+                                  'target': authorized_file_name})
+            system.shell_execute(copy_key_cmd)
+            os.remove(tempkeyfile.name)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Cannot install public keys."))
+            os.remove(tempkeyfile.name)
+            raise
+
+    def _export_conf_to_members(self, members):
+        """This method exports conf files to other members."""
+        try:
+            for member in members:
+                COPY_CMD = (system.SEND_CONF_TO_SERVER % (system.VERTICA_CONF,
+                                                          member,
+                                                          system.VERTICA_CONF))
+                system.shell_execute(COPY_CMD)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Cannot export configuration."))
+            raise
+
+    def install_cluster(self, members):
+        """Installs & configures cluster."""
+        cluster_members = ','.join(members)
+        LOG.debug("Installing cluster with members: %s." % cluster_members)
+        self.install_vertica(cluster_members)
+        self._export_conf_to_members(members)
+        LOG.debug("Creating database with members: %s." % cluster_members)
+        self.create_db(cluster_members)
+        LOG.debug("Cluster configured on members: %s." % cluster_members)

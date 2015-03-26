@@ -241,3 +241,12 @@ volume_support = True
 device_path = /dev/vdb
 num_config_servers_per_cluster = 1
 num_query_routers_per_cluster = 1
+
+[vertica]
+tcp_ports = 5433, 5434, 22, 5444, 5450, 4803
+udp_ports = 5433, 4803, 4804, 6453
+volume_support = True
+device_path = /dev/vdb
+cluster_support = True
+cluster_member_count = 3
+api_strategy = trove.common.strategies.cluster.experimental.vertica.api.VerticaAPIStrategy
