@@ -1100,9 +1100,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         self.slave_list = None
         self.guest.enable_as_master(replica_source_config.config_contents)
 
-    def get_txn_count(self):
-        LOG.debug("Calling get_txn_count on %s" % self.id)
-        return self.guest.get_txn_count()
+    def get_last_txn(self):
+        LOG.debug("Calling get_last_txn on %s" % self.id)
+        return self.guest.get_last_txn()
 
     def get_latest_txn_id(self):
         LOG.debug("Calling get_latest_txn_id on %s" % self.id)

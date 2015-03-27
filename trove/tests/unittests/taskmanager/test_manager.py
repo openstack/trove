@@ -15,12 +15,44 @@
 #    under the License.
 
 from testtools import TestCase
+from mock import Mock, patch
 
 from trove.taskmanager.manager import Manager
+from trove.common.exception import TroveError
+from proboscis.asserts import assert_equal
 
 
 class TestManager(TestCase):
 
+    def setUp(self):
+        super(TestManager, self).setUp()
+        self.manager = Manager()
+
+    def tearDown(self):
+        super(TestManager, self).tearDown()
+        self.manager = None
+
     def test_getattr_lookup(self):
-        self.assertTrue(callable(Manager().delete_cluster))
-        self.assertTrue(callable(Manager().mongodb_add_shard_cluster))
+        self.assertTrue(callable(self.manager.delete_cluster))
+        self.assertTrue(callable(self.manager.mongodb_add_shard_cluster))
+
+    def test_most_current_replica(self):
+        master = Mock()
+        master.id = 32
+
+        def test_case(txn_list, selected_master):
+            with patch.object(self.manager, '_get_replica_txns',
+                              return_value=txn_list):
+                result = self.manager._most_current_replica(master, None)
+                assert_equal(result, selected_master)
+
+        with self.assertRaisesRegexp(TroveError,
+                                     'not all replicating from same'):
+            test_case([['a', '2a99e-32bf', 2], ['b', '2a', 1]], None)
+
+        test_case([['a', '2a99e-32bf', 2]], 'a')
+        test_case([['a', '2a', 1], ['b', '2a', 2]], 'b')
+        test_case([['a', '2a', 2], ['b', '2a', 1]], 'a')
+        test_case([['a', '2a', 1], ['b', '2a', 1]], 'a')
+        test_case([['a', None, 0]], 'a')
+        test_case([['a', None, 0], ['b', '2a', 1]], 'b')

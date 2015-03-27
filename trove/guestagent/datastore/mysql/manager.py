@@ -256,9 +256,14 @@ class Manager(periodic_task.PeriodicTasks):
         replication = REPLICATION_STRATEGY_CLASS(context)
         replication.enable_as_master(app, replica_source_config)
 
+    # DEPRECATED: Maintain for API Compatibility
     def get_txn_count(self, context):
         LOG.debug("Calling get_txn_count")
         return MySqlApp(MySqlAppStatus.get()).get_txn_count()
+
+    def get_last_txn(self, context):
+        LOG.debug("Calling get_last_txn")
+        return MySqlApp(MySqlAppStatus.get()).get_last_txn()
 
     def get_latest_txn_id(self, context):
         LOG.debug("Calling get_latest_txn_id.")

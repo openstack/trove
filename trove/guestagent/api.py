@@ -379,9 +379,15 @@ class API(object):
         self._call("enable_as_master", AGENT_HIGH_TIMEOUT, self.version_cap,
                    replica_source_config=replica_source_config)
 
+    # DEPRECATED: Maintain for API Compatibility
     def get_txn_count(self):
         LOG.debug("Executing get_txn_count.")
         return self._call("get_txn_count",
+                          AGENT_HIGH_TIMEOUT, self.version_cap)
+
+    def get_last_txn(self):
+        LOG.debug("Executing get_last_txn.")
+        return self._call("get_last_txn",
                           AGENT_HIGH_TIMEOUT, self.version_cap)
 
     def get_latest_txn_id(self):
