@@ -13,12 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from trove.common import cfg
 from trove.common.strategies.cluster import strategy
 from trove.common.views import create_links
 from trove.instance.views import InstanceDetailView
 from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class ClusterView(object):
@@ -50,6 +52,39 @@ class ClusterView(object):
 
     def _build_links(self):
         return create_links("clusters", self.req, self.cluster.id)
+
+    def _build_instances(self, ip_to_be_published_for=[],
+                         instance_dict_to_be_published_for=[]):
+        instances = []
+        ip_list = []
+        if self.load_servers:
+            cluster_instances = self.cluster.instances
+        else:
+            cluster_instances = self.cluster.instances_without_server
+        for instance in cluster_instances:
+            instance_dict = {
+                "id": instance.id,
+                "name": instance.name,
+                "type": instance.type,
+                "links": create_links("instances", self.req, instance.id)
+            }
+            if instance.shard_id:
+                instance_dict["shard_id"] = instance.shard_id
+            if self.load_servers:
+                instance_dict["status"] = instance.status
+                if CONF.get(instance.datastore_version.manager).volume_support:
+                    instance_dict["volume"] = {"size": instance.volume_size}
+                instance_dict["flavor"] = self._build_flavor_info(
+                    instance.flavor_id)
+            instance_ips = instance.get_visible_ip_addresses()
+            if self.load_servers and instance_ips:
+                instance_dict["ip"] = instance_ips
+                if instance.type in ip_to_be_published_for:
+                    ip_list.append(instance_ips[0])
+            if instance.type in instance_dict_to_be_published_for:
+                instances.append(instance_dict)
+        ip_list.sort()
+        return instances, ip_list
 
     def build_instances(self):
         raise NotImplementedError()
