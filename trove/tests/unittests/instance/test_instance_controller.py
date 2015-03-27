@@ -166,12 +166,22 @@ class TestInstanceController(TestCase):
         self.assertTrue(validator.is_valid(body))
 
     def test_validate_resize_volume_string(self):
-        body = {"resize": {"volume": {"size": '-44.0'}}}
+        body = {"resize": {"volume": {"size": "4"}}}
         schema = self.controller.get_schema('action', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
-    def test_validate_resize_volume_invalid(self):
+    def test_validate_resize_volume_string_invalid_number(self):
+        body = {"resize": {"volume": {"size": '-44.0'}}}
+        schema = self.controller.get_schema('action', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertThat(errors[0].context[1].message,
+                        Equals("'-44.0' does not match '^[0-9]+$'"))
+        self.assertThat(errors[0].path.pop(), Equals('size'))
+
+    def test_validate_resize_volume_invalid_characters(self):
         body = {"resize": {"volume": {"size": 'x'}}}
         schema = self.controller.get_schema('action', body)
         validator = jsonschema.Draft4Validator(schema)
@@ -180,7 +190,7 @@ class TestInstanceController(TestCase):
         self.assertThat(errors[0].context[0].message,
                         Equals("'x' is not of type 'integer'"))
         self.assertThat(errors[0].context[1].message,
-                        Equals("'x' does not match '[0-9]+'"))
+                        Equals("'x' does not match '^[0-9]+$'"))
         self.assertThat(errors[0].path.pop(), Equals('size'))
 
     def test_validate_resize_instance(self):
@@ -215,7 +225,7 @@ class TestInstanceController(TestCase):
                             "flavorRef"],
                            errors[0].path.pop())
 
-    @skip("This damn URI validator allows just about any garbage you give it")
+    @skip("This URI validator allows just about anything you give it")
     def test_validate_resize_instance_invalid_url(self):
         body = {"resize": {"flavorRef": "xyz-re1f2-daze329d-f23901"}}
         schema = self.controller.get_schema('action', body)

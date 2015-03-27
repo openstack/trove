@@ -165,7 +165,7 @@ class MalformedJson(object):
                  "resize['volume']['size'] %s is not valid under "
                  "any of the given schemas" % data,
                  "%s is not of type 'integer'" % data,
-                 "%s does not match '[0-9]+'" % data])
+                 "%s does not match '^[0-9]+$'" % data])
 
     @test
     def test_bad_change_user_password(self):
