@@ -27,6 +27,7 @@ from proboscis.asserts import assert_true
 from proboscis.asserts import assert_not_equal
 from proboscis.decorators import time_out
 from trove.common.utils import poll_until
+from trove.tests.api.backups import RestoreUsingBackup
 from trove.tests.api.instances import assert_unprocessable
 from trove.tests.api.instances import InstanceTestInfo
 from trove.tests.api.instances import instance_info
@@ -44,6 +45,7 @@ from troveclient.compat import exceptions
 
 
 GROUP = "dbaas.api.configurations"
+GROUP_CONFIG_DEFINE = "dbaas.api.configurations.define"
 CONFIG_NAME = "test_configuration"
 CONFIG_DESC = "configuration description"
 
@@ -166,7 +168,9 @@ class ConfigurationsTestBase(object):
         return datastore_test_configs.get("configurations", {})
 
 
-@test(depends_on_classes=[WaitForGuestInstallationToFinish], groups=[GROUP])
+@test(depends_on_classes=[WaitForGuestInstallationToFinish],
+      runs_after=[RestoreUsingBackup],
+      groups=[GROUP, GROUP_CONFIG_DEFINE])
 class CreateConfigurations(ConfigurationsTestBase):
 
     @test
@@ -300,7 +304,8 @@ class CreateConfigurations(ConfigurationsTestBase):
         assert_equal(resp.status, 200)
 
 
-@test(runs_after=[CreateConfigurations], groups=[GROUP])
+@test(runs_after=[CreateConfigurations],
+      groups=[GROUP, GROUP_CONFIG_DEFINE])
 class AfterConfigurationsCreation(ConfigurationsTestBase):
 
     @test
@@ -439,7 +444,8 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
                       configuration_info.id)
 
 
-@test(runs_after=[AfterConfigurationsCreation], groups=[GROUP])
+@test(runs_after=[AfterConfigurationsCreation],
+      groups=[GROUP, GROUP_CONFIG_DEFINE])
 class ListConfigurations(ConfigurationsTestBase):
 
     @test
@@ -556,7 +562,8 @@ class ListConfigurations(ConfigurationsTestBase):
         assert_equal(list_config[0].updated, details_config.updated)
 
 
-@test(runs_after=[ListConfigurations], groups=[GROUP])
+@test(runs_after=[ListConfigurations],
+      groups=[GROUP, GROUP_CONFIG_DEFINE])
 class StartInstanceWithConfiguration(ConfigurationsTestBase):
 
     @test
@@ -590,7 +597,9 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
         configuration_instance.id = result.id
 
 
-@test(runs_after=[StartInstanceWithConfiguration], groups=[GROUP])
+@test(depends_on_classes=[StartInstanceWithConfiguration],
+      runs_after_groups=['dbaas.api.backups'],
+      groups=[GROUP])
 class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
 
     @test

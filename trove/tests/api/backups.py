@@ -45,7 +45,7 @@ TIMEOUT_BACKUP_DELETE = 120
 backup_info = None
 incremental_info = None
 incremental_db = generate_uuid()
-restore_instance_id = None
+incremental_restore_instance_id = None
 total_num_dbs = 0
 backup_count_prior_to_create = 0
 backup_count_for_instance_prior_to_create = 0
@@ -342,18 +342,15 @@ class RestoreUsingBackup(object):
         assert_equal("BUILD", result.status)
         return result.id
 
-    @test(depends_on=[WaitForBackupCreateToFinish])
-    def test_restore(self):
-        global restore_instance_id
-        restore_instance_id = self._restore(backup_info.id)
-
     @test(depends_on=[IncrementalBackups])
     def test_restore_incremental(self):
         global incremental_restore_instance_id
         incremental_restore_instance_id = self._restore(incremental_info.id)
 
 
-@test(groups=[GROUP, tests.INSTANCES])
+@test(depends_on_classes=[WaitForGuestInstallationToFinish],
+      runs_after_groups=['dbaas.api.configurations.define'],
+      groups=[GROUP, tests.INSTANCES])
 class WaitForRestoreToFinish(object):
 
     @classmethod
@@ -374,16 +371,6 @@ class WaitForRestoreToFinish(object):
 
         poll_until(result_is_active, time_out=TIMEOUT_INSTANCE_CREATE,
                    sleep_time=10)
-
-    """
-        Wait until the instance is finished restoring from full backup.
-    """
-    @test(depends_on=[RestoreUsingBackup.test_restore])
-    def test_instance_restored(self):
-        try:
-            self._poll(restore_instance_id)
-        except exception.PollTimeOut:
-            fail('Timed out')
 
     """
         Wait until the instance is finished restoring from incremental backup.
@@ -441,13 +428,6 @@ class DeleteRestoreInstance(object):
         poll_until(instance_is_gone, time_out=TIMEOUT_INSTANCE_DELETE)
         assert_raises(exceptions.NotFound, instance_info.dbaas.instances.get,
                       instance_id)
-
-    @test(runs_after=[WaitForRestoreToFinish.test_instance_restored])
-    def test_delete_restored_instance(self):
-        try:
-            self._delete(restore_instance_id)
-        except exception.PollTimeOut:
-            fail('Timed out')
 
     @test(runs_after=[VerifyRestore.test_database_restored_incremental])
     def test_delete_restored_instance_incremental(self):
