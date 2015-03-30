@@ -14,6 +14,7 @@
 
 import testtools
 from mock import MagicMock
+from mock import patch
 from testtools.matchers import Is, Equals, Not
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
@@ -132,9 +133,12 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
     def test_restart(self):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
-        db2_service.DB2App.restart = MagicMock(return_value=None)
-        self.manager.restart(self.context)
-        db2_service.DB2App.restart.assert_any_call()
+        with patch.object(db2_service.DB2App, 'restart',
+                          return_value=None) as restart_mock:
+            #invocation
+            self.manager.restart(self.context)
+            #verification/assertion
+            restart_mock.assert_any_call()
 
     def test_stop_db(self):
         mock_status = MagicMock()
