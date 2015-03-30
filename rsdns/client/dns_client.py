@@ -30,7 +30,7 @@ except ImportError:
 
 
 from novaclient.client import HTTPClient
-from novaclient.v1_1.client import Client
+from novaclient.v2.client import Client
 
 LOG = logging.getLogger('rsdns.client.dns_client')
 

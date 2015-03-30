@@ -69,7 +69,7 @@ class TestConfig(object):
             'trove_auth_url': "http://localhost:5000/v2.0/tokens",
             'dbaas_url': "http://localhost:8775/v1.0/dbaas",
             'version_url': "http://localhost:8775/",
-            'nova_url': "http://localhost:8774/v1.1",
+            'nova_url': "http://localhost:8774/v2",
             'dbaas_datastore': "mysql",
             'dbaas_datastore_id': "a00000a0-00a0-0a00-00a0-000a000000aa",
             'dbaas_datastore_name_no_versions': "Test_Datastore_1",

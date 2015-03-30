@@ -25,7 +25,7 @@ from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
 
-from novaclient.v1_1.servers import Server
+from novaclient.v2.servers import Server
 
 from proboscis import test
 from proboscis import before_class

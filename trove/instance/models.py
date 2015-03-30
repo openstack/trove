@@ -67,7 +67,7 @@ def load_server(context, instance_id, server_id):
     :type context: trove.common.context.TroveContext
     :type instance_id: unicode
     :type server_id: unicode
-    :rtype: novaclient.v1_1.servers.Server
+    :rtype: novaclient.v2.servers.Server
     """
     client = create_nova_client(context)
     try:
@@ -539,7 +539,7 @@ class BaseInstance(SimpleInstance):
         instance at it exists in the db
         :type context: trove.common.context.TroveContext
         :type db_info: trove.instance.models.DBInstance
-        :type server: novaclient.v1_1.servers.Server
+        :type server: novaclient.v2.servers.Server
         :typdatastore_statusus: trove.instance.models.InstanceServiceStatus
         """
         super(BaseInstance, self).__init__(context, db_info, datastore_status)

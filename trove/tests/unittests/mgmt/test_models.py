@@ -18,9 +18,9 @@ from mock import MagicMock, patch, ANY
 from testtools import TestCase
 from testtools.matchers import Equals, Is, Not
 
-from novaclient.v1_1 import Client
-from novaclient.v1_1.flavors import FlavorManager, Flavor
-from novaclient.v1_1.servers import Server, ServerManager
+from novaclient.v2 import Client
+from novaclient.v2.flavors import FlavorManager, Flavor
+from novaclient.v2.servers import Server, ServerManager
 from oslo.config import cfg
 from trove.backup.models import Backup
 from trove.common.context import TroveContext
