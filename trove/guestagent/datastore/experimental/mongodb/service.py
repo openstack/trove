@@ -178,11 +178,8 @@ class MongoDBApp(object):
 
                 LOG.info(_("Moving %(a)s to %(b)s.")
                          % {'a': system.TMP_CONFIG, 'b': CONFIG_FILE})
-                utils.execute_with_timeout("mv",
-                                           system.TMP_CONFIG,
-                                           CONFIG_FILE,
-                                           run_as_root=True,
-                                           root_helper="sudo")
+                operating_system.move(system.TMP_CONFIG, CONFIG_FILE,
+                                      as_root=True)
             except Exception:
                 os.unlink(system.TMP_CONFIG)
                 raise
@@ -248,9 +245,8 @@ class MongoDBApp(object):
         LOG.info(_("Moving %(a)s to %(b)s.")
                  % {'a': system.TMP_MONGOS_UPSTART,
                     'b': system.MONGOS_UPSTART})
-        utils.execute_with_timeout("mv", system.TMP_MONGOS_UPSTART,
-                                   system.MONGOS_UPSTART,
-                                   run_as_root=True, root_helper="sudo")
+        operating_system.move(system.TMP_MONGOS_UPSTART, system.MONGOS_UPSTART,
+                              as_root=True)
         operating_system.remove('/etc/init/mongodb.conf', force=True,
                                 as_root=True)
 

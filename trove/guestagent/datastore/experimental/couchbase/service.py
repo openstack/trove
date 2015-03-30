@@ -333,8 +333,7 @@ class CouchbaseRootAccess(object):
             LOG.exception(message)
             raise RuntimeError(message)
 
-        utils.execute_with_timeout('mv', tempname, system.pwd_file,
-                                   run_as_root=True, root_helper='sudo')
+        operating_system.move(tempname, system.pwd_file, as_root=True)
 
     @staticmethod
     def get_password():

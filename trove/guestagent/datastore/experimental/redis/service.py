@@ -235,11 +235,8 @@ class RedisApp(object):
         LOG.debug("Writing Redis config.")
         with open(TMP_REDIS_CONF, 'w') as fd:
             fd.write(config_contents)
-        utils.execute_with_timeout('mv',
-                                   TMP_REDIS_CONF,
-                                   system.REDIS_CONFIG,
-                                   run_as_root=True,
-                                   root_helper='sudo')
+        operating_system.move(TMP_REDIS_CONF, system.REDIS_CONFIG,
+                              as_root=True)
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_('Starting redis with conf changes.'))

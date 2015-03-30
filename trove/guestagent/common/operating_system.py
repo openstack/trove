@@ -295,6 +295,72 @@ def remove(path, force=False, recursive=True, **kwargs):
         raise exception.UnprocessableEntity(_("Cannot remove a blank file."))
 
 
+def move(source, destination, force=False, **kwargs):
+    """Move a given file or directory to a new location.
+    Move attempts to preserve the original ownership, permissions and
+    timestamps.
+
+    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+
+    :param source:          Path to the source location.
+    :type source:           string
+
+    :param destination:     Path to the destination location.
+    :type destination:      string
+
+    :param force:           Do not prompt before overwriting.
+    :type force:            boolean
+
+    :raises:                :class:`UnprocessableEntity` if source or
+                            destination not given.
+    """
+
+    if not source:
+        raise exception.UnprocessableEntity(_("Missing source path."))
+    elif not destination:
+        raise exception.UnprocessableEntity(_("Missing destination path."))
+
+    options = (('f', force),)
+    _execute_shell_cmd('mv', options, source, destination, **kwargs)
+
+
+def copy(source, destination, force=False, preserve=False, recursive=True,
+         **kwargs):
+    """Copy a given file or directory to another location.
+    Copy does NOT attempt to preserve ownership, permissions and timestamps
+    unless the 'preserve' option is enabled.
+
+    :seealso: _execute_shell_cmd for valid optional keyword arguments.
+
+    :param source:          Path to the source location.
+    :type source:           string
+
+    :param destination:     Path to the destination location.
+    :type destination:      string
+
+    :param force:           If an existing destination file cannot be
+                            opened, remove it and try again.
+    :type force:            boolean
+
+    :param preserve:        Preserve mode, ownership and timestamps.
+    :type preserve:         boolean
+
+    :param recursive:       Copy directories recursively.
+    :type recursive:        boolean
+
+    :raises:                :class:`UnprocessableEntity` if source or
+                            destination not given.
+    """
+
+    if not source:
+        raise exception.UnprocessableEntity(_("Missing source path."))
+    elif not destination:
+        raise exception.UnprocessableEntity(_("Missing destination path."))
+
+    options = (('f', force), ('p', preserve), ('R', recursive))
+    _execute_shell_cmd('cp', options, source, destination, **kwargs)
+
+
 def _execute_shell_cmd(cmd, options, *args, **kwargs):
     """Execute a given shell command passing it
     given options (flags) and arguments.

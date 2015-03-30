@@ -643,10 +643,9 @@ class MySqlApp(object):
         random_uuid = str(uuid.uuid4())
         configs = ["/etc/my.cnf", "/etc/mysql/conf.d", "/etc/mysql/my.cnf"]
         for config in configs:
-            command = "mv %s %s_%s" % (config, config, random_uuid)
             try:
-                utils.execute_with_timeout(command, shell=True,
-                                           root_helper="sudo")
+                old_conf_backup = "%s_%s" % (config, random_uuid)
+                operating_system.move(config, old_conf_backup, as_root=True)
                 LOG.debug("%s saved to %s_%s." %
                           (config, config, random_uuid))
             except exception.ProcessExecutionError:
@@ -791,15 +790,11 @@ class MySqlApp(object):
             with open(TMP_MYCNF, 'w') as t:
                 t.write(config_contents)
 
-            utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                       MYSQL_CONFIG)
-
+            operating_system.move(TMP_MYCNF, MYSQL_CONFIG, as_root=True)
             self._write_temp_mycnf_with_admin_account(MYSQL_CONFIG,
                                                       TMP_MYCNF,
                                                       admin_password)
-
-            utils.execute_with_timeout("sudo", "mv", TMP_MYCNF,
-                                       MYSQL_CONFIG)
+            operating_system.move(TMP_MYCNF, MYSQL_CONFIG, as_root=True)
         except Exception:
             os.unlink(TMP_MYCNF)
             raise
@@ -816,9 +811,8 @@ class MySqlApp(object):
         with open(MYCNF_OVERRIDES_TMP, 'w') as overrides:
             overrides.write(overrideValues)
         LOG.info(_("Moving overrides.cnf into correct location."))
-        utils.execute_with_timeout("sudo", "mv", MYCNF_OVERRIDES_TMP,
-                                   MYCNF_OVERRIDES)
-
+        operating_system.move(MYCNF_OVERRIDES_TMP, MYCNF_OVERRIDES,
+                              as_root=True)
         LOG.info(_("Setting permissions on overrides.cnf."))
         operating_system.chmod(MYCNF_OVERRIDES, FileMode.SET_GRP_RW_OTH_R,
                                as_root=True)
@@ -834,9 +828,7 @@ class MySqlApp(object):
         with open(MYCNF_REPLCONFIG_TMP, 'w') as overrides:
             overrides.write(overrideValues)
         LOG.debug("Moving temp replication.cnf into correct location.")
-        utils.execute_with_timeout("sudo", "mv", MYCNF_REPLCONFIG_TMP,
-                                   cnf_file)
-
+        operating_system.move(MYCNF_REPLCONFIG_TMP, cnf_file, as_root=True)
         LOG.debug("Setting permissions on replication.cnf.")
         operating_system.chmod(cnf_file, FileMode.SET_GRP_RW_OTH_R,
                                as_root=True)
