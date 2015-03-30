@@ -14,8 +14,10 @@
 import testtools
 from mock import MagicMock
 from mock import patch
+from trove.common.exception import DatastoreOperationNotSupported
 from trove.common import instance as rd_instance
 from trove.common.context import TroveContext
+from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.datastore.experimental.vertica.manager import Manager
 from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
@@ -204,3 +206,142 @@ class GuestAgentManagerTest(testtools.TestCase):
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertEqual(output, True)
+
+    @patch.object(VerticaAppStatus, 'set_status')
+    def test_prepare_invalid_cluster_config(self, mock_set_status):
+        self._prepare_method("test-instance-3", "query_router")
+        mock_set_status.assert_called_with(
+            rd_instance.ServiceStatuses.FAILED)
+
+    def test_get_filesystem_stats(self):
+        with patch.object(dbaas, 'get_filesystem_volume_stats'):
+            self.manager.get_filesystem_stats(self.context, '/var/lib/vertica')
+            dbaas.get_filesystem_volume_stats.assert_any_call(
+                '/var/lib/vertica')
+
+    def test_mount_volume(self):
+        with patch.object(volume.VolumeDevice, 'mount', return_value=None):
+            self.manager.mount_volume(self.context,
+                                      device_path='/dev/vdb',
+                                      mount_point='/var/lib/vertica')
+            test_mount = volume.VolumeDevice.mount.call_args_list[0]
+            test_mount.assert_called_with('/var/lib/vertica', False)
+
+    def test_unmount_volume(self):
+        with patch.object(volume.VolumeDevice, 'unmount', return_value=None):
+            self.manager.unmount_volume(self.context, device_path='/dev/vdb')
+            test_unmount = volume.VolumeDevice.unmount.call_args_list[0]
+            test_unmount.assert_called_with('/var/lib/vertica')
+
+    def test_resize_fs(self):
+        with patch.object(volume.VolumeDevice, 'resize_fs', return_value=None):
+            self.manager.resize_fs(self.context, device_path='/dev/vdb')
+            test_resize_fs = volume.VolumeDevice.resize_fs.call_args_list[0]
+            test_resize_fs.assert_called_with('/var/lib/vertica')
+
+    def test_cluster_complete(self):
+        mock_status = MagicMock()
+        mock_status.set_status = MagicMock()
+        self.manager.appStatus = mock_status
+        mock_status._get_actual_db_status = MagicMock(
+            return_value=rd_instance.ServiceStatuses.RUNNING)
+        self.manager.cluster_complete(self.context)
+        mock_status.set_status.assert_called_with(
+            rd_instance.ServiceStatuses.RUNNING)
+
+    def test_get_public_keys(self):
+        with patch.object(VerticaApp, 'get_public_keys',
+                          return_value='some_key'):
+            test_key = self.manager.get_public_keys(self.context, 'test_user')
+            self.assertEqual('some_key', test_key)
+
+    def test_authorize_public_keys(self):
+        with patch.object(VerticaApp, 'authorize_public_keys',
+                          return_value=None):
+            self.manager.authorize_public_keys(self.context,
+                                               'test_user',
+                                               'some_key')
+            VerticaApp.authorize_public_keys.assert_any_call(
+                'test_user', 'some_key')
+
+    def test_start_db_with_conf_changes(self):
+        with patch.object(VerticaApp, 'start_db_with_conf_changes'):
+            self.manager.start_db_with_conf_changes(self.context, 'something')
+            VerticaApp.start_db_with_conf_changes.assert_any_call('something')
+
+    def test_change_passwords(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.change_passwords,
+                          self.context, None)
+
+    def test_update_attributes(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.update_attributes,
+                          self.context, 'test_user', '%', {'name': 'new_user'})
+
+    def test_create_database(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.create_database,
+                          self.context, [{'name': 'test_db'}])
+
+    def test_create_user(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.create_user,
+                          self.context, [{'name': 'test_user'}])
+
+    def test_delete_database(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.delete_database,
+                          self.context, [{'name': 'test_db'}])
+
+    def test_delete_user(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.delete_user,
+                          self.context, [{'name': 'test_user'}])
+
+    def test_get_user(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.get_user,
+                          self.context, 'test_user', '%')
+
+    def test_grant_access(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.grant_access,
+                          self.context, 'test_user', '%', [{'name': 'test_db'}]
+                          )
+
+    def test_revoke_access(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.revoke_access,
+                          self.context, 'test_user', '%', [{'name': 'test_db'}]
+                          )
+
+    def test_list_access(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.list_access,
+                          self.context, 'test_user', '%')
+
+    def test_list_databases(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.list_databases,
+                          self.context)
+
+    def test_list_users(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.list_users,
+                          self.context)
+
+    def test_enable_root(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.enable_root,
+                          self.context)
+
+    def test_is_root_enabled(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.is_root_enabled,
+                          self.context)
+
+    def test_create_backup(self):
+        self.assertRaises(DatastoreOperationNotSupported,
+                          self.manager.create_backup,
+                          self.context, {})
