@@ -20,6 +20,7 @@ import stat
 import subprocess
 import tempfile
 
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import exception
 from trove.common import instance as rd_instance
@@ -63,7 +64,7 @@ class CouchbaseApp(object):
             self._install_couchbase(packages)
 
     def initial_setup(self):
-        self.ip_address = operating_system.get_ip_address()
+        self.ip_address = netutils.get_my_ipv4()
         mount_point = CONF.couchbase.mount_point
         try:
             LOG.info(_('Couchbase Server change data dir path.'))
@@ -228,7 +229,7 @@ class CouchbaseAppStatus(service.BaseDbStatus):
     Handles all of the status updating for the couchbase guest agent.
     """
     def _get_actual_db_status(self):
-        self.ip_address = operating_system.get_ip_address()
+        self.ip_address = netutils.get_my_ipv4()
         pwd = None
         try:
             pwd = CouchbaseRootAccess.get_password()
@@ -295,7 +296,7 @@ class CouchbaseRootAccess(object):
         return user.serialize()
 
     def set_password(self, root_password):
-        self.ip_address = operating_system.get_ip_address()
+        self.ip_address = netutils.get_my_ipv4()
         child = pexpect.spawn(system.cmd_reset_pwd % {'IP': self.ip_address})
         try:
             child.expect('.*password.*')

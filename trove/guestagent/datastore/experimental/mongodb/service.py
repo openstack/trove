@@ -17,6 +17,7 @@ import json
 import re
 
 import os
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import utils as utils
 from trove.common import exception
@@ -255,7 +256,7 @@ class MongoDBApp(object):
         utils.execute_with_timeout(cmd, shell=True)
 
     def do_mongo(self, db_cmd):
-        cmd = ('mongo --host ' + operating_system.get_ip_address() +
+        cmd = ('mongo --host ' + netutils.get_my_ipv4() +
                ' --quiet --eval \'printjson(%s)\'' % db_cmd)
         # TODO(ramashri) see if hardcoded values can be removed
         out, err = utils.execute_with_timeout(cmd, shell=True, timeout=100)
@@ -362,11 +363,11 @@ class MongoDbAppStatus(service.BaseDbStatus):
         try:
             if self._is_config_server() is True:
                 status_check = (system.CMD_STATUS %
-                                (operating_system.get_ip_address() +
+                                (netutils.get_my_ipv4() +
                                 ' --port 27019'))
             else:
                 status_check = (system.CMD_STATUS %
-                                operating_system.get_ip_address())
+                                netutils.get_my_ipv4())
 
             out, err = utils.execute_with_timeout(status_check, shell=True)
             if not err and "connected to:" in out:

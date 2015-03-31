@@ -21,6 +21,7 @@ from mock import Mock
 from mock import MagicMock
 from mock import patch
 from mock import ANY
+from oslo_utils import netutils
 import sqlalchemy
 import testtools
 from testtools.matchers import Is
@@ -1702,10 +1703,10 @@ class CouchbaseAppTest(testtools.TestCase):
         self.orig_time_sleep = time.sleep
         time.sleep = Mock()
         self.orig_service_discovery = operating_system.service_discovery
-        self.orig_get_ip = operating_system.get_ip_address
+        self.orig_get_ip = netutils.get_my_ipv4
         operating_system.service_discovery = (
             self.fake_couchbase_service_discovery)
-        operating_system.get_ip_address = Mock()
+        netutils.get_my_ipv4 = Mock()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -1718,7 +1719,7 @@ class CouchbaseAppTest(testtools.TestCase):
         super(CouchbaseAppTest, self).tearDown()
         couchservice.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
-        operating_system.get_ip_address = self.orig_get_ip
+        netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
@@ -1805,10 +1806,10 @@ class CouchDBAppTest(testtools.TestCase):
         self.orig_time_sleep = time.sleep
         time.sleep = Mock()
         self.orig_service_discovery = operating_system.service_discovery
-        self.orig_get_ip = operating_system.get_ip_address
+        self.orig_get_ip = netutils.get_my_ipv4
         operating_system.service_discovery = (
             self.fake_couchdb_service_discovery)
-        operating_system.get_ip_address = Mock()
+        netutils.get_my_ipv4 = Mock()
         util.init_db()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
@@ -1822,7 +1823,7 @@ class CouchDBAppTest(testtools.TestCase):
         super(CouchDBAppTest, self).tearDown()
         couchdb_service.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
-        operating_system.get_ip_address = self.orig_get_ip
+        netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
