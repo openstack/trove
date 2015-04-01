@@ -89,7 +89,7 @@ class VerticaClusterTasksTest(testtools.TestCase):
          get_status.return_value) = ServiceStatuses.FAILED
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
-        mock_update.assert_called_with(self.cluster_id)
+        mock_update.assert_called_with(self.cluster_id, None)
         self.assertEqual(False, ret_val)
 
     @patch.object(InstanceServiceStatus, 'find_by')
