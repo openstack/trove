@@ -23,7 +23,6 @@ from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.common import utils
-from trove.common.views import create_links
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
@@ -226,66 +225,13 @@ class MongoDbCluster(models.Cluster):
 class MongoDbClusterView(ClusterView):
 
     def build_instances(self):
-        instances = []
-        ip_list = []
-        if self.load_servers:
-            cluster_instances = self.cluster.instances
-        else:
-            cluster_instances = self.cluster.instances_without_server
-        for instance in cluster_instances:
-            if self.load_servers and instance.type == 'query_router':
-                ip = instance.get_visible_ip_addresses()
-                if ip:
-                    ip_list.append(ip[0])
-            if instance.type != 'member':
-                continue
-            instance_dict = {
-                "id": instance.id,
-                "name": instance.name,
-                "links": create_links("instances", self.req, instance.id)
-            }
-            if instance.shard_id:
-                instance_dict["shard_id"] = instance.shard_id
-            if self.load_servers:
-                instance_dict["status"] = instance.status
-                if CONF.get(instance.datastore_version.manager).volume_support:
-                    instance_dict["volume"] = {"size": instance.volume_size}
-                instance_dict["flavor"] = self._build_flavor_info(
-                    instance.flavor_id)
-            instances.append(instance_dict)
-        ip_list.sort()
-        return instances, ip_list
+        return self._build_instances(['query_router'], ['member'])
 
 
 class MongoDbMgmtClusterView(MgmtClusterView):
 
     def build_instances(self):
-        instances = []
-        ip_list = []
-        if self.load_servers:
-            cluster_instances = self.cluster.instances
-        else:
-            cluster_instances = self.cluster.instances_without_server
-        for instance in cluster_instances:
-            instance_dict = {
-                "id": instance.id,
-                "name": instance.name,
-                "type": instance.type,
-                "links": create_links("instances", self.req, instance.id)
-            }
-            instance_ips = instance.get_visible_ip_addresses()
-            if self.load_servers and instance_ips:
-                instance_dict["ip"] = instance_ips
-                if instance.type == 'query_router':
-                    ip_list.append(instance_ips[0])
-            if instance.shard_id:
-                instance_dict["shard_id"] = instance.shard_id
-            if self.load_servers:
-                instance_dict["status"] = instance.status
-                if CONF.get(instance.datastore_version.manager).volume_support:
-                    instance_dict["volume"] = {"size": instance.volume_size}
-                instance_dict["flavor"] = self._build_flavor_info(
-                    instance.flavor_id)
-            instances.append(instance_dict)
-        ip_list.sort()
-        return instances, ip_list
+        return self._build_instances(['query_router'],
+                                     ['config_server',
+                                      'member',
+                                      'query_router'])

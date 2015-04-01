@@ -15,6 +15,7 @@
 #
 
 from mock import Mock
+from mock import MagicMock
 from mock import patch
 from testtools import TestCase
 from trove.cluster.views import ClusterInstanceDetailView
@@ -23,7 +24,6 @@ from trove.cluster.views import load_view
 from trove.common import cfg
 from trove.common.strategies.cluster.experimental.mongodb.api import (
     MongoDbClusterView)
-
 CONF = cfg.CONF
 
 
@@ -72,6 +72,40 @@ class ClusterViewTest(TestCase):
         cluster.datastore_version.manager = 'mongodb'
         view = load_view(cluster, Mock())
         self.assertTrue(isinstance(view, MongoDbClusterView))
+
+    def test__build_instances(self, *args):
+        cluster = Mock()
+        cluster.instances = []
+        cluster.instances.append(Mock())
+        cluster.instances.append(Mock())
+        cluster.instances.append(Mock())
+        cluster.instances[0].type = 'configsvr'
+        cluster.instances[0].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[0].datastore_version.manager = 'mongodb'
+        cluster.instances[1].type = 'query_router'
+        cluster.instances[1].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[1].datastore_version.manager = 'mongodb'
+        cluster.instances[2].type = 'member'
+        cluster.instances[2].get_visible_ip_addresses = lambda: ['1.2.3.4']
+        cluster.instances[2].datastore_version.manager = 'mongodb'
+
+        def test_case(ip_to_be_published_for,
+                      instance_dict_to_be_published_for,
+                      number_of_ip_published,
+                      number_of_instance_dict_published):
+            view = ClusterView(cluster, MagicMock())
+            instances, ip_list = view._build_instances(
+                ip_to_be_published_for, instance_dict_to_be_published_for)
+
+            self.assertEqual(len(ip_list), number_of_ip_published)
+            self.assertEqual(len(instances), number_of_instance_dict_published)
+
+        test_case([], [], 0, 0)
+        test_case(['abc'], ['def'], 0, 0)
+        test_case(['query_router'], ['member'], 1, 1)
+        test_case(['query_router'], ['query_router', 'configsvr', 'member'],
+                  1, 3)
+        test_case(['query_router', 'member'], ['member'], 2, 1)
 
 
 class ClusterInstanceDetailViewTest(TestCase):

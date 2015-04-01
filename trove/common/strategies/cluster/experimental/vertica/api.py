@@ -20,7 +20,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster import base
-from trove.common.views import create_links
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
 from trove.openstack.common import log as logging
@@ -130,60 +129,10 @@ class VerticaCluster(models.Cluster):
 class VerticaClusterView(ClusterView):
 
     def build_instances(self):
-        instances = []
-        ip_list = []
-        if self.load_servers:
-            cluster_instances = self.cluster.instances
-        else:
-            cluster_instances = self.cluster.instances_without_server
-        for instance in cluster_instances:
-            if instance.type != 'member':
-                continue
-            instance_dict = {
-                "id": instance.id,
-                "name": instance.name,
-                "links": create_links("instances", self.req, instance.id)
-            }
-            if self.load_servers:
-                instance_dict["status"] = instance.status
-                if CONF.get(instance.datastore_version.manager).volume_support:
-                    instance_dict["volume"] = {"size": instance.volume_size}
-                instance_dict["flavor"] = self._build_flavor_info(
-                    instance.flavor_id)
-                instance_ips = instance.get_visible_ip_addresses()
-                if instance_ips:
-                    instance_dict["ip"] = instance_ips
-                    ip_list.append(instance_ips[0])
-            instances.append(instance_dict)
-        ip_list.sort()
-        return instances, ip_list
+        return self._build_instances(['member'], ['member'])
 
 
 class VerticaMgmtClusterView(MgmtClusterView):
 
     def build_instances(self):
-        instances = []
-        ip_list = []
-        if self.load_servers:
-            cluster_instances = self.cluster.instances
-        else:
-            cluster_instances = self.cluster.instances_without_server
-        for instance in cluster_instances:
-            instance_dict = {
-                "id": instance.id,
-                "name": instance.name,
-                "type": instance.type,
-                "links": create_links("instances", self.req, instance.id)
-            }
-            instance_ips = instance.get_visible_ip_addresses()
-            if self.load_servers and instance_ips:
-                instance_dict["ip"] = instance_ips
-            if self.load_servers:
-                instance_dict["status"] = instance.status
-                if CONF.get(instance.datastore_version.manager).volume_support:
-                    instance_dict["volume"] = {"size": instance.volume_size}
-                instance_dict["flavor"] = self._build_flavor_info(
-                    instance.flavor_id)
-            instances.append(instance_dict)
-        ip_list.sort()
-        return instances, ip_list
+        return self._build_instances(['member'], ['member'])
