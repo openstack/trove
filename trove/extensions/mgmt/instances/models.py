@@ -14,6 +14,7 @@
 import datetime
 
 from trove.common import cfg
+from trove.common import exception
 from trove.common import remote
 from trove.common import utils
 from trove.openstack.common import log as logging
@@ -219,8 +220,18 @@ class NotificationTransformer(object):
         messages = []
         db_infos = instance_models.DBInstance.find_all(deleted=False)
         for db_info in db_infos:
-            service_status = InstanceServiceStatus.find_by(
-                instance_id=db_info.id)
+            try:
+                service_status = InstanceServiceStatus.find_by(
+                    instance_id=db_info.id)
+            except exception.ModelNotFoundError:
+                # There is a small window of opportunity during when the db
+                # resource for an instance exists, but no InstanceServiceStatus
+                # for it has yet been created. We skip sending the notification
+                # message for all such instances. These instance are too new
+                # and will get picked up the next round of notifications.
+                LOG.debug("InstanceServiceStatus not found for %s. "
+                          "Will wait to send notification." % db_info.id)
+                continue
             instance = SimpleMgmtInstance(None, db_info, None, service_status)
             message = self.transform_instance(instance, audit_start, audit_end)
             messages.append(message)
