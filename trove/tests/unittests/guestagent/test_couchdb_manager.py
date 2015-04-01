@@ -17,10 +17,10 @@ import os
 import testtools
 from mock import MagicMock
 from mock import patch
+from oslo_utils import netutils
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import volume
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchdb import (
     service as couchdb_service)
 from trove.guestagent.datastore.experimental.couchdb import (
@@ -53,7 +53,7 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
         self.origin_mount_points = volume.VolumeDevice.mount_points
         self.origin_stop_db = couchdb_service.CouchDBApp.stop_db
         self.origin_start_db = couchdb_service.CouchDBApp.start_db
-        self.original_get_ip = operating_system.get_ip_address
+        self.original_get_ip = netutils.get_my_ipv4
         self.orig_make_host_reachable = (
             couchdb_service.CouchDBApp.make_host_reachable)
 
@@ -68,7 +68,7 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount_points = self.origin_mount_points
         couchdb_service.CouchDBApp.stop_db = self.origin_stop_db
         couchdb_service.CouchDBApp.start_db = self.origin_start_db
-        operating_system.get_ip_address = self.original_get_ip
+        netutils.get_my_ipv4 = self.original_get_ip
         couchdb_service.CouchDBApp.make_host_reachable = (
             self.orig_make_host_reachable)
 

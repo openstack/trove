@@ -15,7 +15,6 @@
 
 import os
 
-import netifaces
 from trove.common import utils
 
 REDHAT = 'redhat'
@@ -92,21 +91,6 @@ def service_discovery(service_candidates):
                 result['cmd_disable'] = "sudo systemctl disable %s" % service
             break
     return result
-
-
-def get_ip_address(ifname='eth0', address_family=netifaces.AF_INET):
-    """
-
-    Retrieves IP address which assigned to given network interface. As
-    an interface can have multiple addresses associated with it, the
-    address_family identifies which address is sought. By default
-    this routine returns the AF_INET address.
-
-    @parameter ifname network interface (ethX, wlanX, etc.)
-    @parameter address_family the address family being sought
-    """
-    addresses_by_family = netifaces.ifaddresses(ifname)[address_family]
-    return addresses_by_family.pop()['addr']
 
 
 def update_owner(user, group, path):

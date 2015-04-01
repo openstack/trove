@@ -15,11 +15,11 @@ import ConfigParser
 import os
 import tempfile
 
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import exception
 from trove.common import utils as utils
 from trove.common import instance as rd_instance
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 from trove.guestagent import volume
@@ -123,7 +123,7 @@ class VerticaApp(object):
         finally:
             self.status.end_install_or_restart()
 
-    def create_db(self, members=operating_system.get_ip_address()):
+    def create_db(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
         LOG.info(_("Creating database on Vertica host."))
         try:
@@ -137,7 +137,7 @@ class VerticaApp(object):
             LOG.exception(_("Vertica database create failed."))
         LOG.info(_("Vertica database create completed."))
 
-    def install_vertica(self, members=operating_system.get_ip_address()):
+    def install_vertica(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
         LOG.info(_("Installing Vertica Server."))
         try:

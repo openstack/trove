@@ -16,11 +16,11 @@
 import testtools
 
 from mock import patch
+from oslo_utils import netutils
 from trove.common import instance as ds_instance
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import volume
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb.manager import Manager
@@ -98,7 +98,7 @@ class GuestAgentMongoDBClusterManagerTest(testtools.TestCase):
     @patch.object(MongoDBApp, 'write_mongos_upstart')
     @patch.object(MongoDBApp, 'reset_configuration')
     @patch.object(MongoDBApp, 'update_config_contents')
-    @patch.object(operating_system, 'get_ip_address', return_value="10.0.0.2")
+    @patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.2")
     def test_prepare_mongos(self, mock_ip_address, mock_update, mock_reset,
                             mock_upstart, mock_set_status):
 
@@ -112,7 +112,7 @@ class GuestAgentMongoDBClusterManagerTest(testtools.TestCase):
     @patch.object(utils, 'poll_until')
     @patch.object(MongoDBApp, 'start_db_with_conf_changes')
     @patch.object(MongoDBApp, 'update_config_contents')
-    @patch.object(operating_system, 'get_ip_address', return_value="10.0.0.3")
+    @patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.3")
     def test_prepare_config_server(self, mock_ip_address, mock_update,
                                    mock_start, mock_poll, mock_set_status):
         self._prepare_method("test-id-2", "config_server")
@@ -127,7 +127,7 @@ class GuestAgentMongoDBClusterManagerTest(testtools.TestCase):
     @patch.object(utils, 'poll_until')
     @patch.object(MongoDBApp, 'start_db_with_conf_changes')
     @patch.object(MongoDBApp, 'update_config_contents')
-    @patch.object(operating_system, 'get_ip_address', return_value="10.0.0.4")
+    @patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.4")
     def test_prepare_member(self, mock_ip_address, mock_update, mock_start,
                             mock_poll, mock_set_status):
         self._prepare_method("test-id-3", "member")

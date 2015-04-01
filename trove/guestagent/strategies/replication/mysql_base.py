@@ -17,10 +17,10 @@
 import abc
 import uuid
 
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
@@ -48,7 +48,7 @@ class MysqlReplicationBase(base.Replication):
 
     def get_master_ref(self, service, snapshot_info):
         master_ref = {
-            'host': operating_system.get_ip_address(),
+            'host': netutils.get_my_ipv4(),
             'port': service.get_port()
         }
         return master_ref

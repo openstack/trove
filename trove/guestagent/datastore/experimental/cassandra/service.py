@@ -16,11 +16,11 @@
 import os
 import tempfile
 import yaml
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import utils
 from trove.common import exception
 from trove.common import instance as rd_instance
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.cassandra import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
@@ -193,9 +193,9 @@ class CassandraApp(object):
     def make_host_reachable(self):
         updates = {
             'rpc_address': "0.0.0.0",
-            'broadcast_rpc_address': operating_system.get_ip_address(),
-            'listen_address': operating_system.get_ip_address(),
-            'seed': operating_system.get_ip_address()
+            'broadcast_rpc_address': netutils.get_my_ipv4(),
+            'listen_address': netutils.get_my_ipv4(),
+            'seed': netutils.get_my_ipv4()
         }
         self.update_conf_with_group(updates)
 

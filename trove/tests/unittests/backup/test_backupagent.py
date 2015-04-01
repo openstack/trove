@@ -19,10 +19,10 @@ import hashlib
 import os
 import testtools
 
+from oslo_utils import netutils
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.conductor import api as conductor_api
-from trove.guestagent.common import operating_system
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
 from trove.guestagent.strategies.restore.base import RestoreRunner
@@ -167,12 +167,12 @@ class BackupAgentTest(testtools.TestCase):
         backupagent.get_storage_strategy = MagicMock(return_value=MockSwift)
         os.statvfs = MagicMock(return_value=MockStats)
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
-        self.orig_os_get_ip_address = operating_system.get_ip_address
+        self.orig_os_get_ip_address = netutils.get_my_ipv4
 
     def tearDown(self):
         super(BackupAgentTest, self).tearDown()
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-        operating_system.get_ip_address = self.orig_os_get_ip_address
+        netutils.get_my_ipv4 = self.orig_os_get_ip_address
 
     def test_backup_impl_MySQLDump(self):
         """This test is for
@@ -214,7 +214,7 @@ class BackupAgentTest(testtools.TestCase):
         self.assertEqual(str_innobackup_manifest, inno_backup_ex.manifest)
 
     def test_backup_impl_CbBackup(self):
-        operating_system.get_ip_address = Mock(return_value="1.1.1.1")
+        netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
         utils.execute_with_timeout = Mock(return_value=None)
         cbbackup = couchbase_impl.CbBackup('cbbackup', extra_opts='')
         self.assertIsNotNone(cbbackup)

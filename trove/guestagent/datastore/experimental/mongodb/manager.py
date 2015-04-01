@@ -15,6 +15,7 @@
 
 import os
 
+from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import exception
 from trove.common import instance as ds_instance
@@ -109,7 +110,7 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Getting configuration changes.")
         config_changes = {}
         if cluster_config is not None:
-            config_changes['bind_ip'] = operating_system.get_ip_address()
+            config_changes['bind_ip'] = netutils.get_my_ipv4()
             if cluster_config["instance_type"] == "config_server":
                 config_changes["configsvr"] = "true"
             elif cluster_config["instance_type"] == "member":

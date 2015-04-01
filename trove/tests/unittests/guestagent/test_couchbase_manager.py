@@ -19,11 +19,11 @@ import tempfile
 import testtools
 from mock import MagicMock
 from mock import Mock
+from oslo_utils import netutils
 from trove.common import utils
 from trove.common.context import TroveContext
 from trove.guestagent import volume
 from trove.guestagent import backup
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import (
     service as couch_service)
 from trove.guestagent.datastore.experimental.couchbase import (
@@ -47,7 +47,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         self.origin_install_if = couch_service.CouchbaseApp.install_if_needed
         self.origin_complete_install = \
             couch_service.CouchbaseApp.complete_install_or_restart
-        operating_system.get_ip_address = MagicMock()
+        netutils.get_my_ipv4 = MagicMock()
 
     def tearDown(self):
         super(GuestAgentCouchbaseManagerTest, self).tearDown()

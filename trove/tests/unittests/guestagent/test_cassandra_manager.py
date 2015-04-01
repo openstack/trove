@@ -16,10 +16,10 @@ import os
 
 import testtools
 from mock import MagicMock
+from oslo_utils import netutils
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import volume
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
 from trove.guestagent.datastore.experimental.cassandra import (
@@ -53,7 +53,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         self.origin_stop_db = cass_service.CassandraApp.stop_db
         self.origin_start_db = cass_service.CassandraApp.start_db
         self.origin_install_db = cass_service.CassandraApp._install_db
-        self.original_get_ip = operating_system.get_ip_address
+        self.original_get_ip = netutils.get_my_ipv4
         self.orig_make_host_reachable = (
             cass_service.CassandraApp.make_host_reachable)
 
@@ -69,7 +69,7 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         cass_service.CassandraApp.stop_db = self.origin_stop_db
         cass_service.CassandraApp.start_db = self.origin_start_db
         cass_service.CassandraApp._install_db = self.origin_install_db
-        operating_system.get_ip_address = self.original_get_ip
+        netutils.get_my_ipv4 = self.original_get_ip
         cass_service.CassandraApp.make_host_reachable = (
             self.orig_make_host_reachable)
 
