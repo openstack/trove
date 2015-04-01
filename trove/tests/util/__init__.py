@@ -166,7 +166,7 @@ def create_nova_client(user, service_type=None):
     if test_config.nova_client is None:
         raise SkipTest("No nova_client info specified in the Test Config "
                        "so this test will be skipped.")
-    from novaclient.v1_1.client import Client
+    from novaclient.v2.client import Client
     if not service_type:
         service_type = test_config.nova_client['nova_service_type']
     openstack = Client(user.auth_user, user.auth_key,

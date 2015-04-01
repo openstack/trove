@@ -18,8 +18,8 @@ from mock import Mock, MagicMock, patch
 from testtools.matchers import Equals, Is
 from cinderclient import exceptions as cinder_exceptions
 from novaclient import exceptions as nova_exceptions
-import novaclient.v1_1.servers
-import novaclient.v1_1.flavors
+import novaclient.v2.servers
+import novaclient.v2.flavors
 import cinderclient.v2.client as cinderclient
 from oslo.utils import timeutils
 import trove.backup.models
@@ -533,27 +533,27 @@ class BuiltInstanceTasksTest(testtools.TestCase):
 
         self.instance_task._guest = MagicMock(spec=trove.guestagent.api.API)
         self.instance_task._nova_client = MagicMock(
-            spec=novaclient.v1_1.Client)
+            spec=novaclient.v2.Client)
         self.stub_server_mgr = MagicMock(
-            spec=novaclient.v1_1.servers.ServerManager)
+            spec=novaclient.v2.servers.ServerManager)
         self.stub_running_server = MagicMock(
-            spec=novaclient.v1_1.servers.Server)
+            spec=novaclient.v2.servers.Server)
         self.stub_running_server.status = 'ACTIVE'
         self.stub_running_server.flavor = {'id': 6, 'ram': 512}
         self.stub_verifying_server = MagicMock(
-            spec=novaclient.v1_1.servers.Server)
+            spec=novaclient.v2.servers.Server)
         self.stub_verifying_server.status = 'VERIFY_RESIZE'
         self.stub_verifying_server.flavor = {'id': 8, 'ram': 768}
         self.stub_server_mgr.get = MagicMock(
             return_value=self.stub_verifying_server)
         self.instance_task._nova_client.servers = self.stub_server_mgr
         stub_flavor_manager = MagicMock(
-            spec=novaclient.v1_1.flavors.FlavorManager)
+            spec=novaclient.v2.flavors.FlavorManager)
         self.instance_task._nova_client.flavors = stub_flavor_manager
 
-        nova_flavor = novaclient.v1_1.flavors.Flavor(stub_flavor_manager,
-                                                     self.new_flavor,
-                                                     True)
+        nova_flavor = novaclient.v2.flavors.Flavor(stub_flavor_manager,
+                                                   self.new_flavor,
+                                                   True)
         stub_flavor_manager.get = MagicMock(return_value=nova_flavor)
 
         answers = (status for status in
