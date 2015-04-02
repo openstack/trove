@@ -214,8 +214,7 @@ class MongoDBApp(object):
         mount_point = "/var/lib/mongodb/*"
         LOG.debug("Clearing storage at %s." % mount_point)
         try:
-            cmd = "sudo rm -rf %s" % mount_point
-            utils.execute_with_timeout(cmd, shell=True)
+            operating_system.remove(mount_point, force=True, as_root=True)
         except exception.ProcessExecutionError:
             LOG.exception(_("Error clearing storage."))
 
@@ -252,8 +251,8 @@ class MongoDBApp(object):
         utils.execute_with_timeout("mv", system.TMP_MONGOS_UPSTART,
                                    system.MONGOS_UPSTART,
                                    run_as_root=True, root_helper="sudo")
-        cmd = "sudo rm -f /etc/init/mongodb.conf"
-        utils.execute_with_timeout(cmd, shell=True)
+        operating_system.remove('/etc/init/mongodb.conf', force=True,
+                                as_root=True)
 
     def do_mongo(self, db_cmd):
         cmd = ('mongo --host ' + netutils.get_my_ipv4() +

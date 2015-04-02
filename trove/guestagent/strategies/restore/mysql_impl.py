@@ -20,6 +20,8 @@ import pexpect
 import re
 import tempfile
 
+from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.strategies.restore import base
 from trove.openstack.common import log as logging
 from trove.common import exception
@@ -125,7 +127,8 @@ class MySQLRestoreMixin(object):
 
     def reset_root_password(self):
         with tempfile.NamedTemporaryFile() as init_file:
-            utils.execute_with_timeout("sudo", "chmod", "a+r", init_file.name)
+            operating_system.chmod(init_file.name, FileMode.ADD_READ_ALL,
+                                   as_root=True)
             self._writelines_one_per_line(init_file,
                                           self.RESET_ROOT_MYSQL_COMMANDS)
             # Do not attempt to delete the file as the 'trove' user.
@@ -161,9 +164,7 @@ class MySQLRestoreMixin(object):
 
         if os.path.isfile(file_path):
             try:
-                utils.execute_with_timeout("rm", "-f", file_path,
-                                           run_as_root=True,
-                                           root_helper="sudo")
+                operating_system.remove(file_path, force=True, as_root=True)
             except Exception:
                 LOG.exception("Could not remove file: '%s'" % file_path)
 
@@ -204,10 +205,8 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
         app.stop_db()
         LOG.info(_("Cleaning out restore location: %s."),
                  self.restore_location)
-        utils.execute_with_timeout("chmod", "-R", "0777",
-                                   self.restore_location,
-                                   root_helper="sudo",
-                                   run_as_root=True)
+        operating_system.chmod(self.restore_location, FileMode.SET_FULL,
+                               as_root=True)
         utils.clean_out(self.restore_location)
 
     def _run_prepare(self):
@@ -311,8 +310,7 @@ class InnoBackupExIncremental(InnoBackupEx):
 
         # Delete unpacked incremental backup metadata
         if incremental_dir:
-            utils.execute("rm", "-fr", incremental_dir, root_helper="sudo",
-                          run_as_root=True)
+            operating_system.remove(incremental_dir, force=True, as_root=True)
 
     def _run_restore(self):
         """Run incremental restore.

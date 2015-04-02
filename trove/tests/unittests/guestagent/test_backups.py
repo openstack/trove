@@ -14,8 +14,9 @@
 
 import testtools
 import mock
-from mock import patch, ANY
+from mock import ANY, DEFAULT, patch
 
+from trove.guestagent.common.operating_system import FileMode
 import trove.guestagent.strategies.backup.base as backupBase
 import trove.guestagent.strategies.restore.base as restoreBase
 from trove.guestagent.strategies.restore.mysql_impl import MySQLRestoreMixin
@@ -297,26 +298,21 @@ class GuestAgentBackupTest(testtools.TestCase):
         self.assertEqual(DECRYPT + PIPE + UNZIP + PIPE + CBBACKUP_RESTORE,
                          restr.restore_cmd)
 
-    def test_reset_root_password_on_mysql_restore(self):
-        with patch.object(utils, 'execute_with_timeout',
-                          return_value=True) as exec_call:
-            with patch.object(MySQLRestoreMixin,
-                              '_start_mysqld_safe_with_init_file',
-                              return_value=True):
-                inst = MySQLRestoreMixin()
-                inst.reset_root_password()
+    @patch.multiple('trove.guestagent.common.operating_system',
+                    chmod=DEFAULT, remove=DEFAULT)
+    def test_reset_root_password_on_mysql_restore(self, chmod, remove):
+        with patch.object(MySQLRestoreMixin,
+                          '_start_mysqld_safe_with_init_file',
+                          return_value=True):
+            inst = MySQLRestoreMixin()
+            inst.reset_root_password()
 
-                self.assertEqual(2, exec_call.call_count,
-                                 "'execute_with_timeout' "
-                                 "called an unexpected number of times")
+            chmod.assert_called_once_with(ANY, FileMode.ADD_READ_ALL,
+                                          as_root=True)
 
-                exec_call.assert_any_call("sudo", "chmod", "a+r",
-                                          ANY)
-
-                # Make sure the temporary error log got deleted as root
-                # (see bug/1423759).
-                exec_call.assert_any_call("rm", "-f", ANY, run_as_root=True,
-                                          root_helper="sudo")
+            # Make sure the temporary error log got deleted as root
+            # (see bug/1423759).
+            remove.assert_called_once_with(ANY, force=True, as_root=True)
 
 
 class CouchbaseBackupTests(testtools.TestCase):

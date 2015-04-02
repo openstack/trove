@@ -21,6 +21,8 @@ from trove.common import cfg
 from trove.common import utils
 from trove.common import exception
 from trove.common import instance as rd_instance
+from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.cassandra import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
@@ -141,7 +143,8 @@ class CassandraApp(object):
             # no cassandra user in operating system
             execute_function("sudo", "chown",
                              "cassandra:cassandra", system.CASSANDRA_CONF)
-            execute_function("sudo", "chmod", "a+r", system.CASSANDRA_CONF)
+            operating_system.chmod(system.CASSANDRA_CONF,
+                                   FileMode.ADD_READ_ALL, as_root=True)
         except Exception:
             LOG.exception(
                 _("Exception generating Cassandra configuration %s.") %

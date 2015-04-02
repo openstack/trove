@@ -77,8 +77,8 @@ class CouchbaseApp(object):
                  % {'data_path': mount_point,
                     'IP': self.ip_address,
                     'PWD': pwd}), shell=True)
-            utils.execute_with_timeout(
-                system.cmd_rm_old_data_dir, shell=True)
+            operating_system.remove(system.INSTANCE_DATA_DIR, force=True,
+                                    as_root=True)
             LOG.debug('Couchbase Server initialize cluster.')
             utils.execute_with_timeout(
                 (system.cmd_cluster_init

@@ -32,6 +32,7 @@ from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common.exception import PollTimeOut
 from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.common import sql_query
 from trove.guestagent.db import models
 from trove.guestagent import pkg
@@ -98,8 +99,7 @@ def clear_expired_password():
         except exception.ProcessExecutionError:
             LOG.exception(_("Cannot change mysql password."))
             return
-        utils.execute("rm", "-f", secret_file, run_as_root=True,
-                      root_helper="sudo")
+        operating_system.remove(secret_file, force=True, as_root=True)
         LOG.debug("Expired password removed.")
 
 
@@ -769,10 +769,10 @@ class MySqlApp(object):
                 # On restarts, sometimes these are wiped. So it can be a race
                 # to have MySQL start up before it's restarted and these have
                 # to be deleted. That's why its ok if they aren't found and
-                # that is why we use the "-f" option to "rm".
-                (utils.
-                 execute_with_timeout("sudo", "rm", "-f", "%s/ib_logfile%d"
-                                                    % (MYSQL_BASE_DIR, index)))
+                # that is why we use the "force" option to "remove".
+                operating_system.remove("%s/ib_logfile%d"
+                                        % (MYSQL_BASE_DIR, index), force=True,
+                                        as_root=True)
             except exception.ProcessExecutionError:
                 LOG.exception("Could not delete logfile.")
                 raise
@@ -820,13 +820,13 @@ class MySqlApp(object):
                                    MYCNF_OVERRIDES)
 
         LOG.info(_("Setting permissions on overrides.cnf."))
-        utils.execute_with_timeout("sudo", "chmod", "0644",
-                                   MYCNF_OVERRIDES)
+        operating_system.chmod(MYCNF_OVERRIDES, FileMode.SET_GRP_RW_OTH_R,
+                               as_root=True)
 
     def remove_overrides(self):
         LOG.info(_("Removing overrides configuration file."))
         if os.path.exists(MYCNF_OVERRIDES):
-            utils.execute_with_timeout("sudo", "rm", MYCNF_OVERRIDES)
+            operating_system.remove(MYCNF_OVERRIDES, as_root=True)
 
     def _write_replication_overrides(self, overrideValues, cnf_file):
         LOG.info(_("Writing replication.cnf file."))
@@ -838,12 +838,13 @@ class MySqlApp(object):
                                    cnf_file)
 
         LOG.debug("Setting permissions on replication.cnf.")
-        utils.execute_with_timeout("sudo", "chmod", "0644", cnf_file)
+        operating_system.chmod(cnf_file, FileMode.SET_GRP_RW_OTH_R,
+                               as_root=True)
 
     def _remove_replication_overrides(self, cnf_file):
         LOG.info(_("Removing replication configuration file."))
         if os.path.exists(cnf_file):
-            utils.execute_with_timeout("sudo", "rm", cnf_file)
+            operating_system.remove(cnf_file, as_root=True)
 
     def exists_replication_source_overrides(self):
         return os.path.exists(MYCNF_REPLMASTER)

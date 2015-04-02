@@ -18,11 +18,11 @@ import subprocess
 import tempfile
 from uuid import uuid4
 import time
+from mock import ANY
 from mock import Mock
 from mock import MagicMock
 from mock import PropertyMock
 from mock import patch
-from mock import ANY
 from oslo_utils import netutils
 import sqlalchemy
 import testtools
@@ -39,6 +39,7 @@ import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent import pkg
 from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.dbaas import to_gb
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.datastore.service import BaseDbStatus
@@ -1658,21 +1659,23 @@ class CassandraDBAppTest(testtools.TestCase):
 
         mock_execute = MagicMock(return_value=('', ''))
 
-        self.cassandra.write_config(configuration,
-                                    execute_function=mock_execute,
-                                    mkstemp_function=mock_mkstemp)
+        with patch('trove.guestagent.common.operating_system.chmod') as chmod:
+            self.cassandra.write_config(configuration,
+                                        execute_function=mock_execute,
+                                        mkstemp_function=mock_mkstemp)
 
-        mv, chown, chmod = mock_execute.call_args_list
+            mv, chown = mock_execute.call_args_list
 
-        mv.assert_called_with("sudo", "mv",
-                              temp_config_name,
-                              cass_system.CASSANDRA_CONF)
-        chown.assert_called_with("sudo", "chown", "cassandra:cassandra",
-                                 cass_system.CASSANDRA_CONF)
-        chmod.assert_called_with("sudo", "chmod", "a+r",
-                                 cass_system.CASSANDRA_CONF)
+            mv.assert_called_with("sudo", "mv",
+                                  temp_config_name,
+                                  cass_system.CASSANDRA_CONF)
+            chown.assert_called_with("sudo", "chown", "cassandra:cassandra",
+                                     cass_system.CASSANDRA_CONF)
+            chmod.assert_called_with(
+                cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL,
+                as_root=True)
 
-        mock_mkstemp.assert_called_once()
+            mock_mkstemp.assert_called_once()
 
         with open(temp_config_name, 'r') as config_file:
             configuration_data = config_file.read()

@@ -18,10 +18,6 @@ UPDATE_BIND_ADDRESS = (
     "sudo sed -i -r 's/;bind_address = 127.0.0.1/bind_address = 0.0.0.0/' "
     "/etc/couchdb/local.ini")
 TIME_OUT = 1200
-UPDATE_LIB_DIR_PERMISSIONS = "sudo chmod -R g+rw %(libdir)s"
-UPDATE_LOG_DIR_PERMISSIONS = "sudo chmod -R g+rw %(logdir)s"
-UPDATE_BIN_DIR_PERMISSIONS = "sudo chmod -R g+rw %(bindir)s"
-UPDATE_CONF_DIR_PERMISSIONS = "sudo chmod -R g+rw %(confdir)s"
 UPDATE_GROUP_MEMBERSHIP = "sudo usermod -a -G couchdb $(whoami)"
 COUCHDB_HTTPD_PORT = "5984"
 COUCHDB_SERVER_STATUS = "curl http://127.0.0.1:" + COUCHDB_HTTPD_PORT

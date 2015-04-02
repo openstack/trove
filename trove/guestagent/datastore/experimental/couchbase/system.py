@@ -23,6 +23,7 @@ COUCHBASE_REST_API = 'http://localhost:' + COUCHBASE_WEBADMIN_PORT
 BUCKETS_JSON = '/buckets.json'
 SECRET_KEY = '/secret_key'
 SERVICE_CANDIDATES = ["couchbase-server"]
+INSTANCE_DATA_DIR = '/opt/couchbase/var/lib/couchbase/data'
 cmd_couchbase_status = ('sudo /opt/couchbase/bin/couchbase-cli server-info '
                         '-c %(IP)s:8091 -u root -p %(PWD)s')
 cmd_node_init = ('sudo /opt/couchbase/bin/couchbase-cli node-init '
@@ -33,7 +34,6 @@ cmd_cluster_init = ('sudo /opt/couchbase/bin/couchbase-cli cluster-init '
                     '--cluster-init-password=%(PWD)s '
                     '--cluster-init-port=8091')
 cmd_kill = 'sudo pkill -u couchbase'
-cmd_rm_old_data_dir = 'sudo rm -rf /opt/couchbase/var/lib/couchbase/data'
 """ For optimal couchbase operations, swappiness of vm should be set to 0.
 Reference link: http://docs.couchbase.com/couchbase-manual-2
 .5/cb-admin/#using-couchbase-in-the-cloud """

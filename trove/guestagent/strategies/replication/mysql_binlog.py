@@ -18,9 +18,10 @@ import csv
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import utils
 from trove.common.i18n import _
 from trove.guestagent.backup.backupagent import BackupAgent
+from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.strategies.replication import mysql_base
 from trove.openstack.common import log as logging
 
@@ -61,7 +62,7 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
     def _read_log_position(self):
         INFO_FILE = '/var/lib/mysql/data/xtrabackup_binlog_info'
         LOG.info(_("Setting read permissions on %s") % INFO_FILE)
-        utils.execute_with_timeout("sudo", "chmod", "+r", INFO_FILE)
+        operating_system.chmod(INFO_FILE, FileMode.ADD_READ_ALL, as_root=True)
         LOG.info(_("Reading log position from %s") % INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
