@@ -955,7 +955,7 @@ class Instance(BuiltInstance):
             raise exception.BadRequest(_("Instance %s is not a replica"
                                        " source.") % self.id)
         service = InstanceServiceStatus.find_by(instance_id=self.id)
-        last_heartbeat_delta = datetime.now() - service.updated_at
+        last_heartbeat_delta = datetime.utcnow() - service.updated_at
         agent_expiry_interval = timedelta(seconds=CONF.agent_heartbeat_expiry)
         if last_heartbeat_delta < agent_expiry_interval:
             raise exception.BadRequest(_("Replica Source %s cannot be ejected"
