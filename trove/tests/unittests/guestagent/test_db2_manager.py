@@ -203,3 +203,7 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         users = self.manager.get_user(self.context, username, hostname)
         self.assertThat(users, Equals(['user1']))
         db2_service.DB2Admin.get_user.assert_any_call(username, hostname)
+
+    def test_rpc_ping(self):
+        output = self.manager.rpc_ping(self.context)
+        self.assertEqual(output, True)

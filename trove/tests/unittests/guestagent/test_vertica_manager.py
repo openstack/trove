@@ -193,3 +193,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         self._prepare_method("test-instance-3", "member")
         mock_set_status.assert_called_with(
             rd_instance.ServiceStatuses.BUILD_PENDING)
+
+    def test_rpc_ping(self):
+        output = self.manager.rpc_ping(self.context)
+        self.assertEqual(output, True)
