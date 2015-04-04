@@ -18,7 +18,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.backup import models as backup_models
 from trove.datastore import models as datastore_models
-from trove.datastore.models import DBDatastoreVersion
 from trove.common.instance import ServiceStatuses
 from trove.instance.models import filter_ips
 from trove.instance.models import InstanceServiceStatus
@@ -216,35 +215,77 @@ class TestReplication(TestCase):
 
     def setUp(self):
         util.init_db()
-        self.replica_datastore_version = Mock(spec=DBDatastoreVersion)
+
+        self.datastore = datastore_models.DBDatastore.create(
+            id=str(uuid.uuid4()),
+            name='name',
+            default_version_id=str(uuid.uuid4()))
+
+        self.datastore_version = datastore_models.DBDatastoreVersion.create(
+            id=self.datastore.default_version_id,
+            name='name',
+            image_id=str(uuid.uuid4()),
+            packages=str(uuid.uuid4()),
+            datastore_id=self.datastore.id,
+            manager='mysql',
+            active=1)
+
+        self.master = DBInstance(
+            InstanceTasks.NONE,
+            id=str(uuid.uuid4()),
+            name="TestMasterInstance",
+            datastore_version_id=self.datastore_version.id)
+        self.master.set_task_status(InstanceTasks.NONE)
+        self.master.save()
+        self.master_status = InstanceServiceStatus(
+            ServiceStatuses.RUNNING,
+            id=str(uuid.uuid4()),
+            instance_id=self.master.id)
+        self.master_status.save()
+
+        self.safe_nova_client = models.create_nova_client
+        models.create_nova_client = nova.fake_create_nova_client
+        super(TestReplication, self).setUp()
+
+    def tearDown(self):
+        self.master.delete()
+        self.master_status.delete()
+        self.datastore.delete()
+        self.datastore_version.delete()
+        models.create_nova_client = self.safe_nova_client
+        super(TestReplication, self).tearDown()
+
+    def test_replica_of_not_active_master(self):
+        self.master.set_task_status(InstanceTasks.BUILDING)
+        self.master.save()
+        self.master_status.set_status(ServiceStatuses.BUILDING)
+        self.master_status.save()
+        self.assertRaises(exception.UnprocessableEntity,
+                          Instance.create,
+                          None, 'name', 1, "UUID", [], [], None,
+                          self.datastore_version, 1,
+                          None, slave_of_id=self.master.id)
+
+    def test_replica_with_invalid_slave_of_id(self):
+        self.assertRaises(exception.NotFound,
+                          Instance.create,
+                          None, 'name', 1, "UUID", [], [], None,
+                          self.datastore_version, 1,
+                          None, slave_of_id=str(uuid.uuid4()))
+
+    def test_create_replica_from_replica(self):
+        self.replica_datastore_version = Mock(
+            spec=datastore_models.DBDatastoreVersion)
         self.replica_datastore_version.id = "UUID"
         self.replica_datastore_version.manager = 'mysql'
-        self.root_info = DBInstance(
-            InstanceTasks.NONE,
-            id="Another_instance",
-            name="TestInstance",
-            datastore_version_id=self.replica_datastore_version.id)
-        self.root_info.save()
         self.replica_info = DBInstance(
             InstanceTasks.NONE,
             id="UUID",
             name="TestInstance",
             datastore_version_id=self.replica_datastore_version.id,
-            slave_of_id="Another_instance")
+            slave_of_id=self.master.id)
         self.replica_info.save()
-        self.safe_nova = models.create_nova_client
-        models.create_nova_client = nova.fake_create_nova_client
-
-        super(TestReplication, self).setUp()
-
-    def tearDown(self):
-        models.create_nova_client = self.safe_nova
-        self.replica_info.delete()
-        self.root_info.delete()
-        super(TestReplication, self).tearDown()
-
-    def test_create_replica_from_replica(self):
         self.assertRaises(exception.Forbidden, Instance.create,
                           None, 'name', 2, "UUID", [], [], None,
-                          self.replica_datastore_version, 1,
+                          self.datastore_version, 1,
                           None, slave_of_id=self.replica_info.id)
