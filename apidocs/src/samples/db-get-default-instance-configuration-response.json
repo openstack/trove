@@ -14,7 +14,7 @@
             "join_buffer_size": "1M",
             "key_buffer_size": "50M",
             "local-infile": "0",
-            "max_allowed_packet": "1M",
+            "max_allowed_packet": "1024K",
             "max_connections": "100",
             "max_heap_table_size": "16M",
             "max_user_connections": "100",
@@ -41,4 +41,3 @@
         }
     }
 }
-
