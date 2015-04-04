@@ -29,6 +29,7 @@ SEND_CONF_TO_SERVER = ("rsync -v -e 'ssh -o "
                        "StrictHostKeyChecking=no' --perms --owner --group "
                        "%s %s:%s")
 SSH_KEY_GEN = "ssh-keygen -f %s/.ssh/id_rsa -t rsa -N ''"
+VERTICA_AGENT_SERVICE_COMMAND = "service vertica_agent %s"
 VERTICA_CONF = "/etc/vertica.cnf"
 INSTALL_TIMEOUT = 1000
 
@@ -40,5 +41,5 @@ def shell_execute(command, command_executor="root"):
 
     #Note: This method uses su because using sudo -i -u <user> <command>
     #does not works with vertica installer
-    #and it has problems while executing remote commmands.
+    #and it has problems while executing remote commands.
     return utils.execute("sudo", "su", "-", command_executor, "-c", command)
