@@ -845,6 +845,9 @@ class MySqlApp(object):
         if os.path.exists(cnf_file):
             utils.execute_with_timeout("sudo", "rm", cnf_file)
 
+    def exists_replication_source_overrides(self):
+        return os.path.exists(MYCNF_REPLMASTER)
+
     def write_replication_source_overrides(self, overrideValues):
         self._write_replication_overrides(overrideValues, MYCNF_REPLMASTER)
 
