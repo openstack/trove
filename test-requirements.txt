@@ -5,17 +5,17 @@ flake8==2.0
 hacking>=0.8.0,<0.9
 sphinx>=1.1.2,<1.1.999
 
-coverage>=3.6
+coverage>=3.6,<=3.7.1
 nose
 nosexcover
 openstack-doc-tools>=0.13
 openstack.nose_plugin>=0.7
-WebTest>=2.0
+WebTest>=2.0,<=2.0.18
 wsgi_intercept>=0.6.1 # MIT License
 proboscis==1.2.5.3
 http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
-mock>=1.0
-mox>=0.5.3
-testtools>=0.9.34,!=1.2.0,!=1.4.0
-discover
-testrepository>=0.0.18
+mock>=1.0,<=1.0.1
+mox>=0.5.3,<=0.5.3
+testtools>=0.9.34,!=1.2.0,!=1.4.0,<=1.7.1
+discover<=0.4.0
+testrepository>=0.0.18,<=0.0.20
