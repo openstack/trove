@@ -170,9 +170,12 @@ class Manager(periodic_task.PeriodicTasks):
             operation='revoke_access', datastore=MANAGER)
 
     def reset_configuration(self, context, configuration):
+        """
+         Currently this method does nothing. This method needs to be
+         implemented to enable rollback of flavor-resize on guestagent side.
+        """
         LOG.debug("Resetting DB2 configuration.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=MANAGER)
+        pass
 
     def change_passwords(self, context, users):
         LOG.debug("Changing password.")

@@ -142,6 +142,13 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
         couchdb_service.CouchDBApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
 
+    def test_reset_configuration(self):
+        try:
+            configuration = {'config_contents': 'some junk'}
+            self.manager.reset_configuration(self.context, configuration)
+        except Exception:
+            self.fail("reset_configuration raised exception unexpectedly.")
+
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertEqual(output, True)
