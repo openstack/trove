@@ -12,12 +12,12 @@ nosexcover
 openstack-doc-tools>=0.18.1
 openstack.nose_plugin>=0.7
 WebTest>=2.0,<=2.0.18
-wsgi_intercept>=0.6.1 # MIT License
+wsgi_intercept>=0.6.1,<=0.9.1 # MIT License
 proboscis==1.2.5.3
 http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
-mock>=1.0
-mox3>=0.7.0
+mock>=1.0,<=1.0.1
+mox3>=0.7.0,<=0.7.0
 testtools>=0.9.34,!=1.4.0,<=1.5.0
-discover
+discover<=0.4.0
 testrepository>=0.0.18,<=0.0.20
 
