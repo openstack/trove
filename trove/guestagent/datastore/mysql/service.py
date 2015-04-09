@@ -987,6 +987,7 @@ class MySqlApp(object):
         LOG.info(_("Resetting configuration."))
         self._write_mycnf(None, config_contents)
 
+    # DEPRECATED: Mantain for API Compatibility
     def get_txn_count(self):
         LOG.info(_("Retrieving latest txn id."))
         txn_count = 0
@@ -1001,11 +1002,32 @@ class MySqlApp(object):
                         txn_count += 1
         return txn_count
 
+    def _get_slave_status(self):
+        with LocalSqlClient(get_engine()) as client:
+            return client.execute('SHOW SLAVE STATUS').first()
+
+    def _get_master_UUID(self):
+        slave_status = self._get_slave_status()
+        return slave_status and slave_status['Master_UUID'] or None
+
+    def _get_gtid_executed(self):
+        with LocalSqlClient(get_engine()) as client:
+            return client.execute('SELECT @@global.gtid_executed').first()[0]
+
+    def get_last_txn(self):
+        master_UUID = self._get_master_UUID()
+        last_txn_id = '0'
+        gtid_executed = self._get_gtid_executed()
+        for gtid_set in gtid_executed.split(','):
+            uuid_set = gtid_set.split(':')
+            if uuid_set[0] == master_UUID:
+                last_txn_id = uuid_set[-1].split('-')[-1]
+                break
+        return master_UUID, int(last_txn_id)
+
     def get_latest_txn_id(self):
         LOG.info(_("Retrieving latest txn id."))
-        with LocalSqlClient(get_engine()) as client:
-            result = client.execute('SELECT @@global.gtid_executed').first()
-            return result[0]
+        return self._get_gtid_executed()
 
     def wait_for_txn(self, txn):
         LOG.info(_("Waiting on txn '%s'.") % txn)

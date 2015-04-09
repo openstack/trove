@@ -26,6 +26,7 @@ import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import backup
 from trove.guestagent.volume import VolumeDevice
 from trove.guestagent import pkg as pkg
+from proboscis.asserts import assert_equal
 
 
 class GuestAgentManagerTest(testtools.TestCase):
@@ -361,3 +362,40 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.manager.demote_replication_master(self.context)
         # assertions
         self.assertEqual(mock_replication.demote_master.call_count, 1)
+
+    def test_get_master_UUID(self):
+        app = dbaas.MySqlApp(None)
+
+        def test_case(slave_status, expected_value):
+            with patch.object(dbaas.MySqlApp, '_get_slave_status',
+                              return_value=slave_status):
+                assert_equal(app._get_master_UUID(), expected_value)
+
+        test_case({'Master_UUID': '2a5b-2064-32fb'}, '2a5b-2064-32fb')
+        test_case({'Master_UUID': ''}, None)
+        test_case({}, None)
+
+    def test_get_last_txn(self):
+
+        def test_case(gtid_list, expected_value):
+            with patch.object(dbaas.MySqlApp, '_get_gtid_executed',
+                              return_value=gtid_list):
+                txn = self.manager.get_last_txn(self.context)
+                assert_equal(txn, expected_value)
+
+        with patch.object(dbaas.MySqlApp, '_get_slave_status',
+                          return_value={'Master_UUID': '2a5b-2064-32fb'}):
+            test_case('2a5b-2064-32fb:1', ('2a5b-2064-32fb', 1))
+            test_case('2a5b-2064-32fb:1-5', ('2a5b-2064-32fb', 5))
+            test_case('2a5b-2064-32fb:1,4b4-23:5', ('2a5b-2064-32fb', 1))
+            test_case('4b4-23:5,2a5b-2064-32fb:1', ('2a5b-2064-32fb', 1))
+            test_case('4b-23:5,2a5b-2064-32fb:1,25:3-4', ('2a5b-2064-32fb', 1))
+            test_case('4b4-23:1-5,2a5b-2064-32fb:1-10', ('2a5b-2064-32fb', 10))
+
+        with patch.object(dbaas.MySqlApp, '_get_slave_status',
+                          return_value={'Master_UUID': ''}):
+            test_case('2a5b-2064-32fb:1', (None, 0))
+
+        with patch.object(dbaas.MySqlApp, '_get_slave_status',
+                          return_value={}):
+            test_case('2a5b-2064-32fb:1', (None, 0))
