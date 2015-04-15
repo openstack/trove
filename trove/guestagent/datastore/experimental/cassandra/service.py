@@ -32,9 +32,10 @@ from trove.common import pagination
 from trove.common.stream_codecs import IniCodec
 from trove.common.stream_codecs import SafeYamlCodec
 from trove.common import utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import OneFileOverrideStrategy
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
 from trove.guestagent import pkg
@@ -64,6 +65,15 @@ class CassandraApp(object):
         """By default login with root no password for initial setup."""
         self.state_change_wait_time = CONF.state_change_wait_time
         self.status = CassandraAppStatus(self.get_current_superuser())
+
+        revision_dir = guestagent_utils.build_file_path(
+            os.path.dirname(self.cassandra_conf),
+            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
+        self.configuration_manager = ConfigurationManager(
+            self.cassandra_conf,
+            self.cassandra_owner, self.cassandra_owner,
+            SafeYamlCodec(default_flow_style=False), requires_root=True,
+            override_strategy=OneFileOverrideStrategy(revision_dir))
 
     @property
     def service_candidates(self):
@@ -111,7 +121,7 @@ class CassandraApp(object):
         return "~/.cassandra/cqlshrc"
 
     def install_if_needed(self, packages):
-        """Prepare the guest machine with a cassandra server installation."""
+        """Prepare the guest machine with a Cassandra server installation."""
         LOG.info(_("Preparing Guest as a Cassandra Server"))
         if not packager.pkg_is_installed(packages):
             self._install_db(packages)
@@ -138,8 +148,8 @@ class CassandraApp(object):
             self.service_candidates, self.state_change_wait_time)
 
     def _install_db(self, packages):
-        """Install cassandra server"""
-        LOG.debug("Installing cassandra server.")
+        """Install Cassandra server"""
+        LOG.debug("Installing Cassandra server.")
         packager.pkg_install(packages, None, 10000)
         LOG.debug("Finished installing Cassandra server")
 
@@ -214,73 +224,62 @@ class CassandraApp(object):
             config[self._CONF_AUTH_SEC][self._CONF_PWD_KEY]
         )
 
-    def write_config(self, config_contents):
+    def apply_initial_guestagent_configuration(self):
+        """
+        Some of these settings may be overriden by user defined
+        configuration groups.
 
-        operating_system.write_file(
-            self.cassandra_conf, config_contents, codec=SafeYamlCodec(),
-            as_root=True)
-        operating_system.chown(self.cassandra_conf,
-                               self.cassandra_owner,
-                               self.cassandra_owner,
-                               recursive=False, as_root=True)
-        operating_system.chmod(self.cassandra_conf,
-                               FileMode.ADD_READ_ALL, as_root=True)
-
-        LOG.info(_('Wrote new Cassandra configuration.'))
-
-    def update_config_with_single(self, key, value):
-        """Updates single key:value in 'cassandra.yaml'."""
-
-        yamled = operating_system.read_file(self.cassandra_conf,
-                                            codec=SafeYamlCodec())
-        yamled.update({key: value})
-        LOG.debug("Updating cassandra.yaml with %(key)s: %(value)s."
-                  % {'key': key, 'value': value})
-        LOG.debug("Dumping YAML to stream.")
-        self.write_config(yamled)
-
-    def update_conf_with_group(self, group):
-        """Updates group of key:value in 'cassandra.yaml'."""
-
-        yamled = operating_system.read_file(self.cassandra_conf,
-                                            codec=SafeYamlCodec())
-        for key, value in group.iteritems():
-            if key == 'seed':
-                (yamled.get('seed_provider')[0].
-                 get('parameters')[0].
-                 update({'seeds': value}))
-            else:
-                yamled.update({key: value})
-            LOG.debug("Updating cassandra.yaml with %(key)s: %(value)s."
-                      % {'key': key, 'value': value})
-        LOG.debug("Dumping YAML to stream")
-        self.write_config(yamled)
-
-    def make_host_reachable(self):
+        cluster_name
+            - Use the unique guest id by default.
+            - Prevents nodes from one logical cluster from talking
+              to another. All nodes in a cluster must have the same value.
+        authenticator and authorizer
+            - Necessary to enable users and permissions.
+        rpc_address - Enable remote connections on all interfaces.
+        broadcast_rpc_address - RPC address to broadcast to drivers and
+                                other clients. Must be set if
+                                rpc_address = 0.0.0.0 and can never be
+                                0.0.0.0 itself.
+        listen_address - The address on which the node communicates with
+                         other nodes. Can never be 0.0.0.0.
+        seed_provider - A list of discovery contact points.
+        """
         updates = {
+            'cluster_name': CONF.guest_id,
+            'authenticator': 'org.apache.cassandra.auth.PasswordAuthenticator',
+            'authorizer': 'org.apache.cassandra.auth.CassandraAuthorizer',
             'rpc_address': "0.0.0.0",
             'broadcast_rpc_address': netutils.get_my_ipv4(),
             'listen_address': netutils.get_my_ipv4(),
-            'seed': netutils.get_my_ipv4()
+            'seed_provider': {'parameters':
+                              [{'seeds': netutils.get_my_ipv4()}]
+                              }
         }
-        self.update_conf_with_group(updates)
+
+        self.configuration_manager.apply_system_override(updates)
+
+    def update_overrides(self, context, overrides, remove=False):
+        if overrides:
+            self.configuration_manager.apply_user_override(overrides)
+
+    def remove_overrides(self):
+        self.configuration_manager.remove_user_override()
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting Cassandra with configuration changes."))
-        LOG.debug("Inside the guest - Cassandra is running %s."
-                  % self.status.is_running)
+        LOG.debug("Starting database with configuration changes.")
         if self.status.is_running:
-            LOG.error(_("Cannot execute start_db_with_conf_changes because "
-                        "Cassandra state == %s.") % self.status)
-            raise RuntimeError("Cassandra not stopped.")
-        LOG.debug("Initiating config.")
-        self.write_config(config_contents)
+            raise RuntimeError(_("The service is still running."))
+
+        self.configuration_manager.save_configuration(config_contents)
+        # The configuration template has to be updated with
+        # guestagent-controlled settings.
+        self.apply_initial_guestagent_configuration()
         self.start_db(True)
 
     def reset_configuration(self, configuration):
+        LOG.debug("Resetting configuration.")
         config_contents = configuration['config_contents']
-        LOG.debug("Resetting configuration")
-        self.write_config(config_contents)
+        self.configuration_manager.save_configuration(config_contents)
 
     def _get_cqlsh_conf_path(self):
         return os.path.expanduser(self.cqlsh_conf_path)

@@ -15,7 +15,6 @@
 #
 
 import os
-import yaml
 
 from oslo_log import log as logging
 
@@ -49,6 +48,10 @@ class Manager(manager.Manager):
     def admin(self):
         return self.__admin
 
+    @property
+    def configuration_manager(self):
+        return self.app.configuration_manager
+
     def restart(self, context):
         self.app.restart()
 
@@ -79,8 +82,9 @@ class Manager(manager.Manager):
 
             if config_contents:
                 LOG.debug("Applying configuration.")
-                self.app.write_config(yaml.load(config_contents))
-                self.app.make_host_reachable()
+                self.app.configuration_manager.save_configuration(
+                    config_contents)
+                self.app.apply_initial_guestagent_configuration()
 
             if device_path:
                 LOG.debug("Preparing data volume.")
@@ -144,3 +148,16 @@ class Manager(manager.Manager):
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
         return self.admin.list_users(context, limit, marker, include_marker)
+
+    def update_overrides(self, context, overrides, remove=False):
+        LOG.debug("Updating overrides.")
+        if remove:
+            self.app.remove_overrides()
+        else:
+            self.app.update_overrides(context, overrides, remove)
+
+    def apply_overrides(self, context, overrides):
+        """Configuration changes are made in the config YAML file and
+        require restart, so this is a no-op.
+        """
+        pass

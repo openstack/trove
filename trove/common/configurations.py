@@ -62,3 +62,14 @@ class PostgresqlConfParser(object):
 
     def parse(self):
         return self.CODEC.deserialize(self.config).items()
+
+
+class CassandraConfParser(object):
+
+    CODEC = stream_codecs.SafeYamlCodec(default_flow_style=False)
+
+    def __init__(self, config):
+        self.config = config
+
+    def parse(self):
+        return self.CODEC.deserialize(self.config).items()

@@ -41,7 +41,6 @@ from trove.common import utils
 from trove.conductor import api as conductor_api
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
-from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.common import sql_query
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
@@ -2350,7 +2349,8 @@ class TestRedisApp(BaseAppTest.AppTestCase):
 
 class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
-    def setUp(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    def setUp(self, _):
         super(CassandraDBAppTest, self).setUp(str(uuid4()))
         self.sleep = time.sleep
         self.orig_time_time = time.time
@@ -2417,25 +2417,6 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
                           ['cassandra=1.2.10'])
 
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch.multiple('trove.guestagent.common.operating_system',
-                    chown=DEFAULT, chmod=DEFAULT, write_file=DEFAULT)
-    def test_cassandra_write_config(self, chown, chmod, write_file):
-        configuration = 'some arbitrary configuration text'
-        self.cassandra.write_config(configuration)
-
-        write_file.assert_called_with(
-            self.cassandra.cassandra_conf,
-            configuration,
-            codec=ANY,
-            as_root=True)
-        chown.assert_called_with(self.cassandra.cassandra_conf,
-                                 "cassandra", "cassandra", recursive=False,
-                                 as_root=True)
-        chmod.assert_called_with(
-            self.cassandra.cassandra_conf,
-            FileMode.ADD_READ_ALL,
-            as_root=True)
 
 
 class CouchbaseAppTest(BaseAppTest.AppTestCase):
