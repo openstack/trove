@@ -101,9 +101,12 @@ class Manager(periodic_task.PeriodicTasks):
         self.app.restart()
 
     def reset_configuration(self, context, configuration):
+        """
+         Currently this method does nothing. This method needs to be
+         implemented to enable rollback of flavor-resize on guestagent side.
+        """
         LOG.debug("Resetting CouchDB configuration.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=MANAGER)
+        pass
 
     def change_passwords(self, context, users):
         LOG.debug("Changing password.")

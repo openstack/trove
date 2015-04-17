@@ -204,6 +204,13 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         self.assertThat(users, Equals(['user1']))
         db2_service.DB2Admin.get_user.assert_any_call(username, hostname)
 
+    def test_reset_configuration(self):
+        try:
+            configuration = {'config_contents': 'some junk'}
+            self.manager.reset_configuration(self.context, configuration)
+        except Exception:
+            self.fail("reset_configuration raised exception unexpectedly.")
+
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertEqual(output, True)

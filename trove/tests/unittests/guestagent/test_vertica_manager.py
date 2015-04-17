@@ -194,6 +194,13 @@ class GuestAgentManagerTest(testtools.TestCase):
         mock_set_status.assert_called_with(
             rd_instance.ServiceStatuses.BUILD_PENDING)
 
+    def test_reset_configuration(self):
+        try:
+            configuration = {'config_contents': 'some junk'}
+            self.manager.reset_configuration(self.context, configuration)
+        except Exception:
+            self.fail("reset_configuration raised exception unexpectedly.")
+
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertEqual(output, True)
