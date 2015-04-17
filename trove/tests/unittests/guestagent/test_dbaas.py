@@ -510,6 +510,7 @@ class MySqlAppTest(testtools.TestCase):
         self.orig_time_sleep = time.sleep
         self.orig_unlink = os.unlink
         self.orig_get_auth_password = dbaas.get_auth_password
+        self.orig_service_discovery = operating_system.service_discovery
         util.init_db()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
@@ -522,8 +523,8 @@ class MySqlAppTest(testtools.TestCase):
                          'cmd_enable': Mock(),
                          'cmd_disable': Mock(),
                          'bin': Mock()}
-        dbaas.operating_system.service_discovery = Mock(return_value=
-                                                        mysql_service)
+        operating_system.service_discovery = Mock(return_value=
+                                                  mysql_service)
         time.sleep = Mock()
         os.unlink = Mock()
         dbaas.get_auth_password = Mock()
@@ -533,6 +534,7 @@ class MySqlAppTest(testtools.TestCase):
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
         os.unlink = self.orig_unlink
+        operating_system.service_discovery = self.orig_service_discovery
         dbaas.get_auth_password = self.orig_get_auth_password
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
