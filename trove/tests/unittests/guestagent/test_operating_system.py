@@ -179,6 +179,140 @@ class TestOperatingSystem(testtools.TestCase):
                               "Got unknown keyword args: {'_unknown_kw': 0}"),
             'path', _unknown_kw=0)
 
+    def test_move(self):
+        self._assert_execute_call(
+            [['mv', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.move, None, 'source', 'destination', as_root=True)
+
+        self._assert_execute_call(
+            [['mv', '-f', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.move, None, 'source', 'destination', force=True,
+            as_root=True)
+
+        self._assert_execute_call(
+            [['mv', 'source', 'destination']],
+            [{'timeout': 100}],
+            operating_system.move, None, 'source', 'destination',
+            timeout=100)
+
+        self._assert_execute_call(
+            [['mv', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': 'sudo', 'timeout': None}],
+            operating_system.move, None, 'source', 'destination', timeout=None,
+            as_root=True)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), '', 'destination')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), None, 'destination')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing destination path."), 'source', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing destination path."), 'source', None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), '', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), None, None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.move,
+            ExpectedException(UnknownArgumentError,
+                              "Got unknown keyword args: {'_unknown_kw': 0}"),
+            'source', 'destination', _unknown_kw=0)
+
+    def test_copy(self):
+        self._assert_execute_call(
+            [['cp', '-R', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.copy, None, 'source', 'destination', as_root=True)
+
+        self._assert_execute_call(
+            [['cp', '-f', '-p', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.copy, None, 'source', 'destination', force=True,
+            preserve=True, recursive=False, as_root=True)
+
+        self._assert_execute_call(
+            [['cp', '-R', 'source', 'destination']],
+            [{'timeout': 100}],
+            operating_system.copy, None, 'source', 'destination',
+            timeout=100)
+
+        self._assert_execute_call(
+            [['cp', '-R', 'source', 'destination']],
+            [{'run_as_root': True, 'root_helper': "sudo", 'timeout': None}],
+            operating_system.copy, None, 'source', 'destination', timeout=None,
+            as_root=True)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), '', 'destination')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), None, 'destination')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing destination path."), 'source', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing destination path."), 'source', None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), '', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing source path."), None, None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.copy,
+            ExpectedException(UnknownArgumentError,
+                              "Got unknown keyword args: {'_unknown_kw': 0}"),
+            'source', 'destination', _unknown_kw=0)
+
     def _assert_execute_call(self, exec_args, exec_kwargs,
                              fun, return_value, *args, **kwargs):
         """

@@ -19,6 +19,7 @@ import tempfile
 from uuid import uuid4
 import time
 from mock import ANY
+from mock import DEFAULT
 from mock import Mock
 from mock import MagicMock
 from mock import PropertyMock
@@ -1633,19 +1634,22 @@ class CassandraDBAppTest(testtools.TestCase):
 
         configuration = 'this is my configuration'
 
-        self.assertRaises(ProcessExecutionError,
-                          self.cassandra.write_config,
-                          config_contents=configuration,
-                          execute_function=execute_with_timeout,
-                          mkstemp_function=mock_mkstemp,
-                          unlink_function=mock_unlink)
+        with patch('trove.guestagent.common.operating_system.move'):
+            self.assertRaises(ProcessExecutionError,
+                              self.cassandra.write_config,
+                              config_contents=configuration,
+                              execute_function=execute_with_timeout,
+                              mkstemp_function=mock_mkstemp,
+                              unlink_function=mock_unlink)
 
-        self.assertEqual(mock_unlink.call_count, 1)
+            self.assertEqual(mock_unlink.call_count, 1)
 
         # really delete the temporary_config_file
         os.unlink(temp_config_name)
 
-    def test_cassandra_write_config(self):
+    @patch.multiple('trove.guestagent.common.operating_system',
+                    chmod=DEFAULT, move=DEFAULT)
+    def test_cassandra_write_config(self, chmod, move):
         # ensure that write_config creates a temporary file, and then
         # moves the file to the final place. Also validate the
         # contents of the file written.
@@ -1659,23 +1663,18 @@ class CassandraDBAppTest(testtools.TestCase):
 
         mock_execute = MagicMock(return_value=('', ''))
 
-        with patch('trove.guestagent.common.operating_system.chmod') as chmod:
-            self.cassandra.write_config(configuration,
-                                        execute_function=mock_execute,
-                                        mkstemp_function=mock_mkstemp)
+        self.cassandra.write_config(configuration,
+                                    execute_function=mock_execute,
+                                    mkstemp_function=mock_mkstemp)
 
-            mv, chown = mock_execute.call_args_list
+        move.assert_called_with(temp_config_name, cass_system.CASSANDRA_CONF,
+                                as_root=True)
+        mock_execute.assert_called_with("sudo", "chown", "cassandra:cassandra",
+                                        cass_system.CASSANDRA_CONF)
+        chmod.assert_called_with(
+            cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL, as_root=True)
 
-            mv.assert_called_with("sudo", "mv",
-                                  temp_config_name,
-                                  cass_system.CASSANDRA_CONF)
-            chown.assert_called_with("sudo", "chown", "cassandra:cassandra",
-                                     cass_system.CASSANDRA_CONF)
-            chmod.assert_called_with(
-                cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL,
-                as_root=True)
-
-            mock_mkstemp.assert_called_once()
+        mock_mkstemp.assert_called_once()
 
         with open(temp_config_name, 'r') as config_file:
             configuration_data = config_file.read()

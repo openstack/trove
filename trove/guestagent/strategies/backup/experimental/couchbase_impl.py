@@ -23,6 +23,7 @@ from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.strategies.backup import base
 from trove.common.i18n import _
 from trove.openstack.common import log as logging
+from trove.guestagent.common import operating_system
 
 
 LOG = logging.getLogger(__name__)
@@ -87,15 +88,12 @@ class CbBackup(base.BackupRunner):
                     else:
                         LOG.info(_("All buckets are memcached.  "
                                    "Skipping backup."))
-            utils.execute_with_timeout('mv', OUTFILE,
-                                       system.COUCHBASE_DUMP_DIR)
+            operating_system.move(OUTFILE, system.COUCHBASE_DUMP_DIR)
             if pw != "password":
                 # Not default password, backup generated root password
-                utils.execute_with_timeout('cp', '-p',
-                                           system.pwd_file,
-                                           system.COUCHBASE_DUMP_DIR,
-                                           run_as_root=True,
-                                           root_helper='sudo')
+                operating_system.copy(system.pwd_file,
+                                      system.COUCHBASE_DUMP_DIR,
+                                      preserve=True, as_root=True)
         except exception.ProcessExecutionError as p:
             LOG.error(p)
             raise p

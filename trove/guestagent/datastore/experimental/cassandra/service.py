@@ -137,7 +137,8 @@ class CassandraApp(object):
         # we move the file.
         try:
             os.write(conf_fd, config_contents)
-            execute_function("sudo", "mv", conf_path, system.CASSANDRA_CONF)
+            operating_system.move(conf_path, system.CASSANDRA_CONF,
+                                  as_root=True)
             #TODO(denis_makogon): figure out the dynamic way to discover
             # configs owner since it can cause errors if there is
             # no cassandra user in operating system
