@@ -226,8 +226,8 @@ class CreateConfigurations(ConfigurationsTestBase):
         with TypeCheck('ConfigurationParameter', param) as parameter:
             parameter.has_field('name', basestring)
             parameter.has_field('restart_required', bool)
-            parameter.has_field('max', int)
-            parameter.has_field('min', int)
+            parameter.has_field('max', (int, long))
+            parameter.has_field('min', (int, long))
             parameter.has_field('type', basestring)
             parameter.has_field('datastore_version_id', unicode)
 
