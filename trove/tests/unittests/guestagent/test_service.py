@@ -12,19 +12,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
-from mock import Mock, MagicMock
+from mock import Mock
+from mock import patch
 from trove.guestagent import service
+from trove.tests.unittests import trove_testtools
 
 
-class ServiceTest(testtools.TestCase):
+class ServiceTest(trove_testtools.TestCase):
     def setUp(self):
         super(ServiceTest, self).setUp()
 
     def tearDown(self):
         super(ServiceTest, self).tearDown()
 
-    def test_app_factory(self):
-        service.API._instance_router = MagicMock()
+    @patch.object(service.API, '_instance_router')
+    def test_app_factory(self, instance_router_mock):
         service.app_factory(Mock)
-        self.assertEqual(1, service.API._instance_router.call_count)
+        self.assertEqual(1, instance_router_mock.call_count)
