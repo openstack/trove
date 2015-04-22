@@ -2012,27 +2012,15 @@ class MongoDBAppTest(testtools.TestCase):
     def test_mongodb_error_in_write_config_verify_unlink(self):
         configuration = {'config_contents': 'some junk'}
         from trove.common.exception import ProcessExecutionError
-        mongo_service.utils.execute_with_timeout = (
-            Mock(side_effect=ProcessExecutionError('some exception')))
 
-        self.assertRaises(ProcessExecutionError,
-                          self.mongoDbApp.reset_configuration,
-                          configuration=configuration)
-        self.assertEqual(
-            mongo_service.utils.execute_with_timeout.call_count, 1)
-        self.assertEqual(os.unlink.call_count, 1)
-
-    def test_mongodb_error_in_write_config(self):
-        configuration = {'config_contents': 'some junk'}
-        from trove.common.exception import ProcessExecutionError
-        mongo_service.utils.execute_with_timeout = (
-            Mock(side_effect=ProcessExecutionError('some exception')))
-
-        self.assertRaises(ProcessExecutionError,
-                          self.mongoDbApp.reset_configuration,
-                          configuration=configuration)
-        self.assertEqual(
-            mongo_service.utils.execute_with_timeout.call_count, 1)
+        with patch.object(os.path, 'isfile', return_value=True):
+            with patch.object(operating_system, 'move',
+                              side_effect=ProcessExecutionError):
+                self.assertRaises(ProcessExecutionError,
+                                  self.mongoDbApp.reset_configuration,
+                                  configuration=configuration)
+                self.assertEqual(1, operating_system.move.call_count)
+                self.assertEqual(1, os.unlink.call_count)
 
     def test_start_db_with_conf_changes_db_is_running(self):
 
