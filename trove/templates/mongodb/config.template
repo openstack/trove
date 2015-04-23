@@ -92,15 +92,3 @@ journal=true
 #oplogSize = <MB>
 # Size limit for in-memory storage of op ids.
 #opIdMem = <bytes>
-
-[Service]
-# (file size)
-LimitFSIZE=infinity
-# (cpu time)
-LimitCPU=infinity
-# (virtual memory size)
-LimitAS=infinity
-# (open files)
-LimitNOFILE=64000
-# (processes/threads)
-LimitNPROC=64000
