@@ -2138,6 +2138,12 @@ class VerticaAppTest(testtools.TestCase):
             " -m vertica.local_coerce")
         arguments.assert_called_with(expected_command)
 
+    def test_failure_prepare_for_install_vertica(self):
+        with patch.object(vertica_system, 'shell_execute',
+                          side_effect=ProcessExecutionError('Error')):
+            self.assertRaises(ProcessExecutionError,
+                              self.app.prepare_for_install_vertica)
+
     def test_install_vertica(self):
         with patch.object(self.app, 'write_config',
                           return_value=None):
@@ -2157,6 +2163,13 @@ class VerticaAppTest(testtools.TestCase):
                                                         '/var/lib/vertica',
                                                         'some_password'))
         arguments.assert_called_with(expected_command, 'dbadmin')
+
+    def test_failure_create_db(self):
+        with patch.object(self.app, 'read_config',
+                          side_effect=RuntimeError('Error')):
+            self.app.create_db('10.0.0.2')
+        # Because of an exception in read_config there was no shell execution.
+        self.assertEqual(vertica_system.shell_execute.call_count, 0)
 
     def test_vertica_write_config(self):
         temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
@@ -2275,6 +2288,35 @@ class VerticaAppTest(testtools.TestCase):
                         mock_status.wait_for_real_status_to_change_to.called)
                     arguments.assert_called_with(expected_cmd, 'dbadmin')
 
+    def test_stop_db_do_not_start_on_reboot(self):
+        mock_status = MagicMock()
+        type(mock_status)._is_restarting = PropertyMock(return_value=True)
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_disable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                with patch.object(vertica_system, 'shell_execute',
+                                  MagicMock(side_effect=[['', ''],
+                                                         ['db_srvr', None],
+                                                         ['', '']])):
+                    app.stop_db(do_not_start_on_reboot=True)
+
+                    self.assertEqual(vertica_system.shell_execute.call_count,
+                                     3)
+                    app._disable_db_on_boot.assert_any_call()
+
+    def test_stop_db_database_not_running(self):
+        mock_status = MagicMock()
+        app = VerticaApp(mock_status)
+        with patch.object(app, '_disable_db_on_boot', return_value=None):
+            with patch.object(app, 'read_config',
+                              return_value=self.test_config):
+                    app.stop_db()
+                    # Since database stop command does not gets executed,
+                    # so only 2 shell calls were there.
+                    self.assertEqual(vertica_system.shell_execute.call_count,
+                                     2)
+
     def test_stop_db_failure(self):
         mock_status = MagicMock()
         type(mock_status)._is_restarting = PropertyMock(return_value=False)
@@ -2296,6 +2338,14 @@ class VerticaAppTest(testtools.TestCase):
         self.app._export_conf_to_members(members=['member1', 'member2'])
         self.assertEqual(vertica_system.shell_execute.call_count, 2)
 
+    def test_fail__export_conf_to_members(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(vertica_system, 'shell_execute',
+                          side_effect=ProcessExecutionError('Error')):
+            self.assertRaises(ProcessExecutionError,
+                              app._export_conf_to_members,
+                              ['member1', 'member2'])
+
     def test_authorize_public_keys(self):
         user = 'test_user'
         keys = ['test_key@machine1', 'test_key@machine2']
@@ -2305,6 +2355,33 @@ class VerticaAppTest(testtools.TestCase):
         self.assertEqual(vertica_system.shell_execute.call_count, 2)
         vertica_system.shell_execute.assert_any_call(
             'cat ' + '/home/' + user + '/.ssh/authorized_keys')
+
+    def test_authorize_public_keys_authorized_file_not_exists(self):
+        user = 'test_user'
+        keys = ['test_key@machine1', 'test_key@machine2']
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+            with patch.object(
+                    vertica_system, 'shell_execute',
+                    MagicMock(side_effect=[ProcessExecutionError('Some Error'),
+                                           ['', '']])):
+                self.app.authorize_public_keys(user=user, public_keys=keys)
+                self.assertEqual(vertica_system.shell_execute.call_count, 2)
+                vertica_system.shell_execute.assert_any_call(
+                    'cat ' + '/home/' + user + '/.ssh/authorized_keys')
+
+    def test_fail_authorize_public_keys(self):
+        user = 'test_user'
+        keys = ['test_key@machine1', 'test_key@machine2']
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+            with patch.object(
+                    vertica_system, 'shell_execute',
+                    MagicMock(side_effect=[ProcessExecutionError('Some Error'),
+                                           ProcessExecutionError('Some Error')
+                                           ])):
+                self.assertRaises(ProcessExecutionError,
+                                  self.app.authorize_public_keys, user, keys)
 
     def test_get_public_keys(self):
         user = 'test_user'
@@ -2317,6 +2394,30 @@ class VerticaAppTest(testtools.TestCase):
         vertica_system.shell_execute.assert_any_call(
             'cat ' + '/home/' + user + '/.ssh/id_rsa.pub')
 
+    def test_get_public_keys_if_key_exists(self):
+        user = 'test_user'
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+            with patch.object(
+                    vertica_system, 'shell_execute',
+                    MagicMock(side_effect=[ProcessExecutionError('Some Error'),
+                                           ['some_key', None]])):
+                key = self.app.get_public_keys(user=user)
+                self.assertEqual(vertica_system.shell_execute.call_count, 2)
+                self.assertEqual('some_key', key)
+
+    def test_fail_get_public_keys(self):
+        user = 'test_user'
+        with patch.object(os.path, 'expanduser',
+                          return_value=('/home/' + user)):
+            with patch.object(
+                    vertica_system, 'shell_execute',
+                    MagicMock(side_effect=[ProcessExecutionError('Some Error'),
+                                           ProcessExecutionError('Some Error')
+                                           ])):
+                self.assertRaises(ProcessExecutionError,
+                                  self.app.get_public_keys, user)
+
     def test_install_cluster(self):
         with patch.object(self.app, 'read_config',
                           return_value=self.test_config):
@@ -2324,6 +2425,78 @@ class VerticaAppTest(testtools.TestCase):
         # Verifying nu,ber of shell calls,
         # as command has already been tested in preceeding tests
         self.assertEqual(vertica_system.shell_execute.call_count, 5)
+
+    def test__enable_db_on_boot(self):
+        app = VerticaApp(MagicMock())
+        app._enable_db_on_boot()
+
+        restart_policy, agent_enable = subprocess.Popen.call_args_list
+        expected_restart_policy = [
+            'sudo', 'su', '-', 'dbadmin', '-c',
+            (vertica_system.SET_RESTART_POLICY % ('db_srvr', 'always'))]
+        expected_agent_enable = [
+            'sudo', 'su', '-', 'root', '-c',
+            (vertica_system.VERTICA_AGENT_SERVICE_COMMAND % 'enable')]
+
+        self.assertEqual(subprocess.Popen.call_count, 2)
+        restart_policy.assert_called_with(expected_restart_policy)
+        agent_enable.assert_called_with(expected_agent_enable)
+
+    def test_failure__enable_db_on_boot(self):
+        with patch.object(subprocess, 'Popen', side_effect=OSError):
+            self.assertRaisesRegexp(RuntimeError,
+                                    'Could not enable db on boot.',
+                                    self.app._enable_db_on_boot)
+
+    def test__disable_db_on_boot(self):
+        app = VerticaApp(MagicMock())
+        app._disable_db_on_boot()
+
+        restart_policy, agent_disable = (
+            vertica_system.shell_execute.call_args_list)
+        expected_restart_policy = (
+            vertica_system.SET_RESTART_POLICY % ('db_srvr', 'never'))
+        expected_agent_disable = (
+            vertica_system.VERTICA_AGENT_SERVICE_COMMAND % 'disable')
+
+        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        restart_policy.assert_called_with(expected_restart_policy, 'dbadmin')
+        agent_disable.assert_called_with(expected_agent_disable, 'root')
+
+    def test_failure__disable_db_on_boot(self):
+        with patch.object(vertica_system, 'shell_execute',
+                          side_effect=ProcessExecutionError('Error')):
+            self.assertRaisesRegexp(RuntimeError,
+                                    'Could not disable db on boot.',
+                                    self.app._disable_db_on_boot)
+
+    def test_read_config(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(ConfigParser, 'ConfigParser',
+                          return_value=self.test_config):
+            test_config = app.read_config()
+            self.assertEqual('some_password',
+                             test_config.get('credentials', 'dbadmin_password')
+                             )
+
+    def test_fail_read_config(self):
+        with patch.object(ConfigParser.ConfigParser, 'read',
+                          side_effect=ConfigParser.Error()):
+            self.assertRaises(RuntimeError, self.app.read_config)
+
+    def test_complete_install_or_restart(self):
+        app = VerticaApp(MagicMock())
+        app.complete_install_or_restart()
+        app.status.end_install_or_restart.assert_any_call()
+
+    def test_start_db_with_conf_changes(self):
+        mock_status = MagicMock()
+        type(mock_status)._is_restarting = PropertyMock(return_value=False)
+        app = VerticaApp(mock_status)
+        with patch.object(app, 'read_config',
+                          return_value=self.test_config):
+            app.start_db_with_conf_changes('test_config_contents')
+            app.status.end_install_or_restart.assert_any_call()
 
 
 class DB2AppTest(testtools.TestCase):
