@@ -57,7 +57,7 @@ class BackupRunner(Strategy):
     def backup_type(self):
         return type(self).__name__
 
-    def run(self):
+    def _run(self):
         LOG.debug("BackupRunner running cmd: %s", self.command)
         self.process = subprocess.Popen(self.command, shell=True,
                                         stdout=subprocess.PIPE,
@@ -68,7 +68,7 @@ class BackupRunner(Strategy):
     def __enter__(self):
         """Start up the process."""
         self._run_pre_backup()
-        self.run()
+        self._run()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -76,7 +76,7 @@ class BackupRunner(Strategy):
         if exc_type is not None:
             return False
 
-        if hasattr(self, 'process'):
+        if getattr(self, 'process', None):
             try:
                 # Send a sigterm to the session leader, so that all
                 # child processes are killed and cleaned up on terminate
