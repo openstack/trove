@@ -53,7 +53,7 @@ db_api_implementation = trove.db.sqlalchemy.api
 # basically acting like the client via that proxy token.
 nova_proxy_admin_user = admin
 nova_proxy_admin_pass = 3de4922d8b6ac5a1aad9
-nova_proxy_admin_tenant_name = admin
+nova_proxy_admin_tenant_id =
 trove_auth_url = http://0.0.0.0:5000/v2.0
 
 nova_region_name = RegionOne
