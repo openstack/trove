@@ -370,7 +370,7 @@ class MongoDbAppStatus(service.BaseDbStatus):
                                 netutils.get_my_ipv4())
 
             out, err = utils.execute_with_timeout(status_check, shell=True)
-            if not err and "connected to:" in out:
+            if not err:
                 return ds_instance.ServiceStatuses.RUNNING
             else:
                 return ds_instance.ServiceStatuses.SHUTDOWN
