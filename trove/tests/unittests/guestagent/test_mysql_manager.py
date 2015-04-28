@@ -230,14 +230,14 @@ class GuestAgentManagerTest(testtools.TestCase):
         # verification/assertion
         mock_status.begin_install.assert_any_call()
 
-        self.assertEqual(VolumeDevice.format.call_count, COUNT)
-        self.assertEqual(VolumeDevice.migrate_data.call_count, COUNT)
-        self.assertEqual(VolumeDevice.mount_points.call_count, COUNT)
-        self.assertEqual(dbaas.MySqlApp.stop_db.call_count, COUNT)
+        self.assertEqual(COUNT, VolumeDevice.format.call_count)
+        self.assertEqual(COUNT, VolumeDevice.migrate_data.call_count)
+        self.assertEqual(COUNT, VolumeDevice.mount_points.call_count)
+        self.assertEqual(COUNT, dbaas.MySqlApp.stop_db.call_count)
         if is_mounted:
-            self.assertEqual(VolumeDevice.unmount.call_count, 1)
+            self.assertEqual(1, VolumeDevice.unmount.call_count)
         else:
-            self.assertEqual(VolumeDevice.unmount.call_count, 0)
+            self.assertEqual(0, VolumeDevice.unmount.call_count)
         if backup_info:
             backup.restore.assert_any_call(self.context,
                                            backup_info,
@@ -290,10 +290,10 @@ class GuestAgentManagerTest(testtools.TestCase):
                                                   replica_source_config))
         # assertions
         self.assertEqual(expected_replication_snapshot, replication_snapshot)
-        self.assertEqual(mock_replication.enable_as_master.call_count, 1)
+        self.assertEqual(1, mock_replication.enable_as_master.call_count)
         self.assertEqual(
-            mock_replication.snapshot_for_replication.call_count, 1)
-        self.assertEqual(mock_replication.get_master_ref.call_count, 1)
+            1, mock_replication.snapshot_for_replication.call_count)
+        self.assertEqual(1, mock_replication.get_master_ref.call_count)
 
     def test_attach_replication_slave_valid(self):
         mock_status = MagicMock()
@@ -313,7 +313,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         # entry point
         self.manager.attach_replica(self.context, snapshot, None)
         # assertions
-        self.assertEqual(mock_replication.enable_as_slave.call_count, 1)
+        self.assertEqual(1, mock_replication.enable_as_slave.call_count)
 
     def test_attach_replication_slave_invalid(self):
         mock_status = MagicMock()
@@ -335,7 +335,7 @@ class GuestAgentManagerTest(testtools.TestCase):
                           self.manager.attach_replica,
                           self.context, snapshot, None)
         # assertions
-        self.assertEqual(mock_replication.enable_as_slave.call_count, 0)
+        self.assertEqual(0, mock_replication.enable_as_slave.call_count)
 
     def test_detach_replica(self):
         mock_status = MagicMock()
@@ -348,7 +348,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         # entry point
         self.manager.detach_replica(self.context)
         # assertions
-        self.assertEqual(mock_replication.detach_slave.call_count, 1)
+        self.assertEqual(1, mock_replication.detach_slave.call_count)
 
     def test_demote_replication_master(self):
         mock_status = MagicMock()
@@ -361,7 +361,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         # entry point
         self.manager.demote_replication_master(self.context)
         # assertions
-        self.assertEqual(mock_replication.demote_master.call_count, 1)
+        self.assertEqual(1, mock_replication.demote_master.call_count)
 
     def test_get_master_UUID(self):
         app = dbaas.MySqlApp(None)

@@ -335,7 +335,7 @@ class BackupORMTest(testtools.TestCase):
 
     def test_backup_size(self):
         db_record = models.DBBackup.find_by(id=self.backup.id)
-        self.assertEqual(db_record.size, self.backup.size)
+        self.assertEqual(self.backup.size, db_record.size)
 
     def test_backup_delete(self):
         backup = models.DBBackup.find_by(id=self.backup.id)

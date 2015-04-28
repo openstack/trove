@@ -21,8 +21,8 @@ class TroveErrorTest(TestCase):
 
     def test_valid_error_message_format(self):
         error = TroveError("%02d" % 1)
-        self.assertEqual(error.message, "01")
+        self.assertEqual("01", error.message)
 
     def test_invalid_error_message_format(self):
         error = TroveError("test%999999sdb")
-        self.assertEqual(error.message, "test999999sdb")
+        self.assertEqual("test999999sdb", error.message)

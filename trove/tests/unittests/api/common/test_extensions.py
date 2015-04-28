@@ -99,7 +99,7 @@ class TestExtensionLoading(testtools.TestCase):
         eps = pkg_resources.EntryPoint.parse_group('mock', EP_TEXT)
         mock_iter_eps.return_value = eps.values()
         extension_mgr = extensions.ExtensionManager()
-        self.assertEqual(len(extension_mgr.extensions),
-                         len(DEFAULT_EXTENSION_MAP.keys()),
+        self.assertEqual(len(DEFAULT_EXTENSION_MAP.keys()),
+                         len(extension_mgr.extensions),
                          "Loaded invalid extensions")
         self._assert_default_extensions(extension_mgr.extensions)
