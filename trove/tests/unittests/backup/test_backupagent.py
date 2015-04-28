@@ -397,7 +397,7 @@ class BackupAgentTest(testtools.TestCase):
 
                 mysql_impl.InnoBackupExIncremental.metadata = MagicMock(
                     return_value=meta)
-                mysql_impl.InnoBackupExIncremental.run = MagicMock(
+                mysql_impl.InnoBackupExIncremental._run = MagicMock(
                     return_value=True)
                 mysql_impl.InnoBackupExIncremental.__exit__ = MagicMock(
                     return_value=True)

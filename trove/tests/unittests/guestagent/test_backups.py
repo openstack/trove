@@ -328,18 +328,18 @@ class CouchbaseBackupTests(testtools.TestCase):
 
     def test_backup_success(self):
         self.backup_runner.__exit__ = mock.Mock()
-        self.backup_runner.run = mock.Mock()
+        self.backup_runner._run = mock.Mock()
         self.backup_runner._run_pre_backup = mock.Mock()
         self.backup_runner._run_post_backup = mock.Mock()
         utils.execute_with_timeout = mock.Mock(return_value=None)
         with self.backup_runner(12345):
             pass
-        self.assertTrue(self.backup_runner.run)
+        self.assertTrue(self.backup_runner._run)
         self.assertTrue(self.backup_runner._run_pre_backup)
         self.assertTrue(self.backup_runner._run_post_backup)
 
     def test_backup_failed_due_to_run_backup(self):
-        self.backup_runner.run = mock.Mock(
+        self.backup_runner._run = mock.Mock(
             side_effect=exception.ProcessExecutionError('test'))
         self.backup_runner._run_pre_backup = mock.Mock()
         self.backup_runner._run_post_backup = mock.Mock()
