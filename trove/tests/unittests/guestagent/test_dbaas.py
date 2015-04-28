@@ -33,6 +33,8 @@ from testtools.matchers import Not
 from trove.common import cfg
 from trove.common.exception import ProcessExecutionError
 from trove.common.exception import GuestError
+from trove.common.exception import PollTimeOut
+from trove.common.exception import BadRequest
 from trove.common import utils
 from trove.common import instance as rd_instance
 from trove.conductor import api as conductor_api
@@ -88,7 +90,7 @@ FAKE_DB = {"_name": "testDB", "_character_set": "latin2",
 FAKE_DB_2 = {"_name": "testDB2", "_character_set": "latin2",
              "_collate": "latin2_general_ci"}
 FAKE_USER = [{"_name": "random", "_password": "guesswhat",
-              "_databases": [FAKE_DB]}]
+              "_host": "%", "_databases": [FAKE_DB]}]
 
 conductor_api.API.get_client = Mock()
 conductor_api.API.heartbeat = Mock()
@@ -121,6 +123,46 @@ class DbaasTest(testtools.TestCase):
         super(DbaasTest, self).tearDown()
         dbaas.utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         dbaas.utils.execute = self.orig_utils_execute
+
+    @patch.object(operating_system, 'remove')
+    def test_clear_expired_password(self, mock_remove):
+        secret_content = ("# The random password set for the "
+                          "root user at Wed May 14 14:06:38 2014 "
+                          "(local time): somepassword")
+        with patch.object(dbaas.utils, 'execute',
+                          return_value=(secret_content, None)):
+            dbaas.clear_expired_password()
+            self.assertEqual(2, dbaas.utils.execute.call_count)
+            self.assertEqual(1, mock_remove.call_count)
+
+    @patch.object(operating_system, 'remove')
+    def test_no_secret_content_clear_expired_password(self, mock_remove):
+        with patch.object(dbaas.utils, 'execute', return_value=('', None)):
+            dbaas.clear_expired_password()
+            self.assertEqual(1, dbaas.utils.execute.call_count)
+            mock_remove.assert_not_called()
+
+    @patch.object(operating_system, 'remove')
+    def test_fail_password_update_content_clear_expired_password(self,
+                                                                 mock_remove):
+        secret_content = ("# The random password set for the "
+                          "root user at Wed May 14 14:06:38 2014 "
+                          "(local time): somepassword")
+        with patch.object(dbaas.utils, 'execute',
+                          side_effect=[(secret_content, None),
+                                       ProcessExecutionError]):
+            dbaas.clear_expired_password()
+            self.assertEqual(2, dbaas.utils.execute.call_count)
+            mock_remove.assert_not_called()
+
+    @patch.object(operating_system, 'remove')
+    @patch.object(dbaas.utils, 'execute', side_effect=ProcessExecutionError)
+    def test_fail_retrieve_secret_content_clear_expired_password(self,
+                                                                 mock_execute,
+                                                                 mock_remove):
+        dbaas.clear_expired_password()
+        self.assertEqual(1, mock_execute.call_count)
+        mock_remove.assert_not_called()
 
     def test_get_auth_password(self):
 
@@ -175,10 +217,10 @@ class DbaasTest(testtools.TestCase):
                           "federated=ha_federated.so"],
                          options["plugin-load"])
 
-    def test_load_mysqld_options_error(self):
+    @patch.object(os.path, 'isfile', return_value=True)
+    def test_load_mysqld_options_error(self, mock_exists):
 
         dbaas.utils.execute = Mock(side_effect=ProcessExecutionError())
-
         self.assertFalse(dbaas.load_mysqld_options())
 
 
@@ -247,6 +289,105 @@ class MySqlAdminTest(testtools.TestCase):
         dbaas.LocalSqlClient.execute = self.orig_LocalSqlClient_execute
         models.MySQLUser._is_valid_user_name = (
             self.orig_MySQLUser_is_valid_user_name)
+
+    def test__associate_dbs(self):
+        db_result = [{"grantee": "'test_user'@'%'", "table_schema": "db1"},
+                     {"grantee": "'test_user'@'%'", "table_schema": "db2"},
+                     {"grantee": "'test_user'@'%'", "table_schema": "db3"},
+                     {"grantee": "'test_user1'@'%'", "table_schema": "db1"},
+                     {"grantee": "'test_user1'@'%'", "table_schema": "db3"}]
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user.databases = []
+        expected = ("SELECT grantee, table_schema FROM "
+                    "information_schema.SCHEMA_PRIVILEGES WHERE privilege_type"
+                    " != 'USAGE' GROUP BY grantee, table_schema;")
+
+        with patch.object(dbaas.LocalSqlClient, 'execute',
+                          Mock(return_value=db_result)):
+            self.mySqlAdmin._associate_dbs(user)
+            args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+
+            self.assertEqual(3, len(user.databases))
+            self.assertEqual(expected, args[0].text,
+                             "Associate database queries are not the same")
+
+            self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                            "The client object was not called")
+
+    def test_change_passwords(self):
+        user = [{"name": "test_user", "host": "%", "password": "password"}]
+        self.mySqlAdmin.change_passwords(user)
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+        expected = ("UPDATE mysql.user SET Password="
+                    "PASSWORD('password') WHERE User = 'test_user' "
+                    "AND Host = '%';")
+        self.assertEqual(expected, args[0].text,
+                         "Change password queries are not the same")
+
+        self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                        "The client object was not called")
+
+    def test_update_attributes_password(self):
+        db_result = [{"grantee": "'test_user'@'%'", "table_schema": "db1"},
+                     {"grantee": "'test_user'@'%'", "table_schema": "db2"}]
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user_attrs = {"password": "password"}
+        with patch.object(dbaas.LocalSqlClient, 'execute',
+                          Mock(return_value=db_result)):
+            with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+                with patch.object(self.mySqlAdmin, 'grant_access'):
+                    self.mySqlAdmin.update_attributes('test_usr', '%',
+                                                      user_attrs)
+                    self.mySqlAdmin.grant_access.assert_not_called()
+            args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
+            expected = ("UPDATE mysql.user SET Password="
+                        "PASSWORD('password') WHERE User = 'test_user' "
+                        "AND Host = '%';")
+            self.assertEqual(expected, args[0].text,
+                             "Update attributes queries are not the same")
+
+            self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                            "The client object was not called")
+
+    def test_update_attributes_name(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user_attrs = {"name": "new_name"}
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            with patch.object(self.mySqlAdmin, 'grant_access'):
+                self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
+                self.mySqlAdmin.grant_access.assert_called()
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
+        expected = ("UPDATE mysql.user SET User='new_name' "
+                    "WHERE User = 'test_user' AND Host = '%';")
+        self.assertEqual(expected, args[0].text,
+                         "Update attributes queries are not the same")
+
+        self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                        "The client object was not called")
+
+    def test_update_attributes_host(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user_attrs = {"host": "new_host"}
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            with patch.object(self.mySqlAdmin, 'grant_access'):
+                self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
+                self.mySqlAdmin.grant_access.assert_called()
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
+        expected = ("UPDATE mysql.user SET Host='new_host' "
+                    "WHERE User = 'test_user' AND Host = '%';")
+        self.assertEqual(expected, args[0].text,
+                         "Update attributes queries are not the same")
+
+        self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                        "The client object was not called")
 
     def test_create_database(self):
 
@@ -337,16 +478,19 @@ class MySqlAdminTest(testtools.TestCase):
 
     def test_create_user(self):
         self.mySqlAdmin.create_user(FAKE_USER)
-        expected = ("GRANT ALL PRIVILEGES ON `testDB`.* TO `random`@`%` "
-                    "IDENTIFIED BY 'guesswhat' "
-                    "WITH GRANT OPTION;")
-        # For some reason, call_args is None.
-        call_args = dbaas.LocalSqlClient.execute.call_args
-        if call_args is not None:
-            args, _ = call_args
-            self.assertEqual(expected, args[0].text.strip(),
-                             "Create user queries are not the same")
-            self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
+        access_grants_expected = ("GRANT ALL PRIVILEGES ON `testDB`.* TO "
+                                  "`random`@`%` IDENTIFIED BY 'guesswhat';")
+        create_user_expected = ("GRANT USAGE ON *.* TO `random`@`%` "
+                                "IDENTIFIED BY 'guesswhat';")
+
+        create_user, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+        self.assertEqual(create_user_expected, create_user[0].text,
+                         "Create user queries are not the same")
+
+        access_grants, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
+        self.assertEqual(access_grants_expected, access_grants[0].text,
+                         "Create user queries are not the same")
+        self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
 
     def test_list_databases(self):
         self.mySqlAdmin.list_databases()
@@ -483,14 +627,18 @@ class MySqlAdminTest(testtools.TestCase):
 
         self.assertTrue("AND Marker >= '" + marker + "'" in args[0].text)
 
-    def test_get_user(self):
+    @patch.object(dbaas.MySqlAdmin, '_associate_dbs')
+    def test_get_user(self, mock_associate_dbs):
         """
         Unit tests for mySqlAdmin.get_user.
         This test case checks if the sql query formed by the get_user method
         is correct or not by checking with expected query.
         """
         username = "user1"
-        hostname = "host"
+        hostname = "%"
+        user = [{"User": "user1", "Host": "%", 'Password': 'some_thing'}]
+        dbaas.LocalSqlClient.execute.return_value.fetchall = Mock(
+            return_value=user)
         self.mySqlAdmin.get_user(username, hostname)
         args, _ = dbaas.LocalSqlClient.execute.call_args
         expected = ["SELECT User, Host",
@@ -501,6 +649,76 @@ class MySqlAdminTest(testtools.TestCase):
 
         for text in expected:
             self.assertTrue(text in args[0].text, "%s not in query." % text)
+        self.assertEqual(1, mock_associate_dbs.call_count)
+
+    def test_fail_get_user(self):
+        username = "os_admin"
+        hostname = "host"
+        self.assertRaisesRegexp(BadRequest, "Username os_admin is not valid",
+                                self.mySqlAdmin.get_user, username, hostname)
+
+    def test_grant_access(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user.password = 'some_password'
+        databases = ['db1']
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            self.mySqlAdmin.grant_access('test_usr', '%', databases)
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+        expected = ("GRANT ALL PRIVILEGES ON `db1`.* TO `test_user`@`%` "
+                    "IDENTIFIED BY PASSWORD 'some_password';")
+        self.assertEqual(expected, args[0].text,
+                         "Grant access queries are not the same")
+
+        self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                        "The client object was not called")
+
+    def test_fail_grant_access(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user.password = 'some_password'
+        databases = ['mysql']
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            self.mySqlAdmin.grant_access('test_usr', '%', databases)
+        #since mysql is not a database to be provided access to,
+        #testing that executed was not called in grant access.
+        dbaas.LocalSqlClient.execute.assert_not_called()
+
+    def test_is_root_enabled(self):
+        self.mySqlAdmin.is_root_enabled()
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+        expected = ("SELECT User FROM mysql.user WHERE "
+                    "User = 'root' AND Host != 'localhost';")
+        self.assertEqual(expected, args[0].text,
+                         "Find root enabled queries are not the same")
+
+        self.assertTrue(dbaas.LocalSqlClient.execute.called,
+                        "The client object was not called")
+
+    def test_revoke_access(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user.password = 'some_password'
+        databases = ['db1']
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            self.mySqlAdmin.revoke_access('test_usr', '%', databases)
+        args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
+        expected = ("REVOKE ALL ON `['db1']`.* FROM `test_user`@`%`;")
+        self.assertEqual(expected, args[0].text,
+                         "Revoke access queries are not the same")
+
+    def test_list_access(self):
+        user = MagicMock()
+        user.name = "test_user"
+        user.host = "%"
+        user.databases = ['db1', 'db2']
+        with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
+            databases = self.mySqlAdmin.list_access('test_usr', '%')
+        self.assertEqual(2, len(databases),
+                         "List access queries are not the same")
 
 
 class MySqlAppTest(testtools.TestCase):
@@ -529,6 +747,11 @@ class MySqlAppTest(testtools.TestCase):
         time.sleep = Mock()
         os.unlink = Mock()
         dbaas.get_auth_password = Mock()
+        self.mock_client = Mock()
+        self.mock_execute = Mock()
+        self.mock_client.__enter__ = Mock()
+        self.mock_client.__exit__ = Mock()
+        self.mock_client.__enter__.return_value.execute = self.mock_execute
 
     def tearDown(self):
         super(MySqlAppTest, self).tearDown()
@@ -591,12 +814,33 @@ class MySqlAppTest(testtools.TestCase):
             {'service_status':
              rd_instance.ServiceStatuses.SHUTDOWN.description}))
 
+    @patch.object(utils, 'execute_with_timeout')
+    def test_stop_mysql_do_not_start_on_reboot(self, mock_execute):
+
+        self.appStatus.set_next_status(
+            rd_instance.ServiceStatuses.SHUTDOWN)
+
+        self.mySqlApp.stop_db(True, True)
+        self.assertTrue(conductor_api.API.heartbeat.called_once_with(
+            self.FAKE_ID,
+            {'service_status':
+             rd_instance.ServiceStatuses.SHUTDOWN.description}))
+        self.assertEqual(2, mock_execute.call_count)
+
     def test_stop_mysql_error(self):
 
         dbaas.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         self.mySqlApp.state_change_wait_time = 1
         self.assertRaises(RuntimeError, self.mySqlApp.stop_db)
+
+    @patch.object(operating_system, 'service_discovery',
+                  side_effect=KeyError('error'))
+    @patch.object(utils, 'execute_with_timeout')
+    def test_stop_mysql_key_error(self, mock_execute, mock_service):
+        self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
+                                self.mySqlApp.stop_db)
+        self.assertEqual(0, mock_execute.call_count)
 
     def test_restart_is_successful(self):
 
@@ -702,14 +946,35 @@ class MySqlAppTest(testtools.TestCase):
 
     def test_remove_overrides(self):
 
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         dbaas.utils.execute_with_timeout = mocked
         self.assertRaises(ProcessExecutionError, self.mySqlApp.start_mysql)
 
+    @patch.object(operating_system, 'move')
+    @patch.object(operating_system, 'remove')
+    @patch.object(dbaas, 'get_auth_password', return_value='some_password')
+    @patch.object(dbaas.MySqlApp, '_write_config_overrides')
+    def test_reset_configuration(self, mock_write_overrides,
+                                 mock_get_auth_password, mock_remove,
+                                 mock_move):
+        configuration = {'config_contents': 'some junk'}
+        self.mySqlApp.reset_configuration(configuration=configuration)
+        self.assertEqual(1, mock_get_auth_password.call_count)
+        self.assertEqual(2, mock_move.call_count)
+        self.assertEqual(2, mock_remove.call_count)
+        self.assertEqual(0, mock_write_overrides.call_count)
+
+    @patch.object(operating_system, 'move')
+    @patch.object(operating_system, 'remove')
+    @patch.object(dbaas.MySqlApp, '_write_config_overrides')
+    def test__write_mycnf(self, mock_write_overrides, mock_remove, mock_move):
+        self.mySqlApp._write_mycnf('some_password', 'some junk', 'something')
+        self.assertEqual(2, mock_move.call_count)
+        self.assertEqual(2, mock_remove.call_count)
+        self.assertEqual(1, mock_write_overrides.call_count)
+
     def test_mysql_error_in_write_config_verify_unlink(self):
         configuration = {'config_contents': 'some junk'}
-        from trove.common.exception import ProcessExecutionError
         dbaas.utils.execute_with_timeout = (
             Mock(side_effect=ProcessExecutionError('something')))
 
@@ -722,7 +987,6 @@ class MySqlAppTest(testtools.TestCase):
 
     def test_mysql_error_in_write_config(self):
         configuration = {'config_contents': 'some junk'}
-        from trove.common.exception import ProcessExecutionError
         dbaas.utils.execute_with_timeout = (
             Mock(side_effect=ProcessExecutionError('something')))
 
@@ -732,6 +996,279 @@ class MySqlAppTest(testtools.TestCase):
         self.assertEqual(1, dbaas.utils.execute_with_timeout.call_count)
         self.assertEqual(1, dbaas.get_auth_password.call_count)
 
+    @patch.object(utils, 'execute_with_timeout')
+    def test__enable_mysql_on_boot(self, mock_execute):
+        mysql_service = dbaas.operating_system.service_discovery(["mysql"])
+        self.mySqlApp._enable_mysql_on_boot()
+        self.assertEqual(1, mock_execute.call_count)
+        mock_execute.assert_called_with(mysql_service['cmd_enable'],
+                                        shell=True)
+
+    @patch.object(operating_system, 'service_discovery',
+                  side_effect=KeyError('error'))
+    @patch.object(utils, 'execute_with_timeout')
+    def test_fail__enable_mysql_on_boot(self, mock_execute, mock_service):
+        self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
+                                self.mySqlApp._enable_mysql_on_boot)
+        self.assertEqual(0, mock_execute.call_count)
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test__disable_mysql_on_boot(self, mock_execute):
+        mysql_service = dbaas.operating_system.service_discovery(["mysql"])
+        self.mySqlApp._disable_mysql_on_boot()
+        self.assertEqual(1, mock_execute.call_count)
+        mock_execute.assert_called_with(mysql_service['cmd_disable'],
+                                        shell=True)
+
+    @patch.object(operating_system, 'service_discovery',
+                  side_effect=KeyError('error'))
+    @patch.object(utils, 'execute_with_timeout')
+    def test_fail__disable_mysql_on_boot(self, mock_execute, mock_service):
+        self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
+                                self.mySqlApp._disable_mysql_on_boot)
+        self.assertEqual(0, mock_execute.call_count)
+
+    @patch.object(operating_system, 'move')
+    @patch.object(operating_system, 'chmod')
+    @patch.object(utils, 'execute_with_timeout')
+    def test_update_overrides(self, mock_execute, mock_chmod, mock_move):
+        override_value = 'something'
+        self.mySqlApp.update_overrides(override_value)
+        with open(dbaas.MYCNF_OVERRIDES_TMP, 'r') as test_file:
+            test_data = test_file.read()
+        self.assertEqual(override_value, test_data)
+        mock_chmod.assert_called_with(dbaas.MYCNF_OVERRIDES,
+                                      dbaas.FileMode.SET_GRP_RW_OTH_R,
+                                      as_root=True)
+        mock_move.assert_called_with(dbaas.MYCNF_OVERRIDES_TMP,
+                                     dbaas.MYCNF_OVERRIDES, as_root=True)
+
+        # Remove the residual file
+        os.remove(dbaas.MYCNF_OVERRIDES_TMP)
+
+    @patch.object(os.path, 'exists', return_value=True)
+    @patch.object(operating_system, 'remove')
+    def test_remove_override(self, mock_remove, mock_exists):
+        self.mySqlApp.remove_overrides()
+        self.assertEqual(1, mock_remove.call_count)
+        self.assertEqual(1, mock_exists.call_count)
+        mock_remove.assert_called_once_with(ANY, as_root=True)
+
+    @patch.object(operating_system, 'move')
+    @patch.object(operating_system, 'chmod')
+    def test_write_replication_source_overrides(self, mock_chmod, mock_move):
+        self.mySqlApp.write_replication_source_overrides('something')
+        self.assertEqual(1, mock_move.call_count)
+        self.assertEqual(1, mock_chmod.call_count)
+
+    @patch.object(dbaas.MySqlApp, '_write_replication_overrides')
+    def test_write_replication_replica_overrides(self, mock_write_overrides):
+        self.mySqlApp.write_replication_replica_overrides('something')
+        self.assertEqual(1, mock_write_overrides.call_count)
+
+    @patch.object(os.path, 'exists', return_value=True)
+    @patch.object(operating_system, 'remove')
+    def test_remove_replication_source_overrides(self, mock_remove, mock_exists
+                                                 ):
+        self.mySqlApp.remove_replication_source_overrides()
+        self.assertEqual(1, mock_remove.call_count)
+        self.assertEqual(1, mock_exists.call_count)
+
+    @patch.object(dbaas.MySqlApp, '_remove_replication_overrides')
+    def test_remove_replication_replica_overrides(self, mock_remove_overrides):
+        self.mySqlApp.remove_replication_replica_overrides()
+        self.assertEqual(1, mock_remove_overrides.call_count)
+
+    @patch.object(os.path, 'exists', return_value=True)
+    def test_exists_replication_source_overrides(self, mock_exists):
+        self.assertTrue(self.mySqlApp.exists_replication_source_overrides())
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_grant_replication_privilege(self, *args):
+        replication_user = {'name': 'testUSr', 'password': 'somePwd'}
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.grant_replication_privilege(replication_user)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("GRANT REPLICATION SLAVE ON *.* TO `testUSr`@`%` "
+                    "IDENTIFIED BY 'somePwd';")
+        self.assertEqual(expected, args[0].text,
+                         "Replication grant statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_get_port(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.get_port()
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SELECT @@port")
+        self.assertEqual(expected, args[0],
+                         "Port queries are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_get_binlog_position(self, *args):
+        result = {'File': 'mysql-bin.003', 'Position': '73'}
+        self.mock_execute.return_value.first = Mock(return_value=result)
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            found_result = self.mySqlApp.get_binlog_position()
+
+        self.assertEqual(result['File'], found_result['log_file'])
+        self.assertEqual(result['Position'], found_result['position'])
+
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SHOW MASTER STATUS")
+        self.assertEqual(expected, args[0],
+                         "Master status queries are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_execute_on_client(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.execute_on_client('show tables')
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("show tables")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    @patch.object(dbaas.MySqlApp, '_wait_for_slave_status')
+    def test_start_slave(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.start_slave()
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("START SLAVE")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    @patch.object(dbaas.MySqlApp, '_wait_for_slave_status')
+    def test_stop_slave_with_failover(self, *args):
+        self.mock_execute.return_value.first = Mock(
+            return_value={'Master_User': 'root'})
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            result = self.mySqlApp.stop_slave(True)
+        self.assertEqual('root', result['replication_user'])
+
+        expected = ["SHOW SLAVE STATUS", "STOP SLAVE", "RESET SLAVE ALL"]
+        self.assertEqual(len(expected), len(self.mock_execute.call_args_list))
+        for i in range(len(self.mock_execute.call_args_list)):
+            args, _ = self.mock_execute.call_args_list[i]
+            self.assertEqual(expected[i], args[0],
+                             "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    @patch.object(dbaas.MySqlApp, '_wait_for_slave_status')
+    def test_stop_slave_without_failover(self, *args):
+        self.mock_execute.return_value.first = Mock(
+            return_value={'Master_User': 'root'})
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            result = self.mySqlApp.stop_slave(False)
+        self.assertEqual('root', result['replication_user'])
+
+        expected = ["SHOW SLAVE STATUS", "STOP SLAVE", "RESET SLAVE ALL",
+                    "DROP USER root"]
+        self.assertEqual(len(expected), len(self.mock_execute.call_args_list))
+        for i in range(len(self.mock_execute.call_args_list)):
+            args, _ = self.mock_execute.call_args_list[i]
+            self.assertEqual(expected[i], args[0],
+                             "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_stop_master(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.stop_master()
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("RESET MASTER")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test__wait_for_slave_status(self, *args):
+        mock_client = Mock()
+        mock_client.execute = Mock()
+        result = ['Slave_running', 'on']
+        mock_client.execute.return_value.first = Mock(return_value=result)
+        self.mySqlApp._wait_for_slave_status('ON', mock_client, 5)
+        args, _ = mock_client.execute.call_args_list[0]
+        expected = ("SHOW GLOBAL STATUS like 'slave_running'")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    @patch.object(utils, 'poll_until', side_effect=PollTimeOut)
+    def test_fail__wait_for_slave_status(self, *args):
+        self.assertRaisesRegexp(RuntimeError,
+                                "Replication is not on after 5 seconds.",
+                                self.mySqlApp._wait_for_slave_status, 'ON',
+                                Mock(), 5)
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test__get_slave_status(self, *args):
+        self.mock_execute.return_value.first = Mock(return_value='some_thing')
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            result = self.mySqlApp._get_slave_status()
+        self.assertEqual('some_thing', result)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SHOW SLAVE STATUS")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_get_latest_txn_id(self, *args):
+        self.mock_execute.return_value.first = Mock(return_value=['some_thing']
+                                                    )
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            result = self.mySqlApp.get_latest_txn_id()
+        self.assertEqual('some_thing', result)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SELECT @@global.gtid_executed")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_wait_for_txn(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.wait_for_txn('abcd')
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('abcd')")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_get_txn_count(self, *args):
+        self.mock_execute.return_value.first = Mock(
+            return_value=['b1f3f33a-0789-ee1c-43f3-f8373e12f1ea:1'])
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            result = self.mySqlApp.get_txn_count()
+        self.assertEqual(1, result)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SELECT @@global.gtid_executed")
+        self.assertEqual(expected, args[0],
+                         "Sql statements are not the same")
+
 
 class MySqlAppInstallTest(MySqlAppTest):
 
@@ -740,6 +1277,11 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.orig_create_engine = sqlalchemy.create_engine
         self.orig_pkg_version = dbaas.packager.pkg_version
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
+        self.mock_client = Mock()
+        self.mock_execute = Mock()
+        self.mock_client.__enter__ = Mock()
+        self.mock_client.__exit__ = Mock()
+        self.mock_client.__enter__.return_value.execute = self.mock_execute
 
     def tearDown(self):
         super(MySqlAppInstallTest, self).tearDown()
@@ -777,9 +1319,72 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertTrue(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    @patch.object(utils, 'generate_random_password',
+                  return_value='some_password')
+    def test_secure_root(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.secure_root()
+        update_root_password, _ = self.mock_execute.call_args_list[0]
+        update_expected = ("UPDATE mysql.user SET Password="
+                           "PASSWORD('some_password') "
+                           "WHERE User = 'root' AND Host = 'localhost';")
+
+        remove_root, _ = self.mock_execute.call_args_list[1]
+        remove_expected = ("DELETE FROM mysql.user WHERE "
+                           "User = 'root' AND Host != 'localhost';")
+
+        self.assertEqual(update_expected, update_root_password[0].text,
+                         "Update root password queries are not the same")
+        self.assertEqual(remove_expected, remove_root[0].text,
+                         "Remove root queries are not the same")
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test__create_mysql_confd_dir(self, mock_execute):
+        self.mySqlApp._create_mysql_confd_dir()
+        self.assertEqual(1, mock_execute.call_count)
+        mock_execute.assert_called_with('sudo mkdir -p /etc/mysql/conf.d',
+                                        shell=True)
+
+    @patch.object(operating_system, 'move')
+    def test__clear_mysql_config(self, mock_move):
+        self.mySqlApp._clear_mysql_config()
+        self.assertEqual(3, mock_move.call_count)
+
+    @patch.object(operating_system, 'move', side_effect=ProcessExecutionError)
+    def test_exception__clear_mysql_config(self, mock_move):
+        self.mySqlApp._clear_mysql_config()
+        # call-count needs to be same as normal,
+        # because exception is eaten to make the flow goto next file-move.
+        self.assertEqual(3, mock_move.call_count)
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_apply_overrides(self, *args):
+        overrides = {'sort_buffer_size': 1000000}
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.apply_overrides(overrides)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("SET GLOBAL sort_buffer_size=1000000")
+        self.assertEqual(expected, args[0].text,
+                         "Set global statements are not the same")
+
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_make_read_only(self, *args):
+        with patch.object(dbaas, 'LocalSqlClient',
+                          return_value=self.mock_client):
+            self.mySqlApp.make_read_only('ON')
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("set global read_only = ON")
+        self.assertEqual(expected, args[0].text,
+                         "Set read_only statements are not the same")
+
     def test_install_install_error(self):
 
-        from trove.guestagent import pkg
         self.mySqlApp.start_mysql = Mock()
         self.mySqlApp.stop_db = Mock()
         pkg.Package.pkg_is_installed = Mock(return_value=False)
@@ -1113,13 +1718,13 @@ class KeepAliveConnectionTest(testtools.TestCase):
 
     def test_checkout_disconnection_error(self):
 
-        from sqlalchemy import exc
         dbapi_con = Mock()
         dbapi_con.OperationalError = self.OperationalError
         dbapi_con.ping = Mock(side_effect=dbapi_con.OperationalError(2013))
 
         self.keepAliveConn = KeepAliveConnection()
-        self.assertRaises(exc.DisconnectionError, self.keepAliveConn.checkout,
+        self.assertRaises(sqlalchemy.exc.DisconnectionError,
+                          self.keepAliveConn.checkout,
                           dbapi_con, Mock(), Mock())
 
     def test_checkout_operation_error(self):
@@ -1281,6 +1886,16 @@ class MySqlAppStatusTest(testtools.TestCase):
 
         self.assertEqual(rd_instance.ServiceStatuses.RUNNING, status)
 
+    @patch.object(utils, 'execute_with_timeout',
+                  side_effect=ProcessExecutionError())
+    @patch.object(os.path, 'exists', return_value=True)
+    def test_get_actual_db_status_error_crashed(self, mock_exists,
+                                                mock_execute):
+        dbaas.load_mysqld_options = Mock(return_value={})
+        self.mySqlAppStatus = MySqlAppStatus()
+        status = self.mySqlAppStatus._get_actual_db_status()
+        self.assertEqual(rd_instance.ServiceStatuses.CRASHED, status)
+
     def test_get_actual_db_status_error_shutdown(self):
 
         mocked = Mock(side_effect=ProcessExecutionError())
@@ -1293,7 +1908,7 @@ class MySqlAppStatusTest(testtools.TestCase):
 
         self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN, status)
 
-    def test_get_actual_db_status_error_crashed(self):
+    def test_get_actual_db_status_error_blocked(self):
 
         dbaas.utils.execute_with_timeout = MagicMock(
             side_effect=[ProcessExecutionError(), ("some output", None)])
@@ -1606,7 +2221,6 @@ class CassandraDBAppTest(testtools.TestCase):
 
     def test_install_install_error(self):
 
-        from trove.guestagent import pkg
         self.cassandra.start_db = Mock()
         self.cassandra.stop_db = Mock()
         self.pkg.pkg_is_installed = Mock(return_value=False)
@@ -1623,7 +2237,6 @@ class CassandraDBAppTest(testtools.TestCase):
         # this test verifies not only that the write_config
         # method properly invoked execute, but also that it properly
         # attempted to unlink the file (as a result of the exception)
-        from trove.common.exception import ProcessExecutionError
         execute_with_timeout = Mock(
             side_effect=ProcessExecutionError('some exception'))
 
@@ -1765,7 +2378,6 @@ class CouchbaseAppTest(testtools.TestCase):
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_start_db_error(self):
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         couchservice.utils.execute_with_timeout = mocked
         self.couchbaseApp._enable_db_on_boot = Mock()
@@ -1869,7 +2481,6 @@ class CouchDBAppTest(testtools.TestCase):
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
     def test_start_db_error(self):
-        from trove.common.exception import ProcessExecutionError
         couchdb_service.utils.execute_with_timeout = Mock(
             side_effect=ProcessExecutionError('Error'))
         self.couchdbApp._enable_db_on_boot = Mock()
@@ -2005,7 +2616,6 @@ class MongoDBAppTest(testtools.TestCase):
     def test_start_db_error(self):
 
         self.mongoDbApp._enable_db_on_boot = Mock()
-        from trove.common.exception import ProcessExecutionError
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
         mongo_service.utils.execute_with_timeout = mocked
 
@@ -2013,7 +2623,6 @@ class MongoDBAppTest(testtools.TestCase):
 
     def test_mongodb_error_in_write_config_verify_unlink(self):
         configuration = {'config_contents': 'some junk'}
-        from trove.common.exception import ProcessExecutionError
 
         with patch.object(os.path, 'isfile', return_value=True):
             with patch.object(operating_system, 'move',

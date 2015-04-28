@@ -15,6 +15,7 @@
 
 import itertools
 from mock import call, patch
+import os
 from oslo_concurrency.processutils import UnknownArgumentError
 import stat
 import testtools
@@ -74,6 +75,26 @@ class TestOperatingSystem(testtools.TestCase):
         self.assertEqual(ex_remove, actual.get_remove_mode())
 
     def test_chmod(self):
+        self._assert_execute_call(
+            [['chmod', '-R', '=064', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chmod, None,
+            'path', FileMode.SET_GRP_RW_OTH_R,
+            as_root=True)
+        self._assert_execute_call(
+            [['chmod', '-R', '+444', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chmod, None,
+            'path', FileMode.ADD_READ_ALL,
+            as_root=True)
+
+        self._assert_execute_call(
+            [['chmod', '-R', '+060', 'path']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.chmod, None,
+            'path', FileMode.ADD_GRP_RW,
+            as_root=True)
+
         self._assert_execute_call(
             [['chmod', '-R', '=777', 'path']],
             [{'run_as_root': True, 'root_helper': 'sudo'}],
@@ -362,3 +383,60 @@ class TestOperatingSystem(testtools.TestCase):
                 self.assertEqual(expected_calls, exec_call.mock_calls,
                                  "Mismatch in calls to "
                                  "'execute_with_timeout'.")
+
+    def test_get_os_redhat(self):
+        with patch.object(os.path, 'isfile', side_effect=[True]):
+            find_os = operating_system.get_os()
+        self.assertEqual('redhat', find_os)
+
+    def test_get_os_suse(self):
+        with patch.object(os.path, 'isfile', side_effect=[False, True]):
+            find_os = operating_system.get_os()
+        self.assertEqual('suse', find_os)
+
+    def test_get_os_debian(self):
+        with patch.object(os.path, 'isfile', side_effect=[False, False]):
+            find_os = operating_system.get_os()
+        self.assertEqual('debian', find_os)
+
+    def test_upstart_type_service_discovery(self):
+        with patch.object(os.path, 'isfile', side_effect=[True]):
+            mysql_service = operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
+    def test_sysvinit_type_service_discovery(self):
+        with patch.object(os.path, 'isfile', side_effect=[False, True, True]):
+            mysql_service = operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
+    def test_sysvinit_chkconfig_type_service_discovery(self):
+        with patch.object(os.path, 'isfile',
+                          side_effect=[False, True, False, True]):
+            mysql_service = operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
+    @patch.object(os.path, 'islink', return_value=True)
+    @patch.object(os.path, 'realpath')
+    @patch.object(os.path, 'basename')
+    def test_systemd_symlinked_type_service_discovery(self, mock_base,
+                                                      mock_path, mock_islink):
+        with patch.object(os.path, 'isfile', side_effect=[False, False, True]):
+            mysql_service = operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
+    def test_systemd_not_symlinked_type_service_discovery(self):
+        with patch.object(os.path, 'isfile', side_effect=[False, False, True]):
+            with patch.object(os.path, 'islink', return_value=False):
+                mysql_service = operating_system.service_discovery(["mysql"])
+        self.assertIsNotNone(mysql_service['cmd_start'])
+        self.assertIsNotNone(mysql_service['cmd_enable'])
+
+    def test_file_discovery(self):
+        with patch.object(os.path, 'isfile', side_effect=[False, True]):
+                config_file = operating_system.file_discovery(
+                    ["/etc/mongodb.conf", "/etc/mongod.conf"])
+        self.assertEqual('/etc/mongod.conf', config_file)

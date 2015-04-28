@@ -365,7 +365,7 @@ class MySqlAdmin(object):
         user = models.MySQLUser()
         try:
             user.name = username  # Could possibly throw a BadRequest here.
-        except exception.ValueError as ve:
+        except ValueError as ve:
             LOG.exception(_("Error Getting user information"))
             raise exception.BadRequest(_("Username %(user)s is not valid"
                                          ": %(reason)s") %

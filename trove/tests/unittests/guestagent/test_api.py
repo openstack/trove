@@ -13,6 +13,8 @@
 #    under the License.
 from eventlet import Timeout
 import mock
+from oslo.messaging.rpc.client import RemoteError
+from oslo import messaging
 import testtools
 from testtools.matchers import Is
 
@@ -76,6 +78,13 @@ class ApiTest(testtools.TestCase):
         self.assertEqual('guestagent.instance-id-x23d2d',
                          self.api._get_routing_key())
 
+    def test_update_attributes(self):
+        self.api.update_attributes('test_user', '%', {'name': 'new_user'})
+
+        self._verify_rpc_prepare_before_cast()
+        self._verify_cast('update_attributes', username='test_user',
+                          hostname='%', user_attrs={'name': 'new_user'})
+
     def test_create_user(self):
         self.api.create_user('test_user')
 
@@ -94,6 +103,15 @@ class ApiTest(testtools.TestCase):
     def test_api_call_timeout(self):
         self.call_context.call.side_effect = Timeout()
         self.assertRaises(exception.GuestTimeout, self.api.restart)
+
+    def test_api_cast_remote_error(self):
+        self.call_context.cast.side_effect = RemoteError('Error')
+        self.assertRaises(exception.GuestError, self.api.delete_database,
+                          'test_db')
+
+    def test_api_call_remote_error(self):
+        self.call_context.call.side_effect = RemoteError('Error')
+        self.assertRaises(exception.GuestError, self.api.stop_db)
 
     def test_list_users(self):
         exp_resp = ['user1', 'user2', 'user3']
@@ -174,6 +192,13 @@ class ApiTest(testtools.TestCase):
         self._verify_call('get_hwinfo')
         self.assertThat(resp, Is('[blah]'))
 
+    def test_rpc_ping(self):
+        # execute
+        self.api.rpc_ping()
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('rpc_ping')
+
     def test_get_diagnostics(self):
         self.call_context.call.return_value = '[all good]'
 
@@ -194,6 +219,14 @@ class ApiTest(testtools.TestCase):
 
         self._verify_rpc_prepare_before_call()
         self._verify_call('start_db_with_conf_changes', config_contents=None)
+
+    def test_reset_configuration(self):
+        # execute
+        self.api.reset_configuration({'config_contents': 'some junk'})
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('reset_configuration',
+                          configuration={'config_contents': 'some junk'})
 
     def test_stop_db(self):
         self.api.stop_db(do_not_start_on_reboot=False)
@@ -222,6 +255,30 @@ class ApiTest(testtools.TestCase):
 
         self._verify_rpc_prepare_before_cast()
         self._verify_cast('create_backup', backup_info={'id': '123'})
+
+    def test_unmount_volume(self):
+        # execute
+        self.api.unmount_volume('/dev/vdb', '/var/lib/mysql')
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('unmount_volume', device_path='/dev/vdb',
+                          mount_point='/var/lib/mysql')
+
+    def test_mount_volume(self):
+        # execute
+        self.api.mount_volume('/dev/vdb', '/var/lib/mysql')
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('mount_volume', device_path='/dev/vdb',
+                          mount_point='/var/lib/mysql')
+
+    def test_resize_fs(self):
+        # execute
+        self.api.resize_fs('/dev/vdb', '/var/lib/mysql')
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('resize_fs', device_path='/dev/vdb',
+                          mount_point='/var/lib/mysql')
 
     def test_update_overrides(self):
         self.api.update_overrides('123')
@@ -294,6 +351,13 @@ class ApiTest(testtools.TestCase):
         self._verify_rpc_prepare_before_call()
         self._verify_call('get_txn_count')
 
+    def test_get_last_txn(self):
+        # execute
+        self.api.get_last_txn()
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('get_last_txn')
+
     def test_get_latest_txn_id(self):
         # execute
         self.api.get_latest_txn_id()
@@ -308,6 +372,15 @@ class ApiTest(testtools.TestCase):
         self._verify_rpc_prepare_before_call()
         self._verify_call('wait_for_txn', txn="")
 
+    def test_cleanup_source_on_replica_detach(self):
+        # execute
+        self.api.cleanup_source_on_replica_detach({'replication_user':
+                                                   'test_user'})
+        # verify
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('cleanup_source_on_replica_detach',
+                          replica_info={'replication_user': 'test_user'})
+
     def test_demote_replication_master(self):
         # execute
         self.api.demote_replication_master()
@@ -315,8 +388,9 @@ class ApiTest(testtools.TestCase):
         self._verify_rpc_prepare_before_call()
         self._verify_call('demote_replication_master')
 
-    def test_prepare(self):
-        self.api._create_guest_queue = mock.Mock()
+    @mock.patch.object(messaging, 'Target')
+    @mock.patch.object(rpc, 'get_server')
+    def test_prepare(self, *args):
         self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                          '/mnt/opt', None, 'cont', '1-2-3-4',
                          'override', {'id': '2-3-4-5'})
@@ -330,8 +404,9 @@ class ApiTest(testtools.TestCase):
             overrides='override', cluster_config={'id': '2-3-4-5'},
             snapshot=None)
 
-    def test_prepare_with_backup(self):
-        self.api._create_guest_queue = mock.Mock()
+    @mock.patch.object(messaging, 'Target')
+    @mock.patch.object(rpc, 'get_server')
+    def test_prepare_with_backup(self, *args):
         backup = {'id': 'backup_id_123'}
         self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                          '/mnt/opt', backup, 'cont', '1-2-3-4',
