@@ -90,7 +90,7 @@ class VerticaClusterTasksTest(testtools.TestCase):
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
         mock_update.assert_called_with(self.cluster_id, None)
-        self.assertEqual(False, ret_val)
+        self.assertFalse(ret_val)
 
     @patch.object(InstanceServiceStatus, 'find_by')
     def test_all_instances_ready(self, mock_find):
@@ -98,7 +98,7 @@ class VerticaClusterTasksTest(testtools.TestCase):
          get_status.return_value) = ServiceStatuses.RUNNING
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')

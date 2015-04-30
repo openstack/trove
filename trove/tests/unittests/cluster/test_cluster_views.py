@@ -97,8 +97,8 @@ class ClusterViewTest(TestCase):
             instances, ip_list = view._build_instances(
                 ip_to_be_published_for, instance_dict_to_be_published_for)
 
-            self.assertEqual(len(ip_list), number_of_ip_published)
-            self.assertEqual(len(instances), number_of_instance_dict_published)
+            self.assertEqual(number_of_ip_published, len(ip_list))
+            self.assertEqual(number_of_instance_dict_published, len(instances))
 
         test_case([], [], 0, 0)
         test_case(['abc'], ['def'], 0, 0)

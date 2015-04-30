@@ -21,13 +21,13 @@ class TestDatastoreVersions(TestDatastoreBase):
     def test_load_datastore_version(self):
         datastore_version = DatastoreVersion.load(self.datastore,
                                                   self.ds_version)
-        self.assertEqual(datastore_version.name, self.ds_version)
+        self.assertEqual(self.ds_version, datastore_version.name)
 
     def test_datastore_verison_capabilities(self):
         self.datastore_version.capabilities.add(self.cap1, enabled=False)
         test_filtered_capabilities = self.capability_name_filter(
             self.datastore_version.capabilities)
-        self.assertEqual(len(test_filtered_capabilities), 3,
+        self.assertEqual(3, len(test_filtered_capabilities),
                          'Capabilities the test thinks it has are: %s, '
                          'Filtered capabilities: %s' %
                          (self.datastore_version.capabilities,
@@ -38,7 +38,7 @@ class TestDatastoreVersions(TestDatastoreBase):
                                                        self.ds_version)
         test_filtered_capabilities = self.capability_name_filter(
             self.datastore_version.capabilities)
-        self.assertEqual(len(test_filtered_capabilities), 3,
+        self.assertEqual(3, len(test_filtered_capabilities),
                          'Capabilities the test thinks it has are: %s, '
                          'Filtered capabilities: %s' %
                          (self.datastore_version.capabilities,

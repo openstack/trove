@@ -415,7 +415,7 @@ class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
 
             instance = DBInstance.find_by(context=self.context,
                                           id=active_instance.id)
-            self.assertEqual(instance.id, active_instance.id)
+            self.assertEqual(active_instance.id, instance.id)
 
             self.assertRaises(
                 exception.ModelNotFoundError,
@@ -427,7 +427,7 @@ class TestMgmtInstanceDeleted(MockMgmtInstanceTest):
             instance = DBInstance.find_by(context=self.context,
                                           id=deleted_instance.id,
                                           deleted=True)
-            self.assertEqual(instance.id, deleted_instance.id)
+            self.assertEqual(deleted_instance.id, instance.id)
 
 
 class TestMgmtInstancePing(MockMgmtInstanceTest):

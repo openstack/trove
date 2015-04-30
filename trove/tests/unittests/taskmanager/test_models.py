@@ -242,8 +242,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         self.assertTrue(
             '/etc/trove/conf.d/trove-guestagent.conf' in files)
         self.assertEqual(
-            files['/etc/trove/conf.d/trove-guestagent.conf'],
-            self.guestconfig_content)
+            self.guestconfig_content,
+            files['/etc/trove/conf.d/trove-guestagent.conf'])
 
     @patch('trove.taskmanager.models.CONF')
     def test_create_instance_guestconfig_compat(self, mock_conf):
@@ -266,8 +266,8 @@ class FreshInstanceTasksTest(testtools.TestCase):
         self.assertTrue(
             '/etc/trove-guestagent.conf' in files)
         self.assertEqual(
-            files['/etc/trove-guestagent.conf'],
-            self.guestconfig_content)
+            self.guestconfig_content,
+            files['/etc/trove-guestagent.conf'])
 
     @patch('trove.taskmanager.models.CONF')
     def test_create_instance_with_az_kwarg(self, mock_conf):
@@ -304,10 +304,10 @@ class FreshInstanceTasksTest(testtools.TestCase):
         DBInstance.find_by = Mock(
             return_value=fake_DBInstance.find_by())
         self.freshinstancetasks.update_statuses_on_time_out()
-        self.assertEqual(fake_InstanceServiceStatus.find_by().get_status(),
-                         ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT)
-        self.assertEqual(fake_DBInstance.find_by().get_task_status(),
-                         InstanceTasks.BUILDING_ERROR_TIMEOUT_GA)
+        self.assertEqual(ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
+                         fake_InstanceServiceStatus.find_by().get_status())
+        self.assertEqual(InstanceTasks.BUILDING_ERROR_TIMEOUT_GA,
+                         fake_DBInstance.find_by().get_task_status())
 
     def test_create_sg_rules_success(self):
         datastore_manager = 'mysql'
@@ -595,7 +595,7 @@ class BuiltInstanceTasksTest(testtools.TestCase):
             do_not_start_on_reboot=True)
         orig_server.resize.assert_any_call(self.new_flavor['id'])
         self.assertThat(self.db_instance.task_status, Is(InstanceTasks.NONE))
-        self.assertEqual(self.stub_server_mgr.get.call_count, 1)
+        self.assertEqual(1, self.stub_server_mgr.get.call_count)
         self.assertThat(self.db_instance.flavor_id, Is(self.new_flavor['id']))
 
     def test_resize_flavor_resize_failure(self):
@@ -715,26 +715,26 @@ class BackupTasksTest(testtools.TestCase):
     def test_parse_manifest(self):
         manifest = 'container/prefix'
         cont, prefix = taskmanager_models.BackupTasks._parse_manifest(manifest)
-        self.assertEqual(cont, 'container')
-        self.assertEqual(prefix, 'prefix')
+        self.assertEqual('container', cont)
+        self.assertEqual('prefix', prefix)
 
     def test_parse_manifest_bad(self):
         manifest = 'bad_prefix'
         cont, prefix = taskmanager_models.BackupTasks._parse_manifest(manifest)
-        self.assertEqual(cont, None)
-        self.assertEqual(prefix, None)
+        self.assertIsNone(cont)
+        self.assertIsNone(prefix)
 
     def test_parse_manifest_long(self):
         manifest = 'container/long/path/to/prefix'
         cont, prefix = taskmanager_models.BackupTasks._parse_manifest(manifest)
-        self.assertEqual(cont, 'container')
-        self.assertEqual(prefix, 'long/path/to/prefix')
+        self.assertEqual('container', cont)
+        self.assertEqual('long/path/to/prefix', prefix)
 
     def test_parse_manifest_short(self):
         manifest = 'container/'
         cont, prefix = taskmanager_models.BackupTasks._parse_manifest(manifest)
-        self.assertEqual(cont, 'container')
-        self.assertEqual(prefix, '')
+        self.assertEqual('container', cont)
+        self.assertEqual('', prefix)
 
 
 class NotifyMixinTest(testtools.TestCase):

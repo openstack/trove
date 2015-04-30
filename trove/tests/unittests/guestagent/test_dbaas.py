@@ -155,10 +155,10 @@ class DbaasTest(testtools.TestCase):
             options = dbaas.load_mysqld_options()
 
         self.assertEqual(5, len(options))
-        self.assertEqual(options["user"], ["mysql"])
-        self.assertEqual(options["port"], ["3306"])
-        self.assertEqual(options["basedir"], ["/usr"])
-        self.assertEqual(options["tmpdir"], ["/tmp"])
+        self.assertEqual(["mysql"], options["user"])
+        self.assertEqual(["3306"], options["port"])
+        self.assertEqual(["/usr"], options["basedir"])
+        self.assertEqual(["/tmp"], options["tmpdir"])
         self.assertTrue("skip-external-locking" in options)
 
     def test_load_mysqld_options_contains_plugin_loads_options(self):
@@ -171,9 +171,9 @@ class DbaasTest(testtools.TestCase):
             options = dbaas.load_mysqld_options()
 
         self.assertEqual(1, len(options))
-        self.assertEqual(options["plugin-load"],
-                         ["blackhole=ha_blackhole.so",
-                          "federated=ha_federated.so"])
+        self.assertEqual(["blackhole=ha_blackhole.so",
+                          "federated=ha_federated.so"],
+                         options["plugin-load"])
 
     def test_load_mysqld_options_error(self):
 
@@ -259,7 +259,7 @@ class MySqlAdminTest(testtools.TestCase):
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEqual(args[0].text, expected,
+        self.assertEqual(expected, args[0].text,
                          "Create database queries are not the same")
 
         self.assertEqual(1, dbaas.LocalSqlClient.execute.call_count,
@@ -279,14 +279,14 @@ class MySqlAdminTest(testtools.TestCase):
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEqual(args[0].text, expected,
+        self.assertEqual(expected, args[0].text,
                          "Create database queries are not the same")
 
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
         expected = ("CREATE DATABASE IF NOT EXISTS "
                     "`testDB2` CHARACTER SET = 'latin2' "
                     "COLLATE = 'latin2_general_ci';")
-        self.assertEqual(args[0].text, expected,
+        self.assertEqual(expected, args[0].text,
                          "Create database queries are not the same")
 
         self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count,
@@ -312,7 +312,7 @@ class MySqlAdminTest(testtools.TestCase):
 
         args, _ = dbaas.LocalSqlClient.execute.call_args
         expected = "DROP DATABASE `testDB`;"
-        self.assertEqual(args[0].text, expected,
+        self.assertEqual(expected, args[0].text,
                          "Delete database queries are not the same")
 
         self.assertTrue(dbaas.LocalSqlClient.execute.called,
@@ -329,7 +329,7 @@ class MySqlAdminTest(testtools.TestCase):
         if call_args is not None:
             args, _ = call_args
             expected = "DROP USER `testUser`@`%`;"
-            self.assertEqual(args[0].text, expected,
+            self.assertEqual(expected, args[0].text,
                              "Delete user queries are not the same")
 
             self.assertTrue(dbaas.LocalSqlClient.execute.called,
@@ -344,7 +344,7 @@ class MySqlAdminTest(testtools.TestCase):
         call_args = dbaas.LocalSqlClient.execute.call_args
         if call_args is not None:
             args, _ = call_args
-            self.assertEqual(args[0].text.strip(), expected,
+            self.assertEqual(expected, args[0].text.strip(),
                              "Create user queries are not the same")
             self.assertEqual(2, dbaas.LocalSqlClient.execute.call_count)
 
@@ -687,8 +687,8 @@ class MySqlAppTest(testtools.TestCase):
 
         self.assertTrue(self.mySqlApp._write_mycnf.called)
         self.assertTrue(self.mySqlApp.start_mysql.called)
-        self.assertEqual(self.appStatus._get_actual_db_status(),
-                         rd_instance.ServiceStatuses.RUNNING)
+        self.assertEqual(rd_instance.ServiceStatuses.RUNNING,
+                         self.appStatus._get_actual_db_status())
 
     def test_start_db_with_conf_changes_mysql_is_running(self):
 
@@ -716,9 +716,9 @@ class MySqlAppTest(testtools.TestCase):
         self.assertRaises(ProcessExecutionError,
                           self.mySqlApp.reset_configuration,
                           configuration=configuration)
-        self.assertEqual(dbaas.utils.execute_with_timeout.call_count, 1)
-        self.assertEqual(os.unlink.call_count, 1)
-        self.assertEqual(dbaas.get_auth_password.call_count, 1)
+        self.assertEqual(1, dbaas.utils.execute_with_timeout.call_count)
+        self.assertEqual(1, os.unlink.call_count)
+        self.assertEqual(1, dbaas.get_auth_password.call_count)
 
     def test_mysql_error_in_write_config(self):
         configuration = {'config_contents': 'some junk'}
@@ -729,8 +729,8 @@ class MySqlAppTest(testtools.TestCase):
         self.assertRaises(ProcessExecutionError,
                           self.mySqlApp.reset_configuration,
                           configuration=configuration)
-        self.assertEqual(dbaas.utils.execute_with_timeout.call_count, 1)
-        self.assertEqual(dbaas.get_auth_password.call_count, 1)
+        self.assertEqual(1, dbaas.utils.execute_with_timeout.call_count)
+        self.assertEqual(1, dbaas.get_auth_password.call_count)
 
 
 class MySqlAppInstallTest(MySqlAppTest):
@@ -947,22 +947,22 @@ class InterrogatorTest(testtools.TestCase):
 
     def test_to_gb(self):
         result = to_gb(123456789)
-        self.assertEqual(result, 0.11)
+        self.assertEqual(0.11, result)
 
     def test_to_gb_zero(self):
         result = to_gb(0)
-        self.assertEqual(result, 0.0)
+        self.assertEqual(0.0, result)
 
     def test_get_filesystem_volume_stats(self):
         with patch.object(os, 'statvfs', return_value=MockStats):
             result = get_filesystem_volume_stats('/some/path/')
 
-        self.assertEqual(result['block_size'], 4096)
-        self.assertEqual(result['total_blocks'], 1048576)
-        self.assertEqual(result['free_blocks'], 524288)
-        self.assertEqual(result['total'], 4.0)
-        self.assertEqual(result['free'], 2147483648)
-        self.assertEqual(result['used'], 2.0)
+        self.assertEqual(4096, result['block_size'])
+        self.assertEqual(1048576, result['total_blocks'])
+        self.assertEqual(524288, result['free_blocks'])
+        self.assertEqual(4.0, result['total'])
+        self.assertEqual(2147483648, result['free'])
+        self.assertEqual(2.0, result['used'])
 
     def test_get_filesystem_volume_stats_error(self):
         with patch.object(os, 'statvfs', side_effect=OSError):
@@ -986,29 +986,29 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(test_dict.get('test'),
-                         datastore_registry_ext_test.get('test', None))
-        self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.experimental.redis.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.experimental.cassandra.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.experimental.'
-                         'couchbase.manager.Manager')
+        self.assertEqual(datastore_registry_ext_test.get('test', None),
+                         test_dict.get('test'))
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager',
+                         test_dict.get('mysql'))
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager',
+                         test_dict.get('percona'))
+        self.assertEqual('trove.guestagent.datastore.experimental.redis.'
+                         'manager.Manager',
+                         test_dict.get('redis'))
+        self.assertEqual('trove.guestagent.datastore.experimental.cassandra.'
+                         'manager.Manager',
+                         test_dict.get('cassandra'))
+        self.assertEqual('trove.guestagent.datastore.experimental.'
+                         'couchbase.manager.Manager',
+                         test_dict.get('couchbase'))
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
-        self.assertEqual(test_dict.get('couchdb'),
-                         'trove.guestagent.datastore.experimental.couchdb.'
-                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager',
+                         test_dict.get('couchdb'))
         self.assertEqual('trove.guestagent.datastore.experimental.db2.'
                          'manager.Manager',
                          test_dict.get('db2'))
@@ -1021,27 +1021,27 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager123')
-        self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.experimental.redis.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.experimental.cassandra.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.experimental.couchbase.'
-                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager123',
+                         test_dict.get('mysql'))
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager',
+                         test_dict.get('percona'))
+        self.assertEqual('trove.guestagent.datastore.experimental.redis.'
+                         'manager.Manager',
+                         test_dict.get('redis'))
+        self.assertEqual('trove.guestagent.datastore.experimental.cassandra.'
+                         'manager.Manager',
+                         test_dict.get('cassandra'))
+        self.assertEqual('trove.guestagent.datastore.experimental.couchbase.'
+                         'manager.Manager',
+                         test_dict.get('couchbase'))
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
-        self.assertEqual(test_dict.get('couchdb'),
-                         'trove.guestagent.datastore.experimental.couchdb.'
-                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager',
+                         test_dict.get('couchdb'))
         self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
                          'manager.Manager',
                          test_dict.get('vertica'))
@@ -1054,27 +1054,27 @@ class ServiceRegistryTest(testtools.TestCase):
         dbaas_sr.get_custom_managers = Mock(return_value=
                                             datastore_registry_ext_test)
         test_dict = dbaas_sr.datastore_registry()
-        self.assertEqual(test_dict.get('mysql'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('percona'),
-                         'trove.guestagent.datastore.mysql.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('redis'),
-                         'trove.guestagent.datastore.experimental.redis.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('cassandra'),
-                         'trove.guestagent.datastore.experimental.cassandra.'
-                         'manager.Manager')
-        self.assertEqual(test_dict.get('couchbase'),
-                         'trove.guestagent.datastore.experimental.couchbase.'
-                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager',
+                         test_dict.get('mysql'))
+        self.assertEqual('trove.guestagent.datastore.mysql.'
+                         'manager.Manager',
+                         test_dict.get('percona'))
+        self.assertEqual('trove.guestagent.datastore.experimental.redis.'
+                         'manager.Manager',
+                         test_dict.get('redis'))
+        self.assertEqual('trove.guestagent.datastore.experimental.cassandra.'
+                         'manager.Manager',
+                         test_dict.get('cassandra'))
+        self.assertEqual('trove.guestagent.datastore.experimental.couchbase.'
+                         'manager.Manager',
+                         test_dict.get('couchbase'))
         self.assertEqual('trove.guestagent.datastore.experimental.mongodb.'
                          'manager.Manager',
                          test_dict.get('mongodb'))
-        self.assertEqual(test_dict.get('couchdb'),
-                         'trove.guestagent.datastore.experimental.couchdb.'
-                         'manager.Manager')
+        self.assertEqual('trove.guestagent.datastore.experimental.couchdb.'
+                         'manager.Manager',
+                         test_dict.get('couchdb'))
         self.assertEqual('trove.guestagent.datastore.experimental.vertica.'
                          'manager.Manager',
                          test_dict.get('vertica'))
@@ -1156,8 +1156,8 @@ class BaseDbStatusTest(testtools.TestCase):
 
         self.baseDbStatus.begin_install()
 
-        self.assertEqual(self.baseDbStatus.status,
-                         rd_instance.ServiceStatuses.BUILDING)
+        self.assertEqual(rd_instance.ServiceStatuses.BUILDING,
+                         self.baseDbStatus.status)
 
     def test_begin_restart(self):
 
@@ -1332,7 +1332,7 @@ class TestRedisApp(testtools.TestCase):
             with patch.object(RedisApp, '_install_redis', return_value=None):
                 self.app.install_if_needed('bar')
                 pkg.Package.pkg_is_installed.assert_any_call('bar')
-                self.assertEqual(RedisApp._install_redis.call_count, 0)
+                self.assertEqual(0, RedisApp._install_redis.call_count)
 
     def test_install_if_needed_not_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=False):
@@ -1644,7 +1644,7 @@ class CassandraDBAppTest(testtools.TestCase):
                               mkstemp_function=mock_mkstemp,
                               unlink_function=mock_unlink)
 
-            self.assertEqual(mock_unlink.call_count, 1)
+            self.assertEqual(1, mock_unlink.call_count)
 
         # really delete the temporary_config_file
         os.unlink(temp_config_name)
@@ -2119,19 +2119,19 @@ class VerticaAppTest(testtools.TestCase):
             with patch.object(pkg.Package, 'pkg_install', return_value=None):
                 self.app.install_if_needed('vertica')
                 pkg.Package.pkg_is_installed.assert_any_call('vertica')
-                self.assertEqual(pkg.Package.pkg_install.call_count, 0)
+                self.assertEqual(0, pkg.Package.pkg_install.call_count)
 
     def test_install_if_needed_not_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=False):
             with patch.object(pkg.Package, 'pkg_install', return_value=None):
                 self.app.install_if_needed('vertica')
                 pkg.Package.pkg_is_installed.assert_any_call('vertica')
-                self.assertEqual(pkg.Package.pkg_install.call_count, 1)
+                self.assertEqual(1, pkg.Package.pkg_install.call_count)
 
     def test_prepare_for_install_vertica(self):
         self.app.prepare_for_install_vertica()
         arguments = vertica_system.shell_execute.call_args_list[0]
-        self.assertEqual(VolumeDevice.set_readahead_size.call_count, 1)
+        self.assertEqual(1, VolumeDevice.set_readahead_size.call_count)
         expected_command = (
             "VERT_DBA_USR=dbadmin VERT_DBA_HOME=/home/dbadmin "
             "VERT_DBA_GRP=verticadba /opt/vertica/oss/python/bin/python"
@@ -2169,7 +2169,7 @@ class VerticaAppTest(testtools.TestCase):
                           side_effect=RuntimeError('Error')):
             self.app.create_db('10.0.0.2')
         # Because of an exception in read_config there was no shell execution.
-        self.assertEqual(vertica_system.shell_execute.call_count, 0)
+        self.assertEqual(0, vertica_system.shell_execute.call_count)
 
     def test_vertica_write_config(self):
         temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
@@ -2192,7 +2192,7 @@ class VerticaAppTest(testtools.TestCase):
         self.assertEqual(
             self.test_config.get('credentials', 'dbadmin_password'),
             configuration_data.get('credentials', 'dbadmin_password'))
-        self.assertEqual(mock_unlink.call_count, 1)
+        self.assertEqual(1, mock_unlink.call_count)
         # delete the temporary_config_file
         os.unlink(temp_file_handle.name)
 
@@ -2209,7 +2209,7 @@ class VerticaAppTest(testtools.TestCase):
                               temp_function=mock_mkstemp,
                               unlink_function=mock_unlink)
 
-        self.assertEqual(mock_unlink.call_count, 1)
+        self.assertEqual(1, mock_unlink.call_count)
 
         # delete the temporary_config_file
         os.unlink(temp_file_handle.name)
@@ -2274,8 +2274,8 @@ class VerticaAppTest(testtools.TestCase):
                         return_value=None)
                     app.stop_db()
 
-                    self.assertEqual(vertica_system.shell_execute.call_count,
-                                     3)
+                    self.assertEqual(
+                        3, vertica_system.shell_execute.call_count)
                     # There are 3 shell-executions:
                     # a) stop vertica-agent service
                     # b) check daatabase status
@@ -2301,8 +2301,8 @@ class VerticaAppTest(testtools.TestCase):
                                                          ['', '']])):
                     app.stop_db(do_not_start_on_reboot=True)
 
-                    self.assertEqual(vertica_system.shell_execute.call_count,
-                                     3)
+                    self.assertEqual(
+                        3, vertica_system.shell_execute.call_count)
                     app._disable_db_on_boot.assert_any_call()
 
     def test_stop_db_database_not_running(self):
@@ -2314,8 +2314,8 @@ class VerticaAppTest(testtools.TestCase):
                     app.stop_db()
                     # Since database stop command does not gets executed,
                     # so only 2 shell calls were there.
-                    self.assertEqual(vertica_system.shell_execute.call_count,
-                                     2)
+                    self.assertEqual(
+                        2, vertica_system.shell_execute.call_count)
 
     def test_stop_db_failure(self):
         mock_status = MagicMock()
@@ -2336,7 +2336,7 @@ class VerticaAppTest(testtools.TestCase):
 
     def test_export_conf_to_members(self):
         self.app._export_conf_to_members(members=['member1', 'member2'])
-        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        self.assertEqual(2, vertica_system.shell_execute.call_count)
 
     def test_fail__export_conf_to_members(self):
         app = VerticaApp(MagicMock())
@@ -2352,7 +2352,7 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(os.path, 'expanduser',
                           return_value=('/home/' + user)):
                 self.app.authorize_public_keys(user=user, public_keys=keys)
-        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        self.assertEqual(2, vertica_system.shell_execute.call_count)
         vertica_system.shell_execute.assert_any_call(
             'cat ' + '/home/' + user + '/.ssh/authorized_keys')
 
@@ -2366,7 +2366,7 @@ class VerticaAppTest(testtools.TestCase):
                     MagicMock(side_effect=[ProcessExecutionError('Some Error'),
                                            ['', '']])):
                 self.app.authorize_public_keys(user=user, public_keys=keys)
-                self.assertEqual(vertica_system.shell_execute.call_count, 2)
+                self.assertEqual(2, vertica_system.shell_execute.call_count)
                 vertica_system.shell_execute.assert_any_call(
                     'cat ' + '/home/' + user + '/.ssh/authorized_keys')
 
@@ -2388,7 +2388,7 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(os.path, 'expanduser',
                           return_value=('/home/' + user)):
             self.app.get_public_keys(user=user)
-        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        self.assertEqual(2, vertica_system.shell_execute.call_count)
         vertica_system.shell_execute.assert_any_call(
             (vertica_system.SSH_KEY_GEN % ('/home/' + user)), user)
         vertica_system.shell_execute.assert_any_call(
@@ -2403,7 +2403,7 @@ class VerticaAppTest(testtools.TestCase):
                     MagicMock(side_effect=[ProcessExecutionError('Some Error'),
                                            ['some_key', None]])):
                 key = self.app.get_public_keys(user=user)
-                self.assertEqual(vertica_system.shell_execute.call_count, 2)
+                self.assertEqual(2, vertica_system.shell_execute.call_count)
                 self.assertEqual('some_key', key)
 
     def test_fail_get_public_keys(self):
@@ -2424,7 +2424,7 @@ class VerticaAppTest(testtools.TestCase):
             self.app.install_cluster(members=['member1', 'member2'])
         # Verifying nu,ber of shell calls,
         # as command has already been tested in preceeding tests
-        self.assertEqual(vertica_system.shell_execute.call_count, 5)
+        self.assertEqual(5, vertica_system.shell_execute.call_count)
 
     def test__enable_db_on_boot(self):
         app = VerticaApp(MagicMock())
@@ -2438,7 +2438,7 @@ class VerticaAppTest(testtools.TestCase):
             'sudo', 'su', '-', 'root', '-c',
             (vertica_system.VERTICA_AGENT_SERVICE_COMMAND % 'enable')]
 
-        self.assertEqual(subprocess.Popen.call_count, 2)
+        self.assertEqual(2, subprocess.Popen.call_count)
         restart_policy.assert_called_with(expected_restart_policy)
         agent_enable.assert_called_with(expected_agent_enable)
 
@@ -2459,7 +2459,7 @@ class VerticaAppTest(testtools.TestCase):
         expected_agent_disable = (
             vertica_system.VERTICA_AGENT_SERVICE_COMMAND % 'disable')
 
-        self.assertEqual(vertica_system.shell_execute.call_count, 2)
+        self.assertEqual(2, vertica_system.shell_execute.call_count)
         restart_policy.assert_called_with(expected_restart_policy, 'dbadmin')
         agent_disable.assert_called_with(expected_agent_disable, 'root')
 
@@ -2578,7 +2578,7 @@ class DB2AdminTest(testtools.TestCase):
             self.assertTrue(db2service.run_command.called)
             args, _ = db2service.run_command.call_args_list[0]
             expected = "db2 drop database testDB"
-            self.assertEqual(args[0], expected,
+            self.assertEqual(expected, args[0],
                              "Delete database queries are not the same")
 
     def test_list_databases(self):
@@ -2590,7 +2590,7 @@ class DB2AdminTest(testtools.TestCase):
             expected = "db2 list database directory " \
                 "| grep -B6 -i indirect | grep 'Database name' | " \
                 "sed 's/.*= //'"
-            self.assertEqual(args[0], expected,
+            self.assertEqual(expected, args[0],
                              "Delete database queries are not the same")
 
     def test_create_users(self):
@@ -2606,9 +2606,9 @@ class DB2AdminTest(testtools.TestCase):
                 "db2 GRANT DBADM,CREATETAB,BINDADD,CONNECT,DATAACCESS " \
                 "ON DATABASE TO USER random; db2 connect reset"
             self.assertEqual(
-                args[0], expected,
+                expected, args[0],
                 "Granting database access queries are not the same")
-            self.assertEqual(db2service.run_command.call_count, 1)
+            self.assertEqual(1, db2service.run_command.call_count)
 
     def test_delete_users_with_db(self):
         with patch.object(db2service, 'run_command',
@@ -2625,9 +2625,9 @@ class DB2AdminTest(testtools.TestCase):
                     "db2 REVOKE DBADM,CREATETAB,BINDADD,CONNECT,DATAACCESS " \
                     "ON DATABASE FROM USER random; db2 connect reset"
                 self.assertEqual(
-                    args[0], expected,
+                    expected, args[0],
                     "Revoke database access queries are not the same")
-                self.assertEqual(db2service.run_command.call_count, 1)
+                self.assertEqual(1, db2service.run_command.call_count)
 
     def test_delete_users_without_db(self):
         FAKE_USER.append(
@@ -2648,9 +2648,9 @@ class DB2AdminTest(testtools.TestCase):
                         "DATAACCESS ON DATABASE FROM USER random2; " \
                         "db2 connect reset"
                     self.assertEqual(
-                        args[0], expected,
+                        expected, args[0],
                         "Revoke database access queries are not the same")
-                    self.assertEqual(db2service.run_command.call_count, 1)
+                    self.assertEqual(1, db2service.run_command.call_count)
 
     def test_list_users(self):
         databases = []
@@ -2665,7 +2665,7 @@ class DB2AdminTest(testtools.TestCase):
                 expected = "db2 +o  connect to testDB; " \
                     "db2 -x  select grantee, dataaccessauth " \
                     "from sysibm.sysdbauth; db2 connect reset"
-            self.assertEqual(args[0], expected,
+            self.assertEqual(expected, args[0],
                              "List database queries are not the same")
 
     def test_get_user(self):

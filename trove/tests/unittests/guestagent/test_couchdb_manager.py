@@ -151,4 +151,4 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
 
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
-        self.assertEqual(output, True)
+        self.assertTrue(output)

@@ -219,7 +219,7 @@ class LimitMiddlewareTest(BaseLimitTestSuite):
 
         request = webob.Request.blank("/")
         response = request.get_response(self.app)
-        self.assertEqual(response.status_int, 413)
+        self.assertEqual(413, response.status_int)
 
         self.assertTrue('Retry-After' in response.headers)
         retry_after = int(response.headers['Retry-After'])

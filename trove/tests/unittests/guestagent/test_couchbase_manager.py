@@ -161,8 +161,7 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             rootaccess.write_password_to_file('mypassword')
 
             filepermissions = os.stat(self.tempname).st_mode
-            self.assertEqual(
-                filepermissions & 0o777, stat.S_IRUSR)
+            self.assertEqual(stat.S_IRUSR, filepermissions & 0o777)
 
     @mock.patch.object(utils, 'execute_with_timeout', Mock(return_value=0))
     def test_write_password_to_file2(self):

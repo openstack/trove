@@ -105,7 +105,7 @@ class QuotaControllerTest(testtools.TestCase):
             body = {'quotas': {'instances': None}}
             result = self.controller.update(self.req, body, FAKE_TENANT1,
                                             FAKE_TENANT2)
-            self.assertEqual(quota.save.call_count, 0)
+            self.assertEqual(0, quota.save.call_count)
             self.assertEqual(200, result.status)
 
     def test_update_resource_instance(self):
@@ -115,7 +115,7 @@ class QuotaControllerTest(testtools.TestCase):
             body = {'quotas': {'instances': 2}}
             result = self.controller.update(self.req, body, FAKE_TENANT1,
                                             FAKE_TENANT2)
-            self.assertEqual(instance_quota.save.call_count, 1)
+            self.assertEqual(1, instance_quota.save.call_count)
             self.assertTrue('instances' in result._data['quotas'])
             self.assertEqual(200, result.status)
             self.assertEqual(2, result._data['quotas']['instances'])
@@ -135,9 +135,9 @@ class QuotaControllerTest(testtools.TestCase):
             body = {'quotas': {'instances': None, 'volumes': 10}}
             result = self.controller.update(self.req, body, FAKE_TENANT1,
                                             FAKE_TENANT2)
-            self.assertEqual(instance_quota.save.call_count, 0)
+            self.assertEqual(0, instance_quota.save.call_count)
             self.assertFalse('instances' in result._data['quotas'])
-            self.assertEqual(volume_quota.save.call_count, 1)
+            self.assertEqual(1, volume_quota.save.call_count)
             self.assertEqual(200, result.status)
             self.assertEqual(10, result._data['quotas']['volumes'])
 

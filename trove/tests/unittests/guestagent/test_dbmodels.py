@@ -30,7 +30,7 @@ class MySQLDatabaseTest(testtools.TestCase):
         self.mysqlDb._ignore_dbs = self.origin_ignore_db
 
     def test_name(self):
-        self.assertEqual(self.mysqlDb.name, None)
+        self.assertIsNone(self.mysqlDb.name)
 
     def test_name_setter(self):
         test_name = "Anna"

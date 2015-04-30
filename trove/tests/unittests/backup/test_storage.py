@@ -144,9 +144,9 @@ class SwiftStorageUtils(testtools.TestCase):
     def test_explode_location(self):
         location = 'http://mockswift.com/v1/545433/backups/mybackup.tar'
         url, container, filename = self.swift._explodeLocation(location)
-        self.assertEqual(url, 'http://mockswift.com/v1/545433')
-        self.assertEqual(container, 'backups')
-        self.assertEqual(filename, 'mybackup.tar')
+        self.assertEqual('http://mockswift.com/v1/545433', url)
+        self.assertEqual('backups', container)
+        self.assertEqual('mybackup.tar', filename)
 
     def test_validate_checksum_good(self):
         match = self.swift._verify_checksum('"my-good-etag"', 'my-good-etag')
@@ -250,7 +250,7 @@ class StreamReaderTests(testtools.TestCase):
         self.assertEqual('XX', results)
         self.assertEqual('123_00000000', self.stream.segment,
                          "The Segment should still be the same")
-        self.assertEqual(self.stream.segment_length, 100)
+        self.assertEqual(100, self.stream.segment_length)
         checksum = hashlib.md5('XX')
         checksum = checksum.hexdigest()
         segment_checksum = self.stream.segment_checksum.hexdigest()

@@ -111,15 +111,15 @@ class GuestAgentManagerTest(testtools.TestCase):
                              cluster_config=None,
                              path_exists_function=path_exists_function)
 
-        self.assertEqual(VolumeDevice.format.call_count, expected_vol_count)
-        self.assertEqual(VolumeDevice.migrate_data.call_count,
-                         expected_vol_count)
-        self.assertEqual(VolumeDevice.mount_points.call_count,
-                         expected_vol_count)
+        self.assertEqual(expected_vol_count, VolumeDevice.format.call_count)
+        self.assertEqual(expected_vol_count,
+                         VolumeDevice.migrate_data.call_count)
+        self.assertEqual(expected_vol_count,
+                         VolumeDevice.mount_points.call_count)
         if is_mounted:
-            self.assertEqual(VolumeDevice.unmount.call_count, 1)
+            self.assertEqual(1, VolumeDevice.unmount.call_count)
         else:
-            self.assertEqual(VolumeDevice.unmount.call_count, 0)
+            self.assertEqual(0, VolumeDevice.unmount.call_count)
 
         VerticaApp.install_if_needed.assert_any_call(packages)
         VerticaApp.prepare_for_install_vertica.assert_any_call()
@@ -205,7 +205,7 @@ class GuestAgentManagerTest(testtools.TestCase):
 
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
-        self.assertEqual(output, True)
+        self.assertTrue(output)
 
     @patch.object(VerticaAppStatus, 'set_status')
     def test_prepare_invalid_cluster_config(self, mock_set_status):
