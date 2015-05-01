@@ -35,6 +35,19 @@ class TestClusterController(TestCase):
     def setUp(self):
         super(TestClusterController, self).setUp()
         self.controller = ClusterController()
+        instances = [
+            {
+                "flavorRef": "7",
+                "volume": {
+                    "size": 1
+                },
+                "availability_zone": "az",
+                "nics": [
+                    {"net-id": "e89aa5fd-6b0a-436d-a75c-1545d34d5331"}
+                ]
+            }
+        ] * 5
+
         self.cluster = {
             "cluster": {
                 "name": "products",
@@ -42,38 +55,7 @@ class TestClusterController(TestCase):
                     "type": "mongodb",
                     "version": "2.4.10"
                 },
-                "instances": [
-                    {
-                        "flavorRef": "7",
-                        "volume": {
-                            "size": 1
-                        },
-                    },
-                    {
-                        "flavorRef": "7",
-                        "volume": {
-                            "size": 1
-                        },
-                    },
-                    {
-                        "flavorRef": "7",
-                        "volume": {
-                            "size": 1
-                        },
-                    },
-                    {
-                        "flavorRef": "7",
-                        "volume": {
-                            "size": 1
-                        },
-                    },
-                    {
-                        "flavorRef": "7",
-                        "volume": {
-                            "size": 1
-                        },
-                    }
-                ]
+                "instances": instances
             }
         }
         self.add_shard = {
@@ -170,11 +152,16 @@ class TestClusterController(TestCase):
         datastore = Mock()
         mock_get_datastore_version.return_value = (datastore,
                                                    datastore_version)
-        instances = [{'volume_size': 1, 'flavor_id': '1234'},
-                     {'volume_size': 1, 'flavor_id': '1234'},
-                     {'volume_size': 1, 'flavor_id': '1234'},
-                     {'volume_size': 1, 'flavor_id': '1234'},
-                     {'volume_size': 1, 'flavor_id': '1234'}]
+        instances = [
+            {
+                'volume_size': 1,
+                'flavor_id': '1234',
+                'availability_zone': 'az',
+                'nics': [
+                    {'net-id': 'e89aa5fd-6b0a-436d-a75c-1545d34d5331'}
+                ]
+            }
+        ] * 5
         mock_id_from_href.return_value = '1234'
 
         mock_cluster = Mock()
