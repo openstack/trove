@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2015.1.dev48\n"
+"Project-Id-Version: trove 2015.2.0.dev30\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-03-13 06:10+0000\n"
+"POT-Creation-Date: 2015-05-04 06:04+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,12 +22,12 @@ msgstr ""
 msgid "Unable to create backup record for instance: %s"
 msgstr ""
 
-#: trove/backup/models.py:238
+#: trove/backup/models.py:260
 #, python-format
 msgid "Backup %s cannot be deleted because it is running."
 msgstr ""
 
-#: trove/backup/models.py:288
+#: trove/backup/models.py:310
 #, python-format
 msgid "Bad location for backup object: %s"
 msgstr ""
@@ -48,7 +48,7 @@ msgid "Setting task to NONE on cluster %s"
 msgstr ""
 
 #: trove/cluster/models.py:193
-#: trove/common/strategies/cluster/experimental/mongodb/api.py:177
+#: trove/common/strategies/cluster/experimental/mongodb/api.py:176
 #, python-format
 msgid ""
 "This action cannot be performed on the cluster while the current cluster "
@@ -67,9 +67,10 @@ msgstr ""
 #: trove/extensions/mgmt/host/service.py:43
 #: trove/extensions/mgmt/instances/service.py:50
 #: trove/extensions/mgmt/instances/service.py:74
-#: trove/extensions/mgmt/instances/service.py:152
-#: trove/extensions/mgmt/instances/service.py:171
-#: trove/extensions/mgmt/instances/service.py:183
+#: trove/extensions/mgmt/instances/service.py:154
+#: trove/extensions/mgmt/instances/service.py:173
+#: trove/extensions/mgmt/instances/service.py:185
+#: trove/extensions/mgmt/instances/service.py:198
 #: trove/extensions/mgmt/quota/service.py:33
 #: trove/extensions/mgmt/upgrade/service.py:35
 #: trove/extensions/mgmt/volume/service.py:33
@@ -90,8 +91,9 @@ msgstr ""
 #: trove/cluster/service.py:106 trove/extensions/mgmt/clusters/service.py:60
 #: trove/extensions/mgmt/host/service.py:45
 #: trove/extensions/mgmt/instances/service.py:76
-#: trove/extensions/mgmt/instances/service.py:154
-#: trove/extensions/mgmt/instances/service.py:185
+#: trove/extensions/mgmt/instances/service.py:156
+#: trove/extensions/mgmt/instances/service.py:187
+#: trove/extensions/mgmt/instances/service.py:199
 #, python-format
 msgid ""
 "id : '%s'\n"
@@ -104,8 +106,8 @@ msgstr ""
 #: trove/extensions/mgmt/configuration/service.py:107
 #: trove/extensions/mgmt/host/instance/service.py:34
 #: trove/extensions/mgmt/host/instance/service.py:52
-#: trove/extensions/mgmt/instances/service.py:95
-#: trove/extensions/mgmt/instances/service.py:118
+#: trove/extensions/mgmt/instances/service.py:97
+#: trove/extensions/mgmt/instances/service.py:120
 #: trove/extensions/mgmt/quota/service.py:43 trove/instance/service.py:75
 msgid "Invalid request body."
 msgstr ""
@@ -392,129 +394,133 @@ msgid "Replication is not supported for the '%(datastore)s' datastore."
 msgstr ""
 
 #: trove/common/exception.py:265
+msgid "Exception encountered attaching slave to new replica source."
+msgstr ""
+
+#: trove/common/exception.py:270
 #, python-format
 msgid ""
 "An error occurred communicating with the task manager: "
 "%(original_message)s."
 msgstr ""
 
-#: trove/common/exception.py:271
+#: trove/common/exception.py:276
 #, python-format
 msgid "Value could not be converted: %(msg)s."
 msgstr ""
 
-#: trove/common/exception.py:276
+#: trove/common/exception.py:281
 msgid "Polling request timed out."
 msgstr ""
 
-#: trove/common/exception.py:281
+#: trove/common/exception.py:286
 msgid "User does not have admin privileges."
 msgstr ""
 
-#: trove/common/exception.py:286
+#: trove/common/exception.py:291
 #, python-format
 msgid "The following values are invalid: %(errors)s."
 msgstr ""
 
-#: trove/common/exception.py:291
+#: trove/common/exception.py:296
 msgid "Not Found."
 msgstr ""
 
-#: trove/common/exception.py:296
+#: trove/common/exception.py:301
 msgid "Failed to update instances."
 msgstr ""
 
-#: trove/common/exception.py:301
+#: trove/common/exception.py:306
 msgid "Config file not found."
 msgstr ""
 
-#: trove/common/exception.py:306
+#: trove/common/exception.py:311
 msgid "Paste app not found."
 msgstr ""
 
-#: trove/common/exception.py:310
+#: trove/common/exception.py:315
 msgid "Quota could not be found."
 msgstr ""
 
-#: trove/common/exception.py:314
+#: trove/common/exception.py:319
 #, python-format
 msgid "Quota for tenant %(tenant_id)s could not be found."
 msgstr ""
 
-#: trove/common/exception.py:318
+#: trove/common/exception.py:323
 #, python-format
 msgid "Unknown quota resources %(unknown)s."
 msgstr ""
 
-#: trove/common/exception.py:322
+#: trove/common/exception.py:327
 msgid "Unable to upload Backup to swift."
 msgstr ""
 
-#: trove/common/exception.py:326
+#: trove/common/exception.py:331
 msgid "Unable to download Backup from swift"
 msgstr ""
 
-#: trove/common/exception.py:330
+#: trove/common/exception.py:335
 msgid "Unable to create Backup."
 msgstr ""
 
-#: trove/common/exception.py:334
+#: trove/common/exception.py:339
 msgid "Unable to update Backup table in database."
 msgstr ""
 
-#: trove/common/exception.py:339 trove/extensions/security_group/models.py:59
+#: trove/common/exception.py:344 trove/extensions/security_group/models.py:59
 msgid "Failed to create Security Group."
 msgstr ""
 
-#: trove/common/exception.py:344
+#: trove/common/exception.py:349
 msgid "Failed to delete Security Group."
 msgstr ""
 
-#: trove/common/exception.py:349
+#: trove/common/exception.py:354
 msgid "Failed to create Security Group Rule."
 msgstr ""
 
-#: trove/common/exception.py:354
+#: trove/common/exception.py:359
 msgid "Failed to delete Security Group Rule."
 msgstr ""
 
-#: trove/common/exception.py:359
+#: trove/common/exception.py:364
 #, python-format
 msgid ""
 "Error creating security group rules. Malformed port(s). Port must be an "
 "integer. FromPort = %(from)s greater than ToPort = %(to)s."
 msgstr ""
 
-#: trove/common/exception.py:366
+#: trove/common/exception.py:371
 #, python-format
 msgid ""
 "Unable to create instance because backup %(backup_id)s is not completed. "
 "Actual state: %(state)s."
 msgstr ""
 
-#: trove/common/exception.py:371
+#: trove/common/exception.py:376
 #, python-format
 msgid "Backup file in %(location)s was not found in the object storage."
 msgstr ""
 
-#: trove/common/exception.py:376
+#: trove/common/exception.py:381
 #, python-format
 msgid ""
 "The datastore from which the backup was taken, %(datastore1)s, does not "
 "match the destination datastore of %(datastore2)s."
 msgstr ""
 
-#: trove/common/exception.py:382
+#: trove/common/exception.py:387
 #, python-format
 msgid "Swift account not accessible for tenant %(tenant_id)s."
 msgstr ""
 
-#: trove/common/exception.py:386
+#: trove/common/exception.py:391
 #, python-format
 msgid "Swift is disabled for tenant %(tenant_id)s."
 msgstr ""
 
-#: trove/common/exception.py:390
+#: trove/common/exception.py:395
 #, python-format
 msgid ""
 "The request indicates that user %(user)s should have access to database "
@@ -522,36 +528,36 @@ msgid ""
 "databases list."
 msgstr ""
 
-#: trove/common/exception.py:396
+#: trove/common/exception.py:401
 msgid ""
 "Two or more databases share the same name in the initial databases list. "
 "Please correct the names or remove the duplicate entries."
 msgstr ""
 
-#: trove/common/exception.py:402
+#: trove/common/exception.py:407
 msgid ""
 "Two or more users share the same name and host in the initial users list."
 " Please correct the names or remove the duplicate entries."
 msgstr ""
 
-#: trove/common/exception.py:408
+#: trove/common/exception.py:413
 #, python-format
 msgid ""
 "Current Swift object checksum does not match original checksum for backup"
 " %(backup_id)s."
 msgstr ""
 
-#: trove/common/exception.py:413
+#: trove/common/exception.py:418
 #, python-format
 msgid "%(key)s is not a supported configuration parameter."
 msgstr ""
 
-#: trove/common/exception.py:417
+#: trove/common/exception.py:422
 #, python-format
 msgid "No configuration parser found for datastore %(datastore_manager)s."
 msgstr ""
 
-#: trove/common/exception.py:422
+#: trove/common/exception.py:427
 #, python-format
 msgid ""
 "Datastore Version on Configuration %(config_datastore_version)s does not "
@@ -559,102 +565,102 @@ msgid ""
 "%(instance_datastore_version)s."
 msgstr ""
 
-#: trove/common/exception.py:429
+#: trove/common/exception.py:434
 #, python-format
 msgid ""
 "%(parameter_name)s parameter can no longer be set as of "
 "%(parameter_deleted_at)s."
 msgstr ""
 
-#: trove/common/exception.py:434
+#: trove/common/exception.py:439
 #, python-format
 msgid ""
 "%(parameter_name)s parameter already exists for datastore version "
 "%(datastore_version)s."
 msgstr ""
 
-#: trove/common/exception.py:439
+#: trove/common/exception.py:444
 #, python-format
 msgid ""
 "Instance %(instance_id)s already has a Configuration Group attached: "
 "%(configuration_id)s."
 msgstr ""
 
-#: trove/common/exception.py:444
+#: trove/common/exception.py:449
 #, python-format
 msgid ""
 "The operation you have requested cannot be executed because the instance "
 "status is currently: %(status)s."
 msgstr ""
 
-#: trove/common/exception.py:450
+#: trove/common/exception.py:455
 #, python-format
 msgid ""
 "Endpoint not found for service_type=%(service_type)s, "
 "endpoint_type=%(endpoint_type)s, endpoint_region=%(endpoint_region)s."
 msgstr ""
 
-#: trove/common/exception.py:457
+#: trove/common/exception.py:462
 msgid "Empty catalog."
 msgstr ""
 
-#: trove/common/exception.py:461
+#: trove/common/exception.py:466
 #, python-format
 msgid ""
 "Instance with replication strategy %(guest_strategy)s cannot replicate "
 "from instance with replication strategy %(replication_strategy)s."
 msgstr ""
 
-#: trove/common/exception.py:467
+#: trove/common/exception.py:472
 #, python-format
 msgid ""
 "The target instance has only %(slave_volume_size)sG free, but the "
 "replication snapshot contains %(dataset_size)sG of data."
 msgstr ""
 
-#: trove/common/exception.py:473
+#: trove/common/exception.py:478
 msgid "The replica source cannot be deleted without detaching the replicas."
 msgstr ""
 
-#: trove/common/exception.py:478
+#: trove/common/exception.py:483
 #, python-format
 msgid "Cluster '%(cluster)s' cannot be found."
 msgstr ""
 
-#: trove/common/exception.py:482
+#: trove/common/exception.py:487
 msgid "The flavor for each instance in a cluster must be the same."
 msgstr ""
 
-#: trove/common/exception.py:486
+#: trove/common/exception.py:491
 msgid "A volume size is required for each instance in the cluster."
 msgstr ""
 
-#: trove/common/exception.py:490
+#: trove/common/exception.py:495
 msgid "The volume size for each instance in a cluster must be the same."
 msgstr ""
 
-#: trove/common/exception.py:495
+#: trove/common/exception.py:500
 #, python-format
 msgid ""
 "The number of instances for your initial cluster must be "
 "%(num_instances)s."
 msgstr ""
 
-#: trove/common/exception.py:500
+#: trove/common/exception.py:505
 msgid "Operation not supported for instances that are part of a cluster."
 msgstr ""
 
-#: trove/common/exception.py:505
+#: trove/common/exception.py:510
 #, python-format
 msgid "Operation not allowed for tenant %(tenant_id)s."
 msgstr ""
 
-#: trove/common/exception.py:509
+#: trove/common/exception.py:514
 #, python-format
 msgid "Clusters not supported for %(datastore)s-%(datastore_version)s."
 msgstr ""
 
-#: trove/common/exception.py:514
+#: trove/common/exception.py:519
 #, python-format
 msgid ""
 "Backup is too large for given flavor or volume. Backup size: "
@@ -727,33 +733,32 @@ msgstr ""
 msgid "Failed to stop RPC server before shutdown. "
 msgstr ""
 
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:132
-msgid "Timeout for all instance service statuses to become ready."
-msgstr ""
-
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:139
-#, python-format
-msgid "Some instances failed to become ready: %s"
-msgstr ""
-
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:165
+#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:78
 msgid "error adding members"
 msgstr ""
 
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:179
+#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:92
 msgid "error adding shard"
 msgstr ""
 
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:230
+#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:143
 msgid "error adding config servers"
 msgstr ""
 
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:253
+#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:166
 msgid "timeout for building cluster."
 msgstr ""
 
-#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:304
+#: trove/common/strategies/cluster/experimental/mongodb/taskmanager.py:217
 msgid "timeout for building shard."
+msgstr ""
+
+#: trove/common/strategies/cluster/experimental/vertica/taskmanager.py:86
+msgid "Error creating cluster."
+msgstr ""
+
+#: trove/common/strategies/cluster/experimental/vertica/taskmanager.py:96
+msgid "Timeout for building cluster."
 msgstr ""
 
 #: trove/conductor/manager.py:50
@@ -913,7 +918,7 @@ msgstr ""
 
 #: trove/extensions/mgmt/clusters/service.py:84
 #: trove/extensions/mgmt/host/instance/service.py:42
-#: trove/extensions/mgmt/instances/service.py:108
+#: trove/extensions/mgmt/instances/service.py:110
 msgid "Only one action can be specified per request."
 msgstr ""
 
@@ -991,22 +996,22 @@ msgstr ""
 msgid "Showing a database instance for tenant '%s'"
 msgstr ""
 
-#: trove/extensions/mgmt/instances/service.py:112
+#: trove/extensions/mgmt/instances/service.py:114
 #, python-format
 msgid "Invalid instance action: %s"
 msgstr ""
 
-#: trove/extensions/mgmt/instances/service.py:153
+#: trove/extensions/mgmt/instances/service.py:155
 #, python-format
 msgid "Showing root history for tenant '%s'"
 msgstr ""
 
-#: trove/extensions/mgmt/instances/service.py:172
+#: trove/extensions/mgmt/instances/service.py:174
 #, python-format
 msgid "Showing hardware info for instance '%s'"
 msgstr ""
 
-#: trove/extensions/mgmt/instances/service.py:184
+#: trove/extensions/mgmt/instances/service.py:186
 #, python-format
 msgid "Showing a instance diagnostics for instance '%s'"
 msgstr ""
@@ -1111,7 +1116,7 @@ msgstr ""
 msgid "Failed to create remote security group."
 msgstr ""
 
-#: trove/extensions/security_group/models.py:76 trove/taskmanager/models.py:611
+#: trove/extensions/security_group/models.py:76 trove/taskmanager/models.py:727
 #, python-format
 msgid "Security Group for %s"
 msgstr ""
@@ -1141,7 +1146,7 @@ msgstr ""
 msgid "Error calling %s"
 msgstr ""
 
-#: trove/guestagent/dbaas.py:81
+#: trove/guestagent/dbaas.py:87
 msgid "Error getting volume stats."
 msgstr ""
 
@@ -1168,44 +1173,54 @@ msgstr ""
 msgid "Error updating the apt sources"
 msgstr ""
 
-#: trove/guestagent/volume.py:64
+#: trove/guestagent/volume.py:65
 msgid "Error getting device status"
 msgstr ""
 
-#: trove/guestagent/volume.py:65
+#: trove/guestagent/volume.py:66
 #, python-format
 msgid "InvalidDevicePath(path=%s)"
 msgstr ""
 
-#: trove/guestagent/volume.py:81
+#: trove/guestagent/volume.py:82
 msgid "Device path at {0} did not seem to be {1}."
 msgstr ""
 
-#: trove/guestagent/volume.py:85
+#: trove/guestagent/volume.py:86
 msgid "Volume was not formatted."
 msgstr ""
 
-#: trove/guestagent/volume.py:128
+#: trove/guestagent/volume.py:129
 msgid "Error resizing file system."
 msgstr ""
 
-#: trove/guestagent/volume.py:129
+#: trove/guestagent/volume.py:130
 #, python-format
 msgid "Error resizing the filesystem: %s"
 msgstr ""
 
-#: trove/guestagent/volume.py:142
+#: trove/guestagent/volume.py:143
 #, python-format
 msgid "Device %(device)s is already mounted in %(mount_point)s. Unmounting now."
 msgstr ""
 
-#: trove/guestagent/volume.py:155
+#: trove/guestagent/volume.py:156
 msgid "Error retrieving mount points"
 msgstr ""
 
-#: trove/guestagent/volume.py:156
+#: trove/guestagent/volume.py:157
 #, python-format
 msgid "Could not obtain a list of mount points for device: %s"
+msgstr ""
+
+#: trove/guestagent/volume.py:168
+#, python-format
+msgid "Error setting readhead size to %(size)s for device %(device)s."
+msgstr ""
+
+#: trove/guestagent/volume.py:171
+#, python-format
+msgid "Error setting readhead size: %s."
 msgstr ""
 
 #: trove/guestagent/backup/backupagent.py:120
@@ -1218,9 +1233,48 @@ msgstr ""
 msgid "Completed backup %(backup_id)s."
 msgstr ""
 
-#: trove/guestagent/backup/backupagent.py:180
+#: trove/guestagent/backup/backupagent.py:181
 #, python-format
 msgid "Error restoring backup %(id)s."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:231
+msgid "Cannot create a blank directory."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:260
+msgid "Cannot change ownership of a blank file or directory."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:263
+msgid "Please specify owner or group, or both."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:319
+msgid "Cannot change mode of a blank file."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:349
+msgid "No file mode specified."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:373
+msgid "Cannot remove a blank file."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:397
+#: trove/guestagent/common/operating_system.py:434
+msgid "Missing source path."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:399
+#: trove/guestagent/common/operating_system.py:436
+msgid "Missing destination path."
+msgstr ""
+
+#: trove/guestagent/common/operating_system.py:467
+#, python-format
+msgid "Got unknown keyword args: %r"
 msgstr ""
 
 #: trove/guestagent/datastore/service.py:78
@@ -1238,88 +1292,88 @@ msgstr ""
 msgid "Timeout while waiting for database status to change."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/manager.py:65
+#: trove/guestagent/datastore/experimental/cassandra/manager.py:69
 msgid "Setting status of instance to BUILDING."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/manager.py:100
+#: trove/guestagent/datastore/experimental/cassandra/manager.py:104
 msgid "Completed setup of Cassandra database instance."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:47
+#: trove/guestagent/datastore/experimental/cassandra/service.py:49
 msgid "Preparing Guest as a Cassandra Server"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:68
+#: trove/guestagent/datastore/experimental/cassandra/service.py:69
 msgid "Error while initiating storage structure."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:76
+#: trove/guestagent/datastore/experimental/cassandra/service.py:77
 msgid "Error starting Cassandra"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:88
+#: trove/guestagent/datastore/experimental/cassandra/service.py:89
 msgid "Error killing Cassandra start command."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:90
+#: trove/guestagent/datastore/experimental/cassandra/service.py:91
 msgid "Could not start Cassandra"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:102
-#: trove/guestagent/datastore/experimental/cassandra/service.py:104
+#: trove/guestagent/datastore/experimental/cassandra/service.py:103
+#: trove/guestagent/datastore/experimental/cassandra/service.py:105
 msgid "Could not stop Cassandra."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:109
+#: trove/guestagent/datastore/experimental/cassandra/service.py:110
 msgid "Restarting Cassandra server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:147
+#: trove/guestagent/datastore/experimental/cassandra/service.py:151
 #, python-format
 msgid "Exception generating Cassandra configuration %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:154
+#: trove/guestagent/datastore/experimental/cassandra/service.py:158
 msgid "Wrote new Cassandra configuration."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:203
+#: trove/guestagent/datastore/experimental/cassandra/service.py:207
 msgid "Starting Cassandra with configuration changes."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:207
+#: trove/guestagent/datastore/experimental/cassandra/service.py:211
 #, python-format
 msgid "Cannot execute start_db_with_conf_changes because Cassandra state == %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/cassandra/service.py:233
+#: trove/guestagent/datastore/experimental/cassandra/service.py:237
 msgid "Error getting Cassandra status"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/manager.py:89
+#: trove/guestagent/datastore/experimental/couchbase/manager.py:93
 msgid "Completed setup of Couchbase database instance."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/manager.py:173
+#: trove/guestagent/datastore/experimental/couchbase/manager.py:177
 #, python-format
 msgid "Restoring database from backup %s"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/manager.py:178
+#: trove/guestagent/datastore/experimental/couchbase/manager.py:182
 #, python-format
 msgid "Error performing restore from backup %s"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/manager.py:183
+#: trove/guestagent/datastore/experimental/couchbase/manager.py:187
 msgid "Restored database successfully"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:60
+#: trove/guestagent/datastore/experimental/couchbase/service.py:61
 msgid "Preparing Guest as Couchbase Server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:69
+#: trove/guestagent/datastore/experimental/couchbase/service.py:70
 msgid "Couchbase Server change data dir path."
 msgstr ""
 
@@ -1331,184 +1385,320 @@ msgstr ""
 msgid "Error performing initial Couchbase setup."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:120
+#: trove/guestagent/datastore/experimental/couchbase/service.py:117
 msgid "Enabling Couchbase Server on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:127
+#: trove/guestagent/datastore/experimental/couchbase/service.py:124
 msgid "Command to enable Couchbase Server on boot not found."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:160
-#: trove/guestagent/datastore/experimental/couchbase/service.py:162
+#: trove/guestagent/datastore/experimental/couchbase/service.py:157
+#: trove/guestagent/datastore/experimental/couchbase/service.py:159
 msgid "Could not stop Couchbase Server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:165
+#: trove/guestagent/datastore/experimental/couchbase/service.py:162
 msgid "Restarting Couchbase Server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:177
+#: trove/guestagent/datastore/experimental/couchbase/service.py:174
 msgid "Starting Couchbase Server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:193
+#: trove/guestagent/datastore/experimental/couchbase/service.py:190
 msgid "Start up of Couchbase Server failed."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:197
+#: trove/guestagent/datastore/experimental/couchbase/service.py:194
 msgid "Error killing Couchbase start command."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:205
+#: trove/guestagent/datastore/experimental/couchbase/service.py:202
 msgid "Starting Couchbase with configuration changes."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:206
-#: trove/guestagent/datastore/experimental/mongodb/service.py:141
+#: trove/guestagent/datastore/experimental/couchbase/service.py:203
+#: trove/guestagent/datastore/experimental/mongodb/service.py:142
 #, python-format
 msgid ""
 "Configuration contents:\n"
 " %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:208
+#: trove/guestagent/datastore/experimental/couchbase/service.py:205
 #, python-format
 msgid "Cannot start Couchbase with configuration changes. Couchbase state == %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:238
+#: trove/guestagent/datastore/experimental/couchbase/service.py:235
 msgid "Error getting the Couchbase status."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:244
+#: trove/guestagent/datastore/experimental/couchbase/service.py:241
 msgid "Error getting the root password from the native Couchbase config file."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:258
+#: trove/guestagent/datastore/experimental/couchbase/service.py:255
 msgid ""
 "Error getting Couchbase status using the password parsed from the native "
 "Couchbase config file."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/couchbase/service.py:328
+#: trove/guestagent/datastore/experimental/couchbase/service.py:324
 #, python-format
 msgid "An error occurred in saving password (%(errno)s). %(strerror)s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/manager.py:96
+#: trove/guestagent/datastore/experimental/couchdb/manager.py:71
+msgid "Completed setup of CouchDB database instance."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:60
+msgid "Preparing guest as a CouchDB server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:64
+msgid "Finished installing CouchDB server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:106
+msgid "Error changing permissions."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:138
+msgid "Stopping CouchDB."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:148
+msgid "CouchDB service is not discovered."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:153
+#: trove/guestagent/datastore/experimental/couchdb/service.py:155
+msgid "Could not stop CouchDB."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:161
+msgid "Starting CouchDB server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:177
+msgid "Start up of CouchDB server failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:182
+msgid "Restarting CouchDB server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:199
+msgid "Error while trying to update bind address of CouchDB server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:210
+msgid "Starting CouchDB with configuration changes."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/couchdb/service.py:237
+msgid "Error getting CouchDB status."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/manager.py:80
+msgid "Completed setup of DB2 database instance."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:64
+msgid "Command to change ownership of  DB2 data directory failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:72
+msgid "Command to enable DB2 server on boot failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:80
+msgid "Command to disable DB2 server on boot failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:91
+msgid "Starting DB2 with configuration changes."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:105
+msgid "Start of DB2 server instance failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:107
+msgid "Could not start DB2."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:121
+#: trove/guestagent/datastore/experimental/db2/service.py:123
+msgid "Could not stop DB2."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:149
+msgid "Error getting the DB2 server status."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:176
+#, python-format
+msgid "There was an error creating database: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:181
+#, python-format
+msgid "Creating the following databases failed: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:194
+#, python-format
+msgid "There was an error while deleting database:%s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:196
+#, python-format
+msgid "Unable to delete database: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:241
+#, python-format
+msgid "An error occured listing databases: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:259
+#, python-format
+msgid "Error creating user: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:277
+#, python-format
+msgid "An error occured creating users: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:313
+#, python-format
+msgid "There was an error while deleting user: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/db2/service.py:315
+#, python-format
+msgid "Unable to delete user: %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/mongodb/manager.py:102
+#: trove/guestagent/datastore/experimental/vertica/manager.py:76
 #, python-format
 msgid "Bad cluster configuration; instance type given as %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/manager.py:102
+#: trove/guestagent/datastore/experimental/mongodb/manager.py:108
 msgid "Completed setup of MongoDB database instance."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:46
+#: trove/guestagent/datastore/experimental/mongodb/service.py:47
 msgid "Preparing Guest as MongoDB."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:50
+#: trove/guestagent/datastore/experimental/mongodb/service.py:51
 msgid "Finished installing MongoDB server."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:61
+#: trove/guestagent/datastore/experimental/mongodb/service.py:62
 msgid "Enabling MongoDB on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:67
-#: trove/guestagent/datastore/experimental/mongodb/service.py:89
+#: trove/guestagent/datastore/experimental/mongodb/service.py:68
+#: trove/guestagent/datastore/experimental/mongodb/service.py:90
 msgid "MongoDB service is not discovered."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:70
+#: trove/guestagent/datastore/experimental/mongodb/service.py:71
 msgid "Disabling MongoDB on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:79
+#: trove/guestagent/datastore/experimental/mongodb/service.py:80
 msgid "Stopping MongoDB."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:94
+#: trove/guestagent/datastore/experimental/mongodb/service.py:95
 msgid "Could not stop MongoDB."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:96
+#: trove/guestagent/datastore/experimental/mongodb/service.py:97
 msgid "Could not stop MongoDB"
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:99
+#: trove/guestagent/datastore/experimental/mongodb/service.py:100
 msgid "Restarting MongoDB."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:108
+#: trove/guestagent/datastore/experimental/mongodb/service.py:109
 msgid "Starting MongoDB."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:124
+#: trove/guestagent/datastore/experimental/mongodb/service.py:125
 msgid "Start up of MongoDB failed."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:134
+#: trove/guestagent/datastore/experimental/mongodb/service.py:135
 msgid "Error killing MongoDB start command."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:140
+#: trove/guestagent/datastore/experimental/mongodb/service.py:141
 msgid "Starting MongoDB with configuration changes."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:143
+#: trove/guestagent/datastore/experimental/mongodb/service.py:144
 #, python-format
 msgid "Cannot start MongoDB with configuration changes. MongoDB state == %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:151
-#: trove/guestagent/datastore/experimental/redis/service.py:256
-#: trove/guestagent/datastore/mysql/service.py:987
-#: trove/guestagent/datastore/mysql/service.py:993
+#: trove/guestagent/datastore/experimental/mongodb/service.py:152
+#: trove/guestagent/datastore/experimental/redis/service.py:249
+#: trove/guestagent/datastore/mysql/service.py:973
+#: trove/guestagent/datastore/mysql/service.py:979
 msgid "Resetting configuration."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:155
+#: trove/guestagent/datastore/experimental/mongodb/service.py:156
 msgid "Updating configuration contents."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:171
+#: trove/guestagent/datastore/experimental/mongodb/service.py:172
 msgid "Updating MongoDB config."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:173
-#: trove/guestagent/datastore/experimental/mongodb/service.py:243
+#: trove/guestagent/datastore/experimental/mongodb/service.py:174
+#: trove/guestagent/datastore/experimental/mongodb/service.py:240
 #, python-format
 msgid "Writing %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:178
-#: trove/guestagent/datastore/experimental/mongodb/service.py:248
+#: trove/guestagent/datastore/experimental/mongodb/service.py:179
+#: trove/guestagent/datastore/experimental/mongodb/service.py:245
 #, python-format
 msgid "Moving %(a)s to %(b)s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:196
+#: trove/guestagent/datastore/experimental/mongodb/service.py:194
 #, python-format
 msgid "Config file %s not found."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:219
+#: trove/guestagent/datastore/experimental/mongodb/service.py:216
 msgid "Error clearing storage."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:236
+#: trove/guestagent/datastore/experimental/mongodb/service.py:233
 msgid "Rewriting configuration."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:377
+#: trove/guestagent/datastore/experimental/mongodb/service.py:373
 #, python-format
 msgid "Process execution %s."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/mongodb/service.py:380
+#: trove/guestagent/datastore/experimental/mongodb/service.py:376
 #, python-format
 msgid "OS Error %s."
 msgstr ""
@@ -1521,11 +1711,11 @@ msgstr ""
 msgid "{guest_id}: Revoking user ({user}) access to database({database})."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/postgresql/service/config.py:114
+#: trove/guestagent/datastore/experimental/postgresql/service/config.py:105
 msgid "{guest_id}: Going into restart mode for config file changes."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/postgresql/service/config.py:124
+#: trove/guestagent/datastore/experimental/postgresql/service/config.py:115
 msgid "{guest_id}: Ending restart mode for config file changes."
 msgstr ""
 
@@ -1581,15 +1771,15 @@ msgstr ""
 msgid "{guest_id}: Regranting permissions from {old} to {new}."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/manager.py:99
+#: trove/guestagent/datastore/experimental/redis/manager.py:104
 msgid "Writing redis configuration."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/manager.py:102
+#: trove/guestagent/datastore/experimental/redis/manager.py:107
 msgid "Redis instance has been setup and configured."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/manager.py:104
+#: trove/guestagent/datastore/experimental/redis/manager.py:109
 msgid "Error setting up Redis instance."
 msgstr ""
 
@@ -1625,152 +1815,254 @@ msgstr ""
 msgid "Redis installed completely."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:179
+#: trove/guestagent/datastore/experimental/redis/service.py:175
 msgid "Enabling Redis on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:186
+#: trove/guestagent/datastore/experimental/redis/service.py:182
 msgid "Command to enable Redis on boot not found."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:193
+#: trove/guestagent/datastore/experimental/redis/service.py:189
 msgid "Disabling Redis on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:207
+#: trove/guestagent/datastore/experimental/redis/service.py:203
 msgid "Stopping redis."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:216
+#: trove/guestagent/datastore/experimental/redis/service.py:212
 msgid "Could not stop Redis."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:245
+#: trove/guestagent/datastore/experimental/redis/service.py:238
 msgid "Starting redis with conf changes."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:250
+#: trove/guestagent/datastore/experimental/redis/service.py:243
 msgid "Initiating config."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:263
+#: trove/guestagent/datastore/experimental/redis/service.py:256
 msgid "Starting redis."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:274
+#: trove/guestagent/datastore/experimental/redis/service.py:267
 msgid "Start up of redis failed."
 msgstr ""
 
-#: trove/guestagent/datastore/experimental/redis/service.py:281
+#: trove/guestagent/datastore/experimental/redis/service.py:274
 msgid "Error killing stalled redis start command."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:102
+#: trove/guestagent/datastore/experimental/vertica/manager.py:54
+msgid "Setting instance status to BUILDING."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/manager.py:79
+msgid "Completed setup of Vertica database instance."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/manager.py:81
+msgid "Cannot prepare Vertica database instance."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/manager.py:221
+msgid "Cluster installation failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:47
+msgid "Service Status is RUNNING."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:50
+msgid "Service Status is SHUTDOWN."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:53
+#: trove/guestagent/datastore/mysql/service.py:175
+msgid "Failed to get database status."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:73
+msgid "Failed to enable db on boot."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:83
+msgid "Failed to disable db on boot."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:88
+msgid "Stopping Vertica."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:106
+msgid "Could not stop Vertica."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:113
+msgid "Failed to stop database."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:118
+msgid "Starting Vertica."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:141
+msgid "Starting Vertica with configuration changes."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:155
+msgid "Creating database on Vertica host."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:164
+msgid "Vertica database create failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:165
+msgid "Vertica database create completed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:169
+msgid "Installing Vertica Server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:176
+msgid "install_vertica failed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:178
+msgid "install_vertica completed."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:216
+#, python-format
+msgid "Failed to read config %s."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:225
+msgid "Preparing Guest as Vertica Server."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:247
+msgid "Failed to prepare for install_vertica."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:266
+msgid "Cannot read public key."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:293
+msgid "Cannot install public keys."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:306
+msgid "Cannot export configuration."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/manager.py:105
 #, python-format
 msgid "Restoring database from backup %s."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:106
+#: trove/guestagent/datastore/mysql/manager.py:109
 #, python-format
 msgid "Error performing restore from backup %s."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:110
+#: trove/guestagent/datastore/mysql/manager.py:113
 msgid "Restored database successfully."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/manager.py:159
+#: trove/guestagent/datastore/mysql/manager.py:165
 msgid "Completed setup of MySQL database instance."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:88
+#: trove/guestagent/datastore/mysql/service.py:90
 msgid "/root/.mysql_secret does not exist."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:98
+#: trove/guestagent/datastore/mysql/service.py:100
 msgid "Cannot change mysql password."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:171
+#: trove/guestagent/datastore/mysql/service.py:172
 msgid "MySQL Service Status is RUNNING."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:174
-msgid "Failed to get database status."
-msgstr ""
-
-#: trove/guestagent/datastore/mysql/service.py:181
+#: trove/guestagent/datastore/mysql/service.py:182
 #, python-format
 msgid "MySQL Service Status %(pid)s is BLOCKED."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:185
+#: trove/guestagent/datastore/mysql/service.py:186
 msgid "Process execution failed."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:190
+#: trove/guestagent/datastore/mysql/service.py:191
 msgid "MySQL Service Status is CRASHED."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:193
+#: trove/guestagent/datastore/mysql/service.py:194
 msgid "MySQL Service Status is SHUTDOWN."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:368
+#: trove/guestagent/datastore/mysql/service.py:369
 msgid "Error Getting user information"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:369
+#: trove/guestagent/datastore/mysql/service.py:370
 #, python-format
 msgid "Username %(user)s is not valid: %(reason)s"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:401
+#: trove/guestagent/datastore/mysql/service.py:402
 msgid "Error granting access"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:402
+#: trove/guestagent/datastore/mysql/service.py:403
 #, python-format
 msgid "Grant access to %s is not allowed"
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:601
+#: trove/guestagent/datastore/mysql/service.py:602
 msgid "Preparing Guest as MySQL Server."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:610
+#: trove/guestagent/datastore/mysql/service.py:611
 msgid "Finished installing MySQL server."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:617
+#: trove/guestagent/datastore/mysql/service.py:618
 msgid "Generating admin password."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:634
+#: trove/guestagent/datastore/mysql/service.py:635
 msgid "Preserving root access from restore."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:667
+#: trove/guestagent/datastore/mysql/service.py:666
 msgid "Error enabling MySQL start on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:677
+#: trove/guestagent/datastore/mysql/service.py:676
 msgid "Error disabling MySQL start on boot."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:681
+#: trove/guestagent/datastore/mysql/service.py:680
 msgid "Stopping MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:689
+#: trove/guestagent/datastore/mysql/service.py:688
 msgid "Error stopping MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:694
+#: trove/guestagent/datastore/mysql/service.py:693
 msgid "Could not stop MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:742
+#: trove/guestagent/datastore/mysql/service.py:737
 #, python-format
 msgid "Unable to set %(key)s with value %(value)s."
 msgstr ""
@@ -1783,80 +2075,85 @@ msgstr ""
 msgid "Writing my.cnf templates."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:812
+#: trove/guestagent/datastore/mysql/service.py:808
 msgid "Writing new temp overrides.cnf file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:816
+#: trove/guestagent/datastore/mysql/service.py:812
 msgid "Moving overrides.cnf into correct location."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:820
+#: trove/guestagent/datastore/mysql/service.py:815
 msgid "Setting permissions on overrides.cnf."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:825
+#: trove/guestagent/datastore/mysql/service.py:820
 msgid "Removing overrides configuration file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:830
+#: trove/guestagent/datastore/mysql/service.py:825
 msgid "Writing replication.cnf file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:843
+#: trove/guestagent/datastore/mysql/service.py:836
 msgid "Removing replication configuration file."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:848
+#: trove/guestagent/datastore/mysql/service.py:856
 msgid "Granting Replication Slave privilege."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:859
-msgid "Revoking Replication Slave privilege."
-msgstr ""
-
-#: trove/guestagent/datastore/mysql/service.py:886
-#, python-format
-msgid "Configuring replication from %s."
-msgstr ""
-
-#: trove/guestagent/datastore/mysql/service.py:908
+#: trove/guestagent/datastore/mysql/service.py:888
 msgid "Starting slave replication."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:915
+#: trove/guestagent/datastore/mysql/service.py:895
 msgid "Stopping slave replication."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:938
+#: trove/guestagent/datastore/mysql/service.py:909
+msgid "Stopping replication master."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:924
 #, python-format
 msgid "Replication is now %s."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:941
+#: trove/guestagent/datastore/mysql/service.py:927
 #, python-format
 msgid "Replication is not %(status)s after %(max)d seconds."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:945
+#: trove/guestagent/datastore/mysql/service.py:931
 msgid "Starting MySQL."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:968
+#: trove/guestagent/datastore/mysql/service.py:954
 msgid "Start up of MySQL failed."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:974
+#: trove/guestagent/datastore/mysql/service.py:960
 msgid "Error killing stalled MySQL start command."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:980
+#: trove/guestagent/datastore/mysql/service.py:966
 msgid "Starting MySQL with conf changes."
 msgstr ""
 
-#: trove/guestagent/datastore/mysql/service.py:984
+#: trove/guestagent/datastore/mysql/service.py:970
 #, python-format
 msgid "Cannot execute start_db_with_conf_changes because MySQL state == %s."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:984
+#: trove/guestagent/datastore/mysql/service.py:1021
+msgid "Retrieving latest txn id."
+msgstr ""
+
+#: trove/guestagent/datastore/mysql/service.py:1025
+#, python-format
+msgid "Waiting on txn '%s'."
 msgstr ""
 
 #: trove/guestagent/db/models.py:308
@@ -1917,51 +2214,55 @@ msgstr ""
 msgid "Metadata for backup: %s."
 msgstr ""
 
-#: trove/guestagent/strategies/backup/experimental/couchbase_impl.py:88
+#: trove/guestagent/strategies/backup/experimental/couchbase_impl.py:89
 msgid "All buckets are memcached.  Skipping backup."
 msgstr ""
 
-#: trove/guestagent/strategies/replication/mysql_binlog.py:61
-msgid "Unable to determine binlog position (from file %(binlog_file))."
-msgstr ""
-
-#: trove/guestagent/strategies/replication/mysql_binlog.py:93
+#: trove/guestagent/strategies/replication/mysql_base.py:78
 msgid "Replication user retry count exceeded"
 msgstr ""
 
-#: trove/guestagent/strategies/replication/mysql_binlog.py:154
+#: trove/guestagent/strategies/replication/mysql_base.py:129
+msgid "Exception enabling guest as replica"
+msgstr ""
+
+#: trove/guestagent/strategies/replication/mysql_binlog.py:38
+msgid "Unable to determine binlog position (from file %(binlog_file))."
+msgstr ""
+
+#: trove/guestagent/strategies/replication/mysql_binlog.py:64
 #, python-format
 msgid "Setting read permissions on %s"
 msgstr ""
 
-#: trove/guestagent/strategies/replication/mysql_binlog.py:156
+#: trove/guestagent/strategies/replication/mysql_binlog.py:66
 #, python-format
 msgid "Reading log position from %s"
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:88
+#: trove/guestagent/strategies/restore/mysql_impl.py:90
 msgid "Starting MySQL"
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:90
+#: trove/guestagent/strategies/restore/mysql_impl.py:92
 msgid "Got a timeout launching mysqld_safe"
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:106
+#: trove/guestagent/strategies/restore/mysql_impl.py:108
 msgid "Root password reset successfully."
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:205
+#: trove/guestagent/strategies/restore/mysql_impl.py:206
 #, python-format
 msgid "Cleaning out restore location: %s."
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:216
-#: trove/guestagent/strategies/restore/mysql_impl.py:275
+#: trove/guestagent/strategies/restore/mysql_impl.py:215
+#: trove/guestagent/strategies/restore/mysql_impl.py:272
 msgid "Innobackupex prepare finished successfully."
 msgstr ""
 
-#: trove/guestagent/strategies/restore/mysql_impl.py:290
+#: trove/guestagent/strategies/restore/mysql_impl.py:287
 #, python-format
 msgid "Restoring parent: %(parent_location)s checksum: %(parent_checksum)s."
 msgstr ""
@@ -1990,36 +2291,58 @@ msgstr ""
 msgid "Writing metadata: %s"
 msgstr ""
 
-#: trove/instance/models.py:557
+#: trove/instance/models.py:568
 msgid "Detach replicas before deleting replica source."
 msgstr ""
 
-#: trove/instance/models.py:719
+#: trove/instance/models.py:730
 #, python-format
 msgid "Cannot create a replica of a replica %(id)s."
 msgstr ""
 
-#: trove/instance/models.py:723
+#: trove/instance/models.py:746
 #, python-format
 msgid "Cannot create a replica of %(id)s as that instance could not be found."
 msgstr ""
 
-#: trove/instance/models.py:855
+#: trove/instance/models.py:751
+#, python-format
+msgid ""
+"Replica count only valid when creating replicas. Cannot create %(count)d "
+"instances."
+msgstr ""
+
+#: trove/instance/models.py:867
+#, python-format
+msgid "The new flavor id must be different than the current flavor id of '%s'."
+msgstr ""
+
+#: trove/instance/models.py:899
 #, python-format
 msgid "The new volume 'size' must be larger than the current volume size of '%s'."
 msgstr ""
 
-#: trove/instance/models.py:863
+#: trove/instance/models.py:907
 #, python-format
 msgid "Instance %s has no volume."
 msgstr ""
 
-#: trove/instance/models.py:898
+#: trove/instance/models.py:942 trove/instance/models.py:950
 #, python-format
 msgid "Instance %s is not a replica."
 msgstr ""
 
-#: trove/instance/models.py:928
+#: trove/instance/models.py:967
+#, python-format
+msgid "Instance %s is not a replica source."
+msgstr ""
+
+#: trove/instance/models.py:973
+#, python-format
+msgid "Replica Source %s cannot be ejected as it has a current heartbeat"
+msgstr ""
+
+#: trove/instance/models.py:1010
 #, python-format
 msgid ""
 "Instance %(instance_id)s is not currently available for an action to be "
@@ -2185,294 +2508,354 @@ msgstr ""
 msgid "Failed to roll back reservations %(reservations)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:207
+#: trove/taskmanager/manager.py:114
+#, python-format
+msgid ""
+"promote-to-replica-source: Unable to migrate replica %(slave)s from old "
+"replica source %(old_master)s to new source %(new_master)s."
+msgstr ""
+
+#: trove/taskmanager/manager.py:128
+msgid "Exception demoting old replica source"
+msgstr ""
+
+#: trove/taskmanager/manager.py:136
+#, python-format
+msgid ""
+"promote-to-replica-source %(id)s: The following replicas may not have "
+"been switched: %(replicas)s"
+msgstr ""
+
+#: trove/taskmanager/manager.py:172
+#, python-format
+msgid "Replicas of %s not all replicating from same master"
+msgstr ""
+
+#: trove/taskmanager/manager.py:198
+#, python-format
+msgid ""
+"eject-replica-source: Unable to migrate replica %(slave)s from old "
+"replica source %(old_master)s to new source %(new_master)s."
+msgstr ""
+
+#: trove/taskmanager/manager.py:214
+#, python-format
+msgid ""
+"eject-replica-source %(id)s: The following replicas may not have been "
+"switched: %(replicas)s"
+msgstr ""
+
+#: trove/taskmanager/manager.py:293
+#, python-format
+msgid "Could not create replica %(num)d of %(count)d."
+msgstr ""
+
+#: trove/taskmanager/manager.py:321
+msgid "Cannot create multiple non-replica instances."
+msgstr ""
+
+#: trove/taskmanager/models.py:261
+msgid "Timeout for all instance service statuses to become ready."
+msgstr ""
+
+#: trove/taskmanager/models.py:268
+#, python-format
+msgid "Some instances failed to become ready: %s"
+msgstr ""
+
+#: trove/taskmanager/models.py:289
 msgid "timeout for instances to be marked as deleted."
 msgstr ""
 
-#: trove/taskmanager/models.py:251
-#, python-format
-msgid "Creating instance %s."
-msgstr ""
-
-#: trove/taskmanager/models.py:263
-#, python-format
-msgid "Error creating security group for instance: %s"
-msgstr ""
-
-#: trove/taskmanager/models.py:334
-#, python-format
-msgid "Error creating DNS entry for instance: %s"
-msgstr ""
-
-#: trove/taskmanager/models.py:350
+#: trove/taskmanager/models.py:337
 #, python-format
 msgid "Created instance %s successfully."
 msgstr ""
 
-#: trove/taskmanager/models.py:353
+#: trove/taskmanager/models.py:340
 #, python-format
 msgid ""
 "Failed to create instance %s. Timeout waiting for instance to become "
 "active. No usage create-event was sent."
 msgstr ""
 
-#: trove/taskmanager/models.py:358
+#: trove/taskmanager/models.py:345
 #, python-format
 msgid "Failed to send usage create-event for instance %s."
 msgstr ""
 
+#: trove/taskmanager/models.py:356
+#, python-format
+msgid "Creating instance %s."
+msgstr ""
+
 #: trove/taskmanager/models.py:368
+#, python-format
+msgid "Error creating security group for instance: %s"
+msgstr ""
+
+#: trove/taskmanager/models.py:439
+#, python-format
+msgid "Error creating DNS entry for instance: %s"
+msgstr ""
+
+#: trove/taskmanager/models.py:453
 #, python-format
 msgid "Error attaching instance %s as replica."
 msgstr ""
 
-#: trove/taskmanager/models.py:389
+#: trove/taskmanager/models.py:486
 #, python-format
 msgid "Unable to create replication snapshot record for instance: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:406
+#: trove/taskmanager/models.py:520
 #, python-format
 msgid ""
 "Error creating replication snapshot from instance %(source)s for new "
 "replica %(replica)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:420
+#: trove/taskmanager/models.py:536
 #, python-format
 msgid ""
 "An error occurred while deleting a bad replication snapshot from instance"
 " %(source)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:441
+#: trove/taskmanager/models.py:557
 #, python-format
 msgid "Service status: %(status)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:444
+#: trove/taskmanager/models.py:560
 #, python-format
 msgid "Service error description: %(desc)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:452
+#: trove/taskmanager/models.py:568
 #, python-format
 msgid "Trove instance status: %(action)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:455
+#: trove/taskmanager/models.py:571
 #, python-format
 msgid "Trove instance status description: %(text)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:477
+#: trove/taskmanager/models.py:593
 #, python-format
 msgid "Service not active, status: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:483
+#: trove/taskmanager/models.py:599
 #, python-format
 msgid "Server not active, status: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:518
+#: trove/taskmanager/models.py:634
 #, python-format
 msgid "Error creating server and volume for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:623
+#: trove/taskmanager/models.py:739
 #, python-format
 msgid "Error occurred during Heat stack creation for instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:654
+#: trove/taskmanager/models.py:770
 #, python-format
 msgid "Failed to create server for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:672
+#: trove/taskmanager/models.py:788
 #, python-format
 msgid "Failed to create volume for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:804
+#: trove/taskmanager/models.py:921
 #, python-format
 msgid ""
 "Failed to create DNS entry for instance %(instance)s. Server status was "
 "%(status)s)."
 msgstr ""
 
-#: trove/taskmanager/models.py:815
+#: trove/taskmanager/models.py:932
 msgid "Creating dns entry..."
 msgstr ""
 
-#: trove/taskmanager/models.py:836
+#: trove/taskmanager/models.py:953
 #, python-format
 msgid ""
 "Failed to create security group rules for instance %(instance_id)s: "
 "Invalid port format - FromPort = %(from)s, ToPort = %(to)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:894
+#: trove/taskmanager/models.py:1011
 #, python-format
 msgid "Error stopping the datastore before attempting to delete instance id %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:905
+#: trove/taskmanager/models.py:1022
 #, python-format
 msgid "Error during delete compute server %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:914
+#: trove/taskmanager/models.py:1031
 #, python-format
 msgid "Error during dns entry of instance %(id)s: %(ex)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:923
+#: trove/taskmanager/models.py:1040
 #, python-format
 msgid ""
 "Server %(server_id)s entered ERROR status when deleting instance "
 "%(instance_id)s!"
 msgstr ""
 
-#: trove/taskmanager/models.py:934
+#: trove/taskmanager/models.py:1051
 #, python-format
 msgid ""
 "Failed to delete instance %(instance_id)s: Timeout deleting compute "
 "server %(server_id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:944
+#: trove/taskmanager/models.py:1061
 #, python-format
 msgid "Deleting volume %(v)s for instance: %(i)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:948
+#: trove/taskmanager/models.py:1065
 #, python-format
 msgid "Error deleting volume of instance %(id)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:963
+#: trove/taskmanager/models.py:1080
 #, python-format
 msgid ""
 "Resizing volume for instance %(instance_id)s from %(old_size)s GB to "
 "%(new_size)s GB."
 msgstr ""
 
-#: trove/taskmanager/models.py:969
+#: trove/taskmanager/models.py:1086
 #, python-format
 msgid "Resized volume for instance %s successfully."
 msgstr ""
 
-#: trove/taskmanager/models.py:972
+#: trove/taskmanager/models.py:1089
 #, python-format
 msgid ""
 "Resizing instance %(instance_id)s from flavor %(old_flavor)s to "
 "%(new_flavor)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:978
+#: trove/taskmanager/models.py:1095
 #, python-format
 msgid "Resized instance %s successfully."
 msgstr ""
 
-#: trove/taskmanager/models.py:981
+#: trove/taskmanager/models.py:1098
 #, python-format
 msgid "Initiating migration to host %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:986
+#: trove/taskmanager/models.py:1103
 #, python-format
 msgid "Initiating backup for instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1000
+#: trove/taskmanager/models.py:1117
 #, python-format
 msgid "Failed to get replication snapshot from %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1014
+#: trove/taskmanager/models.py:1131
 #, python-format
 msgid "Failed to detach replica %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1037
+#: trove/taskmanager/models.py:1144
+#, python-format
+msgid "Failed to attach replica %s."
+msgstr ""
+
+#: trove/taskmanager/models.py:1230
 #, python-format
 msgid "Cannot reboot instance. DB status is %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1043
+#: trove/taskmanager/models.py:1236
 #, python-format
 msgid "Rebooting instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1060
+#: trove/taskmanager/models.py:1253
 #, python-format
 msgid "Rebooted instance %s successfully."
 msgstr ""
 
-#: trove/taskmanager/models.py:1062
+#: trove/taskmanager/models.py:1255
 #, python-format
 msgid "Failed to reboot instance %(id)s: %(e)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1069
+#: trove/taskmanager/models.py:1262
 #, python-format
 msgid "Initiating datastore restart on instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1073
+#: trove/taskmanager/models.py:1266
 #, python-format
 msgid "Failed to initiate datastore restart on instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1079
+#: trove/taskmanager/models.py:1272
 #, python-format
 msgid "Initiating datastore configurations update on instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1102
+#: trove/taskmanager/models.py:1295
 #, python-format
 msgid "Failed to initiate datastore configurations update on instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1106
+#: trove/taskmanager/models.py:1299
 #, python-format
 msgid ""
 "Initiating configuration group %(config_id)s removal from instance "
 "%(instance_id)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1221
+#: trove/taskmanager/models.py:1414
 #, python-format
 msgid "Deleting backup %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1234
+#: trove/taskmanager/models.py:1427
 #, python-format
 msgid "Error occurred when deleting from swift. Details: %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1242
+#: trove/taskmanager/models.py:1435
 #, python-format
 msgid "Deleted backup %s successfully."
 msgstr ""
 
-#: trove/taskmanager/models.py:1262
+#: trove/taskmanager/models.py:1455
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Setting service status to failed."
 msgstr ""
 
-#: trove/taskmanager/models.py:1271
+#: trove/taskmanager/models.py:1464
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
 "instance %(id)s. Trying to recover by restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1279
+#: trove/taskmanager/models.py:1472
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -2480,7 +2863,7 @@ msgid ""
 "restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1288
+#: trove/taskmanager/models.py:1481
 #, python-format
 msgid ""
 "%(func)s encountered an error when attempting to resize the volume for "
@@ -2488,53 +2871,53 @@ msgid ""
 "and then restarting the guest."
 msgstr ""
 
-#: trove/taskmanager/models.py:1394
+#: trove/taskmanager/models.py:1587
 #, python-format
 msgid "Failed to get volume %(vol_id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1408
+#: trove/taskmanager/models.py:1601
 #, python-format
 msgid "Timeout trying to extend the volume %(vol_id)s for instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1421
+#: trove/taskmanager/models.py:1614
 #, python-format
 msgid ""
 "Error encountered trying to verify extend for the volume %(vol_id)s for "
 "instance %(id)s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1468
+#: trove/taskmanager/models.py:1661
 #, python-format
 msgid ""
 "Failed to resize instance %(id)s volume for server %(server_id)s. The "
 "instance must be in state %(state)s not %(inst_state)s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1591
+#: trove/taskmanager/models.py:1784
 msgid "Exception during nova action."
 msgstr ""
 
-#: trove/taskmanager/models.py:1593
+#: trove/taskmanager/models.py:1786
 #, python-format
 msgid "Reverting action for instance %s"
 msgstr ""
 
-#: trove/taskmanager/models.py:1599
+#: trove/taskmanager/models.py:1792
 msgid "Restarting datastore."
 msgstr ""
 
-#: trove/taskmanager/models.py:1602
+#: trove/taskmanager/models.py:1795
 msgid "Cannot restart datastore because Nova server status is not ACTIVE"
 msgstr ""
 
-#: trove/taskmanager/models.py:1605
+#: trove/taskmanager/models.py:1798
 #, python-format
 msgid "Error resizing instance %s."
 msgstr ""
 
-#: trove/taskmanager/models.py:1667
+#: trove/taskmanager/models.py:1860
 msgid "Error sending reset_configuration call."
 msgstr ""
 
