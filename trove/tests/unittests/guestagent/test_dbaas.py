@@ -1470,24 +1470,24 @@ class MySqlAppMockTest(testtools.TestCase):
         mock_conn = mock_sql_connection()
 
         with patch.object(mock_conn, 'execute', return_value=None):
-            operating_system.service_discovery = Mock(return_value={
-                'cmd_stop': 'service mysql stop'})
-            utils.execute_with_timeout = MagicMock(return_value=None)
-            # skip writing the file for now
-            with patch.object(os.path, 'isfile', return_value=False):
-                mock_status = MagicMock()
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=True)
-                dbaas.clear_expired_password = MagicMock(return_value=None)
-                app = MySqlApp(mock_status)
-                dbaas.clear_expired_password = MagicMock(return_value=None)
-                self.assertRaises(TypeError, app.secure, None, None)
-                self.assertTrue(mock_conn.execute.called)
-                # At least called twice
-                self.assertTrue(mock_conn.execute.call_count >= 2)
-                (mock_status.wait_for_real_status_to_change_to.
-                 assert_called_with(rd_instance.ServiceStatuses.SHUTDOWN,
-                                    app.state_change_wait_time, False))
+            with patch.object(operating_system, 'service_discovery',
+                              return_value={'cmd_stop': 'service mysql stop'}):
+                utils.execute_with_timeout = MagicMock(return_value=None)
+                # skip writing the file for now
+                with patch.object(os.path, 'isfile', return_value=False):
+                    mock_status = MagicMock()
+                    mock_status.wait_for_real_status_to_change_to = MagicMock(
+                        return_value=True)
+                    dbaas.clear_expired_password = MagicMock(return_value=None)
+                    app = MySqlApp(mock_status)
+                    dbaas.clear_expired_password = MagicMock(return_value=None)
+                    self.assertRaises(TypeError, app.secure, None, None)
+                    self.assertTrue(mock_conn.execute.called)
+                    # At least called twice
+                    self.assertTrue(mock_conn.execute.call_count >= 2)
+                    (mock_status.wait_for_real_status_to_change_to.
+                     assert_called_with(rd_instance.ServiceStatuses.SHUTDOWN,
+                                        app.state_change_wait_time, False))
 
 
 class MySqlRootStatusTest(testtools.TestCase):
