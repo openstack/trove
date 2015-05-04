@@ -13,16 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-from trove.common import exception
-import trove.common.utils as utils
-
 from mock import Mock
-import testtools
 from testtools import ExpectedException
+from trove.common import exception
+from trove.common import utils
+from trove.tests.unittests import trove_testtools
 
 
-class TestTroveExecuteWithTimeout(testtools.TestCase):
+class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
 
     def setUp(self):
         super(TestTroveExecuteWithTimeout, self).setUp()

@@ -15,12 +15,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-import testtools
 from trove.common.pagination import PaginatedDataView
+from trove.tests.unittests import trove_testtools
 
 
-class TestPaginatedDataView(testtools.TestCase):
+class TestPaginatedDataView(trove_testtools.TestCase):
 
     def test_creation_with_string_marker(self):
         view = PaginatedDataView("TestType", [], "http://current_page",
