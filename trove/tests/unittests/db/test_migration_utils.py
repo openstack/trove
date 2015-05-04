@@ -13,19 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-from mock import call
 from mock import Mock
+from mock import call
 from mock import patch
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import Column
-import testtools
-
-from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy import utils as db_utils
+from trove.db.sqlalchemy.migrate_repo.schema import String
+from trove.tests.unittests import trove_testtools
 
 
-class TestDbMigrationUtils(testtools.TestCase):
+class TestDbMigrationUtils(trove_testtools.TestCase):
     def setUp(self):
         super(TestDbMigrationUtils, self).setUp()
 

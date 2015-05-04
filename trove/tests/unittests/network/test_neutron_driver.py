@@ -14,7 +14,6 @@
 #    under the License.
 #
 
-import testtools
 from mock import MagicMock
 from mock import Mock
 from neutronclient.common import exceptions as neutron_exceptions
@@ -25,9 +24,10 @@ from trove.common.models import NetworkRemoteModelBase
 from trove.network import neutron
 from trove.network.neutron import NeutronDriver as driver
 from trove.extensions.security_group.models import RemoteSecurityGroup
+from trove.tests.unittests import trove_testtools
 
 
-class NeutronDriverTest(testtools.TestCase):
+class NeutronDriverTest(trove_testtools.TestCase):
     def setUp(self):
         super(NeutronDriverTest, self).setUp()
         self.context = Mock()
@@ -72,7 +72,7 @@ class NeutronDriverTest(testtools.TestCase):
         self.assertEqual(1, driver.delete_security_group.call_count)
 
 
-class NeutronDriverExceptionTest(testtools.TestCase):
+class NeutronDriverExceptionTest(trove_testtools.TestCase):
     def setUp(self):
         super(NeutronDriverExceptionTest, self).setUp()
         self.context = Mock()

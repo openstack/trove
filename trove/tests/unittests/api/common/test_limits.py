@@ -19,7 +19,6 @@ Tests dealing with HTTP rate-limiting.
 
 import httplib
 from trove.quota.models import Quota
-import testtools
 import webob
 
 from mock import Mock, MagicMock
@@ -31,6 +30,7 @@ from trove.limits import views
 from trove.limits.service import LimitsController
 from oslo.serialization import jsonutils
 from trove.quota.quota import QUOTAS
+from trove.tests.unittests import trove_testtools
 
 TEST_LIMITS = [
     Limit("GET", "/delayed", "^/delayed", 1, limits.PER_MINUTE),
@@ -40,7 +40,7 @@ TEST_LIMITS = [
 ]
 
 
-class BaseLimitTestSuite(testtools.TestCase):
+class BaseLimitTestSuite(trove_testtools.TestCase):
     """Base test suite which provides relevant stubs and time abstraction."""
 
     def setUp(self):
@@ -683,7 +683,7 @@ class WsgiLimiterProxyTest(BaseLimitTestSuite):
         super(WsgiLimiterProxyTest, self).tearDown()
 
 
-class LimitsViewTest(testtools.TestCase):
+class LimitsViewTest(trove_testtools.TestCase):
     def setUp(self):
         super(LimitsViewTest, self).setUp()
 
@@ -735,7 +735,7 @@ class LimitsViewTest(testtools.TestCase):
         self.assertEqual(expected, data)
 
 
-class LimitsViewsTest(testtools.TestCase):
+class LimitsViewsTest(trove_testtools.TestCase):
     def setUp(self):
         super(LimitsViewsTest, self).setUp()
 

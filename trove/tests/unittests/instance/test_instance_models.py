@@ -11,30 +11,30 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import uuid
 from mock import Mock
-from testtools import TestCase
+from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import exception
-from trove.backup import models as backup_models
-from trove.datastore import models as datastore_models
 from trove.common.instance import ServiceStatuses
-from trove.instance.models import filter_ips
-from trove.instance.models import InstanceServiceStatus
+from trove.datastore import models as datastore_models
+from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
+from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
-from trove.instance import models
+from trove.instance.models import filter_ips
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.tests.fakes import nova
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
+import uuid
 
 CONF = cfg.CONF
 task_api.API.get_client = Mock()
 
 
-class SimpleInstanceTest(TestCase):
+class SimpleInstanceTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(SimpleInstanceTest, self).setUp()
@@ -102,7 +102,7 @@ class SimpleInstanceTest(TestCase):
         self.assertTrue('15.123.123.123' in ip)
 
 
-class CreateInstanceTest(TestCase):
+class CreateInstanceTest(trove_testtools.TestCase):
 
     def setUp(self):
         util.init_db()
@@ -181,7 +181,7 @@ class CreateInstanceTest(TestCase):
         models.create_nova_client = self.orig_client
         task_api.API(self.context).create_instance = self.orig_api
         models.run_with_quotas = self.run_with_quotas
-        backup_models.DBBackup.check_swift_object_exist = self.context
+        backup_models.DBBackup.check_swift_object_exist = self.check
         self.backup.delete()
         self.db_info.delete()
         super(CreateInstanceTest, self).tearDown()
@@ -211,7 +211,7 @@ class CreateInstanceTest(TestCase):
         self.assertIsNotNone(instance)
 
 
-class TestReplication(TestCase):
+class TestReplication(trove_testtools.TestCase):
 
     def setUp(self):
         util.init_db()

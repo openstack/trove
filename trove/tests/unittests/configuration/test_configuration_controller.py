@@ -13,17 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-import jsonschema
-from testtools import TestCase
-from trove.configuration.service import ConfigurationsController
-from trove.extensions.mgmt.configuration import service
+from mock import MagicMock
 from trove.common import configurations
 from trove.common.exception import UnprocessableEntity
-from mock import MagicMock
+from trove.configuration.service import ConfigurationsController
+from trove.extensions.mgmt.configuration import service
+from trove.tests.unittests import trove_testtools
+import jsonschema
 
 
-class TestConfigurationParser(TestCase):
+class TestConfigurationParser(trove_testtools.TestCase):
     def setUp(self):
         super(TestConfigurationParser, self).setUp()
 
@@ -46,7 +45,7 @@ class TestConfigurationParser(TestCase):
         self.assertEqual('1', d_parsed["skip-external-locking"])
 
 
-class TestConfigurationController(TestCase):
+class TestConfigurationController(trove_testtools.TestCase):
     def setUp(self):
         super(TestConfigurationController, self).setUp()
         self.controller = ConfigurationsController()
@@ -178,7 +177,7 @@ class TestConfigurationController(TestCase):
             None, config_rules)
 
 
-class TestConfigurationsParameterController(TestCase):
+class TestConfigurationsParameterController(trove_testtools.TestCase):
     def setUp(self):
         super(TestConfigurationsParameterController, self).setUp()
         self.controller = service.ConfigurationsParameterController()

@@ -11,18 +11,17 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import testtools
 from trove.datastore import models as datastore_models
-from trove.datastore.models import Datastore
 from trove.datastore.models import Capability
-from trove.datastore.models import DatastoreVersion
 from trove.datastore.models import DBCapabilityOverrides
+from trove.datastore.models import Datastore
+from trove.datastore.models import DatastoreVersion
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 import uuid
 
 
-class TestDatastoreBase(testtools.TestCase):
+class TestDatastoreBase(trove_testtools.TestCase):
 
     def setUp(self):
         # Basic setup and mock/fake structures for testing only
