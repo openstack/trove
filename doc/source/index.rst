@@ -44,6 +44,7 @@ functionality, the following resources are provided.
   :maxdepth: 1
 
   dev/design
+  dev/testing
   dev/install
   dev/manual_install.rst
   dev/building_guest_images.rst
