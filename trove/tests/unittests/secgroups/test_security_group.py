@@ -12,15 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
 import uuid
 import trove.common.remote
 from mock import Mock
+from mock import patch
 from trove.common import exception
 from trove.tests.fakes import nova
 from trove.extensions.security_group import models as sec_mod
 from trove.instance import models as inst_model
 from novaclient import exceptions as nova_exceptions
+from trove.tests.unittests import trove_testtools
 
 
 """
@@ -28,7 +29,7 @@ Unit tests for testing the exceptions raised by Security Groups
 """
 
 
-class Security_Group_Exceptions_Test(testtools.TestCase):
+class Security_Group_Exceptions_Test(trove_testtools.TestCase):
 
     def setUp(self):
         super(Security_Group_Exceptions_Test, self).setUp()
@@ -98,15 +99,16 @@ class fake_SecGr_Association(object):
         pass
 
 
-class SecurityGroupDeleteTest(testtools.TestCase):
+class SecurityGroupDeleteTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(SecurityGroupDeleteTest, self).setUp()
-        inst_model.CONF = Mock()
+        self.inst_model_conf_patch = patch.object(inst_model, 'CONF')
+        self.inst_model_conf_mock = self.inst_model_conf_patch.start()
+        self.addCleanup(self.inst_model_conf_patch.stop)
         self.context = Mock()
-        self. original_find_by = (sec_mod.
-                                  SecurityGroupInstanceAssociation.
-                                  find_by)
+        self.original_find_by = (
+            sec_mod.SecurityGroupInstanceAssociation.find_by)
         self.original_delete = sec_mod.SecurityGroupInstanceAssociation.delete
         self.fException = Mock(side_effect=
                                lambda *args, **kwargs:
