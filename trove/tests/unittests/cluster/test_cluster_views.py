@@ -17,17 +17,18 @@
 from mock import Mock
 from mock import MagicMock
 from mock import patch
-from testtools import TestCase
 from trove.cluster.views import ClusterInstanceDetailView
 from trove.cluster.views import ClusterView
 from trove.cluster.views import load_view
 from trove.common import cfg
 from trove.common.strategies.cluster.experimental.mongodb.api import (
     MongoDbClusterView)
+from trove.tests.unittests import trove_testtools
+
 CONF = cfg.CONF
 
 
-class ClusterViewTest(TestCase):
+class ClusterViewTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(ClusterViewTest, self).setUp()
@@ -108,7 +109,7 @@ class ClusterViewTest(TestCase):
         test_case(['query_router', 'member'], ['member'], 2, 1)
 
 
-class ClusterInstanceDetailViewTest(TestCase):
+class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(ClusterInstanceDetailViewTest, self).setUp()

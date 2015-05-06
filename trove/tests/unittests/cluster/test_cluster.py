@@ -17,7 +17,6 @@ import uuid
 
 from mock import Mock
 from mock import patch
-from testtools import TestCase
 from trove.cluster.models import Cluster
 from trove.cluster.models import ClusterTasks
 from trove.cluster.models import DBCluster
@@ -32,14 +31,17 @@ from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
 from trove.quota.quota import QUOTAS
 from trove.taskmanager import api as task_api
+from trove.tests.unittests import trove_testtools
 
 CONF = cfg.CONF
 
 
-class ClusterTest(TestCase):
+class ClusterTest(trove_testtools.TestCase):
     def setUp(self):
         super(ClusterTest, self).setUp()
-        task_api.API.get_client = Mock()
+        self.get_client_patch = patch.object(task_api.API, 'get_client')
+        self.get_client_mock = self.get_client_patch.start()
+        self.addCleanup(self.get_client_patch.stop)
         self.cluster_id = str(uuid.uuid4())
         self.cluster_name = "Cluster" + self.cluster_id
         self.tenant_id = "23423432"
