@@ -13,7 +13,6 @@
 #    under the License.
 import datetime
 
-import testtools
 from mock import Mock, MagicMock, patch
 from testtools.matchers import Equals, Is
 from cinderclient import exceptions as cinder_exceptions
@@ -41,6 +40,7 @@ from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 from trove.common import utils
 from trove import rpc
@@ -162,7 +162,8 @@ class fake_DBInstance(object):
         return self.deleted
 
 
-class FreshInstanceTasksTest(testtools.TestCase):
+class FreshInstanceTasksTest(trove_testtools.TestCase):
+
     def setUp(self):
         super(FreshInstanceTasksTest, self).setUp()
         mock_instance = patch('trove.instance.models.FreshInstance')
@@ -196,6 +197,19 @@ class FreshInstanceTasksTest(testtools.TestCase):
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
             None, Mock(), None, None)
+        self.tm_sg_create_inst_patch = patch.object(
+            trove.taskmanager.models.SecurityGroup, 'create_for_instance',
+            Mock(return_value={'id': uuid.uuid4(), 'name': uuid.uuid4()}))
+        self.tm_sg_create_inst_mock = self.tm_sg_create_inst_patch.start()
+        self.addCleanup(self.tm_sg_create_inst_patch.stop)
+        self.tm_sgr_create_sgr_patch = patch.object(
+            trove.taskmanager.models.SecurityGroupRule,
+            'create_sec_group_rule')
+        self.tm_sgr_create_sgr_mock = self.tm_sgr_create_sgr_patch.start()
+        self.addCleanup(self.tm_sgr_create_sgr_patch.stop)
+        self.task_models_conf_patch = patch('trove.taskmanager.models.CONF')
+        self.task_models_conf_mock = self.task_models_conf_patch.start()
+        self.addCleanup(self.task_models_conf_patch.stop)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()
@@ -204,8 +218,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
         InstanceServiceStatus.find_by = self.orig_ISS_find_by
         DBInstance.find_by = self.orig_DBI_find_by
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_userdata(self, mock_conf):
+    def test_create_instance_userdata(self):
         cloudinit_location = os.path.dirname(self.cloudinit)
         datastore_manager = os.path.splitext(os.path.basename(self.
                                                               cloudinit))[0]
@@ -215,14 +228,13 @@ class FreshInstanceTasksTest(testtools.TestCase):
                 return cloudinit_location
             else:
                 return ''
-        mock_conf.get.side_effect = fake_conf_getter
+        self.task_models_conf_mock.get.side_effect = fake_conf_getter
 
         server = self.freshinstancetasks._create_server(
             None, None, None, datastore_manager, None, None, None)
         self.assertEqual(server.userdata, self.userdata)
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_guestconfig(self, mock_conf):
+    def test_create_instance_guestconfig(self):
         def fake_conf_getter(*args, **kwargs):
             if args[0] == 'guest_config':
                 return self.guestconfig
@@ -233,7 +245,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
             else:
                 return ''
 
-        mock_conf.get.side_effect = fake_conf_getter
+        self.task_models_conf_mock.get.side_effect = fake_conf_getter
         # execute
         files = self.freshinstancetasks._get_injected_files("test")
         # verify
@@ -245,8 +257,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
             self.guestconfig_content,
             files['/etc/trove/conf.d/trove-guestagent.conf'])
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_guestconfig_compat(self, mock_conf):
+    def test_create_instance_guestconfig_compat(self):
         def fake_conf_getter(*args, **kwargs):
             if args[0] == 'guest_config':
                 return self.guestconfig
@@ -257,7 +268,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
             else:
                 return ''
 
-        mock_conf.get.side_effect = fake_conf_getter
+        self.task_models_conf_mock.get.side_effect = fake_conf_getter
         # execute
         files = self.freshinstancetasks._get_injected_files("test")
         # verify
@@ -269,40 +280,37 @@ class FreshInstanceTasksTest(testtools.TestCase):
             self.guestconfig_content,
             files['/etc/trove-guestagent.conf'])
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_with_az_kwarg(self, mock_conf):
-        mock_conf.get.return_value = ''
+    def test_create_instance_with_az_kwarg(self):
+        self.task_models_conf_mock.get.return_value = ''
         # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, availability_zone='nova', nics=None)
         # verify
         self.assertIsNotNone(server)
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_with_az(self, mock_conf):
-        mock_conf.get.return_value = ''
+    def test_create_instance_with_az(self):
+        self.task_models_conf_mock.get.return_value = ''
         # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, 'nova', None)
         # verify
         self.assertIsNotNone(server)
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_create_instance_with_az_none(self, mock_conf):
-        mock_conf.get.return_value = ''
+    def test_create_instance_with_az_none(self):
+        self.task_models_conf_mock.get.return_value = ''
         # execute
         server = self.freshinstancetasks._create_server(
             None, None, None, None, None, None, None)
         # verify
         self.assertIsNotNone(server)
 
-    @patch('trove.taskmanager.models.CONF')
-    def test_update_status_of_intance_failure(self, mock_conf):
-        mock_conf.get.return_value = ''
-        InstanceServiceStatus.find_by = Mock(
-            return_value=fake_InstanceServiceStatus.find_by())
-        DBInstance.find_by = Mock(
-            return_value=fake_DBInstance.find_by())
+    @patch.object(InstanceServiceStatus, 'find_by',
+                  return_value=fake_InstanceServiceStatus.find_by())
+    @patch.object(DBInstance, 'find_by',
+                  return_value=fake_DBInstance.find_by())
+    def test_update_status_of_instance_failure(
+            self, dbi_find_by_mock, iss_find_by_mock):
+        self.task_models_conf_mock.get.return_value = ''
         self.freshinstancetasks.update_statuses_on_time_out()
         self.assertEqual(ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT,
                          fake_InstanceServiceStatus.find_by().get_status())
@@ -311,54 +319,34 @@ class FreshInstanceTasksTest(testtools.TestCase):
 
     def test_create_sg_rules_success(self):
         datastore_manager = 'mysql'
-        taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(),
-                               'name': uuid.uuid4()}))
-        taskmanager_models.CONF.get = Mock(return_value=FakeOptGroup())
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
-            Mock())
+        self.task_models_conf_mock.get = Mock(return_value=FakeOptGroup())
         self.freshinstancetasks._create_secgroup(datastore_manager)
         self.assertEqual(2, taskmanager_models.SecurityGroupRule.
                          create_sec_group_rule.call_count)
 
     def test_create_sg_rules_format_exception_raised(self):
         datastore_manager = 'mysql'
-        taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(),
-                               'name': uuid.uuid4()}))
-        taskmanager_models.CONF.get = Mock(
+        self.task_models_conf_mock.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['3306', '-3306']))
         self.freshinstancetasks.update_db = Mock()
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
-            Mock())
         self.assertRaises(MalformedSecurityGroupRuleError,
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
 
     def test_create_sg_rules_greater_than_exception_raised(self):
         datastore_manager = 'mysql'
-        taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(),
-                               'name': uuid.uuid4()}))
-        taskmanager_models.CONF.get = Mock(
+        self.task_models_conf_mock.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['3306', '33060-3306']))
         self.freshinstancetasks.update_db = Mock()
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
-            Mock())
         self.assertRaises(MalformedSecurityGroupRuleError,
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
 
     def test_create_sg_rules_success_with_duplicated_port_or_range(self):
         datastore_manager = 'mysql'
-        taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(),
-                               'name': uuid.uuid4()}))
-        taskmanager_models.CONF.get = Mock(
+        self.task_models_conf_mock.get = Mock(
             return_value=FakeOptGroup(
                 tcp_ports=['3306', '3306', '3306-3307', '3306-3307']))
-        taskmanager_models.SecurityGroupRule.create_sec_group_rule = (
-            Mock())
         self.freshinstancetasks.update_db = Mock()
         self.freshinstancetasks._create_secgroup(datastore_manager)
         self.assertEqual(2, taskmanager_models.SecurityGroupRule.
@@ -366,10 +354,7 @@ class FreshInstanceTasksTest(testtools.TestCase):
 
     def test_create_sg_rules_exception_with_malformed_ports_or_range(self):
         datastore_manager = 'mysql'
-        taskmanager_models.SecurityGroup.create_for_instance = (
-            Mock(return_value={'id': uuid.uuid4(),
-                               'name': uuid.uuid4()}))
-        taskmanager_models.CONF.get = Mock(
+        self.task_models_conf_mock.get = Mock(
             return_value=FakeOptGroup(tcp_ports=['A', 'B-C']))
         self.freshinstancetasks.update_db = Mock()
         self.assertRaises(MalformedSecurityGroupRuleError,
@@ -377,11 +362,16 @@ class FreshInstanceTasksTest(testtools.TestCase):
                           datastore_manager)
 
 
-class ResizeVolumeTest(testtools.TestCase):
+class ResizeVolumeTest(trove_testtools.TestCase):
+
     def setUp(self):
         super(ResizeVolumeTest, self).setUp()
-        utils.poll_until = Mock()
-        timeutils.isotime = Mock()
+        self.utils_poll_until_patch = patch.object(utils, 'poll_until')
+        self.utils_poll_until_mock = self.utils_poll_until_patch.start()
+        self.addCleanup(self.utils_poll_until_patch.stop)
+        self.timeutils_isotime_patch = patch.object(timeutils, 'isotime')
+        self.timeutils_isotime_mock = self.timeutils_isotime_patch.start()
+        self.addCleanup(self.timeutils_isotime_patch.stop)
         self.instance = Mock()
         self.old_vol_size = 1
         self.new_vol_size = 2
@@ -474,7 +464,7 @@ class ResizeVolumeTest(testtools.TestCase):
         self.instance.reset_mock()
 
 
-class BuiltInstanceTasksTest(testtools.TestCase):
+class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
     def get_inst_service_status(self, status_id, statuses):
         answers = []
@@ -500,8 +490,10 @@ class BuiltInstanceTasksTest(testtools.TestCase):
         super(BuiltInstanceTasksTest, self).setUp()
         self.new_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
         stub_nova_server = MagicMock()
-        rpc.get_notifier = MagicMock()
-        rpc.get_client = MagicMock()
+        self.rpc_patches = patch.multiple(
+            rpc, get_notifier=MagicMock(), get_client=MagicMock())
+        self.rpc_mocks = self.rpc_patches.start()
+        self.addCleanup(self.rpc_patches.stop)
         db_instance = DBInstance(InstanceTasks.NONE,
                                  id=INST_ID,
                                  name='resize-inst-name',
@@ -519,10 +511,16 @@ class BuiltInstanceTasksTest(testtools.TestCase):
         # this is used during the final check of whether the resize successful
         db_instance.server_status = 'ACTIVE'
         self.db_instance = db_instance
-        datastore_models.DatastoreVersion.load_by_uuid = MagicMock(
-            return_value=datastore_models.DatastoreVersion(db_instance))
-        datastore_models.Datastore.load = MagicMock(
-            return_value=datastore_models.Datastore(db_instance))
+        self.dm_dv_load_by_uuid_patch = patch.object(
+            datastore_models.DatastoreVersion, 'load_by_uuid', MagicMock(
+                return_value=datastore_models.DatastoreVersion(db_instance)))
+        self.dm_dv_load_by_uuid_mock = self.dm_dv_load_by_uuid_patch.start()
+        self.addCleanup(self.dm_dv_load_by_uuid_patch.stop)
+        self.dm_ds_load_patch = patch.object(
+            datastore_models.Datastore, 'load', MagicMock(
+                return_value=datastore_models.Datastore(db_instance)))
+        self.dm_ds_load_mock = self.dm_ds_load_patch.start()
+        self.addCleanup(self.dm_ds_load_patch.stop)
 
         self.instance_task = taskmanager_models.BuiltInstanceTasks(
             trove.common.context.TroveContext(),
@@ -571,13 +569,24 @@ class BuiltInstanceTasksTest(testtools.TestCase):
                 return db_instance
             else:
                 return MagicMock()
-        trove.db.models.DatabaseModelBase.find_by = MagicMock(
-            side_effect=side_effect_func)
 
-        template.SingleInstanceConfigTemplate = MagicMock(
-            spec=template.SingleInstanceConfigTemplate)
+        self.dbm_dbmb_patch = patch.object(
+            trove.db.models.DatabaseModelBase, 'find_by',
+            MagicMock(side_effect=side_effect_func))
+        self.dbm_dbmb_mock = self.dbm_dbmb_patch.start()
+        self.addCleanup(self.dbm_dbmb_patch.stop)
+
+        self.template_patch = patch.object(
+            template, 'SingleInstanceConfigTemplate',
+            MagicMock(spec=template.SingleInstanceConfigTemplate))
+        self.template_mock = self.template_patch.start()
+        self.addCleanup(self.template_patch.stop)
         db_instance.save = MagicMock(return_value=None)
-        trove.backup.models.Backup.running = MagicMock(return_value=None)
+        self.tbmb_running_patch = patch.object(
+            trove.backup.models.Backup, 'running',
+            MagicMock(return_value=None))
+        self.tbmb_running_mock = self.tbmb_running_patch.start()
+        self.addCleanup(self.tbmb_running_patch.stop)
 
         if 'volume' in self._testMethodName:
             self._stub_volume_client()
@@ -642,7 +651,8 @@ class BuiltInstanceTasksTest(testtools.TestCase):
         assert not self.instance_task.set_datastore_status_to_paused.called
 
 
-class BackupTasksTest(testtools.TestCase):
+class BackupTasksTest(trove_testtools.TestCase):
+
     def setUp(self):
         super(BackupTasksTest, self).setUp()
         self.backup = backup_models.DBBackup()
@@ -659,12 +669,24 @@ class BackupTasksTest(testtools.TestCase):
                                   [{'name': 'first'},
                                    {'name': 'second'},
                                    {'name': 'third'}])
-        backup_models.Backup.delete = MagicMock(return_value=None)
-        backup_models.Backup.get_by_id = MagicMock(return_value=self.backup)
-        backup_models.DBBackup.save = MagicMock(return_value=self.backup)
+        self.bm_backup_patches = patch.multiple(
+            backup_models.Backup,
+            delete=MagicMock(return_value=None),
+            get_by_id=MagicMock(return_value=self.backup))
+        self.bm_backup_mocks = self.bm_backup_patches.start()
+        self.addCleanup(self.bm_backup_patches.stop)
+        self.bm_DBBackup_patch = patch.object(
+            backup_models.DBBackup, 'save',
+            MagicMock(return_value=self.backup))
+        self.bm_DBBackup_mock = self.bm_DBBackup_patch.start()
+        self.addCleanup(self.bm_DBBackup_patch.stop)
         self.backup.delete = MagicMock(return_value=None)
         self.swift_client = MagicMock()
-        remote.create_swift_client = MagicMock(return_value=self.swift_client)
+        self.create_swift_client_patch = patch.object(
+            remote, 'create_swift_client',
+            MagicMock(return_value=self.swift_client))
+        self.create_swift_client_mock = self.create_swift_client_patch.start()
+        self.addCleanup(self.create_swift_client_patch.stop)
 
         self.swift_client.head_container = MagicMock(
             side_effect=ClientException("foo"))
@@ -737,7 +759,7 @@ class BackupTasksTest(testtools.TestCase):
         self.assertEqual('', prefix)
 
 
-class NotifyMixinTest(testtools.TestCase):
+class NotifyMixinTest(trove_testtools.TestCase):
     def test_get_service_id(self):
         id_map = {
             'mysql': '123',
@@ -756,7 +778,7 @@ class NotifyMixinTest(testtools.TestCase):
                         Equals('unknown-service-id-error'))
 
 
-class RootReportTest(testtools.TestCase):
+class RootReportTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(RootReportTest, self).setUp()
@@ -773,9 +795,10 @@ class RootReportTest(testtools.TestCase):
     def test_report_root_double_create(self):
         uuid = utils.generate_uuid()
         history = mysql_models.RootHistory(uuid, 'root').save()
-        mysql_models.RootHistory.load = Mock(return_value=history)
-        report = mysql_models.RootHistory.create(
-            None, uuid, 'root')
-        self.assertTrue(mysql_models.RootHistory.load.called)
-        self.assertEqual(history.user, report.user)
-        self.assertEqual(history.id, report.id)
+        with patch.object(mysql_models.RootHistory, 'load',
+                          Mock(return_value=history)):
+            report = mysql_models.RootHistory.create(
+                None, uuid, 'root')
+            self.assertTrue(mysql_models.RootHistory.load.called)
+            self.assertEqual(history.user, report.user)
+            self.assertEqual(history.id, report.id)
