@@ -17,7 +17,6 @@ from webob.exc import HTTPNotFound
 
 import hashlib
 import os
-import testtools
 
 from oslo_utils import netutils
 from trove.common import utils
@@ -31,6 +30,7 @@ from trove.guestagent.backup import backupagent
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
+from trove.tests.unittests import trove_testtools
 
 conductor_api.API.get_client = Mock()
 conductor_api.API.update_backup = Mock()
@@ -160,12 +160,22 @@ class MockStats:
     f_bfree = 512 * 1024
 
 
-class BackupAgentTest(testtools.TestCase):
+class BackupAgentTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupAgentTest, self).setUp()
-        mysql_impl.get_auth_password = MagicMock(return_value='123')
-        backupagent.get_storage_strategy = MagicMock(return_value=MockSwift)
-        os.statvfs = MagicMock(return_value=MockStats)
+        self.get_auth_pwd_patch = patch.object(
+            mysql_impl, 'get_auth_password', MagicMock(return_value='123'))
+        self.get_auth_pwd_mock = self.get_auth_pwd_patch.start()
+        self.addCleanup(self.get_auth_pwd_patch.stop)
+        self.get_ss_patch = patch.object(
+            backupagent, 'get_storage_strategy',
+            MagicMock(return_value=MockSwift))
+        self.get_ss_mock = self.get_ss_patch.start()
+        self.addCleanup(self.get_ss_patch.stop)
+        self.statvfs_patch = patch.object(
+            os, 'statvfs', MagicMock(return_value=MockStats))
+        self.statvfs_mock = self.statvfs_patch.start()
+        self.addCleanup(self.statvfs_patch.stop)
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
         self.orig_os_get_ip_address = netutils.get_my_ipv4
 
@@ -383,41 +393,38 @@ class BackupAgentTest(testtools.TestCase):
                               context=None, backup_info=bkup_info,
                               restore_location='/var/lib/mysql')
 
-    def test_backup_incremental_metadata(self):
-        with patch.object(backupagent, 'get_storage_strategy',
-                          return_value=MockSwift):
-            MockStorage.save_metadata = Mock()
-            with patch.object(MockSwift, 'load_metadata',
-                              return_value={'lsn': '54321'}):
-                meta = {
-                    'lsn': '12345',
-                    'parent_location': 'fake',
-                    'parent_checksum': 'md5',
-                }
+    @patch.object(MockSwift, 'load_metadata', return_value={'lsn': '54321'})
+    @patch.object(MockStorage, 'save_metadata')
+    @patch.object(backupagent, 'get_storage_strategy', return_value=MockSwift)
+    def test_backup_incremental_metadata(self,
+                                         get_storage_strategy_mock,
+                                         save_metadata_mock,
+                                         load_metadata_mock):
+        meta = {
+            'lsn': '12345',
+            'parent_location': 'fake',
+            'parent_checksum': 'md5',
+        }
+        with patch.multiple(mysql_impl.InnoBackupExIncremental,
+                            metadata=MagicMock(return_value=meta),
+                            _run=MagicMock(return_value=True),
+                            __exit__=MagicMock(return_value=True)):
+            agent = backupagent.BackupAgent()
 
-                mysql_impl.InnoBackupExIncremental.metadata = MagicMock(
-                    return_value=meta)
-                mysql_impl.InnoBackupExIncremental._run = MagicMock(
-                    return_value=True)
-                mysql_impl.InnoBackupExIncremental.__exit__ = MagicMock(
-                    return_value=True)
+            bkup_info = {'id': '123',
+                         'location': 'fake-location',
+                         'type': 'InnoBackupEx',
+                         'checksum': 'fake-checksum',
+                         'parent': {'location': 'fake', 'checksum': 'md5'}
+                         }
 
-                agent = backupagent.BackupAgent()
+            agent.execute_backup(TroveContext(),
+                                 bkup_info,
+                                 '/var/lib/mysql')
 
-                bkup_info = {'id': '123',
-                             'location': 'fake-location',
-                             'type': 'InnoBackupEx',
-                             'checksum': 'fake-checksum',
-                             'parent': {'location': 'fake', 'checksum': 'md5'}
-                             }
-
-                agent.execute_backup(TroveContext(),
-                                     bkup_info,
-                                     '/var/lib/mysql')
-
-                self.assertTrue(MockStorage.save_metadata.called_once_with(
-                                ANY,
-                                meta))
+            self.assertTrue(MockStorage.save_metadata.called_once_with(
+                            ANY,
+                            meta))
 
     def test_backup_incremental_bad_metadata(self):
         with patch.object(backupagent, 'get_storage_strategy',
