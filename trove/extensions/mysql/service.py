@@ -15,7 +15,7 @@
 
 import webob.exc
 
-from oslo.utils import strutils
+from oslo_utils import strutils
 
 from trove.common import exception
 from trove.common import pagination

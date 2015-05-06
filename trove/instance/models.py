@@ -20,7 +20,7 @@ import re
 from datetime import datetime
 from datetime import timedelta
 from novaclient import exceptions as nova_exceptions
-from oslo.config.cfg import NoSuchOptError
+from oslo_config.cfg import NoSuchOptError
 from trove.common import cfg
 from trove.common import exception
 from trove.common import template

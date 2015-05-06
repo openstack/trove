@@ -15,7 +15,7 @@
 #    under the License.
 
 import jinja2
-from oslo.config import cfg as oslo_config
+from oslo_config import cfg as oslo_config
 
 from trove.common import cfg
 from trove.common import configurations

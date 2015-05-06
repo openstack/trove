@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.utils.importutils import import_class
+from oslo_utils.importutils import import_class
 
 from trove.common import cfg
 from trove.common import exception

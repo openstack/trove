@@ -13,8 +13,8 @@
 #    under the License.
 from eventlet import Timeout
 import mock
-from oslo.messaging.rpc.client import RemoteError
-from oslo import messaging
+from oslo_messaging.rpc.client import RemoteError
+import oslo_messaging as messaging
 import testtools
 from testtools.matchers import Is
 

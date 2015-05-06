@@ -21,7 +21,7 @@ from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from novaclient import exceptions as nova_exceptions
 
-from oslo.utils import timeutils
+from oslo_utils import timeutils
 
 from trove.backup import models as bkup_models
 from trove.backup.models import Backup

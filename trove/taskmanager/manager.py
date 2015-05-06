@@ -15,10 +15,10 @@
 
 from sets import Set
 
-from oslo import messaging
+import oslo_messaging as messaging
 from trove.common.context import TroveContext
 
-from oslo.utils import importutils
+from oslo_utils import importutils
 
 from trove.backup.models import Backup
 import trove.common.cfg as cfg

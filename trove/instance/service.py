@@ -15,7 +15,7 @@
 
 import webob.exc
 
-from oslo.utils import strutils
+from oslo_utils import strutils
 
 from trove.common import cfg
 from trove.common import exception

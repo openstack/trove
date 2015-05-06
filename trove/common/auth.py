@@ -17,7 +17,7 @@ import re
 import webob.exc
 import wsgi
 
-from oslo.utils import strutils
+from oslo_utils import strutils
 
 from trove.common import exception
 from trove.openstack.common import log as logging

@@ -15,8 +15,8 @@
 
 """Quotas for DB instances and resources."""
 
-from oslo.config import cfg
-from oslo.utils import importutils
+from oslo_config import cfg
+from oslo_utils import importutils
 
 from trove.openstack.common import log as logging
 from trove.common.i18n import _

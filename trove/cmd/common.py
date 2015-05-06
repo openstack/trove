@@ -49,7 +49,7 @@ def initialize(extra_opts=None, pre_logging=None):
 
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet
-    # executor from oslo.messaging library.
+    # executor from oslo_messaging library.
     from trove import rpc
     rpc.init(conf)
 

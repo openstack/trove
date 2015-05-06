@@ -21,7 +21,7 @@ from testtools.matchers import Equals, Is, Not
 from novaclient.v2 import Client
 from novaclient.v2.flavors import FlavorManager, Flavor
 from novaclient.v2.servers import Server, ServerManager
-from oslo.config import cfg
+from oslo_config import cfg
 from trove.backup.models import Backup
 from trove.common.context import TroveContext
 from trove.common import exception

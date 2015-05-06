@@ -30,7 +30,7 @@ from trove.common import context as rd_context
 from trove.common import exception
 from trove.common import utils
 from trove.common.i18n import _
-from oslo.serialization import jsonutils
+from oslo_serialization import jsonutils
 
 from trove.openstack.common import pastedeploy
 from trove.openstack.common import service

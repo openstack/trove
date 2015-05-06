@@ -20,7 +20,7 @@ from proboscis import test
 
 from novaclient.exceptions import BadRequest
 from novaclient.v2.servers import Server
-from oslo.messaging._drivers.common import RPCException
+from oslo_messaging._drivers.common import RPCException
 
 from trove.common.exception import PollTimeOut
 from trove.common import template

@@ -1,4 +1,4 @@
-from oslo.utils import timeutils
+from oslo_utils import timeutils
 from datetime import datetime
 
 

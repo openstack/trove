@@ -29,7 +29,7 @@ import sys
 import time
 
 import eventlet.wsgi
-from oslo.config import cfg
+from oslo_config import cfg
 import routes
 import routes.middleware
 #import six
