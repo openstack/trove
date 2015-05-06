@@ -27,7 +27,7 @@ import trove.common.apischema as apischema
 LOG = logging.getLogger(__name__)
 
 
-class ClusterController(ClusterController):
+class MgmtClusterController(ClusterController):
     """Controller for cluster functionality."""
     schemas = apischema.mgmt_cluster
 
@@ -74,24 +74,12 @@ class ClusterController(ClusterController):
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.MgmtCluster.load(context=context, id=id)
-        _actions = {
-            'reset-task': self._action_reset_task
-        }
-        selected_action = None
-        for key in body:
-            if key in _actions:
-                if selected_action is not None:
-                    msg = _("Only one action can be specified per request.")
-                    raise exception.BadRequest(msg)
-                selected_action = _actions[key]
-            else:
-                msg = _("Invalid cluster action: %s.") % key
-                raise exception.BadRequest(msg)
 
-        if selected_action:
-            return selected_action(context, cluster, body)
+        if 'reset-task' in body:
+            return self._action_reset_task(context, cluster, body)
         else:
-            raise exception.BadRequest(_("Invalid request body."))
+            msg = _("Invalid cluster action requested.")
+            raise exception.BadRequest(msg)
 
     def _action_reset_task(self, context, cluster, body):
         cluster.reset_task()
