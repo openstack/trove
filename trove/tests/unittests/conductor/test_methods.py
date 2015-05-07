@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
 from trove.backup import models as bkup_models
 from trove.backup import state
 from trove.common import exception as t_exception
@@ -21,6 +20,7 @@ from trove.common.instance import ServiceStatuses
 from trove.conductor import manager as conductor_manager
 from trove.guestagent.common import timeutils
 from trove.instance import models as t_models
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
 
@@ -28,7 +28,7 @@ from trove.tests.unittests.util import util
 OLD_DBB_SAVE = bkup_models.DBBackup.save
 
 
-class ConductorMethodTests(testtools.TestCase):
+class ConductorMethodTests(trove_testtools.TestCase):
     def setUp(self):
         # See LP bug #1255178
         bkup_models.DBBackup.save = OLD_DBB_SAVE

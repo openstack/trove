@@ -12,15 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
-import testtools
-
 import trove.common.cfg as cfg
 import trove.tests.fakes.conf as fake_conf
 
+from mock import MagicMock
+from mock import patch
 from trove.cmd import conductor as conductor_cmd
 from trove.cmd import common as common_cmd
 from trove.openstack.common import service as os_service
+from trove.tests.unittests import trove_testtools
 
 CONF = cfg.CONF
 TROVE_UT = 'trove.tests.unittests'
@@ -39,7 +39,7 @@ class NoopManager(object):
     RPC_API_VERSION = 1.0
 
 
-class ConductorConfTests(testtools.TestCase):
+class ConductorConfTests(trove_testtools.TestCase):
     def setUp(self):
         super(ConductorConfTests, self).setUp()
 
@@ -51,11 +51,12 @@ class ConductorConfTests(testtools.TestCase):
             qualified_mgr = "%s.%s" % (server.manager_impl.__module__,
                                        server.manager_impl.__class__.__name__)
             self.assertEqual(rt_mgr_name, qualified_mgr, "Invalid manager")
-            return mock.MagicMock()
+            return MagicMock()
 
         os_service.launch = mock_launch
-        common_cmd.initialize = mock.MagicMock(return_value=conf)
-        conductor_cmd.main()
+        with patch.object(common_cmd, 'initialize',
+                          MagicMock(return_value=conf)):
+            conductor_cmd.main()
 
     def test_user_defined_manager(self):
         qualified_mgr = TROVE_UT + ".conductor.test_conf.NoopManager"
