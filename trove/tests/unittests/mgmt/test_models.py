@@ -15,7 +15,6 @@
 #
 import uuid
 from mock import MagicMock, patch, ANY
-from testtools import TestCase
 from testtools.matchers import Equals, Is, Not
 
 from novaclient.v2 import Client
@@ -33,13 +32,14 @@ from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
 import trove.extensions.mgmt.instances.models as mgmtmodels
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 from trove import rpc
 
 CONF = cfg.CONF
 
 
-class MockMgmtInstanceTest(TestCase):
+class MockMgmtInstanceTest(trove_testtools.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -372,24 +372,22 @@ class TestMgmtInstanceTasks(MockMgmtInstanceTest):
         flavor.name = 'db.small'
 
         notifier = MagicMock()
-        rpc.get_notifier = MagicMock(return_value=notifier)
-
-        with patch.object(mgmtmodels, 'load_mgmt_instances',
-                          return_value=[mgmt_instance]):
-            with patch.object(self.flavor_mgr, 'get', return_value=flavor):
-                self.assertThat(self.context.auth_token,
-                                Is('some_secret_password'))
-                with patch.object(notifier, 'info', return_value=None):
-                    # invocation
-                    mgmtmodels.publish_exist_events(
-                        mgmtmodels.NovaNotificationTransformer(
-                            context=self.context),
-                        self.context)
-                    # assertion
-                    notifier.info.assert_any_call(self.context,
-                                                  'trove.instance.exists',
-                                                  ANY)
-                    self.assertThat(self.context.auth_token, Is(None))
+        with patch.object(rpc, 'get_notifier', return_value=notifier):
+            with patch.object(mgmtmodels, 'load_mgmt_instances',
+                              return_value=[mgmt_instance]):
+                with patch.object(self.flavor_mgr, 'get', return_value=flavor):
+                    self.assertThat(self.context.auth_token,
+                                    Is('some_secret_password'))
+                    with patch.object(notifier, 'info', return_value=None):
+                        # invocation
+                        mgmtmodels.publish_exist_events(
+                            mgmtmodels.NovaNotificationTransformer(
+                                context=self.context),
+                            self.context)
+                        # assertion
+                        notifier.info.assert_any_call(
+                            self.context, 'trove.instance.exists', ANY)
+                        self.assertThat(self.context.auth_token, Is(None))
         self.addCleanup(self.do_cleanup, instance, service_status)
 
 
