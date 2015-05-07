@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
 from trove.guestagent.common import sql_query
+from trove.tests.unittests import trove_testtools
 
 
-class QueryTestBase(testtools.TestCase):
+class QueryTestBase(trove_testtools.TestCase):
     def setUp(self):
         super(QueryTestBase, self).setUp()
 
