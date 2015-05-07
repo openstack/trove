@@ -1,0 +1,304 @@
+{
+    "configuration-parameters": [
+        {
+            "name": "tcp-backlog",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "timeout",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "tcp-keepalive",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "loglevel",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "databases",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "save",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "stop-writes-on-bgsave-error",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "rdbcompression",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "rdbchecksum",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "slave-serve-stale-data",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "slave-read-only",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "repl-diskless-sync",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "repl-diskless-sync-delay",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "repl-ping-slave-period",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "repl-timeout",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "repl-disable-tcp-nodelay",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "repl-backlog-size",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "repl-backlog-ttl",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "slave-priority",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "min-slaves-to-write",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "min-slaves-max-lag",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "requirepass",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "maxclients",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "maxmemory",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "maxmemory-policy",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "maxmemory-samples",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "appendonly",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "appendfsync",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "no-appendfsync-on-rewrite",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "auto-aof-rewrite-percentage",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "auto-aof-rewrite-min-size",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "aof-load-truncated",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "lua-time-limit",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cluster-node-timeout",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cluster-slave-validity-factor",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cluster-migration-barrier",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cluster-require-full-coverage",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "slowlog-log-slower-than",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "slowlog-max-len",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "latency-monitor-threshold",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "notify-keyspace-events",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "hash-max-ziplist-entries",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "hash-max-ziplist-value",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "list-max-ziplist-entries",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "list-max-ziplist-value",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "set-max-intset-entries",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "zset-max-ziplist-entries",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "zset-max-ziplist-value",
+            "restart_required": false,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "hll-sparse-max-bytes",
+            "restart_required": false,
+            "min": 0,
+            "max": 16000,
+            "type": "integer"
+        },
+        {
+            "name": "activerehashing",
+            "restart_required": false,
+            "type": "boolean"
+        },
+        {
+            "name": "client-output-buffer-limit",
+            "restart_required": false,
+            "type": "string"
+        },
+        {
+            "name": "hz",
+            "restart_required": false,
+            "min": 0,
+            "max": 500,
+            "type": "integer"
+        },
+        {
+            "name": "aof-rewrite-incremental-fsync",
+            "restart_required": false,
+            "type": "boolean"
+        }
+    ]
+}

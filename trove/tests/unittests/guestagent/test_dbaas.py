@@ -1428,6 +1428,7 @@ class MySqlAppInstallTest(MySqlAppTest):
 
 
 class TextClauseMatcher(object):
+
     def __init__(self, text):
         self.text = text
 
@@ -1701,6 +1702,7 @@ class ServiceRegistryTest(testtools.TestCase):
 class KeepAliveConnectionTest(testtools.TestCase):
 
     class OperationalError(Exception):
+
         def __init__(self, value):
             self.args = [value]
 
@@ -1938,7 +1940,10 @@ class TestRedisApp(testtools.TestCase):
         self.FAKE_ID = 1000
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
-        self.app = RedisApp(self.appStatus)
+
+        with patch.object(RedisApp, '_build_admin_client'):
+            self.app = RedisApp(state_change_wait_time=0)
+
         self.orig_os_path_isfile = os.path.isfile
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
         utils.execute_with_timeout = Mock()
@@ -2027,18 +2032,17 @@ class TestRedisApp(testtools.TestCase):
         mock_status = MagicMock()
         mock_status.wait_for_real_status_to_change_to = MagicMock(
             return_value=True)
-        app = RedisApp(mock_status, state_change_wait_time=0)
+        self.app.status = mock_status
         RedisApp._disable_redis_on_boot = MagicMock(
             return_value=None)
 
-        with patch.object(utils, 'execute_with_timeout', return_value=None):
+        with patch.object(operating_system, 'stop_service') as stop_srv_mock:
             mock_status.wait_for_real_status_to_change_to = MagicMock(
                 return_value=True)
-            app.stop_db(do_not_start_on_reboot=True)
+            self.app.stop_db(do_not_start_on_reboot=True)
 
-            utils.execute_with_timeout.assert_any_call(
-                'sudo ' + RedisSystem.REDIS_CMD_STOP,
-                shell=True)
+            stop_srv_mock.assert_called_once_with(
+                RedisSystem.SERVICE_CANDIDATES)
             self.assertTrue(RedisApp._disable_redis_on_boot.called)
             self.assertTrue(
                 mock_status.wait_for_real_status_to_change_to.called)
@@ -2047,18 +2051,17 @@ class TestRedisApp(testtools.TestCase):
         mock_status = MagicMock()
         mock_status.wait_for_real_status_to_change_to = MagicMock(
             return_value=True)
-        app = RedisApp(mock_status, state_change_wait_time=0)
+        self.app.status = mock_status
         RedisApp._disable_redis_on_boot = MagicMock(
             return_value=None)
 
-        with patch.object(utils, 'execute_with_timeout', return_value=None):
+        with patch.object(operating_system, 'stop_service') as stop_srv_mock:
             mock_status.wait_for_real_status_to_change_to = MagicMock(
                 return_value=False)
-            app.stop_db(do_not_start_on_reboot=True)
+            self.app.stop_db(do_not_start_on_reboot=True)
 
-            utils.execute_with_timeout.assert_any_call(
-                'sudo ' + RedisSystem.REDIS_CMD_STOP,
-                shell=True)
+            stop_srv_mock.assert_called_once_with(
+                RedisSystem.SERVICE_CANDIDATES)
             self.assertTrue(RedisApp._disable_redis_on_boot.called)
             self.assertTrue(mock_status.end_install_or_restart.called)
             self.assertTrue(
@@ -2066,13 +2069,13 @@ class TestRedisApp(testtools.TestCase):
 
     def test_restart(self):
         mock_status = MagicMock()
-        app = RedisApp(mock_status, state_change_wait_time=0)
+        self.app.status = mock_status
         mock_status.begin_restart = MagicMock(return_value=None)
         with patch.object(RedisApp, 'stop_db', return_value=None):
             with patch.object(RedisApp, 'start_redis', return_value=None):
                 mock_status.end_install_or_restart = MagicMock(
                     return_value=None)
-                app.restart()
+                self.app.restart()
                 mock_status.begin_restart.assert_any_call()
                 RedisApp.stop_db.assert_any_call()
                 RedisApp.start_redis.assert_any_call()
@@ -2080,28 +2083,38 @@ class TestRedisApp(testtools.TestCase):
 
     def test_start_redis(self):
         mock_status = MagicMock()
-        app = RedisApp(mock_status, state_change_wait_time=0)
-        with patch.object(RedisApp, '_enable_redis_on_boot',
-                          return_value=None):
-            with patch.object(utils, 'execute_with_timeout',
-                              return_value=None):
-                mock_status.wait_for_real_status_to_change_to = MagicMock(
-                    return_value=None)
-                mock_status.end_install_or_restart = MagicMock(
-                    return_value=None)
-                app.start_redis()
+        mock_status.wait_for_real_status_to_change_to = MagicMock(
+            return_value=True)
 
-                utils.execute_with_timeout.assert_any_call(
-                    'sudo ' + RedisSystem.REDIS_CMD_START,
-                    shell=True)
-                utils.execute_with_timeout.assert_any_call('pkill', '-9',
-                                                           'redis-server',
-                                                           run_as_root=True,
-                                                           root_helper='sudo')
-                self.assertTrue(RedisApp._enable_redis_on_boot.called)
-                self.assertTrue(mock_status.end_install_or_restart.called)
-                self.assertTrue(
-                    mock_status.wait_for_real_status_to_change_to.callled)
+        self._assert_start_redis(mock_status)
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test_start_redis_with_failure(self, exec_mock):
+        mock_status = MagicMock()
+        mock_status.wait_for_real_status_to_change_to = MagicMock(
+            return_value=False)
+        mock_status.end_install_or_restart = MagicMock()
+
+        self._assert_start_redis(mock_status)
+
+        exec_mock.assert_called_once_with('pkill', '-9', 'redis-server',
+                                          run_as_root=True, root_helper='sudo')
+
+        mock_status.end_install_or_restart.assert_called_once_with()
+
+    @patch.multiple(operating_system, start_service=DEFAULT,
+                    enable_service_on_boot=DEFAULT)
+    def _assert_start_redis(self, mock_status, start_service,
+                            enable_service_on_boot):
+        self.app.status = mock_status
+
+        self.app.start_redis()
+
+        mock_status.wait_for_real_status_to_change_to.assert_called_once_with(
+            rd_instance.ServiceStatuses.RUNNING, ANY, False)
+        enable_service_on_boot.assert_called_once_with(
+            RedisSystem.SERVICE_CANDIDATES)
+        start_service.assert_called_once_with(RedisSystem.SERVICE_CANDIDATES)
 
 
 class CassandraDBAppTest(testtools.TestCase):
@@ -2939,11 +2952,11 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(app, '_disable_db_on_boot', return_value=None):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                    app.stop_db()
-                    # Since database stop command does not gets executed,
-                    # so only 2 shell calls were there.
-                    self.assertEqual(
-                        2, vertica_system.shell_execute.call_count)
+                app.stop_db()
+                # Since database stop command does not gets executed,
+                # so only 2 shell calls were there.
+                self.assertEqual(
+                    2, vertica_system.shell_execute.call_count)
 
     def test_stop_db_failure(self):
         mock_status = MagicMock()
@@ -2979,7 +2992,7 @@ class VerticaAppTest(testtools.TestCase):
         keys = ['test_key@machine1', 'test_key@machine2']
         with patch.object(os.path, 'expanduser',
                           return_value=('/home/' + user)):
-                self.app.authorize_public_keys(user=user, public_keys=keys)
+            self.app.authorize_public_keys(user=user, public_keys=keys)
         self.assertEqual(2, vertica_system.shell_execute.call_count)
         vertica_system.shell_execute.assert_any_call(
             'cat ' + '/home/' + user + '/.ssh/authorized_keys')
@@ -3128,6 +3141,7 @@ class VerticaAppTest(testtools.TestCase):
 
 
 class DB2AppTest(testtools.TestCase):
+
     def setUp(self):
         super(DB2AppTest, self).setUp()
         self.orig_utils_execute_with_timeout = (
@@ -3183,6 +3197,7 @@ class DB2AppTest(testtools.TestCase):
 
 
 class DB2AdminTest(testtools.TestCase):
+
     def setUp(self):
         super(DB2AdminTest, self).setUp()
         self.db2Admin = db2service.DB2Admin()
@@ -3262,23 +3277,23 @@ class DB2AdminTest(testtools.TestCase):
             {"_name": "random2", "_password": "guesswhat", "_databases": []})
         with patch.object(db2service, 'run_command',
                           MagicMock(return_value=None)):
-                with patch.object(db2service.DB2Admin, 'list_access',
-                                  MagicMock(return_value=[FAKE_DB])):
-                    utils.execute_with_timeout = MagicMock(return_value=None)
-                    self.db2Admin.delete_user(FAKE_USER[1])
-                    self.assertTrue(db2service.run_command.called)
-                    self.assertTrue(db2service.DB2Admin.list_access.called)
-                    self.assertTrue(
-                        db2service.utils.execute_with_timeout.called)
-                    args, _ = db2service.run_command.call_args_list[0]
-                    expected = "db2 connect to testDB; " \
-                        "db2 REVOKE DBADM,CREATETAB,BINDADD,CONNECT," \
-                        "DATAACCESS ON DATABASE FROM USER random2; " \
-                        "db2 connect reset"
-                    self.assertEqual(
-                        expected, args[0],
-                        "Revoke database access queries are not the same")
-                    self.assertEqual(1, db2service.run_command.call_count)
+            with patch.object(db2service.DB2Admin, 'list_access',
+                              MagicMock(return_value=[FAKE_DB])):
+                utils.execute_with_timeout = MagicMock(return_value=None)
+                self.db2Admin.delete_user(FAKE_USER[1])
+                self.assertTrue(db2service.run_command.called)
+                self.assertTrue(db2service.DB2Admin.list_access.called)
+                self.assertTrue(
+                    db2service.utils.execute_with_timeout.called)
+                args, _ = db2service.run_command.call_args_list[0]
+                expected = "db2 connect to testDB; " \
+                    "db2 REVOKE DBADM,CREATETAB,BINDADD,CONNECT," \
+                    "DATAACCESS ON DATABASE FROM USER random2; " \
+                    "db2 connect reset"
+                self.assertEqual(
+                    expected, args[0],
+                    "Revoke database access queries are not the same")
+                self.assertEqual(1, db2service.run_command.call_count)
 
     def test_list_users(self):
         databases = []

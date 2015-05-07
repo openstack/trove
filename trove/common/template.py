@@ -33,6 +33,7 @@ ENV = utils.ENV
 SERVICE_PARSERS = {
     'mysql': configurations.MySQLConfParser,
     'percona': configurations.MySQLConfParser,
+    'redis': configurations.RedisConfParser,
 }
 
 

@@ -153,6 +153,55 @@ class TestOperatingSystem(trove_testtools.TestCase):
                                             "Lorem Ipsum", as_root=True)
         self.assertFalse(os.path.exists(temp_file.name))
 
+    def test_start_service(self):
+        self._assert_service_call(operating_system.start_service,
+                                  'cmd_start')
+
+    def test_stop_service(self):
+        self._assert_service_call(operating_system.stop_service,
+                                  'cmd_stop')
+
+    def test_enable_service_on_boot(self):
+        self._assert_service_call(operating_system.enable_service_on_boot,
+                                  'cmd_enable')
+
+    def test_disable_service_on_boot(self):
+        self._assert_service_call(operating_system.disable_service_on_boot,
+                                  'cmd_disable')
+
+    @patch.object(operating_system, '_execute_service_command')
+    def _assert_service_call(self, fun, expected_cmd_key,
+                             exec_service_cmd_mock):
+        test_candidate_names = ['test_service_1', 'test_service_2']
+        fun(test_candidate_names)
+        exec_service_cmd_mock.assert_called_once_with(test_candidate_names,
+                                                      expected_cmd_key)
+
+    @patch.object(operating_system, 'service_discovery',
+                  return_value={'cmd_start': 'start',
+                                'cmd_stop': 'stop',
+                                'cmd_enable': 'enable',
+                                'cmd_disable': 'disable'})
+    def test_execute_service_command(self, discovery_mock):
+        test_service_candidates = ['service_name']
+        self._assert_execute_call([['start']], [{'shell': True}],
+                                  operating_system._execute_service_command,
+                                  None, test_service_candidates, 'cmd_start')
+        discovery_mock.assert_called_once_with(test_service_candidates)
+
+        with ExpectedException(exception.UnprocessableEntity,
+                               "Candidate service names not specified."):
+            operating_system._execute_service_command([], 'cmd_disable')
+
+        with ExpectedException(exception.UnprocessableEntity,
+                               "Candidate service names not specified."):
+            operating_system._execute_service_command(None, 'cmd_start')
+
+        with ExpectedException(RuntimeError, "Service control command not "
+                               "available: unknown"):
+            operating_system._execute_service_command(test_service_candidates,
+                                                      'unknown')
+
     def test_modes(self):
         self._assert_modes(None, None, None, operating_system.FileMode())
         self._assert_modes(None, None, None,
