@@ -14,16 +14,18 @@
 #    under the License.
 
 from mock import Mock
-from testtools import TestCase
+from mock import patch
 
 from trove.common.strategies.cluster.experimental.mongodb.taskmanager import (
     MongoDbTaskManagerAPI)
 from trove.taskmanager import api as task_api
+from trove.tests.unittests import trove_testtools
 
 
-class TestAPI(TestCase):
-    def test_load_api(self):
-        task_api.API.get_client = Mock()
+class TestAPI(trove_testtools.TestCase):
+
+    @patch.object(task_api.API, 'get_client')
+    def test_load_api(self, get_client_mock):
         context = Mock()
         manager = 'mongodb'
 

@@ -13,7 +13,6 @@
 
 import datetime
 
-import testtools
 from mock import Mock
 from mock import patch
 
@@ -28,9 +27,10 @@ from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
 from trove.taskmanager.models import ServiceStatuses
+from trove.tests.unittests import trove_testtools
 
 
-class VerticaClusterTasksTest(testtools.TestCase):
+class VerticaClusterTasksTest(trove_testtools.TestCase):
     def setUp(self):
         super(VerticaClusterTasksTest, self).setUp()
         self.cluster_id = "1232"

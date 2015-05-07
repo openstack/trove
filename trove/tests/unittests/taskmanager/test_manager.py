@@ -14,15 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from testtools import TestCase
 from mock import Mock, patch
 
 from trove.taskmanager.manager import Manager
 from trove.common.exception import TroveError
 from proboscis.asserts import assert_equal
+from trove.tests.unittests import trove_testtools
 
 
-class TestManager(TestCase):
+class TestManager(trove_testtools.TestCase):
 
     def setUp(self):
         super(TestManager, self).setUp()
