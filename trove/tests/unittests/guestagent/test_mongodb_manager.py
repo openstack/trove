@@ -12,105 +12,104 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
+import mock
+import pymongo
 
-from mock import MagicMock
-from mock import patch
-import testtools
-
-from trove.common.context import TroveContext
-from trove.common import utils
-from trove.guestagent import backup
-from trove.guestagent.datastore.experimental.mongodb import (
-    manager as mongo_manager)
-from trove.guestagent.datastore.experimental.mongodb import (
-    service as mongo_service)
-from trove.guestagent import volume
-from trove.guestagent.volume import VolumeDevice
+import trove.common.context as context
+import trove.common.utils as utils
+import trove.guestagent.backup as backup
+import trove.guestagent.datastore.experimental.mongodb.manager as manager
+import trove.guestagent.volume as volume
+import trove.tests.unittests.trove_testtools as trove_testtools
 
 
-class GuestAgentMongoDBManagerTest(testtools.TestCase):
+class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentMongoDBManagerTest, self).setUp()
-        self.context = TroveContext()
-        self.manager = mongo_manager.Manager()
-        self.origin_MongoDbAppStatus = mongo_service.MongoDbAppStatus
-        self.origin_os_path_exists = os.path.exists
-        self.origin_format = volume.VolumeDevice.format
-        self.origin_migrate_data = volume.VolumeDevice.migrate_data
-        self.origin_mount = volume.VolumeDevice.mount
-        self.origin_mount_points = volume.VolumeDevice.mount_points
-        self.origin_stop_db = mongo_service.MongoDBApp.stop_db
-        self.origin_start_db = mongo_service.MongoDBApp.start_db
-        self.orig_exec_with_to = utils.execute_with_timeout
-        self.orig_backup_restore = backup.restore
+        self.context = context.TroveContext()
+        self.manager = manager.Manager()
+
+        self.execute_with_timeout_patch = mock.patch.object(
+            utils, 'execute_with_timeout'
+        )
+        self.addCleanup(self.execute_with_timeout_patch.stop)
+        self.execute_with_timeout_patch.start()
+
+        self.pymongo_patch = mock.patch.object(
+            pymongo, 'MongoClient'
+        )
+        self.addCleanup(self.pymongo_patch.stop)
+        self.pymongo_patch.start()
+
+        self.mount_point = '/var/lib/mongodb'
 
     def tearDown(self):
         super(GuestAgentMongoDBManagerTest, self).tearDown()
-        mongo_service.MongoDbAppStatus = self.origin_MongoDbAppStatus
-        os.path.exists = self.origin_os_path_exists
-        volume.VolumeDevice.format = self.origin_format
-        volume.VolumeDevice.migrate_data = self.origin_migrate_data
-        volume.VolumeDevice.mount = self.origin_mount
-        volume.VolumeDevice.mount_points = self.origin_mount_points
-        mongo_service.MongoDBApp.stop_db = self.origin_stop_db
-        mongo_service.MongoDBApp.start_db = self.origin_start_db
-        utils.execute_with_timeout = self.orig_exec_with_to
-        backup.restore = self.orig_backup_restore
 
     def test_update_status(self):
-        self.manager.status = MagicMock()
-        self.manager.update_status(self.context)
-        self.manager.status.update.assert_any_call()
+        with mock.patch.object(self.manager, 'status') as status:
+            self.manager.update_status(self.context)
+            status.update.assert_any_call()
 
-    def test_prepare_from_backup(self):
-        self._prepare_dynamic(backup_id='backup_id_123abc')
+    def _prepare_method(self, databases=None, users=None, device_path=None,
+                        mount_point=None, backup_info=None,
+                        cluster_config=None, overrides=None, memory_mb='2048',
+                        packages=['packages']):
+        """self.manager.app must be correctly mocked before calling."""
 
-    def _prepare_dynamic(self, device_path='/dev/vdb', is_db_installed=True,
-                         backup_id=None):
+        self.manager.status = mock.Mock()
+        self.manager.get_config_changes = mock.Mock()
 
-        # covering all outcomes is starting to cause trouble here
-        backup_info = {'id': backup_id,
+        self.manager.prepare(self.context, packages,
+                             databases, memory_mb, users,
+                             device_path=device_path,
+                             mount_point=mount_point,
+                             backup_info=backup_info,
+                             overrides=overrides,
+                             cluster_config=cluster_config)
+
+        self.manager.status.begin_install.assert_any_call()
+        self.manager.app.install_if_needed.assert_called_with(packages)
+        self.manager.app.stop_db.assert_any_call()
+        self.manager.app.clear_storage.assert_any_call()
+        self.manager.get_config_changes.assert_called_with(cluster_config,
+                                                           self.mount_point)
+
+    @mock.patch.object(volume, 'VolumeDevice')
+    @mock.patch('os.path.exists')
+    def test_prepare_for_volume(self, exists, mocked_volume):
+        device_path = '/dev/vdb'
+
+        self.manager.app = mock.Mock()
+
+        self._prepare_method(device_path=device_path)
+
+        mocked_volume().unmount_device.assert_called_with(device_path)
+        mocked_volume().format.assert_any_call()
+        mocked_volume().migrate_data.assert_called_with(self.mount_point)
+        mocked_volume().mount.assert_called_with(self.mount_point)
+
+    def test_secure(self):
+        self.manager.app = mock.Mock()
+
+        mock_secure = mock.Mock()
+        self.manager.app.secure = mock_secure
+
+        self._prepare_method()
+
+        mock_secure.assert_called_with(None)
+
+    @mock.patch.object(backup, 'restore')
+    def test_prepare_from_backup(self, mocked_restore):
+        self.manager.app = mock.Mock()
+
+        backup_info = {'id': 'backup_id_123abc',
                        'location': 'fake-location',
-                       'type': 'MongoDump',
-                       'checksum': 'fake-checksum'} if backup_id else None
+                       'type': 'MongoDBDump',
+                       'checksum': 'fake-checksum'}
 
-        mock_status = MagicMock()
-        mock_app = MagicMock()
-        self.manager.status = mock_status
-        self.manager.app = mock_app
+        self._prepare_method(backup_info=backup_info)
 
-        mock_status.begin_install = MagicMock(return_value=None)
-        volume.VolumeDevice.format = MagicMock(return_value=None)
-        volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
-        volume.VolumeDevice.mount = MagicMock(return_value=None)
-        volume.VolumeDevice.mount_points = MagicMock(return_value=[])
-        backup.restore = MagicMock(return_value=None)
-
-        mock_app.stop_db = MagicMock(return_value=None)
-        mock_app.start_db = MagicMock(return_value=None)
-        mock_app.clear_storage = MagicMock(return_value=None)
-        os.path.exists = MagicMock(return_value=is_db_installed)
-
-        with patch.object(utils, 'execute_with_timeout'):
-            # invocation
-            self.manager.prepare(context=self.context, databases=None,
-                                 packages=['package'],
-                                 memory_mb='2048', users=None,
-                                 device_path=device_path,
-                                 mount_point='/var/lib/mongodb',
-                                 backup_info=backup_info,
-                                 overrides=None,
-                                 cluster_config=None)
-
-        # verification/assertion
-        mock_status.begin_install.assert_any_call()
-        mock_app.install_if_needed.assert_any_call(['package'])
-        mock_app.stop_db.assert_any_call()
-        VolumeDevice.format.assert_any_call()
-        VolumeDevice.migrate_data.assert_any_call('/var/lib/mongodb')
-        if backup_info:
-            backup.restore.assert_any_call(self.context,
-                                           backup_info,
-                                           '/var/lib/mongodb')
+        mocked_restore.assert_called_with(self.context, backup_info,
+                                          '/var/lib/mongodb')

@@ -23,8 +23,7 @@ from trove.common.i18n import _
 from trove.common import instance as ds_instance
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.experimental.mongodb import (
-    service as mongo_service)
+from trove.guestagent.datastore.experimental.mongodb import service
 from trove.guestagent.datastore.experimental.mongodb import system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
@@ -40,8 +39,8 @@ MANAGER = CONF.datastore_manager
 class Manager(periodic_task.PeriodicTasks):
 
     def __init__(self):
-        self.status = mongo_service.MongoDbAppStatus()
-        self.app = mongo_service.MongoDBApp(self.status)
+        self.status = service.MongoDBAppStatus()
+        self.app = service.MongoDBApp(self.status)
 
     @periodic_task.periodic_task(ticks_between_runs=3)
     def update_status(self, context):
@@ -80,6 +79,7 @@ class Manager(periodic_task.PeriodicTasks):
             LOG.debug("Mounted the volume %(path)s as %(mount)s." %
                       {'path': device_path, "mount": mount_point})
 
+        self.app.secure(cluster_config)
         conf_changes = self.get_config_changes(cluster_config, mount_point)
         config_contents = self.app.update_config_contents(
             config_contents, conf_changes)
@@ -115,8 +115,13 @@ class Manager(periodic_task.PeriodicTasks):
     def get_config_changes(self, cluster_config, mount_point=None):
         LOG.debug("Getting configuration changes.")
         config_changes = {}
+        # todo mvandijk: uncomment the following when auth is being enabled
+        # config_changes['auth'] = 'true'
+        config_changes['bind_ip'] = ','.join([netutils.get_my_ipv4(),
+                                              '127.0.0.1'])
         if cluster_config is not None:
-            config_changes['bind_ip'] = netutils.get_my_ipv4()
+            # todo mvandijk: uncomment the following when auth is being enabled
+            # config_changes['keyFile'] = self.app.get_key_file()
             if cluster_config["instance_type"] == "config_server":
                 config_changes["configsvr"] = "true"
             elif cluster_config["instance_type"] == "member":
@@ -344,3 +349,14 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Cluster creation complete, starting status checks.")
         status = self.status._get_actual_db_status()
         self.status.set_status(status)
+
+    def get_key(self, context):
+        # Return the cluster key
+        LOG.debug("Getting the cluster key.")
+        return self.app.get_key()
+
+    def create_admin_user(self, context, password):
+        self.app.create_admin_user(password)
+
+    def store_admin_password(self, context, password):
+        self.app.store_admin_password(password)

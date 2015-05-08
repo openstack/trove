@@ -38,14 +38,16 @@ class MongoDump(base.RestoreRunner):
 
     def __init__(self, *args, **kwargs):
         super(MongoDump, self).__init__(*args, **kwargs)
-        self.status = mongo_service.MongoDbAppStatus()
+        self.status = mongo_service.MongoDBAppStatus()
         self.app = mongo_service.MongoDBApp(self.status)
 
     def post_restore(self):
         """
         Restore from the directory that we untarred into
         """
-        utils.execute_with_timeout("mongorestore", MONGO_DUMP_DIR,
+        params = self.app.admin_cmd_auth_params()
+        params.append(MONGO_DUMP_DIR)
+        utils.execute_with_timeout('mongorestore', *params,
                                    timeout=LARGE_TIMEOUT)
 
         operating_system.remove(MONGO_DUMP_DIR, force=True, as_root=True)

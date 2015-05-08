@@ -740,6 +740,10 @@ mongodb_opts = [
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
+    cfg.IntOpt('mongodb_port', default=27017,
+               help='Port for mongod and mongos instances.'),
+    cfg.IntOpt('configsvr_port', default=27019,
+               help='Port for instances running as config servers.'),
 ]
 
 # PostgreSQL

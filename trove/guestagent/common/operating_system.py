@@ -144,6 +144,14 @@ class FileMode(object):
         return cls(reset=[stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH])  # =0064
 
     @classmethod
+    def SET_USR_RO(cls):
+        return cls(reset=[stat.S_IRUSR])  # =0400
+
+    @classmethod
+    def SET_USR_RW(cls):
+        return cls(reset=[stat.S_IRUSR | stat.S_IWUSR])  # =0600
+
+    @classmethod
     def ADD_READ_ALL(cls):
         return cls(add=[stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH])  # +0444
 
