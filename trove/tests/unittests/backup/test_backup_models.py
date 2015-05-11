@@ -13,8 +13,9 @@
 
 
 import datetime
-from mock import MagicMock, patch
-import testtools
+from mock import DEFAULT
+from mock import MagicMock
+from mock import patch
 
 from trove.backup import models
 from trove.backup import state
@@ -23,6 +24,7 @@ from trove.common import exception
 from trove.common import utils
 from trove.instance import models as instance_models
 from trove.taskmanager import api
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
 
@@ -47,7 +49,7 @@ BACKUP_LOCATION = 'https://hpcs.com/tenant/database_backups/' + BACKUP_FILENAME
 api.API.get_client = MagicMock()
 
 
-class BackupCreateTest(testtools.TestCase):
+class BackupCreateTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupCreateTest, self).setUp()
         util.init_db()
@@ -69,11 +71,11 @@ class BackupCreateTest(testtools.TestCase):
             instance.datastore_version = MagicMock()
             instance.datastore_version.id = 'datastore-id-999'
             instance.cluster_id = None
-            with patch.object(models.Backup, 'validate_can_perform_action',
-                              return_value=None):
-                with patch.object(models.Backup, 'verify_swift_auth_token',
-                                  return_value=None):
-                    api.API.create_backup = MagicMock(return_value=None)
+            with patch.multiple(models.Backup,
+                                validate_can_perform_action=DEFAULT,
+                                verify_swift_auth_token=DEFAULT):
+                with patch.object(api.API, 'create_backup',
+                                  MagicMock(return_value=None)):
                     bu = models.Backup.create(self.context, self.instance_id,
                                               BACKUP_NAME, BACKUP_DESC)
                     self.created = True
@@ -106,38 +108,36 @@ class BackupCreateTest(testtools.TestCase):
             instance.datastore_version = MagicMock()
             instance.datastore_version.id = 'datastore-id-999'
             instance.cluster_id = None
-            with patch.object(models.Backup, 'validate_can_perform_action',
-                              return_value=None):
-                with patch.object(models.Backup, 'verify_swift_auth_token',
-                                  return_value=None):
-                    api.API.create_backup = MagicMock(return_value=None)
-                    with patch.object(models.Backup, 'get_by_id',
-                                      return_value=parent):
+            with patch.multiple(models.Backup,
+                                validate_can_perform_action=DEFAULT,
+                                verify_swift_auth_token=DEFAULT,
+                                get_by_id=MagicMock(return_value=parent)):
+                with patch.object(api.API, 'create_backup',
+                                  MagicMock(return_value=None)):
+                    incremental = models.Backup.create(
+                        self.context,
+                        self.instance_id,
+                        BACKUP_NAME,
+                        BACKUP_DESC,
+                        parent_id='parent_uuid')
 
-                        incremental = models.Backup.create(
-                            self.context,
-                            self.instance_id,
-                            BACKUP_NAME,
-                            BACKUP_DESC,
-                            parent_id='parent_uuid')
+                    self.created = True
 
-                        self.created = True
-
-                        db_record = models.DBBackup.find_by(id=incremental.id)
-                        self.assertEqual(incremental.id,
-                                         db_record['id'])
-                        self.assertEqual(BACKUP_NAME,
-                                         db_record['name'])
-                        self.assertEqual(BACKUP_DESC,
-                                         db_record['description'])
-                        self.assertEqual(self.instance_id,
-                                         db_record['instance_id'])
-                        self.assertEqual(state.BackupState.NEW,
-                                         db_record['state'])
-                        self.assertEqual('parent_uuid',
-                                         db_record['parent_id'])
-                        self.assertEqual(instance.datastore_version.id,
-                                         db_record['datastore_version_id'])
+                    db_record = models.DBBackup.find_by(id=incremental.id)
+                    self.assertEqual(incremental.id,
+                                     db_record['id'])
+                    self.assertEqual(BACKUP_NAME,
+                                     db_record['name'])
+                    self.assertEqual(BACKUP_DESC,
+                                     db_record['description'])
+                    self.assertEqual(self.instance_id,
+                                     db_record['instance_id'])
+                    self.assertEqual(state.BackupState.NEW,
+                                     db_record['state'])
+                    self.assertEqual('parent_uuid',
+                                     db_record['parent_id'])
+                    self.assertEqual(instance.datastore_version.id,
+                                     db_record['datastore_version_id'])
 
     def test_create_instance_not_found(self):
         self.assertRaises(exception.NotFound, models.Backup.create,
@@ -202,7 +202,7 @@ class BackupCreateTest(testtools.TestCase):
                                   BACKUP_NAME, BACKUP_DESC)
 
 
-class BackupDeleteTest(testtools.TestCase):
+class BackupDeleteTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupDeleteTest, self).setUp()
         util.init_db()
@@ -233,7 +233,7 @@ class BackupDeleteTest(testtools.TestCase):
                                   self.context, 'backup_id')
 
 
-class BackupORMTest(testtools.TestCase):
+class BackupORMTest(trove_testtools.TestCase):
     def setUp(self):
         super(BackupORMTest, self).setUp()
         util.init_db()
@@ -358,7 +358,7 @@ class BackupORMTest(testtools.TestCase):
         self.assertEqual(BACKUP_FILENAME, self.backup.filename)
 
 
-class PaginationTests(testtools.TestCase):
+class PaginationTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(PaginationTests, self).setUp()
@@ -416,7 +416,7 @@ class PaginationTests(testtools.TestCase):
         self.assertEqual(10, len(backups))
 
 
-class OrderingTests(testtools.TestCase):
+class OrderingTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(OrderingTests, self).setUp()

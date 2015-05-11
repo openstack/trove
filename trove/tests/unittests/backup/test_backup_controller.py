@@ -14,13 +14,13 @@
 #    under the License.
 #
 import jsonschema
-from testtools import TestCase
 from testtools.matchers import Equals
 from trove.backup.service import BackupController
 from trove.common import apischema
+from trove.tests.unittests import trove_testtools
 
 
-class TestBackupController(TestCase):
+class TestBackupController(trove_testtools.TestCase):
 
     def setUp(self):
         super(TestBackupController, self).setUp()

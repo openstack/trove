@@ -12,12 +12,12 @@
 #See the License for the specific language governing permissions and
 #limitations under the License.
 
-import testtools
 from mock import Mock, MagicMock, patch
 import hashlib
 
 from trove.common.context import TroveContext
 from trove.tests.fakes.swift import FakeSwiftConnection
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.backup.test_backupagent \
     import MockBackup as MockBackupRunner
 from trove.guestagent.strategies.storage.swift \
@@ -27,7 +27,7 @@ from trove.guestagent.strategies.storage.swift import SwiftStorage
 from trove.guestagent.strategies.storage.swift import StreamReader
 
 
-class SwiftStorageSaveChecksumTests(testtools.TestCase):
+class SwiftStorageSaveChecksumTests(trove_testtools.TestCase):
     """SwiftStorage.save is used to save a backup to Swift."""
 
     def setUp(self):
@@ -129,14 +129,18 @@ class SwiftStorageSaveChecksumTests(testtools.TestCase):
                          "Incorrect swift location was returned.")
 
 
-class SwiftStorageUtils(testtools.TestCase):
+class SwiftStorageUtils(trove_testtools.TestCase):
 
     def setUp(self):
         super(SwiftStorageUtils, self).setUp()
-        context = TroveContext()
-        swift_client = FakeSwiftConnection()
-        swift.create_swift_client = MagicMock(return_value=swift_client)
-        self.swift = SwiftStorage(context)
+        self.context = TroveContext()
+        self.swift_client = FakeSwiftConnection()
+        self.create_swift_client_patch = patch.object(
+            swift, 'create_swift_client',
+            MagicMock(return_value=self.swift_client))
+        self.create_swift_client_mock = self.create_swift_client_patch.start()
+        self.addCleanup(self.create_swift_client_patch.stop)
+        self.swift = SwiftStorage(self.context)
 
     def tearDown(self):
         super(SwiftStorageUtils, self).tearDown()
@@ -159,7 +163,7 @@ class SwiftStorageUtils(testtools.TestCase):
                           'AND-THE-UGLY')
 
 
-class SwiftStorageLoad(testtools.TestCase):
+class SwiftStorageLoad(trove_testtools.TestCase):
     """SwiftStorage.load is used to return SwiftDownloadStream which is used
         to download a backup object from Swift
     """
@@ -214,7 +218,7 @@ class MockBackupStream(MockBackupRunner):
         return 'X' * chunk_size
 
 
-class StreamReaderTests(testtools.TestCase):
+class StreamReaderTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(StreamReaderTests, self).setUp()
@@ -269,13 +273,17 @@ class StreamReaderTests(testtools.TestCase):
         self.assertTrue(self.stream.end_of_file)
 
 
-class SwiftMetadataTests(testtools.TestCase):
+class SwiftMetadataTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(SwiftMetadataTests, self).setUp()
         self.swift_client = FakeSwiftConnection()
         self.context = TroveContext()
-        swift.create_swift_client = MagicMock(return_value=self.swift_client)
+        self.create_swift_client_patch = patch.object(
+            swift, 'create_swift_client',
+            MagicMock(return_value=self.swift_client))
+        self.create_swift_client_mock = self.create_swift_client_patch.start()
+        self.addCleanup(self.create_swift_client_patch.stop)
         self.swift = SwiftStorage(self.context)
 
     def tearDown(self):
