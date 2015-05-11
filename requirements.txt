@@ -1,11 +1,11 @@
 # The order of packages is significant, because pip processes them in the order
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
-pbr>=0.6,!=0.7,<1.0
+pbr>=0.11,<2.0
 SQLAlchemy>=0.9.7,<=0.9.99
-eventlet>=0.16.1,!=0.17.0
+eventlet>=0.17.3
 keystonemiddleware>=1.5.0
-kombu>=2.5.0
+kombu>=3.0.7
 Routes>=1.12.3,!=2.0
 WebOb>=1.2.3
 PasteDeploy>=1.5.0
@@ -18,8 +18,8 @@ lxml>=2.3
 passlib
 python-heatclient>=0.3.0
 python-novaclient>=2.22.0
-python-cinderclient>=1.1.0
-python-keystoneclient>=1.1.0
+python-cinderclient>=1.2.0
+python-keystoneclient>=1.3.0
 python-swiftclient>=2.2.0
 python-designateclient>=1.0.0
 python-neutronclient>=2.3.11,<3
@@ -27,7 +27,7 @@ iso8601>=0.1.9
 jsonschema>=2.0.0,<3.0.0
 Jinja2>=2.6  # BSD License (3 clause)
 pexpect>=3.1,!=3.3 # ISC License
-oslo.config>=1.9.3  # Apache-2.0
+oslo.config>=1.11.0  # Apache-2.0
 oslo.i18n>=1.5.0  # Apache-2.0
 oslo.serialization>=1.4.0               # Apache-2.0
 oslo.utils>=1.4.0                       # Apache-2.0
