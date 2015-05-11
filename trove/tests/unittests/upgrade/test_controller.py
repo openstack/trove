@@ -13,14 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import Mock, MagicMock
-from testtools import TestCase
+from mock import Mock, MagicMock, patch
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove.extensions.mgmt.upgrade.service import UpgradeController
+from trove.tests.unittests import trove_testtools
 import jsonschema
 
 
-class TestUpgradeController(TestCase):
+class TestUpgradeController(trove_testtools.TestCase):
 
     def setUp(self):
         super(TestUpgradeController, self).setUp()
@@ -59,6 +59,7 @@ class TestUpgradeController(TestCase):
         validator = self._get_validator(self.body)
         self.assertTrue(validator.is_valid(self.body))
 
+    @patch.object(UpgradeMessageSender, 'create', Mock(return_value=Mock()))
     def test_controller_with_no_metadata(self):
         """
         Test the mock controller w/out metadata
@@ -71,9 +72,6 @@ class TestUpgradeController(TestCase):
         req.environ = MagicMock()
         req.environ.get = Mock(return_value=context)
 
-        send = Mock()
-        UpgradeMessageSender.create = Mock(return_value=send)
-
         resp = self.controller.create(req, self.body, tenant_id, instance_id)
 
         instance_version = self.body["upgrade"]["instance_version"]
@@ -84,6 +82,7 @@ class TestUpgradeController(TestCase):
             context, instance_id, instance_version, location, metadata)
         self.assertEqual(202, resp.status)
 
+    @patch.object(UpgradeMessageSender, 'create', Mock(return_value=Mock()))
     def test_controller_with_metadata(self):
         """
         Test the mock controller with metadata
@@ -95,9 +94,6 @@ class TestUpgradeController(TestCase):
         req = Mock()
         req.environ = MagicMock()
         req.environ.get = Mock(return_value=context)
-
-        send = Mock()
-        UpgradeMessageSender.create = Mock(return_value=send)
 
         # append the body w/ metadata
         self.body["upgrade"]["metadata"] = {
@@ -115,6 +111,7 @@ class TestUpgradeController(TestCase):
             context, instance_id, instance_version, location, metadata)
         self.assertEqual(202, resp.status)
 
+    @patch.object(UpgradeMessageSender, 'create', Mock(return_value=Mock()))
     def test_controller_with_empty_metadata(self):
         """
         Test the mock controller with metadata
@@ -126,9 +123,6 @@ class TestUpgradeController(TestCase):
         req = Mock()
         req.environ = MagicMock()
         req.environ.get = Mock(return_value=context)
-
-        send = Mock()
-        UpgradeMessageSender.create = Mock(return_value=send)
 
         # append the body w/ empty metadata
         self.body["upgrade"]["metadata"] = {}

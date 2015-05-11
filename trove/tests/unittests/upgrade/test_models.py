@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import Mock
-from testtools import TestCase
+from mock import Mock, patch
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
+from trove.tests.unittests import trove_testtools
 
 
-class TestUpgradeModel(TestCase):
+class TestUpgradeModel(trove_testtools.TestCase):
 
     def setUp(self):
         super(TestUpgradeModel, self).setUp()
@@ -49,90 +49,36 @@ class TestUpgradeModel(TestCase):
         self.assertTrue(UpgradeMessageSender._validate(param, 36))
 
     def test_create(self):
-        """
-        Test creating notification
-        """
-        context = Mock()
-
-        instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f",
-        instance_version = "v1.0.1",
-        location = "http://swift/trove-guestagent-v1.0.1.tar.gz"
-
-        _create_resource = Mock(return_value=None)
-        UpgradeMessageSender.create = Mock(return_value=_create_resource)
-
-        func = UpgradeMessageSender.create(context, instance_id,
-                                           instance_version, location)
-
-        self.assertEqual(_create_resource, func)
-
-        UpgradeMessageSender.create.assert_called_with(
-            context, instance_id, instance_version, location)
+        self._assert_create_with_metadata()
 
     def test_create_with_metadata_none(self):
-        """
-        Test creating notification with metadata is None
-        """
-        context = Mock()
-
-        instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f",
-        instance_version = "v1.0.1",
-        location = "http://swift/trove-guestagent-v1.0.1.tar.gz"
-        metadata = None
-
-        _create_resource = Mock(return_value=None)
-        UpgradeMessageSender.create = Mock(return_value=_create_resource)
-
-        func = UpgradeMessageSender.create(
-            context, instance_id, instance_version, location, metadata)
-
-        self.assertEqual(_create_resource, func)
-
-        UpgradeMessageSender.create.assert_called_with(
-            context, instance_id, instance_version, location, metadata)
+        self._assert_create_with_metadata(metadata=None)
 
     def test_create_with_empty_metadata(self):
-        """
-        Test creating notification with metadata {}
-        """
-        context = Mock()
-
-        instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f",
-        instance_version = "v1.0.1",
-        location = "http://swift/trove-guestagent-v1.0.1.tar.gz"
-        metadata = {}
-
-        _create_resource = Mock(return_value=None)
-        UpgradeMessageSender.create = Mock(return_value=_create_resource)
-
-        func = UpgradeMessageSender.create(
-            context, instance_id, instance_version, location, metadata)
-
-        self.assertEqual(_create_resource, func)
-
-        UpgradeMessageSender.create.assert_called_with(
-            context, instance_id, instance_version, location, metadata)
+        self._assert_create_with_metadata(metadata={})
 
     def test_create_with_metadata(self):
-        """
-        Test creating notification with metadata
+        self._assert_create_with_metadata(
+            metadata={"is_public": True,
+                      "is_encrypted": True,
+                      "config_location": "http://swift/trove-guestagent.conf"})
+
+    @patch('trove.guestagent.api.API.upgrade')
+    def _assert_create_with_metadata(self, api_upgrade_mock, metadata=None):
+        """Excercise UpgradeMessageSender.create() call.
         """
         context = Mock()
 
-        instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f",
-        instance_version = "v1.0.1",
+        instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f"
+        instance_version = "v1.0.1"
         location = "http://swift/trove-guestagent-v1.0.1.tar.gz"
-        metadata = {"is_public": True,
-                    "is_encrypted": True,
-                    "config_location": "http://swift/trove-guestagent.conf"}
 
-        _create_resource = Mock(return_value=None)
-        UpgradeMessageSender.create = Mock(return_value=_create_resource)
-
-        func = UpgradeMessageSender.create(
+        func = (UpgradeMessageSender.create(
             context, instance_id, instance_version, location, metadata)
+            if metadata is not None else UpgradeMessageSender.create(
+                context, instance_id, instance_version, location))
 
-        self.assertEqual(_create_resource, func)
-
-        UpgradeMessageSender.create.assert_called_with(
-            context, instance_id, instance_version, location, metadata)
+        self.assertTrue(callable(func))
+        func()  # This call should translate to the API call asserted below.
+        api_upgrade_mock.assert_called_once_with(instance_version, location,
+                                                 metadata)
