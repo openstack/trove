@@ -1,28 +1,25 @@
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
-
-
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from mock import Mock
-import testtools
-import re
-
 from trove.common import exception
 from trove.common import template
 from trove.common import utils
 from trove.datastore.models import DatastoreVersion
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
+import re
 
 
-class TemplateTest(testtools.TestCase):
+class TemplateTest(trove_testtools.TestCase):
     def setUp(self):
         super(TemplateTest, self).setUp()
         util.init_db()
@@ -106,7 +103,7 @@ class TemplateTest(testtools.TestCase):
         self.assertTrue(self._find_in_template(config.render(), "relay_log"))
 
 
-class HeatTemplateLoadTest(testtools.TestCase):
+class HeatTemplateLoadTest(trove_testtools.TestCase):
 
     class FakeTemplate():
         def __init__(self):

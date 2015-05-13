@@ -11,13 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
-from testtools import TestCase
 from trove.common.exception import TroveError
+from trove.tests.unittests import trove_testtools
 
 
-class TroveErrorTest(TestCase):
+class TroveErrorTest(trove_testtools.TestCase):
 
     def test_valid_error_message_format(self):
         error = TroveError("%02d" % 1)

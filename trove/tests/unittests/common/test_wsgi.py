@@ -13,14 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-import trove.common.wsgi as wsgi
+from testtools.matchers import Equals, Is, Not
+from trove.common import wsgi
+from trove.tests.unittests import trove_testtools
 import webob
 
-import testtools
-from testtools.matchers import Equals, Is, Not
 
-
-class TestWsgi(testtools.TestCase):
+class TestWsgi(trove_testtools.TestCase):
     def test_process_request(self):
         middleware = wsgi.ContextMiddleware("test_trove")
         req = webob.BaseRequest({})

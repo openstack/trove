@@ -13,16 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from hashlib import md5
+from mock import MagicMock, patch
 import httplib
 import json
+import logging
 import os
 import socket
-import uuid
-import logging
-import swiftclient.client as swift_client
 import swiftclient
-from hashlib import md5
-from mock import MagicMock
+import swiftclient.client as swift_client
+import uuid
 
 from swiftclient import client as swift
 
@@ -203,7 +203,35 @@ class FakeSwiftConnection(object):
         pass
 
 
-class SwiftClientStub(object):
+class Patcher(object):
+    """Objects that need to mock global symbols throughout their existence
+    should extend this base class.
+    The object acts as a context manager which, when used in conjunction with
+    the 'with' statement, terminates all running patchers when it leaves the
+    scope.
+    """
+
+    def __init__(self):
+        self.__patchers = None
+
+    def __enter__(self):
+        self.__patchers = []
+        return self
+
+    def __exit__(self, type, value, traceback):
+        # Stop patchers in the LIFO order.
+        while self.__patchers:
+            self.__patchers.pop().stop()
+
+    def _start_patcher(self, patcher):
+        """All patchers started by this method will be automatically
+        terminated on __exit__().
+        """
+        self.__patchers.append(patcher)
+        return patcher.start()
+
+
+class SwiftClientStub(Patcher):
     """
     Component for controlling behavior of Swift Client Stub.  Instantiated
     before tests are invoked in "fake" mode.  Invoke methods to control
@@ -257,6 +285,7 @@ class SwiftClientStub(object):
     """
 
     def __init__(self):
+        super(SwiftClientStub, self).__init__()
         self._connection = swift_client.Connection()
         self._containers = {}
         self._containers_list = []
@@ -296,7 +325,7 @@ class SwiftClientStub(object):
                      'content-type': 'application/json; charset=utf-8',
                      'x-account-object-count': '0'}, self._containers_list)
 
-        swift_client.Connection.get_auth = MagicMock(return_value=(
+        get_auth_return_value = (
             u"http://127.0.0.1:8080/v1/AUTH_c7b038976df24d96bf1980f5da17bd89",
             u'MIINrwYJKoZIhvcNAQcCoIINoDCCDZwCAQExCTAHBgUrDgMCGjCCDIgGCSqGSIb3'
             u'DQEHAaCCDHkEggx1eyJhY2Nlc3MiOiB7InRva2VuIjogeyJpc3N1ZWRfYXQiOiAi'
@@ -305,9 +334,17 @@ class SwiftClientStub(object):
             u'ImVuYWJsZWQiOiB0cnVlLCAiZGVzY3JpcHRpb24iOiBudWxsLCAibmFtZSI6ICJy'
             u'ZWRkd2FyZiIsICJpZCI6ICJjN2IwMzg5NzZkZjI0ZDk2YmYxOTgwZjVkYTE3YmQ4'
             u'OSJ9fSwgInNlcnZpY2VDYXRhbG9nIjogW3siZW5kcG9pbnRzIjogW3siYWRtaW5')
-        )
-        swift_client.Connection.get_account = MagicMock(
-            return_value=account_resp())
+
+        get_auth_patcher = patch.object(
+            swift_client.Connection, 'get_auth',
+            MagicMock(return_value=get_auth_return_value))
+        self._start_patcher(get_auth_patcher)
+
+        get_account_patcher = patch.object(
+            swift_client.Connection, 'get_account',
+            MagicMock(return_value=account_resp()))
+        self._start_patcher(get_account_patcher)
+
         return self
 
     def _create_container(self, container_name):
@@ -351,7 +388,9 @@ class SwiftClientStub(object):
                     self._objects[container])
 
         # if this is called multiple times then nothing happens
-        swift_client.Connection.put_container = MagicMock(return_value=None)
+        put_container_patcher = patch.object(swift_client.Connection,
+                                             'put_container')
+        self._start_patcher(put_container_patcher)
 
         def side_effect_func(*args, **kwargs):
             if args[0] in self._containers:
@@ -362,8 +401,10 @@ class SwiftClientStub(object):
 
         self._create_container(container_name)
         # return container headers
-        swift_client.Connection.get_container = MagicMock(
-            side_effect=side_effect_func)
+        get_container_patcher = patch.object(
+            swift_client.Connection, 'get_container',
+            MagicMock(side_effect=side_effect_func))
+        self._start_patcher(get_container_patcher)
 
         return self
 
@@ -411,8 +452,10 @@ class SwiftClientStub(object):
         :param contents: the contents of the object
         """
 
-        swift_client.Connection.put_object = MagicMock(
-            return_value=uuid.uuid1())
+        put_object_patcher = patch.object(
+            swift_client.Connection, 'put_object',
+            MagicMock(return_value=uuid.uuid1()))
+        self._start_patcher(put_object_patcher)
 
         def side_effect_func(*args, **kwargs):
             if (args[0] in self._containers and
@@ -432,8 +475,10 @@ class SwiftClientStub(object):
                 raise swiftclient.ClientException('Resource Not Found',
                                                   http_status=404)
 
-        swift_client.Connection.get_object = MagicMock(
-            side_effect=side_effect_func)
+        get_object_patcher = patch.object(
+            swift_client.Connection, 'get_object',
+            MagicMock(side_effect=side_effect_func))
+        self._start_patcher(get_object_patcher)
 
         self._remove_object(name, self._objects[container])
         self._objects[container].append(
@@ -471,8 +516,10 @@ class SwiftClientStub(object):
             else:
                 return None
 
-        swift_client.Connection.delete_object = MagicMock(
-            side_effect=side_effect_func)
+        delete_object_patcher = patch.object(
+            swift_client.Connection, 'delete_object',
+            MagicMock(side_effect=side_effect_func))
+        self._start_patcher(delete_object_patcher)
 
         self._remove_object(name, self._objects[container])
         return self

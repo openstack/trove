@@ -13,13 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-import trove.common.context as context
-
-import testtools
 from testtools.matchers import Equals, Is
+from trove.common import context
+from trove.tests.unittests import trove_testtools
 
 
-class TestTroveContext(testtools.TestCase):
+class TestTroveContext(trove_testtools.TestCase):
     def test_create_with_extended_args(self):
         expected_service_catalog = {'key': 'value'}
         ctx = context.TroveContext(user="test_user_id",
