@@ -212,7 +212,7 @@ Prepare image
 * Upload the converted image into Glance::
 
     # glance --os-username trove --os-password trove --os-tenant-name trove --os-auth-url http://<KeystoneIp>:35357/v2.0
-        image-create --name trove-image --public --container-format ovf --disk-format qcow2 --owner trove < precise.qcow2
+        image-create --name trove-image --is-public true --container-format ovf --disk-format qcow2 --owner trove < precise.qcow2
 
 ----------------
 Prepare database
