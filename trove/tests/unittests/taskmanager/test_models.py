@@ -36,6 +36,7 @@ from trove.common.exception import TroveError
 from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.instance import ServiceStatuses
 from trove.extensions.mysql import models as mysql_models
+from trove.instance.models import BaseInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
 from trove.instance.models import DBInstance
@@ -361,6 +362,105 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
                           self.freshinstancetasks._create_secgroup,
                           datastore_manager)
 
+    @patch.object(BaseInstance, 'update_db')
+    @patch('trove.taskmanager.models.CONF')
+    def test_error_sec_group_create_instance(self, mock_conf, mock_update_db):
+        mock_conf.get = Mock(
+            return_value=FakeOptGroup(tcp_ports=['3306', '-3306']))
+        mock_flavor = {'id': 7, 'ram': 256, 'name': 'smaller_flavor'}
+        self.assertRaisesRegexp(
+            TroveError,
+            'Error creating security group for instance',
+            self.freshinstancetasks.create_instance, mock_flavor,
+            'mysql-image-id', None, None, 'mysql', 'mysql-server', 2,
+            None, None, None, None, Mock(), None)
+
+    @patch.object(BaseInstance, 'update_db')
+    @patch.object(backup_models.Backup, 'get_by_id')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'report_root_enabled')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_get_injected_files')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
+    @patch.object(template, 'SingleInstanceConfigTemplate')
+    @patch.object(template, 'OverrideConfigTemplate')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry',
+                  side_effect=TroveError)
+    def test_error_create_dns_entry_create_instance(self, *args):
+        mock_flavor = {'id': 6, 'ram': 512, 'name': 'big_flavor'}
+        self.assertRaisesRegexp(
+            TroveError,
+            'Error creating DNS entry for instance',
+            self.freshinstancetasks.create_instance, mock_flavor,
+            'mysql-image-id', None, None, 'mysql', 'mysql-server',
+            2, Mock(), None, 'root_password', None, Mock(), None)
+
+    @patch.object(BaseInstance, 'update_db')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_get_injected_files')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
+    @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
+    @patch.object(template, 'SingleInstanceConfigTemplate')
+    @patch.object(template, 'OverrideConfigTemplate')
+    def test_create_instance(self,
+                             mock_override_template,
+                             mock_single_instance_template,
+                             mock_guest_prepare,
+                             mock_build_volume_info,
+                             mock_create_secgroup,
+                             *args):
+        mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
+        config_content = {'config_contents': 'some junk'}
+        mock_single_instance_template.return_value.config_contents = (
+            config_content)
+        mock_override_template.return_value.config_contents = None
+        self.freshinstancetasks.create_instance(mock_flavor, 'mysql-image-id',
+                                                None, None, 'mysql',
+                                                'mysql-server', 2,
+                                                None, None, None, None,
+                                                Mock(), None)
+        mock_create_secgroup.assert_called_with('mysql')
+        mock_build_volume_info.assert_called_with('mysql', volume_size=2)
+        mock_guest_prepare.assert_called_with(
+            768, mock_build_volume_info(), 'mysql-server', None, None, None,
+            config_content, None, None, None, None)
+
+    @patch.object(trove.guestagent.api.API, 'attach_replication_slave')
+    @patch.object(rpc, 'get_client')
+    def test_attach_replication_slave(self, mock_get_client,
+                                      mock_attach_replication_slave):
+        mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
+        snapshot = {'replication_strategy': 'MysqlGTIDReplication',
+                    'master': {'id': 'master-id'}}
+        config_content = {'config_contents': 'some junk'}
+        replica_config = MagicMock()
+        replica_config.config_contents = config_content
+        with patch.object(taskmanager_models.FreshInstanceTasks,
+                          '_render_replica_config',
+                          return_value=replica_config):
+            self.freshinstancetasks.attach_replication_slave(snapshot,
+                                                             mock_flavor)
+        mock_attach_replication_slave.assert_called_with(snapshot,
+                                                         config_content)
+
+    @patch.object(BaseInstance, 'update_db')
+    @patch.object(rpc, 'get_client')
+    @patch.object(taskmanager_models.FreshInstanceTasks,
+                  '_render_replica_config')
+    @patch.object(trove.guestagent.api.API, 'attach_replication_slave',
+                  side_effect=GuestError)
+    def test_error_attach_replication_slave(self, *args):
+        mock_flavor = {'id': 8, 'ram': 768, 'name': 'bigger_flavor'}
+        snapshot = {'replication_strategy': 'MysqlGTIDReplication',
+                    'master': {'id': 'master-id'}}
+        self.assertRaisesRegexp(
+            TroveError, 'Error attaching instance',
+            self.freshinstancetasks.attach_replication_slave,
+            snapshot, mock_flavor)
+
 
 class ResizeVolumeTest(trove_testtools.TestCase):
 
@@ -591,6 +691,14 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         if 'volume' in self._testMethodName:
             self._stub_volume_client()
 
+        stub_floating_ips_manager = MagicMock(
+            spec=novaclient.v2.floating_ips.FloatingIPManager)
+        self.instance_task._nova_client.floating_ips = (
+            stub_floating_ips_manager)
+        floatingip = novaclient.v2.floating_ips.FloatingIP(
+            stub_floating_ips_manager, {'ip': '192.168.10.1'}, True)
+        stub_floating_ips_manager.list = MagicMock(return_value=[floatingip])
+
     def tearDown(self):
         super(BuiltInstanceTasksTest, self).tearDown()
 
@@ -649,6 +757,89 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
         self.instance_task._refresh_datastore_status.assert_any_call()
         assert not self.instance_task.server.reboot.called
         assert not self.instance_task.set_datastore_status_to_paused.called
+
+    @patch.object(BaseInstance, 'update_db')
+    def test_detach_replica(self, mock_update_db):
+        self.instance_task.detach_replica(Mock(), True)
+        self.instance_task._guest.detach_replica.assert_called_with(True)
+        mock_update_db.assert_called_with(slave_of_id=None)
+
+    def test_error_detach_replica(self):
+        with patch.object(self.instance_task._guest, 'detach_replica',
+                          side_effect=GuestError):
+            self.assertRaises(GuestError, self.instance_task.detach_replica,
+                              Mock(), True)
+
+    @patch.object(BaseInstance, 'update_db')
+    def test_make_read_only(self, mock_update_db):
+        read_only = MagicMock()
+        self.instance_task.make_read_only(read_only)
+        self.instance_task._guest.make_read_only.assert_called_with(read_only)
+
+    @patch.object(BaseInstance, 'update_db')
+    def test_attach_replica(self, mock_update_db):
+        master = MagicMock()
+        self.instance_task.attach_replica(master)
+        self.instance_task._guest.make_read_only.assert_called()
+        mock_update_db.assert_called_with(slave_of_id=master.id)
+
+    def test_error_attach_replica(self):
+        with patch.object(self.instance_task._guest, 'attach_replica',
+                          side_effect=GuestError):
+            self.assertRaises(GuestError, self.instance_task.attach_replica,
+                              Mock())
+
+    def test_get_floating_ips(self):
+        floating_ips = self.instance_task._get_floating_ips()
+        self.assertEqual('192.168.10.1', floating_ips['192.168.10.1'].ip)
+
+    @patch.object(BaseInstance, 'get_visible_ip_addresses',
+                  return_value=['192.168.10.1'])
+    def test_detach_public_ips(self, mock_address):
+        removed_ips = self.instance_task.detach_public_ips()
+        self.assertEqual(['192.168.10.1'], removed_ips)
+
+    def test_attach_public_ips(self):
+        self.instance_task.attach_public_ips(['192.168.10.1'])
+        self.stub_verifying_server.add_floating_ip.assert_called_with(
+            '192.168.10.1')
+
+    @patch.object(BaseInstance, 'update_db')
+    def test_enable_as_master(self, mock_update_db):
+        test_func = self.instance_task._guest.enable_as_master
+        config_content = {'config_contents': 'some junk'}
+        replica_source_config = MagicMock()
+        replica_source_config.config_contents = config_content
+        with patch.object(self.instance_task, '_render_replica_source_config',
+                          return_value=replica_source_config):
+            self.instance_task.enable_as_master()
+        mock_update_db.assert_called_with(slave_of_id=None)
+        test_func.assert_called_with(config_content)
+
+    def test_get_last_txn(self):
+        self.instance_task.get_last_txn()
+        self.instance_task._guest.get_last_txn.assert_any_call()
+
+    def test_get_latest_txn_id(self):
+        self.instance_task.get_latest_txn_id()
+        self.instance_task._guest.get_latest_txn_id.assert_any_call()
+
+    def test_wait_for_txn(self):
+        self.instance_task.wait_for_txn(None)
+        self.instance_task._guest.wait_for_txn.assert_not_called()
+        txn = Mock()
+        self.instance_task.wait_for_txn(txn)
+        self.instance_task._guest.wait_for_txn.assert_called_with(txn)
+
+    def test_cleanup_source_on_replica_detach(self):
+        test_func = self.instance_task._guest.cleanup_source_on_replica_detach
+        replica_info = Mock()
+        self.instance_task.cleanup_source_on_replica_detach(replica_info)
+        test_func.assert_called_with(replica_info)
+
+    def test_demote_replication_master(self):
+        self.instance_task.demote_replication_master()
+        self.instance_task._guest.demote_replication_master.assert_any_call()
 
 
 class BackupTasksTest(trove_testtools.TestCase):
