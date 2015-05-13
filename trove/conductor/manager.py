@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo import messaging
+import oslo_messaging as messaging
 
 from trove.backup import models as bkup_models
 from trove.common import cfg

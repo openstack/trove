@@ -18,7 +18,7 @@
 
 import sys
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from trove.openstack.common import log
 

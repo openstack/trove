@@ -24,7 +24,7 @@ gettext.install('trove', unicode=1)
 
 import sys
 
-from oslo.config import cfg as openstack_cfg
+from oslo_config import cfg as openstack_cfg
 
 from trove.common import cfg
 from trove.common import debug_utils
@@ -56,7 +56,7 @@ def main():
 
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet
-    # executor from oslo.messaging library.
+    # executor from oslo_messaging library.
     from trove import rpc
     rpc.init(CONF)
 

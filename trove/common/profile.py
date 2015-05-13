@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo import messaging
+import oslo_messaging as messaging
 from osprofiler import notifier
 from osprofiler import web
 

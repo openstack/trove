@@ -18,8 +18,8 @@
 
 import inspect
 import os
-from oslo import messaging
-from oslo.utils import importutils
+import oslo_messaging as messaging
+from oslo_utils import importutils
 from osprofiler import profiler
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import log as logging

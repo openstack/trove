@@ -18,7 +18,7 @@
 Routes all the requests to the task manager.
 """
 
-from oslo import messaging
+import oslo_messaging as messaging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.strategies.cluster import strategy

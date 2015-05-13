@@ -26,9 +26,9 @@ import shutil
 from eventlet.timeout import Timeout
 from passlib import utils as passlib_utils
 
-from oslo.utils import importutils
-from oslo.utils import timeutils
-from oslo.utils import strutils
+from oslo_utils import importutils
+from oslo_utils import timeutils
+from oslo_utils import strutils
 from oslo_concurrency import processutils
 
 from trove.common import cfg

@@ -17,7 +17,7 @@
 import os
 import ssl
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 from trove.openstack.common.gettextutils import _  # noqa
 

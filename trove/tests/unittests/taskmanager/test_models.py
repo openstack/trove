@@ -20,7 +20,7 @@ from novaclient import exceptions as nova_exceptions
 import novaclient.v2.servers
 import novaclient.v2.flavors
 import cinderclient.v2.client as cinderclient
-from oslo.utils import timeutils
+from oslo_utils import timeutils
 import trove.backup.models
 import trove.common.context
 from trove.datastore import models as datastore_models

@@ -31,8 +31,8 @@ __all__ = [
 ]
 
 
-from oslo.config import cfg
-from oslo import messaging
+from oslo_config import cfg
+import oslo_messaging as messaging
 from osprofiler import profiler
 
 from trove.common.context import TroveContext
