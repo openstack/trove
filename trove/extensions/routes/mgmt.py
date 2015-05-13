@@ -16,7 +16,7 @@
 from trove.openstack.common import log as logging
 
 from trove.common import extensions
-from trove.extensions.mgmt.clusters.service import ClusterController
+from trove.extensions.mgmt.clusters.service import MgmtClusterController
 from trove.extensions.mgmt.configuration import service as conf_service
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.extensions.mgmt.host.service import HostController
@@ -60,7 +60,7 @@ class Mgmt(extensions.ExtensionDescriptor):
 
         clusters = extensions.ResourceExtension(
             '{tenant_id}/mgmt/clusters',
-            ClusterController(),
+            MgmtClusterController(),
             member_actions={'action': 'POST'})
         resources.append(clusters)
 
