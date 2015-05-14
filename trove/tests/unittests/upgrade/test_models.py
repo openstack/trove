@@ -15,6 +15,7 @@
 #
 from mock import Mock, patch
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 
 
@@ -64,7 +65,9 @@ class TestUpgradeModel(trove_testtools.TestCase):
                       "config_location": "http://swift/trove-guestagent.conf"})
 
     @patch('trove.guestagent.api.API.upgrade')
-    def _assert_create_with_metadata(self, api_upgrade_mock, metadata=None):
+    @patch.object(rpc, 'get_client')
+    def _assert_create_with_metadata(self, mock_client, api_upgrade_mock,
+                                     metadata=None):
         """Excercise UpgradeMessageSender.create() call.
         """
         context = Mock()

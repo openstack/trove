@@ -20,6 +20,7 @@ from trove.common import exception
 from trove.common.rpc.version import RPC_API_VERSION
 from trove.common.strategies.cluster.experimental.vertica.guestagent import (
     VerticaGuestAgentAPI)
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 
 
@@ -35,7 +36,8 @@ def _mock_call(cmd, timeout, version=None, user=None,
 
 
 class ApiTest(trove_testtools.TestCase):
-    def setUp(self):
+    @mock.patch.object(rpc, 'get_client')
+    def setUp(self, *args):
         super(ApiTest, self).setUp()
         self.context = context.TroveContext()
         self.guest = VerticaGuestAgentAPI(self.context, 0)

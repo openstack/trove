@@ -15,7 +15,6 @@ from eventlet import Timeout
 import mock
 from oslo_messaging.rpc.client import RemoteError
 import oslo_messaging as messaging
-import testtools
 from testtools.matchers import Is
 
 import trove.common.context as context
@@ -23,6 +22,7 @@ from trove.common import exception
 from trove.common.remote import guest_client
 from trove.guestagent import api
 from trove import rpc
+from trove.tests.unittests import trove_testtools
 
 REPLICATION_SNAPSHOT = {'master': {'id': '123', 'host': '192.168.0.1',
                                    'port': 3306},
@@ -48,11 +48,11 @@ def _mock_call(cmd, timeout, version=None, username=None, hostname=None,
         raise BaseException("Test Failed")
 
 
-class ApiTest(testtools.TestCase):
-    def setUp(self):
+class ApiTest(trove_testtools.TestCase):
+    @mock.patch.object(rpc, 'get_client')
+    def setUp(self, *args):
         super(ApiTest, self).setUp()
         self.context = context.TroveContext()
-        rpc.get_client = mock.Mock()
         self.guest = api.API(self.context, 0)
         self.guest._cast = _mock_call_pwd_change
         self.guest._call = _mock_call
@@ -456,7 +456,7 @@ class ApiTest(testtools.TestCase):
         self.call_context.cast = mock.Mock()
 
 
-class ApiStrategyTest(testtools.TestCase):
+class ApiStrategyTest(trove_testtools.TestCase):
 
     @mock.patch('trove.guestagent.api.API.__init__',
                 mock.Mock(return_value=None))
