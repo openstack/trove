@@ -13,16 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from testtools.matchers import Is
+from trove.extensions.mysql.service import SchemaController
+from trove.extensions.mysql.service import UserAccessController
+from trove.extensions.mysql.service import UserController
+from trove.tests.unittests import trove_testtools
 import jsonschema
 
-from testtools import TestCase
-from testtools.matchers import Is
-from trove.extensions.mysql.service import UserController
-from trove.extensions.mysql.service import UserAccessController
-from trove.extensions.mysql.service import SchemaController
 
-
-class TestUserController(TestCase):
+class TestUserController(trove_testtools.TestCase):
     def setUp(self):
         super(TestUserController, self).setUp()
         self.controller = UserController()
@@ -305,7 +304,7 @@ class TestUserController(TestCase):
         self.assertFalse(validator_none_host.is_valid(body_none_host))
 
 
-class TestUserAccessController(TestCase):
+class TestUserAccessController(trove_testtools.TestCase):
     def test_validate_update_db(self):
         body = {"databases": []}
         schema = (UserAccessController()).get_schema('update_all', body)
@@ -318,7 +317,7 @@ class TestUserAccessController(TestCase):
         #self.assertThat(errors[0].path.pop(), Equals("databases"))
 
 
-class TestSchemaController(TestCase):
+class TestSchemaController(trove_testtools.TestCase):
     def setUp(self):
         super(TestSchemaController, self).setUp()
         self.controller = SchemaController()

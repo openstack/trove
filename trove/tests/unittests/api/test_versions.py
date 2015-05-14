@@ -14,6 +14,7 @@
 #    under the License.
 
 from mock import Mock
+from trove.tests.unittests import trove_testtools
 from trove.versions import BaseVersion
 from trove.versions import Version
 from trove.versions import VersionDataView
@@ -22,12 +23,11 @@ from trove.versions import VersionsController
 from trove.versions import VersionsDataView
 from trove.versions import VERSIONS
 
-import testtools
 
 BASE_URL = 'http://localhost'
 
 
-class VersionsControllerTest(testtools.TestCase):
+class VersionsControllerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionsControllerTest, self).setUp()
@@ -79,7 +79,7 @@ class VersionsControllerTest(testtools.TestCase):
         self.assertEqual('v1.0', version['id'], "Version id was not 'v1.0'")
 
 
-class BaseVersionTestCase(testtools.TestCase):
+class BaseVersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(BaseVersionTestCase, self).setUp()
@@ -113,7 +113,7 @@ class BaseVersionTestCase(testtools.TestCase):
                          "Base Version url is incorrect")
 
 
-class VersionTestCase(testtools.TestCase):
+class VersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionTestCase, self).setUp()
@@ -140,7 +140,7 @@ class VersionTestCase(testtools.TestCase):
                          'Base url value was incorrect')
 
 
-class VersionDataViewTestCase(testtools.TestCase):
+class VersionDataViewTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionDataViewTestCase, self).setUp()
@@ -177,7 +177,7 @@ class VersionDataViewTestCase(testtools.TestCase):
                          "Data status was not 'v1.0'")
 
 
-class VersionsDataViewTestCase(testtools.TestCase):
+class VersionsDataViewTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionsDataViewTestCase, self).setUp()
@@ -220,7 +220,7 @@ class VersionsDataViewTestCase(testtools.TestCase):
                          "Version ids are not equal")
 
 
-class VersionAPITestCase(testtools.TestCase):
+class VersionAPITestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionAPITestCase, self).setUp()

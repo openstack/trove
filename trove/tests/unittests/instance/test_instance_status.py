@@ -13,16 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-
-import uuid
-
-from testtools import TestCase
 from trove.common.instance import ServiceStatuses
 from trove.datastore import models
-from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
+from trove.instance.models import InstanceStatus
 from trove.instance.models import SimpleInstance
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
+import uuid
 
 
 class FakeInstanceTask(object):
@@ -42,7 +40,7 @@ class FakeDBInstance(object):
         self.task_status = FakeInstanceTask()
 
 
-class BaseInstanceStatusTestCase(TestCase):
+class BaseInstanceStatusTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         util.init_db()

@@ -12,17 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from testtools import TestCase
-from testtools.matchers import Is
 from testtools.matchers import Equals
-from trove.common.exception import DatabaseInitialDatabaseDuplicateError
+from testtools.matchers import Is
 from trove.common.exception import DatabaseForUserNotInDatabaseListError
+from trove.common.exception import DatabaseInitialDatabaseDuplicateError
 from trove.common.exception import DatabaseInitialUserDuplicateError
-from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import populate_users
+from trove.extensions.mysql.common import populate_validated_databases
+from trove.tests.unittests import trove_testtools
 
 
-class MySqlCommonTest(TestCase):
+class MySqlCommonTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(MySqlCommonTest, self).setUp()

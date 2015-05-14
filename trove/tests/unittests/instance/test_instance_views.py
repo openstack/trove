@@ -14,15 +14,15 @@
 #    under the License.
 #
 from mock import Mock
-from testtools import TestCase
 from trove.common import cfg
-from trove.instance.views import InstanceView
 from trove.instance.views import InstanceDetailView
+from trove.instance.views import InstanceView
+from trove.tests.unittests import trove_testtools
 
 CONF = cfg.CONF
 
 
-class InstanceViewsTest(TestCase):
+class InstanceViewsTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(InstanceViewsTest, self).setUp()
@@ -38,7 +38,7 @@ class InstanceViewsTest(TestCase):
         CONF.ip_regex = self.orig_ip_regex
 
 
-class InstanceDetailViewTest(TestCase):
+class InstanceDetailViewTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(InstanceDetailViewTest, self).setUp()
