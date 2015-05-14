@@ -483,7 +483,11 @@ class ResizeVolumeTest(trove_testtools.TestCase):
             def __init__(self):
                 self.mount_point = 'var/lib/mysql'
                 self.device_path = '/dev/vdb'
-        taskmanager_models.CONF.get = Mock(return_value=FakeGroup())
+
+        self.taskmanager_models_CONF = patch.object(taskmanager_models, 'CONF')
+        self.mock_conf = self.taskmanager_models_CONF.start()
+        self.mock_conf.get = Mock(return_value=FakeGroup())
+        self.addCleanup(self.taskmanager_models_CONF.stop)
 
     def tearDown(self):
         super(ResizeVolumeTest, self).tearDown()
