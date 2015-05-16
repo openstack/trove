@@ -11,16 +11,17 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import testtools
 from designateclient.v1.domains import Domain
 from designateclient.v1.records import Record
 from trove.dns.designate import driver
 from mock import MagicMock
+from mock import patch
 import base64
 import hashlib
+from trove.tests.unittests import trove_testtools
 
 
-class DesignateObjectConverterTest(testtools.TestCase):
+class DesignateObjectConverterTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(DesignateObjectConverterTest, self).setUp()
@@ -60,7 +61,7 @@ class DesignateObjectConverterTest(testtools.TestCase):
         self.assertEqual(zone, converted_record.dns_zone)
 
 
-class DesignateDriverTest(testtools.TestCase):
+class DesignateDriverTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(DesignateDriverTest, self).setUp()
@@ -79,67 +80,67 @@ class DesignateDriverTest(testtools.TestCase):
                                ttl=1800, priority=2),
                         Record(name='record3', type='A', data='10.0.0.3',
                                ttl=3600, priority=1)]
+        self.create_des_client_patch = patch.object(
+            driver, 'create_designate_client', MagicMock(return_value=None))
+        self.create_des_client_mock = self.create_des_client_patch.start()
+        self.addCleanup(self.create_des_client_patch.stop)
 
     def tearDown(self):
         super(DesignateDriverTest, self).tearDown()
 
     def test_get_entries_by_name(self):
         zone = driver.DesignateDnsZone('123', 'www.example.com')
-        driver.create_designate_client = MagicMock(return_value=None)
-        driver.DesignateDriver._get_records = MagicMock(
-            return_value=self.records)
-        dns_driver = driver.DesignateDriver()
-        entries = dns_driver.get_entries_by_name('record2', zone)
-        self.assertTrue(len(entries) == 1, 'More than one record found')
-        entry = entries[0]
-        self.assertEqual('record2', entry.name)
-        self.assertEqual('CNAME', entry.type)
-        self.assertEqual('10.0.0.2', entry.content)
-        self.assertEqual(1800, entry.ttl)
-        self.assertEqual(2, entry.priority)
-        zone = entry.dns_zone
-        self.assertEqual('123', zone.id)
-        self.assertEqual('www.example.com', zone.name)
+        with patch.object(driver.DesignateDriver, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriver()
+            entries = dns_driver.get_entries_by_name('record2', zone)
+            self.assertTrue(len(entries) == 1, 'More than one record found')
+            entry = entries[0]
+            self.assertEqual('record2', entry.name)
+            self.assertEqual('CNAME', entry.type)
+            self.assertEqual('10.0.0.2', entry.content)
+            self.assertEqual(1800, entry.ttl)
+            self.assertEqual(2, entry.priority)
+            zone = entry.dns_zone
+            self.assertEqual('123', zone.id)
+            self.assertEqual('www.example.com', zone.name)
 
     def test_get_entries_by_name_not_found(self):
         zone = driver.DesignateDnsZone('123', 'www.example.com')
-        driver.create_designate_client = MagicMock(return_value=None)
-        driver.DesignateDriver._get_records = MagicMock(
-            return_value=self.records)
-        dns_driver = driver.DesignateDriver()
-        entries = dns_driver.get_entries_by_name('record_not_found', zone)
-        self.assertTrue(len(entries) == 0, 'Some records were returned')
+        with patch.object(driver.DesignateDriver, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriver()
+            entries = dns_driver.get_entries_by_name('record_not_found', zone)
+            self.assertTrue(len(entries) == 0, 'Some records were returned')
 
     def test_get_entries_by_content(self):
         zone = driver.DesignateDnsZone('123', 'www.example.com')
-        driver.create_designate_client = MagicMock(return_value=None)
-        driver.DesignateDriver._get_records = MagicMock(
-            return_value=self.records)
-        dns_driver = driver.DesignateDriver()
-        entries = dns_driver.get_entries_by_content('10.0.0.1', zone)
-        self.assertTrue(len(entries) == 1, 'More than one record found')
-        entry = entries[0]
-        self.assertEqual('record1', entry.name)
-        self.assertEqual('A', entry.type)
-        self.assertEqual('10.0.0.1', entry.content)
-        self.assertEqual(3600, entry.ttl)
-        self.assertEqual(1, entry.priority)
-        zone = entry.dns_zone
-        self.assertEqual('123', zone.id)
-        self.assertEqual('www.example.com', zone.name)
+        with patch.object(driver.DesignateDriver, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriver()
+            entries = dns_driver.get_entries_by_content('10.0.0.1', zone)
+            self.assertTrue(len(entries) == 1, 'More than one record found')
+            entry = entries[0]
+            self.assertEqual('record1', entry.name)
+            self.assertEqual('A', entry.type)
+            self.assertEqual('10.0.0.1', entry.content)
+            self.assertEqual(3600, entry.ttl)
+            self.assertEqual(1, entry.priority)
+            zone = entry.dns_zone
+            self.assertEqual('123', zone.id)
+            self.assertEqual('www.example.com', zone.name)
 
     def test_get_entries_by_content_not_found(self):
         zone = driver.DesignateDnsZone('123', 'www.example.com')
-        driver.create_designate_client = MagicMock(return_value=None)
-        driver.DesignateDriver._get_records = MagicMock(
-            return_value=self.records)
-        dns_driver = driver.DesignateDriver()
-        entries = dns_driver.get_entries_by_content('127.0.0.1', zone)
-        self.assertTrue(len(entries) == 0, 'Some records were returned')
+        with patch.object(driver.DesignateDriver, '_get_records',
+                          MagicMock(return_value=self.records)):
+            dns_driver = driver.DesignateDriver()
+            entries = dns_driver.get_entries_by_content('127.0.0.1', zone)
+            self.assertTrue(len(entries) == 0, 'Some records were returned')
 
     def test_get_dnz_zones(self):
         client = MagicMock()
-        driver.create_designate_client = MagicMock(return_value=client)
+        self.create_des_client_mock.return_value = client
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones()
@@ -149,7 +150,7 @@ class DesignateDriverTest(testtools.TestCase):
 
     def test_get_dnz_zones_by_name(self):
         client = MagicMock()
-        driver.create_designate_client = MagicMock(return_value=client)
+        self.create_des_client_mock.return_value = client
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones('www.trove.com')
@@ -158,7 +159,7 @@ class DesignateDriverTest(testtools.TestCase):
 
     def test_get_dnz_zones_not_found(self):
         client = MagicMock()
-        driver.create_designate_client = MagicMock(return_value=client)
+        self.create_des_client_mock.return_value = client
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones('www.notfound.com')
@@ -169,7 +170,7 @@ class DesignateDriverTest(testtools.TestCase):
         self.assertEqual(expected.id, actual.id)
 
 
-class DesignateInstanceEntryFactoryTest(testtools.TestCase):
+class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(DesignateInstanceEntryFactoryTest, self).setUp()
