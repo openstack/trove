@@ -37,8 +37,8 @@ class GaleraApp(service.BaseMySqlApp):
                                         keep_alive_connection_cls)
 
     def _test_mysql(self):
-        engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
-                                          echo=True)
+        uri = "mysql+pymysql://root:@localhost:3306"
+        engine = sqlalchemy.create_engine(uri, echo=True)
         try:
             with self.local_sql_client(engine) as client:
                 out = client.execute(text("select 1;"))

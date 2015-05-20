@@ -606,8 +606,9 @@ class BaseMySqlApp(object):
             return ENGINE
 
         pwd = self.get_auth_password()
-        ENGINE = sqlalchemy.create_engine("mysql://%s:%s@localhost:3306" %
-                                          (ADMIN_USER_NAME, pwd.strip()),
+        uri = ("mysql+pymysql://%s:%s@localhost:3306"
+               % (ADMIN_USER_NAME, pwd.strip()))
+        ENGINE = sqlalchemy.create_engine(uri,
                                           pool_recycle=7200,
                                           echo=CONF.sql_query_logging,
                                           listeners=[
@@ -682,8 +683,8 @@ class BaseMySqlApp(object):
         LOG.info(_("Generating admin password."))
         admin_password = utils.generate_random_password()
         clear_expired_password()
-        engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
-                                          echo=True)
+        uri = "mysql+pymysql://root:@localhost:3306"
+        engine = sqlalchemy.create_engine(uri, echo=True)
         with self.local_sql_client(engine) as client:
             self._remove_anonymous_user(client)
             self._create_admin_user(client, admin_password)
@@ -1037,7 +1038,7 @@ class BaseMySqlRootAccess(object):
                 cu = sql_query.CreateUser(user.name, host=user.host)
                 t = text(str(cu))
                 client.execute(t, **cu.keyArgs)
-            except exc.OperationalError as err:
+            except (exc.OperationalError, exc.InternalError) as err:
                 # Ignore, user is already created, just reset the password
                 # TODO(rnirmal): More fine grained error checking later on
                 LOG.debug(err)

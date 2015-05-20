@@ -15,7 +15,7 @@
         notifier_queue_hostname = controller
         ...
         [database]
-        connection = mysql://trove:TROVE_DBPASS@controller/trove
+        connection = mysql+pymysql://trove:TROVE_DBPASS@controller/trove
 
    * Configure the Database service to use the ``RabbitMQ`` message broker
      by setting the following options in each file:
@@ -98,7 +98,7 @@
       # su -s /bin/sh -c "trove-manage db_sync" trove
         ...
         2016-04-06 22:00:17.771 10706 INFO trove.db.sqlalchemy.migration [-]
-        Upgrading mysql://trove:dbaasdb@controller/trove to version latest
+        Upgrading mysql+pymysql://trove:dbaasdb@controller/trove to version latest
 
    .. note::
 

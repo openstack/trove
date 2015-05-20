@@ -14,6 +14,7 @@
 
 from migrate.changeset import UniqueConstraint
 from oslo_log import log as logging
+from sqlalchemy.exc import InternalError
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import MetaData
 
@@ -38,7 +39,7 @@ def upgrade(migrate_engine):
     if uc:
         try:
             uc.drop()
-        except OperationalError as e:
+        except (OperationalError, InternalError) as e:
             logger.info(e)
 
 

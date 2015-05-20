@@ -150,7 +150,7 @@ class TestTroveMigrations(object):
 
     @test
     def test_mysql_migration(self):
-        db_backend = "mysql+mysqldb"
+        db_backend = "mysql+pymysql"
         # Gracefully skip this test if the developer do not have
         # MySQL running. MySQL should always be available on
         # the infrastructure
