@@ -14,11 +14,12 @@
 #    under the License.
 #
 
+from novaclient import exceptions as nova_exceptions
+
 from trove.common import exception
 from trove.common import remote
 from trove.network import base
 from trove.openstack.common import log as logging
-from novaclient import exceptions as nova_exceptions
 
 
 LOG = logging.getLogger(__name__)

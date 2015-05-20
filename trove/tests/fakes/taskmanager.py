@@ -15,13 +15,14 @@
 #
 
 from collections import defaultdict
+
 import eventlet
 
 import trove.openstack.common.log as logging
+from trove import rpc
 from trove.taskmanager.api import API
 from trove.taskmanager.manager import Manager
 import trove.tests.util.usage as usage
-from trove import rpc
 
 LOG = logging.getLogger(__name__)
 MESSAGE_QUEUE = defaultdict(list)

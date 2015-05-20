@@ -12,44 +12,45 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import datetime
+import os
+from tempfile import NamedTemporaryFile
+import uuid
 
-from mock import Mock, MagicMock, patch
-from testtools.matchers import Equals, Is
 from cinderclient import exceptions as cinder_exceptions
-from novaclient import exceptions as nova_exceptions
-import novaclient.v2.servers
-import novaclient.v2.flavors
 import cinderclient.v2.client as cinderclient
+from mock import Mock, MagicMock, patch
+from novaclient import exceptions as nova_exceptions
+import novaclient.v2.flavors
+import novaclient.v2.servers
 from oslo_utils import timeutils
+from swiftclient.client import ClientException
+from testtools.matchers import Equals, Is
+
 import trove.backup.models
-import trove.common.context
-from trove.datastore import models as datastore_models
-import trove.db.models
-from trove.taskmanager import models as taskmanager_models
-import trove.guestagent.api
 from trove.backup import models as backup_models
 from trove.backup import state
-from trove.common import remote
+import trove.common.context
 from trove.common.exception import GuestError
+from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
-from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.instance import ServiceStatuses
+from trove.common import remote
+import trove.common.template as template
+from trove.common import utils
+from trove.datastore import models as datastore_models
+import trove.db.models
 from trove.extensions.mysql import models as mysql_models
+import trove.guestagent.api
 from trove.instance.models import BaseInstance
+from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
-from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
+from trove import rpc
+from trove.taskmanager import models as taskmanager_models
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-from trove.common import utils
-from trove import rpc
-from swiftclient.client import ClientException
-from tempfile import NamedTemporaryFile
-import os
-import trove.common.template as template
-import uuid
 
 INST_ID = 'dbinst-id-1'
 VOLUME_ID = 'volume-id-1'

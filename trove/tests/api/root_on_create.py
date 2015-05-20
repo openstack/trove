@@ -12,20 +12,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from proboscis import before_class
 from proboscis import after_class
-from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+from proboscis import before_class
+from proboscis import test
 
-from trove import tests
 from trove.common import cfg
 from trove.common.utils import poll_until
-from trove.tests import util
-from trove.tests.api.users import TestUsers
-from trove.tests.api.instances import instance_info
+from trove import tests
 from trove.tests.api.databases import TestMysqlAccess
+from trove.tests.api.instances import instance_info
+from trove.tests.api.users import TestUsers
+from trove.tests import util
 
 CONF = cfg.CONF
 GROUP = "dbaas.api.root.oncreate"

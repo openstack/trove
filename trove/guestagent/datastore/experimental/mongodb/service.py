@@ -14,20 +14,21 @@
 #    under the License.
 
 import json
+import os
 import re
 
-import os
 from oslo_utils import netutils
+
 from trove.common import cfg
-from trove.common import utils as utils
 from trove.common import exception
-from trove.common import instance as ds_instance
 from trove.common.exception import ProcessExecutionError
-from trove.guestagent.datastore import service
-from trove.guestagent.datastore.experimental.mongodb import system
-from trove.openstack.common import log as logging
-from trove.guestagent.common import operating_system
 from trove.common.i18n import _
+from trove.common import instance as ds_instance
+from trove.common import utils as utils
+from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.experimental.mongodb import system
+from trove.guestagent.datastore import service
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -323,7 +324,7 @@ class MongoDBApp(object):
         # add replica-set members
         for member in members:
             self.do_mongo('rs.add("' + member + '")')
-         # TODO(ramashri) see if hardcoded values can be removed
+        # TODO(ramashri) see if hardcoded values can be removed
         utils.poll_until(check_rs_status, sleep_time=60, time_out=100)
 
 
@@ -359,7 +360,7 @@ class MongoDbAppStatus(service.BaseDbStatus):
             if self._is_config_server() is True:
                 status_check = (system.CMD_STATUS %
                                 (netutils.get_my_ipv4() +
-                                ' --port 27019'))
+                                 ' --port 27019'))
             else:
                 status_check = (system.CMD_STATUS %
                                 netutils.get_my_ipv4())

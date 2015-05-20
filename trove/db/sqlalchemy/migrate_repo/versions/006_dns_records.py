@@ -16,10 +16,10 @@
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
-from trove.db.sqlalchemy.migrate_repo.schema import Table
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import String
+from trove.db.sqlalchemy.migrate_repo.schema import Table
 
 
 meta = MetaData()

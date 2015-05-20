@@ -12,16 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os.path
 import re
 import traceback
-import os.path
 
-from heatclient import exc as heat_exceptions
 from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
+from heatclient import exc as heat_exceptions
 from novaclient import exceptions as nova_exceptions
-
 from oslo_utils import timeutils
+from swiftclient.client import ClientException
 
 from trove.backup import models as bkup_models
 from trove.backup.models import Backup
@@ -32,9 +32,6 @@ from trove.cluster.models import DBCluster
 from trove.cluster import tasks
 from trove.common import cfg
 from trove.common import exception
-from trove.common import template
-from trove.common import utils
-from trove.common.utils import try_recover
 from trove.common.exception import BackupCreationError
 from trove.common.exception import GuestError
 from trove.common.exception import GuestTimeout
@@ -43,30 +40,32 @@ from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.exception import VolumeCreationFailure
-from trove.common.instance import ServiceStatuses
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
-from trove.common.strategies.cluster import strategy
+from trove.common.instance import ServiceStatuses
+import trove.common.remote as remote
+from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
 from trove.common.remote import create_heat_client
-from trove.common.remote import create_cinder_client
-from trove.extensions.mysql import models as mysql_models
+from trove.common.strategies.cluster import strategy
+from trove.common import template
+from trove.common import utils
+from trove.common.utils import try_recover
 from trove.configuration.models import Configuration
-from trove.extensions.security_group.models import SecurityGroup
-from trove.extensions.security_group.models import SecurityGroupRule
+from trove.extensions.mysql import models as mysql_models
 from trove.extensions.security_group.models import (
     SecurityGroupInstanceAssociation)
-from swiftclient.client import ClientException
+from trove.extensions.security_group.models import SecurityGroup
+from trove.extensions.security_group.models import SecurityGroupRule
 from trove.instance import models as inst_models
 from trove.instance.models import BuiltInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import FreshInstance
-from trove.instance.tasks import InstanceTasks
-from trove.instance.models import InstanceStatus
 from trove.instance.models import InstanceServiceStatus
+from trove.instance.models import InstanceStatus
+from trove.instance.tasks import InstanceTasks
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 from trove.quota.quota import run_with_quotas
-import trove.common.remote as remote
 from trove import rpc
 
 LOG = logging.getLogger(__name__)
@@ -1410,7 +1409,7 @@ class BackupTasks(object):
 
     @classmethod
     def delete_backup(cls, context, backup_id):
-        #delete backup from swift
+        """Delete backup from swift."""
         LOG.info(_("Deleting backup %s.") % backup_id)
         backup = bkup_models.Backup.get_by_id(context, backup_id)
         try:
@@ -1452,37 +1451,39 @@ class ResizeVolumeAction(object):
         return self.instance.device_path
 
     def _fail(self, orig_func):
-        LOG.exception(_("%(func)s encountered an error when attempting to "
-                      "resize the volume for instance %(id)s. Setting service "
-                      "status to failed.") % {'func': orig_func.__name__,
-                      'id': self.instance.id})
+        LOG.exception(_("%(func)s encountered an error when "
+                        "attempting to resize the volume for "
+                        "instance %(id)s. Setting service "
+                        "status to failed.") % {'func': orig_func.__name__,
+                                                'id': self.instance.id})
         service = InstanceServiceStatus.find_by(instance_id=self.instance.id)
         service.set_status(ServiceStatuses.FAILED)
         service.save()
 
     def _recover_restart(self, orig_func):
         LOG.exception(_("%(func)s encountered an error when attempting to "
-                      "resize the volume for instance %(id)s. Trying to "
-                      "recover by restarting the guest.") % {
-                      'func': orig_func.__name__,
-                      'id': self.instance.id})
+                        "resize the volume for instance %(id)s. Trying to "
+                        "recover by restarting the "
+                        "guest.") % {'func': orig_func.__name__,
+                                     'id': self.instance.id})
         self.instance.restart()
 
     def _recover_mount_restart(self, orig_func):
         LOG.exception(_("%(func)s encountered an error when attempting to "
-                      "resize the volume for instance %(id)s. Trying to "
-                      "recover by mounting the volume and then restarting the "
-                      "guest.") % {'func': orig_func.__name__,
-                      'id': self.instance.id})
+                        "resize the volume for instance %(id)s. Trying to "
+                        "recover by mounting the volume and then restarting "
+                        "the guest.") % {'func': orig_func.__name__,
+                                         'id': self.instance.id})
         self._mount_volume()
         self.instance.restart()
 
     def _recover_full(self, orig_func):
         LOG.exception(_("%(func)s encountered an error when attempting to "
-                      "resize the volume for instance %(id)s. Trying to "
-                      "recover by attaching and mounting the volume and then "
-                      "restarting the guest.") % {'func': orig_func.__name__,
-                      'id': self.instance.id})
+                        "resize the volume for instance %(id)s. Trying to "
+                        "recover by attaching and"
+                        " mounting the volume and then restarting the "
+                        "guest.") % {'func': orig_func.__name__,
+                                     'id': self.instance.id})
         self._attach_volume()
         self._mount_volume()
         self.instance.restart()
@@ -1501,7 +1502,7 @@ class ResizeVolumeAction(object):
                                            mount_point=mount_point)
         LOG.debug("Successfully unmounted the volume %(vol_id)s for "
                   "instance %(id)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id})
+                                       'id': self.instance.id})
 
     @try_recover
     def _detach_volume(self):
@@ -1528,7 +1529,7 @@ class ResizeVolumeAction(object):
         device_path = self.get_device_path()
         LOG.debug("Attach volume %(vol_id)s to instance %(id)s at "
                   "%(dev)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id, 'dev': device_path})
+                               'id': self.instance.id, 'dev': device_path})
         self.instance.nova_client.volumes.create_server_volume(
             self.instance.server.id, self.instance.volume_id, device_path)
 
@@ -1542,7 +1543,7 @@ class ResizeVolumeAction(object):
 
         LOG.debug("Successfully attached volume %(vol_id)s to instance "
                   "%(id)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id})
+                              'id': self.instance.id})
 
     @try_recover
     def _resize_fs(self):
@@ -1554,7 +1555,7 @@ class ResizeVolumeAction(object):
                                       mount_point=mount_point)
         LOG.debug("Successfully resized volume %(vol_id)s filesystem for "
                   "instance %(id)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id})
+                                       'id': self.instance.id})
 
     @try_recover
     def _mount_volume(self):
@@ -1566,18 +1567,19 @@ class ResizeVolumeAction(object):
                                          mount_point=mount_point)
         LOG.debug("Successfully mounted the volume %(vol_id)s on instance "
                   "%(id)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id})
+                              'id': self.instance.id})
 
     @try_recover
     def _extend(self):
         LOG.debug("Extending volume %(vol_id)s for instance %(id)s to "
                   "size %(size)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id, 'size': self.new_size})
+                                     'id': self.instance.id,
+                                     'size': self.new_size})
         self.instance.volume_client.volumes.extend(self.instance.volume_id,
                                                    self.new_size)
         LOG.debug("Successfully extended the volume %(vol_id)s for instance "
                   "%(id)s" % {'vol_id': self.instance.volume_id,
-                  'id': self.instance.id})
+                              'id': self.instance.id})
 
     def _verify_extend(self):
         try:
@@ -1638,10 +1640,10 @@ class ResizeVolumeAction(object):
         LOG.debug("%(gt)s: Resizing instance %(id)s volume for server "
                   "%(server_id)s from %(old_volume_size)s to "
                   "%(new_size)r GB" % {'gt': greenthread.getcurrent(),
-                  'id': self.instance.id,
-                  'server_id': self.instance.server.id,
-                  'old_volume_size': self.old_size,
-                  'new_size': self.new_size})
+                                       'id': self.instance.id,
+                                       'server_id': self.instance.server.id,
+                                       'old_volume_size': self.old_size,
+                                       'new_size': self.new_size})
 
         if self.instance.server.status == InstanceStatus.ACTIVE:
             self._resize_active_volume()

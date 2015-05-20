@@ -13,18 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from datetime import datetime
+import json
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common import utils
 from trove.common.exception import ModelNotFoundError
+from trove.common.i18n import _
+from trove.common import utils
 from trove.datastore import models as dstore_models
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 from trove.taskmanager import api as task_api
 
 

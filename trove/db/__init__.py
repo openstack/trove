@@ -15,8 +15,8 @@
 
 import optparse
 
-from trove.common import utils
 from trove.common import cfg
+from trove.common import utils
 
 CONF = cfg.CONF
 

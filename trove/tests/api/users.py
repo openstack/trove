@@ -13,26 +13,24 @@
 #    under the License.
 
 import time
-
-from troveclient.compat import exceptions
+import urllib
 
 from proboscis import after_class
-from proboscis import before_class
-from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
+from proboscis import before_class
+from proboscis import test
+from troveclient.compat import exceptions
 
 from trove import tests
 from trove.tests.api.databases import TestDatabases
+from trove.tests.api.databases import TestMysqlAccess
 from trove.tests.api.instances import instance_info
 from trove.tests import util
 from trove.tests.util import test_config
-from trove.tests.api.databases import TestMysqlAccess
-
-import urllib
 
 
 GROUP = "dbaas.api.users"
@@ -106,7 +104,7 @@ class TestUsers(object):
 
     @test(depends_on=[test_create_users])
     def test_create_users_list(self):
-        #tests for users that should be listed
+        # tests for users that should be listed
         users = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
         found = False
@@ -149,7 +147,7 @@ class TestUsers(object):
 
     @test(depends_on=[test_create_users_list])
     def test_create_users_list_system(self):
-        #tests for users that should not be listed
+        # tests for users that should not be listed
         users = self.dbaas.users.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
         for user in self.system_users:
@@ -205,7 +203,7 @@ class TestUsers(object):
 
     @test()
     def test_updateduser_newname_host_unique(self):
-        #The updated_username@hostname should not exist already
+        # The updated_username@hostname should not exist already
         users = []
         old_name = "testuser1"
         hostname = "192.168.0.1"
@@ -386,7 +384,8 @@ class TestUsers(object):
         assert_equal(400, self.dbaas.last_http_code)
 
     @test(enabled=False)
-    #TODO(hub_cap): Make this test work once python-routes is updated, if ever.
+    # TODO(hub_cap): Make this test work once python-routes is updated,
+    # if ever.
     def test_delete_user_with_period_in_name(self):
         """Attempt to create/destroy a user with a period in its name."""
         users = []

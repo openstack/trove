@@ -15,19 +15,21 @@
 
 import os
 import tempfile
-import yaml
+
 from oslo_utils import netutils
+import yaml
+
 from trove.common import cfg
-from trove.common import utils
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.cassandra import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)
@@ -138,7 +140,7 @@ class CassandraApp(object):
             os.write(conf_fd, config_contents)
             operating_system.move(conf_path, system.CASSANDRA_CONF,
                                   as_root=True)
-            #TODO(denis_makogon): figure out the dynamic way to discover
+            # TODO(denis_makogon): figure out the dynamic way to discover
             # configs owner since it can cause errors if there is
             # no cassandra user in operating system
             operating_system.chown(system.CASSANDRA_CONF,

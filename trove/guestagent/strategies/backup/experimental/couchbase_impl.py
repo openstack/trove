@@ -17,13 +17,13 @@
 import json
 
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import utils
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import service
 from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.strategies.backup import base
-from trove.common.i18n import _
 from trove.openstack.common import log as logging
-from trove.guestagent.common import operating_system
 
 
 LOG = logging.getLogger(__name__)

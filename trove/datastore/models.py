@@ -19,8 +19,8 @@
 from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
-from trove.db import models as dbmodels
 from trove.db import get_db_api
+from trove.db import models as dbmodels
 from trove.openstack.common import log as logging
 
 
@@ -412,8 +412,8 @@ class DatastoreVersion(object):
             self._datastore_name = Datastore.load(self.datastore_id).name
         return self._datastore_name
 
-    #TODO(tim.simpson): This would be less confusing if it was called "version"
-    #                   and datastore_name was called "name".
+    # TODO(tim.simpson): This would be less confusing if it was called
+    #                    "version" and datastore_name was called "name".
     @property
     def name(self):
         return self.db_info.name
@@ -475,15 +475,15 @@ def get_datastore_version(type=None, version=None, return_inactive=False):
     datastore = Datastore.load(datastore)
     version = version or datastore.default_version_id
     if not version:
-        raise exception.DatastoreDefaultVersionNotFound(datastore=
-                                                        datastore.name)
+        raise exception.DatastoreDefaultVersionNotFound(
+            datastore=datastore.name)
     datastore_version = DatastoreVersion.load(datastore, version)
     if datastore_version.datastore_id != datastore.id:
         raise exception.DatastoreNoVersion(datastore=datastore.name,
                                            version=datastore_version.name)
     if not datastore_version.active and not return_inactive:
-        raise exception.DatastoreVersionInactive(version=
-                                                 datastore_version.name)
+        raise exception.DatastoreVersionInactive(
+            version=datastore_version.name)
     return (datastore, datastore_version)
 
 

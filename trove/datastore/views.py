@@ -16,8 +16,8 @@
 #    under the License.
 #
 
-from trove.common import wsgi
 from trove.common.views import create_links
+from trove.common import wsgi
 
 
 class DatastoreView(object):

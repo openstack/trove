@@ -16,17 +16,18 @@
 #    under the License.
 #
 
-from proboscis import test
-from proboscis import asserts
 from proboscis import after_class
-from proboscis import before_class
+from proboscis import asserts
 from proboscis.asserts import Check
-from trove.tests.util import create_dbaas_client
+from proboscis import before_class
+from proboscis import test
+from troveclient.compat import exceptions
+
+from trove.tests.config import CONFIG
 from trove.tests.util import create_client
+from trove.tests.util import create_dbaas_client
 from trove.tests.util import get_standby_instance_flavor
 from trove.tests.util.users import Requirements
-from trove.tests.config import CONFIG
-from troveclient.compat import exceptions
 
 
 class QuotasBase(object):
@@ -169,5 +170,5 @@ class ChangeVolumesQuota(QuotasBase):
                                + 1})
         asserts.assert_equal(413, self.client1.last_http_code)
 
-    #create an instance when I set the limit back to
-    #multiple updates to the quota and it should do what you expect
+    # create an instance when I set the limit back to
+    # multiple updates to the quota and it should do what you expect

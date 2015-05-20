@@ -14,17 +14,18 @@
 
 from mock import Mock, MagicMock, patch
 from testtools import skipIf
-from trove.quota.quota import DbQuotaDriver
-from trove.quota.models import Resource
+
+from trove.common import cfg
+from trove.common import exception
+from trove.db.models import DatabaseModelBase
+from trove.extensions.mgmt.quota.service import QuotaController
 from trove.quota.models import Quota
 from trove.quota.models import QuotaUsage
 from trove.quota.models import Reservation
-from trove.db.models import DatabaseModelBase
-from trove.extensions.mgmt.quota.service import QuotaController
-from trove.common import exception
-from trove.common import cfg
-from trove.quota.quota import run_with_quotas
+from trove.quota.models import Resource
+from trove.quota.quota import DbQuotaDriver
 from trove.quota.quota import QUOTAS
+from trove.quota.quota import run_with_quotas
 from trove.tests.unittests import trove_testtools
 """
 Unit tests for the classes and functions in DbQuotaDriver.py.

@@ -16,17 +16,16 @@
 from sets import Set
 
 import oslo_messaging as messaging
-from trove.common.context import TroveContext
-
 from oslo_utils import importutils
 
 from trove.backup.models import Backup
 import trove.common.cfg as cfg
-from trove.common.i18n import _
-import trove.common.rpc.version as rpc_version
+from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common.exception import ReplicationSlaveAttachError
 from trove.common.exception import TroveError
+from trove.common.i18n import _
+import trove.common.rpc.version as rpc_version
 from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.instance.tasks import InstanceTasks

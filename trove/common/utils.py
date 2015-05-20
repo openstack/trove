@@ -16,20 +16,19 @@
 
 import datetime
 import inspect
-import jinja2
-import time
-import six.moves.urllib.parse as urlparse
-import uuid
 import os
 import shutil
+import time
+import uuid
 
 from eventlet.timeout import Timeout
-from passlib import utils as passlib_utils
-
-from oslo_utils import importutils
-from oslo_utils import timeutils
-from oslo_utils import strutils
+import jinja2
 from oslo_concurrency import processutils
+from oslo_utils import importutils
+from oslo_utils import strutils
+from oslo_utils import timeutils
+from passlib import utils as passlib_utils
+import six.moves.urllib.parse as urlparse
 
 from trove.common import cfg
 from trove.common import exception

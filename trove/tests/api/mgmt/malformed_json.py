@@ -17,18 +17,19 @@
 #
 
 from collections import deque
-from proboscis import test
-from proboscis import asserts
+
 from proboscis import after_class
+from proboscis import asserts
 from proboscis import before_class
-from trove.tests.config import CONFIG
+from proboscis import test
+
+from trove.common.utils import poll_until
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
-
-from trove.tests.util.users import Requirements
+from trove.tests.config import CONFIG
 from trove.tests.util import assert_contains
 from trove.tests.util import create_dbaas_client
-from trove.common.utils import poll_until
+from trove.tests.util.users import Requirements
 
 
 @test(groups=["dbaas.api.mgmt.malformed_json"])

@@ -15,8 +15,8 @@
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 
-from trove.db.sqlalchemy.migrate_repo.schema import Table
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
+from trove.db.sqlalchemy.migrate_repo.schema import Table
 
 
 def upgrade(migrate_engine):

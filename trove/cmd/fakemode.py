@@ -12,8 +12,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from oslo_config import cfg as openstack_cfg
 from oslo_concurrency import processutils
+from oslo_config import cfg as openstack_cfg
+
 from trove.cmd.common import with_initialize
 
 

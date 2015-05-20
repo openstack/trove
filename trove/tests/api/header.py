@@ -16,11 +16,12 @@
 #    under the License.
 #
 
-from proboscis import test
-from proboscis import SkipTest
 from functools import wraps
 
+from proboscis import SkipTest
+from proboscis import test
 from troveclient.compat.client import TroveHTTPClient
+
 from trove.tests.api.versions import Versions
 
 

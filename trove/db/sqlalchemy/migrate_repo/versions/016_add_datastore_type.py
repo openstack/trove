@@ -61,7 +61,7 @@ def upgrade(migrate_engine):
     instances.drop_column('service_type')
     # Table 'service_images' is deprecated since this version.
     # Leave it for few releases.
-    #drop_tables([service_images])
+    # drop_tables([service_images])
 
 
 def downgrade(migrate_engine):

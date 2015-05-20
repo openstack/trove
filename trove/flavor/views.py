@@ -14,8 +14,8 @@
 #    under the License.
 
 
-from trove.common.views import create_links
 from trove.common import cfg
+from trove.common.views import create_links
 
 CONF = cfg.CONF
 

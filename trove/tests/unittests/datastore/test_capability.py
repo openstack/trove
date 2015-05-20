@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.tests.unittests.datastore.base import TestDatastoreBase
-from trove.datastore.models import CapabilityOverride
-from trove.datastore.models import Capability
 from trove.common.exception import CapabilityNotFound
+from trove.datastore.models import Capability
+from trove.datastore.models import CapabilityOverride
+from trove.tests.unittests.datastore.base import TestDatastoreBase
 
 
 class TestCapabilities(TestDatastoreBase):

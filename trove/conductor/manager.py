@@ -17,6 +17,7 @@ import oslo_messaging as messaging
 from trove.backup import models as bkup_models
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common.instance import ServiceStatus
 from trove.common.rpc import version as rpc_version
 from trove.conductor.models import LastSeen
@@ -24,7 +25,6 @@ from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
-from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

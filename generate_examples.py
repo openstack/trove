@@ -15,10 +15,11 @@
 #    under the License.
 #
 
-import run_tests
 import argparse
 import os
 import sys
+
+import run_tests
 
 
 def import_tests():

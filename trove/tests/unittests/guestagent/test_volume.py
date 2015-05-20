@@ -12,12 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import os
-import testtools
-import pexpect
+
 from mock import Mock, MagicMock, patch, mock_open
-from trove.guestagent import volume
-from trove.common import utils
+import pexpect
+import testtools
+
 from trove.common.exception import GuestError, ProcessExecutionError
+from trove.common import utils
+from trove.guestagent import volume
 
 
 def _setUp_fake_spawn(return_val=0):

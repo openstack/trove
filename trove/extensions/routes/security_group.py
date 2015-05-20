@@ -14,11 +14,11 @@
 #    under the License.
 #
 
-from trove.openstack.common import log as logging
 
-from trove.common import extensions
 from trove.common import cfg
+from trove.common import extensions
 from trove.extensions.security_group import service
+from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

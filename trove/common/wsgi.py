@@ -14,29 +14,29 @@
 #    under the License.
 """Wsgi helper utilities for trove"""
 
-import eventlet.wsgi
 import math
-import jsonschema
-import paste.urlmap
 import re
 import time
 import traceback
 import uuid
+
+import eventlet.wsgi
+import jsonschema
+from oslo_serialization import jsonutils
+import paste.urlmap
 import webob
 import webob.dec
 import webob.exc
 
+from trove.common import base_wsgi
+from trove.common import cfg
 from trove.common import context as rd_context
 from trove.common import exception
-from trove.common import utils
 from trove.common.i18n import _
-from oslo_serialization import jsonutils
-
+from trove.common import utils
+from trove.openstack.common import log as logging
 from trove.openstack.common import pastedeploy
 from trove.openstack.common import service
-from trove.common import base_wsgi
-from trove.openstack.common import log as logging
-from trove.common import cfg
 
 CONTEXT_KEY = 'trove.context'
 Router = base_wsgi.Router

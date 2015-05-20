@@ -15,8 +15,9 @@
 
 """Various conveniences used for migration scripts."""
 
-from trove.openstack.common import log as logging
 import sqlalchemy.types
+
+from trove.openstack.common import log as logging
 
 
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')

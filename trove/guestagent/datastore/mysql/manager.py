@@ -17,18 +17,19 @@
 #
 
 import os
+
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
-from trove.guestagent import dbaas
 from trove.guestagent import backup
-from trove.guestagent import volume
-from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlApp
+from trove.guestagent.datastore.mysql.service import MySqlAppStatus
+from trove.guestagent import dbaas
 from trove.guestagent.strategies.replication import get_replication_strategy
+from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 from trove.openstack.common import periodic_task
 
 
@@ -122,16 +123,16 @@ class Manager(periodic_task.PeriodicTasks):
         app = MySqlApp(MySqlAppStatus.get())
         app.install_if_needed(packages)
         if device_path:
-            #stop and do not update database
+            # stop and do not update database
             app.stop_db()
             device = volume.VolumeDevice(device_path)
             # unmount if device is already mounted
             device.unmount_device(device_path)
             device.format()
             if os.path.exists(mount_point):
-                #rsync exiting data
+                # rsync exiting data
                 device.migrate_data(mount_point)
-            #mount the volume
+            # mount the volume
             device.mount(mount_point)
             LOG.debug("Mounted the volume.")
             app.start_mysql()

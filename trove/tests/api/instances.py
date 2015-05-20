@@ -13,11 +13,45 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
 import os
 import re
 import time
+from time import sleep
 import unittest
 
+
+from proboscis import after_class
+from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_false
+from proboscis.asserts import assert_is_not_none
+from proboscis.asserts import assert_not_equal
+from proboscis.asserts import assert_raises
+from proboscis.asserts import assert_true
+from proboscis.asserts import fail
+from proboscis import before_class
+from proboscis.decorators import time_out
+from proboscis import SkipTest
+from proboscis import test
+from troveclient.compat import exceptions
+
+from trove.common import exception as rd_exceptions
+from trove.common.utils import poll_until
+from trove.datastore import models as datastore_models
+from trove import tests
+from trove.tests.config import CONFIG
+from trove.tests.util.check import AttrCheck
+from trove.tests.util.check import TypeCheck
+from trove.tests.util import create_dbaas_client
+from trove.tests.util import create_nova_client
+from trove.tests.util import dns_checker
+from trove.tests.util import event_simulator
+from trove.tests.util import iso_time
+from trove.tests.util import test_config
+from trove.tests.util.usage import create_usage_verifier
+from trove.tests.util.users import Requirements
+
+FAKE = test_config.values['fake_mode']
 
 GROUP = "dbaas.guest"
 GROUP_NEUTRON = "dbaas.neutron"
@@ -35,42 +69,6 @@ GROUP_QUOTAS = "dbaas.quotas"
 
 TIMEOUT_INSTANCE_CREATE = 60 * 32
 TIMEOUT_INSTANCE_DELETE = 120
-
-from datetime import datetime
-from time import sleep
-
-from trove.datastore import models as datastore_models
-from trove.common import exception as rd_exceptions
-from troveclient.compat import exceptions
-
-from proboscis.decorators import time_out
-from proboscis import before_class
-from proboscis import after_class
-from proboscis import test
-from proboscis import SkipTest
-from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import assert_true
-from proboscis.asserts import fail
-
-from trove import tests
-from trove.tests.config import CONFIG
-from trove.tests.util import create_dbaas_client
-from trove.tests.util import create_nova_client
-from trove.tests.util.usage import create_usage_verifier
-from trove.tests.util import dns_checker
-from trove.tests.util import iso_time
-from trove.tests.util.users import Requirements
-from trove.common.utils import poll_until
-from trove.tests.util.check import AttrCheck
-from trove.tests.util.check import TypeCheck
-from trove.tests.util import test_config
-from trove.tests.util import event_simulator
-
-FAKE = test_config.values['fake_mode']
 
 
 class InstanceTestInfo(object):
@@ -1365,7 +1363,7 @@ class DeleteInstance(object):
         except Exception as ex:
             fail("Failure: %s" % str(ex))
 
-    #TODO(tim-simpson): make sure that the actual instance, volume,
+    # TODO(tim-simpson): make sure that the actual instance, volume,
     # guest status, and DNS entries are deleted.
 
 
@@ -1451,7 +1449,7 @@ class VerifyInstanceMgmtInfo(object):
             'name': ir.name,
             'account_id': info.user.auth_user,
             # TODO(hub-cap): fix this since its a flavor object now
-            #'flavorRef': info.dbaas_flavor_href,
+            # 'flavorRef': info.dbaas_flavor_href,
             'databases': [
                 {
                     'name': 'db2',

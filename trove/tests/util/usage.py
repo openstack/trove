@@ -15,11 +15,12 @@
 
 from collections import defaultdict
 
-import trove.openstack.common.log as logging
-from trove.common import utils
-from trove.tests.config import CONFIG
 import proboscis.asserts as asserts
 from proboscis.dependencies import SkipTest
+
+from trove.common import utils
+import trove.openstack.common.log as logging
+from trove.tests.config import CONFIG
 
 LOG = logging.getLogger(__name__)
 MESSAGE_QUEUE = defaultdict(list)

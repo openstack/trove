@@ -13,27 +13,26 @@
 #    under the License.
 
 from mox3 import mox
-import trove.common.instance as tr_instance
-from trove.backup import models as backup_models
-from trove.backup import state
-from trove.common.context import TroveContext
-from trove.instance.tasks import InstanceTasks
-from trove.instance import models as imodels
-from trove.instance.models import DBInstance
-from trove.extensions.mgmt.instances.models import MgmtInstance
-from trove.tests.util import create_dbaas_client
-from trove.tests.util import test_config
-from trove.tests.util.users import Requirements
-
 from novaclient.v2.servers import Server
-
-from proboscis import test
-from proboscis import before_class
 from proboscis import after_class
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
+from proboscis import before_class
+from proboscis import test
+
+from trove.backup import models as backup_models
+from trove.backup import state
+from trove.common.context import TroveContext
 from trove.common import exception
+import trove.common.instance as tr_instance
+from trove.extensions.mgmt.instances.models import MgmtInstance
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
+from trove.instance import models as imodels
+from trove.instance.models import DBInstance
+from trove.instance.tasks import InstanceTasks
+from trove.tests.util import create_dbaas_client
+from trove.tests.util import test_config
+from trove.tests.util.users import Requirements
 
 GROUP = "dbaas.api.mgmt.action.reset-task-status"
 

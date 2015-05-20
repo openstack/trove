@@ -21,8 +21,8 @@ class InstanceTask(object):
     """
     Stores the different kind of tasks being performed by an instance.
     """
-    #TODO(tim.simpson): Figure out someway to migrate this to the TaskManager
-    #                   once that revs up.
+    # TODO(tim.simpson): Figure out someway to migrate this to the TaskManager
+    #                    once that revs up.
     _lookup = {}
 
     def __init__(self, code, action, db_text, is_error=False):

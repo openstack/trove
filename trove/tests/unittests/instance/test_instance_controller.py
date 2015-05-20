@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import jsonschema
 from mock import Mock
 from testtools.matchers import Is, Equals
 from testtools.testcase import skip
+
 from trove.common import apischema
 from trove.instance.service import InstanceController
 from trove.tests.unittests import trove_testtools
-import jsonschema
 
 
 class TestInstanceController(trove_testtools.TestCase):

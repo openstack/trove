@@ -14,24 +14,25 @@
 #    under the License.
 
 import json
-import pexpect
 import os
 import stat
 import subprocess
 import tempfile
 
 from oslo_utils import netutils
+import pexpect
+
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common import utils as utils
-from trove.guestagent import pkg
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore import service
 from trove.guestagent.datastore.experimental.couchbase import system
+from trove.guestagent.datastore import service
 from trove.guestagent.db import models
+from trove.guestagent import pkg
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)

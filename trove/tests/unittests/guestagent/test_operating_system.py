@@ -14,14 +14,16 @@
 #    under the License.
 
 import itertools
-from mock import call, patch
 import os
-from oslo_concurrency.processutils import UnknownArgumentError
 import stat
+
+from mock import call, patch
+from oslo_concurrency.processutils import UnknownArgumentError
 import testtools
 from testtools import ExpectedException
-from trove.common import utils
+
 from trove.common import exception
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 

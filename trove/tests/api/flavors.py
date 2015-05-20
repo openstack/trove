@@ -18,19 +18,18 @@ import os
 from nose.tools import assert_equal
 from nose.tools import assert_false
 from nose.tools import assert_true
+from proboscis.asserts import assert_raises
+from proboscis import before_class
+from proboscis import test
 from troveclient.compat import exceptions
 from troveclient.v1.flavors import Flavor
 
-from proboscis import before_class
-from proboscis import test
-from proboscis.asserts import assert_raises
-
 from trove import tests
+from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import create_nova_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
-from trove.tests.util.check import AttrCheck
 
 GROUP = "dbaas.api.flavors"
 
@@ -127,7 +126,7 @@ class Flavors(object):
         print(os_flavors)
         print("DBaaS Flavors:")
         print(dbaas_flavors)
-        #Length of both flavors list should be identical.
+        # Length of both flavors list should be identical.
         assert_equal(len(os_flavors), len(dbaas_flavors))
         for os_flavor in os_flavors:
             found_index = None

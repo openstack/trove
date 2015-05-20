@@ -13,8 +13,8 @@
 #    under the License.
 from eventlet import Timeout
 import mock
-from oslo_messaging.rpc.client import RemoteError
 import oslo_messaging as messaging
+from oslo_messaging.rpc.client import RemoteError
 from testtools.matchers import Is
 
 import trove.common.context as context
@@ -41,7 +41,7 @@ def _mock_call_pwd_change(cmd, version=None, users=None):
 
 def _mock_call(cmd, timeout, version=None, username=None, hostname=None,
                database=None, databases=None):
-    #To check get_user, list_access, grant_access, revoke_access in cmd.
+    # To check get_user, list_access, grant_access, revoke_access in cmd.
     if cmd in ('get_user', 'list_access', 'grant_access', 'revoke_access'):
         return True
     else:

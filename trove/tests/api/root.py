@@ -13,23 +13,22 @@
 #    under the License.
 
 
-from troveclient.compat import exceptions
-
 from nose.plugins.skip import SkipTest
-from proboscis import before_class
-from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+from proboscis import before_class
+from proboscis import test
+from troveclient.compat import exceptions
 
 from trove import tests
-from trove.tests.api.users import TestUsers
+from trove.tests.api.databases import TestMysqlAccess
 from trove.tests.api.instances import instance_info
+from trove.tests.api.users import TestUsers
 from trove.tests import util
 from trove.tests.util import test_config
-from trove.tests.api.databases import TestMysqlAccess
 
 
 GROUP = "dbaas.api.root"

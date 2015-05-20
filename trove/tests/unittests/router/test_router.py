@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from routes import Mapper
+
 from trove.common.wsgi import Router, Fault
 from trove.tests.unittests import trove_testtools
-from routes import Mapper
 
 
 class FakeRequst(object):

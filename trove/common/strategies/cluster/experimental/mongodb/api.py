@@ -20,6 +20,7 @@ from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.common import utils
@@ -27,7 +28,6 @@ from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
-from trove.common.i18n import _
 from trove.openstack.common import log as logging
 from trove.quota.quota import check_quotas
 from trove.taskmanager import api as task_api

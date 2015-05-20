@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
-import time
 import re
+import time
 
 import eventlet
+
 from trove.common import exception as rd_exception
 from trove.common import instance as rd_instance
+from trove.openstack.common import log as logging
 from trove.tests.util import unquote_user_host
 
 DB = {}
@@ -208,9 +209,9 @@ class FakeGuest(object):
                 mount_point=None, backup_info=None, config_contents=None,
                 root_password=None, overrides=None, cluster_config=None,
                 snapshot=None):
+        from trove.guestagent.models import AgentHeartBeat
         from trove.instance.models import DBInstance
         from trove.instance.models import InstanceServiceStatus
-        from trove.guestagent.models import AgentHeartBeat
         LOG.debug("users... %s" % users)
         LOG.debug("databases... %s" % databases)
         instance_name = DBInstance.find_by(id=self.id).name

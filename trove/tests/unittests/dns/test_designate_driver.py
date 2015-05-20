@@ -11,13 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from designateclient.v1.domains import Domain
-from designateclient.v1.records import Record
-from trove.dns.designate import driver
-from mock import MagicMock
-from mock import patch
 import base64
 import hashlib
+
+from designateclient.v1.domains import Domain
+from designateclient.v1.records import Record
+from mock import MagicMock
+from mock import patch
+
+from trove.dns.designate import driver
 from trove.tests.unittests import trove_testtools
 
 

@@ -18,9 +18,9 @@
 from oslo_config import cfg
 from oslo_utils import importutils
 
-from trove.openstack.common import log as logging
-from trove.common.i18n import _
 from trove.common import exception
+from trove.common.i18n import _
+from trove.openstack.common import log as logging
 from trove.quota.models import Quota
 from trove.quota.models import QuotaUsage
 from trove.quota.models import Reservation
@@ -137,8 +137,8 @@ class DbQuotaDriver(object):
         unregistered_resources = [delta for delta in deltas
                                   if delta not in resources]
         if unregistered_resources:
-            raise exception.QuotaResourceUnknown(unknown=
-                                                 unregistered_resources)
+            raise exception.QuotaResourceUnknown(
+                unknown=unregistered_resources)
 
         quotas = self.get_all_quotas_by_tenant(tenant_id, deltas.keys())
         quota_usages = self.get_all_quota_usages_by_tenant(tenant_id,
@@ -146,9 +146,9 @@ class DbQuotaDriver(object):
 
         overs = [resource for resource in deltas
                  if (int(deltas[resource]) > 0 and
-                    (quota_usages[resource].in_use +
-                     quota_usages[resource].reserved +
-                     int(deltas[resource])) > quotas[resource].hard_limit)]
+                     (quota_usages[resource].in_use +
+                      quota_usages[resource].reserved +
+                      int(deltas[resource])) > quotas[resource].hard_limit)]
 
         if overs:
             raise exception.QuotaExceeded(overs=sorted(overs))

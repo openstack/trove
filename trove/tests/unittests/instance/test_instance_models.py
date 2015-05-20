@@ -11,7 +11,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import uuid
+
 from mock import Mock, patch
+
 from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import exception
@@ -19,16 +22,15 @@ from trove.common.instance import ServiceStatuses
 from trove.datastore import models as datastore_models
 from trove.instance import models
 from trove.instance.models import DBInstance
+from trove.instance.models import filter_ips
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
-from trove.instance.models import filter_ips
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import api as task_api
 from trove.tests.fakes import nova
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-import uuid
 
 CONF = cfg.CONF
 
@@ -136,8 +138,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
             name=self.name, flavor_id=self.flavor_id,
             tenant_id=self.tenant_id,
             volume_size=self.volume_size,
-            datastore_version_id=
-            self.datastore_version.id,
+            datastore_version_id=self.datastore_version.id,
             task_status=InstanceTasks.BUILDING,
             configuration_id=self.configuration
         )
@@ -200,7 +201,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
                       "given flavor or volume.", str(exc))
 
     def test_can_restore_from_backup_with_almost_equal_size(self):
-        #target size equals to "1Gb"
+        # target size equals to "1Gb"
         self.backup.size = 0.99
         self.backup.save()
         instance = models.Instance.create(

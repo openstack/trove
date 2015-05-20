@@ -14,14 +14,15 @@
 #    under the License.
 
 import inspect
+import operator
 import os
 import stat
 
-import operator
 from oslo_concurrency.processutils import UnknownArgumentError
+
 from trove.common import exception
-from trove.common import utils
 from trove.common.i18n import _
+from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'

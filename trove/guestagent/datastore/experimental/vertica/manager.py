@@ -1,27 +1,28 @@
-#Copyright [2015] Hewlett-Packard Development Company, L.P.
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+# Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import os
+
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import instance as rd_ins
-from trove.guestagent import volume
-from trove.guestagent import dbaas
 from trove.guestagent.datastore.experimental.vertica.service import (
     VerticaAppStatus)
 from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
+from trove.guestagent import dbaas
+from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
@@ -59,7 +60,7 @@ class Manager(periodic_task.PeriodicTasks):
                 device.unmount_device(device_path)
                 device.format()
                 if path_exists_function(mount_point):
-                    #rsync any existing data
+                    # rsync any existing data
                     device.migrate_data(mount_point)
                     # mount the volume
                     device.mount(mount_point)

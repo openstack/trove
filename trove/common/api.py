@@ -14,16 +14,16 @@
 
 import routes
 
-from trove.common import wsgi
+from trove.backup.service import BackupController
 from trove.cluster.service import ClusterController
+from trove.common import wsgi
 from trove.configuration.service import ConfigurationsController
 from trove.configuration.service import ParametersController
+from trove.datastore.service import DatastoreController
 from trove.flavor.service import FlavorController
 from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
-from trove.backup.service import BackupController
 from trove.versions import VersionsController
-from trove.datastore.service import DatastoreController
 
 
 class API(wsgi.Router):

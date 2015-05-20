@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import commands
 import os
+import re
 import subprocess
-import testtools
+
 from mock import Mock, MagicMock, patch
 import pexpect
-import commands
-import re
+import testtools
 
 from trove.common import exception
 from trove.common import utils

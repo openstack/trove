@@ -14,27 +14,28 @@
 #    under the License.
 #
 import uuid
-from mock import MagicMock, patch, ANY
-from testtools.matchers import Equals, Is, Not
 
+from mock import MagicMock, patch, ANY
 from novaclient.v2 import Client
 from novaclient.v2.flavors import FlavorManager, Flavor
 from novaclient.v2.servers import Server, ServerManager
 from oslo_config import cfg
+from testtools.matchers import Equals, Is, Not
+
 from trove.backup.models import Backup
 from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common import remote
 from trove.datastore import models as datastore_models
+import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.guestagent.api import API
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
-import trove.extensions.mgmt.instances.models as mgmtmodels
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-from trove import rpc
 
 CONF = cfg.CONF
 
@@ -87,13 +88,11 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
                               name='test_name',
                               id=str(uuid.uuid4()),
                               flavor_id='flavor_1',
-                              datastore_version_id=
-                              version.id,
+                              datastore_version_id=version.id,
                               compute_instance_id='compute_id_1',
                               server_id='server_id_1',
                               tenant_id='tenant_id_1',
-                              server_status=
-                              rd_instance.ServiceStatuses.
+                              server_status=rd_instance.ServiceStatuses.
                               BUILDING.api_status,
                               deleted=False)
         instance.save()

@@ -27,7 +27,7 @@ class DatastoreController(wsgi.Controller):
         datastore_versions = (models.DatastoreVersions.load(datastore.id))
         return wsgi.Result(views.
                            DatastoreView(datastore, datastore_versions,
-                           req).data(), 200)
+                                         req).data(), 200)
 
     def index(self, req, tenant_id):
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -38,7 +38,7 @@ class DatastoreController(wsgi.Controller):
         datastores_versions = models.DatastoreVersions.load_all(only_active)
         return wsgi.Result(views.
                            DatastoresView(datastores, datastores_versions,
-                           req).data(), 200)
+                                          req).data(), 200)
 
     def version_show(self, req, tenant_id, datastore, id):
         datastore = models.Datastore.load(datastore)

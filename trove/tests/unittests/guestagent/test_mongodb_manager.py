@@ -14,16 +14,17 @@
 
 import os
 
-import testtools
 from mock import MagicMock
 from mock import patch
-from trove.common import utils
+import testtools
+
 from trove.common.context import TroveContext
-from trove.guestagent import volume
-from trove.guestagent.datastore.experimental.mongodb import (
-    service as mongo_service)
+from trove.common import utils
 from trove.guestagent.datastore.experimental.mongodb import (
     manager as mongo_manager)
+from trove.guestagent.datastore.experimental.mongodb import (
+    service as mongo_service)
+from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
 
 

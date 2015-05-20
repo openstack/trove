@@ -12,27 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from troveclient.compat import exceptions
-
-from proboscis import before_class
-from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
+from proboscis import before_class
 from proboscis.check import Check
 from proboscis import SkipTest
+from proboscis import test
+from troveclient.compat import exceptions
 
+from trove.common.utils import poll_until
+from trove.tests.api.instances import CreateInstance
+from trove.tests.api.instances import GROUP_START
+from trove.tests.api.instances import GROUP_TEST
+from trove.tests.api.instances import instance_info
 from trove.tests.config import CONFIG
+from trove.tests.util.check import CollectionCheck
+from trove.tests.util.check import TypeCheck
 from trove.tests.util import create_client
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
-from trove.tests.util.check import CollectionCheck
-from trove.tests.util.check import TypeCheck
-
-from trove.tests.api.instances import CreateInstance
-from trove.tests.api.instances import instance_info
-from trove.tests.api.instances import GROUP_START
-from trove.tests.api.instances import GROUP_TEST
-from trove.common.utils import poll_until
 
 GROUP = "dbaas.api.mgmt.instances"
 
@@ -99,7 +97,7 @@ def mgmt_instance_get():
         instance.has_field('id', basestring)
         instance.has_field('links', list)
         instance.has_field('name', basestring)
-        #instance.has_field('server_status', basestring)
+        # instance.has_field('server_status', basestring)
         instance.has_field('status', basestring)
         instance.has_field('tenant_id', basestring)
         instance.has_field('updated', basestring)
@@ -109,7 +107,7 @@ def mgmt_instance_get():
             instance.has_field('volume', dict, volume_check)
         else:
             instance.has_field('volume', None)
-        #TODO(tim-simpson): Validate additional fields, assert
+        # TODO(tim-simpson): Validate additional fields, assert
         # no extra fields exist.
     if api_instance.server is not None:
         print("the real content of server: %s" % dir(api_instance.server))
@@ -191,14 +189,14 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
             instance.has_field('id', basestring)
             instance.has_field('links', list)
             instance.has_field('name', basestring)
-            #instance.has_field('server_status', basestring)
+            # instance.has_field('server_status', basestring)
             instance.has_field('status', basestring)
             instance.has_field('tenant_id', basestring)
             instance.has_field('updated', basestring)
             # Can be None if no volume is given on this instance.
             instance.has_field('server', None)
             instance.has_field('volume', None)
-            #TODO(tim-simpson): Validate additional fields,
+            # TODO(tim-simpson): Validate additional fields,
             # assert no extra fields exist.
 
 

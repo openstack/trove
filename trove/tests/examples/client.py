@@ -20,6 +20,7 @@ from urlparse import urlparse
 
 from proboscis.asserts import fail
 from troveclient.compat.client import TroveHTTPClient
+
 from trove.tests.config import CONFIG
 
 print_req = True

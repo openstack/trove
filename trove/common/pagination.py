@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
-import six.moves.urllib.parse as urlparse
-
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+import urllib
+
+import six.moves.urllib.parse as urlparse
 
 
 def url_quote(s):

@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
-from mock import Mock, MagicMock
-from trove.guestagent import models
-from trove.common import utils
-from trove.db.sqlalchemy import api as dbapi
-from trove.db import models as dbmodels
 from datetime import datetime
+
+from mock import Mock, MagicMock
+import testtools
+
+from trove.common import utils
+from trove.db import models as dbmodels
+from trove.db.sqlalchemy import api as dbapi
+from trove.guestagent import models
 
 
 class AgentHeartBeatTest(testtools.TestCase):

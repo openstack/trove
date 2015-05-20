@@ -16,19 +16,20 @@
 Extra tests to create an instance, shut down MySQL, and delete it.
 """
 
-from proboscis.decorators import time_out
-from proboscis import before_class
-from proboscis import test
-from proboscis import asserts
+from datetime import datetime
 import time
 
-from datetime import datetime
+from proboscis import asserts
+from proboscis import before_class
+from proboscis.decorators import time_out
+from proboscis import test
 from troveclient.compat import exceptions
-from trove.tests.util import create_client
+
 from trove.common.utils import poll_until
-from trove.tests.util import test_config
-from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.api.instances import EPHEMERAL_SUPPORT
+from trove.tests.api.instances import VOLUME_SUPPORT
+from trove.tests.util import create_client
+from trove.tests.util import test_config
 
 
 @test(groups=["dbaas.api.instances.down"])

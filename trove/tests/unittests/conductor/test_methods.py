@@ -15,8 +15,8 @@
 from trove.backup import models as bkup_models
 from trove.backup import state
 from trove.common import exception as t_exception
-from trove.common import utils
 from trove.common.instance import ServiceStatuses
+from trove.common import utils
 from trove.conductor import manager as conductor_manager
 from trove.guestagent.common import timeutils
 from trove.instance import models as t_models

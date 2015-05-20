@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import Mock
 from mock import call
+from mock import Mock
 from mock import patch
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import Column
-from trove.db.sqlalchemy import utils as db_utils
+
 from trove.db.sqlalchemy.migrate_repo.schema import String
+from trove.db.sqlalchemy import utils as db_utils
 from trove.tests.unittests import trove_testtools
 
 
@@ -36,13 +37,13 @@ class TestDbMigrationUtils(trove_testtools.TestCase):
         mock_engine = Mock()
         (mock_inspector.return_value.
          get_foreign_keys.return_value) = [{'constrained_columns': ['col1'],
-                                           'referred_table': 'ref_table1',
-                                           'referred_columns': ['ref_col1'],
-                                           'name': 'constraint1'},
+                                            'referred_table': 'ref_table1',
+                                            'referred_columns': ['ref_col1'],
+                                            'name': 'constraint1'},
                                            {'constrained_columns': ['col2'],
-                                           'referred_table': 'ref_table2',
-                                           'referred_columns': ['ref_col2'],
-                                           'name': 'constraint2'}]
+                                            'referred_table': 'ref_table2',
+                                            'referred_columns': ['ref_col2'],
+                                            'name': 'constraint2'}]
         ret_val = db_utils.get_foreign_key_constraint_names(mock_engine,
                                                             'table1',
                                                             ['col1'],

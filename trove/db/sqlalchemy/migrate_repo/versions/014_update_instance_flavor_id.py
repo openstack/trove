@@ -31,7 +31,7 @@ def upgrade(migrate_engine):
                                'TYPE INTEGER USING flavor_id::integer')
     else:
         instances = Table('instances', meta, autoload=True)
-        #modify column
+        # modify column
         instances.c.flavor_id.alter(type=Integer())
 
 

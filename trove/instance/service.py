@@ -13,25 +13,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_utils import strutils
 import webob.exc
 
-from oslo_utils import strutils
-
+from trove.backup.models import Backup as backup_model
+from trove.backup import views as backup_views
+import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
+from trove.common.i18n import _LI
 from trove.common import pagination
 from trove.common import utils
 from trove.common import wsgi
-from trove.extensions.mysql.common import populate_validated_databases
-from trove.extensions.mysql.common import populate_users
-from trove.instance import models, views
 from trove.datastore import models as datastore_models
-from trove.backup.models import Backup as backup_model
-from trove.backup import views as backup_views
+from trove.extensions.mysql.common import populate_users
+from trove.extensions.mysql.common import populate_validated_databases
+from trove.instance import models, views
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
-from trove.common.i18n import _LI
-import trove.common.apischema as apischema
 
 
 CONF = cfg.CONF

@@ -13,11 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import jsonschema
 from mock import Mock, MagicMock, patch
+
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove.extensions.mgmt.upgrade.service import UpgradeController
 from trove.tests.unittests import trove_testtools
-import jsonschema
 
 
 class TestUpgradeController(trove_testtools.TestCase):

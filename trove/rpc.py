@@ -68,7 +68,7 @@ def init(conf):
                                         allowed_remote_exmods=exmods,
                                         aliases=TRANSPORT_ALIASES)
 
-    #serializer = RequestContextSerializer(JsonPayloadSerializer())
+    # serializer = RequestContextSerializer(JsonPayloadSerializer())
     # https://review.openstack.org/#/c/71532/1/nova/rpc.py
     NOTIFIER = messaging.Notifier(TRANSPORT, serializer=None)
 

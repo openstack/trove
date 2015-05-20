@@ -25,9 +25,9 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import utils
 from trove.configuration import models as config_models
+from trove.datastore import models as datastore_models
 from trove.db import get_db_api
 from trove.openstack.common import log as logging
-from trove.datastore import models as datastore_models
 
 
 CONF = cfg.CONF

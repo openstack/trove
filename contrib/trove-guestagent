@@ -19,8 +19,8 @@
 When the guest is moved out of the application, this will no longer
 be needed in the project."""
 
-import sys
 import os
+import sys
 
 possible_topdir = os.path.normpath(os.path.join(os.path.abspath(sys.argv[0]),
                                                 os.pardir,

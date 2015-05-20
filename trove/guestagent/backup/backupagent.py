@@ -15,18 +15,19 @@
 #
 
 import logging
+
 from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import context as trove_context
+from trove.common.i18n import _
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import timeutils
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.strategies.backup.base import BackupError
 from trove.guestagent.strategies.backup.base import UnknownBackupType
-from trove.guestagent.strategies.storage import get_storage_strategy
 from trove.guestagent.strategies.backup import get_backup_strategy
 from trove.guestagent.strategies.restore import get_restore_strategy
-from trove.common.i18n import _  # noqa
+from trove.guestagent.strategies.storage import get_storage_strategy
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

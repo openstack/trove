@@ -15,16 +15,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import uuid
+
 from mock import patch, MagicMock
+import swiftclient.client
 from testtools import ExpectedException, matchers
+
 from trove.common import cfg
+from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common import remote
-from trove.common.context import TroveContext
 from trove.tests.fakes.swift import SwiftClientStub
 from trove.tests.unittests import trove_testtools
-import swiftclient.client
-import uuid
 
 
 class TestRemote(trove_testtools.TestCase):
@@ -102,10 +104,12 @@ class TestRemote(trove_testtools.TestCase):
             # get container details
             cont_info = conn.get_container(cont_name)
             self.assertIsNotNone(cont_info)
-            self.assertThat(cont_info[0], matchers.KeysEqual('content-length',
-                            'x-container-object-count', 'accept-ranges',
-                            'x-container-bytes-used', 'x-timestamp',
-                            'x-trans-id', 'date', 'content-type'))
+            self.assertThat(
+                cont_info[0],
+                matchers.KeysEqual('content-length',
+                                   'x-container-object-count', 'accept-ranges',
+                                   'x-container-bytes-used', 'x-timestamp',
+                                   'x-trans-id', 'date', 'content-type'))
             self.assertThat(len(cont_info[1]), matchers.Equals(0))
             # remove container
             swift_stub.without_container(cont_name)

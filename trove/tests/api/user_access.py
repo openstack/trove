@@ -14,18 +14,17 @@
 
 from random import choice
 
-from troveclient.compat import exceptions
-
 from proboscis import after_class
+from proboscis import asserts
 from proboscis import before_class
 from proboscis import test
-from proboscis import asserts
+from troveclient.compat import exceptions
 
 from trove import tests
 from trove.tests.api.instances import instance_info
+from trove.tests.api.users import TestUsers
 from trove.tests import util
 from trove.tests.util import test_config
-from trove.tests.api.users import TestUsers
 
 GROUP = "dbaas.api.useraccess"
 GROUP_POSITIVE = GROUP + ".positive"
@@ -478,7 +477,7 @@ class TestUserAccessNegative(UserAccessBase):
 
     @test
     def test_user_empty_with_host(self):
-        #self._negative_user_test("", self.databases, 400, 400, 400, 400)
+        # self._negative_user_test("", self.databases, 400, 400, 400, 400)
         # Try and fail to create the user.
         empty_user = {"name": "", "host": "%",
                       "password": "password", "databases": []}

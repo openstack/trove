@@ -17,16 +17,16 @@ from oslo_config.cfg import NoSuchOptError
 
 from trove.cluster import models
 from trove.cluster import views
+from trove.common import apischema
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import pagination
-from trove.common import apischema
+from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.common import wsgi
-from trove.common.strategies.cluster import strategy
 from trove.datastore import models as datastore_models
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 
 CONF = cfg.CONF

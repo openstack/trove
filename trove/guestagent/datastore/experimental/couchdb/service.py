@@ -17,15 +17,15 @@ import json
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common import utils as utils
-from trove.guestagent import pkg
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.guestagent.datastore import service
 from trove.guestagent.datastore.experimental.couchdb import system
+from trove.guestagent.datastore import service
+from trove.guestagent import pkg
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

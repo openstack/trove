@@ -12,27 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-import time
-import logging
 import functools
+import json
+import logging
+import time
 
-from proboscis import before_class
-from proboscis import test
-from proboscis import SkipTest
-from proboscis import TestProgram
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
-
-from troveclient.compat import TroveHTTPClient
+from proboscis import before_class
+from proboscis import SkipTest
+from proboscis import test
+from proboscis import TestProgram
 from troveclient.compat import client as trove_client
-from trove.tests.config import CONFIG
-
 from troveclient.compat import Dbaas
+from troveclient.compat import TroveHTTPClient
 
-from trove.tests.examples.client import SnippetWriter
+from trove.tests.config import CONFIG
 from trove.tests.examples.client import JsonClient
+from trove.tests.examples.client import SnippetWriter
 
 trove_client._logger.setLevel(logging.CRITICAL)
 
@@ -168,12 +166,10 @@ def create_client(cls, user):
 
 
 def make_client(user):
-    #snippet_writer = SnippetWriter(conf)
     args, kwargs = create_client_args(user)
     kwargs['client_cls'] = JsonClient
     client = Dbaas(*args, **kwargs)
     client.client.name = "auth"
-    #client.client.snippet_writer = snippet_writer
     client.authenticate()
     return client
 
@@ -348,8 +344,7 @@ class Databases(Example):
             "POST", 202, "Accepted",
             lambda client: client.databases.create(
                 json_instance.id,
-                databases=
-                [
+                databases=[
                     {
                         "name": "testingdb",
                         "character_set": "utf8",
@@ -358,8 +353,7 @@ class Databases(Example):
                         "name": "anotherdb"
                     }, {
                         "name": "oneMoreDB"
-                    }
-                ]))
+                    }]))
 
     @test(depends_on=[post_create_databases])
     def get_list_databases(self):

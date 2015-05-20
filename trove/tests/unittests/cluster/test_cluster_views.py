@@ -14,9 +14,10 @@
 #    under the License.
 #
 
-from mock import Mock
 from mock import MagicMock
+from mock import Mock
 from mock import patch
+
 from trove.cluster.views import ClusterInstanceDetailView
 from trove.cluster.views import ClusterView
 from trove.cluster.views import load_view
