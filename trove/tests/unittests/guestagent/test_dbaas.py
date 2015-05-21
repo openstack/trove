@@ -2760,6 +2760,13 @@ class VerticaAppTest(testtools.TestCase):
             vertica_system.INSTALL_VERTICA % ('10.0.0.2', '/var/lib/vertica'))
         arguments.assert_called_with(expected_command)
 
+    def test_failure_install_vertica(self):
+        with patch.object(vertica_system, 'shell_execute',
+                          side_effect=ProcessExecutionError('some exception')):
+            self.assertRaisesRegexp(RuntimeError, 'install_vertica failed.',
+                                    self.app.install_vertica,
+                                    members='10.0.0.2')
+
     def test_create_db(self):
         with patch.object(self.app, 'read_config',
                           return_value=self.test_config):
@@ -2774,7 +2781,9 @@ class VerticaAppTest(testtools.TestCase):
     def test_failure_create_db(self):
         with patch.object(self.app, 'read_config',
                           side_effect=RuntimeError('Error')):
-            self.app.create_db('10.0.0.2')
+            self.assertRaisesRegexp(RuntimeError,
+                                    'Vertica database create failed.',
+                                    self.app.create_db)
         # Because of an exception in read_config there was no shell execution.
         self.assertEqual(0, vertica_system.shell_execute.call_count)
 
