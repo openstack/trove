@@ -7,39 +7,39 @@ Manual Trove Installation
 Objectives
 ==========
 
-This document is aimed to provide a step-by-step guide for manual installation of Trove with an existing OpenStack
-environment for development purposes.
+This document provides a step-by-step guide for manual installation of Trove with
+an existing OpenStack environment for development purposes.
 
-This document does not cover OpenStack setup.
+This document will not cover:
 
-This document does not cover production-specific moments like high availability or security.
-
-This document does not cover all possible configurations. It only provides one possible way to get things
-running.
+    - OpenStack setup
+    - Trove service configuration
 
 Requirements
 ============
 
-- PC with freshly installed Ubuntu 12.04 to run Trove services. This will be referred to as "local PC"
+A running OpenStack environment is required, including the following components:
 
-- Running OpenStack environment that includes at least the following components:
+    - Compute (Nova)
+    - Image Service (Glance)
+    - Identity (Keystone)
+    - A networking component (either Neutron or Nova-Network)
+    - If you want to provision datastores on block-storage volumes, you also will need Block Storage (Cinder)
+    - If you want to do backup/restore and replication, you will also need Object Storage (Swift)
+    - An environment with a freshly installed Ubuntu 14.04 LTS to run Trove services.
+      This will be referred to as "local environment"
+    - AMQP service (RabbitMQ or QPID)
+    - MySQL (SQLite, PostgreSQL) database for Trove's internal needs, accessible from the local environment
+    - Certain OpenStack services must be accessible from VMs:
+        - Swift
 
-  - Compute (nova)
-  - Image Service (glance)
-  - Identity (keystone)
-  - A networking component (either neutron or nova-network)
-  - If you want to provision datastores on block-storage volumes, you also need Block Storage (cinder)
-  - If you want to do backup and restore, you also need Object Storage (swift)
+    - VMs must be accessible from local environment for development/debugging purposes
 
-- AMQP service provided by RabbitMQ
-
-- MySQL database for Trove's internal needs, accessible from the local PC
-
-- Though it is not required by OpenStack itself, all OpenStack services must be accessible via network from virtual machines
-
-- Trove's database must be accessible from VMs, i.e. one must be able to connect to DB from VM
-
-- VMs must be accessible from local PC (same network)
+    - OpenStack services must be accessible directly from the local environment, such as:
+        - Nova
+        - Cinder
+        - Swift
+        - Heat
 
 Installation
 ============
@@ -48,220 +48,394 @@ Installation
 Gather info
 -----------
 
-..
-    TODO: Requirements below (e.g. admin credentials) are obviously excessive. Try to use regular account.
+The following information about the existing environment is required:
 
-The following information about existing environment is required:
-
-- Keystone host and port(s)
-
-- OpenStack administrator's username, tenant and password
-
-- Nova compute URL
-
-- Cinder URL
-
-- Swift URL
-
-- RabbitMQ URL, user Id, password
-
-- Trove's MySQL connection string
+    - Keystone host and port(s)
+    - OpenStack administrator's username, tenant name and password
+    - Nova URL
+    - Cinder URL
+    - Swift URL
+    - Heat URL
+    - AMPQ connection credentials (server URL, user, password)
+    - Trove's controller backend connection string (MySQL, SQLite, PostgreSQL)
 
 --------------------
 Install dependencies
 --------------------
-* Install required packages::
 
-    # sudo apt-get install build-essential libxslt1-dev qemu-utils mysql-client git python-dev python-pexpect python-mysqldb libmysqlclient-dev
+Required packages for Trove
+---------------------------
 
-* Some packages in Ubuntu repo are outdated, so install their latest version from sources::
+List of packages to be installed:
 
-    # cd ~
-    # wget https://pypi.python.org/packages/source/s/setuptools/setuptools-0.9.8.tar.gz
-    # tar xfvz setuptools-0.9.8.tar.gz
-    # cd setuptools-0.9.8
-    # python setup.py install --user
+.. code-block:: bash
 
-    # cd ~
-    # wget https://pypi.python.org/packages/source/p/pip/pip-1.4.1.tar.gz
-    # tar xfvz pip-1.4.1.tar.gz
-    # cd pip-1.4.1
-    # python setup.py install --user
+   $ sudo apt-get install build-essential libxslt1-dev qemu-utils mysql-client \
+     git python-dev python-pexpect python-mysqldb libmysqlclient-dev
 
-    # cd ~
+Python settings
+---------------
 
-* Note '--user' above -- we installed packages in user's home dir, in $HOME/.local/bin, so we need to add it to path::
+To find out which setuptools version is latest please check out the `setuptools repo`_.
 
-    # echo PATH="$HOME/.local/bin:$PATH" >> ~/.profile
-    # . ~/.profile
+.. _setuptools repo: https://pypi.python.org/pypi/setuptools/
 
-* Install virtualenv, create environment and activate it::
+To find out which pip version is latest please visit the `pip repo`_.
 
-    # pip install virtualenv --user
-    # virtualenv --system-site-packages env
-    # . env/bin/activate
+.. _pip repo: https://pypi.python.org/pypi/pip/
+
+Some packages in Ubuntu repositories are outdated. Please make sure to update to the latest versions from the appropriate sources.
+
+Use latest setuptools:
+
+.. code-block:: bash
+
+    $ cd ~
+    $ wget https://pypi.python.org/packages/source/s/setuptools/setuptools-{{latest}}.tar.gz
+    $ tar xfvz setuptools-{{latest}}.tar.gz
+    $ cd setuptools-{{latest}}
+    $ python setup.py install --user
+
+Use latest pip:
+
+.. code-block:: bash
+
+    $ wget https://pypi.python.org/packages/source/p/pip/pip-{{latest}}.tar.gz
+    $ tar xfvz pip-{{latest}}.tar.gz
+    $ cd pip-{{latest}}
+    $ python setup.py install --user
+
+Note '--user' above -- we installed packages in user's home dir, in $HOME/.local/bin, so we need to add it to path:
+
+.. code-block:: bash
+
+    $ echo PATH="$HOME/.local/bin:$PATH" >> ~/.profile
+    $ . ~/.profile
+
+Install virtualenv, create environment and activate it:
+
+.. code-block:: bash
+
+    $ pip install virtualenv --user
+    $ virtualenv --system-site-packages env
+    $ source env/bin/activate
+
+Get Trove
+---------
+
+Obtain the Trove source components from OpenStack repositories:
+
+.. code-block:: bash
+
+    $ cd ~
+    $ git clone https://git.openstack.org/openstack/trove.git
+    $ git clone https://git.openstack.org/openstack/python-troveclient.git
 
 
-------------
-Obtain Trove
-------------
-* Get Trove's sources from git::
-
-    # git clone https://git.openstack.org/openstack/trove.git
-    # git clone https://git.openstack.org/openstack/python-troveclient.git
-
--------------
 Install Trove
--------------
-* First install required python packages::
+=============
 
-    # cd ~/trove
-    # pip install -r requirements.txt
+First, install the requirements:
 
-* Resolve dependency conflicts (if there are any)
+.. code-block:: bash
 
-Trove is being built and tested against latest versions of OpenStack components that can be obtained from git.
-But setup downloads dependencies from PyPI which may contain outdated versions. This may cause a dependency conflicts.
-E.g. for now python-cinderclient from PyPI requires older 'requests' than one installed by default, so fix it manually::
+    $ cd ~/trove
+    $ pip install -r requirements.txt -r test-requirements.txt
 
-    # pip install --upgrade 'requests<1.2.3'
+Then, install Trove:
 
-or consider manual installing fresh OpenStack components from git
+.. code-block:: bash
 
-* Install Trove itself::
+    $ sudo python setup.py develop
 
-    # python setup.py develop
+Finally, install the Trove client:
 
-* Install Trove CLI::
+.. code-block:: bash
 
-    # cd ~/python-troveclient
-    # python setup.py develop
-    # cd ~
+    $ cd ~/python-troveclient
+    $ sudo python setup.py develop
+    $ cd ~
 
-* We'll need glance client as well::
+Other required OpenStack clients (python-novaclient, python-keystoneclient, etc.) should already be installed as part of the Trove requirements.
 
-    # pip install python-glanceclient
 
------------------
-Prepare OpenStack
------------------
-* Create a tenant 'trove' and user 'trove' with password 'trove' to be used with Trove.
+---------------------------
+Prepare Trove for OpenStack
+---------------------------
 
-These values are not required to all be 'trove'; you can instead choose your own values for the name,
-tenant, and password::
+You will first need to create a tenant called 'trove_for_trove_usage'.
+Next, create users called 'regular_trove_user' and 'admin_trove_user' —using 'trove' as the password. These are the accounts used by the Trove service.
+Additionally, you will need to register Trove as an OpenStack service and its endpoints:
 
-    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
-        --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        tenant-create --name trove
+.. code-block:: bash
 
-    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
-        --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        user-create --name trove --pass trove --tenant trove
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 tenant-create --user trove_for_trove_usage
 
-    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
-        --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        user-role-add --name trove --tenant trove --role admin
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-create --user regular_trove_user --pass trove --tenant trove_for_trove_usage
 
-* Create service for trove::
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-create --user admin_trove_user --pass trove --tenant trove_for_trove_usage
 
-    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
-        --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        service-create --name trove --type database
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 user-role-add --user admin_trove_user --tenant trove_for_trove_usage --role admin
 
-* Create an endpoint that points to localhost. Pay attention to the use of quotes (')::
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 service-create --user trove --type database
 
-    # keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword>
-        --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIp>:35357/v2.0
-        endpoint-create --service trove --region RegionOne
-        --publicurl 'http://localhost:8779/v1.0/$(tenant_id)s'
-        --adminurl 'http://localhost:8779/v1.0/$(tenant_id)s'
-        --internalurl 'http://localhost:8779/v1.0/$(tenant_id)s'
+    $ keystone --os-username <OpenStackAdminUsername> --os-password <OpenStackAdminPassword> --os-tenant-name <OpenStackAdminTenant> --os-auth-url http://<KeystoneIP>:<KeystonePort>/v2.0 endpoint-create --service trove --region RegionOne --publicurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s' --adminurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s' --internalurl 'http://<EnvironmentPublicIP>:<EnvironmentPort>/v1.0/$(tenant_id)s'
 
----------------------------------
+Where <EnvironmentPublicIP> and <EnvironmentPort> are the IP address and Port of the server where Trove was installed. This IP should be reachable from any hosts that will be used to communicate with Trove.
+
 Prepare Trove configuration files
----------------------------------
+=================================
 
 There are several configuration files for Trove:
 
-- api-paste.ini and trove.conf -- for trove-api
+    - api-paste.ini and trove.conf — For trove-api service
+    - trove-taskmanager.conf — For trove-taskmanager service
+    - trove-guestagent.conf — For trove-guestagent service
+    - trove-conductor.conf — For trove-conductor service
+    - <datastore_manager>.cloudinit — Userdata for VMs during provisioning
 
-- trove-taskmanager.conf -- for trove-taskmanager
+Cloud-init scripts are userdata that is being used for different datastore types like mysql/percona, cassandra, mongodb, redis, couchbase while provisioning new compute instances.
 
-- trove-guestagent.conf -- for trove-guestagent
+Samples of the above are available in ~/trove/etc/trove/ as \*.conf.sample files.
 
-- <service_type>.cloudinit -- cloudinit scripts for different service types. For now only 'mysql' and 'percona' are recognized as valid service types. NOTE: file names must exactly follow the pattern, e.g. 'mysql.cloudinit'
+If a clean Ubuntu image is used as the source image for Trove instances, the cloud-init script must install and run guestagent in the instance.
 
-Samples of the above are available in $TROVE/trove/etc/trove/ as \*.conf.sample files.
+As an alternative, one may consider creating a custom image with pre-installed and pre-configured Trove in it.
 
-If a vanilla Ubuntu image used as a source image for Trove instances, then it is cloudinit script's responsibility
-to install and run Trove guestagent in the instance.
+Source images
+=============
 
-As an alternative one may consider creating a custom image with pre-installed and pre-configured Trove in it.
+As the source image for Trove instances, we will use a Trove-compatible Ubuntu image:
 
--------------
-Prepare image
--------------
-* As the source image for trove instances, we will use a cloudinit-enabled vanilla Ubuntu image::
+.. code-block:: bash
 
-    # wget http://cloud-images.ubuntu.com/precise/current/precise-server-cloudimg-amd64-disk1.img
+    $ export DATASTORE_TYPE="mysql"
+    $ wget http://tarballs.openstack.org/trove/images/ubuntu/${DATASTORE_TYPE}.qcow2
+    $ glance --os-username admin_trove_user --os-password trove --os-tenant-name trove_for_trove_usage --os-auth-url http://<KeystoneIP>:<KeystoneAdminPort>/v2.0 image-create --name trove-image --is-public True --container-format ovf --disk-format qcow2 --owner ${DATASTORE_TYPE}.qcow2
 
-* Convert the downloaded image into uncompressed qcow2::
+Note: http://tarballs.openstack.org/trove/images includes mysql, percona, mongodb Trove-compatible images.
 
-    # qemu-img convert -O qcow2 precise-server-cloudimg-amd64-disk1.img precise.qcow2
+At this step please remember the image ID or store it in an environment variable (IMAGEID).
 
-* Upload the converted image into Glance::
+.. code-block:: bash
 
-    # glance --os-username trove --os-password trove --os-tenant-name trove --os-auth-url http://<KeystoneIp>:35357/v2.0
+    $ glance --os-username trove --os-password trove --os-tenant-name trove --os-auth-url http://<KeystoneIP>:<KeystoneAdminPort>/v2.0
         image-create --name trove-image --is-public true --container-format ovf --disk-format qcow2 --owner trove < precise.qcow2
 
-----------------
-Prepare database
-----------------
-* Initialize the database::
+    $ export IMAGEID=<glance_image_id>
 
-    # trove-manage --config-file=<PathToTroveConf> db_recreate trove_test.sqlite mysql fake
 
-* Setup trove to use the uploaded image. Enter the following in a single line, note quotes (') and backquotes(`)::
+Cloud-init scripts
+==================
 
-    # trove-manage --config-file=<PathToTroveConf> image_update mysql
-        `nova --os-username trove --os-password trove --os-tenant-name trove
-        --os-auth-url http://<KeystoneIp>:5000/v2.0 image-list | awk '/trove-image/ {print $2}'`
+-------------------
+Cloud-init location
+-------------------
+
+By default, trove-taskmanager will look at /etc/trove/cloudinit for <datastore_manager>.cloudinit.
+
+------------------
+Cloud-init content
+------------------
+
+Each cloud-init script for Trove-compatible images should contain:
+
+       - Trove installation
+
+Custom images with Trove code inside
+====================================
+
+*To be added*
+
+Prepare the database
+====================
+
+Create the Trove database schema:
+
+  - Connect to the storage backend (MySQL, PostgreSQL)
+  - Create a database called `trove` (this database will be used for storing Trove ORM)
+  - Compose connection string. Example: mysql://<user>:<password>@<backend_host>:<backend_port>/<database_name>
+
+Initialize the database
+=======================
+
+Once the database for Trove is created, its structure needs to be populated.
+
+.. code-block:: bash
+
+    $ trove-manage db_sync
+
+Setup Trove Datastores
+======================
 
 ---------
+Datastore
+---------
+
+A Datastore is a data structure that describes a set of Datastore Versions, which consists of::
+
+    - ID -- simple auto-generated UUID
+    - Name -- user-defined attribute, actual name of a datastore
+    - Datastore Versions
+
+
+Example::
+
+  - mysql, cassandra, redis, etc.
+
+-----------------
+Datastore Version
+-----------------
+
+A Datastore Version is a data structure that describes a version of a specific database pinned to datastore, which consists of::
+
+    - ID — Simple auto-generated UUID
+    - Datastore ID — Reference to Datastore
+    - Name — User-defined attribute, actual name of a database version
+    - Datastore manager — trove-guestagent manager that is used for datastore management
+    - Image ID — Reference to a specific Glance image ID
+    - Packages — Operating system specific packages that would be deployed onto datastore VM
+    - Active — Boolean flag that defines if version can be used for instance deployment or not
+
+Example::
+
+  - ID - edb1d22a-b66d-4e86-be60-756240439272
+  - Datastore ID - 9c3d890b-a2f2-4ba5-91b2-2997d0791502
+  - Name - mysql-5.6
+  - Datastore manager - mysql
+  - Image ID - d73a402-3953-4721-8c99-86fc72e1cb51
+  - Packages - mysql-server=5.5, percona-xtrabackup=2.1
+  - Active - True
+
+--------------------------------------------
+Datastore and Datastore Version registration
+--------------------------------------------
+
+To register a datastore, you must execute:
+
+.. code-block:: bash
+
+    $ export DATASTORE_TYPE="mysql" # available options: mysql, mongodb, postgresql, redis, cassandra, couchbase, couchdb, db2, vertica, etc.
+
+    $ export DATASTORE_VERSION="5.6" # available options: for cassandra 2.0.x, for mysql: 5.x, for mongodb: 2.x.x, etc.
+
+    $ export PACKAGES="mysql-server-5.6" # available options: cassandra=2.0.9, mongodb=2.0.4, etc
+
+    $ export IMAGEID="9910350b-77e3-4790-86be-b971d0cf9175" # Glance image ID of the relevant Datastore version (see Source images section)
+
+    $ trove-manage datastore_update ${DATASTORE_TYPE} ""
+
+    $ trove-manage datastore_version_update ${DATASTORE_TYPE} ${DATASTORE_VERSION} ${DATASTORE_TYPE} ${IMAGEID} ${PACKAGES} 1
+
+    $ trove-manage datastore_update ${DATASTORE_TYPE} ${DATASTORE_VERSION}
+
+=========
 Run Trove
----------
-* Run trove-api::
+=========
 
-    # trove-api --config-file=<PathToTroveConf> &
+Trove services configuration and tuning
+=======================================
 
-* Run trove-taskmanager::
+*To be added*
 
-    # trove-taskmanager --config-file=<PathToTroveTaskmanagerConf> &
+Starting Trove services
+=======================
 
-* Try executing a trove command, like get-instance. You must first issue an "auth login" to obtain an API key.::
+Run trove-api:
 
-    # trove-cli --username=trove --apikey=trove --tenant=trove --auth_url=http://<KeystoneIp>:35357/v2.0/tokens auth login
+.. code-block:: bash
 
-    # trove-cli instance list
+    $ trove-api --config-file=${TROVE_CONF_DIR}/trove-api.conf &
 
+Run trove-taskmanager:
 
+.. code-block:: bash
+
+    $ trove-taskmanager --config-file=${TROVE_CONF_DIR}/trove-taskamanger.conf &
+
+Run trove-conductor:
+
+.. code-block:: bash
+
+   $ trove-conductor --config-file=${TROVE_CONF_DIR}/trove-conductor.conf &
+
+=================
+Trove interaction
+=================
+
+Keystonerc
+==========
+
+You need to build a `keystonerc` file that contains data to simplify the auth processes while using the Trove client:
+
+.. code-block:: bash
+
+        export OS_TENANT_NAME=trove
+
+        export OS_USERNAME=regular_trove_user
+
+        export OS_PASSWORD=trove
+
+        export OS_AUTH_URL="http://<KeystoneIP>:<KeystonePort>/v2.0/"
+
+        export OS_AUTH_STRATEGY=keystone
+
+Trove deployment verification
+=============================
+
+First you need to execute:
+
+.. code-block:: bash
+
+    $ . keystonerc
+
+To see `help` for a specific command:
+
+.. code-block:: bash
+
+    $ trove help <command>
+
+To create an instance:
+
+.. code-block:: bash
+
+    $ trove create <name> <flavor_id>
+                    [--size <size>]
+                    [--databases <databases> [<databases> ...]]
+                    [--users <users> [<users> ...]] [--backup <backup>]
+                    [--availability_zone <availability_zone>]
+                    [--datastore <datastore>]
+                    [--datastore_version <datastore_version>]
+                    [--nic <net-id=net-uuid,v4-fixed-ip=ip-addr,port-id=port-uuid>]
+                    [--configuration <configuration>]
+                    [--replica_of <source_id>]
+
+===============
 Troubleshooting
 ===============
 
----------------------------------------------------------
-No instance IPs in the output of 'trove-cli instance get'
----------------------------------------------------------
+No instance IPs in the output of 'trove show <instance_id>'
+===========================================================
 
-If Trove instance is created properly, is in the state ACTIVE, and is known for sure to be working,
-but there are no IP addresses for the instance in the output of 'trove-cli instance get <id>', then make sure
-the following lines are added to trove.conf::
+If the Trove instance was successfully created, is showing ACTIVE state and working, yet there is no IP address for the instance shown in the output of 'trove show <instance_id>, then confirm the following lines are added to trove.conf ::
 
-    add_addresses = True
     network_label_regex = ^NETWORK_NAME$
 
-where NETWORK_NAME should be replaced with real name of the nova network to which the instance is connected to.
+where NETWORK_NAME should be replaced with real name of the network to which the instance is connected to.
 
-One possible way to find the nova network name is to execute the 'nova list' command. The output will list
-all OpenStack instances for the tenant, including network information. Look for ::
+To decide which network would you like to attach a Trove instance to, run the following command:
+
+.. code-block:: bash
+
+   $ nova net-list
+
+or
+
+.. code-block:: bash
+
+   $ neutron net-list
+
+One possible way to find the network name is to execute the 'nova list' command. The output will list all OpenStack instances for the tenant, including network information. Look for ::
 
     NETWORK_NAME=IP_ADDRESS
+
