@@ -46,8 +46,6 @@ BACKUP_DESC = 'Backup test'
 BACKUP_FILENAME = '45a3d8cb-ade8-484c-a8a5-0c3c7286fb2f.xbstream.gz'
 BACKUP_LOCATION = 'https://hpcs.com/tenant/database_backups/' + BACKUP_FILENAME
 
-api.API.get_client = MagicMock()
-
 
 class BackupCreateTest(trove_testtools.TestCase):
     def setUp(self):
@@ -62,6 +60,7 @@ class BackupCreateTest(trove_testtools.TestCase):
             models.DBBackup.find_by(
                 tenant_id=self.context.tenant).delete()
 
+    @patch.object(api.API, 'get_client', MagicMock(return_value=MagicMock()))
     def test_create(self):
         instance = MagicMock()
         with patch.object(instance_models.BuiltInstance, 'load',
@@ -96,6 +95,7 @@ class BackupCreateTest(trove_testtools.TestCase):
                     self.assertEqual(instance.datastore_version.id,
                                      db_record['datastore_version_id'])
 
+    @patch.object(api.API, 'get_client', MagicMock(return_value=MagicMock()))
     def test_create_incremental(self):
         instance = MagicMock()
         parent = MagicMock(spec=models.DBBackup)

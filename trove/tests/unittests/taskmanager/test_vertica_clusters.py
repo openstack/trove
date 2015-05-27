@@ -173,6 +173,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
 
 
 class VerticaTaskManagerAPITest(trove_testtools.TestCase):
+    @patch.object(rpc, 'get_client', Mock(return_value=Mock()))
     def setUp(self):
         super(VerticaTaskManagerAPITest, self).setUp()
         self.context = context.TroveContext()

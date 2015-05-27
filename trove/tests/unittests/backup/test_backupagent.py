@@ -32,9 +32,6 @@ from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.storage.base import Storage
 from trove.tests.unittests import trove_testtools
 
-conductor_api.API.get_client = Mock()
-conductor_api.API.update_backup = Mock()
-
 
 def create_fake_data():
     from random import choice
@@ -251,6 +248,9 @@ class BackupAgentTest(trove_testtools.TestCase):
             self.assertIsNone(backup_runner.zip_cmd)
         self.assertEqual('BackupRunner', backup_runner.backup_type)
 
+    @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
+    @patch.object(conductor_api.API, 'update_backup',
+                  Mock(return_value=Mock()))
     def test_execute_backup(self):
         """This test should ensure backup agent
                 ensures that backup and storage is not running
@@ -293,6 +293,9 @@ class BackupAgentTest(trove_testtools.TestCase):
                 backup_type=backup_info['type'],
                 state=BackupState.COMPLETED))
 
+    @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
+    @patch.object(conductor_api.API, 'update_backup',
+                  Mock(return_value=Mock()))
     def test_execute_bad_process_backup(self):
         agent = backupagent.BackupAgent()
         backup_info = {'id': '123',
@@ -330,6 +333,9 @@ class BackupAgentTest(trove_testtools.TestCase):
                 backup_type=backup_info['type'],
                 state=BackupState.FAILED))
 
+    @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
+    @patch.object(conductor_api.API, 'update_backup',
+                  Mock(return_value=Mock()))
     def test_execute_lossy_backup(self):
         """This test verifies that incomplete writes to swift will fail."""
         with patch.object(MockSwift, 'save',
@@ -393,6 +399,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                               context=None, backup_info=bkup_info,
                               restore_location='/var/lib/mysql')
 
+    @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(MockSwift, 'load_metadata', return_value={'lsn': '54321'})
     @patch.object(MockStorage, 'save_metadata')
     @patch.object(backupagent, 'get_storage_strategy', return_value=MockSwift)
@@ -426,6 +433,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                             ANY,
                             meta))
 
+    @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     def test_backup_incremental_bad_metadata(self):
         with patch.object(backupagent, 'get_storage_strategy',
                           return_value=MockSwift):

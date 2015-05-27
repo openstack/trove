@@ -28,6 +28,7 @@ from trove.tests.unittests import trove_testtools
 
 
 class ApiTest(trove_testtools.TestCase):
+    @patch.object(task_api.API, 'get_client')
     def setUp(self, *args):
         super(ApiTest, self).setUp()
         self.context = context.TroveContext()

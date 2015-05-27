@@ -11,7 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from mock import Mock
+from mock import Mock, patch
 from trove.backup import models as backup_models
 from trove.common import cfg
 from trove.common import exception
@@ -31,7 +31,6 @@ from trove.tests.unittests.util import util
 import uuid
 
 CONF = cfg.CONF
-task_api.API.get_client = Mock()
 
 
 class SimpleInstanceTest(trove_testtools.TestCase):
@@ -104,6 +103,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
 
 class CreateInstanceTest(trove_testtools.TestCase):
 
+    @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     def setUp(self):
         util.init_db()
         self.context = Mock()
@@ -173,6 +173,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
             return_value=True)
         super(CreateInstanceTest, self).setUp()
 
+    @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     def tearDown(self):
         self.db_info.delete()
         self.backup.delete()
