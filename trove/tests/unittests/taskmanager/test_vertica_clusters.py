@@ -18,14 +18,21 @@ from mock import patch
 
 from trove.cluster.models import ClusterTasks as ClusterTaskStatus
 from trove.cluster.models import DBCluster
-from trove.common.strategies.cluster.experimental.vertica.taskmanager import \
-    VerticaClusterTasks as ClusterTasks
+import trove.common.context as context
+from trove.common.exception import GuestError
+from trove.common.strategies.cluster.experimental.vertica.taskmanager import (
+    VerticaClusterTasks as ClusterTasks)
+from trove.common.strategies.cluster.experimental.vertica.taskmanager import (
+    VerticaTaskManagerAPI as task_api)
+from trove.common.strategies.cluster.experimental.vertica.taskmanager import (
+    VerticaTaskManagerStrategy as task_strategy)
 from trove.datastore import models as datastore_models
 from trove.instance.models import BaseInstance
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceTasks
+from trove import rpc
 from trove.taskmanager.models import ServiceStatuses
 from trove.tests.unittests import trove_testtools
 
@@ -101,6 +108,23 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
+    @patch.object(ClusterTasks, '_all_instances_ready', return_value=False)
+    @patch.object(Instance, 'load')
+    @patch.object(DBInstance, 'find_all')
+    @patch.object(datastore_models.Datastore, 'load')
+    @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
+    def test_create_cluster_instance_not_ready(self, mock_dv, mock_ds,
+                                               mock_find_all, mock_load,
+                                               mock_ready, mock_reset_task):
+        mock_find_all.return_value.all.return_value = [self.dbinst1]
+        mock_load.return_value = BaseInstance(Mock(),
+                                              self.dbinst1, Mock(),
+                                              InstanceServiceStatus(
+                                                  ServiceStatuses.NEW))
+        self.clustertasks.create_cluster(Mock(), self.cluster_id)
+        mock_reset_task.assert_called()
+
+    @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')
     @patch.object(ClusterTasks, 'get_ip')
     @patch.object(ClusterTasks, '_all_instances_ready')
@@ -121,3 +145,62 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
                                                                    )
         mock_reset_task.assert_called()
         mock_guest.return_value.cluster_complete.assert_called()
+
+    @patch.object(ClusterTasks, 'update_statuses_on_failure')
+    @patch.object(ClusterTasks, 'reset_task')
+    @patch.object(ClusterTasks, 'get_ip')
+    @patch.object(ClusterTasks, '_all_instances_ready')
+    @patch.object(Instance, 'load')
+    @patch.object(DBInstance, 'find_all')
+    @patch.object(datastore_models.Datastore, 'load')
+    @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
+    def test_create_cluster_fail(self, mock_dv, mock_ds, mock_find_all,
+                                 mock_load, mock_ready, mock_ip,
+                                 mock_reset_task, mock_update_status):
+        mock_find_all.return_value.all.return_value = [self.dbinst1]
+        mock_load.return_value = BaseInstance(Mock(),
+                                              self.dbinst1, Mock(),
+                                              InstanceServiceStatus(
+                                                  ServiceStatuses.NEW))
+        mock_ip.return_value = "10.0.0.2"
+        guest_client = Mock()
+        guest_client.install_cluster = Mock(side_effect=GuestError("Error"))
+        with patch.object(ClusterTasks, 'get_guest',
+                          return_value=guest_client):
+            self.clustertasks.create_cluster(Mock(), self.cluster_id)
+            mock_update_status.assert_called()
+            mock_reset_task.assert_called()
+
+
+class VerticaTaskManagerAPITest(trove_testtools.TestCase):
+    def setUp(self):
+        super(VerticaTaskManagerAPITest, self).setUp()
+        self.context = context.TroveContext()
+        self.api = task_api(self.context)
+        self.call_context = Mock()
+        self.api.client.prepare = Mock(return_value=self.call_context)
+        self.call_context.cast = Mock()
+        self.rpc_api_version = '1.0'
+
+    @patch.object(rpc, 'get_client')
+    def test_task_manager_api__cast(self, mock_rpc_client):
+        self.api._cast(method_name='test_method', version=self.rpc_api_version)
+        mock_rpc_client.assert_called()
+
+
+class VerticaTaskManagerStrategyTest(trove_testtools.TestCase):
+
+    def test_task_manager_cluster_tasks_class(self):
+        vertica_strategy = task_strategy()
+        self.assertFalse(
+            hasattr(vertica_strategy.task_manager_cluster_tasks_class,
+                    'rebuild_cluster'))
+        self.assertTrue(callable(
+            vertica_strategy.task_manager_cluster_tasks_class.create_cluster))
+
+    def test_task_manager_api_class(self):
+        vertica_strategy = task_strategy()
+        self.assertFalse(hasattr(vertica_strategy.task_manager_api_class,
+                                 'add_new_node'))
+        self.assertTrue(
+            callable(vertica_strategy.task_manager_api_class._cast))
