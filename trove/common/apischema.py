@@ -232,7 +232,9 @@ cluster = {
                             "additionalProperties": True,
                             "properties": {
                                 "flavorRef": flavorref,
-                                "volume": volume
+                                "volume": volume,
+                                "nics": nics,
+                                "availability_zone": non_empty_string
                             }
                         }
                     }

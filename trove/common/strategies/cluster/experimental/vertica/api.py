@@ -96,6 +96,11 @@ class VerticaCluster(models.Cluster):
 
         check_quotas(context.tenant, deltas)
 
+        nics = [instance.get('nics', None) for instance in instances]
+
+        azs = [instance.get('availability_zone', None)
+               for instance in instances]
+
         # Updating Cluster Task
         db_info = models.DBCluster.create(
             name=name, tenant_id=context.tenant,
@@ -106,16 +111,16 @@ class VerticaCluster(models.Cluster):
                          "instance_type": "member"}
 
         # Creating member instances
-        for i in range(1, num_instances + 1):
-            instance_name = "%s-member-%s" % (name, str(i))
+        for i in range(0, num_instances):
+            instance_name = "%s-member-%s" % (name, str(i + 1))
             inst_models.Instance.create(context, instance_name,
                                         flavor_id,
                                         datastore_version.image_id,
                                         [], [], datastore,
                                         datastore_version,
                                         volume_size, None,
-                                        availability_zone=None,
-                                        nics=None,
+                                        nics=nics[i],
+                                        availability_zone=azs[i],
                                         configuration_id=None,
                                         cluster_config=member_config)
 
