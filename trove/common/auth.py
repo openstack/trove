@@ -66,8 +66,11 @@ class TenantBasedAuth(object):
                         "%(request)s") %
                       {'tenant_id': tenant_id, 'request': request}))
             return True
-        msg = _("User with tenant id %s cannot access this resource")
-        LOG.debug(msg % tenant_id)
+
+        msg = _(
+            "User with tenant id %s cannot access this resource.") % tenant_id
+
+        LOG.error(msg)
         raise webob.exc.HTTPForbidden(msg)
 
 
