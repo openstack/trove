@@ -373,8 +373,9 @@ class Controller(object):
         if cls.schemas:
             matching_schema = cls.schemas.get(action, {})
             if matching_schema:
-                LOG.debug("Found Schema: %s" % matching_schema.get("name",
-                                                                   "none"))
+                LOG.debug(
+                    "Found Schema: %s" % matching_schema.get("name",
+                                                             matching_schema))
             return matching_schema
 
     @staticmethod
