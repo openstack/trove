@@ -197,9 +197,14 @@ users_list = {
     }
 }
 
+null_configuration_id = {
+    "type": "null"
+}
+
 configuration_id = {
     'oneOf': [
-        uuid
+        uuid,
+        null_configuration_id
     ]
 }
 
@@ -301,10 +306,12 @@ instance = {
             "instance": {
                 "type": "object",
                 "required": [],
+                "additionalProperties": False,
                 "properties": {
                     "slave_of": {},
+                    "replica_of": {},
                     "name": non_empty_string,
-                    "configuration_id": configuration_id,
+                    "configuration": configuration_id,
                 }
             }
         }
