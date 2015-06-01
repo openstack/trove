@@ -14,18 +14,19 @@
 
 import os
 
-import testtools
 from mock import MagicMock
 from mock import patch
 from oslo_utils import netutils
+import testtools
+
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
-from trove.guestagent import volume
-from trove.guestagent.datastore.experimental.couchdb import (
-    service as couchdb_service)
 from trove.guestagent.datastore.experimental.couchdb import (
     manager as couchdb_manager)
+from trove.guestagent.datastore.experimental.couchdb import (
+    service as couchdb_service)
 from trove.guestagent import pkg as pkg
+from trove.guestagent import volume
 
 
 class GuestAgentCouchDBManagerTest(testtools.TestCase):
@@ -127,18 +128,18 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
         self.manager.appStatus = mock_status
         with patch.object(couchdb_service.CouchDBApp, 'restart',
                           return_value=None):
-            #invocation
+            # invocation
             self.manager.restart(self.context)
-            #verification/assertion
+            # verification/assertion
             couchdb_service.CouchDBApp.restart.assert_any_call()
 
     def test_stop_db(self):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         couchdb_service.CouchDBApp.stop_db = MagicMock(return_value=None)
-        #invocation
+        # invocation
         self.manager.stop_db(self.context)
-        #verification/assertion
+        # verification/assertion
         couchdb_service.CouchDBApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
 

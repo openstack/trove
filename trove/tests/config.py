@@ -21,13 +21,13 @@ environments if we choose to.
 
 """
 
+from collections import Mapping
 import json
 import os
-from collections import Mapping
 
 
-#TODO(tim.simpson): I feel like this class already exists somewhere in core
-#                   Python.
+# TODO(tim.simpson): I feel like this class already exists somewhere in core
+#                    Python.
 class FrozenDict(Mapping):
 
     def __init__(self, original):

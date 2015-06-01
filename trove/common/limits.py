@@ -23,16 +23,16 @@ import httplib
 import math
 import re
 import time
+
+from oslo_serialization import jsonutils
+from oslo_utils import importutils
 import webob.dec
 import webob.exc
 
-from oslo_utils import importutils
-from oslo_serialization import jsonutils
-
-from trove.common import cfg
-from trove.common import wsgi
 from trove.common import base_wsgi
+from trove.common import cfg
 from trove.common.i18n import _
+from trove.common import wsgi
 
 
 CONF = cfg.CONF

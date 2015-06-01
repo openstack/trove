@@ -16,20 +16,19 @@
 #    under the License.
 #
 
+from datetime import datetime
+
 from nose.tools import assert_equal
 from nose.tools import assert_true
-
 from oslo_utils import timeutils
-
 from proboscis import before_class
 from proboscis import test
+from troveclient.compat import exceptions
 
 from trove.common import cfg
-from trove.tests.util import create_dbaas_client
-from troveclient.compat import exceptions
-from datetime import datetime
-from trove.tests.util.users import Users
 from trove.tests.fakes import limits as fake_limits
+from trove.tests.util import create_dbaas_client
+from trove.tests.util.users import Users
 
 
 CONF = cfg.CONF

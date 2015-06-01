@@ -14,14 +14,14 @@
 #    under the License.
 
 from trove.common import cfg
+from trove.common.i18n import _
 from trove.common import instance
-from trove.guestagent import pkg
 from trove.guestagent.datastore.experimental.postgresql.service.process import(
     PgSqlProcess)
 from trove.guestagent.datastore.experimental.postgresql.service.status import(
     PgSqlAppStatus)
+from trove.guestagent import pkg
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

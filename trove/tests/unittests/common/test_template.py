@@ -9,14 +9,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
+
 from mock import Mock
+
 from trove.common import exception
 from trove.common import template
 from trove.common import utils
 from trove.datastore.models import DatastoreVersion
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-import re
 
 
 class TemplateTest(trove_testtools.TestCase):

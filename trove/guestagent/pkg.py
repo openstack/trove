@@ -17,19 +17,20 @@
 Manages packages on the Guest VM.
 """
 import commands
+import os
 import re
 import subprocess
 from tempfile import NamedTemporaryFile
-import os
+
 import pexpect
 import six
 
 from trove.common import exception
-from trove.common import utils
 from trove.common.exception import ProcessExecutionError
+from trove.common.i18n import _
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 
 LOG = logging.getLogger(__name__)

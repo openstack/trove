@@ -15,14 +15,15 @@
 #
 
 import os
+
 from trove.common import cfg
 from trove.common import exception
-from trove.guestagent import volume
-from trove.guestagent.datastore.experimental.cassandra import service
-from trove.openstack.common import periodic_task
-from trove.openstack.common import log as logging
 from trove.common.i18n import _
+from trove.guestagent.datastore.experimental.cassandra import service
 from trove.guestagent import dbaas
+from trove.guestagent import volume
+from trove.openstack.common import log as logging
+from trove.openstack.common import periodic_task
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -91,9 +92,9 @@ class Manager(periodic_task.PeriodicTasks):
                 device.unmount_device(device_path)
                 device.format()
                 if os.path.exists(mount_point):
-                    #rsync exiting data
+                    # rsync exiting data
                     device.migrate_data(mount_point)
-                #mount the volume
+                # mount the volume
                 device.mount(mount_point)
                 LOG.debug("Mounting new volume.")
 

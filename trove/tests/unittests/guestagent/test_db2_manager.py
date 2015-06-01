@@ -12,18 +12,19 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import testtools
 from mock import MagicMock
 from mock import patch
+import testtools
 from testtools.matchers import Is, Equals, Not
+
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
-from trove.guestagent import volume
-from trove.guestagent.datastore.experimental.db2 import (
-    service as db2_service)
 from trove.guestagent.datastore.experimental.db2 import (
     manager as db2_manager)
+from trove.guestagent.datastore.experimental.db2 import (
+    service as db2_service)
 from trove.guestagent import pkg as pkg
+from trove.guestagent import volume
 
 
 class GuestAgentDB2ManagerTest(testtools.TestCase):
@@ -135,9 +136,9 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         self.manager.appStatus = mock_status
         with patch.object(db2_service.DB2App, 'restart',
                           return_value=None) as restart_mock:
-            #invocation
+            # invocation
             self.manager.restart(self.context)
-            #verification/assertion
+            # verification/assertion
             restart_mock.assert_any_call()
 
     def test_stop_db(self):

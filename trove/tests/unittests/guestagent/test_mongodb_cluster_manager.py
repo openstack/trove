@@ -13,18 +13,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
-
 from mock import patch
 from oslo_utils import netutils
+import testtools
+
+from trove.common.context import TroveContext
 from trove.common import instance as ds_instance
 from trove.common import utils
-from trove.common.context import TroveContext
-from trove.guestagent import volume
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb.manager import Manager
 from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
+from trove.guestagent import volume
 
 
 class GuestAgentMongoDBClusterManagerTest(testtools.TestCase):

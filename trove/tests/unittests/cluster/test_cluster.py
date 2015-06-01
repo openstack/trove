@@ -207,6 +207,6 @@ class ClusterTest(trove_testtools.TestCase):
         mock_task_api.mongodb_add_shard_cluster.return_value = None
         mock_task_api_load.return_value = mock_task_api
         self.cluster.add_shard()
-        mock_update_db.assert_called_with(task_status=
-                                          ClusterTasks.ADDING_SHARD)
+        mock_update_db.assert_called_with(
+            task_status=ClusterTasks.ADDING_SHARD)
         mock_task_api.mongodb_add_shard_cluster.assert_called

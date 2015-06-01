@@ -14,20 +14,20 @@
 #    under the License.
 
 import abc
+
+from lxml import etree
 import routes
 import six
 import stevedore
 import webob.dec
 import webob.exc
 
-from trove.common import base_wsgi
-
-from lxml import etree
-from trove.openstack.common import log as logging
 from trove.common import base_exception as exception
+from trove.common import base_wsgi
 from trove.common import cfg
+from trove.common.i18n import _
 from trove.common import wsgi
-from trove.common.i18n import _  # noqa
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

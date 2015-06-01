@@ -12,14 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import trove.common.cfg as cfg
-import trove.tests.fakes.conf as fake_conf
-
 from mock import MagicMock
 from mock import patch
-from trove.cmd import conductor as conductor_cmd
+
 from trove.cmd import common as common_cmd
+from trove.cmd import conductor as conductor_cmd
+import trove.common.cfg as cfg
 from trove.openstack.common import service as os_service
+import trove.tests.fakes.conf as fake_conf
 from trove.tests.unittests import trove_testtools
 
 CONF = cfg.CONF

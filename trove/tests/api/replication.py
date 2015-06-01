@@ -12,12 +12,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from proboscis import test
+from time import sleep
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.decorators import time_out
 from proboscis import SkipTest
+from proboscis import test
+from troveclient.compat import exceptions
+
 from trove.common.utils import generate_uuid
 from trove.common.utils import poll_until
 from trove.tests.api.instances import CheckInstance
@@ -27,8 +31,6 @@ from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
 from trove.tests.util.server_connection import create_server_connection
-from troveclient.compat import exceptions
-from time import sleep
 
 
 class SlaveInstanceTestInfo(object):

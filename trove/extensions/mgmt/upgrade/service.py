@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.common import wsgi
+import trove.common.apischema as apischema
 from trove.common.auth import admin_context
+from trove.common.i18n import _
+from trove.common import wsgi
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
-import trove.common.apischema as apischema
 
 
 LOG = logging.getLogger(__name__)

@@ -14,14 +14,15 @@
 #    under the License.
 
 from mock import Mock
+
 from trove.tests.unittests import trove_testtools
 from trove.versions import BaseVersion
 from trove.versions import Version
 from trove.versions import VersionDataView
+from trove.versions import VERSIONS
 from trove.versions import VersionsAPI
 from trove.versions import VersionsController
 from trove.versions import VersionsDataView
-from trove.versions import VERSIONS
 
 
 BASE_URL = 'http://localhost'

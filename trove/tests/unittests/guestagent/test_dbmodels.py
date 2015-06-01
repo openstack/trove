@@ -11,9 +11,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import testtools
-from trove.guestagent.db import models as dbmodels
 from mock import MagicMock
+import testtools
+
+from trove.guestagent.db import models as dbmodels
 
 
 class MySQLDatabaseTest(testtools.TestCase):

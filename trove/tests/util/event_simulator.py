@@ -26,9 +26,9 @@ to sit around for the designated time, which greatly speeds up the time it
 takes to run the tests.
 """
 import eventlet
-from eventlet import spawn as true_spawn
 from eventlet.event import Event
 from eventlet.semaphore import Semaphore
+from eventlet import spawn as true_spawn
 
 
 class Coroutine(object):
@@ -190,7 +190,7 @@ def fake_spawn_n(func, *args, **kw):
 def fake_spawn(time_from_now_in_seconds, func, *args, **kw):
     """Fakes eventlet's spawn function by adding a fake thread."""
     def thread_start():
-        #fake_sleep(time_from_now_in_seconds)
+        # fake_sleep(time_from_now_in_seconds)
         return func(*args, **kw)
 
     cr = Coroutine(thread_start)

@@ -16,30 +16,30 @@
 import time
 
 from proboscis import after_class
-from proboscis import before_class
-from proboscis import test
 from proboscis import asserts
+from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import SkipTest
-
-from trove import tests
-from trove.tests.util.check import Checker
+from proboscis import test
+from sqlalchemy import exc as sqlalchemy_exc
+from sqlalchemy.sql.expression import text
 from troveclient.compat.exceptions import BadRequest
 from troveclient.compat.exceptions import HTTPNotImplemented
-from trove.tests.api.instances import GROUP as INSTANCE_GROUP
-from trove.tests.api.instances import instance_info
-from trove.tests.api.instances import GROUP_START
-from trove.tests.api.instances import assert_unprocessable
-from trove.tests.api.instances import VOLUME_SUPPORT
-from trove.tests.api.instances import EPHEMERAL_SUPPORT
-from trove.tests.util.server_connection import create_server_connection
+
 from trove.common.utils import poll_until
-import trove.tests.util as testsutil
+from trove import tests
+from trove.tests.api.instances import assert_unprocessable
+from trove.tests.api.instances import EPHEMERAL_SUPPORT
+from trove.tests.api.instances import GROUP as INSTANCE_GROUP
+from trove.tests.api.instances import GROUP_START
+from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import VOLUME_SUPPORT
 from trove.tests.config import CONFIG
-from trove.tests.util import LocalSqlClient
-from sqlalchemy import exc as sqlalchemy_exc
+import trove.tests.util as testsutil
+from trove.tests.util.check import Checker
 from trove.tests.util.check import TypeCheck
-from sqlalchemy.sql.expression import text
+from trove.tests.util import LocalSqlClient
+from trove.tests.util.server_connection import create_server_connection
 
 GROUP = "dbaas.api.instances.actions"
 GROUP_REBOOT = "dbaas.api.instances.actions.reboot"
@@ -491,7 +491,7 @@ class ResizeInstanceTest(ActionTestBase):
             self.get_flavor_href(flavor_id=self.expected_new_flavor_id))
         asserts.assert_equal(202, self.dbaas.last_http_code)
 
-        #(WARNING) IF THE RESIZE IS WAY TOO FAST THIS WILL FAIL
+        # (WARNING) IF THE RESIZE IS WAY TOO FAST THIS WILL FAIL
         assert_unprocessable(
             self.dbaas.instances.resize_instance,
             self.instance_id,

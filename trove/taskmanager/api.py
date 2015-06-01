@@ -19,13 +19,14 @@ Routes all the requests to the task manager.
 """
 
 import oslo_messaging as messaging
+
 from trove.common import cfg
 from trove.common import exception
-from trove.common.strategies.cluster import strategy
 import trove.common.rpc.version as rpc_version
+from trove.common.strategies.cluster import strategy
 from trove.guestagent import models as agent_models
-from trove import rpc
 from trove.openstack.common import log as logging
+from trove import rpc
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

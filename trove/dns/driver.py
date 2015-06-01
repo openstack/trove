@@ -45,13 +45,13 @@ class DnsDriver(object):
         pass
 
     def modify_content(self, name, content, dns_zone):
-        #TODO(tim.simpson) I've found no use for this in RS impl of DNS w/
-        #                  instances. Check to see its really needed.
+        # TODO(tim.simpson) I've found no use for this in RS impl of DNS w/
+        #                   instances. Check to see its really needed.
         pass
 
     def rename_entry(self, content, name, dns_zone):
-        #TODO(tim.simpson) I've found no use for this in RS impl of DNS w/
-        #                  instances. Check to see its really needed.
+        # TODO(tim.simpson) I've found no use for this in RS impl of DNS w/
+        #                   instances. Check to see its really needed.
         pass
 
 

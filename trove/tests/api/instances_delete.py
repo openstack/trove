@@ -19,19 +19,19 @@
 import time
 
 from proboscis import after_class
-from proboscis import before_class
-from proboscis import test
 from proboscis import asserts
+from proboscis import before_class
 from proboscis.decorators import time_out
+from proboscis import test
+from troveclient.compat import exceptions
 
 from trove.common import cfg
-from troveclient.compat import exceptions
-from trove.tests.util import create_dbaas_client
 from trove.common.utils import poll_until
-from trove.tests.util import test_config
-from trove.tests.util.users import Requirements
 from trove.tests.api.instances import instance_info
 from trove.tests.api.instances import VOLUME_SUPPORT
+from trove.tests.util import create_dbaas_client
+from trove.tests.util import test_config
+from trove.tests.util.users import Requirements
 
 
 CONF = cfg.CONF
@@ -122,7 +122,7 @@ class ErroredInstanceDelete(TestBase):
         else:
             self.volume_error = None
         # Create an instance that fails during DNS prov.
-        #self.dns_error = self.create_instance('test_DNS_ERROR')
+        # self.dns_error = self.create_instance('test_DNS_ERROR')
         # Create an instance that fails while it's been deleted the first time.
         self.delete_error = self.create_instance('test_ERROR_ON_DELETE')
 

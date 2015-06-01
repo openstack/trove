@@ -16,11 +16,12 @@
 """Like asserts, but does not raise an exception until the end of a block."""
 
 import traceback
-from proboscis.asserts import ASSERTION_ERROR
+
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+from proboscis.asserts import ASSERTION_ERROR
 from proboscis.asserts import Check
 
 

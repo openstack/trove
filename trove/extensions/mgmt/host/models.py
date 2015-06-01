@@ -17,16 +17,16 @@
 Model classes that extend the instances functionality for MySQL instances.
 """
 
-from trove.openstack.common import log as logging
-from trove.common.i18n import _
+from novaclient import exceptions as nova_exceptions
 
 from trove.common import exception
+from trove.common.i18n import _
+from trove.common.remote import create_guest_client
+from trove.common.remote import create_nova_client
 from trove.instance.models import DBInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import SimpleInstance
-from trove.common.remote import create_guest_client
-from trove.common.remote import create_nova_client
-from novaclient import exceptions as nova_exceptions
+from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

@@ -14,10 +14,12 @@
 #    under the License.
 
 import re
+
+from eventlet.green import subprocess
+
+from trove.common import exception
 from trove.guestagent.strategies.restore import base
 from trove.openstack.common import log as logging
-from trove.common import exception
-from eventlet.green import subprocess
 
 LOG = logging.getLogger(__name__)
 

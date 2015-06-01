@@ -16,18 +16,19 @@
 
 import glob
 import os
-import pexpect
 import re
 import tempfile
 
+import pexpect
+
+from trove.common import exception
+from trove.common.i18n import _
+from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent.strategies.restore import base
 from trove.openstack.common import log as logging
-from trove.common import exception
-from trove.common import utils
-import trove.guestagent.datastore.mysql.service as dbaas
-from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 

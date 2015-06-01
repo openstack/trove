@@ -20,13 +20,9 @@
 .. automodule:: utils
    :platform: Unix
    :synopsis: Tests for Nova.
-.. moduleauthor:: Nirmal Ranganathan <nirmal.ranganathan@rackspace.com>
-.. moduleauthor:: Tim Simpson <tim.simpson@rackspace.com>
 """
 
 import subprocess
-
-from trove.tests.config import CONFIG as test_config
 from urllib import unquote
 
 try:
@@ -34,20 +30,20 @@ try:
 except ImportError:
     EVENT_AVAILABLE = False
 
-from sqlalchemy import create_engine
-
-from troveclient.compat import exceptions
-
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
 from proboscis.asserts import fail
 from proboscis import SkipTest
+from sqlalchemy import create_engine
 from troveclient.compat import Dbaas
-from trove.tests.util import test_config as CONFIG
-from trove.tests.util.client import TestClient as TestClient
-from trove.tests.util.users import Requirements
-from trove.common.utils import import_object
+from troveclient.compat import exceptions
+
 from trove.common.utils import import_class
+from trove.common.utils import import_object
+from trove.tests.config import CONFIG as test_config
+from trove.tests.util.client import TestClient as TestClient
+from trove.tests.util import test_config as CONFIG
+from trove.tests.util.users import Requirements
 
 
 WHITE_BOX = test_config.white_box
@@ -236,7 +232,7 @@ def assert_contains(exception_message, substrings):
 # https://bugs.launchpad.net/trove-integration/+bug/1228306
 
 
-#TODO(cp16net): DO NOT USE needs to be removed
+# TODO(cp16net): DO NOT USE needs to be removed
 def mysql_connection():
     cls = CONFIG.get('mysql_connection',
                      "local.MySqlConnection")

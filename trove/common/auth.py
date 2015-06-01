@@ -14,14 +14,14 @@
 #    under the License.
 
 import re
+
+from oslo_utils import strutils
 import webob.exc
 import wsgi
 
-from oslo_utils import strutils
-
 from trove.common import exception
-from trove.openstack.common import log as logging
 from trove.common.i18n import _
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

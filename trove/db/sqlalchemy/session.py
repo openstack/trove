@@ -14,6 +14,7 @@
 #    under the License.
 
 import contextlib
+
 import osprofiler.sqlalchemy
 import sqlalchemy
 from sqlalchemy import create_engine
@@ -21,9 +22,9 @@ from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
 
 from trove.common import cfg
-from trove.openstack.common import log as logging
 from trove.common.i18n import _
 from trove.db.sqlalchemy import mappers
+from trove.openstack.common import log as logging
 
 _ENGINE = None
 _MAKER = None
@@ -41,17 +42,17 @@ def configure_db(options, models_mapper=None):
     if models_mapper:
         models_mapper.map(_ENGINE)
     else:
-        from trove.instance import models as base_models
+        from trove.backup import models as backup_models
+        from trove.cluster import models as cluster_models
+        from trove.conductor import models as conductor_models
+        from trove.configuration import models as configurations_models
         from trove.datastore import models as datastores_models
         from trove.dns import models as dns_models
         from trove.extensions.mysql import models as mysql_models
-        from trove.guestagent import models as agent_models
-        from trove.quota import models as quota_models
-        from trove.backup import models as backup_models
         from trove.extensions.security_group import models as secgrp_models
-        from trove.configuration import models as configurations_models
-        from trove.conductor import models as conductor_models
-        from trove.cluster import models as cluster_models
+        from trove.guestagent import models as agent_models
+        from trove.instance import models as base_models
+        from trove.quota import models as quota_models
 
         model_modules = [
             base_models,

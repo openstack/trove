@@ -13,10 +13,11 @@
 #    under the License.
 
 import oslo_messaging as messaging
-from trove import rpc
+
 from trove.common import cfg
 from trove.common.rpc import version as rpc_version
 from trove.openstack.common import log as logging
+from trove import rpc
 
 
 CONF = cfg.CONF

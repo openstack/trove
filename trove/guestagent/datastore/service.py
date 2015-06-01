@@ -18,11 +18,11 @@ import time
 
 from trove.common import cfg
 from trove.common import context
+from trove.common.i18n import _
 from trove.common import instance
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import timeutils
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

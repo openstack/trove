@@ -13,10 +13,11 @@
 #    under the License.
 
 from sqlalchemy.schema import MetaData
-from sqlalchemy.sql.expression import select
-from sqlalchemy.sql.expression import insert
-from sqlalchemy.sql.expression import update
 from sqlalchemy.sql.expression import delete
+from sqlalchemy.sql.expression import insert
+from sqlalchemy.sql.expression import select
+from sqlalchemy.sql.expression import update
+
 from trove.common import cfg
 from trove.db.sqlalchemy.migrate_repo.schema import Table
 

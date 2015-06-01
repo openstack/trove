@@ -15,16 +15,17 @@
 
 
 import os
-from trove.common import cfg
-from trove.guestagent import dbaas
-from trove.guestagent import backup
-from trove.guestagent import volume
+
 from .service.config import PgSqlConfig
 from .service.database import PgSqlDatabase
 from .service.install import PgSqlInstall
 from .service.root import PgSqlRoot
-from .service.users import PgSqlUsers
 from .service.status import PgSqlAppStatus
+from .service.users import PgSqlUsers
+from trove.common import cfg
+from trove.guestagent import backup
+from trove.guestagent import dbaas
+from trove.guestagent import volume
 from trove.openstack.common import log as logging
 from trove.openstack.common import periodic_task
 

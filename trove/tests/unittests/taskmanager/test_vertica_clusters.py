@@ -1,15 +1,15 @@
-#Copyright [2015] Hewlett-Packard Development Company, L.P.
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+# Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import datetime
 
@@ -55,8 +55,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         self.dbinst1 = DBInstance(InstanceTasks.NONE, id="1", name="member1",
                                   compute_instance_id="compute-1",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-1",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
@@ -64,8 +63,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         self.dbinst2 = DBInstance(InstanceTasks.NONE, id="2", name="member2",
                                   compute_instance_id="compute-2",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-2",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
@@ -73,8 +71,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         self.dbinst3 = DBInstance(InstanceTasks.NONE, id="3", name="member3",
                                   compute_instance_id="compute-3",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-3",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,

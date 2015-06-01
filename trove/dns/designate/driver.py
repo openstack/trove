@@ -17,14 +17,16 @@
 Dns Driver that uses Designate DNSaaS.
 """
 
+import base64
+import hashlib
+
+from designateclient.v1 import Client
+from designateclient.v1.records import Record
+
 from trove.common import cfg
 from trove.common import exception
 from trove.dns import driver
 from trove.openstack.common import log as logging
-from designateclient.v1 import Client
-from designateclient.v1.records import Record
-import base64
-import hashlib
 
 
 CONF = cfg.CONF
@@ -142,7 +144,7 @@ class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
         # Constructing the hostname by hashing the instance ID.
         name = base64.b32encode(hashlib.md5(instance_id).digest())[:11].lower()
         hostname = ("%s.%s" % (name, zone.name))
-        #Removing the leading dot if present
+        # Removing the leading dot if present
         if hostname.endswith('.'):
             hostname = hostname[:-1]
 

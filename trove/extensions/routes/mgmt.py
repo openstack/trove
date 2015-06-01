@@ -13,17 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
-
 from trove.common import extensions
 from trove.extensions.mgmt.clusters.service import MgmtClusterController
 from trove.extensions.mgmt.configuration import service as conf_service
-from trove.extensions.mgmt.instances.service import MgmtInstanceController
-from trove.extensions.mgmt.host.service import HostController
-from trove.extensions.mgmt.quota.service import QuotaController
 from trove.extensions.mgmt.host.instance import service as hostservice
-from trove.extensions.mgmt.volume.service import StorageController
+from trove.extensions.mgmt.host.service import HostController
+from trove.extensions.mgmt.instances.service import MgmtInstanceController
+from trove.extensions.mgmt.quota.service import QuotaController
 from trove.extensions.mgmt.upgrade.service import UpgradeController
+from trove.extensions.mgmt.volume.service import StorageController
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

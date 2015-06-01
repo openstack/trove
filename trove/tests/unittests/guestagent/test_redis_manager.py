@@ -12,15 +12,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import testtools
 from mock import MagicMock
+import testtools
+
 from trove.common.context import TroveContext
-from trove.guestagent.datastore.experimental.redis.manager import (
-    Manager as RedisManager)
-from trove.guestagent.datastore.experimental.redis import (
-    service as redis_service)
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.experimental.redis import (
+    service as redis_service)
+from trove.guestagent.datastore.experimental.redis.manager import (
+    Manager as RedisManager)
 from trove.guestagent.volume import VolumeDevice
 
 

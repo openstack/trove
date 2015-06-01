@@ -16,10 +16,10 @@
 #    under the License.
 #
 
+from collections import defaultdict
 import os
 import re
 import uuid
-from collections import defaultdict
 
 import sqlalchemy
 from sqlalchemy import exc
@@ -27,18 +27,18 @@ from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from trove.common import cfg
-from trove.common import utils as utils
 from trove.common import exception
-from trove.common import instance as rd_instance
 from trove.common.exception import PollTimeOut
+from trove.common.i18n import _
+from trove.common import instance as rd_instance
+from trove.common import utils as utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.common import sql_query
+from trove.guestagent.datastore import service
 from trove.guestagent.db import models
 from trove.guestagent import pkg
-from trove.guestagent.datastore import service
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
@@ -117,8 +117,8 @@ def get_auth_password():
 
 def get_engine():
     """Create the default engine with the updated admin user."""
-    #TODO(rnirmal):Based on permissions issues being resolved we may revert
-    #url = URL(drivername='mysql', host='localhost',
+    # TODO(rnirmal):Based on permissions issues being resolved we may revert
+    # url = URL(drivername='mysql', host='localhost',
     #          query={'read_default_file': '/etc/mysql/my.cnf'})
     global ENGINE
     if ENGINE:
@@ -133,7 +133,7 @@ def get_engine():
 
 
 def load_mysqld_options():
-    #find mysqld bin
+    # find mysqld bin
     for bin in MYSQL_BIN_CANDIDATES:
         if os.path.isfile(bin):
             mysqld_bin = bin

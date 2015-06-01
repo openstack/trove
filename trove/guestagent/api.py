@@ -18,8 +18,8 @@ Handles all request to the Platform or Guest VM
 """
 
 from eventlet import Timeout
-from oslo_messaging.rpc.client import RemoteError
 import oslo_messaging as messaging
+from oslo_messaging.rpc.client import RemoteError
 
 from trove.common import cfg
 from trove.common import exception

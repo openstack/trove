@@ -14,9 +14,9 @@
 #    under the License.
 
 from sqlalchemy import MetaData
-from sqlalchemy import Table
 from sqlalchemy import orm
 from sqlalchemy.orm import exc as orm_exc
+from sqlalchemy import Table
 
 
 def map(engine, models):

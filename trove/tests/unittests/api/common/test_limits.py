@@ -18,17 +18,18 @@ Tests dealing with HTTP rate-limiting.
 """
 
 import httplib
-from trove.quota.models import Quota
-import webob
+
 
 from mock import Mock, MagicMock
+from oslo_serialization import jsonutils
 import six
+import webob
 
 from trove.common import limits
 from trove.common.limits import Limit
-from trove.limits import views
 from trove.limits.service import LimitsController
-from oslo_serialization import jsonutils
+from trove.limits import views
+from trove.quota.models import Quota
 from trove.quota.quota import QUOTAS
 from trove.tests.unittests import trove_testtools
 

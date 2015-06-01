@@ -34,10 +34,10 @@ class MongoDbGuestAgentAPI(guest_api.API):
 
     def add_shard(self, replica_set_name, replica_set_member):
         LOG.debug("Adding shard with replSet %(replica_set_name)s and member "
-                  "%(replica_set_member)s for instance %(id)s" % {
-                  'replica_set_name': replica_set_name,
-                  'replica_set_member': replica_set_member,
-                  'id': self.id})
+                  "%(replica_set_member)s for instance "
+                  "%(id)s" % {'replica_set_name': replica_set_name,
+                              'replica_set_member': replica_set_member,
+                              'id': self.id})
         return self._call("add_shard", guest_api.AGENT_HIGH_TIMEOUT,
                           self.version_cap,
                           replica_set_name=replica_set_name,

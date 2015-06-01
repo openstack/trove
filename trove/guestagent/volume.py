@@ -14,16 +14,17 @@
 #    under the License.
 
 import os
-import pexpect
 from tempfile import NamedTemporaryFile
 
+import pexpect
+
 from trove.common import cfg
-from trove.common import utils
 from trove.common.exception import GuestError
 from trove.common.exception import ProcessExecutionError
-from trove.openstack.common import log as logging
 from trove.common.i18n import _
+from trove.common import utils
 from trove.guestagent.common import operating_system
+from trove.openstack.common import log as logging
 
 TMP_MOUNT_POINT = "/mnt/volume"
 

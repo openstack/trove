@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
 import os
 
 from migrate.versioning import api as versioning_api
@@ -25,6 +24,7 @@ except ImportError:
     from migrate import exceptions as versioning_exceptions
 
 from trove.common import exception
+from trove.openstack.common import log as logging
 
 
 logger = logging.getLogger('trove.db.sqlalchemy.migration')

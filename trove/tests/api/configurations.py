@@ -14,34 +14,36 @@
 #    under the License.
 
 
+from datetime import datetime
 import json
 from time import sleep
-from datetime import datetime
+
 from proboscis import after_class
-from proboscis import before_class
-from proboscis import SkipTest
-from proboscis import test
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
-from proboscis.asserts import assert_not_equal
+from proboscis import before_class
 from proboscis.decorators import time_out
+from proboscis import SkipTest
+from proboscis import test
+from troveclient.compat import exceptions
+
 from trove.common.utils import poll_until
 from trove.tests.api.backups import RestoreUsingBackup
 from trove.tests.api.instances import assert_unprocessable
-from trove.tests.api.instances import InstanceTestInfo
 from trove.tests.api.instances import instance_info
+from trove.tests.api.instances import InstanceTestInfo
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
-from trove.tests.util import create_dbaas_client
 from trove.tests.util.check import AttrCheck
 from trove.tests.util.check import CollectionCheck
 from trove.tests.util.check import TypeCheck
+from trove.tests.util import create_dbaas_client
 from trove.tests.util.mysql import create_mysql_connection
 from trove.tests.util.users import Requirements
-from troveclient.compat import exceptions
 
 
 GROUP = "dbaas.api.configurations"
@@ -433,10 +435,9 @@ class AfterConfigurationsCreation(ConfigurationsTestBase):
         other_user_tenant_id = other_user.tenant_id
         client_tenant_id = instance_info.user.tenant_id
         if other_user_tenant_id == client_tenant_id:
-            other_user = CONFIG.users.find_user(reqs,
-                                                black_list=[
-                                                instance_info.user.auth_user,
-                                                other_user])
+            other_user = CONFIG.users.find_user(
+                reqs, black_list=[instance_info.user.auth_user,
+                                  other_user])
         print(other_user)
         print(other_user.__dict__)
         other_client = create_dbaas_client(other_user)
@@ -705,7 +706,7 @@ class DeleteConfigurations(ConfigurationsTestBase):
         resp, body = instance_info.dbaas.client.last_response
         assert_equal(resp.status, 202)
         instance_info.dbaas.instances.get(configuration_instance.id)
-        #test that config group is not removed
+        # test that config group is not removed
         instance_info.dbaas.instances.modify(instance_info.id,
                                              configuration=None)
         resp, body = instance_info.dbaas.client.last_response

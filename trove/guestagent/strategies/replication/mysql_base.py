@@ -18,6 +18,7 @@ import abc
 import uuid
 
 from oslo_utils import netutils
+
 from trove.common import cfg
 from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
@@ -25,8 +26,8 @@ from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
-from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+from trove.openstack.common import log as logging
 
 AGENT = BackupAgent()
 CONF = cfg.CONF

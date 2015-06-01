@@ -13,23 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_utils import strutils
 import webob.exc
 
-from oslo_utils import strutils
-
+import trove.common.apischema as apischema
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import pagination
-from trove.common import wsgi
 from trove.common.utils import correct_id_with_req
-from trove.extensions.mysql.common import populate_validated_databases
+from trove.common import wsgi
 from trove.extensions.mysql.common import populate_users
+from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import unquote_user_host
 from trove.extensions.mysql import models
 from trove.extensions.mysql import views
 from trove.guestagent.db import models as guest_models
 from trove.openstack.common import log as logging
-from trove.common.i18n import _
-import trove.common.apischema as apischema
 
 
 LOG = logging.getLogger(__name__)

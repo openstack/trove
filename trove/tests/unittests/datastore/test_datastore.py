@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from trove.common import exception
 from trove.datastore import models as datastore_models
 from trove.datastore.models import Datastore
 from trove.tests.unittests.datastore.base import TestDatastoreBase
-from trove.common import exception
 
 
 class TestDatastore(TestDatastoreBase):

@@ -1,16 +1,16 @@
-#Copyright [2013] Hewlett-Packard Development Company, L.P.
+# Copyright [2013] Hewlett-Packard Development Company, L.P.
 
-#Licensed under the Apache License, Version 2.0 (the "License");
-#you may not use this file except in compliance with the License.
-#You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-#Unless required by applicable law or agreed to in writing, software
-#distributed under the License is distributed on an "AS IS" BASIS,
-#WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#See the License for the specific language governing permissions and
-#limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Model classes that form the core of snapshots functionality."""
 
@@ -20,14 +20,14 @@ from swiftclient.client import ClientException
 from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common import exception
-from trove.db.models import DatabaseModelBase
-from trove.datastore import models as datastore_models
-from trove.openstack.common import log as logging
-from trove.taskmanager import api
+from trove.common.i18n import _
 from trove.common.remote import create_swift_client
 from trove.common import utils
+from trove.datastore import models as datastore_models
+from trove.db.models import DatabaseModelBase
+from trove.openstack.common import log as logging
 from trove.quota.quota import run_with_quotas
-from trove.common.i18n import _
+from trove.taskmanager import api
 
 
 CONF = cfg.CONF

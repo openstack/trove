@@ -14,22 +14,23 @@
 
 import os
 
-import testtools
 from mock import MagicMock
 from mock import patch
+from proboscis.asserts import assert_equal
+import testtools
 from testtools.matchers import Is, Equals, Not
+
 from trove.common.context import TroveContext
 from trove.common.exception import InsufficientSpaceForReplica
 from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
-from trove.guestagent import dbaas as base_dbaas
-from trove.guestagent import volume
+from trove.guestagent import backup
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
-from trove.guestagent import backup
-from trove.guestagent.volume import VolumeDevice
+from trove.guestagent import dbaas as base_dbaas
 from trove.guestagent import pkg as pkg
-from proboscis.asserts import assert_equal
+from trove.guestagent import volume
+from trove.guestagent.volume import VolumeDevice
 
 
 class GuestAgentManagerTest(testtools.TestCase):

@@ -16,15 +16,15 @@
 import os
 
 from trove.common import cfg
-from trove.common import utils as utils
 from trove.common import exception
-from trove.common import instance as rd_instance
-from trove.guestagent import pkg
-from trove.guestagent.common import operating_system
-from trove.guestagent.datastore import service
-from trove.guestagent.datastore.experimental.redis import system
-from trove.openstack.common import log as logging
 from trove.common.i18n import _
+from trove.common import instance as rd_instance
+from trove.common import utils as utils
+from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.experimental.redis import system
+from trove.guestagent.datastore import service
+from trove.guestagent import pkg
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 TMP_REDIS_CONF = '/tmp/redis.conf.tmp'

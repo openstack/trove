@@ -50,8 +50,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self.dbinst1 = DBInstance(InstanceTasks.NONE, id="1", name="member1",
                                   compute_instance_id="compute-1",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-1",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
@@ -60,8 +59,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self.dbinst2 = DBInstance(InstanceTasks.NONE, id="2", name="member2",
                                   compute_instance_id="compute-2",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-2",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
@@ -70,8 +68,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self.dbinst3 = DBInstance(InstanceTasks.NONE, id="3", name="mongos",
                                   compute_instance_id="compute-3",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-3",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
@@ -81,8 +78,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
                                   name="configserver",
                                   compute_instance_id="compute-4",
                                   task_id=InstanceTasks.NONE._code,
-                                  task_description=
-                                  InstanceTasks.NONE._db_text,
+                                  task_description=InstanceTasks.NONE._db_text,
                                   volume_id="volume-4",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,

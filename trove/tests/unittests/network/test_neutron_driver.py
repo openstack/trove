@@ -18,12 +18,13 @@ from mock import MagicMock
 from mock import Mock
 from neutronclient.common import exceptions as neutron_exceptions
 from neutronclient.v2_0 import client as NeutronClient
+
 from trove.common import exception
-from trove.common import remote
 from trove.common.models import NetworkRemoteModelBase
+from trove.common import remote
+from trove.extensions.security_group.models import RemoteSecurityGroup
 from trove.network import neutron
 from trove.network.neutron import NeutronDriver as driver
-from trove.extensions.security_group.models import RemoteSecurityGroup
 from trove.tests.unittests import trove_testtools
 
 

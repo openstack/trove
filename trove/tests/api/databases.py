@@ -14,21 +14,19 @@
 
 import time
 
-from troveclient.compat import exceptions
-
-from proboscis import before_class
-from proboscis import test
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+from proboscis import before_class
 from proboscis.decorators import time_out
+from proboscis import test
+from troveclient.compat import exceptions
 
 from trove import tests
-
-from trove.tests import util
 from trove.tests.api.instances import GROUP_START
 from trove.tests.api.instances import instance_info
+from trove.tests import util
 from trove.tests.util import test_config
 
 GROUP = "dbaas.api.databases"
@@ -123,7 +121,7 @@ class TestDatabases(object):
 
     @test
     def test_create_database_list_system(self):
-        #Databases that should not be returned in the list
+        # Databases that should not be returned in the list
         databases = self.dbaas.databases.list(instance_info.id)
         assert_equal(200, self.dbaas.last_http_code)
         found = False

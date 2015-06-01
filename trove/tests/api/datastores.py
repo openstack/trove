@@ -15,18 +15,17 @@
 
 
 from nose.tools import assert_equal
-from troveclient.compat import exceptions
-
-from proboscis import before_class
-from proboscis import test
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
+from proboscis import before_class
+from proboscis import test
+from troveclient.compat import exceptions
 
 from trove import tests
+from trove.tests.util.check import TypeCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
-from trove.tests.util.check import TypeCheck
 
 GROUP = "dbaas.api.datastores"
 NAME = "nonexistent"

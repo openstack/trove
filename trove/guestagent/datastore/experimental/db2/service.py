@@ -18,11 +18,11 @@ from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common import utils as utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore import service
 from trove.guestagent.datastore.experimental.db2 import system
+from trove.guestagent.datastore import service
 from trove.guestagent.db import models
-from trove.openstack.common import log as logging
 from trove.openstack.common.gettextutils import _
+from trove.openstack.common import log as logging
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

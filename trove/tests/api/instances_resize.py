@@ -15,18 +15,17 @@
 
 from mock import Mock
 from mox3 import mox
-from testtools import TestCase
-from proboscis import test
-
 from novaclient.exceptions import BadRequest
 from novaclient.v2.servers import Server
 from oslo_messaging._drivers.common import RPCException
+from proboscis import test
+from testtools import TestCase
 
+from trove.common.context import TroveContext
 from trove.common.exception import PollTimeOut
+from trove.common import instance as rd_instance
 from trove.common import template
 from trove.common import utils
-from trove.common.context import TroveContext
-from trove.common import instance as rd_instance
 from trove.datastore.models import DatastoreVersion
 from trove.guestagent import api as guest
 from trove.instance.models import DBInstance

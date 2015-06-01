@@ -14,8 +14,9 @@
 #    under the License.
 #
 
-from trove.openstack.common import log as logging
 import os
+
+from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

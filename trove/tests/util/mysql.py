@@ -16,16 +16,18 @@
 #    under the License.
 #
 
-import pexpect
 import re
+
+import pexpect
 from sqlalchemy import create_engine
-from trove import tests
-from trove.tests.config import CONFIG
 from sqlalchemy.exc import OperationalError
 try:
     from sqlalchemy.exc import ResourceClosedError
 except ImportError:
     ResourceClosedError = Exception
+
+from trove import tests
+from trove.tests.config import CONFIG
 
 
 def create_mysql_connection(host, user, password):

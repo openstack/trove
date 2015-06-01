@@ -12,22 +12,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 import os
 import stat
 import tempfile
-import testtools
+
+import mock
 from mock import MagicMock
 from mock import Mock
 from oslo_utils import netutils
-from trove.common import utils
+import testtools
+
 from trove.common.context import TroveContext
-from trove.guestagent import volume
+from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchbase import (
-    service as couch_service)
-from trove.guestagent.datastore.experimental.couchbase import (
     manager as couch_manager)
+from trove.guestagent.datastore.experimental.couchbase import (
+    service as couch_service)
+from trove.guestagent import volume
 
 
 class GuestAgentCouchbaseManagerTest(testtools.TestCase):
@@ -99,14 +101,14 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             return_value=None)
         backup.restore = MagicMock(return_value=None)
 
-        #invocation
+        # invocation
         self.manager.prepare(self.context, self.packages, None, 2048,
                              None, device_path=device_path,
                              mount_point='/var/lib/couchbase',
                              backup_info=backup_info,
                              overrides=None,
                              cluster_config=None)
-        #verification/assertion
+        # verification/assertion
         mock_status.begin_install.assert_any_call()
         couch_service.CouchbaseApp.install_if_needed.assert_any_call(
             self.packages)
@@ -121,18 +123,18 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         couch_service.CouchbaseApp.restart = MagicMock(return_value=None)
-        #invocation
+        # invocation
         self.manager.restart(self.context)
-        #verification/assertion
+        # verification/assertion
         couch_service.CouchbaseApp.restart.assert_any_call()
 
     def test_stop_db(self):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         couch_service.CouchbaseApp.stop_db = MagicMock(return_value=None)
-        #invocation
+        # invocation
         self.manager.stop_db(self.context)
-        #verification/assertion
+        # verification/assertion
         couch_service.CouchbaseApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
 

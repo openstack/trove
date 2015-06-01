@@ -19,9 +19,9 @@ import re
 
 from oslo_concurrency import processutils
 
-from trove.openstack.common import log as logging
 from trove.common import base_exception as openstack_exception
 from trove.common.i18n import _
+from trove.openstack.common import log as logging
 
 
 ClientConnectionError = openstack_exception.ClientConnectionError

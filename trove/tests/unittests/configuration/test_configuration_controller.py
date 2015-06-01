@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+import jsonschema
 from mock import MagicMock
+
 from trove.common import configurations
 from trove.common.exception import UnprocessableEntity
 from trove.configuration.service import ConfigurationsController
 from trove.extensions.mgmt.configuration import service
 from trove.tests.unittests import trove_testtools
-import jsonschema
 
 
 class TestConfigurationParser(trove_testtools.TestCase):

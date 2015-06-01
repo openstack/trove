@@ -19,7 +19,6 @@
 .. automodule:: trove
    :platform: Unix
    :synopsis: Platform-As-A-Service Database Cloud
-.. moduleauthor:: Michael Basnight <mbasnight@gmail.com>
 """
 
 __all__ = ['__version__']

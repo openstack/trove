@@ -13,8 +13,8 @@
 #    under the License.
 
 from sqlalchemy.schema import Column
-from sqlalchemy.schema import MetaData
 from sqlalchemy.schema import ForeignKey
+from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
