@@ -688,7 +688,7 @@ mongodb_opts = [
                 help='List of UPD ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.StrOpt('backup_strategy', default='MongoDump',
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
@@ -728,11 +728,15 @@ mongodb_opts = [
                'mongodb.guestagent.MongoDbGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
-    cfg.StrOpt('backup_namespace', default=None,
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.experimental.'
+                       'mongo_impl',
                help='Namespace to load backup strategies from.',
                deprecated_name='backup_namespace',
                deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace', default=None,
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.experimental.'
+                       'mongo_impl',
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),

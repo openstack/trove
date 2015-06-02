@@ -39,6 +39,11 @@ BACKUP_CBBACKUP_CLS = ("trove.guestagent.strategies.backup."
                        "experimental.couchbase_impl.CbBackup")
 RESTORE_CBBACKUP_CLS = ("trove.guestagent.strategies.restore."
                         "experimental.couchbase_impl.CbBackup")
+BACKUP_MONGODUMP_CLS = ("trove.guestagent.strategies.backup."
+                        "experimental.mongo_impl.MongoDump")
+RESTORE_MONGODUMP_CLS = ("trove.guestagent.strategies.restore."
+                         "experimental.mongo_impl.MongoDump")
+
 PIPE = " | "
 ZIP = "gzip"
 UNZIP = "gzip -d -c"
@@ -73,6 +78,10 @@ CRYPTO_KEY = "default_aes_cbc_key"
 CBBACKUP_CMD = "tar cpPf - /tmp/backups"
 
 CBBACKUP_RESTORE = "sudo tar xpPf -"
+
+MONGODUMP_CMD = "sudo tar cPf - /var/lib/mongodb/dump"
+
+MONGODUMP_RESTORE = "sudo tar xPf -"
 
 
 class GuestAgentBackupTest(trove_testtools.TestCase):
@@ -312,6 +321,45 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             # (see bug/1423759).
             remove.assert_called_once_with(ANY, force=True, as_root=True)
 
+    def test_backup_encrypted_mongodump_command(self):
+        backupBase.BackupRunner.is_encrypted = True
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_MONGODUMP_CLS)
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(
+            MONGODUMP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn("gz.enc", bkp.manifest)
+
+    def test_backup_not_encrypted_mongodump_command(self):
+        backupBase.BackupRunner.is_encrypted = False
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_MONGODUMP_CLS)
+        utils.execute_with_timeout = mock.Mock(return_value=None)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(MONGODUMP_CMD + PIPE + ZIP, bkp.command)
+        self.assertIn("gz", bkp.manifest)
+
+    def test_restore_decrypted_mongodump_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = False
+        RunnerClass = utils.import_class(RESTORE_MONGODUMP_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd, UNZIP + PIPE + MONGODUMP_RESTORE)
+
+    def test_restore_encrypted_mongodump_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = True
+        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_MONGODUMP_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd,
+                         DECRYPT + PIPE + UNZIP + PIPE + MONGODUMP_RESTORE)
+
 
 class CouchbaseBackupTests(trove_testtools.TestCase):
 
@@ -365,6 +413,85 @@ class CouchbaseRestoreTests(trove_testtools.TestCase):
 
     def tearDown(self):
         super(CouchbaseRestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=expected_content_length)
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner.post_restore = mock.Mock()
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_pre_restore(self):
+        self.restore_runner.post_restore = mock.Mock()
+        self.restore_runner.pre_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner._run_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner._run_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner.post_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+
+class MongodbBackupTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(MongodbBackupTests, self).setUp()
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch.start()
+        self.backup_runner = utils.import_class(
+            BACKUP_MONGODUMP_CLS)
+        self.backup_runner_patch = patch.multiple(
+            self.backup_runner, _run=DEFAULT,
+            _run_pre_backup=DEFAULT, _run_post_backup=DEFAULT)
+
+    def tearDown(self):
+        super(MongodbBackupTests, self).tearDown()
+        self.backup_runner_patch.stop()
+        self.exec_timeout_patch.stop()
+
+    def test_backup_success(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        with self.backup_runner(12345):
+            pass
+
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        backup_runner_mocks['_run_post_backup'].assert_called_once_with()
+
+    def test_backup_failed_due_to_run_backup(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        backup_runner_mocks['_run'].configure_mock(
+            side_effect=exception.TroveError('test')
+        )
+        with ExpectedException(exception.TroveError, 'test'):
+            with self.backup_runner(12345):
+                pass
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        self.assertEqual(0, backup_runner_mocks['_run_post_backup'].call_count)
+
+
+class MongodbRestoreTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(MongodbRestoreTests, self).setUp()
+
+        self.restore_runner = utils.import_class(
+            RESTORE_MONGODUMP_CLS)('swift', location='http://some.where',
+                                   checksum='True_checksum',
+                                   restore_location='/var/lib/somewhere')
+
+    def tearDown(self):
+        super(MongodbRestoreTests, self).tearDown()
 
     def test_restore_success(self):
         expected_content_length = 123

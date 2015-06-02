@@ -327,6 +327,13 @@ class MongoDBApp(object):
         # TODO(ramashri) see if hardcoded values can be removed
         utils.poll_until(check_rs_status, sleep_time=60, time_out=100)
 
+    def list_databases(self):
+        cmd = 'db.adminCommand("listDatabases").databases'
+        out, err = self.do_mongo(cmd)
+        out.strip()
+        dbs = json.loads(out)
+        return [d['name'] for d in dbs]
+
 
 class MongoDbAppStatus(service.BaseDbStatus):
 

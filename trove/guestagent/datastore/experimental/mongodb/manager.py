@@ -21,6 +21,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
+from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
@@ -84,6 +85,9 @@ class Manager(periodic_task.PeriodicTasks):
             config_contents, conf_changes)
         if cluster_config is None:
             self.app.start_db_with_conf_changes(config_contents)
+            if backup_info:
+                self._perform_restore(backup_info, context,
+                                      mount_point, self.app)
         else:
             if cluster_config['instance_type'] == "query_router":
                 self.app.reset_configuration({'config_contents':
@@ -218,13 +222,19 @@ class Manager(periodic_task.PeriodicTasks):
             operation='is_root_enabled', datastore=MANAGER)
 
     def _perform_restore(self, backup_info, context, restore_location, app):
-        raise exception.DatastoreOperationNotSupported(
-            operation='_perform_restore', datastore=MANAGER)
+        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        try:
+            backup.restore(context, backup_info, restore_location)
+        except Exception:
+            LOG.exception(_("Error performing restore from backup %s.") %
+                          backup_info['id'])
+            self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully."))
 
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_backup', datastore=MANAGER)
+        backup.backup(context, backup_info)
 
     def mount_volume(self, context, device_path=None, mount_point=None):
         LOG.debug("Mounting the device %s at the mount point %s." %
