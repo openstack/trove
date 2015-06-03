@@ -163,6 +163,7 @@ class VerticaApp(object):
             system.shell_execute(create_db_command, "dbadmin")
         except Exception:
             LOG.exception(_("Vertica database create failed."))
+            raise RuntimeError(_("Vertica database create failed."))
         LOG.info(_("Vertica database create completed."))
 
     def install_vertica(self, members=netutils.get_my_ipv4()):
@@ -175,6 +176,7 @@ class VerticaApp(object):
             system.shell_execute(install_vertica_cmd)
         except exception.ProcessExecutionError:
             LOG.exception(_("install_vertica failed."))
+            raise RuntimeError(_("install_vertica failed."))
         self._generate_database_password()
         LOG.info(_("install_vertica completed."))
 
