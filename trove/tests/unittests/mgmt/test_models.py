@@ -70,7 +70,10 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         self.client.servers = self.server_mgr
         self.flavor_mgr = MagicMock(spec=FlavorManager)
         self.client.flavors = self.flavor_mgr
-        remote.create_admin_nova_client = MagicMock(return_value=self.client)
+        self.admin_client_patch = patch.object(
+            remote, 'create_admin_nova_client', return_value=self.client)
+        self.addCleanup(self.admin_client_patch.stop)
+        self.admin_client_patch.start()
         CONF.set_override('host', 'test_host')
         CONF.set_override('exists_notification_ticks', 1)
         CONF.set_override('report_interval', 20)
@@ -246,7 +249,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                                 Not(Is(None)))
                 self.assertIn(status.lower(),
                               [db['state']
-                              for db in payloads])
+                               for db in payloads])
                 self.assertThat(payload['instance_type'],
                                 Equals('db.small'))
                 self.assertThat(payload['instance_type_id'],
@@ -340,7 +343,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                 self.assertThat(payload['audit_period_ending'], Not(Is(None)))
                 self.assertIn(status.lower(),
                               [db['state']
-                              for db in payloads])
+                               for db in payloads])
                 self.assertThat(payload['instance_type'], Equals('db.small'))
                 self.assertThat(payload['instance_type_id'],
                                 Equals('flavor_1'))
