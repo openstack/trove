@@ -61,3 +61,17 @@ class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
         utils.LOG.error.assert_called_with(
             u"Command 'test' failed. test-desc Exit code: 42\n"
             "stderr: err\nstdout: out")
+
+    def test_unpack_singleton(self):
+        self.assertEqual([1, 2, 3], utils.unpack_singleton([1, 2, 3]))
+        self.assertEqual(0, utils.unpack_singleton([0]))
+        self.assertEqual('test', utils.unpack_singleton('test'))
+        self.assertEqual('test', utils.unpack_singleton(['test']))
+        self.assertEqual([], utils.unpack_singleton([]))
+        self.assertEqual(None, utils.unpack_singleton(None))
+        self.assertEqual([None, None], utils.unpack_singleton([None, None]))
+        self.assertEqual('test', utils.unpack_singleton([['test']]))
+        self.assertEqual([1, 2, 3], utils.unpack_singleton([[1, 2, 3]]))
+        self.assertEqual(1, utils.unpack_singleton([[[1]]]))
+        self.assertEqual([[1], [2]], utils.unpack_singleton([[1], [2]]))
+        self.assertEqual(['a', 'b'], utils.unpack_singleton(['a', 'b']))

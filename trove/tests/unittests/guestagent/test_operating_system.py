@@ -15,20 +15,143 @@
 
 import itertools
 import os
+import re
 import stat
+import tempfile
 
 from mock import call, patch
 from oslo_concurrency.processutils import UnknownArgumentError
 from testtools import ExpectedException
 
 from trove.common import exception
+from trove.common.stream_codecs import (
+    IdentityCodec, IniCodec, PropertiesCodec, YamlCodec)
 from trove.common import utils
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.tests.unittests import trove_testtools
 
 
 class TestOperatingSystem(trove_testtools.TestCase):
+
+    def test_identity_file_codec(self):
+        data = ("Lorem Ipsum, Lorem Ipsum\n"
+                "Lorem Ipsum, Lorem Ipsum\n"
+                "Lorem Ipsum, Lorem Ipsum\n")
+
+        self._test_file_codec(data, IdentityCodec())
+
+    def test_ini_file_codec(self):
+        data_no_none = {"Section1": {"s1k1": 's1v1',
+                                     "s1k2": '3.1415926535'},
+                        "Section2": {"s2k1": '1',
+                                     "s2k2": 'True'}}
+
+        self._test_file_codec(data_no_none, IniCodec())
+
+        data_with_none = {"Section1": {"s1k1": 's1v1',
+                                       "s1k2": '3.1415926535'},
+                          "Section2": {"s2k1": '1',
+                                       "s2k2": 'True',
+                                       "s2k3": None}}
+
+        # Keys with None values will be written without value.
+        self._test_file_codec(data_with_none, IniCodec())
+
+        # None will be replaced with 'default_value'.
+        default_value = '1'
+        expected_data = guestagent_utils.update_dict(
+            {"Section2": {"s2k3": default_value}}, dict(data_with_none))
+        self._test_file_codec(data_with_none,
+                              IniCodec(default_value=default_value),
+                              expected_data=expected_data)
+
+    def test_yaml_file_codec(self):
+        data = {"Section1": 's1v1',
+                "Section2": {"s2k1": '1',
+                             "s2k2": 'True'},
+                "Section3": {"Section4": {"s4k1": '3.1415926535',
+                                          "s4k2": None}}
+                }
+
+        self._test_file_codec(data, YamlCodec())
+        self._test_file_codec(data, YamlCodec(default_flow_style=True))
+
+    def test_properties_file_codec(self):
+        data = {'key1': [1, "str1", '127.0.0.1', 3.1415926535, True, None],
+                'key2': [2.0, 3, 0, "str1 str2"],
+                'key3': ['str1', 'str2'],
+                'key4': [],
+                'key5': 5000,
+                'key6': 'str1',
+                'key7': 0,
+                'key8': None,
+                'key9': [['str1', 'str2'], ['str3', 'str4']],
+                'key10': [['str1', 'str2', 'str3'], ['str3', 'str4'], 'str5']
+                }
+
+        self._test_file_codec(data, PropertiesCodec())
+        self._test_file_codec(data, PropertiesCodec(
+            string_mappings={'yes': True, 'no': False, "''": None}))
+
+    def _test_file_codec(self, data, read_codec, write_codec=None,
+                         expected_data=None,
+                         expected_exception=None):
+        write_codec = write_codec or read_codec
+
+        with tempfile.NamedTemporaryFile() as test_file:
+            if expected_exception:
+                with expected_exception:
+                    operating_system.write_file(test_file.name, data,
+                                                codec=write_codec)
+                    operating_system.read_file(test_file.name,
+                                               codec=read_codec)
+            else:
+                operating_system.write_file(test_file.name, data,
+                                            codec=write_codec)
+                read = operating_system.read_file(test_file.name,
+                                                  codec=read_codec)
+                if expected_data is not None:
+                    self.assertEqual(expected_data, read)
+                else:
+                    self.assertEqual(data, read)
+
+    def test_read_write_file_input_validation(self):
+        with ExpectedException(exception.UnprocessableEntity,
+                               "File does not exist: None"):
+            operating_system.read_file(None)
+
+        with ExpectedException(exception.UnprocessableEntity,
+                               "File does not exist: /__DOES_NOT_EXIST__"):
+            operating_system.read_file('/__DOES_NOT_EXIST__')
+
+        with ExpectedException(exception.UnprocessableEntity,
+                               "Invalid path: None"):
+            operating_system.write_file(None, {})
+
+    @patch.object(operating_system, 'copy')
+    def test_write_file_as_root(self, copy_mock):
+        target_file = tempfile.NamedTemporaryFile()
+        temp_file = tempfile.NamedTemporaryFile()
+
+        with patch('tempfile.NamedTemporaryFile', return_value=temp_file):
+            operating_system.write_file(
+                target_file.name, "Lorem Ipsum", as_root=True)
+            copy_mock.assert_called_once_with(
+                temp_file.name, target_file.name, force=True, as_root=True)
+        self.assertFalse(os.path.exists(temp_file.name))
+
+    @patch.object(operating_system, 'copy',
+                  side_effect=Exception("Error while executing 'copy'."))
+    def test_write_file_as_root_with_error(self, copy_mock):
+        target_file = tempfile.NamedTemporaryFile()
+        temp_file = tempfile.NamedTemporaryFile()
+        with patch('tempfile.NamedTemporaryFile', return_value=temp_file):
+            with ExpectedException(Exception, "Error while executing 'copy'."):
+                operating_system.write_file(target_file.name,
+                                            "Lorem Ipsum", as_root=True)
+        self.assertFalse(os.path.exists(temp_file.name))
 
     def test_modes(self):
         self._assert_modes(None, None, None, operating_system.FileMode())
@@ -625,6 +748,86 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
     def test_file_discovery(self):
         with patch.object(os.path, 'isfile', side_effect=[False, True]):
-                config_file = operating_system.file_discovery(
-                    ["/etc/mongodb.conf", "/etc/mongod.conf"])
+            config_file = operating_system.file_discovery(
+                ["/etc/mongodb.conf", "/etc/mongod.conf"])
         self.assertEqual('/etc/mongod.conf', config_file)
+
+    def test_list_files_in_directory(self):
+        root_path = tempfile.mkdtemp()
+        try:
+            all_paths = set()
+            self._create_temp_fs_structure(
+                root_path, 3, 3, ['txt', 'py', ''], 1, all_paths)
+
+            # All files in the top directory.
+            self._assert_list_files(root_path, False, None, all_paths, 9)
+
+            # All files recursive.
+            self._assert_list_files(root_path, True, None, all_paths, 27)
+
+            # Only '*.txt' in the top directory.
+            self._assert_list_files(root_path, False, '.*\.txt$', all_paths, 3)
+
+            # Only '*.txt' recursive.
+            self._assert_list_files(root_path, True, '.*\.txt$', all_paths, 9)
+
+            # Only extension-less files in the top directory.
+            self._assert_list_files(root_path, False, '[^\.]*$', all_paths, 3)
+
+            # Only extension-less files recursive.
+            self._assert_list_files(root_path, True, '[^\.]*$', all_paths, 9)
+
+            # Non-existing extension in the top directory.
+            self._assert_list_files(root_path, False, '.*\.bak$', all_paths, 0)
+
+            # Non-existing extension recursive.
+            self._assert_list_files(root_path, True, '.*\.bak$', all_paths, 0)
+        finally:
+            try:
+                os.remove(root_path)
+            except Exception:
+                pass  # Do not fail in the cleanup.
+
+    def _assert_list_files(self, root, recursive, pattern, all_paths, count):
+        found = operating_system.list_files_in_directory(
+            root, recursive=recursive, pattern=pattern)
+        expected = {
+            path for path in all_paths if (
+                (recursive or os.path.dirname(path) == root) and (
+                    not pattern or re.match(
+                        pattern, os.path.basename(path))))}
+        self.assertEqual(expected, found)
+        self.assertEqual(count, len(found),
+                         "Incorrect number of listed files.")
+
+    def _create_temp_fs_structure(self, root_path,
+                                  num_levels, num_files_per_extension,
+                                  file_extensions, level, created_paths):
+        """Create a structure of temporary directories 'num_levels' deep with
+        temporary files on each level.
+        """
+        file_paths = self._create_temp_files(
+            root_path, num_files_per_extension, file_extensions)
+        created_paths.update(file_paths)
+
+        if level < num_levels:
+            path = tempfile.mkdtemp(dir=root_path)
+            self._create_temp_fs_structure(
+                path, num_levels, num_files_per_extension,
+                file_extensions, level + 1, created_paths)
+
+    def _create_temp_files(self, root_path, num_files_per_extension,
+                           file_extensions):
+        """Create 'num_files_per_extension' temporary files
+        per each of the given extensions.
+        """
+        files = set()
+        for ext in file_extensions:
+            for fileno in range(1, num_files_per_extension + 1):
+                prefix = str(fileno)
+                suffix = os.extsep + ext if ext else ''
+                _, path = tempfile.mkstemp(prefix=prefix, suffix=suffix,
+                                           dir=root_path)
+                files.add(path)
+
+        return files
