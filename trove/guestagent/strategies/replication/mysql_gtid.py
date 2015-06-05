@@ -36,7 +36,8 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
             "MASTER_PORT=%(port)s, "
             "MASTER_USER='%(user)s', "
             "MASTER_PASSWORD='%(password)s', "
-            "MASTER_AUTO_POSITION=1 " %
+            "MASTER_AUTO_POSITION=1, "
+            "MASTER_CONNECT_RETRY=15" %
             {
                 'host': snapshot['master']['host'],
                 'port': snapshot['master']['port'],
