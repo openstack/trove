@@ -33,7 +33,7 @@ def startup(conf, topic):
 
 @with_initialize(extra_opts=extra_opts)
 def main(conf):
-    startup(conf, None)
+    startup(conf, conf.taskmanager_queue)
 
 
 @with_initialize(extra_opts=extra_opts)
