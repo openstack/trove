@@ -19,16 +19,16 @@ import stat
 
 from mock import call, patch
 from oslo_concurrency.processutils import UnknownArgumentError
-import testtools
 from testtools import ExpectedException
 
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+from trove.tests.unittests import trove_testtools
 
 
-class TestOperatingSystem(testtools.TestCase):
+class TestOperatingSystem(trove_testtools.TestCase):
 
     def test_modes(self):
         self._assert_modes(None, None, None, operating_system.FileMode())

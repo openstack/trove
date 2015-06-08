@@ -20,18 +20,19 @@ import subprocess
 
 from mock import Mock, MagicMock, patch
 import pexpect
-import testtools
 
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent import pkg
+from trove.tests.unittests import trove_testtools
+
 
 """
 Unit tests for the classes and functions in pkg.py.
 """
 
 
-class PkgDEBInstallTestCase(testtools.TestCase):
+class PkgDEBInstallTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBInstallTestCase, self).setUp()
@@ -141,7 +142,7 @@ class PkgDEBInstallTestCase(testtools.TestCase):
                           self.pkgName, {}, 5000)
 
 
-class PkgDEBRemoveTestCase(testtools.TestCase):
+class PkgDEBRemoveTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBRemoveTestCase, self).setUp()
@@ -258,7 +259,7 @@ class PkgDEBRemoveTestCase(testtools.TestCase):
         self.assertEqual(1, mock_call.call_count)
 
 
-class PkgDEBVersionTestCase(testtools.TestCase):
+class PkgDEBVersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBVersionTestCase, self).setUp()
@@ -288,7 +289,7 @@ class PkgDEBVersionTestCase(testtools.TestCase):
         self.assertFalse(pkg.DebianPackagerMixin().pkg_version(self.pkgName))
 
 
-class PkgRPMVersionTestCase(testtools.TestCase):
+class PkgRPMVersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgRPMVersionTestCase, self).setUp()
@@ -313,7 +314,7 @@ class PkgRPMVersionTestCase(testtools.TestCase):
         self.assertEqual(self.pkgVersion, version)
 
 
-class PkgRPMInstallTestCase(testtools.TestCase):
+class PkgRPMInstallTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgRPMInstallTestCase, self).setUp()
@@ -339,15 +340,15 @@ class PkgRPMInstallTestCase(testtools.TestCase):
 
     def test_pkg_is_installed_yes(self):
         packages = ["package1=1.0", "package2"]
-        commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
-                                                           "package2=2.0"})
-        self.assertTrue(self.pkg.pkg_is_installed(packages))
+        with patch.object(commands, 'getstatusoutput', MagicMock(
+                          return_value={1: "package1=1.0\n" "package2=2.0"})):
+            self.assertTrue(self.pkg.pkg_is_installed(packages))
 
     def test_pkg_is_installed_no(self):
         packages = ["package1=1.0", "package2", "package3=3.0"]
-        commands.getstatusoutput = MagicMock(return_value={1: "package1=1.0\n"
-                                                           "package2=2.0"})
-        self.assertFalse(self.pkg.pkg_is_installed(packages))
+        with patch.object(commands, 'getstatusoutput', MagicMock(
+                          return_value={1: "package1=1.0\n" "package2=2.0"})):
+            self.assertFalse(self.pkg.pkg_is_installed(packages))
 
     def test_permission_error(self):
         # test
@@ -449,7 +450,7 @@ class PkgRPMInstallTestCase(testtools.TestCase):
                           self.pkgName, {}, 5000)
 
 
-class PkgRPMRemoveTestCase(testtools.TestCase):
+class PkgRPMRemoveTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgRPMRemoveTestCase, self).setUp()
@@ -513,7 +514,7 @@ class PkgRPMRemoveTestCase(testtools.TestCase):
                           self.pkgName, 5000)
 
 
-class PkgDEBFixPackageSelections(testtools.TestCase):
+class PkgDEBFixPackageSelections(trove_testtools.TestCase):
 
     def setUp(self):
         super(PkgDEBFixPackageSelections, self).setUp()
