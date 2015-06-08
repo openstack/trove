@@ -23,6 +23,7 @@ gettext.install('trove', unicode=1)
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import utils
 from trove.configuration import models as config_models
 from trove.datastore import models as datastore_models
