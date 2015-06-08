@@ -42,10 +42,10 @@ class Commands(object):
         self.db_api.db_sync(CONF, repo_path=repo_path)
 
     def db_upgrade(self, version=None, repo_path=None):
-        self.db_api.db_upgrade(CONF, version, repo_path=None)
+        self.db_api.db_upgrade(CONF, version, repo_path=repo_path)
 
     def db_downgrade(self, version, repo_path=None):
-        self.db_api.db_downgrade(CONF, version, repo_path=None)
+        self.db_api.db_downgrade(CONF, version, repo_path=repo_path)
 
     def execute(self):
         exec_method = getattr(self, CONF.action.name)
