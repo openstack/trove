@@ -46,9 +46,12 @@ class User(object):
         self.databases = databases
 
     @classmethod
-    def load(cls, context, instance_id, username, hostname):
+    def load(cls, context, instance_id, username, hostname, root_user=False):
         load_and_verify(context, instance_id)
-        validate = guest_models.MySQLUser()
+        if root_user:
+            validate = guest_models.RootUser()
+        else:
+            validate = guest_models.MySQLUser()
         validate.name = username
         validate.host = hostname
         client = create_guest_client(context, instance_id)

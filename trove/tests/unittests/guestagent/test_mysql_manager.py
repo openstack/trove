@@ -167,6 +167,11 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.assertThat(user_id, Is(enable_root_mock.return_value))
         enable_root_mock.assert_any_call()
 
+    @patch.object(dbaas.MySqlAdmin, 'disable_root')
+    def test_disable_root(self, disable_root_mock):
+        self.manager.disable_root(self.context)
+        disable_root_mock.assert_any_call()
+
     @patch.object(dbaas.MySqlAdmin, 'is_root_enabled', return_value=True)
     def test_is_root_enabled(self, is_root_enabled_mock):
         is_enabled = self.manager.is_root_enabled(self.context)

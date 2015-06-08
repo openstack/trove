@@ -497,6 +497,17 @@ class Root(Example):
             lambda client: client.root.is_root_enabled(json_instance.id))
         assert_equal(results[JSON_INDEX].rootEnabled, True)
 
+    @test(depends_on=[get_check_root_access])
+    def delete_disable_root_access(self):
+        self.snippet(
+            "disable_root_user",
+            "/instances/%s/root" % json_instance.id,
+            "DELETE", 200, "OK",
+            lambda client: client.root.delete(json_instance.id))
+
+        # restore root for subsequent tests
+        self.post_enable_root_access()
+
 
 class ActiveMixin(Example):
     """Adds a method to wait for instance status to become ACTIVE."""

@@ -416,6 +416,11 @@ class BaseMySqlAdmin(object):
         """
         return self.mysql_root_access.enable_root(root_password)
 
+    def disable_root(self):
+        """Disable the root user global access
+        """
+        return self.mysql_root_access.disable_root()
+
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance."""
         LOG.debug("---Listing Databases---")
@@ -1011,10 +1016,7 @@ class BaseMySqlRootAccess(object):
         """Enable the root user global access and/or
            reset the root password.
         """
-        user = models.RootUser()
-        user.name = "root"
-        user.host = "%"
-        user.password = root_password or utils.generate_random_password()
+        user = models.MySQLRootUser(root_password)
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             print(client)
             try:
@@ -1044,3 +1046,9 @@ class BaseMySqlRootAccess(object):
             t = text(str(g))
             client.execute(t)
             return user.serialize()
+
+    def disable_root(self):
+        """Disable the root user global access
+        """
+        with self.local_sql_client(self.mysql_app.get_engine()) as client:
+            client.execute(text(sql_query.REMOVE_ROOT))

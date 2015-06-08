@@ -157,6 +157,11 @@ class FakeGuest(object):
             "_databases": [],
         })
 
+    def disable_root(self):
+        self.delete_user({
+            "_name": "root",
+            "_host": "%"})
+
     def delete_user(self, user):
         username = user['_name']
         self._check_username(username)

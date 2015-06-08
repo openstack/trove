@@ -22,6 +22,7 @@ import netaddr
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import utils
 
 CONF = cfg.CONF
 
@@ -840,6 +841,19 @@ class MySQLUser(Base):
 
 class RootUser(MySQLUser):
     """Overrides _ignore_users from the MySQLUser class."""
-
+#    _ignore_users = []
     def __init__(self):
         self._ignore_users = []
+
+
+class MySQLRootUser(RootUser):
+    """Represents the MySQL root user."""
+
+    def __init__(self, password=None):
+        super(MySQLRootUser, self).__init__()
+        self._name = "root"
+        self._host = "%"
+        if password is None:
+            self._password = utils.generate_random_password()
+        else:
+            self._password = password

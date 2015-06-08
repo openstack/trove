@@ -26,6 +26,7 @@ from trove.common.i18n import _
 from trove.common import pagination
 from trove.common.utils import correct_id_with_req
 from trove.common import wsgi
+from trove.extensions.common.service import DefaultRootController
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.extensions.mysql.common import unquote_user_host
@@ -294,3 +295,12 @@ class SchemaController(wsgi.Controller):
 
     def show(self, req, tenant_id, instance_id, id):
         raise webob.exc.HTTPNotImplemented()
+
+
+class MySQLRootController(DefaultRootController):
+
+    def _find_root_user(self, context, instance_id):
+        user = guest_models.MySQLRootUser()
+        return models.User.load(context, instance_id,
+                                user.name, user.host,
+                                root_user=True)

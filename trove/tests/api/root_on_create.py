@@ -116,3 +116,16 @@ class TestRootOnCreate(object):
         enabled = self.enabled(self.instance_id).rootEnabled
         assert_equal(200, self.dbaas.last_http_code)
         assert_true(enabled)
+
+    @test(depends_on=[test_root_still_enabled])
+    def test_root_disable(self):
+        """
+        After root disable ensure the the history enabled flag
+        is still enabled.
+        """
+        self.dbaas.root.delete(self.instance_id)
+        assert_equal(200, self.dbaas.last_http_code)
+
+        enabled = self.enabled(self.instance_id).rootEnabled
+        assert_equal(200, self.dbaas.last_http_code)
+        assert_true(enabled)

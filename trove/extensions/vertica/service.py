@@ -15,6 +15,8 @@
 
 from oslo_log import log as logging
 
+from trove.common import cfg
+from trove.common import exception
 from trove.common.i18n import _LI
 from trove.common import wsgi
 from trove.extensions.common.service import BaseDatastoreRootController
@@ -23,6 +25,8 @@ from trove.extensions.vertica import models
 from trove.instance.models import DBInstance
 
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
+MANAGER = CONF.datastore_manager
 
 
 class VerticaRootController(BaseDatastoreRootController):
@@ -73,6 +77,10 @@ class VerticaRootController(BaseDatastoreRootController):
             tenant_id, cluster_id)
         return self.instance_root_create(req, body, master_instance_id,
                                          cluster_instances)
+
+    def delete(self, req, tenant_id, instance_id):
+        raise exception.DatastoreOperationNotSupported(
+            operation='disable_root', datastore=MANAGER)
 
     def _get_cluster_instance_id(self, tenant_id, cluster_id):
         args = {'tenant_id': tenant_id, 'cluster_id': cluster_id}

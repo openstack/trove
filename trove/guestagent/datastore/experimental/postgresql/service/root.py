@@ -87,3 +87,10 @@ class PgSqlRoot(PgSqlUsers):
         )
         pgutil.psql(query, timeout=30)
         return user
+
+    def disable_root(self, context):
+        """Generate a new random password for the public superuser account.
+        Do not disable its access rights. Once enabled the account should
+        stay that way.
+        """
+        self.enable_root(context)
