@@ -47,7 +47,8 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
             "MASTER_USER='%(user)s', "
             "MASTER_PASSWORD='%(password)s', "
             "MASTER_LOG_FILE='%(log_file)s', "
-            "MASTER_LOG_POS=%(log_pos)s" %
+            "MASTER_LOG_POS=%(log_pos)s, "
+            "MASTER_CONNECT_RETRY=15" %
             {
                 'host': snapshot['master']['host'],
                 'port': snapshot['master']['port'],
