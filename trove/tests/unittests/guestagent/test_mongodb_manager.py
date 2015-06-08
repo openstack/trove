@@ -19,6 +19,7 @@ import trove.common.context as context
 import trove.common.utils as utils
 import trove.guestagent.backup as backup
 import trove.guestagent.datastore.experimental.mongodb.manager as manager
+import trove.guestagent.datastore.experimental.mongodb.service as service
 import trove.guestagent.volume as volume
 import trove.tests.unittests.trove_testtools as trove_testtools
 
@@ -113,3 +114,89 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         mocked_restore.assert_called_with(self.context, backup_info,
                                           '/var/lib/mongodb')
+
+    # This is used in the test_*_user tests below
+    _serialized_user = {'_name': 'testdb.testuser', '_password': None,
+                        '_roles': [{'db': 'testdb', 'role': 'testrole'}],
+                        '_username': 'testuser', '_databases': [],
+                        '_host': None,
+                        '_database': {'_name': 'testdb',
+                                      '_character_set': None,
+                                      '_collate': None}}
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    def test_create_user(self, mocked_admin_user, mocked_client):
+        user = self._serialized_user.copy()
+        user['_password'] = 'testpassword'
+        users = [user]
+
+        client = mocked_client().__enter__()['testdb']
+
+        self.manager.create_user(self.context, users)
+
+        client.add_user.assert_called_with('testuser', password='testpassword',
+                                           roles=[{'db': 'testdb',
+                                                   'role': 'testrole'}])
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    def test_delete_user(self, mocked_admin_user, mocked_client):
+        client = mocked_client().__enter__()['testdb']
+
+        self.manager.delete_user(self.context, self._serialized_user)
+
+        client.remove_user.assert_called_with('testuser')
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    def test_get_user(self, mocked_admin_user, mocked_client):
+        mocked_find = mock.MagicMock(return_value={
+            '_id': 'testdb.testuser',
+            'user': 'testuser', 'db': 'testdb',
+            'roles': [{'db': 'testdb', 'role': 'testrole'}]
+        })
+        client = mocked_client().__enter__().admin
+        client.system.users.find_one = mocked_find
+
+        result = self.manager.get_user(self.context, 'testdb.testuser', None)
+
+        mocked_find.assert_called_with({'user': 'testuser', 'db': 'testdb'})
+        self.assertEqual(self._serialized_user, result)
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    def test_list_users(self, mocked_admin_user, mocked_client):
+        # roles are NOT returned by list_users
+        user1 = self._serialized_user.copy()
+        user1['_roles'] = []
+        user2 = self._serialized_user.copy()
+        user2['_name'] = 'testdb.otheruser'
+        user2['_username'] = 'otheruser'
+        user2['_roles'] = []
+
+        mocked_find = mock.MagicMock(return_value=[
+            {
+                '_id': 'admin.os_admin',
+                'user': 'os_admin', 'db': 'admin',
+                'roles': [{'db': 'admin', 'role': 'root'}]
+            },
+            {
+                '_id': 'testdb.testuser',
+                'user': 'testuser', 'db': 'testdb',
+                'roles': [{'db': 'testdb', 'role': 'testrole'}]
+            },
+            {
+                '_id': 'testdb.otheruser',
+                'user': 'otheruser', 'db': 'testdb',
+                'roles': []
+            }
+        ])
+
+        client = mocked_client().__enter__().admin
+        client.system.users.find = mocked_find
+
+        users, next_marker = self.manager.list_users(self.context)
+
+        self.assertEqual(None, next_marker)
+        self.assertEqual(sorted([user1, user2]), users)

@@ -26,6 +26,7 @@ from trove.common import exception
 from trove.common.exception import ProcessExecutionError
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
+from trove.common import pagination
 from trove.common import utils as utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import system
@@ -468,18 +469,70 @@ class MongoDBAdmin(object):
                 '--authenticationDatabase', user.database.name]
 
     def _create_user_with_client(self, user, client):
-        """Run the create user."""
+        """Run the add user command."""
         client[user.database.name].add_user(
             user.username, password=user.password, roles=user.roles
         )
 
     def create_user(self, user, client=None):
-        """Creates a user, authenticated on the specified database."""
+        """Creates a user on their database."""
+        LOG.debug('Creating user %s on database %s with roles %s.'
+                  % (user.username, user.database.name, str(user.roles)))
+
+        if not user.password:
+            raise exception.BadRequest(_("User's password is empty."))
+
         if client:
             self._create_user_with_client(user, client)
         else:
             with MongoDBClient(self._admin_user()) as admin_client:
                 self._create_user_with_client(user, admin_client)
+
+    def create_users(self, users):
+        """Create the given user(s)."""
+        with MongoDBClient(self._admin_user()) as client:
+            for user in users:
+                self.create_user(models.MongoDBUser.deserialize_user(user),
+                                 client)
+
+    def delete_user(self, user):
+        """Delete the given user."""
+        user = models.MongoDBUser.deserialize_user(user)
+        username = user.username
+        db_name = user.database.name
+        LOG.debug('Deleting user %s from database %s.' % (username, db_name))
+        with MongoDBClient(self._admin_user()) as admin_client:
+            admin_client[db_name].remove_user(username)
+
+    def _get_user_record(self, client, user):
+        """Get the user's record."""
+        return client.admin.system.users.find_one(
+            {'user': user.username, 'db': user.database.name}
+        )
+
+    def get_user(self, name):
+        """Get information for the given user."""
+        LOG.debug('Getting user %s.' % name)
+        user = models.MongoDBUser(name)
+        with MongoDBClient(self._admin_user()) as admin_client:
+            user_info = self._get_user_record(admin_client, user)
+            if not user_info:
+                return None
+            user.roles = user_info['roles']
+        return user.serialize()
+
+    def list_users(self, limit=None, marker=None, include_marker=False):
+        """Get a list of all users."""
+        users = []
+        with MongoDBClient(self._admin_user()) as admin_client:
+            for user_info in admin_client.admin.system.users.find():
+                user = models.MongoDBUser(name=user_info['_id'])
+                if user.name == 'admin.os_admin':
+                    continue
+                users.append(user.serialize())
+        LOG.debug('users = ' + str(users))
+        return pagination.paginate_list(users, limit, marker,
+                                        include_marker)
 
     def list_database_names(self):
         """Get the list of database names."""
