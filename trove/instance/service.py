@@ -304,7 +304,9 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
 
         args = {}
-        args['detach_replica'] = 'slave_of' in body['instance']
+        args['detach_replica'] = ('replica_of' in body['instance'] or
+                                  'slave_of' in body['instance'])
+
         if 'name' in body['instance']:
             args['name'] = body['instance']['name']
         if 'configuration' in body['instance']:
