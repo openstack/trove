@@ -24,14 +24,14 @@ python-swiftclient>=2.2.0
 python-designateclient>=1.0.0
 python-neutronclient>=2.3.11,<3
 iso8601>=0.1.9
-jsonschema>=2.0.0,<3.0.0
+jsonschema>=2.0.0,<3.0.0,!=2.5.0
 Jinja2>=2.6  # BSD License (3 clause)
 pexpect>=3.1,!=3.3 # ISC License
 oslo.config>=1.11.0  # Apache-2.0
 oslo.i18n>=1.5.0  # Apache-2.0
 oslo.serialization>=1.4.0               # Apache-2.0
 oslo.utils>=1.4.0                       # Apache-2.0
-oslo.concurrency>=1.8.0         # Apache-2.0
+oslo.concurrency>=2.0.0         # Apache-2.0
 MySQL-python
 Babel>=1.3
 six>=1.9.0
