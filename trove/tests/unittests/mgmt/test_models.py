@@ -62,6 +62,12 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         )
         super(MockMgmtInstanceTest, cls).setUpClass()
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.version.delete()
+        cls.datastore.delete()
+        super(MockMgmtInstanceTest, cls).tearDownClass()
+
     def setUp(self):
         self.context = TroveContext()
         self.context.auth_token = 'some_secret_password'
