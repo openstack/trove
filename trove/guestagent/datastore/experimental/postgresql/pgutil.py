@@ -55,7 +55,7 @@ def result(filename):
         for line in file_handle:
             if line != "":
                 yield line.split(',')
-    operating_system.remove(filename)
+    operating_system.remove(filename, as_root=True)
     raise StopIteration()
 
 
