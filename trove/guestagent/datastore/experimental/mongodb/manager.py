@@ -193,18 +193,15 @@ class Manager(periodic_task.PeriodicTasks):
 
     def grant_access(self, context, username, hostname, databases):
         LOG.debug("Granting acccess.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='grant_access', datastore=MANAGER)
+        return service.MongoDBAdmin().grant_access(username, databases)
 
     def revoke_access(self, context, username, hostname, database):
         LOG.debug("Revoking access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='revoke_access', datastore=MANAGER)
+        return service.MongoDBAdmin().revoke_access(username, database)
 
     def list_access(self, context, username, hostname):
         LOG.debug("Listing access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_access', datastore=MANAGER)
+        return service.MongoDBAdmin().list_access(username)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):

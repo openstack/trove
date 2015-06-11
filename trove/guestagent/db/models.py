@@ -682,9 +682,15 @@ class MongoDBUser(DatastoreUser):
         else:
             self._add_role(value)
 
+    def revoke_role(self, role):
+        if role in self.roles:
+            self._roles.remove(role)
+
     def _init_roles(self):
         if '_roles' not in self.__dict__:
             self._roles = []
+            for db in self._databases:
+                self._roles.append({'db': db['_name'], 'role': 'readWrite'})
 
     @classmethod
     def deserialize_user(cls, value):
@@ -723,9 +729,15 @@ class MongoDBUser(DatastoreUser):
         if not self._is_valid_role(value):
             raise ValueError(_('Role %s is invalid.') % value)
         self._roles.append(value)
+        if value['role'] == 'readWrite':
+            self.databases = value['db']
 
     def _is_valid_role(self, value):
-        return isinstance(value, dict) or isinstance(value, str)
+        if not isinstance(value, dict):
+            return False
+        if not {'db', 'role'} == set(value):
+            return False
+        return True
 
     @classmethod
     def _dict_requirements(cls):

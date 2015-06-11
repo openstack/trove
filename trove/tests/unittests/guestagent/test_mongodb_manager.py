@@ -183,11 +183,13 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
     def test_list_users(self, mocked_admin_user, mocked_client):
         # roles are NOT returned by list_users
         user1 = self._serialized_user.copy()
-        user1['_roles'] = []
         user2 = self._serialized_user.copy()
         user2['_name'] = 'testdb.otheruser'
         user2['_username'] = 'otheruser'
-        user2['_roles'] = []
+        user2['_roles'] = [{'db': 'testdb2', 'role': 'readWrite'}]
+        user2['_databases'] = [{'_name': 'testdb2',
+                                         '_character_set': None,
+                                         '_collate': None}]
 
         mocked_find = mock.MagicMock(return_value=[
             {
@@ -203,7 +205,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
             {
                 '_id': 'testdb.otheruser',
                 'user': 'otheruser', 'db': 'testdb',
-                'roles': []
+                'roles': [{'db': 'testdb2', 'role': 'readWrite'}]
             }
         ])
 
@@ -225,7 +227,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
                                    '_character_set': None,
                                    '_collate': None},
                      '_password': 'password',
-                     '_roles': ['root'],
+                     '_roles': [{'db': 'admin', 'role': 'root'}],
                      '_databases': [],
                      '_host': None}
 
@@ -233,6 +235,64 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         self.assertTrue(mock_create_user.called)
         self.assertEqual(root_user, result)
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    @mock.patch.object(service.MongoDBAdmin, '_get_user_record',
+                       return_value=models.MongoDBUser('testdb.testuser'))
+    def test_grant_access(self, mocked_get_user,
+                          mocked_admin_user, mocked_client):
+        client = mocked_client().__enter__()['testdb']
+
+        self.manager.grant_access(self.context, 'testdb.testuser',
+                                  None, ['db1', 'db2', 'db3'])
+
+        client.add_user.assert_called_with('testuser', roles=[
+            {'db': 'db1', 'role': 'readWrite'},
+            {'db': 'db2', 'role': 'readWrite'},
+            {'db': 'db3', 'role': 'readWrite'}
+        ])
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    @mock.patch.object(service.MongoDBAdmin, '_get_user_record',
+                       return_value=models.MongoDBUser('testdb.testuser'))
+    def test_revoke_access(self, mocked_get_user,
+                           mocked_admin_user, mocked_client):
+        client = mocked_client().__enter__()['testdb']
+
+        mocked_get_user.return_value.roles = [
+            {'db': 'db1', 'role': 'readWrite'},
+            {'db': 'db2', 'role': 'readWrite'},
+            {'db': 'db3', 'role': 'readWrite'}
+        ]
+
+        self.manager.revoke_access(self.context, 'testdb.testuser',
+                                   None, 'db2')
+
+        client.add_user.assert_called_with('testuser', roles=[
+            {'db': 'db1', 'role': 'readWrite'},
+            {'db': 'db3', 'role': 'readWrite'}
+        ])
+
+    @mock.patch.object(service, 'MongoDBClient')
+    @mock.patch.object(service.MongoDBAdmin, '_admin_user')
+    @mock.patch.object(service.MongoDBAdmin, '_get_user_record',
+                       return_value=models.MongoDBUser('testdb.testuser'))
+    def test_list_access(self, mocked_get_user,
+                         mocked_admin_user, mocked_client):
+        mocked_get_user.return_value.roles = [
+            {'db': 'db1', 'role': 'readWrite'},
+            {'db': 'db2', 'role': 'readWrite'},
+            {'db': 'db3', 'role': 'readWrite'}
+        ]
+
+        accessible_databases = self.manager.list_access(
+            self.context, 'testdb.testuser', None
+        )
+
+        self.assertEqual(['db1', 'db2', 'db3'],
+                         [db['_name'] for db in accessible_databases])
 
     @mock.patch.object(service, 'MongoDBClient')
     @mock.patch.object(service.MongoDBAdmin, '_admin_user')

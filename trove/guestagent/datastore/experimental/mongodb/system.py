@@ -27,9 +27,9 @@ CONFIG_CANDIDATES = ["/etc/mongodb.conf", "/etc/mongod.conf"]
 MONGOS_UPSTART = "/etc/init/mongos.conf"
 TMP_MONGOS_UPSTART = "/tmp/mongos.conf.tmp"
 MONGO_ADMIN_NAME = 'os_admin'
-MONGO_ADMIN_ROLES = ['userAdminAnyDatabase',
-                     'dbAdminAnyDatabase',
-                     'clusterAdmin']
+MONGO_ADMIN_ROLES = [{'db': 'admin', 'role': 'userAdminAnyDatabase'},
+                     {'db': 'admin', 'role': 'dbAdminAnyDatabase'},
+                     {'db': 'admin', 'role': 'clusterAdmin'}]
 MONGO_ADMIN_CREDS_FILE = path.join(path.expanduser('~'),
                                    '.os_mongo_admin_creds.json')
 MONGO_KEY_FILE = '/etc/mongo_key'

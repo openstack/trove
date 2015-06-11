@@ -42,6 +42,7 @@ CONFIG_FILE = (operating_system.
 MONGODB_PORT = CONF.mongodb.mongodb_port
 CONFIGSVR_PORT = CONF.mongodb.configsvr_port
 IGNORED_DBS = CONF.mongodb.ignore_dbs
+IGNORED_USERS = CONF.mongodb.ignore_users
 
 
 class MongoDBApp(object):
@@ -374,7 +375,6 @@ class MongoDBApp(object):
         user = models.MongoDBUser(name='admin.%s' % creds.username,
                                   password=creds.password)
         user.roles = system.MONGO_ADMIN_ROLES
-        user.databases = 'admin'
         with MongoDBClient(user, auth=False) as client:
             MongoDBAdmin().create_user(user, client=client)
         LOG.debug('Created admin user.')
@@ -454,7 +454,6 @@ class MongoDBAdmin(object):
                 'admin.%s' % creds.username,
                 creds.password
             )
-            user.databases = 'admin'
             type(self).admin_user = user
         return type(self).admin_user
 
@@ -504,22 +503,21 @@ class MongoDBAdmin(object):
         with MongoDBClient(self._admin_user()) as admin_client:
             admin_client[db_name].remove_user(username)
 
-    def _get_user_record(self, client, user):
+    def _get_user_record(self, name):
         """Get the user's record."""
-        return client.admin.system.users.find_one(
-            {'user': user.username, 'db': user.database.name}
-        )
+        user = models.MongoDBUser(name)
+        with MongoDBClient(self._admin_user()) as admin_client:
+            user_info = admin_client.admin.system.users.find_one(
+                {'user': user.username, 'db': user.database.name})
+            if not user_info:
+                return None
+            user.roles = user_info['roles']
+        return user
 
     def get_user(self, name):
         """Get information for the given user."""
         LOG.debug('Getting user %s.' % name)
-        user = models.MongoDBUser(name)
-        with MongoDBClient(self._admin_user()) as admin_client:
-            user_info = self._get_user_record(admin_client, user)
-            if not user_info:
-                return None
-            user.roles = user_info['roles']
-        return user.serialize()
+        return self._get_user_record(name).serialize()
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Get a list of all users."""
@@ -527,9 +525,9 @@ class MongoDBAdmin(object):
         with MongoDBClient(self._admin_user()) as admin_client:
             for user_info in admin_client.admin.system.users.find():
                 user = models.MongoDBUser(name=user_info['_id'])
-                if user.name == 'admin.os_admin':
-                    continue
-                users.append(user.serialize())
+                user.roles = user_info['roles']
+                if user.name not in IGNORED_USERS:
+                    users.append(user.serialize())
         LOG.debug('users = ' + str(users))
         return pagination.paginate_list(users, limit, marker,
                                         include_marker)
@@ -540,7 +538,7 @@ class MongoDBAdmin(object):
             LOG.debug('Generating root user password.')
             password = utils.generate_random_password()
         root_user = models.MongoDBUser(name='admin.root', password=password)
-        root_user.roles = 'root'
+        root_user.roles = {'db': 'admin', 'role': 'root'}
         self.create_user(root_user)
         return root_user.serialize()
 
@@ -550,6 +548,47 @@ class MongoDBAdmin(object):
             return bool(admin_client.admin.system.users.find_one(
                 {'roles.role': 'root'}
             ))
+
+    def _update_user_roles(self, user):
+        with MongoDBClient(self._admin_user()) as admin_client:
+            admin_client[user.database.name].add_user(
+                user.username, roles=user.roles
+            )
+
+    def grant_access(self, username, databases):
+        """Adds the RW role to the user for each specified database."""
+        user = self._get_user_record(username)
+        for db_name in databases:
+            # verify the database name
+            models.MongoDBSchema(db_name)
+            role = {'db': db_name, 'role': 'readWrite'}
+            if role not in user.roles:
+                LOG.debug('Adding role %s to user %s.'
+                          % (str(role), username))
+                user.roles = role
+            else:
+                LOG.debug('User %s already has role %s.'
+                          % (username, str(role)))
+        LOG.debug('Updating user %s.' % username)
+        self._update_user_roles(user)
+
+    def revoke_access(self, username, database):
+        """Removes the RW role from the user for the specified database."""
+        user = self._get_user_record(username)
+        # verify the database name
+        models.MongoDBSchema(database)
+        role = {'db': database, 'role': 'readWrite'}
+        LOG.debug('Removing role %s from user %s.'
+                  % (str(role), username))
+        user.revoke_role(role)
+        LOG.debug('Updating user %s.' % username)
+        self._update_user_roles(user)
+
+    def list_access(self, username):
+        """Returns a list of all databases for which the user has the RW role.
+        """
+        user = self._get_user_record(username)
+        return user.databases
 
     def create_database(self, databases):
         """Forces creation of databases.
