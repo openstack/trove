@@ -744,6 +744,8 @@ mongodb_opts = [
                help='Port for mongod and mongos instances.'),
     cfg.IntOpt('configsvr_port', default=27019,
                help='Port for instances running as config servers.'),
+    cfg.ListOpt('ignore_dbs', default=['admin', 'local', 'config'],
+                help='Databases to exclude when listing databases.'),
 ]
 
 # PostgreSQL
