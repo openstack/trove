@@ -440,6 +440,14 @@ def copy(source, destination, force=False, preserve=False, recursive=True,
     _execute_shell_cmd('cp', options, source, destination, **kwargs)
 
 
+def get_bytes_free_on_fs(path):
+    """
+    Returns the number of bytes free for the filesystem that path is on
+    """
+    v = os.statvfs(path)
+    return v.f_bsize * v.f_bavail
+
+
 def _execute_shell_cmd(cmd, options, *args, **kwargs):
     """Execute a given shell command passing it
     given options (flags) and arguments.
