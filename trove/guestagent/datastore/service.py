@@ -17,7 +17,7 @@
 import time
 
 from trove.common import cfg
-from trove.common import context
+from trove.common import context as trove_context
 from trove.common.i18n import _
 from trove.common import instance
 from trove.conductor import api as conductor_api
@@ -105,15 +105,14 @@ class BaseDbStatus(object):
     def set_status(self, status):
         """Use conductor to update the DB app status."""
         LOG.debug("Casting set_status message to conductor.")
-        ctxt = context.TroveContext(user=CONF.nova_proxy_admin_user,
-                                    auth_token=CONF.nova_proxy_admin_pass)
+        context = trove_context.TroveContext()
 
         heartbeat = {
             'service_status': status.description,
         }
-        conductor_api.API(ctxt).heartbeat(CONF.guest_id,
-                                          heartbeat,
-                                          sent=timeutils.float_utcnow())
+        conductor_api.API(context).heartbeat(CONF.guest_id,
+                                             heartbeat,
+                                             sent=timeutils.float_utcnow())
         LOG.debug("Successfully cast set_status.")
         self.status = status
 
@@ -153,11 +152,8 @@ class BaseDbStatus(object):
         LOG.error(_("Timeout while waiting for database status to change."))
         return False
 
-    def report_root(self, user):
+    def report_root(self, context, user):
         """Use conductor to update the root-enable status."""
         LOG.debug("Casting report_root message to conductor.")
-        ctxt = context.TroveContext(user=CONF.nova_proxy_admin_user,
-                                    auth_token=CONF.nova_proxy_admin_pass)
-
-        conductor_api.API(ctxt).report_root(CONF.guest_id, user)
+        conductor_api.API(context).report_root(CONF.guest_id, user)
         LOG.debug("Successfully cast report_root.")

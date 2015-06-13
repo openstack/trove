@@ -18,7 +18,6 @@ import logging
 
 from trove.backup.state import BackupState
 from trove.common import cfg
-from trove.common import context as trove_context
 from trove.common.i18n import _
 from trove.conductor import api as conductor_api
 from trove.guestagent.common import timeutils
@@ -59,13 +58,10 @@ class BackupAgent(object):
                                     % (backup_type, RESTORE_NAMESPACE))
         return runner
 
-    def stream_backup_to_storage(self, backup_info, runner, storage,
+    def stream_backup_to_storage(self, context, backup_info, runner, storage,
                                  parent_metadata={}, extra_opts=EXTRA_OPTS):
         backup_id = backup_info['id']
-        ctxt = trove_context.TroveContext(
-            user=CONF.nova_proxy_admin_user,
-            auth_token=CONF.nova_proxy_admin_pass)
-        conductor = conductor_api.API(ctxt)
+        conductor = conductor_api.API(context)
 
         # Store the size of the filesystem before the backup.
         mount_point = CONFIG_MANAGER.mount_point
@@ -153,7 +149,7 @@ class BackupAgent(object):
                 'parent_checksum': parent['checksum']
             })
 
-        self.stream_backup_to_storage(backup_info, runner, storage,
+        self.stream_backup_to_storage(context, backup_info, runner, storage,
                                       parent_metadata, extra_opts)
 
     def execute_restore(self, context, backup_info, restore_location):
