@@ -20,18 +20,24 @@ import pymongo
 import trove.common.context as context
 import trove.common.instance as ds_instance
 import trove.common.utils as utils
+from trove.guestagent.common import operating_system
 import trove.guestagent.datastore.experimental.mongodb.manager as manager
 import trove.guestagent.datastore.experimental.mongodb.service as service
+import trove.guestagent.datastore.experimental.mongodb.system as system
 import trove.guestagent.volume as volume
 import trove.tests.unittests.trove_testtools as trove_testtools
 
 
 class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
 
-    def setUp(self):
+    @mock.patch.object(service.MongoDBApp, '_init_overrides_dir')
+    def setUp(self, _):
         super(GuestAgentMongoDBClusterManagerTest, self).setUp()
         self.context = context.TroveContext()
         self.manager = manager.Manager()
+        self.manager.app.configuration_manager = mock.MagicMock()
+        self.manager.app.status = mock.MagicMock()
+        self.conf_mgr = self.manager.app.configuration_manager
 
         self.pymongo_patch = mock.patch.object(
             pymongo, 'MongoClient'
@@ -42,14 +48,14 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
     def tearDown(self):
         super(GuestAgentMongoDBClusterManagerTest, self).tearDown()
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
     @mock.patch.object(service.MongoDBApp, 'add_members',
                        side_effect=RuntimeError("Boom!"))
-    def test_add_members_failure(self, mock_add_members, mock_set_status):
+    def test_add_members_failure(self, mock_add_members):
         members = ["test1", "test2"]
         self.assertRaises(RuntimeError, self.manager.add_members,
                           self.context, members)
-        mock_set_status.assert_called_with(ds_instance.ServiceStatuses.FAILED)
+        self.manager.app.status.set_status.assert_called_with(
+            ds_instance.ServiceStatuses.FAILED)
 
     @mock.patch.object(utils, 'poll_until')
     @mock.patch.object(utils, 'generate_random_password', return_value='pwd')
@@ -64,127 +70,118 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
         mock_initiate.assert_any_call()
         mock_add.assert_any_call(["test1", "test2"])
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
     @mock.patch.object(service.MongoDBApp, 'add_shard',
                        side_effect=RuntimeError("Boom!"))
-    def test_add_shard_failure(self, mock_add_shard, mock_set_status):
+    def test_add_shard_failure(self, mock_add_shard):
         self.assertRaises(RuntimeError, self.manager.add_shard,
                           self.context, "rs", "rs_member")
-        mock_set_status.assert_called_with(ds_instance.ServiceStatuses.FAILED)
+        self.manager.app.status.set_status.assert_called_with(
+            ds_instance.ServiceStatuses.FAILED)
 
     @mock.patch.object(service.MongoDBAdmin, 'add_shard')
     def test_add_shard(self, mock_add_shard):
         self.manager.add_shard(self.context, "rs", "rs_member")
         mock_add_shard.assert_called_with("rs/rs_member:27017")
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
     @mock.patch.object(service.MongoDBApp, 'add_config_servers',
                        side_effect=RuntimeError("Boom!"))
-    def test_add_config_server_failure(self, mock_add_config,
-                                       mock_set_status):
+    def test_add_config_server_failure(self, mock_add_config):
         self.assertRaises(RuntimeError, self.manager.add_config_servers,
                           self.context,
                           ["cfg_server1", "cfg_server2"])
-        mock_set_status.assert_called_with(ds_instance.ServiceStatuses.FAILED)
+        self.manager.app.status.set_status.assert_called_with(
+            ds_instance.ServiceStatuses.FAILED)
 
-    @mock.patch.object(service.MongoDBApp, 'start_db_with_conf_changes')
-    @mock.patch.object(service.MongoDBApp, '_add_config_parameter',
-                       return_value="")
-    @mock.patch.object(service.MongoDBApp, '_delete_config_parameters',
-                       return_value="")
-    @mock.patch.object(service.MongoDBApp, '_read_config', return_value="")
-    def test_add_config_servers(self, mock_read, mock_delete,
-                                mock_add, mock_start):
+    @mock.patch.object(service.MongoDBApp, 'start_db')
+    def test_add_config_servers(self, mock_start_db):
         self.manager.add_config_servers(self.context,
                                         ["cfg_server1",
                                          "cfg_server2"])
-        mock_read.assert_called_with()
-        mock_delete.assert_called_with("", ["dbpath", "nojournal",
-                                            "smallfiles", "journal",
-                                            "noprealloc", "configdb"])
-        mock_add.assert_called_with("", "configdb",
-                                    "cfg_server1:27019,cfg_server2:27019")
-        mock_start.assert_called_with("")
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'sharding.configDB': "cfg_server1:27019,cfg_server2:27019"},
+            'clustering')
+        mock_start_db.assert_called_with(True)
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
-    @mock.patch.object(service.MongoDBApp, 'write_mongos_upstart')
-    @mock.patch.object(service.MongoDBApp, 'reset_configuration')
-    @mock.patch.object(service.MongoDBApp, 'update_config_contents')
-    @mock.patch.object(service.MongoDBApp, 'secure')
-    @mock.patch.object(service.MongoDBApp, 'get_key_file',
-                       return_value="/test/key/file")
-    @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.2")
-    def test_prepare_mongos(self, mock_ip_address, mock_key_file,
-                            mock_secure, mock_update, mock_reset,
-                            mock_upstart, mock_set_status):
-
+    @mock.patch.object(service.MongoDBApp, '_configure_as_query_router')
+    @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
+    def test_prepare_mongos(self, mock_secure, mock_config):
         self._prepare_method("test-id-1", "query_router", None)
-        mock_update.assert_called_with(None, {'bind_ip': '10.0.0.2,127.0.0.1',
-                                              # 'keyFile': '/test/key/file'})
-                                              })
-        self.assertTrue(self.manager.app.status.is_query_router)
-        mock_set_status.assert_called_with(
+        mock_config.assert_called_once_with()
+        mock_secure.assert_called_once_with(None)
+        self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.BUILD_PENDING)
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
-    @mock.patch.object(utils, 'poll_until')
-    @mock.patch.object(service.MongoDBApp, 'start_db_with_conf_changes')
-    @mock.patch.object(service.MongoDBApp, 'update_config_contents')
-    @mock.patch.object(service.MongoDBApp, 'secure')
-    @mock.patch.object(service.MongoDBApp, 'get_key_file',
-                       return_value="/test/key/file")
-    @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.3")
-    def test_prepare_config_server(self, mock_ip_address, mock_key_file,
-                                   mock_secure, mock_update, mock_start,
-                                   mock_poll, mock_set_status):
+    @mock.patch.object(service.MongoDBApp, '_configure_as_config_server')
+    @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
+    def test_prepare_config_server(self, mock_secure, mock_config):
         self._prepare_method("test-id-2", "config_server", None)
-        mock_update.assert_called_with(None, {'configsvr': 'true',
-                                              'bind_ip': '10.0.0.3,127.0.0.1',
-                                              # 'keyFile': '/test/key/file',
-                                              'dbpath': '/var/lib/mongodb'})
-        self.assertTrue(self.manager.app.status.is_config_server)
-        mock_set_status.assert_called_with(
+        mock_config.assert_called_once_with()
+        mock_secure.assert_called_once_with(None)
+        self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.BUILD_PENDING)
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
-    @mock.patch.object(utils, 'poll_until')
-    @mock.patch.object(service.MongoDBApp, 'start_db_with_conf_changes')
-    @mock.patch.object(service.MongoDBApp, 'update_config_contents')
-    @mock.patch.object(service.MongoDBApp, 'secure')
-    @mock.patch.object(service.MongoDBApp, 'get_key_file',
-                       return_value="/test/key/file")
-    @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.4")
-    def test_prepare_member(self, mock_ip_address, mock_key_file,
-                            mock_secure, mock_update, mock_start,
-                            mock_poll, mock_set_status):
+    @mock.patch.object(service.MongoDBApp, '_configure_as_cluster_member')
+    @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
+    def test_prepare_member(self, mock_secure, mock_config):
         self._prepare_method("test-id-3", "member", None)
-        mock_update.assert_called_with(None,
-                                       {'bind_ip': '10.0.0.4,127.0.0.1',
-                                        # 'keyFile': '/test/key/file',
-                                        'dbpath': '/var/lib/mongodb',
-                                        'replSet': 'rs1'})
-        mock_set_status.assert_called_with(
+        mock_config.assert_called_once_with('rs1')
+        mock_secure.assert_called_once_with(None)
+        self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.BUILD_PENDING)
 
-    @mock.patch.object(service.MongoDBAppStatus, 'set_status')
-    @mock.patch.object(utils, 'poll_until')
-    @mock.patch.object(service.MongoDBApp, 'start_db_with_conf_changes')
-    @mock.patch.object(service.MongoDBApp, 'update_config_contents')
-    @mock.patch.object(service.MongoDBApp, 'secure')
-    @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.4")
-    def test_prepare_secure(self, mock_ip_address, mock_secure,
-                            mock_update, mock_start, mock_poll,
-                            mock_set_status):
-        key = "test_key"
-        self._prepare_method("test-id-4", "member", key)
-        mock_secure.assert_called_with(
-            {"id": "test-id-4",
-             "shard_id": "test_shard_id",
-             "instance_type": 'member',
-             "replica_set_name": "rs1",
-             "key": key}
+    @mock.patch.object(operating_system, 'write_file')
+    @mock.patch.object(service.MongoDBApp, '_configure_network')
+    def test_configure_as_query_router(self, net_conf, os_write_file):
+        self.conf_mgr.parse_configuration = mock.Mock(
+            return_value={'storage.mmapv1.smallFiles': False,
+                          'storage.journal.enabled': True})
+        self.manager.app._configure_as_query_router()
+        os_write_file.assert_called_once_with(system.MONGOS_UPSTART, mock.ANY,
+                                              as_root=True)
+        self.conf_mgr.save_configuration.assert_called_once_with({})
+        net_conf.assert_called_once_with(service.MONGODB_PORT)
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'sharding.configDB': ''}, 'clustering')
+        self.assertTrue(self.manager.app.is_query_router)
 
-        )
+    @mock.patch.object(service.MongoDBApp, '_configure_network')
+    def test_configure_as_config_server(self, net_conf):
+        self.manager.app._configure_as_config_server()
+        net_conf.assert_called_once_with(service.CONFIGSVR_PORT)
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'sharding.clusterRole': 'configsvr'}, 'clustering')
+
+    @mock.patch.object(service.MongoDBApp, '_configure_network')
+    def test_configure_as_cluster_member(self, net_conf):
+        self.manager.app._configure_as_cluster_member('rs1')
+        net_conf.assert_called_once_with(service.MONGODB_PORT)
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'replication.replSetName': 'rs1'}, 'clustering')
+
+    @mock.patch.object(service.MongoDBApp, 'store_key')
+    @mock.patch.object(service.MongoDBApp, 'get_key_file',
+                       return_value='/var/keypath')
+    def test_configure_cluster_security(self, get_key_mock, store_key_mock):
+        self.manager.app._configure_cluster_security('key')
+        store_key_mock.assert_called_once_with('key')
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'security.clusterAuthMode': 'keyFile',
+             'security.keyFile': '/var/keypath'}, 'clustering')
+
+    @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.2")
+    def test_configure_network(self, ip_mock):
+        self.manager.app._configure_network()
+        self.conf_mgr.apply_system_override.assert_called_once_with(
+            {'net.bindIp': '10.0.0.2,127.0.0.1'})
+        self.manager.app.status.set_host.assert_called_once_with(
+            '10.0.0.2', port=None)
+
+        self.manager.app._configure_network(10000)
+        self.conf_mgr.apply_system_override.assert_called_with(
+            {'net.bindIp': '10.0.0.2,127.0.0.1',
+             'net.port': 10000})
+        self.manager.app.status.set_host.assert_called_with(
+            '10.0.0.2', port=10000)
 
     @mock.patch.object(volume.VolumeDevice, 'mount_points', return_value=[])
     @mock.patch.object(volume.VolumeDevice, 'mount', return_value=None)

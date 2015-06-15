@@ -17,6 +17,7 @@ from testtools.testcase import ExpectedException
 from trove.common import exception
 from trove.common import utils
 from trove.guestagent.common.operating_system import FileMode
+from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
 from trove.guestagent.strategies.backup import base as backupBase
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.restore import base as restoreBase
@@ -327,7 +328,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             # (see bug/1423759).
             remove.assert_called_once_with(ANY, force=True, as_root=True)
 
-    def test_backup_encrypted_mongodump_command(self):
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    def test_backup_encrypted_mongodump_command(self, _):
         backupBase.BackupRunner.is_encrypted = True
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_MONGODUMP_CLS)
@@ -338,7 +340,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             MONGODUMP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
         self.assertIn("gz.enc", bkp.manifest)
 
-    def test_backup_not_encrypted_mongodump_command(self):
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    def test_backup_not_encrypted_mongodump_command(self, _):
         backupBase.BackupRunner.is_encrypted = False
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(BACKUP_MONGODUMP_CLS)
@@ -348,7 +351,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         self.assertEqual(MONGODUMP_CMD + PIPE + ZIP, bkp.command)
         self.assertIn("gz", bkp.manifest)
 
-    def test_restore_decrypted_mongodump_command(self):
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    def test_restore_decrypted_mongodump_command(self, _):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_MONGODUMP_CLS)
@@ -356,7 +360,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + MONGODUMP_RESTORE)
 
-    def test_restore_encrypted_mongodump_command(self):
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    def test_restore_encrypted_mongodump_command(self, _):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
@@ -488,7 +493,8 @@ class MongodbBackupTests(trove_testtools.TestCase):
 
 class MongodbRestoreTests(trove_testtools.TestCase):
 
-    def setUp(self):
+    @patch.object(MongoDBApp, '_init_overrides_dir')
+    def setUp(self, _):
         super(MongodbRestoreTests, self).setUp()
 
         self.restore_runner = utils.import_class(

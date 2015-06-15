@@ -40,6 +40,49 @@ def update_dict(updates, target):
     return target
 
 
+def expand_dict(target, namespace_sep='.'):
+    """Expand a flat dict to a nested one.
+    This is an inverse of 'flatten_dict'.
+
+    :seealso: flatten_dict
+    """
+    nested = {}
+    for k, v in target.items():
+        sub = nested
+        keys = k.split(namespace_sep)
+        for key in keys[:-1]:
+            sub = sub.setdefault(key, {})
+        sub[keys[-1]] = v
+
+    return nested
+
+
+def flatten_dict(target, namespace_sep='.'):
+    """Flatten a nested dict.
+    Return a one-level dict with all sub-level keys joined by a namespace
+    separator.
+
+    The following nested dict:
+    {'ns1': {'ns2a': {'ns3a': True, 'ns3b': False}, 'ns2b': 10}}
+
+    would be flattened to:
+    {'ns1.ns2a.ns3a': True, 'ns1.ns2a.ns3b': False, 'ns1.ns2b': 10}
+    """
+    def flatten(target, keys, namespace_sep):
+        flattened = {}
+        if isinstance(target, collections.Mapping):
+            for k, v in target.items():
+                flattened.update(
+                    flatten(v, keys + [k], namespace_sep))
+        else:
+            ns = namespace_sep.join(keys)
+            flattened[ns] = target
+
+        return flattened
+
+    return flatten(target, [], namespace_sep)
+
+
 def build_file_path(base_dir, base_name, *extensions):
     """Build a path to a file in a given directory.
     The file may have an extension(s).

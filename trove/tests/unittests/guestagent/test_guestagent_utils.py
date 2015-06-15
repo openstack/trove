@@ -92,3 +92,16 @@ class TestGuestagentUtils(trove_testtools.TestCase):
             'base_dir/base_name.ext1.ext2',
             guestagent_utils.build_file_path(
                 'base_dir', 'base_name', 'ext1', 'ext2'))
+
+    def test_flatten_expand_dict(self):
+        self._assert_flatten_expand_dict({}, {})
+        self._assert_flatten_expand_dict({'ns1': 1}, {'ns1': 1})
+        self._assert_flatten_expand_dict(
+            {'ns1': {'ns2a': {'ns3a': True, 'ns3b': False}, 'ns2b': 10}},
+            {'ns1.ns2a.ns3a': True, 'ns1.ns2a.ns3b': False, 'ns1.ns2b': 10})
+
+    def _assert_flatten_expand_dict(self, nested_dict, flattened_dict):
+        self.assertEqual(
+            flattened_dict, guestagent_utils.flatten_dict(nested_dict))
+        self.assertEqual(
+            nested_dict, guestagent_utils.expand_dict(flattened_dict))

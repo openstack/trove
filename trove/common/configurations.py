@@ -39,3 +39,14 @@ class MySQLConfParser(object):
         config_dict = self.CODEC.deserialize(self.config)
         mysqld_section_dict = config_dict['mysqld']
         return mysqld_section_dict.items()
+
+
+class MongoDBConfParser(object):
+
+    CODEC = stream_codecs.SafeYamlCodec(default_flow_style=False)
+
+    def __init__(self, config):
+        self.config = config
+
+    def parse(self):
+        return self.CODEC.deserialize(self.config).items()

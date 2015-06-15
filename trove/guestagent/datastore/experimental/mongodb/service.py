@@ -13,10 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import os
-import re
-import tempfile
 
 from oslo_log import log as logging
 from oslo_utils import netutils
@@ -28,7 +25,11 @@ from trove.common.exception import ProcessExecutionError
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
 from trove.common import pagination
+from trove.common.stream_codecs import JsonCodec, SafeYamlCodec
 from trove.common import utils as utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import OneFileOverrideStrategy
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import system
 from trove.guestagent.datastore import service
@@ -39,6 +40,10 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 CONFIG_FILE = (operating_system.
                file_discovery(system.CONFIG_CANDIDATES))
+
+# Configuration group for clustering-related settings.
+CNF_CLUSTER = 'clustering'
+
 MONGODB_PORT = CONF.mongodb.mongodb_port
 CONFIGSVR_PORT = CONF.mongodb.configsvr_port
 IGNORED_DBS = CONF.mongodb.ignore_dbs
@@ -48,9 +53,34 @@ IGNORED_USERS = CONF.mongodb.ignore_users
 class MongoDBApp(object):
     """Prepares DBaaS on a Guest container."""
 
-    def __init__(self, status):
+    @classmethod
+    def _init_overrides_dir(cls):
+        """Initialize a directory for configuration overrides.
+        """
+        revision_dir = guestagent_utils.build_file_path(
+            os.path.dirname(system.MONGO_USER),
+            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
+
+        if not os.path.exists(revision_dir):
+            operating_system.create_directory(
+                revision_dir,
+                user=system.MONGO_USER, group=system.MONGO_USER,
+                force=True, as_root=True)
+
+        return revision_dir
+
+    def __init__(self):
         self.state_change_wait_time = CONF.state_change_wait_time
-        self.status = status
+
+        revision_dir = self._init_overrides_dir()
+        self.configuration_manager = ConfigurationManager(
+            CONFIG_FILE, system.MONGO_USER, system.MONGO_USER,
+            SafeYamlCodec(default_flow_style=False),
+            requires_root=True,
+            override_strategy=OneFileOverrideStrategy(revision_dir))
+
+        self.is_query_router = False
+        self.status = MongoDBAppStatus()
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a MongoDB installation."""
@@ -61,7 +91,7 @@ class MongoDBApp(object):
         LOG.info(_("Finished installing MongoDB server."))
 
     def _get_service(self):
-        if self.status._is_query_router() is True:
+        if self.is_query_router:
             return (operating_system.
                     service_discovery(system.MONGOS_SERVICE_CANDIDATES))
         else:
@@ -151,75 +181,141 @@ class MongoDBApp(object):
             raise RuntimeError("Could not start MongoDB.")
         LOG.debug('MongoDB started successfully.')
 
+    def update_overrides(self, context, overrides, remove=False):
+        if overrides:
+            self.configuration_manager.apply_user_override(overrides)
+
+    def remove_overrides(self):
+        self.configuration_manager.remove_user_override()
+
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting MongoDB with configuration changes."))
-        LOG.info(_("Configuration contents:\n %s.") % config_contents)
+        LOG.info(_('Starting MongoDB with configuration changes.'))
         if self.status.is_running:
-            LOG.error(_("Cannot start MongoDB with configuration changes. "
-                        "MongoDB state == %s.") % self.status)
-            raise RuntimeError("MongoDB is not stopped.")
-        self._write_config(config_contents)
+            format = 'Cannot start_db_with_conf_changes because status is %s.'
+            LOG.debug(format, self.status)
+            raise RuntimeError(format % self.status)
+        LOG.info(_("Initiating config."))
+        self.configuration_manager.save_configuration(config_contents)
+        # The configuration template has to be updated with
+        # guestagent-controlled settings.
+        self.apply_initial_guestagent_configuration(
+            None, mount_point=system.MONGODB_MOUNT_POINT)
         self.start_db(True)
 
     def reset_configuration(self, configuration):
-        config_contents = configuration['config_contents']
         LOG.info(_("Resetting configuration."))
-        self._write_config(config_contents)
+        config_contents = configuration['config_contents']
+        self.configuration_manager.save_configuration(config_contents)
 
-    def update_config_contents(self, config_contents, parameters):
-        LOG.info(_("Updating configuration contents."))
-        if not config_contents:
-            config_contents = self._read_config()
+    def apply_initial_guestagent_configuration(
+            self, cluster_config, mount_point=None):
+        LOG.debug("Applying initial configuration.")
 
-        contents = self._delete_config_parameters(config_contents,
-                                                  parameters.keys())
-        for param, value in parameters.items():
-            if param and value:
-                contents = self._add_config_parameter(contents,
-                                                      param, value)
-        return contents
+        # todo mvandijk: enable authorization.
+        # 'security.authorization': True
+        self.configuration_manager.apply_system_override(
+            {'processManagement.fork': False,
+             'processManagement.pidFilePath': system.MONGO_PID_FILE,
+             'systemLog.destination': 'file',
+             'systemLog.path': system.MONGO_LOG_FILE,
+             'systemLog.logAppend': True
+             })
 
-    def _write_config(self, config_contents):
-        """
-        Update contents of MongoDB configuration file
-        """
-        LOG.info(_("Updating MongoDB config."))
-        if config_contents:
-            LOG.info(_("Writing %s.") % system.TMP_CONFIG)
-            try:
-                with open(system.TMP_CONFIG, 'w') as t:
-                    t.write(config_contents)
+        if mount_point:
+            self.configuration_manager.apply_system_override(
+                {'storage.dbPath': mount_point})
 
-                LOG.info(_("Moving %(a)s to %(b)s.")
-                         % {'a': system.TMP_CONFIG, 'b': CONFIG_FILE})
-                operating_system.move(system.TMP_CONFIG, CONFIG_FILE,
-                                      as_root=True)
-            except Exception:
-                os.unlink(system.TMP_CONFIG)
-                raise
+        if cluster_config is not None:
+            self._configure_as_cluster_instance(cluster_config)
         else:
-            LOG.debug("Empty config_contents. Do nothing.")
+            self._configure_network(MONGODB_PORT)
 
-    def _read_config(self):
-        try:
-            with open(CONFIG_FILE, 'r') as f:
-                return f.read()
-        except IOError:
-            LOG.info(_("Config file %s not found.") % CONFIG_FILE)
-            return ''
+    def _configure_as_cluster_instance(self, cluster_config):
+        """Configure this guest as a cluster instance and return its
+        new status.
+        """
+        if cluster_config['instance_type'] == "query_router":
+            self._configure_as_query_router()
+        elif cluster_config["instance_type"] == "config_server":
+            self._configure_as_config_server()
+        elif cluster_config["instance_type"] == "member":
+            self._configure_as_cluster_member(
+                cluster_config['replica_set_name'])
+        else:
+            LOG.error(_("Bad cluster configuration; instance type "
+                        "given as %s.") % cluster_config['instance_type'])
+            return ds_instance.ServiceStatuses.FAILED
 
-    def _delete_config_parameters(self, config_contents, parameters):
-        if not config_contents:
-            return None
+        if 'key' in cluster_config:
+            self._configure_cluster_security(cluster_config['key'])
 
-        params_as_string = '|'.join(parameters)
-        p = re.compile("\\s*#?\\s*(%s)\\s*=" % params_as_string)
-        contents_as_list = config_contents.splitlines()
-        filtered = filter(lambda line: not p.match(line), contents_as_list)
-        return '\n'.join(filtered)
+    def _configure_as_query_router(self):
+        LOG.info(_("Configuring instance as a cluster query router."))
+        self.is_query_router = True
 
-    def _add_config_parameter(self, config_contents, parameter, value):
-        return (config_contents or '') + "\n%s = %s" % (parameter, value)
+        # Write the 'mongos' upstart script.
+        # FIXME(pmalik): The control script should really be written in the
+        # elements.
+        # The guestagent will choose the right daemon ('mongod' or 'mongos')
+        # based on the 'cluster_config' values.
+        upstart_contents = (system.MONGOS_UPSTART_CONTENTS.
+                            format(config_file_placeholder=CONFIG_FILE))
+        operating_system.write_file(system.MONGOS_UPSTART, upstart_contents,
+                                    as_root=True)
+
+        # FIXME(pmalik): We should really have a separate configuration
+        # template for the 'mongos' process.
+        # Remove all storage configurations from the template.
+        # They apply only to 'mongod' processes.
+        # Already applied overrides will be integrated into the base file and
+        # their current groups removed.
+        config = guestagent_utils.expand_dict(
+            self.configuration_manager.parse_configuration())
+        if 'storage' in config:
+            LOG.debug("Removing 'storage' directives from the configuration "
+                      "template.")
+            del config['storage']
+            self.configuration_manager.save_configuration(
+                guestagent_utils.flatten_dict(config))
+
+        # Apply 'mongos' configuration.
+        self._configure_network(MONGODB_PORT)
+        self.configuration_manager.apply_system_override(
+            {'sharding.configDB': ''}, CNF_CLUSTER)
+
+    def _configure_as_config_server(self):
+        LOG.info(_("Configuring instance as a cluster config server."))
+        self._configure_network(CONFIGSVR_PORT)
+        self.configuration_manager.apply_system_override(
+            {'sharding.clusterRole': 'configsvr'}, CNF_CLUSTER)
+
+    def _configure_as_cluster_member(self, replica_set_name):
+        LOG.info(_("Configuring instance as a cluster member."))
+        self._configure_network(MONGODB_PORT)
+        self.configuration_manager.apply_system_override(
+            {'replication.replSetName': replica_set_name}, CNF_CLUSTER)
+
+    def _configure_cluster_security(self, key_value):
+        """Force cluster key-file-based authentication.
+        """
+        # Store the cluster member authentication key.
+        self.store_key(key_value)
+
+        self.configuration_manager.apply_system_override(
+            {'security.clusterAuthMode': 'keyFile',
+             'security.keyFile': self.get_key_file()}, CNF_CLUSTER)
+
+    def _configure_network(self, port=None):
+        """Make the service accessible at a given (or default if not) port.
+        """
+        instance_ip = netutils.get_my_ipv4()
+        bind_interfaces_string = ','.join([instance_ip, '127.0.0.1'])
+        options = {'net.bindIp': bind_interfaces_string}
+        if port is not None:
+            guestagent_utils.update_dict({'net.port': port}, options)
+
+        self.configuration_manager.apply_system_override(options)
+        self.status.set_host(instance_ip, port=port)
 
     def clear_storage(self):
         mount_point = "/var/lib/mongodb/*"
@@ -229,41 +325,24 @@ class MongoDBApp(object):
         except exception.ProcessExecutionError:
             LOG.exception(_("Error clearing storage."))
 
+    def _has_config_db(self):
+        value_string = self.configuration_manager.get_value(
+            'sharding', {}).get('configDB')
+
+        return value_string is not None
+
+    # FIXME(pmalik): This method should really be called 'set_config_servers'.
+    # The current name suggests it adds more config servers, but it
+    # rather replaces the existing ones.
     def add_config_servers(self, config_server_hosts):
+        """Set config servers on a query router (mongos) instance.
         """
-        This method is used by query router (mongos) instances.
-        """
-        config_contents = self._read_config()
-        configdb_contents = ','.join(['%(host)s:%(port)s'
-                                      % {'host': host, 'port': CONFIGSVR_PORT}
-                                      for host in config_server_hosts])
-        LOG.debug("Config server list %s." % configdb_contents)
-        # remove db path from config and update configdb
-        contents = self._delete_config_parameters(config_contents,
-                                                  ["dbpath", "nojournal",
-                                                   "smallfiles", "journal",
-                                                   "noprealloc", "configdb"])
-        contents = self._add_config_parameter(contents,
-                                              "configdb", configdb_contents)
-        LOG.info(_("Rewriting configuration."))
-        self.start_db_with_conf_changes(contents)
-
-    def write_mongos_upstart(self):
-        upstart_contents = (system.MONGOS_UPSTART_CONTENTS.
-                            format(config_file_placeholder=CONFIG_FILE))
-
-        LOG.info(_("Writing %s.") % system.TMP_MONGOS_UPSTART)
-
-        with open(system.TMP_MONGOS_UPSTART, 'w') as t:
-            t.write(upstart_contents)
-
-        LOG.info(_("Moving %(a)s to %(b)s.")
-                 % {'a': system.TMP_MONGOS_UPSTART,
-                    'b': system.MONGOS_UPSTART})
-        operating_system.move(system.TMP_MONGOS_UPSTART, system.MONGOS_UPSTART,
-                              as_root=True)
-        operating_system.remove('/etc/init/mongodb.conf', force=True,
-                                as_root=True)
+        config_servers_string = ','.join(['%s:27019' % host
+                                          for host in config_server_hosts])
+        LOG.info(_("Setting config servers: %s") % config_servers_string)
+        self.configuration_manager.apply_system_override(
+            {'sharding.configDB': config_servers_string}, CNF_CLUSTER)
+        self.start_db(True)
 
     def add_shard(self, replica_set_name, replica_set_member):
         """
@@ -288,7 +367,7 @@ class MongoDBApp(object):
             if((status["ok"] == 1) and
                (status["members"][0]["stateStr"] == "PRIMARY") and
                (status["myState"] == 1)):
-                    return True
+                return True
             else:
                 return False
 
@@ -330,6 +409,15 @@ class MongoDBApp(object):
         # TODO(ramashri) see if hardcoded values can be removed
         utils.poll_until(check_rs_status, sleep_time=60, time_out=100)
 
+    def _set_localhost_auth_bypass(self, enabled):
+        """When active, the localhost exception allows connections from the
+        localhost interface to create the first user on the admin database.
+        The exception applies only when there are no users created in the
+        MongoDB instance.
+        """
+        self.configuration_manager.apply_system_override(
+            {'setParameter': {'enableLocalhostAuthBypass': enabled}})
+
     def list_all_dbs(self):
         return MongoDBAdmin().list_database_names()
 
@@ -349,11 +437,7 @@ class MongoDBApp(object):
     def store_key(self, key):
         """Store the cluster key."""
         LOG.debug('Storing key for MongoDB cluster.')
-        with tempfile.NamedTemporaryFile() as f:
-            f.write(key)
-            f.flush()
-            operating_system.copy(f.name, system.MONGO_KEY_FILE,
-                                  force=True, as_root=True)
+        operating_system.write_file(system.MONGO_KEY_FILE, key, as_root=True)
         operating_system.chmod(system.MONGO_KEY_FILE,
                                operating_system.FileMode.SET_USR_RO,
                                as_root=True)
@@ -375,69 +459,59 @@ class MongoDBApp(object):
         user = models.MongoDBUser(name='admin.%s' % creds.username,
                                   password=creds.password)
         user.roles = system.MONGO_ADMIN_ROLES
-        with MongoDBClient(user, auth=False) as client:
+        with MongoDBClient(None) as client:
             MongoDBAdmin().create_user(user, client=client)
         LOG.debug('Created admin user.')
 
-    def secure(self, cluster_config=None):
-        # Secure the server by storing the cluster key  if this is a cluster
-        # or creating the admin user if this is a single instance.
-        LOG.debug('Securing MongoDB instance.')
-        if cluster_config:
-            self.store_key(cluster_config['key'])
-        else:
-            LOG.debug('Generating admin password.')
+    def secure(self):
+        """Create the Trove admin user.
+
+        The service should not be running at this point.
+        """
+        if self.status.is_running:
+            raise RuntimeError(_("Cannot secure the instance. "
+                                 "The service is still running."))
+
+        try:
+            self._set_localhost_auth_bypass(True)
+            self.start_db(update_db=False)
             password = utils.generate_random_password()
-            self.start_db()
             self.create_admin_user(password)
+            LOG.debug("MongoDB secure complete.")
+        finally:
+            self._set_localhost_auth_bypass(False)
             self.stop_db()
-        LOG.debug('MongoDB secure complete.')
+
+    def get_configuration_property(self, name, default=None):
+        """Return the value of a MongoDB configuration property.
+        """
+        return self.configuration_manager.get_value(name, default)
 
 
 class MongoDBAppStatus(service.BaseDbStatus):
 
-    is_config_server = None
-    is_query_router = None
+    def __init__(self, host='localhost', port=None):
+        super(MongoDBAppStatus, self).__init__()
+        self.set_host(host, port=port)
 
-    def _is_config_server(self):
-        if self.is_config_server is None:
-            try:
-                cmd = ("grep '^configsvr[ \t]*=[ \t]*true$' %s"
-                       % CONFIG_FILE)
-                utils.execute_with_timeout(cmd, shell=True)
-                self.is_config_server = True
-            except exception.ProcessExecutionError:
-                self.is_config_server = False
-        return self.is_config_server
-
-    def _is_query_router(self):
-        if self.is_query_router is None:
-            try:
-                cmd = ("grep '^configdb[ \t]*=.*$' %s"
-                       % CONFIG_FILE)
-                utils.execute_with_timeout(cmd, shell=True)
-                self.is_query_router = True
-            except exception.ProcessExecutionError:
-                self.is_query_router = False
-        return self.is_query_router
+    def set_host(self, host, port=None):
+        # This forces refresh of the 'pymongo' engine cached in the
+        # MongoDBClient class.
+        # Authentication is not required to check the server status.
+        MongoDBClient(None, host=host, port=port)
 
     def _get_actual_db_status(self):
         try:
-            port = CONFIGSVR_PORT if self._is_config_server() else MONGODB_PORT
-            out, err = utils.execute_with_timeout(
-                'mongostat', '--host', str(netutils.get_my_ipv4()),
-                '--port', str(port), '-n', str(1), check_exit_code=[0, 1]
-            )
-            if not err:
-                return ds_instance.ServiceStatuses.RUNNING
-            else:
-                return ds_instance.ServiceStatuses.SHUTDOWN
-        except exception.ProcessExecutionError as e:
-            LOG.exception(_("Process execution %s.") % e)
+            with MongoDBClient(None) as client:
+                client.server_info()
+            return ds_instance.ServiceStatuses.RUNNING
+        except (pymongo.errors.ServerSelectionTimeoutError,
+                pymongo.errors.AutoReconnect):
             return ds_instance.ServiceStatuses.SHUTDOWN
-        except OSError as e:
-            LOG.exception(_("OS Error %s.") % e)
-            return ds_instance.ServiceStatuses.SHUTDOWN
+        except Exception:
+            LOG.exception(_("Error getting MongoDB status."))
+
+        return ds_instance.ServiceStatuses.SHUTDOWN
 
 
 class MongoDBAdmin(object):
@@ -667,13 +741,11 @@ class MongoDBClient(object):
     # engine information is cached by making it a class attribute
     engine = {}
 
-    def __init__(self, user, host=None, port=None,
-                 auth=True):
+    def __init__(self, user, host=None, port=None):
         """Get the client. Specifying host and/or port updates cached values.
-        :param user: (required) MongoDBUser instance
+        :param user: MongoDBUser instance used to authenticate
         :param host: server address, defaults to localhost
         :param port: server port, defaults to 27017
-        :param auth: set to False to disable authentication, default True
         :return:
         """
         new_client = False
@@ -688,7 +760,7 @@ class MongoDBClient(object):
             if host:
                 type(self).engine['host'] = host
             if port:
-                type(self).engine['host'] = port
+                type(self).engine['port'] = port
             new_client = True
         if new_client:
             host = type(self).engine['host']
@@ -699,7 +771,7 @@ class MongoDBClient(object):
                                                               port=port,
                                                               connect=False)
         self.session = type(self).engine['client']
-        if auth:
+        if user:
             db_name = user.database.name
             LOG.debug("Authentication MongoDB client on %s." % db_name)
             self._db = self.session[db_name]
@@ -724,25 +796,13 @@ class MongoDBCredentials(object):
         self.password = password
 
     def read(self, filename):
-        with open(filename) as f:
-            credentials = json.load(f)
-            self.username = credentials['username']
-            self.password = credentials['password']
+        credentials = operating_system.read_file(filename, codec=JsonCodec())
+        self.username = credentials['username']
+        self.password = credentials['password']
 
     def write(self, filename):
-        self.clear_file(filename)
-        with open(filename, 'w') as f:
-            credentials = {'username': self.username,
-                           'password': self.password}
-            json.dump(credentials, f)
+        credentials = {'username': self.username,
+                       'password': self.password}
 
-    @staticmethod
-    def clear_file(filename):
-        LOG.debug("Creating clean file %s" % filename)
-        if operating_system.file_discovery([filename]):
-            operating_system.remove(filename)
-        # force file creation by just opening it
-        open(filename, 'wb')
-        operating_system.chmod(filename,
-                               operating_system.FileMode.SET_USR_RW,
-                               as_root=True)
+        operating_system.write_file(filename, credentials, codec=JsonCodec())
+        operating_system.chmod(filename, operating_system.FileMode.SET_USR_RW)

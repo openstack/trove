@@ -43,9 +43,7 @@ class MongoDump(base.BackupRunner):
     backup_cmd = 'mongodump --out ' + MONGO_DUMP_DIR
 
     def __init__(self, *args, **kwargs):
-        self.status = mongo_service.MongoDBAppStatus()
-        self.app = mongo_service.MongoDBApp(self.status)
-        self.admin = mongo_service.MongoDBApp(self.status)
+        self.app = mongo_service.MongoDBApp()
         super(MongoDump, self).__init__(*args, **kwargs)
 
     def _run_pre_backup(self):

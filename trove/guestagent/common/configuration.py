@@ -443,14 +443,15 @@ class OneFileOverrideStrategy(ConfigurationOverrideStrategy):
         self._regenerate_base_configuration()
 
     def remove(self, group_name, change_id=None):
-        self._import_strategy.remove(group_name, change_id=change_id)
-        self._regenerate_base_configuration()
-        if not self._import_strategy.has_revisions:
-            # The base revision file is no longer needed if there are no
-            # overrides. It will be regenerated based on the current
-            # configuration file on the first 'apply()'.
-            operating_system.remove(self._base_revision_file, force=True,
-                                    as_root=self._requires_root)
+        if self._import_strategy.has_revisions:
+            self._import_strategy.remove(group_name, change_id=change_id)
+            self._regenerate_base_configuration()
+            if not self._import_strategy.has_revisions:
+                # The base revision file is no longer needed if there are no
+                # overrides. It will be regenerated based on the current
+                # configuration file on the first 'apply()'.
+                operating_system.remove(self._base_revision_file, force=True,
+                                        as_root=self._requires_root)
 
     def _regenerate_base_configuration(self):
         """Gather all configuration changes and apply them in order on the base

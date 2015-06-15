@@ -27,7 +27,8 @@ import trove.tests.unittests.trove_testtools as trove_testtools
 
 class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
-    def setUp(self):
+    @mock.patch.object(service.MongoDBApp, '_init_overrides_dir')
+    def setUp(self, _):
         super(GuestAgentMongoDBManagerTest, self).setUp()
         self.context = context.TroveContext()
         self.manager = manager.Manager()
@@ -50,9 +51,9 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
         super(GuestAgentMongoDBManagerTest, self).tearDown()
 
     def test_update_status(self):
-        with mock.patch.object(self.manager, 'status') as status:
-            self.manager.update_status(self.context)
-            status.update.assert_any_call()
+        self.manager.app.status = mock.MagicMock()
+        self.manager.update_status(self.context)
+        self.manager.app.status.update.assert_any_call()
 
     def _prepare_method(self, packages=['packages'], databases=None,
                         memory_mb='2048', users=None, device_path=None,
@@ -61,8 +62,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
                         overrides=None, cluster_config=None,):
         """self.manager.app must be correctly mocked before calling."""
 
-        self.manager.status = mock.Mock()
-        self.manager.get_config_changes = mock.Mock()
+        self.manager.app.status = mock.Mock()
 
         self.manager.prepare(self.context, packages,
                              databases, memory_mb, users,
@@ -74,12 +74,13 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
                              overrides=overrides,
                              cluster_config=cluster_config)
 
-        self.manager.status.begin_install.assert_any_call()
+        self.manager.app.status.begin_install.assert_any_call()
         self.manager.app.install_if_needed.assert_called_with(packages)
         self.manager.app.stop_db.assert_any_call()
         self.manager.app.clear_storage.assert_any_call()
-        self.manager.get_config_changes.assert_called_with(cluster_config,
-                                                           self.mount_point)
+
+        (self.manager.app.apply_initial_guestagent_configuration.
+         assert_called_once_with(cluster_config, self.mount_point))
 
     @mock.patch.object(volume, 'VolumeDevice')
     @mock.patch('os.path.exists')
@@ -103,7 +104,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         self._prepare_method()
 
-        mock_secure.assert_called_with(None)
+        mock_secure.assert_called_with()
 
     @mock.patch.object(backup, 'restore')
     @mock.patch.object(service.MongoDBAdmin, 'is_root_enabled')
