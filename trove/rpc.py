@@ -33,11 +33,11 @@ __all__ = [
 
 from oslo_config import cfg
 import oslo_messaging as messaging
+from oslo_serialization import jsonutils
 from osprofiler import profiler
 
 from trove.common.context import TroveContext
 import trove.common.exception
-from trove.openstack.common import jsonutils
 
 
 CONF = cfg.CONF
@@ -68,9 +68,8 @@ def init(conf):
                                         allowed_remote_exmods=exmods,
                                         aliases=TRANSPORT_ALIASES)
 
-    # serializer = RequestContextSerializer(JsonPayloadSerializer())
-    # https://review.openstack.org/#/c/71532/1/nova/rpc.py
-    NOTIFIER = messaging.Notifier(TRANSPORT, serializer=None)
+    serializer = RequestContextSerializer(JsonPayloadSerializer())
+    NOTIFIER = messaging.Notifier(TRANSPORT, serializer=serializer)
 
 
 def cleanup():
