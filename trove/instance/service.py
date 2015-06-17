@@ -67,7 +67,7 @@ class InstanceController(wsgi.Controller):
         :param req: http request object
         :param body: deserialized body of the request as a dict
         :param tenant_id: the tenant id for whom owns the instance
-        :param id: ???
+        :param id: instance id
         """
         LOG.debug("instance action req : '%s'\n\n", req)
         if not body:
