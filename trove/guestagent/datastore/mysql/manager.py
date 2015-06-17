@@ -148,7 +148,7 @@ class Manager(periodic_task.PeriodicTasks):
             MySqlAdmin().enable_root(root_password)
         elif enable_root_on_restore:
             app.secure_root(secure_remote_root=False)
-            MySqlAppStatus.get().report_root('root')
+            MySqlAppStatus.get().report_root(context, 'root')
         else:
             app.secure_root(secure_remote_root=True)
 
