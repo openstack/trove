@@ -191,6 +191,22 @@ function init_trove {
     $TROVE_MANAGE datastore_update "Inactive_Datastore" ""
 }
 
+# finalize_trove_network() - do the last thing(s) before starting Trove
+function finalize_trove_network {
+    management_network_id=$(neutron --os-tenant-name admin --os-username admin --os-password $ADMIN_PASSWORD net-list | grep $PRIVATE_NETWORK_NAME | awk '{print $2}')
+
+    echo "finalize_trove_network: found network id $management_network_id"
+
+    iniset $TROVE_CONF DEFAULT network_label_regex .*
+    iniset $TROVE_CONF DEFAULT ip_regex .*
+    iniset $TROVE_CONF DEFAULT blacklist_regex ^10.0.1.*
+    iniset $TROVE_CONF DEFAULT default_neutron_networks $management_network_id
+    iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
+
+    iniset $TROVE_TASKMANAGER_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
+    iniset $TROVE_TASKMANAGER_CONF mysql tcp_ports 22,3306
+}
+
 # start_trove() - Start running processes, including screen
 function start_trove {
     run_process tr-api "$TROVE_BIN_DIR/trove-api --config-file=$TROVE_CONF --debug"
@@ -225,6 +241,16 @@ if is_service_enabled trove; then
     elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
         # Initialize trove
         init_trove
+
+        # finish the last step in trove network configuration
+        echo_summary "Finalizing Trove Network Configuration"
+
+        if is_service_enabled neutron; then
+            echo "finalize_trove_network: Neutron is enabled."
+            finalize_trove_network
+        else
+            echo "finalize_trove_network: Neutron is not enabled. Nothing to do."
+        fi
 
         # Start the trove API and trove taskmgr components
         echo_summary "Starting Trove"
