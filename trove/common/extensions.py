@@ -545,6 +545,11 @@ class TroveExtensionMiddleware(ExtensionMiddleware):
             mapper.resource(resource_ext.collection,
                             resource_ext.collection, **kargs)
 
+            mapper.connect(("/%s/{id}" % resource_ext.collection),
+                           controller=controller_resource,
+                           action='edit',
+                           conditions={'method': ['PATCH']})
+
         # extended actions
         action_resources = self._action_ext_resources(application, ext_mgr,
                                                       mapper)
