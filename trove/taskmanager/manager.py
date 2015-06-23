@@ -16,6 +16,7 @@
 from sets import Set
 
 import oslo_messaging as messaging
+from oslo_service import periodic_task
 from oslo_utils import importutils
 
 from trove.backup.models import Backup
@@ -30,7 +31,6 @@ from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.instance.tasks import InstanceTasks
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 from trove.taskmanager import models
 from trove.taskmanager.models import FreshInstanceTasks, BuiltInstanceTasks
 
@@ -43,7 +43,7 @@ class Manager(periodic_task.PeriodicTasks):
     target = messaging.Target(version=rpc_version.RPC_API_VERSION)
 
     def __init__(self):
-        super(Manager, self).__init__()
+        super(Manager, self).__init__(CONF)
         self.admin_context = TroveContext(
             user=CONF.nova_proxy_admin_user,
             auth_token=CONF.nova_proxy_admin_pass,
@@ -347,8 +347,7 @@ class Manager(periodic_task.PeriodicTasks):
         cluster_tasks.delete_cluster(context, cluster_id)
 
     if CONF.exists_notification_transformer:
-        @periodic_task.periodic_task(
-            ticks_between_runs=CONF.exists_notification_ticks)
+        @periodic_task.periodic_task
         def publish_exists_event(self, context):
             """
             Push this in Instance Tasks to fetch a report/collection

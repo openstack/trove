@@ -15,6 +15,7 @@
 
 import os
 
+from oslo_service import periodic_task
 from oslo_utils import netutils
 
 from trove.common import cfg
@@ -28,7 +29,6 @@ from trove.guestagent.datastore.experimental.mongodb import system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 
 
 LOG = logging.getLogger(__name__)
@@ -41,8 +41,9 @@ class Manager(periodic_task.PeriodicTasks):
     def __init__(self):
         self.status = service.MongoDBAppStatus()
         self.app = service.MongoDBApp(self.status)
+        super(Manager, self).__init__(CONF)
 
-    @periodic_task.periodic_task(ticks_between_runs=3)
+    @periodic_task.periodic_task
     def update_status(self, context):
         """Update the status of the MongoDB service."""
         self.status.update()

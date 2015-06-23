@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_service import periodic_task
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -25,7 +27,6 @@ from trove.guestagent.datastore.experimental.redis.service import (
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 
 
 LOG = logging.getLogger(__name__)
@@ -39,7 +40,10 @@ class Manager(periodic_task.PeriodicTasks):
     based off of the service_type of the trove instance
     """
 
-    @periodic_task.periodic_task(ticks_between_runs=3)
+    def __init__(self):
+        super(Manager, self).__init__(CONF)
+
+    @periodic_task.periodic_task
     def update_status(self, context):
         """
         Updates the redis trove instance. It is decorated with

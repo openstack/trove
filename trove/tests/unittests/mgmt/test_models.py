@@ -81,8 +81,7 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         self.addCleanup(self.admin_client_patch.stop)
         self.admin_client_patch.start()
         CONF.set_override('host', 'test_host')
-        CONF.set_override('exists_notification_ticks', 1)
-        CONF.set_override('report_interval', 20)
+        CONF.set_override('exists_notification_interval', 1)
         CONF.set_override('notification_service_id', {'mysql': '123'})
 
         super(MockMgmtInstanceTest, self).setUp()
