@@ -31,6 +31,7 @@ from trove.tests.api import root
 from trove.tests.api import user_access
 from trove.tests.api import users
 from trove.tests.api import versions
+from trove.tests.api import vertica
 
 
 GROUP_SERVICES_INITIALIZE = "services.initialize"
@@ -94,3 +95,15 @@ datastore_group = [
 proboscis.register(groups=["cassandra", "couchbase", "mongodb", "postgresql",
                            "redis"],
                    depends_on_groups=datastore_group)
+
+# Vertica int-tests
+vertica_group = [
+    GROUP_SERVICES_INITIALIZE,
+    flavors.GROUP,
+    versions.GROUP,
+    instances.GROUP_START_SIMPLE,
+    instances.GROUP_QUOTAS,
+    vertica.VERTICA_GROUP,
+]
+proboscis.register(groups=["vertica"],
+                   depends_on_groups=vertica_group)
