@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from trove.common import extensions
 from trove.extensions.mgmt.clusters.service import MgmtClusterController
 from trove.extensions.mgmt.configuration import service as conf_service
+from trove.extensions.mgmt.datastores.service import DatastoreVersionController
 from trove.extensions.mgmt.host.instance import service as hostservice
 from trove.extensions.mgmt.host.service import HostController
 from trove.extensions.mgmt.instances.service import MgmtInstanceController
@@ -101,5 +102,11 @@ class Mgmt(extensions.ExtensionDescriptor):
             conf_service.ConfigurationsParameterController(),
             member_actions={})
         resources.append(datastore_configuration_parameters)
+
+        datastore_version = extensions.ResourceExtension(
+            '{tenant_id}/mgmt/datastore-versions',
+            DatastoreVersionController(),
+            member_actions={})
+        resources.append(datastore_version)
 
         return resources

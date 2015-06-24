@@ -23,6 +23,7 @@ from trove.tests.api import instances
 from trove.tests.api import instances_actions
 from trove.tests.api.mgmt import accounts
 from trove.tests.api.mgmt import admin_required
+from trove.tests.api.mgmt import datastore_versions
 from trove.tests.api.mgmt import hosts
 from trove.tests.api.mgmt import instances as mgmt_instances
 from trove.tests.api.mgmt import storage
@@ -60,6 +61,7 @@ black_box_groups = [
     instances.GROUP_STOP,
     versions.GROUP,
     instances.GROUP_GUEST,
+    datastore_versions.GROUP,
 ]
 proboscis.register(groups=["blackbox", "mysql"],
                    depends_on_groups=black_box_groups)
@@ -70,6 +72,7 @@ simple_black_box_groups = [
     versions.GROUP,
     instances.GROUP_START_SIMPLE,
     admin_required.GROUP,
+    datastore_versions.GROUP,
 ]
 proboscis.register(groups=["simple_blackbox"],
                    depends_on_groups=simple_black_box_groups)
@@ -81,6 +84,7 @@ black_box_mgmt_groups = [
     instances_actions.GROUP_REBOOT,
     admin_required.GROUP,
     mgmt_instances.GROUP,
+    datastore_versions.GROUP,
 ]
 proboscis.register(groups=["blackbox_mgmt"],
                    depends_on_groups=black_box_mgmt_groups)

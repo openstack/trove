@@ -399,6 +399,9 @@ class DatastoreVersion(object):
         except exception.ModelNotFoundError:
             raise exception.DatastoreVersionNotFound(version=uuid)
 
+    def delete(self):
+        self.db_info.delete()
+
     @property
     def id(self):
         return self.db_info.id
@@ -434,6 +437,11 @@ class DatastoreVersion(object):
     @property
     def manager(self):
         return self.db_info.manager
+
+    @property
+    def default(self):
+        datastore = Datastore.load(self.datastore_id)
+        return (datastore.default_version_id == self.db_info.id)
 
     @property
     def capabilities(self):

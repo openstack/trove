@@ -519,3 +519,13 @@ class BackupTooLarge(TroveError):
     message = _("Backup is too large for given flavor or volume. "
                 "Backup size: %(backup_size)s GBs. "
                 "Available size: %(disk_size)s GBs.")
+
+
+class ImageNotFound(NotFound):
+
+    message = _("Image %(uuid)s cannot be found.")
+
+
+class DatastoreVersionAlreadyExists(BadRequest):
+
+    message = _("A datastore version with the name '%(name)s' already exists.")
