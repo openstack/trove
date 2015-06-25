@@ -116,13 +116,13 @@ class CreateInstanceTest(trove_testtools.TestCase):
         self.users = []
         self.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),
-            name='mysql',
+            name='mysql' + str(uuid.uuid4()),
         )
         self.datastore_version = (
             datastore_models.DBDatastoreVersion.create(
                 id=str(uuid.uuid4()),
                 datastore_id=self.datastore.id,
-                name="5.5",
+                name="5.5" + str(uuid.uuid4()),
                 manager="mysql",
                 image_id="image_id",
                 packages="",
@@ -220,12 +220,12 @@ class TestReplication(trove_testtools.TestCase):
 
         self.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),
-            name='name',
+            name='name' + str(uuid.uuid4()),
             default_version_id=str(uuid.uuid4()))
 
         self.datastore_version = datastore_models.DBDatastoreVersion.create(
             id=self.datastore.default_version_id,
-            name='name',
+            name='name' + str(uuid.uuid4()),
             image_id=str(uuid.uuid4()),
             packages=str(uuid.uuid4()),
             datastore_id=self.datastore.id,

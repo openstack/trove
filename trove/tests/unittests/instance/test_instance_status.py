@@ -49,13 +49,13 @@ class BaseInstanceStatusTestCase(trove_testtools.TestCase):
             ServiceStatuses.RUNNING)
         self.datastore = models.DBDatastore.create(
             id=str(uuid.uuid4()),
-            name='mysql',
+            name='mysql' + str(uuid.uuid4()),
             default_version_id=self.db_info.datastore_version_id
         )
         self.version = models.DBDatastoreVersion.create(
             id=self.db_info.datastore_version_id,
             datastore_id=self.datastore.id,
-            name='5.5',
+            name='5.5' + str(uuid.uuid4()),
             manager='mysql',
             image_id=str(uuid.uuid4()),
             active=1,

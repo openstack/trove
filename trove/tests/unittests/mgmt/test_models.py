@@ -48,13 +48,13 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         cls.version_id = str(uuid.uuid4())
         cls.datastore = datastore_models.DBDatastore.create(
             id=str(uuid.uuid4()),
-            name='mysql',
+            name='mysql' + str(uuid.uuid4()),
             default_version_id=cls.version_id
         )
         cls.version = datastore_models.DBDatastoreVersion.create(
             id=cls.version_id,
             datastore_id=cls.datastore.id,
-            name='5.5',
+            name='5.5' + str(uuid.uuid4()),
             manager='mysql',
             image_id=str(uuid.uuid4()),
             active=1,
