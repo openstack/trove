@@ -160,6 +160,11 @@ class Manager(periodic_task.PeriodicTasks):
         raise exception.DatastoreOperationNotSupported(
             operation='enable_root', datastore=MANAGER)
 
+    def enable_root_with_password(self, context, root_password=None):
+        LOG.debug("Enabling root with password.")
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root_with_password', datastore=MANAGER)
+
     def is_root_enabled(self, context):
         raise exception.DatastoreOperationNotSupported(
             operation='is_root_enabled', datastore=MANAGER)

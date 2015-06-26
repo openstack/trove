@@ -22,10 +22,12 @@ from oslo_utils import netutils
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.i18n import _LI
 from trove.common import instance as rd_instance
 from trove.common import utils as utils
 from trove.guestagent.datastore.experimental.vertica import system
 from trove.guestagent.datastore import service
+from trove.guestagent.db import models
 from trove.guestagent import pkg
 from trove.guestagent import volume
 
@@ -249,6 +251,69 @@ class VerticaApp(object):
         except exception.ProcessExecutionError:
             LOG.exception(_("Failed to prepare for install_vertica."))
             raise
+
+    def _create_user(self, username, password, role):
+        """Creates a user, granting and enabling the given role for it."""
+        LOG.info(_("Creating user in Vertica database."))
+        out, err = system.exec_vsql_command(self._get_database_password(),
+                                            system.CREATE_USER %
+                                            (username, password))
+        if not err:
+            self._grant_role(username, role)
+        if err:
+            LOG.error(err)
+            raise RuntimeError(_("Failed to create user %s.") % username)
+
+    def _grant_role(self, username, role):
+        """Grants a role to the user on the schema."""
+        out, err = system.exec_vsql_command(self._get_database_password(),
+                                            system.GRANT_TO_USER
+                                            % (role, username))
+        if not err:
+            out, err = system.exec_vsql_command(self._get_database_password(),
+                                                system.ENABLE_FOR_USER
+                                                % (username, role))
+            if err:
+                LOG.error(err)
+
+    def enable_root(self, root_password=None):
+        """Resets the root password."""
+        LOG.info(_LI("Enabling root."))
+        user = models.RootUser()
+        user.name = "root"
+        user.host = "%"
+        user.password = root_password or utils.generate_random_password()
+        if not self.is_root_enabled():
+            self._create_user(user.name, user.password, 'pseudosuperuser')
+        else:
+            LOG.debug("Updating %s password." % user.name)
+            try:
+                out, err = system.exec_vsql_command(
+                    self._get_database_password(),
+                    system.ALTER_USER_PASSWORD % (user.name, user.password))
+                if err:
+                    LOG.error(err)
+                    raise RuntimeError(_("Failed to update %s password.")
+                                       % user.name)
+            except exception.ProcessExecutionError:
+                LOG.error(_("Failed to update %s password.") % user.name)
+                raise RuntimeError(_("Failed to update %s password.")
+                                   % user.name)
+        return user.serialize()
+
+    def is_root_enabled(self):
+        """Return True if root access is enabled else False."""
+        LOG.debug("Checking is root enabled.")
+        try:
+            out, err = system.shell_execute(system.USER_EXISTS %
+                                            (self._get_database_password(),
+                                             'root'), 'dbadmin')
+            if err:
+                LOG.error(err)
+                raise RuntimeError(_("Failed to query for root user."))
+        except exception.ProcessExecutionError:
+            raise RuntimeError(_("Failed to query for root user."))
+        return out.rstrip() == "1"
 
     def get_public_keys(self, user):
         """Generates key (if not found), and sends public key for user."""

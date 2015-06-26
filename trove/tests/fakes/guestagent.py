@@ -148,6 +148,15 @@ class FakeGuest(object):
             "_databases": [],
         })
 
+    def enable_root_with_password(self, root_password=None):
+        self.root_was_enabled = True
+        return self._create_user({
+            "_name": "root",
+            "_host": "%",
+            "_password": "12345",
+            "_databases": [],
+        })
+
     def delete_user(self, user):
         username = user['_name']
         self._check_username(username)

@@ -13,7 +13,8 @@
 
 from mock import MagicMock
 from mock import patch
-import testtools
+from testtools.matchers import Is
+import trove_testtools
 
 from trove.common.context import TroveContext
 from trove.common.exception import DatastoreOperationNotSupported
@@ -27,7 +28,7 @@ from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
 
 
-class GuestAgentManagerTest(testtools.TestCase):
+class GuestAgentManagerTest(trove_testtools.TestCase):
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
         self.context = TroveContext()
@@ -45,6 +46,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_restart = VerticaApp.restart
         self.origin_install_if = VerticaApp.install_if_needed
         self.origin_complete_install = VerticaApp.complete_install_or_restart
+        self.origin_enable_root = VerticaApp.enable_root
+        self.origin_is_root_enabled = VerticaApp.is_root_enabled
+        self.origin_prepare_for_install_vertica = (
+            VerticaApp.prepare_for_install_vertica)
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
@@ -61,6 +66,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         VerticaApp.restart = self.origin_restart
         VerticaApp.install_if_needed = self.origin_install_if
         VerticaApp.complete_install_or_restart = self.origin_complete_install
+        VerticaApp.enable_root = self.origin_enable_root
+        VerticaApp.is_root_enabled = self.origin_is_root_enabled
+        VerticaApp.prepare_for_install_vertica = (
+            self.origin_prepare_for_install_vertica)
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -333,14 +342,14 @@ class GuestAgentManagerTest(testtools.TestCase):
                           self.context)
 
     def test_enable_root(self):
-        self.assertRaises(DatastoreOperationNotSupported,
-                          self.manager.enable_root,
-                          self.context)
+        VerticaApp.enable_root = MagicMock(return_value='user_id_stuff')
+        user_id = self.manager.enable_root_with_password(self.context)
+        self.assertThat(user_id, Is('user_id_stuff'))
 
     def test_is_root_enabled(self):
-        self.assertRaises(DatastoreOperationNotSupported,
-                          self.manager.is_root_enabled,
-                          self.context)
+        VerticaApp.is_root_enabled = MagicMock(return_value=True)
+        is_enabled = self.manager.is_root_enabled(self.context)
+        self.assertThat(is_enabled, Is(True))
 
     def test_create_backup(self):
         self.assertRaises(DatastoreOperationNotSupported,

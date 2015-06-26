@@ -183,6 +183,14 @@ class API(object):
         LOG.debug("Enable root user for instance %s.", self.id)
         return self._call("enable_root", AGENT_HIGH_TIMEOUT, self.version_cap)
 
+    def enable_root_with_password(self, root_password=None):
+        """Make a synchronous call to enable the root user for
+           access from anywhere
+        """
+        LOG.debug("Enable root user for instance %s.", self.id)
+        return self._call("enable_root_with_password", AGENT_HIGH_TIMEOUT,
+                          self.version_cap, root_password=root_password)
+
     def disable_root(self):
         """Make a synchronous call to disable the root user for
            access from anywhere

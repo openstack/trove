@@ -138,6 +138,10 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
     def enable_root(self, context):
         return self.mysql_admin().enable_root()
 
+    def enable_root_with_password(self, context, root_password=None):
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root_with_password', datastore=self.manager)
+
     def is_root_enabled(self, context):
         return self.mysql_admin().is_root_enabled()
 

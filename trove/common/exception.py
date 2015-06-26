@@ -518,6 +518,11 @@ class ClusterInstanceOperationNotSupported(TroveError):
                 "cluster.")
 
 
+class ClusterOperationNotSupported(TroveError):
+
+    message = _("The '%(operation)s' operation is not supported for cluster.")
+
+
 class TroveOperationAuthError(TroveError):
     message = _("Operation not allowed for tenant %(tenant_id)s.")
 

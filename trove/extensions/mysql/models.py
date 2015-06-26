@@ -22,10 +22,9 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.remote import create_guest_client
-from trove.common import utils
-from trove.db import get_db_api
+from trove.extensions.common.models import load_and_verify
+from trove.extensions.common.models import RootHistory
 from trove.guestagent.db import models as guest_models
-from trove.instance import models as base_models
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -33,16 +32,6 @@ LOG = logging.getLogger(__name__)
 
 def persisted_models():
     return {'root_enabled_history': RootHistory}
-
-
-def load_and_verify(context, instance_id):
-    # Load InstanceServiceStatus to verify if its running
-    instance = base_models.Instance.load(context, instance_id)
-    if not instance.is_datastore_running:
-        raise exception.UnprocessableEntity(
-            "Instance %s is not ready." % instance.id)
-    else:
-        return instance
 
 
 class User(object):
@@ -172,63 +161,6 @@ class UserAccess(object):
 
     def __init__(self, databases):
         self.databases = databases
-
-
-class Root(object):
-
-    @classmethod
-    def load(cls, context, instance_id):
-        load_and_verify(context, instance_id)
-        # TODO(pdmars): remove the is_root_enabled call from the guest agent,
-        # just check the database for this information.
-        # If the root history returns null or raises an exception, the root
-        # user hasn't been enabled.
-        try:
-            root_history = RootHistory.load(context, instance_id)
-        except exception.NotFound:
-            return False
-        if not root_history:
-            return False
-        return True
-
-    @classmethod
-    def create(cls, context, instance_id, user):
-        load_and_verify(context, instance_id)
-        root = create_guest_client(context, instance_id).enable_root()
-        root_user = guest_models.RootUser()
-        root_user.deserialize(root)
-        RootHistory.create(context, instance_id, user)
-        return root_user
-
-
-class RootHistory(object):
-
-    _auto_generated_attrs = ['id']
-    _data_fields = ['instance_id', 'user', 'created']
-    _table_name = 'root_enabled_history'
-
-    def __init__(self, instance_id, user):
-        self.id = instance_id
-        self.user = user
-        self.created = utils.utcnow()
-
-    def save(self):
-        LOG.debug("Saving %(name)s: %(dict)s" %
-                  {'name': self.__class__.__name__, 'dict': self.__dict__})
-        return get_db_api().save(self)
-
-    @classmethod
-    def load(cls, context, instance_id):
-        history = get_db_api().find_by(cls, id=instance_id)
-        return history
-
-    @classmethod
-    def create(cls, context, instance_id, user):
-        history = cls.load(context, instance_id)
-        if history is not None:
-            return history
-        history = RootHistory(instance_id, user)
-        return history.save()
 
 
 def load_via_context(cls, context, instance_id):

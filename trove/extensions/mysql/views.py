@@ -51,25 +51,6 @@ class UserAccessView(object):
         return {"databases": dbs}
 
 
-class RootCreatedView(UserView):
-
-    def data(self):
-        user_dict = {
-            "name": self.user.name,
-            "password": self.user.password
-        }
-        return {"user": user_dict}
-
-
-class RootEnabledView(object):
-
-    def __init__(self, is_root_enabled):
-        self.is_root_enabled = is_root_enabled
-
-    def data(self):
-        return {'rootEnabled': self.is_root_enabled}
-
-
 class SchemaView(object):
 
     def __init__(self, schema):

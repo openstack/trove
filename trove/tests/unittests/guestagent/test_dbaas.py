@@ -2801,6 +2801,7 @@ class VerticaAppTest(testtools.TestCase):
         self.setread = VolumeDevice.set_readahead_size
         self.Popen = subprocess.Popen
         vertica_system.shell_execute = MagicMock(return_value=('', ''))
+        vertica_system.exec_vsql_command = MagicMock(return_value=('', ''))
 
         VolumeDevice.set_readahead_size = Mock()
         subprocess.Popen = Mock()
@@ -2814,6 +2815,96 @@ class VerticaAppTest(testtools.TestCase):
         self.app = None
         VolumeDevice.set_readahead_size = self.setread
         subprocess.Popen = self.Popen
+
+    def test_enable_root_is_root_not_enabled(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(app, 'is_root_enabled', return_value=False):
+                    with patch.object(vertica_system, 'exec_vsql_command',
+                                      MagicMock(side_effect=[['', ''],
+                                                             ['', ''],
+                                                             ['', '']])):
+                        app.enable_root('root_password')
+                        create_user_arguments = (
+                            vertica_system.exec_vsql_command.call_args_list[0])
+                        expected_create_user_cmd = (
+                            vertica_system.CREATE_USER % ('root',
+                                                          'root_password'))
+                        create_user_arguments.assert_called_with(
+                            'some_password', expected_create_user_cmd)
+
+                        grant_role_arguments = (
+                            vertica_system.exec_vsql_command.call_args_list[1])
+                        expected_grant_role_cmd = (
+                            vertica_system.GRANT_TO_USER % ('pseudosuperuser',
+                                                            'root'))
+                        grant_role_arguments.assert_called_with(
+                            'some_password', expected_grant_role_cmd)
+
+                        enable_user_arguments = (
+                            vertica_system.exec_vsql_command.call_args_list[2])
+                        expected_enable_user_cmd = (
+                            vertica_system.ENABLE_FOR_USER % ('root',
+                                                              'pseudosuperuser'
+                                                              ))
+                        enable_user_arguments.assert_called_with(
+                            'some_password', expected_enable_user_cmd)
+
+    def test_enable_root_is_root_not_enabled_failed(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(app, 'is_root_enabled', return_value=False):
+                with patch.object(vertica_system, 'exec_vsql_command',
+                                  MagicMock(side_effect=[['', 'err']])):
+                    self.assertRaises(RuntimeError, app.enable_root,
+                                      'root_password')
+
+    def test_enable_root_is_root_enabled(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(app, 'is_root_enabled', return_value=True):
+                with patch.object(vertica_system, 'exec_vsql_command',
+                                  MagicMock(side_effect=[['', '']])):
+                    app.enable_root('root_password')
+                    alter_user_password_arguments = (
+                        vertica_system.exec_vsql_command.call_args_list[0])
+                    expected_alter_user_cmd = (
+                        vertica_system.ALTER_USER_PASSWORD % ('root',
+                                                              'root_password'
+                                                              ))
+                    alter_user_password_arguments.assert_called_with(
+                        'some_password', expected_alter_user_cmd)
+
+    def test_enable_root_is_root_enabled_failed(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(app, 'is_root_enabled', return_value=True):
+                with patch.object(vertica_system, 'exec_vsql_command',
+                                  MagicMock(side_effect=[
+                                      ['', ProcessExecutionError]])):
+                    self.assertRaises(RuntimeError, app.enable_root,
+                                      'root_password')
+
+    def test_is_root_enable(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(vertica_system, 'shell_execute',
+                              MagicMock(side_effect=[['', '']])):
+                app.is_root_enabled()
+                user_exists_args = (
+                    vertica_system.shell_execute.call_args_list[0])
+                expected_user_exists_cmd = vertica_system.USER_EXISTS % (
+                    'some_password', 'root')
+                user_exists_args.assert_called_with(expected_user_exists_cmd,
+                                                    'dbadmin')
+
+    def test_is_root_enable_failed(self):
+        app = VerticaApp(MagicMock())
+        with patch.object(app, 'read_config', return_value=self.test_config):
+            with patch.object(vertica_system, 'shell_execute',
+                              MagicMock(side_effect=[
+                                  ['', ProcessExecutionError]])):
+                self.assertRaises(RuntimeError, app.is_root_enabled)
 
     def test_install_if_needed_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):

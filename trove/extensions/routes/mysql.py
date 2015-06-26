@@ -16,8 +16,8 @@
 from oslo_log import log as logging
 
 from trove.common import extensions
-from trove.extensions.mysql import service
-
+from trove.extensions.common import service as common_service
+from trove.extensions.mysql import service as mysql_service
 
 LOG = logging.getLogger(__name__)
 
@@ -44,14 +44,14 @@ class Mysql(extensions.ExtensionDescriptor):
 
         resource = extensions.ResourceExtension(
             'databases',
-            service.SchemaController(),
+            mysql_service.SchemaController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'})
         resources.append(resource)
 
         resource = extensions.ResourceExtension(
             'users',
-            service.UserController(),
+            mysql_service.UserController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'},
             member_actions={'update': 'PUT'},
@@ -61,7 +61,7 @@ class Mysql(extensions.ExtensionDescriptor):
         collection_url = '{tenant_id}/instances/:instance_id/users'
         resource = extensions.ResourceExtension(
             'databases',
-            service.UserAccessController(),
+            mysql_service.UserAccessController(),
             parent={'member_name': 'user',
                     'collection_name': collection_url},
             collection_actions={'update': 'PUT'})
@@ -69,9 +69,16 @@ class Mysql(extensions.ExtensionDescriptor):
 
         resource = extensions.ResourceExtension(
             'root',
-            service.RootController(),
+            common_service.RootController(),
             parent={'member_name': 'instance',
                     'collection_name': '{tenant_id}/instances'})
+        resources.append(resource)
+
+        resource = extensions.ResourceExtension(
+            'root',
+            common_service.RootController(),
+            parent={'member_name': 'instance',
+                    'collection_name': '{tenant_id}/clusters'})
         resources.append(resource)
 
         return resources

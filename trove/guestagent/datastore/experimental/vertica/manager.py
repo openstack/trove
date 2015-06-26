@@ -190,13 +190,15 @@ class Manager(periodic_task.PeriodicTasks):
 
     def enable_root(self, context):
         LOG.debug("Enabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=MANAGER)
+        return self.app.enable_root()
+
+    def enable_root_with_password(self, context, root_password=None):
+        LOG.debug("Enabling root.")
+        return self.app.enable_root(root_password)
 
     def is_root_enabled(self, context):
         LOG.debug("Checking if root is enabled.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=MANAGER)
+        return self.app.is_root_enabled()
 
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup.")

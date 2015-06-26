@@ -197,6 +197,11 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Enabling root.")
         return service.MongoDBAdmin().enable_root()
 
+    def enable_root_with_password(self, context, root_password=None):
+        LOG.debug("Enabling root with password.")
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root_with_password', datastore=MANAGER)
+
     def is_root_enabled(self, context):
         LOG.debug("Checking if root is enabled.")
         return service.MongoDBAdmin().is_root_enabled()

@@ -166,9 +166,16 @@ class Manager(periodic_task.PeriodicTasks):
             operation='list_users', datastore=MANAGER)
 
     def enable_root(self, context):
+        LOG.debug("Enabling root.")
         return self.app.enable_root()
 
+    def enable_root_with_password(self, context, root_password=None):
+        LOG.debug("Enabling root with password.")
+        raise exception.DatastoreOperationNotSupported(
+            operation='enable_root_with_password', datastore=MANAGER)
+
     def is_root_enabled(self, context):
+        LOG.debug("Checking if root is enabled.")
         return os.path.exists(system.pwd_file)
 
     def _perform_restore(self, backup_info, context, restore_location):

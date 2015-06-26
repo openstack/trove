@@ -166,6 +166,15 @@ class ApiTest(trove_testtools.TestCase):
         self._verify_call('enable_root')
         self.assertThat(resp, Is(True))
 
+    def test_enable_root_with_password(self):
+        self.call_context.call.return_value = True
+
+        resp = self.api.enable_root_with_password()
+
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('enable_root_with_password', root_password=None)
+        self.assertThat(resp, Is(True))
+
     def test_disable_root(self):
         self.call_context.call.return_value = True
 
