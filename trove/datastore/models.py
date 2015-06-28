@@ -502,6 +502,8 @@ def update_datastore(name, default_version):
         if not version.active:
             raise exception.DatastoreVersionInactive(version=version.name)
         datastore.default_version_id = version.id
+    else:
+        datastore.default_version_id = None
 
     db_api.save(datastore)
 
