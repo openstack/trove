@@ -363,7 +363,8 @@ class MySqlAdminTest(testtools.TestCase):
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
             with patch.object(self.mySqlAdmin, 'grant_access'):
                 self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
-                self.mySqlAdmin.grant_access.assert_called()
+                self.mySqlAdmin.grant_access.assert_called_with(
+                    'new_name', '%', set([]))
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
         expected = ("UPDATE mysql.user SET User='new_name' "
                     "WHERE User = 'test_user' AND Host = '%';")
@@ -381,7 +382,8 @@ class MySqlAdminTest(testtools.TestCase):
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
             with patch.object(self.mySqlAdmin, 'grant_access'):
                 self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
-                self.mySqlAdmin.grant_access.assert_called()
+                self.mySqlAdmin.grant_access.assert_called_with(
+                    'test_usr', 'new_host', set([]))
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
         expected = ("UPDATE mysql.user SET Host='new_host' "
                     "WHERE User = 'test_user' AND Host = '%';")

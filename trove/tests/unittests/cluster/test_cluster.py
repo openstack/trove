@@ -25,6 +25,7 @@ from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster.experimental.mongodb import (
     api as mongodb_api)
+from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.instance import models as inst_models
 from trove.instance.models import DBInstance
@@ -171,6 +172,7 @@ class ClusterTest(trove_testtools.TestCase):
         self.assertRaises(exception.UnprocessableEntity,
                           self.cluster.add_shard)
 
+    @patch.object(utils, 'generate_uuid', Mock(return_value='new-shard-id'))
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     @patch.object(task_api, 'load')
     @patch.object(Cluster, 'update_db')
@@ -209,4 +211,5 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster.add_shard()
         mock_update_db.assert_called_with(
             task_status=ClusterTasks.ADDING_SHARD)
-        mock_task_api.mongodb_add_shard_cluster.assert_called
+        mock_task_api.mongodb_add_shard_cluster.assert_called_with(
+            self.cluster.id, 'new-shard-id', 'rs2')

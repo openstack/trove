@@ -119,7 +119,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
                                               InstanceServiceStatus(
                                                   ServiceStatuses.NEW))
         self.clustertasks.create_cluster(Mock(), self.cluster_id)
-        mock_reset_task.assert_called()
+        mock_reset_task.assert_called_with()
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')
@@ -140,8 +140,8 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         self.clustertasks.create_cluster(Mock(), self.cluster_id)
         mock_guest.return_value.install_cluster.assert_called_with(['10.0.0.2']
                                                                    )
-        mock_reset_task.assert_called()
-        mock_guest.return_value.cluster_complete.assert_called()
+        mock_reset_task.assert_called_with()
+        mock_guest.return_value.cluster_complete.assert_called_with()
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(ClusterTasks, 'reset_task')
@@ -165,8 +165,8 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
         with patch.object(ClusterTasks, 'get_guest',
                           return_value=guest_client):
             self.clustertasks.create_cluster(Mock(), self.cluster_id)
-            mock_update_status.assert_called()
-            mock_reset_task.assert_called()
+            mock_update_status.assert_called_with('1232')
+            mock_reset_task.assert_called_with()
 
 
 class VerticaTaskManagerAPITest(trove_testtools.TestCase):
@@ -180,10 +180,9 @@ class VerticaTaskManagerAPITest(trove_testtools.TestCase):
         self.call_context.cast = Mock()
         self.rpc_api_version = '1.0'
 
-    @patch.object(rpc, 'get_client')
-    def test_task_manager_api__cast(self, mock_rpc_client):
+    def test_task_manager_api_cast(self):
         self.api._cast(method_name='test_method', version=self.rpc_api_version)
-        mock_rpc_client.assert_called()
+        self.call_context.cast.assert_called_with(self.context, 'test_method')
 
 
 class VerticaTaskManagerStrategyTest(trove_testtools.TestCase):
