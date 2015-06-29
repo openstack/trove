@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from trove import tests
 from trove.tests import util
 from trove.tests.util.users import Requirements
@@ -32,6 +34,9 @@ class ServerSSHConnection(object):
         self.dbaas_admin = util.create_dbaas_client(self.user)
         self.instance = self.dbaas_admin.management.show(self.instance_id)
         self.ip_address = self.instance.ip[0]
+        TROVE_TEST_SSH_USER = os.environ.get('TROVE_TEST_SSH_USER')
+        if TROVE_TEST_SSH_USER and '@' not in self.ip_address:
+            self.ip_address = TROVE_TEST_SSH_USER + '@' + self.ip_address
 
     def execute(self, cmd):
         exe_cmd = "%s %s %s" % (tests.SSH_CMD, self.ip_address, cmd)
