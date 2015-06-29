@@ -147,8 +147,8 @@ class ActionTestBase(object):
 
     def find_mysql_proc_on_instance(self):
         server = create_server_connection(self.instance_id)
-        cmd = "ps aux | grep /usr/sbin/mysqld " \
-              "| awk '{print $2}'"
+        cmd = "ps acux | grep mysqld " \
+              "| grep -v mysqld_safe | awk '{print $2}'"
         stdout, stderr = server.execute(cmd)
         try:
             return int(stdout)
