@@ -14,11 +14,13 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
+import collections
 import datetime
 import inspect
 import os
 import shutil
 import time
+import types
 import uuid
 
 from eventlet.timeout import Timeout
@@ -289,3 +291,23 @@ def gen_ports(portstr):
     if int(from_port) > int(to_port):
         raise ValueError
     return from_port, to_port
+
+
+def unpack_singleton(container):
+    """Unpack singleton collections.
+
+    Check whether a given collection is a singleton (has exactly one element)
+    and unpack it if that is the case.
+    Return the original collection otherwise.
+    """
+    if is_collection(container) and len(container) == 1:
+        return unpack_singleton(container[0])
+
+    return container
+
+
+def is_collection(item):
+    """Return True is a given item is an iterable collection, but not a string.
+    """
+    return (isinstance(item, collections.Iterable) and
+            not isinstance(item, types.StringTypes))

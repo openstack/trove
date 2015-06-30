@@ -16,17 +16,94 @@
 import inspect
 import operator
 import os
+import re
 import stat
+import tempfile
 
+from functools import reduce
 from oslo_concurrency.processutils import UnknownArgumentError
 
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.stream_codecs import IdentityCodec
 from trove.common import utils
 
 REDHAT = 'redhat'
 DEBIAN = 'debian'
 SUSE = 'suse'
+
+
+def read_file(path, codec=IdentityCodec()):
+    """
+    Read a file into a Python data structure
+    digestible by 'write_file'.
+
+    :param path             Path to the read config file.
+    :type path              string
+
+    :param codec:           A codec used to deserialize the data.
+    :type codec:            StreamCodec
+
+    :returns:               A dictionary of key-value pairs.
+
+    :raises:                :class:`UnprocessableEntity` if file doesn't exist.
+    :raises:                :class:`UnprocessableEntity` if codec not given.
+    """
+    if path and os.path.exists(path):
+        with open(path, 'r') as fp:
+            return codec.deserialize(fp.read())
+
+    raise exception.UnprocessableEntity(_("File does not exist: %s") % path)
+
+
+def write_file(path, data, codec=IdentityCodec(), as_root=False):
+    """Write data into file using a given codec.
+    Overwrite any existing contents.
+    The written file can be read back into its original
+    form by 'read_file'.
+
+    :param path                Path to the written config file.
+    :type path                 string
+
+    :param data:               An object representing the file contents.
+    :type data:                object
+
+    :param codec:              A codec used to serialize the data.
+    :type codec:               StreamCodec
+
+    :param codec:              Execute as root.
+    :type codec:               boolean
+
+    :raises:                   :class:`UnprocessableEntity` if path not given.
+    """
+    if path:
+        if as_root:
+            _write_file_as_root(path, data, codec)
+        else:
+            with open(path, 'w', 0) as fp:
+                fp.write(codec.serialize(data))
+    else:
+        raise exception.UnprocessableEntity(_("Invalid path: %s") % path)
+
+
+def _write_file_as_root(path, data, codec=IdentityCodec):
+    """Write a file as root. Overwrite any existing contents.
+
+    :param path                Path to the written file.
+    :type path                 string
+
+    :param data:               An object representing the file contents.
+    :type data:                StreamCodec
+
+    :param codec:              A codec used to serialize the data.
+    :type codec:               StreamCodec
+    """
+    # The files gets removed automatically once the managing object goes
+    # out of scope.
+    with tempfile.NamedTemporaryFile('w', 0, delete=False) as fp:
+        fp.write(codec.serialize(data))
+        fp.close()  # Release the resource before proceeding.
+        copy(fp.name, path, force=True, as_root=True)
 
 
 class FileMode(object):
@@ -198,6 +275,7 @@ def service_discovery(service_candidates):
                 result['cmd_enable'] = "sudo systemctl enable %s" % service
                 result['cmd_disable'] = "sudo systemctl disable %s" % service
             break
+
     return result
 
 
@@ -487,3 +565,23 @@ def _build_command_options(options):
     """
 
     return ['-' + item[0] for item in options if item[1]]
+
+
+def list_files_in_directory(root_dir, recursive=False, pattern=None):
+    """
+    Return absolute paths to all files in a given root directory.
+
+    :param root_dir            Path to the root directory.
+    :type root_dir             string
+
+    :param recursive           Also probe subdirectories if True.
+    :type recursive            boolean
+
+    :param pattern             Return only files matching the pattern.
+    :type pattern              string
+    """
+    return {os.path.abspath(os.path.join(root, name))
+            for (root, _, files) in os.walk(root_dir, topdown=True)
+            if recursive or (root == root_dir)
+            for name in files
+            if not pattern or re.match(pattern, name)}

@@ -237,33 +237,37 @@ class ConfigurationsController(wsgi.Controller):
 
             # integer min/max checking
             if isinstance(v, (int, long)) and not isinstance(v, bool):
-                try:
-                    min_value = int(rule.min_size)
-                except ValueError:
-                    raise exception.TroveError(_(
-                        "Invalid or unsupported min value defined in the "
-                        "configuration-parameters configuration file. "
-                        "Expected integer."))
-                if v < min_value:
-                    output = {"key": k, "min": min_value}
-                    message = _("The value for the configuration parameter "
-                                "%(key)s is less than the minimum allowed: "
-                                "%(min)s") % output
-                    raise exception.UnprocessableEntity(message=message)
+                if rule.min_size is not None:
+                    try:
+                        min_value = int(rule.min_size)
+                    except ValueError:
+                        raise exception.TroveError(_(
+                            "Invalid or unsupported min value defined in the "
+                            "configuration-parameters configuration file. "
+                            "Expected integer."))
+                    if v < min_value:
+                        output = {"key": k, "min": min_value}
+                        message = _(
+                            "The value for the configuration parameter "
+                            "%(key)s is less than the minimum allowed: "
+                            "%(min)s") % output
+                        raise exception.UnprocessableEntity(message=message)
 
-                try:
-                    max_value = int(rule.max_size)
-                except ValueError:
-                    raise exception.TroveError(_(
-                        "Invalid or unsupported max value defined in the "
-                        "configuration-parameters configuration file. "
-                        "Expected integer."))
-                if v > max_value:
-                    output = {"key": k, "max": max_value}
-                    message = _("The value for the configuration parameter "
-                                "%(key)s is greater than the maximum "
-                                "allowed: %(max)s") % output
-                    raise exception.UnprocessableEntity(message=message)
+                if rule.max_size is not None:
+                    try:
+                        max_value = int(rule.max_size)
+                    except ValueError:
+                        raise exception.TroveError(_(
+                            "Invalid or unsupported max value defined in the "
+                            "configuration-parameters configuration file. "
+                            "Expected integer."))
+                    if v > max_value:
+                        output = {"key": k, "max": max_value}
+                        message = _(
+                            "The value for the configuration parameter "
+                            "%(key)s is greater than the maximum "
+                            "allowed: %(max)s") % output
+                        raise exception.UnprocessableEntity(message=message)
 
     @staticmethod
     def _find_type(value_type):
@@ -288,6 +292,7 @@ class ConfigurationsController(wsgi.Controller):
 
 
 class ParametersController(wsgi.Controller):
+
     def index(self, req, tenant_id, datastore, id):
         ds, ds_version = ds_models.get_datastore_version(
             type=datastore, version=id)

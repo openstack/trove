@@ -1340,8 +1340,11 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                 val = None
                 restart_required = inst_models.InstanceTasks.RESTART_REQUIRED
                 self.update_db(task_status=restart_required)
-            if val:
+            if val and isinstance(val, basestring):
                 overrides[item.configuration_key] = _convert_value(val)
+            else:
+                overrides[item.configuration_key] = val
+
         LOG.debug("setting the default variables in dict: %s" % overrides)
         self.update_overrides(overrides, remove=True)
 
