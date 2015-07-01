@@ -110,6 +110,11 @@ class MongoDbCluster(models.Cluster):
 
         check_quotas(context.tenant, deltas)
 
+        nics = [instance.get('nics', None) for instance in instances]
+
+        azs = [instance.get('availability_zone', None)
+               for instance in instances]
+
         db_info = models.DBCluster.create(
             name=name, tenant_id=context.tenant,
             datastore_version_id=datastore_version.id,
@@ -121,16 +126,16 @@ class MongoDbCluster(models.Cluster):
                          "shard_id": utils.generate_uuid(),
                          "instance_type": "member",
                          "replica_set_name": replica_set_name}
-        for i in range(1, num_instances + 1):
-            instance_name = "%s-%s-%s" % (name, replica_set_name, str(i))
+        for i in range(0, num_instances):
+            instance_name = "%s-%s-%s" % (name, replica_set_name, str(i + 1))
             inst_models.Instance.create(context, instance_name,
                                         flavor_id,
                                         datastore_version.image_id,
                                         [], [], datastore,
                                         datastore_version,
                                         volume_size, None,
-                                        availability_zone=None,
-                                        nics=None,
+                                        availability_zone=azs[i],
+                                        nics=nics[i],
                                         configuration_id=None,
                                         cluster_config=member_config)
 
