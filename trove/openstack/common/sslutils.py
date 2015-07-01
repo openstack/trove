@@ -83,11 +83,15 @@ def wrap(sock):
 _SSL_PROTOCOLS = {
     "tlsv1": ssl.PROTOCOL_TLSv1,
     "sslv23": ssl.PROTOCOL_SSLv23,
-    "sslv3": ssl.PROTOCOL_SSLv3
 }
 
 try:
     _SSL_PROTOCOLS["sslv2"] = ssl.PROTOCOL_SSLv2
+except AttributeError:
+    pass
+
+try:
+    _SSL_PROTOCOLS["sslv3"] = ssl.PROTOCOL_SSLv3
 except AttributeError:
     pass
 
