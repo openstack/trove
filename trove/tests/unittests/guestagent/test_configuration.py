@@ -150,6 +150,11 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
     def setUp(self):
         trove_testtools.TestCase.setUp(self)
         self._temp_files_paths = []
+        self.chmod_patch = patch.object(
+            operating_system, 'chmod',
+            MagicMock(return_value=None))
+        self.chmod_patch_mock = self.chmod_patch.start()
+        self.addCleanup(self.chmod_patch.stop)
 
     def tearDown(self):
         trove_testtools.TestCase.tearDown(self)
