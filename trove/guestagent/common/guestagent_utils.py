@@ -48,14 +48,3 @@ def build_file_path(base_dir, base_name, *extensions):
     """
     file_name = os.extsep.join([base_name] + list(extensions))
     return os.path.join(base_dir, file_name)
-
-
-def dict_difference(a, b):
-    """Recursively compute an asymmetric difference between dicts 'a' and 'b'.
-    By 'difference' we mean the items that were either changed or added in 'b'.
-    """
-    return {k: dict_difference(a[k], v)
-            if isinstance(v, collections.Mapping)
-            else v
-            for k, v in b.items()
-            if k not in a or v != a[k]}

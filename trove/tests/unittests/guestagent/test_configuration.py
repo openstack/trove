@@ -14,19 +14,17 @@
 #    under the License.
 
 import getpass
+from mock import call
 from mock import DEFAULT
 from mock import MagicMock
 from mock import Mock
 from mock import patch
 import os
 import tempfile
-from testtools.testcase import ExpectedException
-from trove.common import exception
 from trove.common.stream_codecs import IniCodec
-from trove.guestagent.common.configuration import ConfigurationError
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import ImportOverrideStrategy
-from trove.guestagent.common.configuration import RollingOverrideStrategy
+from trove.guestagent.common.configuration import OneFileOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.tests.unittests import trove_testtools
@@ -44,10 +42,14 @@ class TestConfigurationManager(trove_testtools.TestCase):
         sample_group = Mock()
         sample_codec = MagicMock()
         sample_requires_root = Mock()
+        sample_strategy = MagicMock()
+        sample_strategy.configure = Mock()
+        sample_strategy.parse_updates = Mock(return_value={})
 
         manager = ConfigurationManager(
             sample_path, sample_owner, sample_group, sample_codec,
-            requires_root=sample_requires_root)
+            requires_root=sample_requires_root,
+            override_strategy=sample_strategy)
 
         manager.parse_configuration()
         read_file.assert_called_with(sample_path, codec=sample_codec)
@@ -55,7 +57,7 @@ class TestConfigurationManager(trove_testtools.TestCase):
         with patch.object(manager, 'parse_configuration',
                           return_value={'key1': 'v1', 'key2': 'v2'}):
             self.assertEqual('v1', manager.get_value('key1'))
-            self.assertEqual(None, manager.get_value('key3'))
+            self.assertIsNone(manager.get_value('key3'))
 
         sample_contents = Mock()
         manager.save_configuration(sample_contents)
@@ -67,82 +69,17 @@ class TestConfigurationManager(trove_testtools.TestCase):
         chmod.assert_called_with(
             sample_path, FileMode.ADD_READ_ALL, as_root=sample_requires_root)
 
-        sample_options = Mock()
-        with patch.object(manager, 'save_configuration') as save_config:
-            manager.render_configuration(sample_options)
-            save_config.assert_called_once_with(
-                sample_codec.serialize.return_value)
-            sample_codec.serialize.assert_called_once_with(sample_options)
-
-        with patch('trove.guestagent.common.configuration.'
-                   'ConfigurationOverrideStrategy') as mock_strategy:
-            manager.set_override_strategy(mock_strategy)
-            manager._current_revision = 3
-            manager.save_configuration(sample_contents)
-            mock_strategy.remove_last.assert_called_once_with(
-                manager._current_revision + 1)
-            write_file.assert_called_with(
-                sample_path, sample_contents, as_root=sample_requires_root)
-
-    @patch(
-        'trove.guestagent.common.configuration.ConfigurationOverrideStrategy')
-    def test_configuration_manager(self, mock_strategy):
-        mock_strategy.count_revisions.return_value = 0
-        manager = ConfigurationManager(Mock(), Mock(), Mock(), Mock())
-
-        with ExpectedException(exception.DatastoreOperationNotSupported):
-            manager.update_override({})
-
-        with ExpectedException(exception.DatastoreOperationNotSupported):
-            manager.remove_override()
-
-        manager.set_override_strategy(mock_strategy, 1)
-
-        self.assertEqual(1, manager.max_num_overrides)
-        self.assertEqual(0, manager.current_revision)
-
-        with ExpectedException(
-                exception.UnprocessableEntity,
-                "The maximum number of attached Configuration Groups cannot "
-                "be negative."):
-            manager.max_num_overrides = -1
-
-        manager.max_num_overrides = 2
-
-        self.assertEqual(2, manager.max_num_overrides)
-
-        self.assertEqual(0, manager.current_revision)
-        manager.update_override({})
-        self.assertEqual(1, manager.current_revision)
-        manager.update_override({})
-        self.assertEqual(2, manager.current_revision)
-
-        with ExpectedException(
-                ConfigurationError, "This instance cannot have more than "
-                "'2' Configuration Groups attached."):
-            manager.update_override({})
-
-        self.assertEqual(2, manager.current_revision)
-        manager.remove_override()
-        self.assertEqual(1, manager.current_revision)
-        manager.update_override({})
-        self.assertEqual(2, manager.current_revision)
-        manager.remove_override()
-        self.assertEqual(1, manager.current_revision)
-        manager.remove_override()
-        self.assertEqual(0, manager.current_revision)
-
-        with ExpectedException(
-                ConfigurationError,
-                "This instance does not have a Configuration Group attached."):
-            manager.remove_override()
-
-        self.assertEqual(0, manager.current_revision)
-
-        manager.override_strategy = None
-
-        self.assertEqual(0, manager.max_num_overrides)
-        self.assertEqual(0, manager.current_revision)
+        sample_data = {}
+        manager.apply_system_override(sample_data)
+        manager.apply_user_override(sample_data)
+        manager.apply_system_override(sample_data, change_id='sys1')
+        manager.apply_user_override(sample_data, change_id='usr1')
+        sample_strategy.apply.has_calls([
+            call(manager.SYSTEM_GROUP, manager.DEFAULT_CHANGE_ID, sample_data),
+            call(manager.USER_GROUP, manager.DEFAULT_CHANGE_ID, sample_data),
+            call(manager.SYSTEM_GROUP, 'sys1', sample_data),
+            call(manager.USER_GROUP, 'usr1', sample_data)
+        ])
 
 
 class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
@@ -171,158 +108,92 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
         self._temp_files_paths.append(path)
         return path
 
-    def test_rolling_override_strategy(self):
-        base_config_contents = {'Section_1': {'name': 'pi',
-                                              'is_number': 'True',
-                                              'value': '3.1415'}
-                                }
-
-        config_overrides_v1 = {'Section_1': {'name': 'sqrt(2)',
-                                             'value': '1.4142'}
-                               }
-
-        expected_contents_v1 = {'Section_1': {'name': 'sqrt(2)',
-                                              'is_number': 'True',
-                                              'value': '1.4142'}
-                                }
-
-        config_overrides_v2 = {'Section_1': {'is_number': 'False'}}
-
-        expected_contents_v2 = {'Section_1': {'name': 'sqrt(2)',
-                                              'is_number': 'False',
-                                              'value': '1.4142'}
-                                }
-
-        config_overrides_seq = [config_overrides_v1, config_overrides_v2]
-        expected_contents_seq = [base_config_contents, expected_contents_v1,
-                                 expected_contents_v2]
-
-        codec = IniCodec()
-        current_user = getpass.getuser()
-        backup_config_dir = self._create_temp_dir()
-
-        with tempfile.NamedTemporaryFile() as base_config:
-
-            # Write initial config contents.
-            operating_system.write_file(
-                base_config.name, base_config_contents, codec)
-
-            strategy = RollingOverrideStrategy(backup_config_dir)
-            strategy.configure(
-                base_config.name, current_user, current_user, codec, False)
-
-            self._assert_rolling_override_strategy(
-                strategy, config_overrides_seq, expected_contents_seq)
-
-    def _assert_rolling_override_strategy(
-            self, strategy, config_overrides_seq, expected_contents_seq):
-
-        def build_backup_path(revision):
-            base_name = os.extsep.join(
-                [os.path.basename(strategy._base_config_path),
-                 str(revision), 'old'])
-            return os.path.join(
-                strategy._revision_backup_dir, base_name)
-
-        # Test apply and rollback in sequence.
-        ######################################
-
-        # Apply a sequence of overrides.
-        for revision, override in enumerate(config_overrides_seq, 1):
-
-            expected_backup_path = build_backup_path(revision)
-
-            # Apply overrides.
-            strategy.apply_next(override)
-
-            # Check there is a backup of the old config file.
-            self.assertTrue(os.path.exists(expected_backup_path),
-                            "Backup revision '%d' does not exist." % revision)
-
-            # Load overriden contents.
-            overriden = operating_system.read_file(
-                strategy._base_config_path, strategy._codec)
-
-            # Load backed up contents.
-            backedup = operating_system.read_file(
-                expected_backup_path, strategy._codec)
-
-            # Assert that the config has the overriden contents.
-            self.assertEqual(expected_contents_seq[revision], overriden)
-
-            # Assert that the backup matches the previous config contents.
-            self.assertEqual(expected_contents_seq[revision - 1], backedup)
-
-        # Rollback the applied overrides.
-        for revision, _ in reversed(
-                [e for e in enumerate(config_overrides_seq, 1)]):
-
-            expected_backup_path = build_backup_path(revision)
-
-            # Remove last overrides.
-            strategy.remove_last(1)
-
-            # Check that the backup was removed.
-            self.assertFalse(
-                os.path.exists(expected_backup_path),
-                "Backup revision '%d' was not removed." %
-                revision)
-
-            # Re-load restored contents.
-            restored = operating_system.read_file(
-                strategy._base_config_path, strategy._codec)
-
-            # Assert that the config was reverted to the previous state.
-            self.assertEqual(expected_contents_seq[revision - 1], restored)
-
-        # Test rollback all.
-        ####################
-
-        # Apply a sequence of overrides.
-        for override in config_overrides_seq:
-            strategy.apply_next(override)
-
-        num_revisions = strategy.count_revisions()
-
-        # Check that we have an expected number of revisions.
-        self.assertEqual(len(config_overrides_seq), num_revisions)
-
-        # Rollback all revisions at once.
-        strategy.remove_last(num_revisions + 1)
-
-        # Check that there are no revisions.
-        self.assertEqual(0, strategy.count_revisions())
-
-        # Check that all backups were removed.
-        for revision, _ in reversed(
-                [e for e in enumerate(config_overrides_seq, 1)]):
-            expected_backup_path = build_backup_path(revision)
-            self.assertFalse(
-                os.path.exists(expected_backup_path),
-                "Backup revision '%d' was not removed." % revision)
-
-        # Re-load restored contents.
-        restored = operating_system.read_file(
-            strategy._base_config_path, strategy._codec)
-
-        # Assert that the config was reverted to the previous state.
-        self.assertEqual(expected_contents_seq[0], restored)
-
     def test_import_override_strategy(self):
+
+        # Data structures representing overrides.
+        # ('change id', 'values', 'expected import index',
+        # 'expected final import data')
+
+        # Distinct IDs within each group mean that there is one file for each
+        # override.
+        user_overrides_v1 = ('id1',
+                             {'Section_1': {'name': 'sqrt(2)',
+                                            'value': '1.4142'}},
+                             1,
+                             {'Section_1': {'name': 'sqrt(2)',
+                                            'value': '1.4142'}}
+                             )
+
+        user_overrides_v2 = ('id2',
+                             {'Section_1': {'is_number': 'False'}},
+                             2,
+                             {'Section_1': {'is_number': 'False'}}
+                             )
+
+        system_overrides_v1 = ('id1',
+                               {'Section_1': {'name': 'e',
+                                              'value': '2.7183'}},
+                               1,
+                               {'Section_1': {'name': 'e',
+                                              'value': '2.7183'}}
+                               )
+
+        system_overrides_v2 = ('id2',
+                               {'Section_2': {'is_number': 'True'}},
+                               2,
+                               {'Section_2': {'is_number': 'True'}}
+                               )
+
+        self._test_import_override_strategy(
+            [system_overrides_v1, system_overrides_v2],
+            [user_overrides_v1, user_overrides_v2], True)
+
+        # Same IDs within a group mean that the overrides get written into a
+        # single file.
+        user_overrides_v1 = ('id1',
+                             {'Section_1': {'name': 'sqrt(2)',
+                                            'value': '1.4142'}},
+                             1,
+                             {'Section_1': {'name': 'sqrt(2)',
+                                            'is_number': 'False',
+                                            'value': '1.4142'}}
+                             )
+
+        user_overrides_v2 = ('id1',
+                             {'Section_1': {'is_number': 'False'}},
+                             1,
+                             {'Section_1': {'name': 'sqrt(2)',
+                                            'is_number': 'False',
+                                            'value': '1.4142'}}
+                             )
+
+        system_overrides_v1 = ('id1',
+                               {'Section_1': {'name': 'e',
+                                              'value': '2.7183'}},
+                               1,
+                               {'Section_1': {'name': 'e',
+                                              'value': '2.7183'},
+                                'Section_2': {'is_number': 'True'}}
+                               )
+
+        system_overrides_v2 = ('id1',
+                               {'Section_2': {'is_number': 'True'}},
+                               1,
+                               {'Section_1': {'name': 'e',
+                                              'value': '2.7183'},
+                                'Section_2': {'is_number': 'True'}}
+                               )
+
+        self._test_import_override_strategy(
+            [system_overrides_v1, system_overrides_v2],
+            [user_overrides_v1, user_overrides_v2], False)
+
+    def _test_import_override_strategy(
+            self, system_overrides, user_overrides, test_multi_rev):
         base_config_contents = {'Section_1': {'name': 'pi',
                                               'is_number': 'True',
                                               'value': '3.1415'}
                                 }
-
-        config_overrides_v1 = {'Section_1': {'name': 'sqrt(2)',
-                                             'value': '1.4142'}
-                               }
-
-        config_overrides_v2 = {'Section_1': {'is_number': 'False'}}
-
-        config_overrides_seq = [config_overrides_v1, config_overrides_v2]
-        expected_contents_seq = [base_config_contents, base_config_contents,
-                                 base_config_contents]
 
         codec = IniCodec()
         current_user = getpass.getuser()
@@ -339,106 +210,151 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
                 base_config.name, current_user, current_user, codec, False)
 
             self._assert_import_override_strategy(
-                strategy, config_overrides_seq, expected_contents_seq)
+                strategy, system_overrides, user_overrides, test_multi_rev)
 
     def _assert_import_override_strategy(
-            self, strategy, config_overrides_seq, expected_contents_seq):
+            self, strategy, system_overrides, user_overrides, test_multi_rev):
 
-        def build_revision_path(revision):
-            base_name = os.extsep.join(
-                [os.path.basename(strategy._base_config_path),
-                    str(revision), strategy._revision_ext])
+        def import_path_builder(
+                root, group_name, change_id, file_index, file_ext):
             return os.path.join(
-                strategy._revision_dir, base_name)
+                root, '%s-%03d-%s.%s'
+                % (group_name, file_index, change_id, file_ext))
 
-        # Test apply and rollback in sequence.
-        ######################################
+        # Apply and remove overrides sequentially.
+        ##########################################
 
-        # Apply a sequence of overrides.
-        for revision, override in enumerate(config_overrides_seq, 1):
+        # Apply the overrides and verify the files as they are created.
+        self._apply_import_overrides(
+            strategy, 'system', system_overrides, import_path_builder)
+        self._apply_import_overrides(
+            strategy, 'user', user_overrides, import_path_builder)
 
-            expected_import_path = build_revision_path(revision)
+        # Verify the files again after applying all overrides.
+        self._assert_import_overrides(
+            strategy, 'system', system_overrides, import_path_builder)
+        self._assert_import_overrides(
+            strategy, 'user', user_overrides, import_path_builder)
 
-            # Apply overrides.
-            strategy.apply_next(override)
+        # Remove the overrides and verify the files are gone.
+        self._remove_import_overrides(
+            strategy, 'user', user_overrides, import_path_builder)
+        self._remove_import_overrides(
+            strategy, 'system', user_overrides, import_path_builder)
 
-            # Check there is a new import file.
-            self.assertTrue(os.path.exists(expected_import_path),
-                            "Revision import '%d' does not exist." % revision)
+        # Remove a whole group.
+        ##########################################
 
-            # Load base config contents.
-            base = operating_system.read_file(
-                strategy._base_config_path, strategy._codec)
+        # Apply overrides first.
+        self._apply_import_overrides(
+            strategy, 'system', system_overrides, import_path_builder)
+        self._apply_import_overrides(
+            strategy, 'user', user_overrides, import_path_builder)
 
-            # Load import contents.
+        # Remove all user overrides and verify the files are gone.
+        self._remove_import_overrides(
+            strategy, 'user', None, import_path_builder)
+
+        # Assert that the system files are still there intact.
+        self._assert_import_overrides(
+            strategy, 'system', system_overrides, import_path_builder)
+
+        # Remove all system overrides and verify the files are gone.
+        self._remove_import_overrides(
+            strategy, 'system', None, import_path_builder)
+
+        if test_multi_rev:
+
+            # Remove at the end (only if we have multiple revision files).
+            ##########################################
+
+            # Apply overrides first.
+            self._apply_import_overrides(
+                strategy, 'system', system_overrides, import_path_builder)
+            self._apply_import_overrides(
+                strategy, 'user', user_overrides, import_path_builder)
+
+            # Remove the last user and system overrides.
+            self._remove_import_overrides(
+                strategy, 'user', [user_overrides[-1]], import_path_builder)
+            self._remove_import_overrides(
+                strategy, 'system', [system_overrides[-1]],
+                import_path_builder)
+
+            # Assert that the first overrides are still there intact.
+            self._assert_import_overrides(
+                strategy, 'user', [user_overrides[0]], import_path_builder)
+            self._assert_import_overrides(
+                strategy, 'system', [system_overrides[0]], import_path_builder)
+
+            # Re-apply all overrides.
+            self._apply_import_overrides(
+                strategy, 'system', system_overrides, import_path_builder)
+            self._apply_import_overrides(
+                strategy, 'user', user_overrides, import_path_builder)
+
+            # This should overwrite the existing files and resume counting from
+            # their indices.
+            self._assert_import_overrides(
+                strategy, 'user', user_overrides, import_path_builder)
+            self._assert_import_overrides(
+                strategy, 'system', system_overrides, import_path_builder)
+
+    def _apply_import_overrides(
+            self, strategy, group_name, overrides, path_builder):
+        # Apply the overrides and immediately check the file and its contents.
+        for change_id, contents, index, _ in overrides:
+            strategy.apply(group_name, change_id, contents)
+            expected_path = path_builder(
+                strategy._revision_dir, group_name, change_id, index,
+                strategy._revision_ext)
+            self._assert_file_exists(expected_path, True)
+
+    def _remove_import_overrides(
+            self, strategy, group_name, overrides, path_builder):
+        if overrides:
+            # Remove the overrides and immediately check the file was removed.
+            for change_id, _, index, _ in overrides:
+                strategy.remove(group_name, change_id)
+                expected_path = path_builder(
+                    strategy._revision_dir, group_name, change_id, index,
+                    strategy._revision_ext)
+                self._assert_file_exists(expected_path, False)
+        else:
+            # Remove the entire group.
+            strategy.remove(group_name)
+            found = operating_system.list_files_in_directory(
+                strategy._revision_dir, pattern='^%s-.+$' % group_name)
+            self.assertEqual(set(), found, "Some import files from group '%s' "
+                             "were not removed." % group_name)
+
+    def _assert_import_overrides(
+            self, strategy, group_name, overrides, path_builder):
+        # Check all override files and their contents,
+        for change_id, _, index, expected in overrides:
+            expected_path = path_builder(
+                strategy._revision_dir, group_name, change_id, index,
+                strategy._revision_ext)
+            self._assert_file_exists(expected_path, True)
+            # Assert that the file contents.
             imported = operating_system.read_file(
-                expected_import_path, strategy._codec)
+                expected_path, codec=strategy._codec)
+            self.assertEqual(expected, imported)
 
-            # Assert that the base config did not change.
-            self.assertEqual(expected_contents_seq[revision], base)
-
-            # Assert that the import contents match the overrides.
-            self.assertEqual(override, imported)
-
-        # Rollback the applied overrides.
-        for revision, _ in reversed(
-                [e for e in enumerate(config_overrides_seq, 1)]):
-
-            expected_import_path = build_revision_path(revision)
-
-            # Remove last overrides.
-            strategy.remove_last(1)
-
-            # Check that the import was removed.
-            self.assertFalse(
-                os.path.exists(expected_import_path),
-                "Revision import '%d' was not removed." %
-                revision)
-
-            # Re-load base config contents.
-            base = operating_system.read_file(
-                strategy._base_config_path, strategy._codec)
-
-            # Assert that the base config did not change.
-            self.assertEqual(expected_contents_seq[revision - 1], base)
-
-        # Test rollback all.
-        ####################
-
-        # Apply a sequence of overrides.
-        for override in config_overrides_seq:
-            strategy.apply_next(override)
-
-        num_revisions = strategy.count_revisions()
-
-        # Check that we have an expected number of revisions.
-        self.assertEqual(len(config_overrides_seq), num_revisions)
-
-        # Rollback all revisions at once.
-        strategy.remove_last(num_revisions + 1)
-
-        # Check that there are no revisions.
-        self.assertEqual(0, strategy.count_revisions())
-
-        # Check that all imports were removed.
-        for revision, _ in reversed(
-                [e for e in enumerate(config_overrides_seq, 1)]):
-            expected_backup_path = build_revision_path(revision)
-            self.assertFalse(
-                os.path.exists(expected_backup_path),
-                "Revision import '%d' was not removed." % revision)
-
-        # Re-load base config contents.
-        base = operating_system.read_file(
-            strategy._base_config_path, strategy._codec)
-
-        # Assert that the base config did not change.
-        self.assertEqual(expected_contents_seq[0], base)
+    def _assert_file_exists(self, file_path, exists):
+        if exists:
+            self.assertTrue(os.path.exists(file_path),
+                            "Revision import '%s' does not exist."
+                            % file_path)
+        else:
+            self.assertFalse(os.path.exists(file_path),
+                             "Revision import '%s' was not removed."
+                             % file_path)
 
     def test_get_value(self):
         revision_dir = self._create_temp_dir()
-        self._assert_get_value(RollingOverrideStrategy(revision_dir))
         self._assert_get_value(ImportOverrideStrategy(revision_dir, 'ext'))
+        self._assert_get_value(OneFileOverrideStrategy(revision_dir))
 
     def _assert_get_value(self, override_strategy):
         base_config_contents = {'Section_1': {'name': 'pi',
@@ -446,14 +362,18 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
                                               'value': '3.1415'}
                                 }
 
-        config_overrides_v1 = {'Section_1': {'name': 'sqrt(2)',
-                                             'value': '1.4142'}
-                               }
+        config_overrides_v1a = {'Section_1': {'name': 'sqrt(2)',
+                                              'value': '1.4142'}
+                                }
 
         config_overrides_v2 = {'Section_1': {'name': 'e',
                                              'value': '2.7183'},
                                'Section_2': {'foo': 'bar'}
                                }
+
+        config_overrides_v1b = {'Section_1': {'name': 'sqrt(4)',
+                                              'value': '2.0'}
+                                }
 
         codec = IniCodec()
         current_user = getpass.getuser()
@@ -466,12 +386,10 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
 
             manager = ConfigurationManager(
                 base_config.name, current_user, current_user, codec,
-                requires_root=False)
-
-            manager.set_override_strategy(override_strategy, 2)
+                requires_root=False, override_strategy=override_strategy)
 
             # Test default value.
-            self.assertEqual(None, manager.get_value('Section_2'))
+            self.assertIsNone(manager.get_value('Section_2'))
             self.assertEqual('foo', manager.get_value('Section_2', 'foo'))
 
             # Test value before applying overrides.
@@ -479,104 +397,55 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
             self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
 
             # Test value after applying overrides.
-            manager.apply_override(config_overrides_v1)
+            manager.apply_user_override(config_overrides_v1a, change_id='id1')
             self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
             self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
-            manager.apply_override(config_overrides_v2)
+            manager.apply_user_override(config_overrides_v2, change_id='id2')
             self.assertEqual('e', manager.get_value('Section_1')['name'])
             self.assertEqual('2.7183', manager.get_value('Section_1')['value'])
             self.assertEqual('bar', manager.get_value('Section_2')['foo'])
 
-            # Test value after removing overrides.
-            manager.remove_override()
-            self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
-            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
-            manager.remove_override()
-            self.assertEqual('pi', manager.get_value('Section_1')['name'])
-            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
-            self.assertEqual(None, manager.get_value('Section_2'))
-
-    def test_update_configuration(self):
-        revision_dir = self._create_temp_dir()
-        self._assert_update_configuration(
-            RollingOverrideStrategy(revision_dir))
-        self._assert_update_configuration(
-            ImportOverrideStrategy(revision_dir, 'ext'))
-
-    def _assert_update_configuration(self, override_strategy):
-        base_config_contents = {'Section_1': {'name': 'pi',
-                                              'is_number': 'True',
-                                              'value': '3.1415'}
-                                }
-
-        config_overrides_v1 = {'Section_1': {'name': 'sqrt(2)',
-                                             'value': '1.4142'}
-                               }
-
-        config_overrides_v2 = {'Section_1': {'name': 'e',
-                                             'value': '2.7183'},
-                               'Section_2': {'foo': 'bar'}
-                               }
-
-        codec = IniCodec()
-        current_user = getpass.getuser()
-
-        with tempfile.NamedTemporaryFile() as base_config:
-
-            # Write initial config contents.
-            operating_system.write_file(
-                base_config.name, base_config_contents, codec)
-
-            manager = ConfigurationManager(
-                base_config.name, current_user, current_user, codec,
-                requires_root=False)
-
-            manager.update_configuration({'System': {'name': 'c',
-                                                     'is_number': 'True',
-                                                     'value': 'N/A'}})
-
-            manager.set_override_strategy(override_strategy, 2)
-
-            # Test value before applying overrides.
-            self.assertEqual('pi', manager.get_value('Section_1')['name'])
-            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
-            self.assertEqual('N/A', manager.get_value('System')['value'])
-            self.assertEqual(0, manager.current_revision)
-
-            manager.update_configuration({'System': {'value': '300000000'}})
-            self.assertEqual('300000000', manager.get_value('System')['value'])
-            self.assertEqual(0, manager.current_revision)
-
-            # Test value after applying overrides.
-            manager.apply_override(config_overrides_v1)
-            self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
-            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
-            self.assertEqual('300000000', manager.get_value('System')['value'])
-            self.assertEqual(1, manager.current_revision)
-
-            manager.update_configuration({'System': {'value': '299792458'}})
-
-            manager.apply_override(config_overrides_v2)
+            # Editing change 'id1' become visible only after removing
+            # change 'id2', which overrides 'id1'.
+            manager.apply_user_override(config_overrides_v1b, change_id='id1')
             self.assertEqual('e', manager.get_value('Section_1')['name'])
             self.assertEqual('2.7183', manager.get_value('Section_1')['value'])
-            self.assertEqual('bar', manager.get_value('Section_2')['foo'])
-            self.assertEqual('299792458', manager.get_value('System')['value'])
-            self.assertEqual(2, manager.current_revision)
 
             # Test value after removing overrides.
-            manager.remove_override()
-            self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
-            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
-            self.assertEqual(1, manager.current_revision)
 
-            manager.update_configuration({'System': {'value': '299792458'}})
+            # The edited values from change 'id1' should be visible after
+            # removing 'id2'.
+            manager.remove_user_override(change_id='id2')
+            self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
+            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
 
-            manager.remove_override()
+            # Back to the base.
+            manager.remove_user_override(change_id='id1')
             self.assertEqual('pi', manager.get_value('Section_1')['name'])
             self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
-            self.assertEqual(None, manager.get_value('Section_2'))
-            self.assertEqual(0, manager.current_revision)
+            self.assertIsNone(manager.get_value('Section_2'))
 
-            manager.update_configuration({'System': {'value': 'N/A'}})
-            self.assertEqual('N/A', manager.get_value('System')['value'])
-            self.assertEqual(0, manager.current_revision)
+            # Test system overrides.
+            manager.apply_system_override(
+                config_overrides_v1b, change_id='id1')
+            self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
+            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
+
+            # The system values should take precedence over the user
+            # override.
+            manager.apply_user_override(
+                config_overrides_v1a, change_id='id1')
+            self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
+            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
+
+            # The user values should become visible only after removing the
+            # system change.
+            manager.remove_system_override(change_id='id1')
+            self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
+            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
+
+            # Back to the base.
+            manager.remove_user_override(change_id='id1')
+            self.assertEqual('pi', manager.get_value('Section_1')['name'])
+            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
+            self.assertIsNone(manager.get_value('Section_2'))
