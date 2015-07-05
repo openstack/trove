@@ -174,25 +174,6 @@ class API(object):
                    slave_of_id=slave_of_id,
                    cluster_config=cluster_config)
 
-    def update_overrides(self, instance_id, overrides=None):
-        LOG.debug("Making async call to update datastore configurations for "
-                  "instance %s" % instance_id)
-
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "update_overrides",
-                   instance_id=instance_id,
-                   overrides=overrides)
-
-    def unassign_configuration(self, instance_id, flavor, configuration_id):
-        LOG.debug("Making async call to remove datastore configurations for "
-                  "instance %s" % instance_id)
-
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "unassign_configuration",
-                   instance_id=instance_id,
-                   flavor=self._transform_obj(flavor),
-                   configuration_id=configuration_id)
-
     def create_cluster(self, cluster_id):
         LOG.debug("Making async call to create cluster %s " % cluster_id)
 

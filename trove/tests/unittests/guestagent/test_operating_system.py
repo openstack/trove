@@ -59,6 +59,15 @@ class TestOperatingSystem(trove_testtools.TestCase):
         # Keys with None values will be written without value.
         self._test_file_codec(data_with_none, IniCodec())
 
+        # Non-string values will be converted to strings.
+        data_with_none_as_objects = {"Section1": {"s1k1": 's1v1',
+                                                  "s1k2": 3.1415926535},
+                                     "Section2": {"s2k1": 1,
+                                                  "s2k2": True,
+                                                  "s2k3": None}}
+        self._test_file_codec(data_with_none_as_objects, IniCodec(),
+                              expected_data=data_with_none)
+
         # None will be replaced with 'default_value'.
         default_value = '1'
         expected_data = guestagent_utils.update_dict(

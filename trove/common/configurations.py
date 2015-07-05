@@ -29,6 +29,7 @@ class RedisConfParser(object):
 
 class MySQLConfParser(object):
 
+    SERVER_CONF_SECTION = 'mysqld'
     CODEC = stream_codecs.IniCodec(
         default_value='1', comment_markers=('#', ';', '!'))
 
@@ -37,7 +38,7 @@ class MySQLConfParser(object):
 
     def parse(self):
         config_dict = self.CODEC.deserialize(self.config)
-        mysqld_section_dict = config_dict['mysqld']
+        mysqld_section_dict = config_dict[self.SERVER_CONF_SECTION]
         return mysqld_section_dict.items()
 
 

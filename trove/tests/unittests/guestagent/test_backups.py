@@ -19,7 +19,7 @@ from trove.common import utils
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
 from trove.guestagent.strategies.backup import base as backupBase
-from trove.guestagent.strategies.backup import mysql_impl
+from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore import base as restoreBase
 from trove.guestagent.strategies.restore.mysql_impl import MySQLRestoreMixin
 from trove.tests.unittests import trove_testtools
@@ -90,20 +90,19 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentBackupTest, self).setUp()
-        self.orig = mysql_impl.get_auth_password
-        mysql_impl.get_auth_password = mock.Mock(
-            return_value='password')
+        self.get_auth_pwd_patch = patch.object(
+            MySqlApp, 'get_auth_password', mock.Mock(return_value='password'))
+        self.get_auth_pwd_mock = self.get_auth_pwd_patch.start()
+        self.addCleanup(self.get_auth_pwd_patch.stop)
         self.orig_exec_with_to = utils.execute_with_timeout
-        self.patcher_get_datadir = patch(
-            'trove.guestagent.strategies.backup.mysql_impl.get_datadir')
-        self.mock_get_datadir = self.patcher_get_datadir.start()
-        self.mock_get_datadir.return_value = '/var/lib/mysql/data'
+        self.get_data_dir_patcher = patch.object(
+            MySqlApp, 'get_data_dir', return_value='/var/lib/mysql/data')
+        self.mock_get_datadir = self.get_data_dir_patcher.start()
 
     def tearDown(self):
         super(GuestAgentBackupTest, self).tearDown()
-        mysql_impl.get_auth_password = self.orig
         utils.execute_with_timeout = self.orig_exec_with_to
-        self.patcher_get_datadir.stop()
+        self.get_data_dir_patcher.stop()
 
     def test_backup_decrypted_xtrabackup_command(self):
         backupBase.BackupRunner.is_zipped = True

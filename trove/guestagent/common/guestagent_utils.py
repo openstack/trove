@@ -15,6 +15,7 @@
 
 import collections
 import os
+import re
 
 
 def update_dict(updates, target):
@@ -91,3 +92,23 @@ def build_file_path(base_dir, base_name, *extensions):
     """
     file_name = os.extsep.join([base_name] + list(extensions))
     return os.path.join(base_dir, file_name)
+
+
+def to_bytes(value):
+    """Convert numbers with a byte suffix to bytes.
+    """
+    if isinstance(value, basestring):
+        pattern = re.compile('^(\d+)([K,M,G]{1})$')
+        match = pattern.match(value)
+        if match:
+            value = match.group(1)
+            suffix = match.group(2)
+            factor = {
+                'K': 1024,
+                'M': 1024 ** 2,
+                'G': 1024 ** 3,
+            }[suffix]
+
+            return str(int(round(factor * float(value))))
+
+    return value

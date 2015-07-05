@@ -187,6 +187,7 @@ class IniCodec(StreamCodec):
                                The key is written without trailing '=' if None.
         :type default_value:   string
         """
+        self._value_converter = StringConverter({default_value: None})
         self._default_value = default_value
         self._comment_markers = comment_markers
 
@@ -201,7 +202,7 @@ class IniCodec(StreamCodec):
         parser = self._init_config_parser()
         parser.readfp(self._pre_parse(stream))
 
-        return {s: {k: v if v is not None else self._default_value
+        return {s: {k: self._value_converter.to_strings(v)
                     for k, v in parser.items(s, raw=True)}
                 for s in parser.sections()}
 
@@ -225,8 +226,8 @@ class IniCodec(StreamCodec):
             for section in sections:
                 parser.add_section(section)
                 for key, value in sections[section].items():
-                    parser.set(section, key, value
-                               if value is not None else self._default_value)
+                    parser.set(section, key,
+                               self._value_converter.to_strings(value))
 
         return parser
 

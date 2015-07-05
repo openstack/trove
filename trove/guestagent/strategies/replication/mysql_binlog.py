@@ -24,7 +24,7 @@ from trove.common.i18n import _
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.guestagent.datastore.mysql.service import get_datadir
+from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.strategies.replication import mysql_base
 
 AGENT = BackupAgent()
@@ -63,7 +63,7 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
         service.start_slave()
 
     def _read_log_position(self):
-        INFO_FILE = ('%s/xtrabackup_binlog_info' % get_datadir())
+        INFO_FILE = ('%s/xtrabackup_binlog_info' % MySqlApp.get_data_dir())
         LOG.info(_("Setting read permissions on %s") % INFO_FILE)
         operating_system.chmod(INFO_FILE, FileMode.ADD_READ_ALL, as_root=True)
         LOG.info(_("Reading log position from %s") % INFO_FILE)

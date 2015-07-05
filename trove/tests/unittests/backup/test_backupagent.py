@@ -30,6 +30,7 @@ from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
 from trove.guestagent.strategies.backup.experimental import mongo_impl
 from trove.guestagent.strategies.backup import mysql_impl
+from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore.base import RestoreRunner
 from trove.guestagent.strategies.storage.base import Storage
 from trove.tests.unittests import trove_testtools
@@ -137,6 +138,7 @@ class MockStorage(Storage):
 
 
 class MockRestoreRunner(RestoreRunner):
+
     def __init__(self, storage, **kwargs):
         pass
 
@@ -160,10 +162,11 @@ class MockStats:
 
 
 class BackupAgentTest(trove_testtools.TestCase):
+
     def setUp(self):
         super(BackupAgentTest, self).setUp()
         self.get_auth_pwd_patch = patch.object(
-            mysql_impl, 'get_auth_password', MagicMock(return_value='123'))
+            MySqlApp, 'get_auth_password', MagicMock(return_value='123'))
         self.get_auth_pwd_mock = self.get_auth_pwd_patch.start()
         self.addCleanup(self.get_auth_pwd_patch.stop)
         self.get_ss_patch = patch.object(
@@ -204,12 +207,12 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(mysql_dump.manifest)
         self.assertEqual('abc.gz.enc', mysql_dump.manifest)
 
-    @mock.patch('trove.guestagent.strategies.backup.mysql_impl.get_datadir')
+    @mock.patch.object(
+        MySqlApp, 'get_data_dir', return_value='/var/lib/mysql/data')
     def test_backup_impl_InnoBackupEx(self, mock_datadir):
         """This test is for
            guestagent/strategies/backup/impl
         """
-        mock_datadir.return_value = '/var/lib/mysql/data'
         inno_backup_ex = mysql_impl.InnoBackupEx('innobackupex', extra_opts='')
         self.assertIsNotNone(inno_backup_ex.cmd)
         str_innobackup_cmd = ('sudo innobackupex'
@@ -415,6 +418,7 @@ class BackupAgentTest(trove_testtools.TestCase):
                               context=None, backup_info=bkup_info,
                               restore_location='/var/lib/mysql/data')
 
+    @patch.object(MySqlApp, 'get_data_dir', return_value='/var/lib/mysql/data')
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(MockSwift, 'load_metadata', return_value={'lsn': '54321'})
     @patch.object(MockStorage, 'save_metadata')
@@ -422,7 +426,8 @@ class BackupAgentTest(trove_testtools.TestCase):
     def test_backup_incremental_metadata(self,
                                          get_storage_strategy_mock,
                                          save_metadata_mock,
-                                         load_metadata_mock):
+                                         load_metadata_mock,
+                                         get_datadir_mock):
         meta = {
             'lsn': '12345',
             'parent_location': 'fake',

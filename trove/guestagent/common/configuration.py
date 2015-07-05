@@ -143,6 +143,11 @@ class ConfigurationManager(object):
 
             self._refresh_cache()
 
+    def has_system_override(self, change_id):
+        """Return whether a given 'system' change exists.
+        """
+        return self._override_strategy.exists(self.SYSTEM_GROUP, change_id)
+
     def apply_system_override(self, options, change_id=DEFAULT_CHANGE_ID):
         """Apply a 'system' change to the configuration.
 
@@ -203,6 +208,11 @@ class ConfigurationOverrideStrategy(object):
         """Configure this strategy.
         A strategy needs to be configured before it can be used.
         It would typically be configured by the ConfigurationManager.
+        """
+
+    @abc.abstractmethod
+    def exists(self, group_name, change_id):
+        """Return whether a given revision exists.
         """
 
     @abc.abstractmethod
@@ -298,6 +308,9 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         self._group = group
         self._codec = codec
         self._requires_root = requires_root
+
+    def exists(self, group_name, change_id):
+        return self._find_revision_file(group_name, change_id) is not None
 
     def apply(self, group_name, change_id, options):
         revision_file = self._find_revision_file(group_name, change_id)
@@ -437,6 +450,9 @@ class OneFileOverrideStrategy(ConfigurationOverrideStrategy):
 
         self._import_strategy.configure(
             base_config_path, owner, group, codec, requires_root)
+
+    def exists(self, group_name, change_id):
+        return self._import_strategy.exists(group_name, change_id)
 
     def apply(self, group_name, change_id, options):
         self._import_strategy.apply(group_name, change_id, options)

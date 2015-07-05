@@ -143,12 +143,6 @@ class ConfigurationsController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
-        instances = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
-            configuration_id=id,
-            deleted=False).all()
-        LOG.debug("Loaded instances for configuration group %s on "
-                  "tenant %s: %s" % (id, tenant_id, instances))
 
         # if name/description are provided in the request body, update the
         # model with these values as well.
@@ -161,20 +155,35 @@ class ConfigurationsController(wsgi.Controller):
         items = self._configuration_items_list(group, body['configuration'])
         deleted_at = datetime.utcnow()
         models.Configuration.remove_all_items(context, group.id, deleted_at)
-        models.Configuration.save(context, group, items, instances)
+        models.Configuration.save(group, items)
+        self._refresh_on_all_instances(context, id)
         return wsgi.Result(None, 202)
 
     def edit(self, req, body, tenant_id, id):
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
-        instances = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
-            configuration_id=id,
-            deleted=False).all()
-        LOG.debug("Loaded instances for configuration group %s on "
-                  "tenant %s: %s" % (id, tenant_id, instances))
         items = self._configuration_items_list(group, body['configuration'])
-        models.Configuration.save(context, group, items, instances)
+        models.Configuration.save(group, items)
+        self._refresh_on_all_instances(context, id)
+
+    def _refresh_on_all_instances(self, context, configuration_id):
+        """Refresh a configuration group on all its instances.
+        """
+        dbinstances = instances_models.DBInstance.find_all(
+            tenant_id=context.tenant,
+            configuration_id=configuration_id,
+            deleted=False).all()
+
+        LOG.debug(
+            "All instances with configuration group '%s' on tenant '%s': %s"
+            % (configuration_id, context.tenant, dbinstances))
+
+        config = models.Configuration(context, configuration_id)
+        for dbinstance in dbinstances:
+            LOG.debug("Applying configuration group '%s' to instance: %s"
+                      % (configuration_id, dbinstance.id))
+            instance = instances_models.Instance.load(context, dbinstance.id)
+            instance.update_overrides(config)
 
     def _configuration_items_list(self, group, configuration):
         ds_version_id = group.datastore_version_id

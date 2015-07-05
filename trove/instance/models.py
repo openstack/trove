@@ -1040,14 +1040,32 @@ class Instance(BuiltInstance):
         if self.configuration and self.configuration.id:
             LOG.debug("Unassigning the configuration id %s.",
                       self.configuration.id)
+
+            self.guest.update_overrides({}, remove=True)
+
+            # Dynamically reset the configuration values back to their default
+            # values from the configuration template.
+            # Reset the values only if the default is available for all of
+            # them and restart is not required by any.
+            # Mark the instance with a 'RESTART_REQUIRED' status otherwise.
             flavor = self.get_flavor()
-            config_id = self.configuration.id
-            LOG.debug("Configuration being unassigned; "
-                      "Marking restart required.")
-            self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
-            task_api.API(self.context).unassign_configuration(self.id,
-                                                              flavor,
-                                                              config_id)
+            default_config = self._render_config_dict(flavor)
+            current_config = Configuration(self.context, self.configuration.id)
+            current_overrides = current_config.get_configuration_overrides()
+            # Check the configuration template has defaults for all modified
+            # values.
+            has_defaults_for_all = all(key in default_config.keys()
+                                       for key in current_overrides.keys())
+            if (not current_config.does_configuration_need_restart() and
+                    has_defaults_for_all):
+                self.guest.apply_overrides(
+                    {k: v for k, v in default_config.items()
+                     if k in current_overrides})
+            else:
+                LOG.debug(
+                    "Could not revert all configuration changes dynamically. "
+                    "A restart will be required.")
+                self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
         else:
             LOG.debug("No configuration found on instance. Skipping.")
 
@@ -1069,20 +1087,32 @@ class Instance(BuiltInstance):
                 instance_datastore_version=inst_ds_v)
 
         config = Configuration(self.context, configuration.id)
-        LOG.debug("Config config is %s.", config)
-        self.update_db(configuration_id=configuration.id)
+        LOG.debug("Config is %s.", config)
+
         self.update_overrides(config)
+        self.update_db(configuration_id=configuration.id)
 
     def update_overrides(self, config):
-        LOG.debug("Updating or removing overrides for instance %s.",
-                  self.id)
+        LOG.debug("Updating or removing overrides for instance %s.", self.id)
+
         overrides = config.get_configuration_overrides()
-        need_restart = config.does_configuration_need_restart()
-        LOG.debug("Config overrides has non-dynamic settings, "
-                  "requires a restart: %s.", need_restart)
-        if need_restart:
+        self.guest.update_overrides(overrides)
+
+        # Apply the new configuration values dynamically to the running
+        # datastore service.
+        # Apply overrides only if ALL values can be applied at once or mark
+        # the instance with a 'RESTART_REQUIRED' status.
+        if not config.does_configuration_need_restart():
+            self.guest.apply_overrides(overrides)
+        else:
+            LOG.debug("Configuration overrides has non-dynamic settings and "
+                      "will require restart to take effect.")
             self.update_db(task_status=InstanceTasks.RESTART_REQUIRED)
-        task_api.API(self.context).update_overrides(self.id, overrides)
+
+    def _render_config_dict(self, flavor):
+        config = template.SingleInstanceConfigTemplate(
+            self.datastore_version, flavor, self.id)
+        return dict(config.render_dict())
 
 
 def create_server_list_matcher(server_list):

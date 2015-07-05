@@ -13,7 +13,6 @@
 #    under the License.
 
 import os.path
-import re
 import traceback
 
 from cinderclient import exceptions as cinder_exceptions
@@ -52,7 +51,6 @@ from trove.common.strategies.cluster import strategy
 from trove.common import template
 from trove.common import utils
 from trove.common.utils import try_recover
-from trove.configuration.models import Configuration
 from trove.extensions.mysql import models as mysql_models
 from trove.extensions.security_group.models import (
     SecurityGroupInstanceAssociation)
@@ -159,12 +157,6 @@ class ConfigurationMixin(object):
         config = template.SingleInstanceConfigTemplate(
             self.datastore_version, flavor, self.id)
         config.render()
-        return config
-
-    def _render_override_config(self, flavor, overrides=None):
-        config = template.OverrideConfigTemplate(
-            self.datastore_version, flavor, self.id)
-        config.render(overrides=overrides)
         return config
 
     def _render_replica_source_config(self, flavor):
@@ -405,8 +397,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 files)
 
         config = self._render_config(flavor)
-        config_overrides = self._render_override_config(flavor,
-                                                        overrides=overrides)
 
         backup_info = None
         if backup_id is not None:
@@ -419,7 +409,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         self._guest_prepare(flavor['ram'], volume_info,
                             packages, databases, users, backup_info,
                             config.config_contents, root_password,
-                            config_overrides.config_contents,
+                            overrides,
                             cluster_config, snapshot)
 
         if root_password:
@@ -1266,87 +1256,6 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                         "%s.") % self.id)
         finally:
             self.reset_task_status()
-
-    def update_overrides(self, overrides, remove=False):
-        LOG.info(_("Initiating datastore configurations update on instance "
-                   "%s.") % self.id)
-        LOG.debug("overrides: %s" % overrides)
-        LOG.debug("self.ds_version: %s" % self.ds_version.__dict__)
-        LOG.debug("self.configuration.id: %s" % self.configuration.id)
-        # check if the configuration requires a restart of the instance
-        config = Configuration(self.context, self.configuration.id)
-        need_restart = config.does_configuration_need_restart()
-        LOG.debug("do we need a restart?: %s" % need_restart)
-        if need_restart:
-            status = inst_models.InstanceTasks.RESTART_REQUIRED
-            self.update_db(task_status=status)
-
-        flavor = self.nova_client.flavors.get(self.flavor_id)
-
-        config_overrides = self._render_override_config(
-            flavor,
-            overrides=overrides)
-        try:
-            self.guest.update_overrides(config_overrides.config_contents,
-                                        remove=remove)
-            self.guest.apply_overrides(overrides)
-        except GuestError:
-            LOG.error(_("Failed to initiate datastore configurations update "
-                      "on instance %s.") % self.id)
-
-    def unassign_configuration(self, flavor, configuration_id):
-        LOG.info(_("Initiating configuration group %(config_id)s removal from "
-                 "instance %(instance_id)s.")
-                 % {'config_id': configuration_id,
-                    'instance_id': self.id})
-
-        def _find_item(items, item_name):
-            LOG.debug("Searching for %(item_name)s in %(items)s" %
-                      {'item_name': item_name, 'items': items})
-            # find the item in the list
-            for i in items:
-                if i[0] == item_name:
-                    return i
-
-        def _convert_value(value):
-            # split the value and the size e.g. 512M=['512','M']
-            pattern = re.compile('(\d+)(\w+)')
-            split = pattern.findall(value)
-            if len(split) < 2:
-                return value
-            digits, size = split
-            conversions = {
-                'K': 1024,
-                'M': 1024 ** 2,
-                'G': 1024 ** 3,
-            }
-            return str(int(digits) * conversions[size])
-
-        default_config = self._render_config_dict(flavor)
-        args = {
-            "ds_manager": self.ds_version.manager,
-            "config": default_config,
-        }
-        LOG.debug("default %(ds_manager)s section: %(config)s" % args)
-        LOG.debug("self.configuration: %s" % self.configuration.__dict__)
-
-        overrides = {}
-        config_items = Configuration.load_items(self.context, configuration_id)
-        for item in config_items:
-            LOG.debug("finding item(%s)" % item.__dict__)
-            try:
-                key, val = _find_item(default_config, item.configuration_key)
-            except TypeError:
-                val = None
-                restart_required = inst_models.InstanceTasks.RESTART_REQUIRED
-                self.update_db(task_status=restart_required)
-            if val and isinstance(val, basestring):
-                overrides[item.configuration_key] = _convert_value(val)
-            else:
-                overrides[item.configuration_key] = val
-
-        LOG.debug("setting the default variables in dict: %s" % overrides)
-        self.update_overrides(overrides, remove=True)
 
     def refresh_compute_server_info(self):
         """Refreshes the compute server field."""

@@ -26,7 +26,6 @@ from trove.common import utils
 from trove.datastore import models as dstore_models
 from trove.db import get_db_api
 from trove.db import models as dbmodels
-from trove.taskmanager import api as task_api
 
 
 CONF = cfg.CONF
@@ -206,22 +205,11 @@ class Configuration(object):
         return False
 
     @staticmethod
-    def save(context, configuration, configuration_items, instances):
+    def save(configuration, configuration_items):
         DBConfiguration.save(configuration)
         for item in configuration_items:
             item["deleted_at"] = None
             DBConfigurationParameter.save(item)
-
-        items = Configuration.load_items(context, configuration.id)
-
-        for instance in instances:
-            LOG.debug("Configuration %s being applied to "
-                      "instance: %s" % (configuration.id, instance.id))
-            overrides = {}
-            for i in items:
-                overrides[i.configuration_key] = i.configuration_value
-
-            task_api.API(context).update_overrides(instance.id, overrides)
 
 
 class DBConfiguration(dbmodels.DatabaseModelBase):

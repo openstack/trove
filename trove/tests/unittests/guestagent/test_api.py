@@ -284,14 +284,14 @@ class ApiTest(trove_testtools.TestCase):
     def test_update_overrides(self):
         self.api.update_overrides('123')
 
-        self._verify_rpc_prepare_before_cast()
-        self._verify_cast('update_overrides', overrides='123', remove=False)
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('update_overrides', overrides='123', remove=False)
 
     def test_apply_overrides(self):
         self.api.apply_overrides('123')
 
-        self._verify_rpc_prepare_before_cast()
-        self._verify_cast('apply_overrides', overrides='123')
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('apply_overrides', overrides='123')
 
     def test_get_replication_snapshot(self):
         # execute

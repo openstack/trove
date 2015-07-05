@@ -105,3 +105,14 @@ class TestGuestagentUtils(trove_testtools.TestCase):
             flattened_dict, guestagent_utils.flatten_dict(nested_dict))
         self.assertEqual(
             nested_dict, guestagent_utils.expand_dict(flattened_dict))
+
+    def test_to_bytes(self):
+        self.assertEqual('1024', guestagent_utils.to_bytes('1024'))
+        self.assertEqual('1048576', guestagent_utils.to_bytes('1024K'))
+        self.assertEqual('1073741824', guestagent_utils.to_bytes('1024M'))
+        self.assertEqual('1099511627776', guestagent_utils.to_bytes('1024G'))
+        self.assertEqual('1024T', guestagent_utils.to_bytes('1024T'))
+        self.assertEqual(1024, guestagent_utils.to_bytes(1024))
+        self.assertEqual('Hello!', guestagent_utils.to_bytes('Hello!'))
+        self.assertEqual('', guestagent_utils.to_bytes(''))
+        self.assertEqual(None, guestagent_utils.to_bytes(None))
