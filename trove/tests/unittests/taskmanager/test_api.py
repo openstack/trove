@@ -82,8 +82,11 @@ class ApiTest(trove_testtools.TestCase):
 
     @patch.object(agent_models, 'AgentHeartBeat')
     def test_delete_heartbeat(self, mock_agent_heart_beat):
+        mock_heartbeat = Mock()
+        mock_agent_heart_beat.return_value.find_by_instance_id = Mock(
+            return_value=mock_heartbeat)
         self.api._delete_heartbeat('some-cluster-id')
-        mock_agent_heart_beat.return_value.delete.assert_called()
+        mock_heartbeat.delete.assert_called_with()
 
     @patch.object(agent_models, 'AgentHeartBeat')
     def test_exception_delete_heartbeat(self, mock_agent_heart_beat):

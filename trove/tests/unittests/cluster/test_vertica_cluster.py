@@ -211,7 +211,8 @@ class ClusterTest(trove_testtools.TestCase):
                             self.datastore,
                             self.datastore_version,
                             instances)
-        mock_task_api.create_cluster.assert_called
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
 
     @patch.object(vertica_api, 'CONF')
@@ -246,7 +247,8 @@ class ClusterTest(trove_testtools.TestCase):
                             self.datastore,
                             self.datastore_version,
                             instances)
-        mock_task_api.create_cluster.assert_called
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
 
     def test_delete_bad_task_status(self):

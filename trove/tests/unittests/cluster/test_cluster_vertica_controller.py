@@ -205,7 +205,7 @@ class TestClusterController(trove_testtools.TestCase):
         cluster = Mock()
         mock_cluster_load.return_value = cluster
         self.controller.delete(req, tenant_id, cluster_id)
-        cluster.delete.assert_called
+        cluster.delete.assert_called_with()
 
 
 class TestClusterControllerWithStrategy(trove_testtools.TestCase):

@@ -18,7 +18,7 @@ import uuid
 
 from cinderclient import exceptions as cinder_exceptions
 import cinderclient.v2.client as cinderclient
-from mock import Mock, MagicMock, patch
+from mock import Mock, MagicMock, patch, PropertyMock
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
 import novaclient.v2.servers
@@ -784,8 +784,21 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(BaseInstance, 'update_db')
     def test_attach_replica(self, mock_update_db):
         master = MagicMock()
-        self.instance_task.attach_replica(master)
-        self.instance_task._guest.make_read_only.assert_called()
+        replica_context = Mock()
+        mock_guest = MagicMock()
+        mock_guest.get_replica_context = Mock(return_value=replica_context)
+        type(master).guest = PropertyMock(return_value=mock_guest)
+
+        config_content = {'config_contents': 'some junk'}
+        replica_config = MagicMock()
+        replica_config.config_contents = config_content
+
+        with patch.object(taskmanager_models.BuiltInstanceTasks,
+                          '_render_replica_config',
+                          return_value=replica_config):
+            self.instance_task.attach_replica(master)
+        self.instance_task._guest.attach_replica.assert_called_with(
+            replica_context, config_content)
         mock_update_db.assert_called_with(slave_of_id=master.id)
 
     def test_error_attach_replica(self):
