@@ -312,6 +312,7 @@ common_opts = [
                     'events (see report_interval).'),
     cfg.DictOpt('notification_service_id',
                 default={'mysql': '2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b',
+                         'percona': 'fd1723f5-68d2-409c-994f-a4a197892a17',
                          'redis': 'b216ffc5-1947-456c-a4cf-70f94c05f7d0',
                          'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed',
                          'couchbase': 'fa62fe68-74d9-4779-a24e-36f19602c415',
