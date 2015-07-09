@@ -1,9 +1,7 @@
-# Copyright 2013 OpenStack Foundation
-# Copyright 2013 Rackspace Hosting
-# Copyright 2013 Hewlett-Packard Development Company, L.P.
+# Copyright 2015 Tesora, Inc.
 # All Rights Reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
 #    a copy of the License at
 #
@@ -28,9 +26,12 @@ REPLICATION_NAMESPACE = CONF.get(MANAGER).replication_namespace
 REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
                                                       REPLICATION_NAMESPACE)
 
-MYSQL_APP = "trove.guestagent.datastore.mysql.service.MySqlApp"
-MYSQL_APP_STATUS = "trove.guestagent.datastore.mysql.service.MySqlAppStatus"
-MYSQL_ADMIN = "trove.guestagent.datastore.mysql.service.MySqlAdmin"
+MYSQL_APP = "trove.guestagent.datastore.experimental.mariadb." \
+            "service.MySqlApp"
+MYSQL_APP_STATUS = "trove.guestagent.datastore.experimental.mariadb." \
+                   "service.MySqlAppStatus"
+MYSQL_ADMIN = "trove.guestagent.datastore.experimental.mariadb.service." \
+              "MySqlAdmin"
 
 
 class Manager(manager_base.BaseMySqlManager):

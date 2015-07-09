@@ -20,8 +20,8 @@ import re
 from oslo_log import log as logging
 
 from trove.common.i18n import _
-from trove.guestagent.datastore.mysql.service import ADMIN_USER_NAME
 from trove.guestagent.datastore.mysql.service import MySqlApp
+from trove.guestagent.datastore.mysql.service_base import ADMIN_USER_NAME
 from trove.guestagent.strategies.backup import base
 
 LOG = logging.getLogger(__name__)
