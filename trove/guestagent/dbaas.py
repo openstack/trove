@@ -38,6 +38,8 @@ defaults = {
     'trove.guestagent.datastore.mysql.manager.Manager',
     'percona':
     'trove.guestagent.datastore.experimental.percona.manager.Manager',
+    'pxc':
+    'trove.guestagent.datastore.experimental.pxc.manager.Manager',
     'redis':
     'trove.guestagent.datastore.experimental.redis.manager.Manager',
     'cassandra':

@@ -20,6 +20,7 @@ import time
 from uuid import uuid4
 
 from mock import ANY
+from mock import call
 from mock import DEFAULT
 from mock import MagicMock
 from mock import Mock
@@ -57,6 +58,10 @@ from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb import (
     system as mongo_system)
+from trove.guestagent.datastore.experimental.pxc import (
+    service as pxc_service)
+from trove.guestagent.datastore.experimental.pxc import (
+    system as pxc_system)
 from trove.guestagent.datastore.experimental.redis import service as rservice
 from trove.guestagent.datastore.experimental.redis.service import RedisApp
 from trove.guestagent.datastore.experimental.redis import system as RedisSystem
@@ -760,7 +765,6 @@ class MySqlAppTest(testtools.TestCase):
         self.orig_unlink = os.unlink
         self.orig_get_auth_password = MySqlApp.get_auth_password
         self.orig_service_discovery = operating_system.service_discovery
-        util.init_db()
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -771,8 +775,11 @@ class MySqlAppTest(testtools.TestCase):
                          'cmd_stop': Mock(),
                          'cmd_enable': Mock(),
                          'cmd_disable': Mock(),
+                         'cmd_bootstrap_pxc_cluster': Mock(),
                          'bin': Mock()}
         operating_system.service_discovery = Mock(
+            return_value=mysql_service)
+        pxc_system.service_discovery = Mock(
             return_value=mysql_service)
         time.sleep = Mock()
         os.unlink = Mock()
@@ -784,6 +791,7 @@ class MySqlAppTest(testtools.TestCase):
         self.mock_client.__enter__.return_value.execute = self.mock_execute
         dbaas.orig_configuration_manager = dbaas.MySqlApp.configuration_manager
         dbaas.MySqlApp.configuration_manager = Mock()
+        self.orig_create_engine = sqlalchemy.create_engine
 
     def tearDown(self):
         super(MySqlAppTest, self).tearDown()
@@ -796,6 +804,7 @@ class MySqlAppTest(testtools.TestCase):
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.MySqlApp.configuration_manager = \
             dbaas.orig_configuration_manager
+        sqlalchemy.create_engine = self.orig_create_engine
 
     def assert_reported_status(self, expected_status):
         service_status = InstanceServiceStatus.find_by(
@@ -863,7 +872,6 @@ class MySqlAppTest(testtools.TestCase):
         self.assertEqual(2, mock_execute.call_count)
 
     def test_stop_mysql_error(self):
-
         dbaas_base.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         self.mySqlApp.state_change_wait_time = 1
@@ -957,9 +965,7 @@ class MySqlAppTest(testtools.TestCase):
         self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
 
     def test_start_db_with_conf_changes(self):
-
         self.mySqlApp.start_mysql = Mock()
-        self.mySqlApp._write_mycnf = Mock()
         self.mysql_starts_successfully()
 
         self.appStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
@@ -973,9 +979,7 @@ class MySqlAppTest(testtools.TestCase):
                          self.appStatus._get_actual_db_status())
 
     def test_start_db_with_conf_changes_mysql_is_running(self):
-
         self.mySqlApp.start_mysql = Mock()
-        self.mySqlApp._write_mycnf = Mock()
 
         self.appStatus.status = rd_instance.ServiceStatuses.RUNNING
         self.assertRaises(RuntimeError,
@@ -1275,26 +1279,6 @@ class MySqlAppTest(testtools.TestCase):
         self.assertEqual(expected, args[0],
                          "Sql statements are not the same")
 
-
-class MySqlAppInstallTest(MySqlAppTest):
-
-    def setUp(self):
-        super(MySqlAppInstallTest, self).setUp()
-        self.orig_create_engine = sqlalchemy.create_engine
-        self.orig_pkg_version = dbaas_base.packager.pkg_version
-        self.orig_utils_execute_with_timeout = utils.execute_with_timeout
-        self.mock_client = Mock()
-        self.mock_execute = Mock()
-        self.mock_client.__enter__ = Mock()
-        self.mock_client.__exit__ = Mock()
-        self.mock_client.__enter__.return_value.execute = self.mock_execute
-
-    def tearDown(self):
-        super(MySqlAppInstallTest, self).tearDown()
-        sqlalchemy.create_engine = self.orig_create_engine
-        dbaas_base.packager.pkg_version = self.orig_pkg_version
-        utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-
     def test_install(self):
 
         self.mySqlApp._install_mysql = Mock()
@@ -1324,10 +1308,13 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.mySqlApp.secure('contents', 'overrides')
 
         self.assertTrue(self.mySqlApp.stop_db.called)
-        self.mySqlApp._reset_configuration.assert_called_once_with(
-            'contents', auth_pwd_mock.return_value)
-        self.mySqlApp._apply_user_overrides.assert_called_once_with(
-            'overrides')
+        reset_config_calls = [call('contents', auth_pwd_mock.return_value),
+                              call('contents', auth_pwd_mock.return_value)]
+        self.mySqlApp._reset_configuration.has_calls(reset_config_calls)
+
+        apply_overrides_calls = [call('overrides'),
+                                 call('overrides')]
+        self.mySqlApp._reset_configuration.has_calls(apply_overrides_calls)
         self.assertTrue(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
@@ -1426,6 +1413,19 @@ class MySqlAppInstallTest(MySqlAppTest):
         self.assertFalse(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
+    @patch.object(dbaas, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test_reset_admin_password(self, mock_engine):
+        with patch.object(dbaas.MySqlApp, 'local_sql_client',
+                          return_value=self.mock_client):
+            config_manager = self.mySqlApp.configuration_manager
+            config_manager.apply_system_override = Mock()
+            self.mySqlApp._create_admin_user = Mock()
+            self.mySqlApp.reset_admin_password("newpassword")
+            self.assertEqual(1,
+                             config_manager.apply_system_override.call_count)
+            self.assertEqual(1, self.mySqlApp._create_admin_user.call_count)
+
 
 class TextClauseMatcher(object):
 
@@ -1477,12 +1477,13 @@ class MySqlAppMockTest(testtools.TestCase):
                     MagicMock(return_value=None)
                 app = MySqlApp(mock_status)
                 app._reset_configuration = MagicMock()
-                app._write_mycnf = MagicMock(return_value=True)
                 app.start_mysql = MagicMock(return_value=None)
+                app._wait_for_mysql_to_be_really_alive = MagicMock(
+                    return_value=True)
                 app.stop_db = MagicMock(return_value=None)
                 app.secure('foo', None)
-                app._reset_configuration.assert_called_once_with(
-                    'foo', auth_pwd_mock.return_value)
+                reset_config_calls = [call('foo', auth_pwd_mock.return_value)]
+                app._reset_configuration.assert_has_calls(reset_config_calls)
                 self.assertTrue(mock_conn.execute.called)
 
     @patch('trove.guestagent.datastore.mysql.service.MySqlApp'
@@ -3394,3 +3395,121 @@ class DB2AdminTest(testtools.TestCase):
                     "from sysibm.sysdbauth; db2 connect reset"
                 self.assertEqual(args[0], expected,
                                  "Delete database queries are not the same")
+
+
+class PXCAppTest(testtools.TestCase):
+
+    def setUp(self):
+        super(PXCAppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = \
+            dbaas_base.utils.execute_with_timeout
+        self.orig_time_sleep = time.sleep
+        self.orig_unlink = os.unlink
+        self.orig_get_auth_password = pxc_service.PXCApp.get_auth_password
+        self.orig_service_discovery = operating_system.service_discovery
+        self.orig_pxc_system_service_discovery = pxc_system.service_discovery
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.PXCApp = pxc_service.PXCApp(self.appStatus)
+        mysql_service = {'cmd_start': Mock(),
+                         'cmd_stop': Mock(),
+                         'cmd_enable': Mock(),
+                         'cmd_disable': Mock(),
+                         'cmd_bootstrap_pxc_cluster': Mock(),
+                         'bin': Mock()}
+        pxc_system.service_discovery = Mock(
+            return_value=mysql_service)
+        time.sleep = Mock()
+        os.unlink = Mock()
+        pxc_service.PXCApp.get_auth_password = Mock()
+        self.mock_client = Mock()
+        self.mock_execute = Mock()
+        self.mock_client.__enter__ = Mock()
+        self.mock_client.__exit__ = Mock()
+        self.mock_client.__enter__.return_value.execute = self.mock_execute
+        pxc_service.orig_configuration_manager = (
+            pxc_service.PXCApp.configuration_manager)
+        pxc_service.PXCApp.configuration_manager = Mock()
+        self.orig_create_engine = sqlalchemy.create_engine
+
+    def tearDown(self):
+        super(PXCAppTest, self).tearDown()
+        self.PXCApp = None
+        dbaas_base.utils.execute_with_timeout = \
+            self.orig_utils_execute_with_timeout
+        time.sleep = self.orig_time_sleep
+        os.unlink = self.orig_unlink
+        operating_system.service_discovery = self.orig_service_discovery
+        pxc_system.service_discovery = self.orig_pxc_system_service_discovery
+        pxc_service.PXCApp.get_auth_password = self.orig_get_auth_password
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        pxc_service.PXCApp.configuration_manager = \
+            pxc_service.orig_configuration_manager
+        sqlalchemy.create_engine = self.orig_create_engine
+
+    @patch.object(pxc_service.PXCApp, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test__grant_cluster_replication_privilege(self, mock_engine):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        with patch.object(pxc_service.PXCApp, 'local_sql_client',
+                          return_value=self.mock_client):
+            self.PXCApp._grant_cluster_replication_privilege(repl_user)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("GRANT LOCK TABLES, RELOAD, REPLICATION CLIENT ON *.* "
+                    "TO `test-user`@`%` IDENTIFIED BY 'test-user-password';")
+        self.assertEqual(expected, args[0].text,
+                         "Sql statements are not the same")
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test__bootstrap_cluster(self, mock_execute):
+        pxc_service_cmds = pxc_system.service_discovery(['mysql'])
+        self.PXCApp._bootstrap_cluster(timeout=20)
+        self.assertEqual(1, mock_execute.call_count)
+        mock_execute.assert_called_with(
+            pxc_service_cmds['cmd_bootstrap_pxc_cluster'],
+            shell=True,
+            timeout=20)
+
+    def test_install_cluster(self):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        apply_mock = Mock()
+        self.PXCApp.configuration_manager.apply_system_override = apply_mock
+        self.PXCApp.stop_db = Mock()
+        self.PXCApp._grant_cluster_replication_privilege = Mock()
+        self.PXCApp.wipe_ib_logfiles = Mock()
+        self.PXCApp.start_mysql = Mock()
+        self.PXCApp.install_cluster(repl_user, "something")
+        self.assertEqual(1, self.PXCApp.stop_db.call_count)
+        self.assertEqual(
+            1, self.PXCApp._grant_cluster_replication_privilege.call_count)
+        self.assertEqual(1, apply_mock.call_count)
+        self.assertEqual(1, self.PXCApp.wipe_ib_logfiles.call_count)
+        self.assertEqual(1, self.PXCApp.start_mysql.call_count)
+
+    def test_install_cluster_with_bootstrap(self):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        apply_mock = Mock()
+        self.PXCApp.configuration_manager.apply_system_override = apply_mock
+        self.PXCApp.stop_db = Mock()
+        self.PXCApp._grant_cluster_replication_privilege = Mock()
+        self.PXCApp.wipe_ib_logfiles = Mock()
+        self.PXCApp._bootstrap_cluster = Mock()
+        self.PXCApp.install_cluster(repl_user, "something", bootstrap=True)
+        self.assertEqual(1, self.PXCApp.stop_db.call_count)
+        self.assertEqual(
+            1, self.PXCApp._grant_cluster_replication_privilege.call_count)
+        self.assertEqual(1, self.PXCApp.wipe_ib_logfiles.call_count)
+        self.assertEqual(1, apply_mock.call_count)
+        self.assertEqual(1, self.PXCApp._bootstrap_cluster.call_count)

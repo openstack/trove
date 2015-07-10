@@ -145,3 +145,7 @@ class ReplicaSourceConfigTemplate(SingleInstanceConfigTemplate):
 
 class ReplicaConfigTemplate(SingleInstanceConfigTemplate):
     template_name = "replica.config.template"
+
+
+class ClusterConfigTemplate(SingleInstanceConfigTemplate):
+    template_name = "cluster.config.template"

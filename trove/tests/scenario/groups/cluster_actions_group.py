@@ -36,5 +36,9 @@ class ClusterActionsGroup(TestGroup):
         self.test_runner.run_cluster_create()
 
     @test(depends_on=[cluster_create])
+    def test_cluster_communication(self):
+        self.test_runner.run_cluster_communication()
+
+    @test(depends_on=[cluster_create], runs_after=[test_cluster_communication])
     def cluster_delete(self):
         self.test_runner.run_cluster_delete()

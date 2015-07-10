@@ -1,0 +1,19 @@
+[mysqld]
+binlog_format=ROW
+bind-address=0.0.0.0
+default-storage-engine=innodb
+innodb_autoinc_lock_mode=2
+innodb_flush_log_at_trx_commit=0
+
+wsrep_slave_threads=8
+wsrep_provider=/usr/lib/libgalera_smm.so
+wsrep_provider_options="gcache.size={{ (128 * flavor['ram']/512)|int }}M; gcache.page_size=1G"
+
+wsrep_sst_method=xtrabackup
+wsrep_sst_auth="{{ replication_user_pass }}"
+
+wsrep_cluster_address="gcomm://{{ cluster_ips }}"
+
+wsrep_cluster_name={{ cluster_name }}
+wsrep_node_name={{ instance_name }}
+wsrep_node_address={{ instance_ip }}

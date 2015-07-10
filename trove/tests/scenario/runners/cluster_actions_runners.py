@@ -59,6 +59,22 @@ class ClusterActionsRunner(TestRunner):
 
         return cluster_id
 
+    def run_cluster_communication(self):
+        databases = []
+        databases.append({"name": 'somenewdb'})
+        cluster = self.auth_client.clusters.get(self.cluster_id)
+        cluster_instances = [
+            self.auth_client.instances.get(instance['id'])
+            for instance in cluster.instances]
+        databases_before = self.auth_client.databases.list(
+            cluster_instances[0].id)
+        self.auth_client.databases.create(cluster_instances[0].id,
+                                          databases)
+        for instance in cluster_instances:
+            databases_after = self.auth_client.databases.list(
+                cluster_instances[0].id)
+            asserts.assert_true(len(databases_before) < len(databases_after))
+
     def run_cluster_delete(
             self, expected_last_instance_state='SHUTDOWN',
             expected_http_code=202):

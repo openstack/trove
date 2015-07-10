@@ -314,6 +314,7 @@ common_opts = [
     cfg.DictOpt('notification_service_id',
                 default={'mysql': '2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b',
                          'percona': 'fd1723f5-68d2-409c-994f-a4a197892a17',
+                         'pxc': '75a628c3-f81b-4ffb-b10a-4087c26bc854',
                          'redis': 'b216ffc5-1947-456c-a4cf-70f94c05f7d0',
                          'cassandra': '459a230d-4e97-4344-9067-2a54a310b0ed',
                          'couchbase': 'fa62fe68-74d9-4779-a24e-36f19602c415',
@@ -379,15 +380,18 @@ common_opts = [
                help="Describes the actual network manager used for "
                     "the management of network attributes "
                     "(security groups, floating IPs, etc.)."),
-    cfg.IntOpt('usage_timeout', default=600,
+    cfg.IntOpt('usage_timeout', default=900,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
     cfg.IntOpt('restore_usage_timeout', default=36000,
                help='Maximum time (in seconds) to wait for a Guest instance '
                     'restored from a backup to become active.'),
-    cfg.IntOpt('cluster_usage_timeout', default=675,
+    cfg.IntOpt('cluster_usage_timeout', default=36000,
                help='Maximum time (in seconds) to wait for a cluster to '
                     'become active.'),
+    cfg.IntOpt('timeout_wait_for_service', default=120,
+               help='Maximum time (in seconds) to wait for a service to '
+                    'become alive.'),
 ]
 
 # Profiling specific option groups
@@ -539,6 +543,77 @@ percona_opts = [
                 'backup.',
                 deprecated_name='backup_incremental_strategy',
                 deprecated_group='DEFAULT'),
+]
+
+# Percona XtraDB Cluster
+pxc_group = cfg.OptGroup(
+    'pxc', title='Percona XtraDB Cluster options',
+    help="Oslo option group designed for Percona XtraDB Cluster datastore")
+pxc_opts = [
+    cfg.ListOpt('tcp_ports', default=["3306", "4444", "4567", "4568"],
+                help='List of TCP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+               help='Default strategy to perform backups.'),
+    cfg.StrOpt('replication_strategy', default='MysqlGTIDReplication',
+               help='Default strategy for replication.'),
+    cfg.StrOpt('replication_namespace',
+               default='trove.guestagent.strategies.replication.mysql_gtid',
+               help='Namespace to load replication strategies from.'),
+    cfg.StrOpt('replication_user', default='slave_user',
+               help='Userid for replication slave.'),
+    cfg.StrOpt('mount_point', default='/var/lib/mysql',
+               help="Filesystem path for mounting "
+                    "volumes if volume support is enabled."),
+    cfg.BoolOpt('root_on_create', default=False,
+                help='Enable the automatic creation of the root user for the '
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                "instance-create as the 'password' field."),
+    cfg.IntOpt('usage_timeout', default=450,
+               help='Maximum time (in seconds) to wait for a Guest to become '
+                    'active.'),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.mysql_impl',
+               help='Namespace to load backup strategies from.'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.mysql_impl',
+               help='Namespace to load restore strategies from.'),
+    cfg.BoolOpt('volume_support', default=True,
+                help='Whether to provision a Cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb',
+               help='Device path for volume if volume support is enabled.'),
+    cfg.DictOpt('backup_incremental_strategy',
+                default={'InnoBackupEx': 'InnoBackupExIncremental'},
+                help='Incremental Backup Runner based on the default '
+                'strategy. For strategies that do not implement an '
+                'incremental backup, the runner will use the default full '
+                'backup.'),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'root', 'clusterrepuser'],
+                help='Users to exclude when listing users.'),
+    cfg.BoolOpt('cluster_support', default=True,
+                help='Enable clusters to be created and managed.'),
+    cfg.IntOpt('cluster_member_count', default=3,
+               help='Number of members in PXC cluster.'),
+    cfg.StrOpt('api_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'pxc.api.PXCAPIStrategy',
+               help='Class that implements datastore-specific API logic.'),
+    cfg.StrOpt('taskmanager_strategy',
+               default='trove.common.strategies.cluster.experimental.pxc.'
+               'taskmanager.PXCTaskManagerStrategy',
+               help='Class that implements datastore-specific task manager '
+                    'logic.'),
+    cfg.StrOpt('guestagent_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'pxc.guestagent.PXCGuestAgentStrategy',
+               help='Class that implements datastore-specific Guest Agent API '
+                    'logic.'),
 ]
 
 # Redis
@@ -1043,6 +1118,7 @@ CONF.register_opts(database_opts, 'database')
 
 CONF.register_group(mysql_group)
 CONF.register_group(percona_group)
+CONF.register_group(pxc_group)
 CONF.register_group(redis_group)
 CONF.register_group(cassandra_group)
 CONF.register_group(couchbase_group)
@@ -1055,6 +1131,7 @@ CONF.register_group(mariadb_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
+CONF.register_opts(pxc_opts, pxc_group)
 CONF.register_opts(redis_opts, redis_group)
 CONF.register_opts(cassandra_opts, cassandra_group)
 CONF.register_opts(couchbase_opts, couchbase_group)

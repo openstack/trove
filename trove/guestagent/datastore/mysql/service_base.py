@@ -923,18 +923,22 @@ class BaseMySqlApp(object):
                 _("Replication is not %(status)s after %(max)d seconds.") % {
                     'status': status.lower(), 'max': max_time})
 
-    def start_mysql(self, update_db=False):
+    def start_mysql(self, update_db=False, disable_on_boot=False, timeout=120):
         LOG.info(_("Starting MySQL."))
         # This is the site of all the trouble in the restart tests.
         # Essentially what happens is that mysql start fails, but does not
         # die. It is then impossible to kill the original, so
 
-        self._enable_mysql_on_boot()
+        if disable_on_boot:
+            self._disable_mysql_on_boot()
+        else:
+            self._enable_mysql_on_boot()
 
         try:
             mysql_service = operating_system.service_discovery(
                 MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mysql_service['cmd_start'], shell=True)
+            utils.execute_with_timeout(mysql_service['cmd_start'], shell=True,
+                                       timeout=timeout)
         except KeyError:
             raise RuntimeError("Service is not discovered.")
         except exception.ProcessExecutionError:
@@ -1022,6 +1026,16 @@ class BaseMySqlApp(object):
         with self.local_sql_client(self.get_engine()) as client:
             client.execute("SELECT WAIT_UNTIL_SQL_THREAD_AFTER_GTIDS('%s')"
                            % txn)
+
+    def reset_admin_password(self, admin_password):
+        """Replace the password in the my.cnf file."""
+        # grant the new  admin password
+        with self.local_sql_client(self.get_engine()) as client:
+            self._create_admin_user(client, admin_password)
+            # reset the ENGINE because the password could have changed
+            global ENGINE
+            ENGINE = None
+        self._save_authentication_properties(admin_password)
 
 
 class BaseMySqlRootAccess(object):

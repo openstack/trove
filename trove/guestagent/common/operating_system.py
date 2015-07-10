@@ -278,8 +278,10 @@ def service_discovery(service_candidates):
     """
     result = {}
     for service in service_candidates:
+        result['service'] = service
         # check upstart
         if os.path.isfile("/etc/init/%s.conf" % service):
+            result['type'] = 'upstart'
             # upstart returns error code when service already started/stopped
             result['cmd_start'] = "sudo start %s || true" % service
             result['cmd_stop'] = "sudo stop %s || true" % service
@@ -290,6 +292,7 @@ def service_discovery(service_candidates):
             break
         # check sysvinit
         if os.path.isfile("/etc/init.d/%s" % service):
+            result['type'] = 'sysvinit'
             result['cmd_start'] = "sudo service %s start" % service
             result['cmd_stop'] = "sudo service %s stop" % service
             if os.path.isfile("/usr/sbin/update-rc.d"):
@@ -306,6 +309,7 @@ def service_discovery(service_candidates):
         # check systemd
         service_path = "/lib/systemd/system/%s.service" % service
         if os.path.isfile(service_path):
+            result['type'] = 'systemd'
             result['cmd_start'] = "sudo systemctl start %s" % service
             result['cmd_stop'] = "sudo systemctl stop %s" % service
 

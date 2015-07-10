@@ -27,6 +27,7 @@ from trove.tests.api.mgmt import datastore_versions
 from trove.tests.api.mgmt import hosts
 from trove.tests.api.mgmt import instances as mgmt_instances
 from trove.tests.api.mgmt import storage
+from trove.tests.api import pxc
 from trove.tests.api import redis
 from trove.tests.api import replication
 from trove.tests.api import root
@@ -154,6 +155,7 @@ register(["mysql_group"], backup_groups, instance_actions_groups,
 register(["redis_group"], backup_groups, instance_actions_groups,
          replication_groups)
 register(["vertica_group"], cluster_actions_groups, instance_actions_groups)
+register(["pxc_group"], instance_actions_groups, cluster_actions_groups)
 
 # Redis int-tests
 redis_group = [
@@ -166,3 +168,10 @@ redis_group = [
 ]
 proboscis.register(groups=["redis"],
                    depends_on_groups=redis_group)
+
+# PXC int-tests
+pxc_group = [
+    pxc.PXC_GROUP,
+]
+proboscis.register(groups=["pxc"],
+                   depends_on_groups=pxc_group)
