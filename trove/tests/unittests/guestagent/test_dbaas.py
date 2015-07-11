@@ -1672,7 +1672,7 @@ class CassandraDBAppTest(testtools.TestCase):
         chmod.assert_called_with("sudo", "chmod", "a+r",
                                  cass_system.CASSANDRA_CONF)
 
-        mock_mkstemp.assert_called_once()
+        self.assertEqual(1, mock_mkstemp.call_count)
 
         with open(temp_config_name, 'r') as config_file:
             configuration_data = config_file.read()
@@ -2180,7 +2180,7 @@ class VerticaAppTest(testtools.TestCase):
              ) % {'source': temp_file_handle.name,
                   'target': vertica_system.VERTICA_CONF})
         arguments.assert_called_with(expected_command)
-        mock_mkstemp.assert_called_once()
+        self.assertEqual(1, mock_mkstemp.call_count)
 
         configuration_data = ConfigParser.ConfigParser()
         configuration_data.read(temp_file_handle.name)

@@ -98,7 +98,7 @@ class VerticaClusterTasksTest(testtools.TestCase):
          get_status.return_value) = ServiceStatuses.RUNNING
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')
@@ -119,5 +119,5 @@ class VerticaClusterTasksTest(testtools.TestCase):
         self.clustertasks.create_cluster(Mock(), self.cluster_id)
         mock_guest.return_value.install_cluster.assert_called_with(['10.0.0.2']
                                                                    )
-        mock_reset_task.assert_called()
-        mock_guest.return_value.cluster_complete.assert_called()
+        mock_reset_task.assert_called_with()
+        mock_guest.return_value.cluster_complete.assert_called_with()
