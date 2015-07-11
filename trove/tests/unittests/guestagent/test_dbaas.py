@@ -342,9 +342,10 @@ class MySqlAdminTest(testtools.TestCase):
                           Mock(return_value=db_result)):
             with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
                 with patch.object(self.mySqlAdmin, 'grant_access'):
-                    self.mySqlAdmin.update_attributes('test_usr', '%',
+                    self.mySqlAdmin.update_attributes('test_user', '%',
                                                       user_attrs)
-                    self.mySqlAdmin.grant_access.assert_not_called()
+                    self.assertEqual(0,
+                                     self.mySqlAdmin.grant_access.call_count)
             args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
             expected = ("UPDATE mysql.user SET Password="
                         "PASSWORD('password') WHERE User = 'test_user' "
@@ -362,7 +363,7 @@ class MySqlAdminTest(testtools.TestCase):
         user_attrs = {"name": "new_name"}
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
             with patch.object(self.mySqlAdmin, 'grant_access'):
-                self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
+                self.mySqlAdmin.update_attributes('test_user', '%', user_attrs)
                 self.mySqlAdmin.grant_access.assert_called_with(
                     'new_name', '%', set([]))
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
@@ -381,9 +382,9 @@ class MySqlAdminTest(testtools.TestCase):
         user_attrs = {"host": "new_host"}
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
             with patch.object(self.mySqlAdmin, 'grant_access'):
-                self.mySqlAdmin.update_attributes('test_usr', '%', user_attrs)
+                self.mySqlAdmin.update_attributes('test_user', '%', user_attrs)
                 self.mySqlAdmin.grant_access.assert_called_with(
-                    'test_usr', 'new_host', set([]))
+                    'test_user', 'new_host', set([]))
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[1]
         expected = ("UPDATE mysql.user SET Host='new_host' "
                     "WHERE User = 'test_user' AND Host = '%';")
@@ -668,7 +669,7 @@ class MySqlAdminTest(testtools.TestCase):
         user.password = 'some_password'
         databases = ['db1']
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
-            self.mySqlAdmin.grant_access('test_usr', '%', databases)
+            self.mySqlAdmin.grant_access('test_user', '%', databases)
         args, _ = dbaas.LocalSqlClient.execute.call_args_list[0]
         expected = ("GRANT ALL PRIVILEGES ON `db1`.* TO `test_user`@`%` "
                     "IDENTIFIED BY PASSWORD 'some_password';")
@@ -685,7 +686,7 @@ class MySqlAdminTest(testtools.TestCase):
         user.password = 'some_password'
         databases = ['mysql']
         with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
-            self.mySqlAdmin.grant_access('test_usr', '%', databases)
+            self.mySqlAdmin.grant_access('test_user', '%', databases)
         # since mysql is not a database to be provided access to,
         # testing that executed was not called in grant access.
         dbaas.LocalSqlClient.execute.assert_not_called()
@@ -2291,7 +2292,7 @@ class CassandraDBAppTest(testtools.TestCase):
         chmod.assert_called_with(
             cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL, as_root=True)
 
-        mock_mkstemp.assert_called_once()
+        self.assertEqual(1, mock_mkstemp.call_count)
 
         with open(temp_config_name, 'r') as config_file:
             configuration_data = config_file.read()
@@ -2805,7 +2806,7 @@ class VerticaAppTest(testtools.TestCase):
              ) % {'source': temp_file_handle.name,
                   'target': vertica_system.VERTICA_CONF})
         arguments.assert_called_with(expected_command)
-        mock_mkstemp.assert_called_once()
+        self.assertEqual(1, mock_mkstemp.call_count)
 
         configuration_data = ConfigParser.ConfigParser()
         configuration_data.read(temp_file_handle.name)

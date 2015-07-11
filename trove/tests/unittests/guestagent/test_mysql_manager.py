@@ -668,5 +668,5 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.assertRaises(ProcessExecutionError,
                           self.manager._perform_restore, backup_info,
                           self.context, '/var/lib/mysql', app)
-        app.status.set_status.assert_any_called(
+        app.status.set_status.assert_called_with(
             rd_instance.ServiceStatuses.FAILED)
