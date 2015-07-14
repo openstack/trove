@@ -224,8 +224,8 @@ def file_discovery(file_candidates):
 
 def service_discovery(service_candidates):
     """
-    This function discovering how to start, stop, enable, disable service
-    in current environment. "service_candidates" is array with possible
+    This function discovers how to start, stop, enable and disable services
+    in the current environment. "service_candidates" is an array with possible
     system service names. Works for upstart, systemd, sysvinit.
     """
     result = {}
