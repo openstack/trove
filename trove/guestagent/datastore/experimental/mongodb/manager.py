@@ -62,6 +62,7 @@ class Manager(periodic_task.PeriodicTasks):
 
         self.status.begin_install()
         self.app.install_if_needed(packages)
+        self.app.wait_for_start()
         self.app.stop_db()
         self.app.clear_storage()
         mount_point = system.MONGODB_MOUNT_POINT

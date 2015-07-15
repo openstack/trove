@@ -21,9 +21,6 @@ from trove.guestagent import pkg
 OS_NAME = operating_system.get_os()
 
 MONGODB_MOUNT_POINT = "/var/lib/mongodb"
-# After changing bind address mongodb accepts connection
-# on real IP, not on the localhost
-CMD_STATUS = "mongostat --host %s -n 1"
 
 TMP_CONFIG = "/tmp/mongodb.conf.tmp"
 CONFIG_CANDIDATES = ["/etc/mongodb.conf", "/etc/mongod.conf"]

@@ -193,6 +193,7 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
     @mock.patch.object(service.MongoDBApp, 'clear_storage')
     @mock.patch.object(service.MongoDBApp, 'start_db')
     @mock.patch.object(service.MongoDBApp, 'stop_db')
+    @mock.patch.object(service.MongoDBApp, 'wait_for_start')
     @mock.patch.object(service.MongoDBApp, 'install_if_needed')
     @mock.patch.object(service.MongoDBAppStatus, 'begin_install')
     def _prepare_method(self, instance_id, instance_type, key, *args):
