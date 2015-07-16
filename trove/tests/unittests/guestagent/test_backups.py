@@ -50,12 +50,13 @@ UNZIP = "gzip -d -c"
 ENCRYPT = "openssl enc -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
 DECRYPT = "openssl enc -d -aes-256-cbc -salt -pass pass:default_aes_cbc_key"
 XTRA_BACKUP_RAW = ("sudo innobackupex --stream=xbstream %(extra_opts)s"
-                   " /var/lib/mysql 2>/tmp/innobackupex.log")
+                   " /var/lib/mysql/data 2>/tmp/innobackupex.log")
 XTRA_BACKUP = XTRA_BACKUP_RAW % {'extra_opts': ''}
 XTRA_BACKUP_EXTRA_OPTS = XTRA_BACKUP_RAW % {'extra_opts': '--no-lock'}
 XTRA_BACKUP_INCR = ('sudo innobackupex --stream=xbstream'
                     ' --incremental --incremental-lsn=%(lsn)s'
-                    ' %(extra_opts)s /var/lib/mysql 2>/tmp/innobackupex.log')
+                    ' %(extra_opts)s /var/lib/mysql/data'
+                    ' 2>/tmp/innobackupex.log')
 SQLDUMP_BACKUP_RAW = ("mysqldump --all-databases %(extra_opts)s "
                       "--opt --password=password -u os_admin"
                       " 2>/tmp/mysqldump.log")
@@ -63,15 +64,15 @@ SQLDUMP_BACKUP = SQLDUMP_BACKUP_RAW % {'extra_opts': ''}
 SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
                              {'extra_opts': '--events --routines --triggers'})
 XTRA_RESTORE_RAW = "sudo xbstream -x -C %(restore_location)s"
-XTRA_RESTORE = XTRA_RESTORE_RAW % {'restore_location': '/var/lib/mysql'}
+XTRA_RESTORE = XTRA_RESTORE_RAW % {'restore_location': '/var/lib/mysql/data'}
 XTRA_INCR_PREPARE = ("sudo innobackupex --apply-log"
-                     " --redo-only /var/lib/mysql"
-                     " --defaults-file=/var/lib/mysql/backup-my.cnf"
+                     " --redo-only /var/lib/mysql/data"
+                     " --defaults-file=/var/lib/mysql/data/backup-my.cnf"
                      " --ibbackup xtrabackup %(incr)s"
                      " 2>/tmp/innoprepare.log")
 SQLDUMP_RESTORE = "sudo mysql"
-PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql "
-           "--defaults-file=/var/lib/mysql/backup-my.cnf "
+PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql/data "
+           "--defaults-file=/var/lib/mysql/data/backup-my.cnf "
            "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
 CRYPTO_KEY = "default_aes_cbc_key"
 
@@ -92,11 +93,16 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         mysql_impl.get_auth_password = mock.Mock(
             return_value='password')
         self.orig_exec_with_to = utils.execute_with_timeout
+        self.patcher_get_datadir = patch(
+            'trove.guestagent.strategies.backup.mysql_impl.get_datadir')
+        self.mock_get_datadir = self.patcher_get_datadir.start()
+        self.mock_get_datadir.return_value = '/var/lib/mysql/data'
 
     def tearDown(self):
         super(GuestAgentBackupTest, self).tearDown()
         mysql_impl.get_auth_password = self.orig
         utils.execute_with_timeout = self.orig_exec_with_to
+        self.patcher_get_datadir.stop()
 
     def test_backup_decrypted_xtrabackup_command(self):
         backupBase.BackupRunner.is_zipped = True
@@ -186,7 +192,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_XTRA_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="md5")
         self.assertEqual(UNZIP + PIPE + XTRA_RESTORE, restr.restore_cmd)
         self.assertEqual(PREPARE, restr.prepare_cmd)
@@ -196,7 +202,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_XTRA_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="md5")
         self.assertEqual(DECRYPT + PIPE + UNZIP + PIPE + XTRA_RESTORE,
                          restr.restore_cmd)
@@ -204,7 +210,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
 
     def test_restore_xtrabackup_incremental_prepare_command(self):
         RunnerClass = utils.import_class(RESTORE_XTRA_INCR_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="m5d")
         # Final prepare command (same as normal xtrabackup)
         self.assertEqual(PREPARE, restr.prepare_cmd)
@@ -221,7 +227,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_XTRA_INCR_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="m5d")
         # Full restore command
         expected = UNZIP + PIPE + XTRA_RESTORE
@@ -237,7 +243,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_XTRA_INCR_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="md5")
         # Full restore command
         expected = DECRYPT + PIPE + UNZIP + PIPE + XTRA_RESTORE
@@ -252,7 +258,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="md5")
         self.assertEqual(UNZIP + PIPE + SQLDUMP_RESTORE, restr.restore_cmd)
 
@@ -261,7 +267,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
         RunnerClass = utils.import_class(RESTORE_SQLDUMP_CLS)
-        restr = RunnerClass(None, restore_location="/var/lib/mysql",
+        restr = RunnerClass(None, restore_location="/var/lib/mysql/data",
                             location="filename", checksum="md5")
         self.assertEqual(DECRYPT + PIPE + UNZIP + PIPE + SQLDUMP_RESTORE,
                          restr.restore_cmd)

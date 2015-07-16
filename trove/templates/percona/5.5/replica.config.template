@@ -1,4 +1,4 @@
 [mysqld]
-log_bin = /var/lib/mysql/mysql-bin.log
-relay_log = /var/lib/mysql/mysql-relay-bin.log
+log_bin = /var/lib/mysql/data/mysql-bin.log
+relay_log = /var/lib/mysql/data/mysql-relay-bin.log
 read_only = true

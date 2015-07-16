@@ -37,16 +37,19 @@ class VolumeDevice(object):
     def __init__(self, device_path):
         self.device_path = device_path
 
-    def migrate_data(self, source_dir):
+    def migrate_data(self, source_dir, target_subdir=None):
         """Synchronize the data from the source directory to the new
-        volume.
+        volume; optionally to a new sub-directory on the new volume.
         """
         self.mount(TMP_MOUNT_POINT, write_to_fstab=False)
         if not source_dir[-1] == '/':
             source_dir = "%s/" % source_dir
+        target_dir = TMP_MOUNT_POINT
+        if target_subdir:
+            target_dir = target_dir + "/" + target_subdir
         utils.execute("sudo", "rsync", "--safe-links", "--perms",
                       "--recursive", "--owner", "--group", "--xattrs",
-                      "--sparse", source_dir, TMP_MOUNT_POINT)
+                      "--sparse", source_dir, target_dir)
         self.unmount(TMP_MOUNT_POINT)
 
     def _check_device_exists(self):

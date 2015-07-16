@@ -27,6 +27,7 @@ from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from trove.common import cfg
+from trove.common import configurations
 from trove.common import exception
 from trove.common.exception import PollTimeOut
 from trove.common.i18n import _
@@ -44,11 +45,11 @@ ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
+DATADIR = None
 PREPARING = False
 UUID = False
 
 TMP_MYCNF = "/tmp/my.cnf.tmp"
-MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONF = cfg.CONF
 MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
@@ -154,6 +155,28 @@ def load_mysqld_options():
         return args
     except exception.ProcessExecutionError:
         return {}
+
+
+def read_mycnf():
+    with open(MYSQL_CONFIG, 'r') as file:
+        config_contents = file.read()
+
+    return config_contents
+
+
+def get_datadir(reset_cache=False):
+    """Return the data directory currently used by Mysql."""
+    global DATADIR
+    if not reset_cache and DATADIR:
+        return DATADIR
+
+    mycnf_contents = read_mycnf()
+
+    # look for datadir parameter in my.cnf
+    mycnf = dict(configurations.MySQLConfParser(mycnf_contents).parse())
+    DATADIR = mycnf['datadir']
+
+    return DATADIR
 
 
 class MySqlAppStatus(service.BaseDbStatus):
@@ -427,10 +450,6 @@ class MySqlAdmin(object):
                   "be omitted from the listing: %s" % ignored_database_names)
         databases = []
         with LocalSqlClient(get_engine()) as client:
-            # If you have an external volume mounted at /var/lib/mysql
-            # the lost+found directory will show up in mysql as a database
-            # which will create errors if you try to do any database ops
-            # on it.  So we remove it here if it exists.
             q = sql_query.Query()
             q.columns = [
                 'schema_name as name',
@@ -769,7 +788,7 @@ class MySqlApp(object):
                 # to be deleted. That's why its ok if they aren't found and
                 # that is why we use the "force" option to "remove".
                 operating_system.remove("%s/ib_logfile%d"
-                                        % (MYSQL_BASE_DIR, index), force=True,
+                                        % (get_datadir(), index), force=True,
                                         as_root=True)
             except exception.ProcessExecutionError:
                 LOG.exception("Could not delete logfile.")
