@@ -42,8 +42,9 @@ class MongoDump(base.BackupRunner):
     backup_cmd = 'mongodump --out ' + MONGO_DUMP_DIR
 
     def __init__(self, *args, **kwargs):
-        self.status = mongo_service.MongoDbAppStatus()
+        self.status = mongo_service.MongoDBAppStatus()
         self.app = mongo_service.MongoDBApp(self.status)
+        self.admin = mongo_service.MongoDBApp(self.status)
         super(MongoDump, self).__init__(*args, **kwargs)
 
     def _run_pre_backup(self):
@@ -66,9 +67,12 @@ class MongoDump(base.BackupRunner):
                                    "nogroup", as_root=True)
 
             # high timeout here since mongodump can take a long time
-            utils.execute_with_timeout(self.backup_cmd, shell=True,
-                                       run_as_root=True, root_helper='sudo',
-                                       timeout=LARGE_TIMEOUT)
+            utils.execute_with_timeout(
+                'mongodump', '--out', MONGO_DUMP_DIR,
+                *(self.app.admin_cmd_auth_params()),
+                run_as_root=True, root_helper='sudo',
+                timeout=LARGE_TIMEOUT
+            )
         except exception.ProcessExecutionError as e:
             LOG.debug("Caught exception when creating the dump")
             self.cleanup()
@@ -94,12 +98,12 @@ class MongoDump(base.BackupRunner):
         db.stats().dataSize. This seems to be conservative, as the actual bson
         output in many cases is a fair bit smaller.
         """
-        dbstats_cmd = 'db.getSiblingDB("%s").stats().dataSize'
-        dbs = self.app.list_databases()
+        dbs = self.app.list_all_dbs()
+        # mongodump does not dump the content of the local database
+        dbs.remove('local')
         dbstats = dict([(d, 0) for d in dbs])
         for d in dbstats:
-            out, err = self.app.do_mongo(dbstats_cmd % d)
-            dbstats[d] = int(out)
+            dbstats[d] = self.app.db_data_size(d)
 
         LOG.debug("Estimated size for databases: " + str(dbstats))
         return sum(dbstats.values())

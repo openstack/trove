@@ -18,6 +18,7 @@ from eventlet.timeout import Timeout
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.strategies.cluster import base
+from trove.common import utils
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.openstack.common import log as logging
@@ -94,6 +95,9 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             return False
         return True
 
+    def get_key(self, member):
+        return self.get_guest(member).get_key()
+
     def create_cluster(self, context, cluster_id):
         LOG.debug("begin create_cluster for id: %s" % cluster_id)
 
@@ -107,6 +111,8 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
 
             if not self._all_instances_ready(instance_ids, cluster_id):
                 return
+
+            LOG.debug("all instances in cluster %s ready." % cluster_id)
 
             instances = [Instance.load(context, instance_id) for instance_id
                          in instance_ids]
@@ -134,11 +140,23 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                                  for instance in config_servers]
             LOG.debug("config server ips: %s" % config_server_ips)
 
-            LOG.debug("calling add_config_servers on query_routers")
+            # Give the query routers the configsvr ips to connect to.
+            # Create the admin user on the query routers.
+            # The first will create the user, and the others will just reset
+            # the password to the same value.
+            LOG.debug("calling add_config_servers on, and sending admin user "
+                      "password to, query_routers")
             try:
+                admin_created = False
+                admin_password = utils.generate_random_password()
                 for query_router in query_routers:
-                    (self.get_guest(query_router)
-                     .add_config_servers(config_server_ips))
+                    guest = self.get_guest(query_router)
+                    guest.add_config_servers(config_server_ips)
+                    if admin_created:
+                        guest.store_admin_password(admin_password)
+                    else:
+                        guest.create_admin_user(admin_password)
+                        admin_created = True
             except Exception:
                 LOG.exception(_("error adding config servers"))
                 self.update_statuses_on_failure(cluster_id)

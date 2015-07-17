@@ -13,12 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 import re
 import string
 
 import netaddr
 
 from trove.common import cfg
+from trove.common import exception
 from trove.common.i18n import _
 
 CONF = cfg.CONF
@@ -30,6 +32,129 @@ class Base(object):
 
     def deserialize(self, o):
         self.__dict__ = o
+
+    @classmethod
+    def _validate_dict(cls, value):
+        reqs = cls._dict_requirements()
+        return (isinstance(value, dict) and
+                all(key in value for key in reqs))
+
+    @classmethod
+    @abc.abstractmethod
+    def _dict_requirements(cls):
+        """Get the dictionary requirements for a user created via
+        deserialization.
+        :returns:           List of required dictionary keys.
+        """
+
+
+class DatastoreSchema(Base):
+    """Represents a database schema."""
+
+    def __init__(self):
+        self._name = None
+        self._collate = None
+        self._character_set = None
+
+    @classmethod
+    def deserialize_schema(cls, value):
+        if not cls._validate_dict(value):
+            raise ValueError(_("Bad dictionary. Keys: %(keys)s. "
+                               "Required: %(reqs)s")
+                             % ({'keys': value.keys(),
+                                 'reqs': cls._dict_requirements()}))
+
+        schema = cls(deserializing=True)
+        schema.deserialize(value)
+        return schema
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._validate_schema_name(value)
+        self._name = value
+
+    @property
+    def collate(self):
+        return self._collate
+
+    @property
+    def character_set(self):
+        return self._character_set
+
+    def _validate_schema_name(self, value):
+        """Perform validations on a given schema name.
+        :param value:        Validated schema name.
+        :type value:         string
+        :raises:             ValueError On validation errors.
+        """
+        if self._max_schema_name_length and (len(value) >
+                                             self._max_schema_name_length):
+            raise ValueError(_("Schema name '%(name)s' is too long. "
+                               "Max length = %(max_length)d.")
+                             % {'name': value,
+                                'max_length': self._max_schema_name_length})
+        elif not self._is_valid_schema_name(value):
+            raise ValueError(_("'%s' is not a valid schema name.") % value)
+
+    @abc.abstractproperty
+    def _max_schema_name_length(self):
+        """Return the maximum valid schema name length if any.
+        :returns:            Maximum schema name length or None if unlimited.
+        """
+
+    @abc.abstractmethod
+    def _is_valid_schema_name(self, value):
+        """Validate a given schema name.
+        :param value:        Validated schema name.
+        :type value:         string
+        :returns:            TRUE if valid, FALSE otherwise.
+        """
+
+    @classmethod
+    @abc.abstractmethod
+    def _dict_requirements(cls):
+        """Get the dictionary requirements for a user created via
+        deserialization.
+        :returns:           List of required dictionary keys.
+        """
+
+
+class MongoDBSchema(DatastoreSchema):
+    """Represents the MongoDB schema and its associated properties.
+
+    MongoDB database names are limited to 128 characters,
+    alphanumeric and - and _ only.
+    """
+
+    name_regex = re.compile(r'^[a-zA-Z0-9_\-]+$')
+
+    def __init__(self, name=None, deserializing=False):
+        super(MongoDBSchema, self).__init__()
+        # need one or the other, not both, not none (!= ~ XOR)
+        if not (bool(deserializing) != bool(name)):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+
+    @property
+    def _max_schema_name_length(self):
+        return 64
+
+    def _is_valid_schema_name(self, value):
+        # check against the invalid character set from
+        # http://docs.mongodb.org/manual/reference/limits
+        return not any(c in value for c in '/\. "$')
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
 
 
 class MySQLDatabase(Base):
@@ -347,6 +472,265 @@ class ValidatedMySQLDatabase(MySQLDatabase):
             raise ValueError(msg % value)
         else:
             self._name = value
+
+
+class DatastoreUser(Base):
+    """Represents a datastore user."""
+
+    _HOSTNAME_WILDCARD = '%'
+
+    def __init__(self):
+        self._name = None
+        self._password = None
+        self._host = None
+        self._databases = []
+
+    @classmethod
+    def deserialize_user(cls, value):
+        if not cls._validate_dict(value):
+            raise ValueError(_("Bad dictionary. Keys: %(keys)s. "
+                               "Required: %(reqs)s")
+                             % ({'keys': value.keys(),
+                                 'reqs': cls._dict_requirements()}))
+        user = cls(deserializing=True)
+        user.deserialize(value)
+        return user
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._validate_user_name(value)
+        self._name = value
+
+    @property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def password(self, value):
+        if self._is_valid_password(value):
+            self._password = value
+        else:
+            raise ValueError(_("'%s' is not a valid password.") % value)
+
+    @property
+    def databases(self):
+        return self._databases
+
+    @databases.setter
+    def databases(self, value):
+        mydb = self._build_database_schema(value)
+        self._databases.append(mydb.serialize())
+
+    @property
+    def host(self):
+        if self._host is None:
+            return self._HOSTNAME_WILDCARD
+        return self._host
+
+    @host.setter
+    def host(self, value):
+        if self._is_valid_host_name(value):
+            self._host = value
+        else:
+            raise ValueError(_("'%s' is not a valid hostname.") % value)
+
+    @abc.abstractmethod
+    def _build_database_schema(self, name):
+        """Build a schema for this user.
+        :type name:              string
+        :type character_set:     string
+        :type collate:           string
+        """
+
+    def _validate_user_name(self, value):
+        """Perform validations on a given user name.
+        :param value:        Validated user name.
+        :type value:         string
+        :raises:             ValueError On validation errors.
+        """
+        if self._max_username_length and (len(value) >
+                                          self._max_username_length):
+            raise ValueError(_("User name '%(name)s' is too long. "
+                               "Max length = %(max_length)d.")
+                             % {'name': value,
+                                'max_length': self._max_username_length})
+        elif not self._is_valid_name(value):
+            raise ValueError(_("'%s' is not a valid user name.") % value)
+
+    @abc.abstractproperty
+    def _max_username_length(self):
+        """Return the maximum valid user name length if any.
+        :returns:            Maximum user name length or None if unlimited.
+        """
+
+    @abc.abstractmethod
+    def _is_valid_name(self, value):
+        """Validate a given user name.
+        :param value:        User name to be validated.
+        :type value:         string
+        :returns:            TRUE if valid, FALSE otherwise.
+        """
+
+    @abc.abstractmethod
+    def _is_valid_host_name(self, value):
+        """Validate a given host name.
+        :param value:        Host name to be validated.
+        :type value:         string
+        :returns:            TRUE if valid, FALSE otherwise.
+        """
+
+    @abc.abstractmethod
+    def _is_valid_password(self, value):
+        """Validate a given password.
+        :param value:        Password to be validated.
+        :type value:         string
+        :returns:            TRUE if valid, FALSE otherwise.
+        """
+
+    @classmethod
+    @abc.abstractmethod
+    def _dict_requirements(cls):
+        """Get the dictionary requirements for a user created via
+        deserialization.
+        :returns:           List of required dictionary keys.
+        """
+
+
+class MongoDBUser(DatastoreUser):
+    """Represents a MongoDB user and its associated properties.
+    MongoDB users are identified using their namd and database.
+    Trove stores this as <database>.<username>
+    """
+
+    def __init__(self, name=None, password=None, deserializing=False):
+        super(MongoDBUser, self).__init__()
+        self._name = None
+        self._username = None
+        self._database = None
+        self._roles = []
+        # need only one of: deserializing, name, or (name and password)
+        if ((not (bool(deserializing) != bool(name))) or
+                (bool(deserializing) and bool(password))):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "password %(pass)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'pass': bool(password),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+            self.password = password
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, value):
+        self._update_name(username=value)
+
+    @property
+    def database(self):
+        return MongoDBSchema.deserialize_schema(self._database)
+
+    @database.setter
+    def database(self, value):
+        self._update_name(database=value)
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._update_name(name=value)
+
+    def _update_name(self, name=None, username=None, database=None):
+        """Keep the name, username, and database values in sync."""
+        if name:
+            (database, username) = self._parse_name(name)
+            if not (database and username):
+                missing = 'username' if self.database else 'database'
+                raise ValueError(_("MongoDB user's name missing %s.")
+                                 % missing)
+        else:
+            if username:
+                if not self.database:
+                    raise ValueError(_('MongoDB user missing database.'))
+                database = self.database.name
+            else:  # database
+                if not self.username:
+                    raise ValueError(_('MongoDB user missing username.'))
+                username = self.username
+            name = '%s.%s' % (database, username)
+        self._name = name
+        self._username = username
+        self._database = self._build_database_schema(database).serialize()
+
+    @property
+    def roles(self):
+        return self._roles
+
+    @roles.setter
+    def roles(self, value):
+        if isinstance(value, list):
+            for role in value:
+                self._add_role(role)
+        else:
+            self._add_role(value)
+
+    def _init_roles(self):
+        if '_roles' not in self.__dict__:
+            self._roles = []
+
+    @classmethod
+    def deserialize_user(cls, value):
+        user = super(MongoDBUser, cls).deserialize_user(value)
+        user.name = user._name
+        user._init_roles()
+        return user
+
+    def _build_database_schema(self, name):
+        return MongoDBSchema(name)
+
+    @staticmethod
+    def _parse_name(value):
+        """The name will be <database>.<username>, so split it."""
+        parts = value.split('.', 1)
+        if len(parts) != 2:
+            raise exception.BadRequest(_(
+                'MongoDB user name "%s" not in <database>.<username> format.'
+            ) % value)
+        return parts[0], parts[1]
+
+    @property
+    def _max_username_length(self):
+        return None
+
+    def _is_valid_name(self, value):
+        return True
+
+    def _is_valid_host_name(self, value):
+        return True
+
+    def _is_valid_password(self, value):
+        return True
+
+    def _add_role(self, value):
+        if not self._is_valid_role(value):
+            raise ValueError(_('Role %s is invalid.') % value)
+        self._roles.append(value)
+
+    def _is_valid_role(self, value):
+        return isinstance(value, dict) or isinstance(value, str)
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
 
 
 class MySQLUser(Base):
