@@ -63,7 +63,6 @@ class DatastoreSchema(Base):
                                "Required: %(reqs)s")
                              % ({'keys': value.keys(),
                                  'reqs': cls._dict_requirements()}))
-
         schema = cls(deserializing=True)
         schema.deserialize(value)
         return schema
