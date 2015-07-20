@@ -35,8 +35,8 @@ from trove.common import cfg
 from trove.common import context as rd_context
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import pastedeploy
 from trove.common import utils
-from trove.openstack.common import pastedeploy
 
 CONTEXT_KEY = 'trove.context'
 Router = base_wsgi.Router

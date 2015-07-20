@@ -22,7 +22,7 @@ context or provide additional information in their specific WSGI pipeline.
 
 from oslo_context import context
 
-from trove.openstack.common import local
+from trove.common import local
 
 
 class TroveContext(context.RequestContext):

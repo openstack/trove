@@ -27,8 +27,8 @@ from oslo_utils import importutils
 from osprofiler import profiler
 
 from trove.common import cfg
+from trove.common.i18n import _
 from trove.common import profile
-from trove.openstack.common.gettextutils import _
 from trove import rpc
 
 

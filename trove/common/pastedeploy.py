@@ -18,7 +18,7 @@ import sys
 
 from paste import deploy
 
-from trove.openstack.common import local
+from trove.common import local
 
 
 class BasePasteFactory(object):
@@ -66,7 +66,7 @@ class AppFactory(BasePasteFactory):
     WSGI app when invoked. The format of the name is <module>:<callable> e.g.
 
       [app:myfooapp]
-      paste.app_factory = openstack.common.pastedeploy:app_factory
+      paste.app_factory = trove.common.pastedeploy:app_factory
       openstack.app_factory = myapp:Foo
 
     The WSGI app constructor must accept a data object and a local config
@@ -89,7 +89,7 @@ class FilterFactory(AppFactory):
     returns a  WSGI filter when invoked. The format is <module>:<callable> e.g.
 
       [filter:myfoofilter]
-      paste.filter_factory = openstack.common.pastedeploy:filter_factory
+      paste.filter_factory = trove.common.pastedeploy:filter_factory
       openstack.filter_factory = myfilter:Foo
 
     The WSGI filter constructor must accept a WSGI app, a data object and
@@ -129,11 +129,11 @@ def paste_deploy_app(paste_config_file, app_name, data):
     like this:
 
       [app:myapp]
-      paste.app_factory = openstack.common.pastedeploy:app_factory
+      paste.app_factory = trove.common.pastedeploy:app_factory
       openstack.app_factory = myapp:App
       ...
       [filter:myfilter]
-      paste.filter_factory = openstack.common.pastedeploy:filter_factory
+      paste.filter_factory = trove.common.pastedeploy:filter_factory
       openstack.filter_factory = myapp:Filter
 
     and then:

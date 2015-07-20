@@ -19,7 +19,7 @@ Exceptions common to OpenStack projects
 
 import logging
 
-from trove.openstack.common.gettextutils import _
+from trove.common.i18n import _
 
 _FATAL_EXCEPTION_FORMAT_ERRORS = False
 
