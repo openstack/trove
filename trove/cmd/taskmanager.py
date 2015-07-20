@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from oslo_config import cfg as openstack_cfg
+from oslo_service import service as openstack_service
+
 from trove.cmd.common import with_initialize
 
 
@@ -22,12 +24,11 @@ extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
 def startup(conf, topic):
     from trove.common.rpc import service as rpc_service
     from trove.common.rpc import version as rpc_version
-    from trove.openstack.common import service as openstack_service
 
     server = rpc_service.RpcService(
         manager=conf.taskmanager_manager, topic=topic,
         rpc_api_version=rpc_version.RPC_API_VERSION)
-    launcher = openstack_service.launch(server)
+    launcher = openstack_service.launch(conf, server)
     launcher.wait()
 
 

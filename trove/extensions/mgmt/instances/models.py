@@ -190,7 +190,7 @@ class NotificationTransformer(object):
         audit_start = utils.isotime(now, subsecond=True)
         audit_end = utils.isotime(
             now + datetime.timedelta(
-                seconds=CONF.exists_notification_ticks * CONF.report_interval),
+                seconds=CONF.exists_notification_interval),
             subsecond=True)
         return audit_start, audit_end
 

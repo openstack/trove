@@ -16,6 +16,9 @@
 
 import os
 
+from oslo_config import cfg as os_cfg
+from oslo_service import periodic_task
+
 from .service.config import PgSqlConfig
 from .service.database import PgSqlDatabase
 from .service.install import PgSqlInstall
@@ -27,7 +30,6 @@ from trove.guestagent import backup
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 
 
 LOG = logging.getLogger(__name__)
@@ -44,9 +46,16 @@ class Manager(
 ):
 
     def __init__(self, *args, **kwargs):
-        super(Manager, self).__init__(*args, **kwargs)
+        if len(args) and isinstance(args[0], os_cfg.ConfigOpts):
+            conf = args[0]
+        elif 'conf' in kwargs:
+            conf = kwargs['conf']
+        else:
+            conf = CONF
 
-    @periodic_task.periodic_task(ticks_between_runs=3)
+        super(Manager, self).__init__(conf)
+
+    @periodic_task.periodic_task
     def update_status(self, context):
         PgSqlAppStatus.get().update()
 

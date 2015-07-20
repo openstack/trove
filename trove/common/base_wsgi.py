@@ -28,6 +28,8 @@ import time
 
 import eventlet.wsgi
 from oslo_config import cfg
+from oslo_service import service
+from oslo_service import sslutils
 import routes
 import routes.middleware
 import webob.dec
@@ -39,8 +41,6 @@ from trove.openstack.common import exception
 from trove.openstack.common.gettextutils import _
 from trove.openstack.common import jsonutils
 from trove.openstack.common import log as logging
-from trove.openstack.common import service
-from trove.openstack.common import sslutils
 from trove.openstack.common import xmlutils
 
 socket_opts = [
@@ -70,7 +70,7 @@ class Service(service.Service):
     Provides a Service API for wsgi servers.
 
     This gives us the ability to launch wsgi servers with the
-    Launcher classes in service.py.
+    Launcher classes in oslo_service.service.py.
     """
 
     def __init__(self, application, port,
@@ -100,8 +100,8 @@ class Service(service.Service):
                 sock = eventlet.listen(bind_addr,
                                        backlog=backlog,
                                        family=family)
-                if sslutils.is_enabled():
-                    sock = sslutils.wrap(sock)
+                if sslutils.is_enabled(CONF):
+                    sock = sslutils.wrap(CONF, sock)
 
             except socket.error as err:
                 if err.args[0] != errno.EADDRINUSE:

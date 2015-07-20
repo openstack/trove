@@ -14,11 +14,11 @@
 
 from mock import MagicMock
 from mock import patch
+from oslo_service import service as os_service
 
 from trove.cmd import common as common_cmd
 from trove.cmd import conductor as conductor_cmd
 import trove.common.cfg as cfg
-from trove.openstack.common import service as os_service
 import trove.tests.fakes.conf as fake_conf
 from trove.tests.unittests import trove_testtools
 
@@ -47,7 +47,7 @@ class ConductorConfTests(trove_testtools.TestCase):
         super(ConductorConfTests, self).tearDown()
 
     def _test_manager(self, conf, rt_mgr_name):
-        def mock_launch(server, workers):
+        def mock_launch(conf, server, workers):
             qualified_mgr = "%s.%s" % (server.manager_impl.__module__,
                                        server.manager_impl.__class__.__name__)
             self.assertEqual(rt_mgr_name, qualified_mgr, "Invalid manager")

@@ -13,6 +13,7 @@
 #    under the License.
 
 import oslo_messaging as messaging
+from oslo_service import periodic_task
 
 from trove.backup import models as bkup_models
 from trove.common import cfg
@@ -24,7 +25,6 @@ from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -35,7 +35,7 @@ class Manager(periodic_task.PeriodicTasks):
     target = messaging.Target(version=rpc_version.RPC_API_VERSION)
 
     def __init__(self):
-        super(Manager, self).__init__()
+        super(Manager, self).__init__(CONF)
 
     def _message_too_old(self, instance_id, method_name, sent):
         fields = {

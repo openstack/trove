@@ -23,6 +23,7 @@ import uuid
 import eventlet.wsgi
 import jsonschema
 from oslo_serialization import jsonutils
+from oslo_service import service
 import paste.urlmap
 import webob
 import webob.dec
@@ -36,7 +37,6 @@ from trove.common.i18n import _
 from trove.common import utils
 from trove.openstack.common import log as logging
 from trove.openstack.common import pastedeploy
-from trove.openstack.common import service
 
 CONTEXT_KEY = 'trove.context'
 Router = base_wsgi.Router
@@ -81,7 +81,7 @@ def launch(app_name, port, paste_config_file, data={},
     app = pastedeploy.paste_deploy_app(paste_config_file, app_name, data)
     server = base_wsgi.Service(app, port, host=host,
                                backlog=backlog, threads=threads)
-    return service.launch(server, workers)
+    return service.launch(CONF, server, workers)
 
 
 # Note: taken from Nova

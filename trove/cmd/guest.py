@@ -25,11 +25,11 @@ gettext.install('trove', unicode=1)
 import sys
 
 from oslo_config import cfg as openstack_cfg
+from oslo_service import service as openstack_service
 
 from trove.common import cfg
 from trove.common import debug_utils
 from trove.openstack.common import log as logging
-from trove.openstack.common import service as openstack_service
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
@@ -66,5 +66,5 @@ def main():
         manager=manager, host=CONF.guest_id,
         rpc_api_version=rpc_version.RPC_API_VERSION)
 
-    launcher = openstack_service.launch(server)
+    launcher = openstack_service.launch(CONF, server)
     launcher.wait()

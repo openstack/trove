@@ -15,6 +15,8 @@
 
 import os
 
+from oslo_service import periodic_task
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -25,7 +27,6 @@ from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.openstack.common import log as logging
-from trove.openstack.common import periodic_task
 
 
 LOG = logging.getLogger(__name__)
@@ -41,8 +42,9 @@ class Manager(periodic_task.PeriodicTasks):
     def __init__(self):
         self.appStatus = service.CouchbaseAppStatus()
         self.app = service.CouchbaseApp(self.appStatus)
+        super(Manager, self).__init__(CONF)
 
-    @periodic_task.periodic_task(ticks_between_runs=3)
+    @periodic_task.periodic_task
     def update_status(self, context):
         """
         Updates the couchbase trove instance. It is decorated with

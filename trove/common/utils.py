@@ -26,6 +26,7 @@ import uuid
 from eventlet.timeout import Timeout
 import jinja2
 from oslo_concurrency import processutils
+from oslo_service import loopingcall
 from oslo_utils import importutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
@@ -36,7 +37,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.openstack.common import log as logging
-from trove.openstack.common import loopingcall
 
 
 CONF = cfg.CONF

@@ -18,16 +18,17 @@
 
 import inspect
 import os
+
 import oslo_messaging as messaging
+from oslo_service import loopingcall
+from oslo_service import service
 from oslo_utils import importutils
 from osprofiler import profiler
-from trove.openstack.common.gettextutils import _
-from trove.openstack.common import log as logging
-from trove.openstack.common import loopingcall
-from trove.openstack.common import service
 
 from trove.common import cfg
 from trove.common import profile
+from trove.openstack.common.gettextutils import _
+from trove.openstack.common import log as logging
 from trove import rpc
 
 
@@ -45,7 +46,6 @@ class RpcService(service.Service):
         self.topic = topic or self.binary.rpartition('trove-')[2]
         _manager = importutils.import_object(manager)
         self.manager_impl = profiler.trace_cls("rpc")(_manager)
-        self.report_interval = CONF.report_interval
         self.rpc_api_version = rpc_api_version or \
             self.manager_impl.RPC_API_VERSION
         profile.setup_profiler(self.binary, self.host)
@@ -64,11 +64,12 @@ class RpcService(service.Service):
         self.rpcserver.start()
 
         # TODO(hub-cap): Currently the context is none... do we _need_ it here?
-        if self.report_interval > 0:
+        report_interval = CONF.report_interval
+        if report_interval > 0:
             pulse = loopingcall.FixedIntervalLoopingCall(
                 self.manager_impl.run_periodic_tasks, context=None)
-            pulse.start(interval=self.report_interval,
-                        initial_delay=self.report_interval)
+            pulse.start(interval=report_interval,
+                        initial_delay=report_interval)
             pulse.wait()
 
     def stop(self):
