@@ -65,3 +65,8 @@ class MongoDbGuestAgentAPI(guest_api.API):
         LOG.debug("Requesting cluster key from guest")
         return self._call("get_key", guest_api.AGENT_LOW_TIMEOUT,
                           self.version_cap)
+
+    def create_admin_user(self, password):
+        LOG.debug("Creating admin user")
+        return self._call("create_admin_user", guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap, password=password)
