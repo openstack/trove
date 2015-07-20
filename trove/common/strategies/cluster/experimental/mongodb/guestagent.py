@@ -22,6 +22,7 @@ from trove.guestagent import api as guest_api
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
+ADD_MEMBERS_TIMEOUT = CONF.mongodb.add_members_timeout
 
 
 class MongoDbGuestAgentStrategy(base.BaseGuestAgentStrategy):
@@ -47,7 +48,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
     def add_members(self, members):
         LOG.debug("Adding members %(members)s on instance %(id)s" % {
             'members': members, 'id': self.id})
-        return self._call("add_members", guest_api.AGENT_HIGH_TIMEOUT,
+        return self._call("add_members", ADD_MEMBERS_TIMEOUT,
                           self.version_cap, members=members)
 
     def add_config_servers(self, config_servers):
@@ -67,7 +68,38 @@ class MongoDbGuestAgentAPI(guest_api.API):
         return self._call("get_key", guest_api.AGENT_LOW_TIMEOUT,
                           self.version_cap)
 
+    def prep_primary(self):
+        LOG.debug("Preparing member to be primary member.")
+        return self._call("prep_primary", guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap)
+
     def create_admin_user(self, password):
         LOG.debug("Creating admin user")
         return self._call("create_admin_user", guest_api.AGENT_HIGH_TIMEOUT,
                           self.version_cap, password=password)
+
+    def store_admin_password(self, password):
+        LOG.debug("Storing admin password")
+        return self._call("store_admin_password",
+                          guest_api.AGENT_LOW_TIMEOUT,
+                          self.version_cap,
+                          password=password)
+
+    def get_replica_set_name(self):
+        LOG.debug("Querying member for its replica set name")
+        return self._call("get_replica_set_name",
+                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap)
+
+    def get_admin_password(self):
+        LOG.debug("Querying instance for its admin password")
+        return self._call("get_admin_password",
+                          guest_api.AGENT_LOW_TIMEOUT,
+                          self.version_cap)
+
+    def is_shard_active(self, replica_set_name):
+        LOG.debug("Checking if replica set %s is active" % replica_set_name)
+        return self._call("is_shard_active",
+                          guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap,
+                          replica_set_name=replica_set_name)

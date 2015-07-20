@@ -17,9 +17,12 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.exception import PollTimeOut
 from trove.common.i18n import _
+from trove.common.instance import ServiceStatuses
 from trove.common.strategies.cluster import base
 from trove.common import utils
+from trove.instance import models
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.taskmanager import api as task_api
@@ -56,47 +59,6 @@ class MongoDbTaskManagerStrategy(base.BaseTaskManagerStrategy):
 
 
 class MongoDbClusterTasks(task_models.ClusterTasks):
-
-    def _create_replica_set(self, members, cluster_id, shard_id=None):
-        # randomly pick a member out of members (referred to as 'x'), then
-        # for every other member append the ip/hostname to a list called
-        # "member_hosts", then
-        first_member = members[0]
-        first_member_ip = self.get_ip(first_member)
-        other_members = members[1:]
-        other_member_ips = [self.get_ip(instance)
-                            for instance in other_members]
-        LOG.debug("first member: %s" % first_member_ip)
-        LOG.debug("others members: %s" % other_member_ips)
-
-        # assumption: add_members is a call not cast, so we don't have to
-        # execute another command to see if the replica-set has initialized
-        # correctly.
-        LOG.debug("sending add_members (call) to %s" % first_member_ip)
-        try:
-            self.get_guest(first_member).add_members(other_member_ips)
-        except Exception:
-            LOG.exception(_("error adding members"))
-            self.update_statuses_on_failure(cluster_id, shard_id)
-            return False
-        return True
-
-    def _create_shard(self, query_routers, replica_set_name,
-                      members, cluster_id, shard_id=None):
-        a_query_router = query_routers[0]
-        LOG.debug("calling add_shard on query_router: %s" % a_query_router)
-        member_ip = self.get_ip(members[0])
-        try:
-            self.get_guest(a_query_router).add_shard(replica_set_name,
-                                                     member_ip)
-        except Exception:
-            LOG.exception(_("error adding shard"))
-            self.update_statuses_on_failure(cluster_id, shard_id)
-            return False
-        return True
-
-    def get_key(self, member):
-        return self.get_guest(member).get_key()
 
     def create_cluster(self, context, cluster_id):
         LOG.debug("begin create_cluster for id: %s" % cluster_id)
@@ -162,13 +124,9 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                 self.update_statuses_on_failure(cluster_id)
                 return
 
-            if not self._create_replica_set(members, cluster_id):
+            if not self._create_shard(query_routers[0], members):
                 return
 
-            replica_set_name = "rs1"
-            if not self._create_shard(query_routers, replica_set_name,
-                                      members, cluster_id):
-                return
             # call to start checking status
             for instance in instances:
                 self.get_guest(instance).cluster_complete()
@@ -208,17 +166,13 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
             members = [Instance.load(context, instance_id)
                        for instance_id in instance_ids]
 
-            if not self._create_replica_set(members, cluster_id, shard_id):
-                return
-
             db_query_routers = DBInstance.find_all(cluster_id=cluster_id,
                                                    type='query_router',
                                                    deleted=False).all()
             query_routers = [Instance.load(context, db_query_router.id)
                              for db_query_router in db_query_routers]
 
-            if not self._create_shard(query_routers, replica_set_name,
-                                      members, cluster_id, shard_id):
+            if not self._create_shard(query_routers[0], members):
                 return
 
             for member in members:
@@ -239,6 +193,211 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
 
         LOG.debug("end add_shard_cluster for cluster %s shard %s"
                   % (cluster_id, shard_id))
+
+    def grow_cluster(self, context, cluster_id, instance_ids):
+        LOG.debug("begin grow_cluster for MongoDB cluster %s" % cluster_id)
+
+        def _grow_cluster():
+            new_instances = [db_instance for db_instance in self.db_instances
+                             if db_instance.id in instance_ids]
+            new_members = [db_instance for db_instance in new_instances
+                           if db_instance.type == 'member']
+            new_query_routers = [db_instance for db_instance in new_instances
+                                 if db_instance.type == 'query_router']
+            instances = []
+            if new_members:
+                shard_ids = set([db_instance.shard_id for db_instance
+                                 in new_members])
+                query_router_id = self._get_running_query_router_id()
+                if not query_router_id:
+                    return
+                for shard_id in shard_ids:
+                    LOG.debug('growing cluster by adding shard %s on query '
+                              'router %s' % (shard_id, query_router_id))
+                    member_ids = [db_instance.id for db_instance in new_members
+                                  if db_instance.shard_id == shard_id]
+                    if not self._all_instances_ready(
+                        member_ids, cluster_id, shard_id
+                    ):
+                        return
+                    members = [Instance.load(context, member_id)
+                               for member_id in member_ids]
+                    query_router = Instance.load(context, query_router_id)
+                    if not self._create_shard(query_router, members):
+                        return
+                    instances.extend(members)
+            if new_query_routers:
+                query_router_ids = [db_instance.id for db_instance
+                                    in new_query_routers]
+                config_servers_ids = [db_instance.id for db_instance
+                                      in self.db_instances
+                                      if db_instance.type == 'config_server']
+                LOG.debug('growing cluster by adding query routers %s, '
+                          'with config servers %s'
+                          % (query_router_ids, config_servers_ids))
+                if not self._all_instances_ready(
+                    query_router_ids, cluster_id
+                ):
+                    return
+                query_routers = [Instance.load(context, instance_id)
+                                 for instance_id in query_router_ids]
+                config_servers_ips = [
+                    self.get_ip(Instance.load(context, config_server_id))
+                    for config_server_id in config_servers_ids
+                ]
+                if not self._add_query_routers(query_routers,
+                                               config_servers_ips):
+                    return
+                instances.extend(query_routers)
+            for instance in instances:
+                self.get_guest(instance).cluster_complete()
+
+        cluster_usage_timeout = CONF.cluster_usage_timeout
+        timeout = Timeout(cluster_usage_timeout)
+        try:
+            _grow_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise  # not my timeout
+            LOG.exception(_("timeout for growing cluster."))
+            self.update_statuses_on_failure(cluster_id)
+        finally:
+            timeout.cancel()
+
+        LOG.debug("end grow_cluster for MongoDB cluster %s" % self.id)
+
+    def shrink_cluster(self, context, cluster_id, instance_ids):
+        LOG.debug("begin shrink_cluster for MongoDB cluster %s" % cluster_id)
+
+        def _shrink_cluster():
+            def all_instances_marked_deleted():
+                non_deleted_instances = DBInstance.find_all(
+                    cluster_id=cluster_id, deleted=False).all()
+                non_deleted_ids = [db_instance.id for db_instance
+                                   in non_deleted_instances]
+                return not bool(
+                    set(instance_ids).intersection(set(non_deleted_ids))
+                )
+            try:
+                utils.poll_until(all_instances_marked_deleted,
+                                 sleep_time=2,
+                                 time_out=CONF.cluster_delete_time_out)
+            except PollTimeOut:
+                LOG.error(_("timeout for instances to be marked as deleted."))
+                return
+
+        cluster_usage_timeout = CONF.cluster_usage_timeout
+        timeout = Timeout(cluster_usage_timeout)
+        try:
+            _shrink_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise  # not my timeout
+            LOG.exception(_("timeout for shrinking cluster."))
+            self.update_statuses_on_failure(cluster_id)
+        finally:
+            timeout.cancel()
+
+        LOG.debug("end shrink_cluster for MongoDB cluster %s" % self.id)
+
+    def get_cluster_admin_password(self):
+        """The cluster admin's user credentials are stored on all query
+        routers. Find one and get the guest to return the password.
+        """
+        instance = self.query_router_instance()
+        return self.get_guest(instance).get_admin_password()
+
+    def query_router_instance(self):
+        a_query_router = [i for i in self.db_instances
+                          if i.type == 'query_router'][0]
+        return self.load_instance(
+            self.context, self.id, a_query_router.id
+        )
+
+    def _init_replica_set(self, primary_member, other_members):
+        """Initialize the replica set by calling the primary member guest's
+        add_members.
+        """
+        LOG.debug('initializing replica set on %s' % primary_member.id)
+        other_members_ips = []
+        try:
+            for member in other_members:
+                other_members_ips.append(self.get_ip(member))
+                self.get_guest(member).restart()
+            self.get_guest(primary_member).prep_primary()
+            self.get_guest(primary_member).add_members(other_members_ips)
+        except Exception:
+            LOG.exception(_("error initializing replica set"))
+            self.update_statuses_on_failure(self.id,
+                                            shard_id=primary_member.shard_id)
+            return False
+        return True
+
+    def _create_shard(self, query_router, members):
+        """Create a replica set out of the given member instances and add it as
+        a shard to the cluster.
+        """
+        primary_member = members[0]
+        other_members = members[1:]
+        if not self._init_replica_set(primary_member, other_members):
+            return False
+        replica_set = self.get_guest(primary_member).get_replica_set_name()
+        LOG.debug('adding replica set %s as shard %s to cluster %s'
+                  % (replica_set, primary_member.shard_id, self.id))
+        try:
+            self.get_guest(query_router).add_shard(
+                replica_set, self.get_ip(primary_member))
+        except Exception:
+            LOG.exception(_("error adding shard"))
+            self.update_statuses_on_failure(self.id,
+                                            shard_id=primary_member.shard_id)
+            return False
+        return True
+
+    def _get_running_query_router_id(self):
+        """Get a query router in this cluster that is in the RUNNING state."""
+        for instance_id in [db_instance.id for db_instance in self.db_instances
+                            if db_instance.type == 'query_router']:
+            status = models.InstanceServiceStatus.find_by(
+                instance_id=instance_id).get_status()
+            if status == ServiceStatuses.RUNNING:
+                return instance_id
+        LOG.exception(_("no query routers ready to accept requests"))
+        self.update_statuses_on_failure(self.id)
+        return False
+
+    def _add_query_routers(self, query_routers, config_server_ips,
+                           new_cluster=False):
+        """Configure the given query routers for the cluster.
+        If this is a new_cluster an admin user will be created with a randomly
+        generated password, else the password needs to be retrieved from
+        and existing query router.
+        """
+        LOG.debug('adding new query router(s) %s with config server '
+                  'ips %s' % ([i.id for i in query_routers],
+                              config_server_ips))
+        admin_password = utils.generate_random_password() if new_cluster \
+            else self.get_cluster_admin_password()
+        need_to_create_admin = new_cluster
+        for query_router in query_routers:
+            try:
+                LOG.debug("calling add_config_servers on query router %s"
+                          % query_router.id)
+                guest = self.get_guest(query_router)
+                guest.add_config_servers(config_server_ips)
+                if need_to_create_admin:
+                    LOG.debug("creating cluster admin user")
+                    guest.create_admin_user(admin_password)
+                    need_to_create_admin = False
+                else:
+                    guest.store_admin_password(admin_password)
+            except Exception:
+                LOG.exception(_("error adding config servers"))
+                self.update_statuses_on_failure(self.id)
+                return False
+        return True
 
 
 class MongoDbTaskManagerAPI(task_api.API):

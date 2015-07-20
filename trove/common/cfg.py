@@ -850,6 +850,9 @@ mongodb_opts = [
                 help='Databases to exclude when listing databases.'),
     cfg.ListOpt('ignore_users', default=['admin.os_admin', 'admin.root'],
                 help='Users to exclude when listing users.'),
+    cfg.IntOpt('add_members_timeout', default=300,
+               help='Maximum time to wait (in seconds) for a replica set '
+                    'initialization process to complete.'),
 ]
 
 # PostgreSQL

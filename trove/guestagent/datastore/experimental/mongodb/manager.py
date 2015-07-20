@@ -91,9 +91,10 @@ class Manager(periodic_task.PeriodicTasks):
             # Create the Trove admin user.
             self.app.secure()
 
-        # Don't start mongos until add_config_servers is invoked.
-        if not self.app.is_query_router:
-            self.app.start_db(update_db=False)
+        # Don't start mongos until add_config_servers is invoked,
+        # don't start members as they should already be running.
+        if not (self.app.is_query_router or self.app.is_cluster_member):
+            self.app.start_db(update_db=True)
 
         if not cluster_config and backup_info:
             self._perform_restore(backup_info, context, mount_point, self.app)
@@ -330,8 +331,25 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Getting the cluster key.")
         return self.app.get_key()
 
+    def prep_primary(self, context):
+        LOG.debug("Preparing to be primary member.")
+        self.app.prep_primary()
+
     def create_admin_user(self, context, password):
         self.app.create_admin_user(password)
 
     def store_admin_password(self, context, password):
         self.app.store_admin_password(password)
+
+    def get_replica_set_name(self, context):
+        # Return this nodes replica set name
+        LOG.debug("Getting the replica set name.")
+        return self.app.replica_set_name
+
+    def get_admin_password(self, context):
+        # Return the admin password from this instance
+        LOG.debug("Getting the admin password.")
+        return self.app.admin_password
+
+    def is_shard_active(self, context, replica_set_name):
+        return self.app.is_shard_active(replica_set_name)

@@ -272,7 +272,9 @@ cluster = {
                         "flavorRef": flavorref,
                         "volume": volume,
                         "nics": nics,
-                        "availability_zone": non_empty_string
+                        "availability_zone": non_empty_string,
+                        "related_to": non_empty_string,
+                        "type": non_empty_string
                     }
                 }
             }

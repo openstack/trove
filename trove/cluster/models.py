@@ -84,6 +84,7 @@ class Cluster(object):
         if self.ds is None:
             self.ds = (datastore_models.Datastore.
                        load(self.ds_version.datastore_id))
+        self._db_instances = None
 
     @classmethod
     def get_guest(cls, instance):
@@ -176,6 +177,14 @@ class Cluster(object):
     @property
     def deleted_at(self):
         return self.db_info.deleted_at
+
+    @property
+    def db_instances(self):
+        """DBInstance objects are persistant, therefore cacheable."""
+        if not self._db_instances:
+            self._db_instances = inst_models.DBInstance.find_all(
+                cluster_id=self.id, deleted=False).all()
+        return self._db_instances
 
     @property
     def instances(self):

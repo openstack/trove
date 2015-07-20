@@ -58,17 +58,21 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
             ds_instance.ServiceStatuses.FAILED)
 
     @mock.patch.object(utils, 'poll_until')
-    @mock.patch.object(utils, 'generate_random_password', return_value='pwd')
-    @mock.patch.object(service.MongoDBApp, 'create_admin_user')
     @mock.patch.object(service.MongoDBAdmin, 'rs_initiate')
     @mock.patch.object(service.MongoDBAdmin, 'rs_add_members')
-    def test_add_member(self, mock_add, mock_initiate,
-                        mock_user, mock_pwd, mock_poll):
+    def test_add_member(self, mock_add, mock_initiate, mock_poll):
         members = ["test1", "test2"]
         self.manager.add_members(self.context, members)
-        mock_user.assert_any_call('pwd')
         mock_initiate.assert_any_call()
         mock_add.assert_any_call(["test1", "test2"])
+
+    @mock.patch.object(service.MongoDBApp, 'restart')
+    @mock.patch.object(service.MongoDBApp, 'create_admin_user')
+    @mock.patch.object(utils, 'generate_random_password', return_value='pwd')
+    def test_prep_primary(self, mock_pwd, mock_user, mock_restart):
+        self.manager.prep_primary(self.context)
+        mock_user.assert_called_with('pwd')
+        mock_restart.assert_called_with()
 
     @mock.patch.object(service.MongoDBApp, 'add_shard',
                        side_effect=RuntimeError("Boom!"))
@@ -151,8 +155,9 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
         self.conf_mgr.apply_system_override.assert_called_once_with(
             {'sharding.clusterRole': 'configsvr'}, 'clustering')
 
+    @mock.patch.object(service.MongoDBApp, 'start_db')
     @mock.patch.object(service.MongoDBApp, '_configure_network')
-    def test_configure_as_cluster_member(self, net_conf):
+    def test_configure_as_cluster_member(self, net_conf, start):
         self.manager.app._configure_as_cluster_member('rs1')
         net_conf.assert_called_once_with(service.MONGODB_PORT)
         self.conf_mgr.apply_system_override.assert_called_once_with(
@@ -183,6 +188,9 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
         self.manager.app.status.set_host.assert_called_with(
             '10.0.0.2', port=10000)
 
+    @mock.patch.object(utils, 'poll_until')
+    @mock.patch.object(service.MongoDBApp, 'get_key_file',
+                       return_value="/test/key/file")
     @mock.patch.object(volume.VolumeDevice, 'mount_points', return_value=[])
     @mock.patch.object(volume.VolumeDevice, 'mount', return_value=None)
     @mock.patch.object(volume.VolumeDevice, 'migrate_data', return_value=None)

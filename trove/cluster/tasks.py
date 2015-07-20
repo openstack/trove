@@ -70,5 +70,6 @@ class ClusterTasks(object):
     SHRINKING_CLUSTER = ClusterTask(
         0x06, 'SHRINKING_CLUSTER', 'Decreasing the size of the cluster.')
 
+
 # Dissuade further additions at run-time.
 ClusterTask.__init__ = None
