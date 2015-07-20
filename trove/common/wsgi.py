@@ -22,6 +22,7 @@ import uuid
 
 import eventlet.wsgi
 import jsonschema
+from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_service import service
 import paste.urlmap
@@ -35,7 +36,6 @@ from trove.common import context as rd_context
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
-from trove.openstack.common import log as logging
 from trove.openstack.common import pastedeploy
 
 CONTEXT_KEY = 'trove.context'

@@ -15,11 +15,11 @@
 #
 
 from novaclient import exceptions as nova_exceptions
+from oslo_log import log as logging
 
 from trove.common import exception
 from trove.common import remote
 from trove.network import base
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

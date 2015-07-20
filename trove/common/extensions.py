@@ -16,6 +16,7 @@
 import abc
 
 from lxml import etree
+from oslo_log import log as logging
 import routes
 import six
 import stevedore
@@ -27,7 +28,6 @@ from trove.common import base_wsgi
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import wsgi
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

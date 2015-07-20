@@ -13,11 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common.strategies.cluster import strategy
 from trove.common.views import create_links
 from trove.instance.views import InstanceDetailView
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 from oslo_utils import strutils
 import webob.exc
 
@@ -30,7 +31,6 @@ from trove.datastore import models as datastore_models
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.instance import models, views
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

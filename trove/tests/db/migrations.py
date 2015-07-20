@@ -27,6 +27,7 @@ import os
 import migrate.versioning.api as migration_api
 from migrate.versioning import repository
 from oslo_concurrency import processutils
+from oslo_log import log as logging
 from proboscis import after_class
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -38,7 +39,6 @@ import sqlalchemy.exc
 
 from trove.common.i18n import _
 import trove.db.sqlalchemy.migrate_repo
-from trove.openstack.common import log as logging
 from trove.tests.util import event_simulator
 
 GROUP = "dbaas.db.migrations"

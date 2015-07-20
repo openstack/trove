@@ -17,12 +17,13 @@
 """
 Model classes for Security Groups and Security Group Rules on instances.
 """
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.models import NetworkRemoteModelBase
 from trove.db.models import DatabaseModelBase
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

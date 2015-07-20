@@ -19,6 +19,7 @@ import os
 import re
 import tempfile
 
+from oslo_log import log as logging
 import pexpect
 
 from trove.common import exception
@@ -28,7 +29,6 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent.strategies.restore import base
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

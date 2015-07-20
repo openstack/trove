@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 import oslo_messaging as messaging
 
 from trove.common import cfg
 from trove.common.rpc import version as rpc_version
-from trove.openstack.common import log as logging
 from trove import rpc
 
 

@@ -14,10 +14,10 @@
 #    under the License.
 
 from oslo_config.cfg import NoSuchOptError
+from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.utils import import_class
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

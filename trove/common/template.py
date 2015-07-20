@@ -16,13 +16,13 @@
 
 import jinja2
 from oslo_config import cfg as oslo_config
+from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
-from trove.openstack.common import log as logging
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

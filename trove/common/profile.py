@@ -14,13 +14,13 @@
 #    under the License.
 
 from oslo_context import context
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from osprofiler import notifier
 from osprofiler import web
 
 from trove.common import cfg
 from trove.common import i18n
-from trove.openstack.common import log as logging
 from trove import rpc
 
 

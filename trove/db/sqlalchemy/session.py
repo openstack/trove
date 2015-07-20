@@ -15,6 +15,7 @@
 
 import contextlib
 
+from oslo_log import log as logging
 import osprofiler.sqlalchemy
 import sqlalchemy
 from sqlalchemy import create_engine
@@ -24,7 +25,6 @@ from sqlalchemy.orm import sessionmaker
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.db.sqlalchemy import mappers
-from trove.openstack.common import log as logging
 
 _ENGINE = None
 _MAKER = None

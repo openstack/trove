@@ -17,6 +17,7 @@
 import os
 
 from oslo_config import cfg as os_cfg
+from oslo_log import log as logging
 from oslo_service import periodic_task
 
 from .service.config import PgSqlConfig
@@ -29,7 +30,6 @@ from trove.common import cfg
 from trove.guestagent import backup
 from trove.guestagent import dbaas
 from trove.guestagent import volume
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

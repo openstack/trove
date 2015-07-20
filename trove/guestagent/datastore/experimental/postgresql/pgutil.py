@@ -17,10 +17,11 @@ import os
 import tempfile
 import uuid
 
+from oslo_log import log as logging
+
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

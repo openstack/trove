@@ -13,8 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
+
 from trove.guestagent.strategies.backup import base
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

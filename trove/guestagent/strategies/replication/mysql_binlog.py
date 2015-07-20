@@ -16,6 +16,8 @@
 
 import csv
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -24,7 +26,6 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.mysql.service import get_datadir
 from trove.guestagent.strategies.replication import mysql_base
-from trove.openstack.common import log as logging
 
 AGENT = BackupAgent()
 CONF = cfg.CONF

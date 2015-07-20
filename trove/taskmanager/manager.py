@@ -15,6 +15,7 @@
 
 from sets import Set
 
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_service import periodic_task
 from oslo_utils import importutils
@@ -30,7 +31,6 @@ import trove.common.rpc.version as rpc_version
 from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.instance.tasks import InstanceTasks
-from trove.openstack.common import log as logging
 from trove.taskmanager import models
 from trove.taskmanager.models import FreshInstanceTasks, BuiltInstanceTasks
 

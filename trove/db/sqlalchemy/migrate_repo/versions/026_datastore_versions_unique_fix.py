@@ -13,11 +13,11 @@
 #    under the License.
 
 from migrate.changeset import UniqueConstraint
+from oslo_log import log as logging
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import Table
-from trove.openstack.common import log as logging
 
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 

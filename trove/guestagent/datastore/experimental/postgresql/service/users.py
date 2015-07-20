@@ -15,12 +15,13 @@
 
 import itertools
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.access import (
     PgSqlAccess)
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

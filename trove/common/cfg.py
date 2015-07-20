@@ -18,6 +18,8 @@
 import os.path
 
 from oslo_config import cfg
+from oslo_log import log as logging
+
 import trove
 
 
@@ -976,6 +978,8 @@ CONF.register_opts(vertica_opts, vertica_group)
 CONF.register_opts(db2_opts, db2_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
+
+logging.register_options(CONF)
 
 
 def custom_parser(parsername, parser):

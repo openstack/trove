@@ -13,6 +13,7 @@
 
 import os
 
+from oslo_log import log as logging
 from oslo_service import periodic_task
 
 from trove.common import cfg
@@ -24,7 +25,6 @@ from trove.guestagent.datastore.experimental.vertica.service import (
 from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
 from trove.guestagent import dbaas
 from trove.guestagent import volume
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

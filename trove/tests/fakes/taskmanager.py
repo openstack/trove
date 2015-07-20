@@ -17,8 +17,8 @@
 from collections import defaultdict
 
 import eventlet
+from oslo_log import log as logging
 
-import trove.openstack.common.log as logging
 from trove import rpc
 from trove.taskmanager.api import API
 from trove.taskmanager.manager import Manager

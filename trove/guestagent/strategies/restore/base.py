@@ -13,12 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+
 from eventlet.green import subprocess
+from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import utils
 from trove.guestagent.strategy import Strategy
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

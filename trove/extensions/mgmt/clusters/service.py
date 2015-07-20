@@ -14,6 +14,8 @@
 #    under the License.
 
 
+from oslo_log import log as logging
+
 from trove.cluster.service import ClusterController
 import trove.common.apischema as apischema
 from trove.common.auth import admin_context
@@ -22,7 +24,6 @@ from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.mgmt.clusters import models
 from trove.extensions.mgmt.clusters import views
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

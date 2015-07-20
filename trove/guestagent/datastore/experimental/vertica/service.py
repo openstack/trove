@@ -16,6 +16,7 @@ import os
 import subprocess
 import tempfile
 
+from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
@@ -27,7 +28,6 @@ from trove.guestagent.datastore.experimental.vertica import system
 from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 from trove.guestagent import volume
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

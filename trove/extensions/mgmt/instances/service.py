@@ -15,6 +15,7 @@
 
 
 from novaclient import exceptions as nova_exceptions
+from oslo_log import log as logging
 
 from trove.backup.models import Backup
 import trove.common.apischema as apischema
@@ -29,7 +30,6 @@ from trove.extensions.mgmt.instances.views import HwInfoView
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as instance_models
 from trove.instance.service import InstanceController
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

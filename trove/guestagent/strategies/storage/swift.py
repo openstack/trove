@@ -16,11 +16,12 @@
 
 import hashlib
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.remote import create_swift_client
 from trove.guestagent.strategies.storage import base
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

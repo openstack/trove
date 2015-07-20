@@ -17,7 +17,7 @@
 Model classes that extend the instances functionality for volumes.
 """
 
-from trove.openstack.common import log as logging
+from oslo_log import log as logging
 
 from trove.common.remote import create_cinder_client
 

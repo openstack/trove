@@ -14,6 +14,7 @@
 
 """Model classes that form the core of snapshots functionality."""
 
+from oslo_log import log as logging
 from sqlalchemy import desc
 from swiftclient.client import ClientException
 
@@ -25,7 +26,6 @@ from trove.common.remote import create_swift_client
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db.models import DatabaseModelBase
-from trove.openstack.common import log as logging
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api
 

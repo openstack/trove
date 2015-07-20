@@ -26,6 +26,7 @@ import uuid
 from eventlet.timeout import Timeout
 import jinja2
 from oslo_concurrency import processutils
+from oslo_log import log as logging
 from oslo_service import loopingcall
 from oslo_utils import importutils
 from oslo_utils import strutils
@@ -36,7 +37,6 @@ import six.moves.urllib.parse as urlparse
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF
@@ -48,7 +48,6 @@ bool_from_string = strutils.bool_from_string
 execute = processutils.execute
 isotime = timeutils.isotime
 
-CONF = cfg.CONF
 ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
                          jinja2.FileSystemLoader(CONF.template_path),
                          jinja2.PackageLoader("trove", "templates")
