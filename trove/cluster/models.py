@@ -20,6 +20,7 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import remote
 from trove.common.strategies.cluster import strategy
 from trove.datastore import models as datastore_models
 from trove.db import models as dbmodels
@@ -83,6 +84,12 @@ class Cluster(object):
         if self.ds is None:
             self.ds = (datastore_models.Datastore.
                        load(self.ds_version.datastore_id))
+
+    @classmethod
+    def get_guest(cls, instance):
+        return remote.create_guest_client(instance.context,
+                                          instance.db_info.id,
+                                          instance.datastore_version.manager)
 
     @classmethod
     def load_all(cls, context, tenant_id):
@@ -186,15 +193,18 @@ class Cluster(object):
         return api_strategy.cluster_class.create(context, name, datastore,
                                                  datastore_version, instances)
 
-    def delete(self):
-
-        if self.db_info.task_status not in (ClusterTasks.NONE,
-                                            ClusterTasks.DELETING):
-            current_task = self.db_info.task_status.name
-            msg = _("This action cannot be performed on the cluster while "
-                    "the current cluster task is '%s'.") % current_task
+    def validate_cluster_available(self, valid_states=[ClusterTasks.NONE]):
+        if self.db_info.task_status not in valid_states:
+            msg = (_("This action cannot be performed on the cluster while "
+                     "the current cluster task is '%s'.") %
+                   self.db_info.task_status.name)
             LOG.error(msg)
             raise exception.UnprocessableEntity(msg)
+
+    def delete(self):
+
+        self.validate_cluster_available([ClusterTasks.NONE,
+                                         ClusterTasks.DELETING])
 
         db_insts = inst_models.DBInstance.find_all(cluster_id=self.id,
                                                    deleted=False).all()
@@ -223,7 +233,8 @@ class Cluster(object):
 
 def is_cluster_deleting(context, cluster_id):
     cluster = Cluster.load(context, cluster_id)
-    return cluster.db_info.task_status == ClusterTasks.DELETING
+    return (cluster.db_info.task_status == ClusterTasks.DELETING
+            or cluster.db_info.task_status == ClusterTasks.SHRINKING_CLUSTER)
 
 
 def validate_volume_size(size):

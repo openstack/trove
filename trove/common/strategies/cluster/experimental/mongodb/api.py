@@ -25,7 +25,6 @@ from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.common import utils
-from trove.common import wsgi
 from trove.datastore import models as datastore_models
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
@@ -49,7 +48,6 @@ class MongoDbAPIStrategy(base.BaseAPIStrategy):
 
     def _action_add_shard(self, cluster, body):
         cluster.add_shard()
-        return wsgi.Result(None, 202)
 
     @property
     def cluster_view_class(self):

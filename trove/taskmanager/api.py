@@ -181,6 +181,20 @@ class API(object):
         cctxt.cast(self.context, "create_cluster",
                    cluster_id=cluster_id)
 
+    def grow_cluster(self, cluster_id, new_instance_ids):
+        LOG.debug("Making async call to grow cluster %s " % cluster_id)
+
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "grow_cluster",
+                   cluster_id=cluster_id, new_instance_ids=new_instance_ids)
+
+    def shrink_cluster(self, cluster_id, instance_ids):
+        LOG.debug("Making async call to shrink cluster %s " % cluster_id)
+
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "shrink_cluster",
+                   cluster_id=cluster_id, instance_ids=instance_ids)
+
     def delete_cluster(self, cluster_id):
         LOG.debug("Making async call to delete cluster %s " % cluster_id)
 

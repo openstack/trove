@@ -342,6 +342,14 @@ class Manager(periodic_task.PeriodicTasks):
         cluster_tasks = models.load_cluster_tasks(context, cluster_id)
         cluster_tasks.create_cluster(context, cluster_id)
 
+    def grow_cluster(self, context, cluster_id, new_instance_ids):
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.grow_cluster(context, cluster_id, new_instance_ids)
+
+    def shrink_cluster(self, context, cluster_id, instance_ids):
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.shrink_cluster(context, cluster_id, instance_ids)
+
     def delete_cluster(self, context, cluster_id):
         cluster_tasks = models.load_cluster_tasks(context, cluster_id)
         cluster_tasks.delete_cluster(context, cluster_id)

@@ -98,9 +98,10 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         mock_status = MagicMock()
         self.manager._app.status = mock_status
         self.manager._build_admin_client = MagicMock(return_value=MagicMock())
-        redis_service.RedisApp.start_redis = MagicMock(return_value=None)
         redis_service.RedisApp.install_if_needed = MagicMock(return_value=None)
         operating_system.chown = MagicMock(return_value=None)
+        redis_service.RedisApp.stop_db = MagicMock(return_value=None)
+        redis_service.RedisApp.start_redis = MagicMock(return_value=None)
         redis_service.RedisApp.restart = MagicMock(return_value=None)
         mock_status.begin_install = MagicMock(return_value=None)
         VolumeDevice.format = MagicMock(return_value=None)

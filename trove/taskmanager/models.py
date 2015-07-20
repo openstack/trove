@@ -200,12 +200,6 @@ class ClusterTasks(Cluster):
     def get_ip(cls, instance):
         return instance.get_visible_ip_addresses()[0]
 
-    @classmethod
-    def get_guest(cls, instance):
-        return remote.create_guest_client(instance.context,
-                                          instance.db_info.id,
-                                          instance.datastore_version.manager)
-
     def _all_instances_ready(self, instance_ids, cluster_id,
                              shard_id=None):
 

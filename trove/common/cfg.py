@@ -546,7 +546,7 @@ redis_group = cfg.OptGroup(
     'redis', title='Redis options',
     help="Oslo option group designed for Redis datastore")
 redis_opts = [
-    cfg.ListOpt('tcp_ports', default=["6379"],
+    cfg.ListOpt('tcp_ports', default=["6379", "16379"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -569,7 +569,7 @@ redis_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/redis',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.BoolOpt('volume_support', default=False,
+    cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default=None,
                help='Device path for volume if volume support is enabled.'),
@@ -585,6 +585,22 @@ redis_opts = [
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
+    cfg.BoolOpt('cluster_support', default=True,
+                help='Enable clusters to be created and managed.'),
+    cfg.StrOpt('api_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'redis.api.RedisAPIStrategy',
+               help='Class that implements datastore-specific API logic.'),
+    cfg.StrOpt('taskmanager_strategy',
+               default='trove.common.strategies.cluster.experimental.redis.'
+               'taskmanager.RedisTaskManagerStrategy',
+               help='Class that implements datastore-specific task manager '
+                    'logic.'),
+    cfg.StrOpt('guestagent_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'redis.guestagent.RedisGuestAgentStrategy',
+               help='Class that implements datastore-specific Guest Agent API '
+                    'logic.'),
 ]
 
 # Cassandra

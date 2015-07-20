@@ -255,6 +255,46 @@ cluster = {
                 "type": "object"
             }
         }
+    },
+    "grow": {
+        "type": "object",
+        "required": ["grow"],
+        "additionalProperties": True,
+        "properties": {
+            "grow": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["flavorRef"],
+                    "additionalProperties": True,
+                    "properties": {
+                        "name": non_empty_string,
+                        "flavorRef": flavorref,
+                        "volume": volume,
+                        "nics": nics,
+                        "availability_zone": non_empty_string
+                    }
+                }
+            }
+        }
+    },
+    "shrink": {
+        "type": "object",
+        "required": ["shrink"],
+        "additionalProperties": True,
+        "properties": {
+            "shrink": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["id"],
+                    "additionalProperties": True,
+                    "properties": {
+                        "id": uuid
+                    }
+                }
+            }
+        }
     }
 }
 

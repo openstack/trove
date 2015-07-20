@@ -387,6 +387,73 @@ class RedisApp(object):
         return utils.unpack_singleton(
             self.configuration_manager.get_value(name, default))
 
+    def cluster_meet(self, ip, port):
+        try:
+            utils.execute_with_timeout('redis-cli', 'cluster', 'meet',
+                                       ip, port)
+        except exception.ProcessExecutionError:
+            LOG.exception(_('Error joining node to cluster at %s.'), ip)
+            raise
+
+    def cluster_addslots(self, first_slot, last_slot):
+        try:
+            slots = map(str, range(first_slot, last_slot + 1))
+            group_size = 200
+            while slots:
+                cmd = ([system.REDIS_CLI, 'cluster', 'addslots']
+                       + slots[0:group_size])
+                out, err = utils.execute_with_timeout(*cmd, run_as_root=True,
+                                                      root_helper='sudo')
+                if 'OK' not in out:
+                    raise RuntimeError(_('Error executing addslots: %s')
+                                       % out)
+                del slots[0:group_size]
+        except exception.ProcessExecutionError:
+            LOG.exception(_('Error adding slots %(first_slot)s-%(last_slot)s'
+                            ' to cluster.'),
+                          {'first_slot': first_slot, 'last_slot': last_slot})
+            raise
+
+    def _get_node_info(self):
+        try:
+            out, _ = utils.execute_with_timeout('redis-cli', '--csv',
+                                                'cluster', 'nodes')
+            return [line.split(' ') for line in out.splitlines()]
+        except exception.ProcessExecutionError:
+            LOG.exception(_('Error getting node info.'))
+            raise
+
+    def _get_node_details(self):
+        for node_details in self._get_node_info():
+            if 'myself' in node_details[2]:
+                return node_details
+        raise exception.TroveError(_("Unable to determine node details"))
+
+    def get_node_ip(self):
+        """Returns [ip, port] where both values are strings"""
+        return self._get_node_details()[1].split(':')
+
+    def get_node_id_for_removal(self):
+        node_details = self._get_node_details()
+        node_id = node_details[0]
+        my_ip = node_details[1].split(':')[0]
+        try:
+            slots, _ = utils.execute_with_timeout('redis-cli', '--csv',
+                                                  'cluster', 'slots')
+            return node_id if my_ip not in slots else None
+        except exception.ProcessExecutionError:
+            LOG.exception(_('Error validating node to for removal.'))
+            raise
+
+    def remove_nodes(self, node_ids):
+        try:
+            for node_id in node_ids:
+                utils.execute_with_timeout('redis-cli', 'cluster',
+                                           'forget', node_id)
+        except exception.ProcessExecutionError:
+            LOG.exception(_('Error removing node from cluster.'))
+            raise
+
 
 class RedisAdmin(object):
     """Handles administrative tasks on the Redis database.

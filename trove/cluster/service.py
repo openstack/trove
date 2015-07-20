@@ -72,7 +72,13 @@ class ClusterController(wsgi.Controller):
                         "by strategy for manager '%(manager)s'") % (
                             {'action': key, 'manager': manager})
             raise exception.TroveError(message)
-        return selected_action(cluster, body)
+        cluster = selected_action(cluster, body)
+        if cluster:
+            view = views.load_view(cluster, req=req, load_servers=False)
+            wsgi_result = wsgi.Result(view.data(), 202)
+        else:
+            wsgi_result = wsgi.Result(None, 202)
+        return wsgi_result
 
     def show(self, req, tenant_id, id):
         """Return a single cluster."""
