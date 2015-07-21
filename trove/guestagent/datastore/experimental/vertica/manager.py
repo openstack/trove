@@ -59,7 +59,7 @@ class Manager(manager.Manager):
         if cluster_config is None:
             self.app.install_vertica()
             self.app.create_db()
-        elif cluster_config['instance_type'] != "member":
+        elif cluster_config['instance_type'] not in ["member", "master"]:
             raise RuntimeError(_("Bad cluster configuration: instance type "
                                "given as %s.") %
                                cluster_config['instance_type'])

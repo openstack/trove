@@ -77,7 +77,13 @@ class VerticaClusterTasks(task_models.ClusterTasks):
                         guest.authorize_public_keys(user, pub_key)
 
                 LOG.debug("Installing cluster with members: %s." % member_ips)
-                guests[0].install_cluster(member_ips)
+                for db_instance in db_instances:
+                    if db_instance['type'] == 'master':
+                        master_instance = Instance.load(context,
+                                                        db_instance.id)
+                        self.get_guest(master_instance).install_cluster(
+                            member_ips)
+                        break
 
                 LOG.debug("Finalizing cluster configuration.")
                 for guest in guests:
