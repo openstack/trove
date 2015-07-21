@@ -89,6 +89,11 @@ class Manager(periodic_task.PeriodicTasks):
             if backup_info:
                 self._perform_restore(backup_info, context,
                                       mount_point, self.app)
+                if service.MongoDBAdmin().is_root_enabled():
+                    self.status.report_root('root')
+            elif root_password:
+                LOG.debug('Root password provided. Enabling root.')
+                service.MongoDBAdmin().enable_root(root_password)
         else:
             if cluster_config['instance_type'] == "query_router":
                 self.app.reset_configuration({'config_contents':
@@ -215,13 +220,11 @@ class Manager(periodic_task.PeriodicTasks):
 
     def enable_root(self, context):
         LOG.debug("Enabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=MANAGER)
+        return service.MongoDBAdmin().enable_root()
 
     def is_root_enabled(self, context):
         LOG.debug("Checking if root is enabled.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=MANAGER)
+        return service.MongoDBAdmin().is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location, app):
         LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
