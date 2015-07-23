@@ -126,7 +126,10 @@ class MongoDBApp(object):
             pass
         except KeyError:
             raise RuntimeError("MongoDB service is not discovered.")
+        self.wait_for_start(update_db=update_db)
 
+    def wait_for_start(self, update_db=False):
+        LOG.debug('Waiting for MongoDB to start.')
         if not self.status.wait_for_real_status_to_change_to(
                 ds_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
@@ -144,6 +147,7 @@ class MongoDBApp(object):
                 # There's nothing more we can do...
             self.status.end_install_or_restart()
             raise RuntimeError("Could not start MongoDB.")
+        LOG.debug('MongoDB started successfully.')
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_("Starting MongoDB with configuration changes."))
@@ -418,16 +422,11 @@ class MongoDBAppStatus(service.BaseDbStatus):
 
     def _get_actual_db_status(self):
         try:
-            if self._is_config_server() is True:
-                status_check = (system.CMD_STATUS %
-                                (netutils.get_my_ipv4() +
-                                 ' --port %s' % CONFIGSVR_PORT))
-            else:
-                status_check = (system.CMD_STATUS %
-                                netutils.get_my_ipv4())
-
-            out, err = utils.execute_with_timeout(status_check, shell=True,
-                                                  check_exit_code=[0, 1])
+            port = CONFIGSVR_PORT if self._is_config_server() else MONGODB_PORT
+            out, err = utils.execute_with_timeout(
+                'mongostat', '--host', str(netutils.get_my_ipv4()),
+                '--port', str(port), '-n', str(1), check_exit_code=[0, 1]
+            )
             if not err:
                 return ds_instance.ServiceStatuses.RUNNING
             else:
