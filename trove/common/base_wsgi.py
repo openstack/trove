@@ -28,6 +28,7 @@ import time
 
 import eventlet.wsgi
 from oslo_config import cfg
+from oslo_serialization import jsonutils
 from oslo_service import service
 from oslo_service import sslutils
 import routes
@@ -37,11 +38,10 @@ import webob.exc
 from xml.dom import minidom
 from xml.parsers import expat
 
+from trove.common import xmlutils
 from trove.openstack.common import exception
 from trove.openstack.common.gettextutils import _
-from trove.openstack.common import jsonutils
 from trove.openstack.common import log as logging
-from trove.openstack.common import xmlutils
 
 socket_opts = [
     cfg.IntOpt('backlog',
