@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_context import context
 import oslo_messaging as messaging
 from osprofiler import notifier
 from osprofiler import web
 
 from trove.common import cfg
 from trove.common import i18n
-from trove.openstack.common import context
 from trove.openstack.common import log as logging
 from trove import rpc
 
