@@ -25,3 +25,4 @@ testtools>=1.4.0
 discover
 testrepository>=0.0.18
 pymongo>=3.0.2
+redis>=2.10.0

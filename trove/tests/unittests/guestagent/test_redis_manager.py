@@ -12,11 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from mock import MagicMock
+from mock import DEFAULT, MagicMock, patch
 import testtools
 
 from trove.common.context import TroveContext
 from trove.guestagent import backup
+from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import (
     service as redis_service)
@@ -27,7 +28,8 @@ from trove.guestagent.volume import VolumeDevice
 
 class RedisGuestAgentManagerTest(testtools.TestCase):
 
-    def setUp(self):
+    @patch.object(redis_service.RedisApp, '_build_admin_client')
+    def setUp(self, config_loader):
         super(RedisGuestAgentManagerTest, self).setUp()
         self.context = TroveContext()
         self.manager = RedisManager()
@@ -36,7 +38,6 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         self.origin_start_redis = redis_service.RedisApp.start_redis
         self.origin_stop_redis = redis_service.RedisApp.stop_db
         self.origin_install_redis = redis_service.RedisApp._install_redis
-        self.origin_write_config = redis_service.RedisApp.write_config
         self.origin_install_if_needed = \
             redis_service.RedisApp.install_if_needed
         self.origin_complete_install_or_restart = \
@@ -52,7 +53,6 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisApp.stop_db = self.origin_stop_redis
         redis_service.RedisApp.start_redis = self.origin_start_redis
         redis_service.RedisApp._install_redis = self.origin_install_redis
-        redis_service.RedisApp.write_config = self.origin_write_config
         redis_service.RedisApp.install_if_needed = \
             self.origin_install_if_needed
         redis_service.RedisApp.complete_install_or_restart = \
@@ -64,25 +64,28 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
 
     def test_update_status(self):
         mock_status = MagicMock()
-        self.manager.appStatus = mock_status
-        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
+        self.manager._app.status = mock_status
         self.manager.update_status(self.context)
-        redis_service.RedisAppStatus.get.assert_any_call()
         mock_status.update.assert_any_call()
 
     def test_prepare_redis_not_installed(self):
         self._prepare_dynamic(is_redis_installed=False)
 
-    def _prepare_dynamic(self, device_path='/dev/vdb', is_redis_installed=True,
+    @patch.multiple(redis_service.RedisApp,
+                    apply_initial_guestagent_configuration=DEFAULT)
+    @patch.object(ConfigurationManager, 'save_configuration')
+    def _prepare_dynamic(self, save_configuration_mock,
+                         apply_initial_guestagent_configuration,
+                         device_path='/dev/vdb', is_redis_installed=True,
                          backup_info=None, is_root_enabled=False,
                          mount_point='var/lib/redis'):
 
         # covering all outcomes is starting to cause trouble here
         mock_status = MagicMock()
-        redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
+        self.manager._app.status = mock_status
+        self.manager._build_admin_client = MagicMock(return_value=MagicMock())
         redis_service.RedisApp.start_redis = MagicMock(return_value=None)
         redis_service.RedisApp.install_if_needed = MagicMock(return_value=None)
-        redis_service.RedisApp.write_config = MagicMock(return_value=None)
         operating_system.chown = MagicMock(return_value=None)
         redis_service.RedisApp.restart = MagicMock(return_value=None)
         mock_status.begin_install = MagicMock(return_value=None)
@@ -99,11 +102,11 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
                              overrides=None,
                              cluster_config=None)
 
-        self.assertEqual(2, redis_service.RedisAppStatus.get.call_count)
         mock_status.begin_install.assert_any_call()
         VolumeDevice.format.assert_any_call()
         redis_service.RedisApp.install_if_needed.assert_any_call(self.packages)
-        redis_service.RedisApp.write_config.assert_any_call(None)
+        save_configuration_mock.assert_any_call(None)
+        apply_initial_guestagent_configuration.assert_called_once_with()
         operating_system.chown.assert_any_call(
             mount_point, 'redis', 'redis', as_root=True)
         redis_service.RedisApp.restart.assert_any_call()
@@ -114,7 +117,6 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
         redis_service.RedisApp.restart = MagicMock(return_value=None)
         self.manager.restart(self.context)
-        redis_service.RedisAppStatus.get.assert_any_call()
         redis_service.RedisApp.restart.assert_any_call()
 
     def test_stop_db(self):
@@ -123,6 +125,5 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         redis_service.RedisAppStatus.get = MagicMock(return_value=mock_status)
         redis_service.RedisApp.stop_db = MagicMock(return_value=None)
         self.manager.stop_db(self.context)
-        redis_service.RedisAppStatus.get.assert_any_call()
         redis_service.RedisApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
