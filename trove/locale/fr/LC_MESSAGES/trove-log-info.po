@@ -1,0 +1,107 @@
+# Translations template for trove.
+# Copyright (C) 2015 ORGANIZATION
+# This file is distributed under the same license as the trove project.
+#
+# Translators:
+# Corinne Verheyde <cverheyd@hotmail.com>, 2015
+# Frédéric <frosmont@free.fr>, 2014
+msgid ""
+msgstr ""
+"Project-Id-Version: trove\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2015-07-27 06:05+0000\n"
+"PO-Revision-Date: 2015-07-24 22:02+0000\n"
+"Last-Translator: Corinne Verheyde <cverheyd@hotmail.com>\n"
+"Language-Team: French (http://www.transifex.com/projects/p/trove/language/"
+"fr/)\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 1.3\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#, python-format
+msgid "Creating a database instance for tenant '%s'"
+msgstr "Création d'une instance de base de données pour le tenant '%s'"
+
+#, python-format
+msgid "Deleting database instance '%(instance_id)s' for tenant '%(tenant_id)s'"
+msgstr ""
+"Suppression de l'instance de base de données '%(instance_id)s' pour le "
+"tenant '%(tenant_id)s'"
+
+#, python-format
+msgid "Detaching instance %s from its replication source."
+msgstr "Instance %s en cours de détachement de sa source de réplication."
+
+#, python-format
+msgid "Editing instance for tenant id %s."
+msgstr "Édition de l'instance for tenant_id %s."
+
+#, python-format
+msgid "Ejecting replica source %s from it's replication set."
+msgstr "Éviction du source replica %s de son jeu de réplication "
+
+#, python-format
+msgid "Getting default configuration for instance %s"
+msgstr "Récupération de la configuration par défaut pour l'instance %s"
+
+#, python-format
+msgid "Listing backups for instance '%s'"
+msgstr "Listing en cours des sauvegardes pour l'instance '%s'"
+
+#, python-format
+msgid "Listing database instances for tenant '%s'"
+msgstr ""
+"Listing en cours des instances de bases de données pour le locataire '%s'"
+
+#, python-format
+msgid "Migrating instance id = %(instance_id)s to host = %(host)s."
+msgstr "Migration de l'instance id = %(instance_id)s vers le host = %(host)s."
+
+#, python-format
+msgid ""
+"Performing %(action_name)s action against instance %(instance_id)s for "
+"tenant '%(tenant_id)s'"
+msgstr ""
+"Action %(action_name)s en cours sur l'instance %(instance_id)s pour le "
+"tenant '%(tenant_id)s'"
+
+#, python-format
+msgid "Promoting instance %s to replication source."
+msgstr "Promotion de l'instance %s en source de réplication."
+
+#, python-format
+msgid "Rebooting instance %s."
+msgstr "Redémarrage de l'instance %s."
+
+#, python-format
+msgid "Resetting task status to NONE on instance %s."
+msgstr "Réinitialisation du statut de la tâche à NONE sur l'instance %s."
+
+#, python-format
+msgid "Resizing instance %(instance_id)s flavor to %(flavor_id)s."
+msgstr ""
+"Redimensionnement du gabarit de l'instance %(instance_id)s vers "
+"%(flavor_id)s."
+
+#, python-format
+msgid "Resizing volume of instance %s."
+msgstr "Redimensionnement du volume de l'instance %s."
+
+#, python-format
+msgid "Restarting datastore on instance %s."
+msgstr "Redémarrage du datastore sur l'instance %s."
+
+#, python-format
+msgid "Showing database instance '%(instance_id)s' for tenant '%(tenant_id)s'"
+msgstr ""
+"Présentation de l'instance de base de données '%(instance_id)s' pour le "
+"tenant '%(tenant_id)s'"
+
+#, python-format
+msgid "Updating database instance '%(instance_id)s' for tenant '%(tenant_id)s'"
+msgstr ""
+"Mise à jour de l'instance de base de données '%(instance_id)s' pour le "
+"tenant '%(tenant_id)s'"

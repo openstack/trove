@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 2015.1.dev48\n"
+"Project-Id-Version: trove 4.0.0.0b2.dev60\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-03-13 06:10+0000\n"
+"POT-Creation-Date: 2015-07-27 06:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,18 +28,8 @@ msgid ""
 "enabled=false"
 msgstr ""
 
-#: trove/instance/models.py:446
+#: trove/instance/models.py:458
 #, python-format
 msgid "Could not load instance %s."
-msgstr ""
-
-#: trove/openstack/common/loopingcall.py:87
-#, python-format
-msgid "task %(func_name)s run outlasted interval by %(delay).2f sec"
-msgstr ""
-
-#: trove/openstack/common/service.py:356
-#, python-format
-msgid "pid %d not in child list"
 msgstr ""
 
