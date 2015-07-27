@@ -228,9 +228,9 @@ class ClusterTasks(Cluster):
                         LOG.debug("Instance %s in %s, exiting polling." % (
                             instance_id, status))
                         return True
-                if (status != ServiceStatuses.RUNNING and
-                   status != ServiceStatuses.BUILD_PENDING):
-                        # if one is not in a ready state, continue polling
+                if status != ServiceStatuses.BUILD_PENDING:
+                        # if one is not in a cluster-ready state,
+                        # continue polling
                         LOG.debug("Instance %s in %s, continue polling." % (
                             instance_id, status))
                         return False
