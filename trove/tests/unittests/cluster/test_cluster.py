@@ -79,7 +79,8 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          []
+                          [],
+                          None
                           )
 
     def test_create_unequal_flavors(self):
@@ -91,7 +92,8 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances,
+                          None
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -107,7 +109,8 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances,
+                          None
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -136,7 +139,8 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances,
+                          None
                           )
 
     def test_delete_bad_task_status(self):

@@ -54,7 +54,8 @@ class PXCAPIStrategy(base.BaseAPIStrategy):
 class PXCCluster(models.Cluster):
 
     @classmethod
-    def create(cls, context, name, datastore, datastore_version, instances):
+    def create(cls, context, name, datastore, datastore_version,
+               instances, extended_properties):
         LOG.debug("Initiating PXC cluster creation.")
         pxc_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)

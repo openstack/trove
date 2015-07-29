@@ -122,7 +122,8 @@ class MongoDbAPIStrategy(base.BaseAPIStrategy):
 class MongoDbCluster(models.Cluster):
 
     @classmethod
-    def create(cls, context, name, datastore, datastore_version, instances):
+    def create(cls, context, name, datastore, datastore_version,
+               instances, extended_properties):
 
         # TODO(amcreynolds): consider moving into CONF and even supporting
         # TODO(amcreynolds): an array of values, e.g. [3, 5, 7]

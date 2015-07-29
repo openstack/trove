@@ -48,6 +48,11 @@ class ClusterView(object):
         }
         if ip_list:
             cluster_dict["ip"] = ip_list
+
+        extended_properties = self.get_extended_properties()
+        if extended_properties:
+            cluster_dict["extended_properties"] = extended_properties
+
         LOG.debug(cluster_dict)
         return {"cluster": cluster_dict}
 
@@ -89,6 +94,9 @@ class ClusterView(object):
 
     def build_instances(self):
         raise NotImplementedError()
+
+    def get_extended_properties(self):
+        return None
 
     def _build_flavor_info(self, flavor_id):
         return {

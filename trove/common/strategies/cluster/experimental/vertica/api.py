@@ -53,7 +53,8 @@ class VerticaAPIStrategy(base.BaseAPIStrategy):
 class VerticaCluster(models.Cluster):
 
     @classmethod
-    def create(cls, context, name, datastore, datastore_version, instances):
+    def create(cls, context, name, datastore, datastore_version,
+               instances, extended_properties):
         LOG.debug("Initiating cluster creation.")
         vertica_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)

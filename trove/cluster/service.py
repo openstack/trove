@@ -143,6 +143,9 @@ class ClusterController(wsgi.Controller):
         datastore, datastore_version = (
             datastore_models.get_datastore_version(**datastore_args))
 
+        # TODO(saurabhs): add extended_properties to apischema
+        extended_properties = body['cluster'].get('extended_properties', {})
+
         try:
             clusters_enabled = (CONF.get(datastore_version.manager)
                                 .get('cluster_support'))
@@ -172,6 +175,7 @@ class ClusterController(wsgi.Controller):
                               "availability_zone": availability_zone})
 
         cluster = models.Cluster.create(context, name, datastore,
-                                        datastore_version, instances)
+                                        datastore_version, instances,
+                                        extended_properties)
         view = views.load_view(cluster, req=req, load_servers=False)
         return wsgi.Result(view.data(), 200)

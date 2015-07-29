@@ -78,7 +78,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          []
+                          [], {},
                           )
 
     def test_create_flavor_not_specified(self):
@@ -90,7 +90,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -110,7 +110,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -126,7 +126,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -146,7 +146,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -178,7 +178,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -193,7 +193,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.cluster_name,
                           self.datastore,
                           self.datastore_version,
-                          instances
+                          instances, {}
                           )
 
     @patch.object(inst_models.Instance, 'create')
@@ -210,7 +210,7 @@ class ClusterTest(trove_testtools.TestCase):
                             self.cluster_name,
                             self.datastore,
                             self.datastore_version,
-                            instances)
+                            instances, {})
         mock_task_api.return_value.create_cluster.assert_called_with(
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
@@ -246,7 +246,7 @@ class ClusterTest(trove_testtools.TestCase):
                             self.cluster_name,
                             self.datastore,
                             self.datastore_version,
-                            instances)
+                            instances, {})
         mock_task_api.return_value.create_cluster.assert_called_with(
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)

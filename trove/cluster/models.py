@@ -197,10 +197,12 @@ class Cluster(object):
             self.context, self.db_info.id, load_servers=False)
 
     @classmethod
-    def create(cls, context, name, datastore, datastore_version, instances):
+    def create(cls, context, name, datastore, datastore_version,
+               instances, extended_properties):
         api_strategy = strategy.load_api_strategy(datastore_version.manager)
         return api_strategy.cluster_class.create(context, name, datastore,
-                                                 datastore_version, instances)
+                                                 datastore_version, instances,
+                                                 extended_properties)
 
     def validate_cluster_available(self, valid_states=[ClusterTasks.NONE]):
         if self.db_info.task_status not in valid_states:
