@@ -533,6 +533,23 @@ class MongoDBAdmin(object):
         return pagination.paginate_list(users, limit, marker,
                                         include_marker)
 
+    def enable_root(self, password=None):
+        """Create a user 'root' with role 'root'."""
+        if not password:
+            LOG.debug('Generating root user password.')
+            password = utils.generate_random_password()
+        root_user = models.MongoDBUser(name='admin.root', password=password)
+        root_user.roles = 'root'
+        self.create_user(root_user)
+        return root_user.serialize()
+
+    def is_root_enabled(self):
+        """Check if user 'admin.root' exists."""
+        with MongoDBClient(self._admin_user()) as admin_client:
+            return bool(admin_client.admin.system.users.find_one(
+                {'roles.role': 'root'}
+            ))
+
     def list_database_names(self):
         """Get the list of database names."""
         with MongoDBClient(self._admin_user()) as admin_client:

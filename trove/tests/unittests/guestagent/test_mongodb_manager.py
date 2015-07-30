@@ -53,10 +53,11 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
             self.manager.update_status(self.context)
             status.update.assert_any_call()
 
-    def _prepare_method(self, databases=None, users=None, device_path=None,
+    def _prepare_method(self, packages=['packages'], databases=None,
+                        memory_mb='2048', users=None, device_path=None,
                         mount_point=None, backup_info=None,
-                        cluster_config=None, overrides=None, memory_mb='2048',
-                        packages=['packages']):
+                        config_contents=None, root_password=None,
+                        overrides=None, cluster_config=None,):
         """self.manager.app must be correctly mocked before calling."""
 
         self.manager.status = mock.Mock()
@@ -67,6 +68,8 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
                              device_path=device_path,
                              mount_point=mount_point,
                              backup_info=backup_info,
+                             config_contents=config_contents,
+                             root_password=root_password,
                              overrides=overrides,
                              cluster_config=cluster_config)
 
@@ -102,7 +105,8 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
         mock_secure.assert_called_with(None)
 
     @mock.patch.object(backup, 'restore')
-    def test_prepare_from_backup(self, mocked_restore):
+    @mock.patch.object(service.MongoDBAdmin, 'is_root_enabled')
+    def test_prepare_from_backup(self, mocked_root_check, mocked_restore):
         self.manager.app = mock.Mock()
 
         backup_info = {'id': 'backup_id_123abc',
@@ -114,6 +118,15 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         mocked_restore.assert_called_with(self.context, backup_info,
                                           '/var/lib/mongodb')
+        mocked_root_check.assert_any_call()
+
+    @mock.patch.object(service.MongoDBAdmin, 'enable_root')
+    def test_provide_root_password(self, mocked_enable_root):
+        self.manager.app = mock.Mock()
+
+        self._prepare_method(root_password='test_password')
+
+        mocked_enable_root.assert_called_with('test_password')
 
     # This is used in the test_*_user tests below
     _serialized_user = {'_name': 'testdb.testuser', '_password': None,
@@ -200,3 +213,22 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         self.assertEqual(None, next_marker)
         self.assertEqual(sorted([user1, user2]), users)
+
+    @mock.patch.object(service.MongoDBAdmin, 'create_user')
+    @mock.patch.object(utils, 'generate_random_password',
+                       return_value='password')
+    def test_enable_root(self, mock_gen_rand_pwd, mock_create_user):
+        root_user = {'_name': 'admin.root',
+                     '_username': 'root',
+                     '_database': {'_name': 'admin',
+                                   '_character_set': None,
+                                   '_collate': None},
+                     '_password': 'password',
+                     '_roles': ['root'],
+                     '_databases': [],
+                     '_host': None}
+
+        result = self.manager.enable_root(self.context)
+
+        self.assertTrue(mock_create_user.called)
+        self.assertEqual(root_user, result)
