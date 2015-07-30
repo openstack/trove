@@ -1,28 +1,34 @@
-# settings needed for trove plugin
+# Settings needed for Trove plugin
+# --------------------------------
 
+# Set up default directories
+TROVE_DIR=${TROVE_DIR:-${DEST}/trove}
+
+TROVECLIENT_DIR=${TROVECLIENT_DIR:-${DEST}/python-troveclient}
+TROVECLIENT_REPO=${TROVECLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}
+TROVECLIENT_BRANCH=${TROVECLIENT_BRANCH:-master}
+
+# Set up configuration directory and files
+TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}
+TROVE_CONF=${TROVE_CONF:-${TROVE_CONF_DIR}/trove.conf}
+TROVE_TASKMANAGER_CONF=${TROVE_TASKMANAGER_CONF:-${TROVE_CONF_DIR}/trove-taskmanager.conf}
+TROVE_CONDUCTOR_CONF=${TROVE_CONDUCTOR_CONF:-${TROVE_CONF_DIR}/trove-conductor.conf}
+TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-${TROVE_CONF_DIR}/trove-guestagent.conf}
+TROVE_API_PASTE_INI=${TROVE_API_PASTE_INI:-${TROVE_CONF_DIR}/api-paste.ini}
+
+TROVE_LOCAL_CONF_DIR=${TROVE_LOCAL_CONF_DIR:-${TROVE_DIR}/etc/trove}
+TROVE_LOCAL_API_PASTE_INI=${TROVE_LOCAL_API_PASTE_INI:-${TROVE_LOCAL_CONF_DIR}/api-paste.ini}
+TROVE_AUTH_CACHE_DIR=${TROVE_AUTH_CACHE_DIR:-/var/cache/trove}
+TROVE_DATASTORE_TYPE=${TROVE_DATASTORE_TYPE:-"mysql"}
+TROVE_DATASTORE_VERSION=${TROVE_DATASTORE_VERSION:-"5.6"}
+TROVE_DATASTORE_PACKAGE=${TROVE_DATASTORE_PACKAGE:-"mysql-server-5.6"}
+
+# Setup the host gateway
 if is_service_enabled neutron; then
     TROVE_HOST_GATEWAY=${PUBLIC_NETWORK_GATEWAY:-172.24.4.1}
 else
     TROVE_HOST_GATEWAY=${NETWORK_GATEWAY:-10.0.0.1}
 fi
-
-# Set up default configuration
-GITDIR["python-troveclient"]=$DEST/python-troveclient
-
-TROVE_DIR=$DEST/trove
-TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}
-TROVE_CONF=${TROVE_CONF:-$TROVE_CONF_DIR/trove.conf}
-TROVE_TASKMANAGER_CONF=${TROVE_TASKMANAGER_CONF:-$TROVE_CONF_DIR/trove-taskmanager.conf}
-TROVE_CONDUCTOR_CONF=${TROVE_CONDUCTOR_CONF:-$TROVE_CONF_DIR/trove-conductor.conf}
-TROVE_GUESTAGENT_CONF=${TROVE_GUESTAGENT_CONF:-$TROVE_CONF_DIR/trove-guestagent.conf}
-TROVE_API_PASTE_INI=${TROVE_API_PASTE_INI:-$TROVE_CONF_DIR/api-paste.ini}
-
-TROVE_LOCAL_CONF_DIR=$TROVE_DIR/etc/trove
-TROVE_LOCAL_API_PASTE_INI=$TROVE_LOCAL_CONF_DIR/api-paste.ini
-TROVE_AUTH_CACHE_DIR=${TROVE_AUTH_CACHE_DIR:-/var/cache/trove}
-TROVE_DATASTORE_TYPE=${TROVE_DATASTORE_TYPE:-"mysql"}
-TROVE_DATASTORE_VERSION=${TROVE_DATASTORE_VERSION:-"5.6"}
-TROVE_DATASTORE_PACKAGE=${TROVE_DATASTORE_PACKAGE:-"mysql-server-5.6"}
 
 # Support entry points installation of console scripts
 if [[ -d $TROVE_DIR/bin ]]; then
