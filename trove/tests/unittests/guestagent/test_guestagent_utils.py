@@ -92,39 +92,3 @@ class TestGuestagentUtils(trove_testtools.TestCase):
             'base_dir/base_name.ext1.ext2',
             guestagent_utils.build_file_path(
                 'base_dir', 'base_name', 'ext1', 'ext2'))
-
-    def test_dict_difference(self):
-        self.assertEqual(
-            {}, guestagent_utils.dict_difference(
-                {}, {}))
-
-        self.assertEqual(
-            {}, guestagent_utils.dict_difference(
-                {'a': 1, 'b': 2, 'c': 3}, {'a': 1, 'b': 2, 'c': 3}))
-
-        self.assertEqual(
-            {}, guestagent_utils.dict_difference(
-                {'a': 1, 'b': 2, 'c': 3}, {}))
-
-        self.assertEqual(
-            {'a': 1, 'b': 2, 'c': 3}, guestagent_utils.dict_difference(
-                {}, {'a': 1, 'b': 2, 'c': 3}))
-
-        self.assertEqual(
-            {}, guestagent_utils.dict_difference(
-                {'a': 1, 'b': 2, 'c': 3}, {'a': 1, 'c': 3}))
-
-        self.assertEqual(
-            {'b': 2}, guestagent_utils.dict_difference(
-                {'a': 1, 'c': 3}, {'a': 1, 'b': 2, 'c': 3}))
-
-        self.assertEqual(
-            {'b': 2, 'c': {'c1': 2}},
-            guestagent_utils.dict_difference(
-                {'a': {'a1': 1, 'a2': 2}, 'c': {'c1': 1, 'c2': 2}},
-                {'a': {'a1': 1, 'a2': 2}, 'b': 2, 'c': {'c1': 2, 'c2': 2}}))
-
-        self.assertEqual(
-            {'a': [4, 5, 6], 'b': 2},
-            guestagent_utils.dict_difference({'a': [1, 2, 3]},
-                                             {'a': [4, 5, 6], 'b': 2}))

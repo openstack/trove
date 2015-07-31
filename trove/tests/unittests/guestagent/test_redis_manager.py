@@ -28,8 +28,9 @@ from trove.guestagent.volume import VolumeDevice
 
 class RedisGuestAgentManagerTest(testtools.TestCase):
 
-    @patch.object(redis_service.RedisApp, '_build_admin_client')
-    def setUp(self, config_loader):
+    @patch.multiple(redis_service.RedisApp,
+                    _build_admin_client=DEFAULT, _init_overrides_dir=DEFAULT)
+    def setUp(self, *args, **kwargs):
         super(RedisGuestAgentManagerTest, self).setUp()
         self.context = TroveContext()
         self.manager = RedisManager()

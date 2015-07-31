@@ -26,7 +26,8 @@ from trove.common import instance as rd_instance
 from trove.common.stream_codecs import PropertiesCodec, StringConverter
 from trove.common import utils as utils
 from trove.guestagent.common.configuration import ConfigurationManager
-from trove.guestagent.common.configuration import RollingOverrideStrategy
+from trove.guestagent.common.configuration import OneFileOverrideStrategy
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import system
 from trove.guestagent.datastore import service
@@ -35,6 +36,7 @@ from trove.guestagent import pkg
 LOG = logging.getLogger(__name__)
 TIME_OUT = 1200  # FIXME(pmalik): should probably use config timeout
 CONF = cfg.CONF
+CLUSTER_CFG = 'clustering'
 packager = pkg.Package()
 
 
@@ -70,6 +72,22 @@ class RedisApp(object):
     on a trove instance.
     """
 
+    @classmethod
+    def _init_overrides_dir(cls):
+        """Initialize a directory for configuration overrides.
+        """
+        revision_dir = guestagent_utils.build_file_path(
+            os.path.dirname(system.REDIS_CONFIG),
+            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
+
+        if not os.path.exists(revision_dir):
+            operating_system.create_directory(
+                revision_dir,
+                user=system.REDIS_OWNER, group=system.REDIS_OWNER,
+                force=True, as_root=True)
+
+        return revision_dir
+
     def __init__(self, state_change_wait_time=None):
         """
         Sets default status and state_change_wait_time
@@ -79,6 +97,7 @@ class RedisApp(object):
         else:
             self.state_change_wait_time = CONF.state_change_wait_time
 
+        revision_dir = self._init_overrides_dir()
         config_value_mappings = {'yes': True, 'no': False, "''": None}
         self._value_converter = StringConverter(config_value_mappings)
         self.configuration_manager = ConfigurationManager(
@@ -87,12 +106,8 @@ class RedisApp(object):
             PropertiesCodec(
                 unpack_singletons=False,
                 string_mappings=config_value_mappings
-            ), requires_root=True)
-
-        import_dir = os.path.dirname(system.REDIS_CONFIG)
-        override_strategy = RollingOverrideStrategy(import_dir)
-
-        self.configuration_manager.set_override_strategy(override_strategy)
+            ), requires_root=True,
+            override_strategy=OneFileOverrideStrategy(revision_dir))
 
         self.admin = self._build_admin_client()
         self.status = RedisAppStatus(self.admin)
@@ -175,7 +190,8 @@ class RedisApp(object):
             self.status.end_install_or_restart()
 
     def update_overrides(self, context, overrides, remove=False):
-        self.configuration_manager.update_override(overrides)
+        if overrides:
+            self.configuration_manager.apply_user_override(overrides)
 
     def apply_overrides(self, client, overrides):
         """Use the 'CONFIG SET' command to apply configuration at runtime.
@@ -213,7 +229,7 @@ class RedisApp(object):
         return items
 
     def remove_overrides(self):
-        self.configuration_manager.remove_override()
+        self.configuration_manager.remove_user_override()
 
     def start_db_with_conf_changes(self, config_contents):
         LOG.info(_('Starting redis with conf changes.'))
@@ -260,7 +276,7 @@ class RedisApp(object):
         # Hide the 'CONFIG' command from end users by mangling its name.
         self.admin.set_config_command_name(self._mangle_config_command_name())
 
-        self.configuration_manager.update_configuration(
+        self.configuration_manager.apply_system_override(
             {'daemonize': 'yes',
              'pidfile': system.REDIS_PID_FILE,
              'logfile': system.REDIS_LOG_FILE,
@@ -289,7 +305,7 @@ class RedisApp(object):
         """It is possible to completely disable a command by renaming it
         to an empty string.
         """
-        self.configuration_manager.update_configuration(
+        self.configuration_manager.apply_system_override(
             {'rename-command': [old_name, new_name]})
 
     def get_logfile(self):
@@ -337,8 +353,8 @@ class RedisApp(object):
         """In order to start a Redis instance as a cluster node enable the
         cluster support
         """
-        self.configuration_manager.update_configuration(
-            {'cluster-enabled': 'yes'})
+        self.configuration_manager.apply_system_override(
+            {'cluster-enabled': 'yes'}, CLUSTER_CFG)
 
     def get_cluster_config_filename(self):
         """Cluster node configuration file.
@@ -349,8 +365,8 @@ class RedisApp(object):
         """Make sure that instances running in the same system do not have
         overlapping cluster configuration file names.
         """
-        self.configuration_manager.update_configuration(
-            {'cluster-config-file': name})
+        self.configuration_manager.apply_system_override(
+            {'cluster-config-file': name}, CLUSTER_CFG)
 
     def get_cluster_node_timeout(self):
         """Cluster node timeout is the amount of milliseconds a node must be

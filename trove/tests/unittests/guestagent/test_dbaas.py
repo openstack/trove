@@ -1941,7 +1941,8 @@ class TestRedisApp(testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
 
-        with patch.object(RedisApp, '_build_admin_client'):
+        with patch.multiple(RedisApp, _build_admin_client=DEFAULT,
+                            _init_overrides_dir=DEFAULT):
             self.app = RedisApp(state_change_wait_time=0)
 
         self.orig_os_path_isfile = os.path.isfile
