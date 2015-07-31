@@ -121,6 +121,28 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
                                           '/var/lib/mongodb')
         mocked_root_check.assert_any_call()
 
+    def test_prepare_with_databases(self):
+        self.manager.app = mock.Mock()
+
+        database = mock.Mock()
+        mock_create_databases = mock.Mock()
+        self.manager.create_database = mock_create_databases
+
+        self._prepare_method(databases=[database])
+
+        mock_create_databases.assert_called_with(self.context, [database])
+
+    def test_prepare_with_users(self):
+        self.manager.app = mock.Mock()
+
+        user = mock.Mock()
+        mock_create_users = mock.Mock()
+        self.manager.create_user = mock_create_users
+
+        self._prepare_method(users=[user])
+
+        mock_create_users.assert_called_with(self.context, [user])
+
     @mock.patch.object(service.MongoDBAdmin, 'enable_root')
     def test_provide_root_password(self, mocked_enable_root):
         self.manager.app = mock.Mock()
