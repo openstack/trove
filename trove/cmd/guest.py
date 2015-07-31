@@ -25,11 +25,11 @@ gettext.install('trove', unicode=1)
 import sys
 
 from oslo_config import cfg as openstack_cfg
+from oslo_log import log as logging
 from oslo_service import service as openstack_service
 
 from trove.common import cfg
 from trove.common import debug_utils
-from trove.openstack.common import log as logging
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
@@ -39,7 +39,7 @@ CONF.register_opts([openstack_cfg.StrOpt('guest_id', default=None,
 
 def main():
     cfg.parse_args(sys.argv)
-    logging.setup(None)
+    logging.setup(CONF, None)
 
     debug_utils.setup()
 

@@ -18,6 +18,7 @@ import os
 import re
 import tempfile
 
+from oslo_log import log as logging
 from oslo_utils import netutils
 import pymongo
 
@@ -32,7 +33,6 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import system
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

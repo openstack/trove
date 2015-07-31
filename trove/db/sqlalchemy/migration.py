@@ -22,9 +22,9 @@ try:
     from migrate.versioning import exceptions as versioning_exceptions
 except ImportError:
     from migrate import exceptions as versioning_exceptions
+from oslo_log import log as logging
 
 from trove.common import exception
-from trove.openstack.common import log as logging
 
 
 logger = logging.getLogger('trove.db.sqlalchemy.migration')

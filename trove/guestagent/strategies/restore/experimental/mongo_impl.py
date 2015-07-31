@@ -15,14 +15,15 @@
 #    under the License.
 #
 
+from oslo_log import log as logging
 from oslo_utils import netutils
+
 from trove.common import cfg
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.strategies.restore import base
-from trove.openstack.common import log as logging
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)

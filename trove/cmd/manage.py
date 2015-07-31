@@ -21,6 +21,8 @@ import sys
 gettext.install('trove', unicode=1)
 
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -28,7 +30,6 @@ from trove.common import utils
 from trove.configuration import models as config_models
 from trove.datastore import models as datastore_models
 from trove.db import get_db_api
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF
@@ -173,7 +174,7 @@ def main():
     cfg.parse_args(sys.argv)
 
     try:
-        logging.setup(None)
+        logging.setup(CONF, None)
 
         Commands().execute()
         sys.exit(0)

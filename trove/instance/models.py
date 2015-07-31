@@ -22,6 +22,7 @@ import re
 
 from novaclient import exceptions as nova_exceptions
 from oslo_config.cfg import NoSuchOptError
+from oslo_log import log as logging
 
 from trove.backup.models import Backup
 from trove.common import cfg
@@ -41,7 +42,6 @@ from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup
 from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
-from trove.openstack.common import log as logging
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api as task_api
 

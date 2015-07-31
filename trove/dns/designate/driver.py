@@ -22,11 +22,11 @@ import hashlib
 
 from designateclient.v1 import Client
 from designateclient.v1.records import Record
+from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import exception
 from trove.dns import driver
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

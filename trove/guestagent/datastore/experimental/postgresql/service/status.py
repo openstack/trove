@@ -15,12 +15,13 @@
 
 import os
 
+from oslo_log import log as logging
+
 from trove.common import exception
 from trove.common import instance
 from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore import service
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

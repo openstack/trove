@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 from oslo_utils import strutils
 import webob.exc
 
@@ -28,7 +29,6 @@ from trove.extensions.mysql.common import unquote_user_host
 from trove.extensions.mysql import models
 from trove.extensions.mysql import views
 from trove.guestagent.db import models as guest_models
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

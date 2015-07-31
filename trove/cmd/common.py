@@ -28,9 +28,11 @@ def initialize(extra_opts=None, pre_logging=None):
     # Import only the modules necessary to initialize logging and determine if
     # debug_utils are enabled.
     import sys
+
+    from oslo_log import log as logging
+
     from trove.common import cfg
     from trove.common import debug_utils
-    from trove.openstack.common import log as logging
 
     conf = cfg.CONF
     if extra_opts:
@@ -40,7 +42,7 @@ def initialize(extra_opts=None, pre_logging=None):
     if pre_logging:
         pre_logging(conf)
 
-    logging.setup(None)
+    logging.setup(conf, None)
     debug_utils.setup()
 
     # Patch 'thread' module if debug is disabled.

@@ -15,6 +15,7 @@
 
 import os
 
+from oslo_log import log as logging
 from oslo_service import periodic_task
 from oslo_utils import netutils
 
@@ -28,7 +29,6 @@ from trove.guestagent.datastore.experimental.mongodb import service
 from trove.guestagent.datastore.experimental.mongodb import system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

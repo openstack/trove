@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
+
 from trove.cluster.tasks import ClusterTask
 from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
@@ -22,7 +24,6 @@ from trove.common.strategies.cluster import strategy
 from trove.datastore import models as datastore_models
 from trove.db import models as dbmodels
 from trove.instance import models as inst_models
-from trove.openstack.common import log as logging
 from trove.taskmanager import api as task_api
 
 

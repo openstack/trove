@@ -22,12 +22,14 @@ eventlet.patcher.monkey_patch(all=False, socket=True)
 
 import datetime
 import errno
+import logging as system_logging
 import socket
 import sys
 import time
 
 import eventlet.wsgi
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_service import service
 from oslo_service import sslutils
@@ -41,7 +43,6 @@ from xml.parsers import expat
 from trove.common import xmlutils
 from trove.openstack.common import exception
 from trove.openstack.common.gettextutils import _
-from trove.openstack.common import log as logging
 
 socket_opts = [
     cfg.IntOpt('backlog',
@@ -63,6 +64,17 @@ def run_server(application, port, **kwargs):
     """Run a WSGI server with the given application."""
     sock = eventlet.listen(('0.0.0.0', port))
     eventlet.wsgi.server(sock, application, **kwargs)
+
+
+class WritableLogger(object):
+    """A thin wrapper that responds to `write` and logs."""
+
+    def __init__(self, logger, level=system_logging.INFO):
+        self.logger = logger
+        self.level = level
+
+    def write(self, msg):
+        self.logger.log(self.level, msg.rstrip())
 
 
 class Service(service.Service):
@@ -158,7 +170,7 @@ class Service(service.Service):
         eventlet.wsgi.server(socket,
                              application,
                              custom_pool=self.tg.pool,
-                             log=logging.WritableLogger(logger))
+                             log=WritableLogger(logger))
 
 
 class Middleware(object):

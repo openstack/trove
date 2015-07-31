@@ -17,10 +17,10 @@ import re
 import time
 
 import eventlet
+from oslo_log import log as logging
 
 from trove.common import exception as rd_exception
 from trove.common import instance as rd_instance
-from trove.openstack.common import log as logging
 from trove.tests.util import unquote_user_host
 
 DB = {}

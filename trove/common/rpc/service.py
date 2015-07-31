@@ -19,6 +19,7 @@
 import inspect
 import os
 
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_service import loopingcall
 from oslo_service import service
@@ -28,7 +29,6 @@ from osprofiler import profiler
 from trove.common import cfg
 from trove.common import profile
 from trove.openstack.common.gettextutils import _
-from trove.openstack.common import log as logging
 from trove import rpc
 
 

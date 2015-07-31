@@ -17,6 +17,7 @@
 import abc
 import uuid
 
+from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
@@ -27,7 +28,6 @@ from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
 from trove.openstack.common.gettextutils import _
-from trove.openstack.common import log as logging
 
 AGENT = BackupAgent()
 CONF = cfg.CONF

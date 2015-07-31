@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 
 from trove.common.auth import admin_context
 from trove.common.i18n import _
@@ -20,7 +21,6 @@ from trove.common import wsgi
 from trove.extensions.mgmt.host import models
 from trove.extensions.mgmt.host import views
 from trove.instance.service import InstanceController
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

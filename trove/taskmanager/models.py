@@ -20,6 +20,7 @@ from cinderclient import exceptions as cinder_exceptions
 from eventlet import greenthread
 from heatclient import exc as heat_exceptions
 from novaclient import exceptions as nova_exceptions
+from oslo_log import log as logging
 from oslo_utils import timeutils
 from swiftclient.client import ClientException
 
@@ -64,7 +65,6 @@ from trove.instance.models import FreshInstance
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
 from trove.instance.tasks import InstanceTasks
-from trove.openstack.common import log as logging
 from trove.quota.quota import run_with_quotas
 from trove import rpc
 

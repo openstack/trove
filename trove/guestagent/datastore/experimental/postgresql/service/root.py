@@ -15,9 +15,10 @@
 
 import uuid
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.guestagent.datastore.experimental.postgresql import pgutil
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

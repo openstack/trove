@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_service import periodic_task
 
@@ -24,7 +25,6 @@ from trove.common.rpc import version as rpc_version
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF

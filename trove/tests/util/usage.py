@@ -15,11 +15,11 @@
 
 from collections import defaultdict
 
+from oslo_log import log as logging
 import proboscis.asserts as asserts
 from proboscis.dependencies import SkipTest
 
 from trove.common import utils
-import trove.openstack.common.log as logging
 from trove.tests.config import CONFIG
 
 LOG = logging.getLogger(__name__)

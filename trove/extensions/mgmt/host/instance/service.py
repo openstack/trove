@@ -14,11 +14,12 @@
 #    under the License.
 
 
+from oslo_log import log as logging
+
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.mgmt.host import models
-from trove.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
 

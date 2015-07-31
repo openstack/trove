@@ -12,13 +12,13 @@
 # limitations under the License.
 
 from eventlet.timeout import Timeout
+from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.strategies.cluster import base
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
-from trove.openstack.common import log as logging
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models
 

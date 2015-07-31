@@ -14,10 +14,11 @@
 #    under the License.
 #
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.strategies.replication import mysql_base
-from trove.openstack.common import log as logging
 
 AGENT = BackupAgent()
 CONF = cfg.CONF

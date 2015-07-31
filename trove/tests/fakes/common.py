@@ -16,8 +16,9 @@
 """Common code to help in faking the models."""
 
 from novaclient import exceptions as nova_exceptions
+from oslo_log import log as logging
+
 from trove.common import cfg
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

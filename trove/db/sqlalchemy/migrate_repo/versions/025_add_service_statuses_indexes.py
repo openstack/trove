@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.schema import Index
 from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import Table
-from trove.openstack.common import log as logging
 
 logger = logging.getLogger('trove.db.sqlalchemy.migrate_repo.schema')
 

@@ -15,6 +15,8 @@
 #    under the License.
 #
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
@@ -25,7 +27,6 @@ from trove.guestagent.datastore.experimental.mongodb import (
 from trove.guestagent.datastore.experimental.mongodb import (
     system as mongo_system)
 from trove.guestagent.strategies.backup import base
-from trove.openstack.common import log as logging
 
 CONF = cfg.CONF
 

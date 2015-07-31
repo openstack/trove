@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from oslo_log import log as logging
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
 
 from trove.dns import driver
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

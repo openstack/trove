@@ -22,6 +22,7 @@ import re
 import subprocess
 from tempfile import NamedTemporaryFile
 
+from oslo_log import log as logging
 import pexpect
 import six
 
@@ -30,7 +31,6 @@ from trove.common.exception import ProcessExecutionError
 from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

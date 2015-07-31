@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.openstack.common import log as logging
+from oslo_log import log as logging
 
 from trove.common import extensions
 from trove.extensions.account import service

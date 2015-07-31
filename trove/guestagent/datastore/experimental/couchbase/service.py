@@ -19,6 +19,7 @@ import stat
 import subprocess
 import tempfile
 
+from oslo_log import log as logging
 from oslo_utils import netutils
 import pexpect
 
@@ -32,7 +33,6 @@ from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
 from trove.guestagent import pkg
-from trove.openstack.common import log as logging
 
 
 LOG = logging.getLogger(__name__)

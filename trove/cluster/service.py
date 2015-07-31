@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_config.cfg import NoSuchOptError
+from oslo_log import log as logging
 
 from trove.cluster import models
 from trove.cluster import views
@@ -26,7 +27,6 @@ from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
-from trove.openstack.common import log as logging
 
 
 CONF = cfg.CONF

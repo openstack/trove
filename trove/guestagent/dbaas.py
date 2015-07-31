@@ -26,12 +26,13 @@ handles RPC calls relating to Platform specific operations.
 from itertools import chain
 import os
 
+from oslo_log import log as logging
+
 from trove.common import cfg
 from trove.common.i18n import _
-from trove.openstack.common import log
 
 
-LOG = log.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 defaults = {
     'mysql':
     'trove.guestagent.datastore.mysql.manager.Manager',

@@ -21,6 +21,7 @@ import os
 import re
 import uuid
 
+from oslo_log import log as logging
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy import interfaces
@@ -39,7 +40,6 @@ from trove.guestagent.common import sql_query
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
 from trove.guestagent import pkg
-from trove.openstack.common import log as logging
 
 ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
