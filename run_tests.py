@@ -59,7 +59,7 @@ def add_support_for_localization():
 
 
 def initialize_trove(config_file):
-    from trove.openstack.common import pastedeploy
+    from trove.common import pastedeploy
 
     cfg.CONF(args=[],
              project='trove',
