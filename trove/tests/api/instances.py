@@ -67,7 +67,8 @@ GROUP_SECURITY_GROUPS = "dbaas.api.security_groups"
 GROUP_CREATE_INSTANCE_FAILURE = "dbaas.api.failures"
 GROUP_QUOTAS = "dbaas.quotas"
 
-TIMEOUT_INSTANCE_CREATE = 60 * 32
+# FIXME(amrith) This is temporary fix - set timeout to 62 minutes
+TIMEOUT_INSTANCE_CREATE = 60 * 62
 TIMEOUT_INSTANCE_DELETE = 120
 
 
