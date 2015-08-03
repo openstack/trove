@@ -41,6 +41,7 @@ CONFIG_FILE = (operating_system.
                file_discovery(system.CONFIG_CANDIDATES))
 MONGODB_PORT = CONF.mongodb.mongodb_port
 CONFIGSVR_PORT = CONF.mongodb.configsvr_port
+IGNORED_DBS = CONF.mongodb.ignore_dbs
 
 
 class MongoDBApp(object):
@@ -550,10 +551,42 @@ class MongoDBAdmin(object):
                 {'roles.role': 'root'}
             ))
 
+    def create_database(self, databases):
+        """Forces creation of databases.
+        For each new database creates a dummy document in a dummy collection,
+        then drops the collection.
+        """
+        tmp = 'dummy'
+        with MongoDBClient(self._admin_user()) as admin_client:
+            for item in databases:
+                db_name = models.MongoDBSchema.deserialize_schema(item).name
+                LOG.debug('Creating MongoDB database %s' % db_name)
+                db = admin_client[db_name]
+                db[tmp].insert({'dummy': True})
+                db.drop_collection(tmp)
+
+    def delete_database(self, database):
+        """Deletes the database."""
+        with MongoDBClient(self._admin_user()) as admin_client:
+            db_name = models.MongoDBSchema.deserialize_schema(database).name
+            admin_client.drop_database(db_name)
+
     def list_database_names(self):
         """Get the list of database names."""
         with MongoDBClient(self._admin_user()) as admin_client:
             return admin_client.database_names()
+
+    def list_databases(self, limit=None, marker=None, include_marker=False):
+        """Lists the databases."""
+        db_names = self.list_database_names()
+        for hidden in IGNORED_DBS:
+            if hidden in db_names:
+                db_names.remove(hidden)
+        databases = [models.MongoDBSchema(db_name).serialize()
+                     for db_name in db_names]
+        LOG.debug('databases = ' + str(databases))
+        return pagination.paginate_list(databases, limit, marker,
+                                        include_marker)
 
     def add_shard(self, url):
         """Runs the addShard command."""

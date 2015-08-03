@@ -172,9 +172,8 @@ class Manager(periodic_task.PeriodicTasks):
             operation='update_attributes', datastore=MANAGER)
 
     def create_database(self, context, databases):
-        LOG.debug("Creating database.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_database', datastore=MANAGER)
+        LOG.debug("Creating database(s).")
+        return service.MongoDBAdmin().create_database(databases)
 
     def create_user(self, context, users):
         LOG.debug("Creating user(s).")
@@ -182,8 +181,7 @@ class Manager(periodic_task.PeriodicTasks):
 
     def delete_database(self, context, database):
         LOG.debug("Deleting database.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='delete_database', datastore=MANAGER)
+        return service.MongoDBAdmin().delete_database(database)
 
     def delete_user(self, context, user):
         LOG.debug("Deleting user.")
@@ -211,8 +209,8 @@ class Manager(periodic_task.PeriodicTasks):
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
         LOG.debug("Listing databases.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_databases', datastore=MANAGER)
+        return service.MongoDBAdmin().list_databases(limit, marker,
+                                                     include_marker)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
