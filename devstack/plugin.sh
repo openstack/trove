@@ -11,6 +11,7 @@
 # ``stack.sh`` calls the entry points in this order:
 #
 # install_trove
+# install_python_troveclient
 # configure_trove
 # init_trove
 # start_trove
@@ -145,19 +146,17 @@ function configure_trove {
     setup_trove_logging $TROVE_GUESTAGENT_CONF
 }
 
-# install_troveclient() - Collect source and prepare
-function install_troveclient {
-    # NOTE(sdague): this probably doesn't work correctly as a devstack
-    # plugin, and needs to be moved to the troveclient project instead
-    if use_library_from_git "python-troveclient"; then
-        git_clone_by_name "python-troveclient"
-        setup_dev_lib "python-troveclient"
-    fi
-}
-
 # install_trove() - Collect source and prepare
 function install_trove {
-    :
+    setup_develop $TROVE_DIR
+}
+
+# install_python_troveclient() - Collect source and prepare
+function install_python_troveclient {
+    if use_library_from_git "python-troveclient"; then
+        git_clone $TROVECLIENT_REPO $TROVECLIENT_DIR $TROVECLIENT_BRANCH
+        setup_develop $TROVECLIENT_DIR
+    fi
 }
 
 # init_trove() - Initializes Trove Database as a Service
@@ -228,7 +227,7 @@ if is_service_enabled trove; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
         echo_summary "Installing Trove"
         install_trove
-        install_troveclient
+        install_python_troveclient
         cleanup_trove
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         echo_summary "Configuring Trove"
