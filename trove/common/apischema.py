@@ -89,7 +89,6 @@ host_string = {
 name_string = {
     "type": "string",
     "minLength": 1,
-    "maxLength": 16,
     "pattern": "^.*[0-9a-zA-Z]+.*$"
 }
 
