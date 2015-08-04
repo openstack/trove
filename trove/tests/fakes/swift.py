@@ -17,13 +17,13 @@ from hashlib import md5
 from mock import MagicMock, patch
 import httplib
 import json
-import logging
 import os
 import socket
 import swiftclient
 import swiftclient.client as swift_client
 import uuid
 
+from oslo_log import log as logging
 from swiftclient import client as swift
 
 from trove.common.i18n import _  # noqa

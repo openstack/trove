@@ -22,7 +22,6 @@ eventlet.patcher.monkey_patch(all=False, socket=True)
 
 import datetime
 import errno
-import logging as system_logging
 import socket
 import sys
 import time
@@ -30,6 +29,7 @@ import time
 import eventlet.wsgi
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_log import loggers
 from oslo_serialization import jsonutils
 from oslo_service import service
 from oslo_service import sslutils
@@ -64,17 +64,6 @@ def run_server(application, port, **kwargs):
     """Run a WSGI server with the given application."""
     sock = eventlet.listen(('0.0.0.0', port))
     eventlet.wsgi.server(sock, application, **kwargs)
-
-
-class WritableLogger(object):
-    """A thin wrapper that responds to `write` and logs."""
-
-    def __init__(self, logger, level=system_logging.INFO):
-        self.logger = logger
-        self.level = level
-
-    def write(self, msg):
-        self.logger.log(self.level, msg.rstrip())
 
 
 class Service(service.Service):
@@ -170,7 +159,7 @@ class Service(service.Service):
         eventlet.wsgi.server(socket,
                              application,
                              custom_pool=self.tg.pool,
-                             log=WritableLogger(logger))
+                             log=loggers.WritableLogger(logger))
 
 
 class Middleware(object):
