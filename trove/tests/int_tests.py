@@ -36,10 +36,12 @@ from trove.tests.api import users
 from trove.tests.api import versions
 from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import cluster_actions_group
+from trove.tests.scenario.groups import database_actions_group
 from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import instance_delete_group
 from trove.tests.scenario.groups import negative_cluster_actions_group
 from trove.tests.scenario.groups import replication_group
+from trove.tests.scenario.groups import user_actions_group
 
 
 GROUP_SERVICES_INITIALIZE = "services.initialize"
@@ -127,6 +129,12 @@ initial_groups = [
 backup_groups = list(initial_groups)
 backup_groups.extend([backup_group.GROUP])
 
+user_actions_groups = list(initial_groups)
+user_actions_groups.extend([user_actions_group.GROUP])
+
+database_actions_groups = list(initial_groups)
+database_actions_groups.extend([database_actions_group.GROUP])
+
 cluster_actions_groups = list(initial_groups)
 cluster_actions_groups.extend([cluster_actions_group.GROUP,
                                negative_cluster_actions_group.GROUP])
@@ -140,22 +148,26 @@ replication_groups.extend([replication_group.GROUP])
 # Module based groups
 register(["backup"], backup_groups)
 register(["cluster"], cluster_actions_groups)
+register(["database"], database_actions_group)
 register(["instance_actions"], instance_actions_groups)
+register(["user"], user_actions_groups)
 register(["replication"], replication_groups)
 
 # Datastore based groups - these should contain all functionality
 # currently supported by the datastore
-register(["cassandra_group"], backup_groups, instance_actions_groups)
-register(["couchbase_group"], instance_actions_groups)
-register(["postgresql_group"], backup_groups, instance_actions_groups)
-register(["mongodb_group"], backup_groups, cluster_actions_groups,
+register(["cassandra_supported"], backup_groups, instance_actions_groups)
+register(["couchbase_supported"], instance_actions_groups)
+register(["postgresql_supported"], backup_groups, database_actions_groups,
+         instance_actions_groups, user_actions_groups)
+register(["mongodb_supported"], backup_groups, cluster_actions_groups,
+         database_actions_groups, instance_actions_groups, user_actions_groups)
+register(["mysql_supported"], backup_groups, database_actions_groups,
+         instance_actions_groups, replication_groups, user_actions_groups)
+register(["redis_supported"], backup_groups, instance_actions_groups,
+         replication_groups)
+register(["vertica_supported"], cluster_actions_groups,
          instance_actions_groups)
-register(["mysql_group"], backup_groups, instance_actions_groups,
-         replication_groups)
-register(["redis_group"], backup_groups, instance_actions_groups,
-         replication_groups)
-register(["vertica_group"], cluster_actions_groups, instance_actions_groups)
-register(["pxc_group"], instance_actions_groups, cluster_actions_groups)
+register(["pxc_supported"], instance_actions_groups, cluster_actions_groups)
 
 # Redis int-tests
 redis_group = [
