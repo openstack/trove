@@ -748,6 +748,8 @@ mongodb_opts = [
                help='Port for instances running as config servers.'),
     cfg.ListOpt('ignore_dbs', default=['admin', 'local', 'config'],
                 help='Databases to exclude when listing databases.'),
+    cfg.ListOpt('ignore_users', default=['admin.os_admin', 'admin.root'],
+                help='Users to exclude when listing users.'),
 ]
 
 # PostgreSQL
