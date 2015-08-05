@@ -95,6 +95,10 @@ class Manager(periodic_task.PeriodicTasks):
             elif root_password:
                 LOG.debug('Root password provided. Enabling root.')
                 service.MongoDBAdmin().enable_root(root_password)
+            if databases:
+                self.create_database(context, databases)
+            if users:
+                self.create_user(context, users)
         else:
             if cluster_config['instance_type'] == "query_router":
                 self.app.reset_configuration({'config_contents':
