@@ -14,7 +14,7 @@
 #    under the License.
 #
 
-import logging
+from oslo_log import log as logging
 
 from trove.backup.state import BackupState
 from trove.common import cfg

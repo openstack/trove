@@ -14,9 +14,9 @@
 
 import functools
 import json
-import logging
 import time
 
+from oslo_log import log as logging
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import Check
