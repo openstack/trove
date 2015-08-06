@@ -112,6 +112,8 @@ def create_admin_nova_client(context):
     """
     client = create_nova_client(context)
     client.client.auth_token = None
+    client.client.management_url = ("%s/%s" %
+                                    (CONF.nova_compute_url, context.tenant))
     return client
 
 
