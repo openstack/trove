@@ -16,14 +16,14 @@
 from proboscis import test
 
 from trove.tests.api.instances import GROUP_START_SIMPLE
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
+from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups.test_group import TestGroup
 
 GROUP = "scenario.replication_group"
 
 
 @test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after=[WaitForGuestInstallationToFinish])
+      runs_after=[backup_group.GROUP_BACKUP])
 class ReplicationGroup(TestGroup):
 
     def __init__(self):

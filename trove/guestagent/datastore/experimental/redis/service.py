@@ -328,6 +328,11 @@ class RedisApp(object):
         """
         return self.get_configuration_property('dir')
 
+    def get_persistence_filepath(self):
+        """Returns the full path to the persistence file."""
+        return guestagent_utils.build_file_path(
+            self.get_working_dir(), self.get_db_filename())
+
     def get_auth_password(self):
         """Client authentication password for this instance or None if not set.
         """
@@ -404,6 +409,12 @@ class RedisAdmin(object):
         """
         return self.__client.ping()
 
+    def get_info(self, section=None):
+        return self.__client.info(section=section)
+
+    def persist_data(self):
+        return self.__client.save()
+
     def config_set(self, name, value):
         response = self.execute(
             '%s %s' % (self.__config_cmd_name, 'SET'), name, value)
@@ -417,18 +428,38 @@ class RedisAdmin(object):
         """
         return response and redis.client.bool_ok(response)
 
-    def execute(self, cmd_name, *cmd_args):
+    def execute(self, cmd_name, *cmd_args, **options):
         """Execute a command and return a parsed response.
         """
         try:
-            return self._execute_command(cmd_name, *cmd_args)
+            return self.__client.execute_command(cmd_name, *cmd_args,
+                                                 **options)
         except Exception as e:
             LOG.exception(e)
             raise exception.TroveError(
                 _("Redis command '%(cmd_name)s %(cmd_args)s' failed.")
                 % {'cmd_name': cmd_name, 'cmd_args': ' '.join(cmd_args)})
 
-    def _execute_command(self, *args, **options):
-        """Execute a command and return a parsed response.
-        """
-        return self.__client.execute_command(*args, **options)
+    def wait_until(self, key, wait_value, section=None,
+                   timeout=CONF.usage_timeout):
+        """Polls redis until the specified 'key' changes to 'wait_value'."""
+        LOG.debug("Waiting for Redis '%s' to be: %s." % (key, wait_value))
+
+        def _check_info():
+            redis_info = self.get_info(section)
+            if key in redis_info:
+                current_value = redis_info[key]
+                LOG.debug("Found '%s' for field %s." % (current_value, key))
+            else:
+                LOG.error(_('Output from Redis command: %s') % redis_info)
+                raise RuntimeError(_("Field %(field)s not found "
+                                     "(Section: '%(sec)s').") %
+                                   ({'field': key, 'sec': section}))
+            return current_value == wait_value
+
+        try:
+            utils.poll_until(_check_info, time_out=timeout)
+        except exception.PollTimeOut:
+            raise RuntimeError(_("Timeout occurred waiting for Redis field "
+                                 "'%(field)s' to change to '%(val)s'.") %
+                               {'field': key, 'val': wait_value})

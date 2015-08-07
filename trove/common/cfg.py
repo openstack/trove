@@ -553,7 +553,7 @@ redis_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.StrOpt('backup_strategy', default='RedisBackup',
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
@@ -572,11 +572,15 @@ redis_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default=None,
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_namespace', default=None,
+    cfg.StrOpt('backup_namespace',
+               default="trove.guestagent.strategies.backup.experimental."
+                       "redis_impl",
                help='Namespace to load backup strategies from.',
                deprecated_name='backup_namespace',
                deprecated_group='DEFAULT'),
-    cfg.StrOpt('restore_namespace', default=None,
+    cfg.StrOpt('restore_namespace',
+               default="trove.guestagent.strategies.restore.experimental."
+                       "redis_impl",
                help='Namespace to load restore strategies from.',
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),

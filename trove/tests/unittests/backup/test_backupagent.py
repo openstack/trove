@@ -25,10 +25,12 @@ from trove.common.context import TroveContext
 from trove.common import utils
 from trove.conductor import api as conductor_api
 from trove.guestagent.backup import backupagent
+from trove.guestagent.common import configuration
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
 from trove.guestagent.strategies.backup.experimental import mongo_impl
+from trove.guestagent.strategies.backup.experimental import redis_impl
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore.base import RestoreRunner
@@ -250,6 +252,21 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertEqual(str_mongodump_cmd, mongodump.cmd)
         self.assertIsNotNone(mongodump.manifest)
         self.assertIn('gz.enc', mongodump.manifest)
+
+    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  Mock(return_value={'dir': '/var/lib/redis',
+                                     'dbfilename': 'dump.rdb'}))
+    def test_backup_impl_RedisBackup(self, *mocks):
+        netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
+        redis_backup = redis_impl.RedisBackup('redisbackup', extra_opts='')
+        self.assertIsNotNone(redis_backup)
+        str_redis_backup_cmd = ("sudo cat /var/lib/redis/dump.rdb | "
+                                "gzip | openssl enc -aes-256-cbc -salt -pass "
+                                "pass:default_aes_cbc_key")
+        self.assertEqual(str_redis_backup_cmd, redis_backup.cmd)
+        self.assertIsNotNone(redis_backup.manifest)
+        self.assertIn('gz.enc', redis_backup.manifest)
 
     def test_backup_base(self):
         """This test is for

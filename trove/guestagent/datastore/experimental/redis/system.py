@@ -16,11 +16,11 @@
 """
 Determines operating system version and OS dependent commands.
 """
+
 from trove.guestagent.common.operating_system import get_os
 
-REDIS_OWNER = 'redis'
 
-OS = get_os()
+REDIS_OWNER = 'redis'
 REDIS_CONFIG = '/etc/redis/redis.conf'
 REDIS_PID_FILE = '/var/run/redis/redis-server.pid'
 REDIS_LOG_FILE = '/var/log/redis/server.log'
@@ -32,6 +32,7 @@ REDIS_BIN = '/usr/bin/redis-server'
 REDIS_PACKAGE = 'redis-server'
 SERVICE_CANDIDATES = ['redis-server']
 
+OS = get_os()
 if OS is 'redhat':
     REDIS_CONFIG = '/etc/redis.conf'
     REDIS_PACKAGE = 'redis'

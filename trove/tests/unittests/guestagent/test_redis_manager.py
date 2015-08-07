@@ -17,7 +17,7 @@ import testtools
 
 from trove.common.context import TroveContext
 from trove.guestagent import backup
-from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common import configuration
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import (
     service as redis_service)
@@ -72,14 +72,27 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
     def test_prepare_redis_not_installed(self):
         self._prepare_dynamic(is_redis_installed=False)
 
-    @patch.multiple(redis_service.RedisApp,
-                    apply_initial_guestagent_configuration=DEFAULT)
-    @patch.object(ConfigurationManager, 'save_configuration')
+    @patch.object(redis_service.RedisApp, 'get_working_dir',
+                  MagicMock(return_value='/var/lib/redis'))
+    def test_prepare_redis_from_backup(self):
+        self._prepare_dynamic(backup_id='backup_id_123abc')
+
+    @patch.object(redis_service.RedisApp,
+                  'apply_initial_guestagent_configuration')
+    @patch.object(configuration.ConfigurationManager, 'save_configuration')
     def _prepare_dynamic(self, save_configuration_mock,
                          apply_initial_guestagent_configuration,
                          device_path='/dev/vdb', is_redis_installed=True,
                          backup_info=None, is_root_enabled=False,
-                         mount_point='var/lib/redis'):
+                         mount_point='var/lib/redis', backup_id=None):
+
+        backup_info = None
+        if backup_id is not None:
+            backup_info = {'id': backup_id,
+                           'location': 'fake-location',
+                           'type': 'RedisBackup',
+                           'checksum': 'fake-checksum',
+                           }
 
         # covering all outcomes is starting to cause trouble here
         mock_status = MagicMock()
@@ -110,7 +123,12 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         apply_initial_guestagent_configuration.assert_called_once_with()
         operating_system.chown.assert_any_call(
             mount_point, 'redis', 'redis', as_root=True)
-        redis_service.RedisApp.restart.assert_any_call()
+        if backup_info:
+            backup.restore.assert_called_once_with(self.context,
+                                                   backup_info,
+                                                   '/var/lib/redis')
+        else:
+            redis_service.RedisApp.restart.assert_any_call()
 
     def test_restart(self):
         mock_status = MagicMock()
@@ -128,3 +146,14 @@ class RedisGuestAgentManagerTest(testtools.TestCase):
         self.manager.stop_db(self.context)
         redis_service.RedisApp.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
+
+    @patch.object(backup, 'backup')
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  MagicMock(return_value={'dir': '/var/lib/redis',
+                                          'dbfilename': 'dump.rdb'}))
+    @patch.object(operating_system, 'chown')
+    @patch.object(operating_system, 'create_directory')
+    def test_create_backup(self, *mocks):
+        backup.backup = MagicMock(return_value=None)
+        RedisManager().create_backup(self.context, 'backup_id_123')
+        backup.backup.assert_any_call(self.context, 'backup_id_123')
