@@ -33,6 +33,10 @@ class RedisHelper(TestHelper):
         self.tiny_data_start = 1
         self.tiny_data_size = 100
 
+        self.tiny2_data_label = 'tiny2'
+        self.tiny2_data_start = 500
+        self.tiny2_data_size = 100
+
         self.small_data_label = 'small'
         self.small_data_start = 1000
         self.small_data_size = 1000
@@ -51,6 +55,10 @@ class RedisHelper(TestHelper):
     def add_tiny_data(self, host, *args, **kwargs):
         self._add_data(self.tiny_data_label, self.tiny_data_start,
                        self.tiny_data_size, host, *args, **kwargs)
+
+    def add_tiny2_data(self, host, *args, **kwargs):
+        self._add_data(self.tiny2_data_label, self.tiny2_data_start,
+                       self.tiny2_data_size, host, *args, **kwargs)
 
     def add_small_data(self, host, *args, **kwargs):
         self._add_data(self.small_data_label, self.small_data_start,
@@ -77,6 +85,10 @@ class RedisHelper(TestHelper):
         self._remove_data(self.tiny_data_label, self.tiny_data_start,
                           self.tiny_data_size, host, *args, **kwargs)
 
+    def remove_tiny2_data(self, host, *args, **kwargs):
+        self._remove_data(self.tiny2_data_label, self.tiny2_data_start,
+                          self.tiny2_data_size, host, *args, **kwargs)
+
     def remove_small_data(self, host, *args, **kwargs):
         self._remove_data(self.small_data_label, self.small_data_start,
                           self.small_data_size, host, *args, **kwargs)
@@ -92,14 +104,18 @@ class RedisHelper(TestHelper):
         test_set = client.get(data_label)
         if test_set:
             for num in range(data_start, data_start + data_size):
-                client.set(self.key_pattern % str(num), None)
+                client.expire(self.key_pattern % str(num), 0)
             # now that the data is gone, remove the label
-            client.set(data_label, None)
+            client.expire(data_label, 0)
 
     # Verify data overrides
     def verify_tiny_data(self, host, *args, **kwargs):
         self._verify_data(self.tiny_data_label, self.tiny_data_start,
                           self.tiny_data_size, host, *args, **kwargs)
+
+    def verify_tiny2_data(self, host, *args, **kwargs):
+        self._verify_data(self.tiny2_data_label, self.tiny2_data_start,
+                          self.tiny2_data_size, host, *args, **kwargs)
 
     def verify_small_data(self, host, *args, **kwargs):
         self._verify_data(self.small_data_label, self.small_data_start,

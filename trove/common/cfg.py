@@ -564,8 +564,12 @@ redis_opts = [
                 'incremental, the runner will use the default full backup.',
                 deprecated_name='backup_incremental_strategy',
                 deprecated_group='DEFAULT'),
-    cfg.StrOpt('replication_strategy', default=None,
+    cfg.StrOpt('replication_strategy', default='RedisSyncReplication',
                help='Default strategy for replication.'),
+    cfg.StrOpt('replication_namespace',
+               default='trove.guestagent.strategies.replication.experimental.'
+                       'redis_sync',
+               help='Namespace to load replication strategies from.'),
     cfg.StrOpt('mount_point', default='/var/lib/redis',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),

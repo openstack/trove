@@ -344,6 +344,9 @@ class FakeGuest(object):
     def attach_replication_slave(self, snapshot, slave_config):
         pass
 
+    def backup_required_for_replication(self):
+        return True
+
 
 def get_or_create(id):
     if id not in DB:

@@ -16,6 +16,7 @@
 from enum import Enum
 import inspect
 from proboscis import SkipTest
+from time import sleep
 
 
 class DataType(Enum):
@@ -28,11 +29,13 @@ class DataType(Enum):
     # very tiny amount of data, useful for testing replication
     # propagation, etc.
     tiny = 1
+    # another tiny dataset (also for replication propagation)
+    tiny2 = 2
     # small amount of data (this can be added to each instance
     # after creation, for example).
-    small = 2
+    small = 3
     # large data, enough to make creating a backup take 20s or more.
-    large = 3
+    large = 4
 
 
 class TestHelper(object):
@@ -82,6 +85,9 @@ class TestHelper(object):
         self.data_fn_pattern = '%s_%s_data'
         self._build_data_fns()
 
+    ########################
+    # Client related methods
+    ########################
     def get_client(self, host, *args, **kwargs):
         """Gets the datastore client."""
         if not self._ds_client or self._current_host != host:
@@ -93,6 +99,9 @@ class TestHelper(object):
         """Create a datastore client."""
         raise SkipTest('No client defined')
 
+    ######################
+    # Data related methods
+    ######################
     def add_data(self, data_type, host, *args, **kwargs):
         """Adds data of type 'data_type' to the database.  Descendant
         classes should implement a function for each DataType value
@@ -174,3 +183,12 @@ class TestHelper(object):
             for name, fn in members:
                 if name in fns:
                     fns[name] = fn
+
+    #############################
+    # Replication related methods
+    #############################
+    def wait_for_replicas(self):
+        """Wait for data to propagate to all the replicas.  Datastore
+        specific overrides could increase (or decrease) this delay.
+        """
+        sleep(30)

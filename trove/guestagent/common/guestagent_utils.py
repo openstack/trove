@@ -26,17 +26,23 @@ def update_dict(updates, target):
     its key is treated as a sub-section of the outer key.
     If a list value is encountered the update is applied
     iteratively on all its items.
+
+    :returns:    Will always return a dictionary of results (may be empty).
     """
+    if target is None:
+        target = {}
+
     if isinstance(target, list):
         for index, item in enumerate(target):
             target[index] = update_dict(updates, item)
         return target
 
-    for k, v in updates.iteritems():
-        if isinstance(v, collections.Mapping):
-            target[k] = update_dict(v, target.get(k, {}))
-        else:
-            target[k] = updates[k]
+    if updates is not None:
+        for k, v in updates.iteritems():
+            if isinstance(v, collections.Mapping):
+                target[k] = update_dict(v, target.get(k, {}))
+            else:
+                target[k] = updates[k]
 
     return target
 

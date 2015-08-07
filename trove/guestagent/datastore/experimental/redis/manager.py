@@ -20,16 +20,22 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import service
 from trove.guestagent import dbaas
+from trove.guestagent.strategies.replication import get_replication_strategy
 from trove.guestagent import volume
 
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-MANAGER = CONF.datastore_manager
+MANAGER = CONF.datastore_manager or 'redis'
+REPLICATION_STRATEGY = CONF.get(MANAGER).replication_strategy
+REPLICATION_NAMESPACE = CONF.get(MANAGER).replication_namespace
+REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
+                                                      REPLICATION_NAMESPACE)
 
 
 class Manager(periodic_task.PeriodicTasks):
@@ -116,6 +122,8 @@ class Manager(periodic_task.PeriodicTasks):
                 persistence_dir = self._app.get_working_dir()
                 self._perform_restore(backup_info, context, persistence_dir,
                                       self._app)
+            if snapshot:
+                self.attach_replica(context, snapshot, snapshot['config'])
             self._app.restart()
             if cluster_config:
                 self._app.status.set_status(
@@ -260,50 +268,125 @@ class Manager(periodic_task.PeriodicTasks):
         raise exception.DatastoreOperationNotSupported(
             operation='is_root_enabled', datastore=MANAGER)
 
+    def backup_required_for_replication(self, context):
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        return replication.backup_required_for_replication()
+
     def get_replication_snapshot(self, context, snapshot_info,
                                  replica_source_config=None):
         LOG.debug("Getting replication snapshot.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_replication_snapshot', datastore=MANAGER)
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.enable_as_master(self._app, replica_source_config)
 
-    def attach_replication_slave(self, context, snapshot, slave_config):
-        LOG.debug("Attaching replica.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='attach_replication_slave', datastore=MANAGER)
+        snapshot_id, log_position = (
+            replication.snapshot_for_replication(context, self._app, None,
+                                                 snapshot_info))
+
+        mount_point = CONF.get(MANAGER).mount_point
+        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+
+        replication_snapshot = {
+            'dataset': {
+                'datastore_manager': MANAGER,
+                'dataset_size': volume_stats.get('used', 0.0),
+                'volume_size': volume_stats.get('total', 0.0),
+                'snapshot_id': snapshot_id
+            },
+            'replication_strategy': REPLICATION_STRATEGY,
+            'master': replication.get_master_ref(self._app, snapshot_info),
+            'log_position': log_position
+        }
+
+        return replication_snapshot
+
+    def enable_as_master(self, context, replica_source_config):
+        LOG.debug("Calling enable_as_master.")
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.enable_as_master(self._app, replica_source_config)
 
     def detach_replica(self, context, for_failover=False):
         LOG.debug("Detaching replica.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='detach_replica', datastore=MANAGER)
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replica_info = replication.detach_slave(self._app, for_failover)
+        return replica_info
 
     def get_replica_context(self, context):
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_replica_context', datastore=MANAGER)
+        LOG.debug("Getting replica context.")
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replica_info = replication.get_replica_context(self._app)
+        return replica_info
+
+    def _validate_slave_for_replication(self, context, replica_info):
+        if (replica_info['replication_strategy'] != REPLICATION_STRATEGY):
+            raise exception.IncompatibleReplicationStrategy(
+                replica_info.update({
+                    'guest_strategy': REPLICATION_STRATEGY
+                }))
+
+    def attach_replica(self, context, replica_info, slave_config):
+        LOG.debug("Attaching replica.")
+        try:
+            if 'replication_strategy' in replica_info:
+                self._validate_slave_for_replication(context, replica_info)
+            replication = REPLICATION_STRATEGY_CLASS(context)
+            replication.enable_as_slave(self._app, replica_info,
+                                        slave_config)
+        except Exception:
+            LOG.exception("Error enabling replication.")
+            self._app.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
 
     def make_read_only(self, context, read_only):
-        raise exception.DatastoreOperationNotSupported(
-            operation='make_read_only', datastore=MANAGER)
+        LOG.debug("Executing make_read_only(%s)" % read_only)
+        self._app.make_read_only(read_only)
 
-    def enable_as_master(self, context, replica_source_config):
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_as_master', datastore=MANAGER)
+    def _get_repl_info(self):
+        return self._app.admin.get_info('replication')
 
-    def get_txn_count(self):
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_txn_count', datastore=MANAGER)
+    def _get_master_host(self):
+        slave_info = self._get_repl_info()
+        return slave_info and slave_info['master_host'] or None
 
-    def get_latest_txn_id(self):
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_latest_txn_id', datastore=MANAGER)
+    def _get_repl_offset(self):
+        repl_info = self._get_repl_info()
+        LOG.debug("Got repl info: %s" % repl_info)
+        offset_key = '%s_repl_offset' % repl_info['role']
+        offset = repl_info[offset_key]
+        LOG.debug("Found offset %s for key %s." % (offset, offset_key))
+        return int(offset)
 
-    def wait_for_txn(self, txn):
-        raise exception.DatastoreOperationNotSupported(
-            operation='wait_for_txn', datastore=MANAGER)
+    def get_last_txn(self, context):
+        master_host = self._get_master_host()
+        repl_offset = self._get_repl_offset()
+        return master_host, repl_offset
+
+    def get_latest_txn_id(self, context):
+        LOG.info(_("Retrieving latest repl offset."))
+        return self._get_repl_offset()
+
+    def wait_for_txn(self, context, txn):
+        LOG.info(_("Waiting on repl offset '%s'.") % txn)
+
+        def _wait_for_txn():
+            current_offset = self._get_repl_offset()
+            LOG.debug("Current offset: %s." % current_offset)
+            return current_offset >= txn
+
+        try:
+            utils.poll_until(_wait_for_txn, time_out=120)
+        except exception.PollTimeOut:
+            raise RuntimeError(_("Timeout occurred waiting for Redis repl "
+                                 "offset to change to '%s'.") % txn)
+
+    def cleanup_source_on_replica_detach(self, context, replica_info):
+        LOG.debug("Cleaning up the source on the detach of a replica.")
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.cleanup_source_on_replica_detach(self._app, replica_info)
 
     def demote_replication_master(self, context):
         LOG.debug("Demoting replica source.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='demote_replication_master', datastore=MANAGER)
+        replication = REPLICATION_STRATEGY_CLASS(context)
+        replication.demote_master(self._app)
 
     def cluster_meet(self, context, ip, port):
         LOG.debug("Executing cluster_meet to join node to cluster.")

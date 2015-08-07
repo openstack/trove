@@ -129,6 +129,7 @@ backup_groups.extend([backup_group.GROUP])
 cluster_actions_groups = list(initial_groups)
 cluster_actions_groups.extend([cluster_actions_group.GROUP,
                                negative_cluster_actions_group.GROUP])
+
 instance_actions_groups = list(initial_groups)
 instance_actions_groups.extend([instance_actions_group.GROUP])
 
@@ -150,7 +151,8 @@ register(["mongodb_group"], backup_groups, cluster_actions_groups,
          instance_actions_groups)
 register(["mysql_group"], backup_groups, instance_actions_groups,
          replication_groups)
-register(["redis_group"], backup_groups, instance_actions_groups)
+register(["redis_group"], backup_groups, instance_actions_groups,
+         replication_groups)
 register(["vertica_group"], cluster_actions_groups, instance_actions_groups)
 
 # Redis int-tests

@@ -62,7 +62,7 @@ class TestRunner(object):
     EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path', None)
     ROOT_PARTITION = not (VOLUME_SUPPORT or CONFIG.get('device_path', None))
 
-    def __init__(self, sleep_time=60, timeout=1200):
+    def __init__(self, sleep_time=10, timeout=1200):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
         self.instance_info = instance_info

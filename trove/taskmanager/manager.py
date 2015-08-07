@@ -105,7 +105,6 @@ class Manager(periodic_task.PeriodicTasks):
             exception_replicas = []
             for replica in replica_models:
                 try:
-                    replica.wait_for_txn(latest_txn_id)
                     if replica.id != master_candidate.id:
                         replica.detach_replica(old_master, for_failover=True)
                         replica.attach_replica(master_candidate)
@@ -119,7 +118,7 @@ class Manager(periodic_task.PeriodicTasks):
                         "new_master": master_candidate.id
                     }
                     LOG.exception(msg % msg_values)
-                    exception_replicas.append(replica.id)
+                    exception_replicas.append(replica)
 
             try:
                 old_master.demote_replication_master()
@@ -280,7 +279,7 @@ class Manager(periodic_task.PeriodicTasks):
                         context, slave_of_id, flavor, replica_backup_id,
                         replica_number=replica_number)
                     replica_backup_id = snapshot['dataset']['snapshot_id']
-                    replica_backup_created = True
+                    replica_backup_created = (replica_backup_id is not None)
                     instance_tasks.create_instance(
                         flavor, image_id, databases, users, datastore_manager,
                         packages, volume_size, replica_backup_id,
@@ -291,7 +290,7 @@ class Manager(periodic_task.PeriodicTasks):
                     # if it's the first replica, then we shouldn't continue
                     LOG.exception(_(
                         "Could not create replica %(num)d of %(count)d.")
-                        % {'num': replica_number, 'count': len(instance_id)})
+                        % {'num': replica_number, 'count': len(ids)})
                     if replica_number == 1:
                         raise
 

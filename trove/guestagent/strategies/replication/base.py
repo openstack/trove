@@ -35,6 +35,10 @@ class Replication(Strategy):
     def get_master_ref(self, service, snapshot_info):
         """Get reference to master site for replication strategy."""
 
+    def backup_required_for_replication(self):
+        """Indicates whether a backup is required for replication."""
+        return True
+
     @abc.abstractmethod
     def snapshot_for_replication(self, context, service, location,
                                  snapshot_info):
@@ -45,7 +49,7 @@ class Replication(Strategy):
         """Configure underlying database to act as master for replication."""
 
     @abc.abstractmethod
-    def enable_as_slave(self, service, snapshot):
+    def enable_as_slave(self, service, snapshot, slave_config):
         """Configure underlying database as a slave of the given master."""
 
     @abc.abstractmethod
