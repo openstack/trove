@@ -31,11 +31,33 @@ from trove.tests.api import root
 from trove.tests.api import user_access
 from trove.tests.api import users
 from trove.tests.api import versions
-from trove.tests.api import vertica
+from trove.tests.scenario.groups import cluster_actions_group
+from trove.tests.scenario.groups import instance_actions_group
+from trove.tests.scenario.groups import instance_delete_group
+from trove.tests.scenario.groups import negative_cluster_actions_group
+from trove.tests.scenario.groups import replication_group
 
 
 GROUP_SERVICES_INITIALIZE = "services.initialize"
 
+
+def build_group(*groups):
+    def merge(collection, *items):
+        for item in items:
+            if isinstance(item, list):
+                merge(collection, *item)
+            else:
+                if item not in collection:
+                    collection.append(item)
+
+    out = []
+    merge(out, *groups)
+    return out
+
+
+def register(datastores, *test_groups):
+    proboscis.register(groups=build_group(datastores),
+                       depends_on_groups=build_group(*test_groups))
 
 black_box_groups = [
     flavors.GROUP,
@@ -85,25 +107,39 @@ black_box_mgmt_groups = [
 proboscis.register(groups=["blackbox_mgmt"],
                    depends_on_groups=black_box_mgmt_groups)
 
-# Datastores groups for int-tests
-datastore_group = [
+#
+# Group designations for datastore agnostic int-tests
+#
+initial_groups = [
     GROUP_SERVICES_INITIALIZE,
     flavors.GROUP,
     versions.GROUP,
     instances.GROUP_START_SIMPLE,
+    instance_delete_group.GROUP
 ]
-proboscis.register(groups=["cassandra", "couchbase", "mongodb", "postgresql",
-                           "redis"],
-                   depends_on_groups=datastore_group)
+instance_actions_groups = list(initial_groups)
+instance_actions_groups.extend([instance_actions_group.GROUP])
 
-# Vertica int-tests
-vertica_group = [
-    GROUP_SERVICES_INITIALIZE,
-    flavors.GROUP,
-    versions.GROUP,
-    instances.GROUP_START_SIMPLE,
-    instances.GROUP_QUOTAS,
-    vertica.VERTICA_GROUP,
-]
-proboscis.register(groups=["vertica"],
-                   depends_on_groups=vertica_group)
+cluster_actions_groups = list(initial_groups)
+cluster_actions_groups.extend([cluster_actions_group.GROUP,
+                               negative_cluster_actions_group.GROUP])
+
+replication_groups = list(initial_groups)
+replication_groups.extend([replication_group.GROUP])
+
+# Module based groups
+register(["instance_actions"], instance_actions_groups)
+register(["cluster"], cluster_actions_groups)
+register(["replication"], replication_groups)
+
+# Datastore based groups - these should contain all functionality
+# currently supported by the datastore
+register(["cassandra_supported"], instance_actions_groups)
+register(["couchbase_supported"], instance_actions_groups)
+register(["postgresql_supported"], instance_actions_groups)
+register(["mongodb_supported"], instance_actions_groups,
+         cluster_actions_groups)
+register(["mysql_supported"], instance_actions_groups, replication_groups)
+register(["redis_supported"], instance_actions_groups)
+register(["vertica_supported"], instance_actions_groups,
+         cluster_actions_groups)
