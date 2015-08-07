@@ -471,6 +471,42 @@ def chmod(path, mode, recursive=True, force=False, **kwargs):
             _("Cannot change mode of a blank file."))
 
 
+def change_user_group(user, group, append=True, add_group=True, **kwargs):
+    """Adds a user to groups by using the usermod linux command with -a and
+    -G options.
+
+    seealso:: _execute_shell_cmd for valid optional keyword arguments.
+
+    :param user:            Username.
+    :type user:             string
+
+    :param group:           Group names.
+    :type group:            comma separated string
+
+    :param  append:         Adds user to a group.
+    :type append:           boolean
+
+    :param add_group:       Lists the groups that the user is a member of.
+                            While adding a new groups to an existing user
+                            with '-G' option alone, will remove all existing
+                            groups that user belongs. Therefore, always add
+                            the '-a' (append) with '-G' option to add or
+                            append new groups.
+    :type add_group:        boolean
+
+    :raises:                :class:`UnprocessableEntity` if user or group not
+                            given.
+    """
+
+    if not user:
+        raise exception.UnprocessableEntity(_("Missing user."))
+    elif not group:
+        raise exception.UnprocessableEntity(_("Missing group."))
+
+    options = (('a', append), ('G', add_group))
+    _execute_shell_cmd('usermod', options, group, user, **kwargs)
+
+
 def _build_shell_chmod_mode(mode):
     """
     Build a shell representation of given mode.
