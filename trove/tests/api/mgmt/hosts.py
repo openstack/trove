@@ -113,7 +113,7 @@ class HostsMgmtCommands(object):
         assert_not_equal(len(result), 0,
                          "list hosts should not be empty: %s" % str(result))
         hosts = []
-        # Find a host with a instanceCount > 0
+        # Find a host with an instanceCount > 0
         for host in result:
             msg = 'Host: %s, Count: %s' % (host.name, host.instanceCount)
             hosts.append(msg)

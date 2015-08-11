@@ -68,7 +68,7 @@ class TestUpgradeModel(trove_testtools.TestCase):
     @patch.object(rpc, 'get_client')
     def _assert_create_with_metadata(self, mock_client, api_upgrade_mock,
                                      metadata=None):
-        """Excercise UpgradeMessageSender.create() call.
+        """Exercise UpgradeMessageSender.create() call.
         """
         context = Mock()
 
