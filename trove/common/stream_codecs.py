@@ -16,6 +16,7 @@
 import abc
 import ast
 import csv
+import json
 import six
 import StringIO
 import yaml
@@ -344,3 +345,12 @@ class PropertiesCodec(StreamCodec):
                 container.append(item)
 
         return container
+
+
+class JsonCodec(StreamCodec):
+
+    def serialize(self, dict_data):
+        return json.dumps(dict_data)
+
+    def deserialize(self, stream):
+        return json.load(StringIO.StringIO(stream))

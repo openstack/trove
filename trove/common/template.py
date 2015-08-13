@@ -31,6 +31,7 @@ ENV = utils.ENV
 
 # TODO(cp16net) Maybe this should be moved to a config dict
 SERVICE_PARSERS = {
+    'mongodb': configurations.MongoDBConfParser,
     'mysql': configurations.MySQLConfParser,
     'percona': configurations.MySQLConfParser,
     'redis': configurations.RedisConfParser,

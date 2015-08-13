@@ -1,0 +1,333 @@
+{
+    "configuration-parameters": [
+        {
+            "name": "systemLog.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.accessControl.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.command.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.control.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.geo.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.index.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.network.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.query.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.replication.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.sharding.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.storage.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.storage.journal.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.component.write.verbosity",
+            "restart_required": true,
+            "min": 0,
+            "max": 5,
+            "type": "integer"
+        },
+        {
+            "name": "systemLog.quiet",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "systemLog.traceAllExceptions",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "systemLog.logAppend",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "systemLog.logRotate",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "systemLog.timeStampFormat",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "net.maxIncomingConnections",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "net.wireObjectCheck",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "net.ipv6",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "net.http.enabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "net.http.JSONPEnabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "net.http.RESTInterfaceEnabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "security.authorization",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "security.sasl.hostName",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "security.sasl.serviceName",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "security.sasl.saslauthdSocketPath",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "security.javascriptEnabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "operationProfiling.slowOpThresholdMs",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "operationProfiling.mode",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "storage.indexBuildRetry",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "storage.journal.enabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "storage.directoryPerDB",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "storage.syncPeriodSecs",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "storage.engine",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "storage.mmapv1.nsSize",
+            "restart_required": true,
+            "min": 0,
+            "max": 2047,
+            "type": "integer"
+        },
+        {
+            "name": "storage.mmapv1.quota.enforced",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "storage.mmapv1.quota.maxFilesPerDB",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "storage.mmapv1.smallFiles",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "storage.mmapv1.journal.debugFlags",
+            "restart_required": true,
+            "type": "integer"
+        },
+        {
+            "name": "storage.mmapv1.journal.commitIntervalMs",
+            "restart_required": true,
+            "min": 2,
+            "max": 300,
+            "type": "integer"
+        },
+        {
+            "name": "storage.wiredTiger.engineConfig.cacheSizeGB",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "storage.wiredTiger.engineConfig.statisticsLogDelaySecs",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "storage.wiredTiger.engineConfig.journalCompressor",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "storage.wiredTiger.collectionConfig.blockCompressor",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "storage.wiredTiger.indexConfig.prefixCompression",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "replication.oplogSizeMB",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "replication.secondaryIndexPrefetch",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "sharding.clusterRole",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "auditLog.format",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "auditLog.filter",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "snmp.subagent",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "snmp.master",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "replication.localPingThresholdMs",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "sharding.autoSplit",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "sharding.chunkSize",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "setParameter",
+            "restart_required": true,
+            "type": "string"
+        }
+    ]
+}
