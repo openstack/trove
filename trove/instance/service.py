@@ -273,8 +273,6 @@ class InstanceController(wsgi.Controller):
                 instance.assign_configuration(kwargs['configuration_id'])
             else:
                 instance.unassign_configuration()
-        if kwargs:
-            instance.update_db(**kwargs)
 
     def update(self, req, id, body, tenant_id):
         """Updates the instance to attach/detach configuration."""

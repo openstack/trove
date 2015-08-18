@@ -1191,17 +1191,8 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
                    "%s.") % self.id)
         LOG.debug("overrides: %s" % overrides)
         LOG.debug("self.ds_version: %s" % self.ds_version.__dict__)
-        LOG.debug("self.configuration.id: %s" % self.configuration.id)
-        # check if the configuration requires a restart of the instance
-        config = Configuration(self.context, self.configuration.id)
-        need_restart = config.does_configuration_need_restart()
-        LOG.debug("do we need a restart?: %s" % need_restart)
-        if need_restart:
-            status = inst_models.InstanceTasks.RESTART_REQUIRED
-            self.update_db(task_status=status)
 
         flavor = self.nova_client.flavors.get(self.flavor_id)
-
         config_overrides = self._render_override_config(
             flavor,
             overrides=overrides)
@@ -1262,6 +1253,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             if val:
                 overrides[item.configuration_key] = _convert_value(val)
         LOG.debug("setting the default variables in dict: %s" % overrides)
+        self.update_db(configuration_id=None)
         self.update_overrides(overrides, remove=True)
 
     def refresh_compute_server_info(self):
