@@ -178,6 +178,14 @@ pydev_debug = disabled
 # path to pydevd library. It will be used if pydevd is absent in sys.path
 #pydev_path = <path>
 
+# ================= Guestagent related ========================
+#guest_config = /etc/trove/trove-guestagent.conf
+# Use 'guest_info = /etc/guest_info' for pre-Kilo compatibility
+#guest_info = guest_info.conf
+# Use 'injected_config_location = /etc/trove' for pre-Kilo compatibility
+#injected_config_location = /etc/trove/conf.d
+#cloudinit_location = /etc/trove/cloudinit
+
 [database]
 
 # SQLAlchemy connection string for the reference implementation
@@ -194,15 +202,6 @@ connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove
 # notice this, you can lower this value to ensure that SQLAlchemy reconnects
 # before MySQL can drop the connection.
 idle_timeout = 3600
-
-
-# ================= Guestagent related ========================
-#guest_config = /etc/trove/trove-guestagent.conf
-# Use 'guest_info = /etc/guest_info' for pre-Kilo compatibility
-#guest_info = guest_info.conf
-# Use 'injected_config_location = /etc/trove' for pre-Kilo compatibility
-#injected_config_location = /etc/trove/conf.d
-#cloudinit_location = /etc/trove/cloudinit
 
 # ================= Security groups related ========================
 # Each future datastore implementation should implement
