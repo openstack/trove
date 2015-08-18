@@ -459,8 +459,13 @@ class MongoDBApp(object):
         user = models.MongoDBUser(name='admin.%s' % creds.username,
                                   password=creds.password)
         user.roles = system.MONGO_ADMIN_ROLES
-        with MongoDBClient(None) as client:
+        # the driver engine is already cached, but we need to change it it
+        with MongoDBClient(None, host='localhost',
+                           port=MONGODB_PORT) as client:
             MongoDBAdmin().create_user(user, client=client)
+        # now revert to the normal engine
+        self.status.set_host(host=netutils.get_my_ipv4(),
+                             port=MONGODB_PORT)
         LOG.debug('Created admin user.')
 
     def secure(self):
