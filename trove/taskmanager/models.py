@@ -1253,6 +1253,7 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             if val:
                 overrides[item.configuration_key] = _convert_value(val)
         LOG.debug("setting the default variables in dict: %s" % overrides)
+        self.update_db(configuration_id=None)
         self.update_overrides(overrides, remove=True)
 
     def refresh_compute_server_info(self):
