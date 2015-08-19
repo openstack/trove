@@ -37,7 +37,8 @@
             "tmp_table_size": "16M",
             "tmpdir": "/var/tmp",
             "user": "mysql",
-            "wait_timeout": "120"
+            "wait_timeout": "120",
+            "performance_schema": "ON"
         }
     }
 }

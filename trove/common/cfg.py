@@ -130,8 +130,7 @@ common_opts = [
     cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
                 help='Users to exclude when listing users.'),
     cfg.ListOpt('ignore_dbs',
-                default=['lost+found', '#mysql50#lost+found', 'mysql',
-                         'information_schema'],
+                default=['mysql', 'information_schema', 'performance_schema'],
                 help='Databases to exclude when listing databases.'),
     cfg.IntOpt('agent_call_low_timeout', default=5,
                help="Maximum time (in seconds) to wait for Guest Agent 'quick'"

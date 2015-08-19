@@ -43,6 +43,7 @@ max_connections = {{ (100 * flavor['ram']/512)|int }}
 default_storage_engine = innodb
 local-infile = 0
 server_id = {{server_id}}
+performance_schema = ON
 
 [mysqldump]
 quick = 1
