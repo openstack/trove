@@ -1,7 +1,7 @@
 Trove
 --------
 
-Trove is Database as a Service for Open Stack.
+Trove is Database as a Service for OpenStack.
 
 
 =============================
