@@ -223,6 +223,10 @@ class GuestAgentManagerTest(testtools.TestCase):
             mount_points = ['/mnt']
         VolumeDevice.mount_points = MagicMock(return_value=mount_points)
         VolumeDevice.unmount = MagicMock(return_value=None)
+        set_data_dir_patcher = patch.object(dbaas.MySqlApp, 'set_data_dir',
+                                            return_value='/var/lib/mysql')
+        self.addCleanup(set_data_dir_patcher.stop)
+        set_data_dir_patcher.start()
         dbaas.MySqlApp.stop_db = MagicMock(return_value=None)
         dbaas.MySqlApp.start_mysql = MagicMock(return_value=None)
         dbaas.MySqlApp.update_overrides = MagicMock(return_value=None)

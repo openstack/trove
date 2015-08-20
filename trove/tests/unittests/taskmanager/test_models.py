@@ -405,9 +405,7 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
-    @patch.object(template, 'OverrideConfigTemplate')
     def test_create_instance(self,
-                             mock_override_template,
                              mock_single_instance_template,
                              mock_guest_prepare,
                              mock_build_volume_info,
@@ -417,17 +415,17 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
         config_content = {'config_contents': 'some junk'}
         mock_single_instance_template.return_value.config_contents = (
             config_content)
-        mock_override_template.return_value.config_contents = None
+        overrides = Mock()
         self.freshinstancetasks.create_instance(mock_flavor, 'mysql-image-id',
                                                 None, None, 'mysql',
                                                 'mysql-server', 2,
                                                 None, None, None, None,
-                                                Mock(), None)
+                                                overrides, None)
         mock_create_secgroup.assert_called_with('mysql')
         mock_build_volume_info.assert_called_with('mysql', volume_size=2)
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
-            config_content, None, None, None, None)
+            config_content, None, overrides, None, None)
 
     @patch.object(trove.guestagent.api.API, 'attach_replication_slave')
     @patch.object(rpc, 'get_client')

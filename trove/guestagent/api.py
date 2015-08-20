@@ -335,13 +335,14 @@ class API(object):
         """Update the overrides."""
         LOG.debug("Updating overrides values %(overrides)s on instance "
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
-        self._cast("update_overrides", self.version_cap, overrides=overrides,
-                   remove=remove)
+        self._call("update_overrides", AGENT_HIGH_TIMEOUT,
+                   self.version_cap, overrides=overrides, remove=remove)
 
     def apply_overrides(self, overrides):
         LOG.debug("Applying overrides values %(overrides)s on instance "
                   "%(id)s.", {'overrides': overrides, 'id': self.id})
-        self._cast("apply_overrides", self.version_cap, overrides=overrides)
+        self._call("apply_overrides", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   overrides=overrides)
 
     def get_replication_snapshot(self, snapshot_info=None,
                                  replica_source_config=None):

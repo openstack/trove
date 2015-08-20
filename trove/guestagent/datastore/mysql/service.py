@@ -28,14 +28,17 @@ from sqlalchemy import interfaces
 from sqlalchemy.sql.expression import text
 
 from trove.common import cfg
-from trove.common import configurations
+from trove.common.configurations import MySQLConfParser
 from trove.common import exception
 from trove.common.exception import PollTimeOut
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common.stream_codecs import IniCodec
 from trove.common import utils as utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import ImportOverrideStrategy
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.common import sql_query
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
@@ -45,11 +48,8 @@ ADMIN_USER_NAME = "os_admin"
 LOG = logging.getLogger(__name__)
 FLUSH = text(sql_query.FLUSH)
 ENGINE = None
-DATADIR = None
 PREPARING = False
 UUID = False
-
-TMP_MYCNF = "/tmp/my.cnf.tmp"
 
 CONF = cfg.CONF
 MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
@@ -65,11 +65,11 @@ MYSQL_CONFIG = {operating_system.REDHAT: "/etc/my.cnf",
                 operating_system.SUSE: "/etc/my.cnf"}[OS_NAME]
 MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
-MYCNF_OVERRIDES = "/etc/mysql/conf.d/overrides.cnf"
-MYCNF_OVERRIDES_TMP = "/tmp/overrides.cnf.tmp"
-MYCNF_REPLMASTER = "/etc/mysql/conf.d/0replmaster.cnf"
-MYCNF_REPLSLAVE = "/etc/mysql/conf.d/1replslave.cnf"
-MYCNF_REPLCONFIG_TMP = "/tmp/replication.cnf.tmp"
+MYSQL_OWNER = 'mysql'
+CNF_EXT = 'cnf'
+CNF_INCLUDE_DIR = '/etc/mysql/conf.d/'
+CNF_MASTER = 'master-replication'
+CNF_SLAVE = 'slave-replication'
 
 
 # Create a package impl
@@ -104,18 +104,6 @@ def clear_expired_password():
         LOG.debug("Expired password removed.")
 
 
-def get_auth_password():
-    pwd, err = utils.execute_with_timeout(
-        "sudo",
-        "awk",
-        "/password\\t=/{print $3; exit}",
-        MYSQL_CONFIG)
-    if err:
-        LOG.error(err)
-        raise RuntimeError("Problem reading my.cnf! : %s" % err)
-    return pwd.strip()
-
-
 def get_engine():
     """Create the default engine with the updated admin user."""
     # TODO(rnirmal):Based on permissions issues being resolved we may revert
@@ -124,7 +112,7 @@ def get_engine():
     global ENGINE
     if ENGINE:
         return ENGINE
-    pwd = get_auth_password()
+    pwd = MySqlApp.get_auth_password()
     ENGINE = sqlalchemy.create_engine("mysql://%s:%s@localhost:3306" %
                                       (ADMIN_USER_NAME, pwd.strip()),
                                       pool_recycle=7200,
@@ -157,29 +145,8 @@ def load_mysqld_options():
         return {}
 
 
-def read_mycnf():
-    with open(MYSQL_CONFIG, 'r') as file:
-        config_contents = file.read()
-
-    return config_contents
-
-
-def get_datadir(reset_cache=False):
-    """Return the data directory currently used by Mysql."""
-    global DATADIR
-    if not reset_cache and DATADIR:
-        return DATADIR
-
-    mycnf_contents = read_mycnf()
-
-    # look for datadir parameter in my.cnf
-    mycnf = dict(configurations.MySQLConfParser(mycnf_contents).parse())
-    DATADIR = mycnf['datadir']
-
-    return DATADIR
-
-
 class MySqlAppStatus(service.BaseDbStatus):
+
     @classmethod
     def get(cls):
         if not cls._instance:
@@ -419,18 +386,18 @@ class MySqlAdmin(object):
         mydb = models.ValidatedMySQLDatabase()
         with LocalSqlClient(get_engine()) as client:
             for database in databases:
-                    try:
-                        mydb.name = database
-                    except ValueError:
-                        LOG.exception(_("Error granting access"))
-                        raise exception.BadRequest(_(
-                            "Grant access to %s is not allowed") % database)
+                try:
+                    mydb.name = database
+                except ValueError:
+                    LOG.exception(_("Error granting access"))
+                    raise exception.BadRequest(_(
+                        "Grant access to %s is not allowed") % database)
 
-                    g = sql_query.Grant(permissions='ALL', database=mydb.name,
-                                        user=user.name, host=user.host,
-                                        hashed=user.password)
-                    t = text(str(g))
-                    client.execute(t)
+                g = sql_query.Grant(permissions='ALL', database=mydb.name,
+                                    user=user.name, host=user.host,
+                                    hashed=user.password)
+                t = text(str(g))
+                client.execute(t)
 
     def is_root_enabled(self):
         """Return True if root access is enabled; False otherwise."""
@@ -589,6 +556,24 @@ class MySqlApp(object):
 
     TIME_OUT = 1000
 
+    configuration_manager = ConfigurationManager(
+        MYSQL_CONFIG, MYSQL_OWNER, MYSQL_OWNER, IniCodec(), requires_root=True,
+        override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT))
+
+    @classmethod
+    def get_auth_password(cls):
+        return cls.configuration_manager.get_value('client').get('password')
+
+    @classmethod
+    def get_data_dir(cls):
+        return cls.configuration_manager.get_value(
+            MySQLConfParser.SERVER_CONF_SECTION).get('datadir')
+
+    @classmethod
+    def set_data_dir(cls, value):
+        cls.configuration_manager.apply_system_override(
+            {MySQLConfParser.SERVER_CONF_SECTION: {'datadir': value}})
+
     def __init__(self, status):
         """By default login with root no password for initial setup."""
         self.state_change_wait_time = CONF.state_change_wait_time
@@ -644,10 +629,26 @@ class MySqlApp(object):
             self._create_admin_user(client, admin_password)
 
         self.stop_db()
-        self._write_mycnf(admin_password, config_contents, overrides)
+
+        self._reset_configuration(config_contents, admin_password)
+        self._apply_user_overrides(overrides)
         self.start_mysql()
 
         LOG.debug("MySQL secure complete.")
+
+    def _reset_configuration(self, configuration, admin_password=None):
+        if not admin_password:
+            # Take the current admin password from the base configuration file
+            # if not given.
+            admin_password = MySqlApp.get_auth_password()
+
+        self.configuration_manager.save_configuration(configuration)
+        self._save_authentication_properties(admin_password)
+        self.wipe_ib_logfiles()
+
+    def _save_authentication_properties(self, admin_password):
+        self.configuration_manager.apply_system_override(
+            {'client': {'user': ADMIN_USER_NAME, 'password': admin_password}})
 
     def secure_root(self, secure_remote_root=True):
         with LocalSqlClient(get_engine()) as client:
@@ -729,30 +730,28 @@ class MySqlApp(object):
         finally:
             self.status.end_install_or_restart()
 
-    def update_overrides(self, override_values):
-        """
-        This function will update the MySQL overrides.cnf file
-        if there is content to write.
+    def update_overrides(self, overrides):
+        self._apply_user_overrides(overrides)
 
-        :param override_values:
-        :return:
-        """
-
-        if override_values:
-            LOG.debug("Writing new overrides.cnf config file.")
-            self._write_config_overrides(override_values)
+    def _apply_user_overrides(self, overrides):
+        # All user-defined values go to the server section of the configuration
+        # file.
+        if overrides:
+            self.configuration_manager.apply_user_override(
+                {MySQLConfParser.SERVER_CONF_SECTION: overrides})
 
     def apply_overrides(self, overrides):
         LOG.debug("Applying overrides to MySQL.")
         with LocalSqlClient(get_engine()) as client:
             LOG.debug("Updating override values in running MySQL.")
             for k, v in overrides.iteritems():
-                q = sql_query.SetServerVariable(key=k, value=v)
+                byte_value = guestagent_utils.to_bytes(v)
+                q = sql_query.SetServerVariable(key=k, value=byte_value)
                 t = text(str(q))
                 try:
                     client.execute(t)
                 except exc.OperationalError:
-                    output = {'key': k, 'value': v}
+                    output = {'key': k, 'value': byte_value}
                     LOG.exception(_("Unable to set %(key)s with value "
                                     "%(value)s.") % output)
 
@@ -760,18 +759,6 @@ class MySqlApp(object):
         with LocalSqlClient(get_engine()) as client:
             q = "set global read_only = %s" % read_only
             client.execute(text(str(q)))
-
-    def _write_temp_mycnf_with_admin_account(self, original_file_path,
-                                             temp_file_path, password):
-        mycnf_file = open(original_file_path, 'r')
-        tmp_file = open(temp_file_path, 'w')
-        for line in mycnf_file:
-            tmp_file.write(line)
-            if "[client]" in line:
-                tmp_file.write("user\t\t= %s\n" % ADMIN_USER_NAME)
-                tmp_file.write("password\t= %s\n" % password)
-        mycnf_file.close()
-        tmp_file.close()
 
     def wipe_ib_logfiles(self):
         """Destroys the iblogfiles.
@@ -788,68 +775,14 @@ class MySqlApp(object):
                 # to be deleted. That's why its ok if they aren't found and
                 # that is why we use the "force" option to "remove".
                 operating_system.remove("%s/ib_logfile%d"
-                                        % (get_datadir(), index), force=True,
-                                        as_root=True)
+                                        % (self.get_data_dir(), index),
+                                        force=True, as_root=True)
             except exception.ProcessExecutionError:
                 LOG.exception("Could not delete logfile.")
                 raise
 
-    def _write_mycnf(self, admin_password, config_contents, overrides=None):
-        """
-        Install the set of mysql my.cnf templates.
-        Update the os_admin user and password to the my.cnf
-        file for direct login from localhost.
-        """
-        LOG.info(_("Writing my.cnf templates."))
-        if admin_password is None:
-            admin_password = get_auth_password()
-
-        try:
-            with open(TMP_MYCNF, 'w') as t:
-                t.write(config_contents)
-
-            operating_system.move(TMP_MYCNF, MYSQL_CONFIG, as_root=True)
-            self._write_temp_mycnf_with_admin_account(MYSQL_CONFIG,
-                                                      TMP_MYCNF,
-                                                      admin_password)
-            operating_system.move(TMP_MYCNF, MYSQL_CONFIG, as_root=True)
-        except Exception:
-            os.unlink(TMP_MYCNF)
-            raise
-
-        self.wipe_ib_logfiles()
-
-        # write configuration file overrides
-        if overrides:
-            self._write_config_overrides(overrides)
-
-    def _write_config_overrides(self, overrideValues):
-        LOG.info(_("Writing new temp overrides.cnf file."))
-
-        with open(MYCNF_OVERRIDES_TMP, 'w') as overrides:
-            overrides.write(overrideValues)
-        LOG.info(_("Moving overrides.cnf into correct location."))
-        operating_system.move(MYCNF_OVERRIDES_TMP, MYCNF_OVERRIDES,
-                              as_root=True)
-        LOG.info(_("Setting permissions on overrides.cnf."))
-        operating_system.chmod(MYCNF_OVERRIDES, FileMode.SET_GRP_RW_OTH_R,
-                               as_root=True)
-
     def remove_overrides(self):
-        LOG.info(_("Removing overrides configuration file."))
-        if os.path.exists(MYCNF_OVERRIDES):
-            operating_system.remove(MYCNF_OVERRIDES, as_root=True)
-
-    def _write_replication_overrides(self, overrideValues, cnf_file):
-        LOG.info(_("Writing replication.cnf file."))
-
-        with open(MYCNF_REPLCONFIG_TMP, 'w') as overrides:
-            overrides.write(overrideValues)
-        LOG.debug("Moving temp replication.cnf into correct location.")
-        operating_system.move(MYCNF_REPLCONFIG_TMP, cnf_file, as_root=True)
-        LOG.debug("Setting permissions on replication.cnf.")
-        operating_system.chmod(cnf_file, FileMode.SET_GRP_RW_OTH_R,
-                               as_root=True)
+        self.configuration_manager.remove_user_override()
 
     def _remove_replication_overrides(self, cnf_file):
         LOG.info(_("Removing replication configuration file."))
@@ -857,19 +790,21 @@ class MySqlApp(object):
             operating_system.remove(cnf_file, as_root=True)
 
     def exists_replication_source_overrides(self):
-        return os.path.exists(MYCNF_REPLMASTER)
+        return self.configuration_manager.has_system_override(CNF_MASTER)
 
     def write_replication_source_overrides(self, overrideValues):
-        self._write_replication_overrides(overrideValues, MYCNF_REPLMASTER)
+        self.configuration_manager.apply_system_override(overrideValues,
+                                                         CNF_MASTER)
 
     def write_replication_replica_overrides(self, overrideValues):
-        self._write_replication_overrides(overrideValues, MYCNF_REPLSLAVE)
+        self.configuration_manager.apply_system_override(overrideValues,
+                                                         CNF_SLAVE)
 
     def remove_replication_source_overrides(self):
-        self._remove_replication_overrides(MYCNF_REPLMASTER)
+        self.configuration_manager.remove_system_override(CNF_MASTER)
 
     def remove_replication_replica_overrides(self):
-        self._remove_replication_overrides(MYCNF_REPLSLAVE)
+        self.configuration_manager.remove_system_override(CNF_SLAVE)
 
     def grant_replication_privilege(self, replication_user):
         LOG.info(_("Granting Replication Slave privilege."))
@@ -990,13 +925,13 @@ class MySqlApp(object):
                         "MySQL state == %s.") % self.status)
             raise RuntimeError("MySQL not stopped.")
         LOG.info(_("Resetting configuration."))
-        self._write_mycnf(None, config_contents)
+        self._reset_configuration(config_contents)
         self.start_mysql(True)
 
     def reset_configuration(self, configuration):
         config_contents = configuration['config_contents']
         LOG.info(_("Resetting configuration."))
-        self._write_mycnf(None, config_contents)
+        self._reset_configuration(config_contents)
 
     # DEPRECATED: Mantain for API Compatibility
     def get_txn_count(self):
@@ -1048,6 +983,7 @@ class MySqlApp(object):
 
 
 class MySqlRootAccess(object):
+
     @classmethod
     def is_root_enabled(cls):
         """Return True if root access is enabled; False otherwise."""
