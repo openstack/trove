@@ -15,15 +15,13 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import GROUP_START_SIMPLE
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.scenario.groups.test_group import TestGroup
+
 
 GROUP = "scenario.negative_cluster_actions_group"
 
 
-@test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after=[WaitForGuestInstallationToFinish])
+@test(groups=[GROUP])
 class NegativeClusterActionsGroup(TestGroup):
 
     def __init__(self):
@@ -32,8 +30,10 @@ class NegativeClusterActionsGroup(TestGroup):
 
     @test
     def create_constrained_size_cluster(self):
+        """Ensure creating a cluster with wrong number of nodes fails."""
         self.test_runner.run_create_constrained_size_cluster()
 
     @test
     def create_heterogeneous_cluster(self):
+        """Ensure creating a cluster with unequal nodes fails."""
         self.test_runner.run_create_heterogeneous_cluster()
