@@ -15,15 +15,14 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import GROUP_START_SIMPLE
-from trove.tests.scenario.groups import backup_group
+from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+
 
 GROUP = "scenario.replication_group"
 
 
-@test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after=[backup_group.GROUP_BACKUP])
+@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
 class ReplicationGroup(TestGroup):
     """Test Replication functionality."""
 

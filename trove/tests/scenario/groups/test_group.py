@@ -29,15 +29,29 @@ class TestGroup(object):
     TEST_HELPER_BASE_NAME = 'TestHelper'
 
     def __init__(self, runner_module_name, runner_base_name, *args, **kwargs):
+        self._test_runner = self.get_runner(
+            runner_module_name, runner_base_name, *args, **kwargs)
+
+    def get_runner(self, runner_module_name, runner_base_name,
+                   *args, **kwargs):
         class_prefix = self._get_test_datastore()
         runner_cls = self._load_dynamic_class(
             runner_module_name, class_prefix, runner_base_name,
             self.TEST_RUNNERS_NS)
-        self._test_runner = runner_cls(*args, **kwargs)
+        runner = runner_cls(*args, **kwargs)
         helper_cls = self._load_dynamic_class(
             self.TEST_HELPER_MODULE_NAME, class_prefix,
             self.TEST_HELPER_BASE_NAME, self.TEST_HELPERS_NS)
-        self._test_runner._test_helper = helper_cls(self._build_class_name(
+        runner._test_helper = helper_cls(self._build_class_name(
+            class_prefix, self.TEST_HELPER_BASE_NAME, strip_test=True))
+        return runner
+
+    def get_helper(self):
+        class_prefix = self._get_test_datastore()
+        helper_cls = self._load_dynamic_class(
+            self.TEST_HELPER_MODULE_NAME, class_prefix,
+            self.TEST_HELPER_BASE_NAME, self.TEST_HELPERS_NS)
+        return helper_cls(self._build_class_name(
             class_prefix, self.TEST_HELPER_BASE_NAME, strip_test=True))
 
     def _get_test_datastore(self):

@@ -192,3 +192,38 @@ class TestHelper(object):
         specific overrides could increase (or decrease) this delay.
         """
         sleep(30)
+
+    def get_valid_database_definitions(self):
+        """Return a list of valid database JSON definitions.
+        These definitions will be used by tests that create databases.
+        Return an empty list if the datastore does not support databases.
+        """
+        return list()
+
+    def get_valid_user_definitions(self):
+        """Return a list of valid user JSON definitions.
+         These definitions will be used by tests that create users.
+         Return an empty list if the datastore does not support users.
+         """
+        return list()
+
+    def get_dynamic_group(self):
+        """Return a definition of a dynamic configuration group.
+        A dynamic group should contain only properties that do not require
+        database restart.
+        Return an empty dict if the datastore does not have any.
+        """
+        return dict()
+
+    def get_non_dynamic_group(self):
+        """Return a definition of a non-dynamic configuration group.
+        A non-dynamic group has to include at least one property that requires
+        database restart.
+        Return an empty dict if the datastore does not have any.
+        """
+        return dict()
+
+    def get_invalid_groups(self):
+        """Return a list of configuration groups with invalid values.
+        """
+        return []

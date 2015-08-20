@@ -15,16 +15,13 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import GROUP_START_SIMPLE
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.scenario.groups.test_group import TestGroup
 
 
 GROUP = "scenario.cluster_actions_group"
 
 
-@test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after=[WaitForGuestInstallationToFinish])
+@test(groups=[GROUP])
 class ClusterActionsGroup(TestGroup):
 
     def __init__(self):
@@ -33,12 +30,15 @@ class ClusterActionsGroup(TestGroup):
 
     @test
     def cluster_create(self):
+        """Create a cluster."""
         self.test_runner.run_cluster_create()
 
     @test(depends_on=[cluster_create])
     def test_cluster_communication(self):
+        """Validate the cluster data and properties."""
         self.test_runner.run_cluster_communication()
 
     @test(depends_on=[cluster_create], runs_after=[test_cluster_communication])
     def cluster_delete(self):
+        """Delete an existing cluster."""
         self.test_runner.run_cluster_delete()

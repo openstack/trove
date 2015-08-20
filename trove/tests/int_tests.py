@@ -38,6 +38,7 @@ from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import cluster_actions_group
 from trove.tests.scenario.groups import database_actions_group
 from trove.tests.scenario.groups import instance_actions_group
+from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups import instance_delete_group
 from trove.tests.scenario.groups import negative_cluster_actions_group
 from trove.tests.scenario.groups import replication_group
@@ -119,37 +120,39 @@ proboscis.register(groups=["blackbox_mgmt"],
 #
 # Group designations for datastore agnostic int-tests
 #
-initial_groups = [
+instance_create_groups = [
     GROUP_SERVICES_INITIALIZE,
     flavors.GROUP,
     versions.GROUP,
-    instances.GROUP_START_SIMPLE,
+    instance_create_group.GROUP,
     instance_delete_group.GROUP
 ]
-backup_groups = list(initial_groups)
+
+backup_groups = list(instance_create_groups)
 backup_groups.extend([backup_group.GROUP])
 
-user_actions_groups = list(initial_groups)
+user_actions_groups = list(instance_create_groups)
 user_actions_groups.extend([user_actions_group.GROUP])
 
-database_actions_groups = list(initial_groups)
+database_actions_groups = list(instance_create_groups)
 database_actions_groups.extend([database_actions_group.GROUP])
 
-cluster_actions_groups = list(initial_groups)
+cluster_actions_groups = list(instance_create_groups)
 cluster_actions_groups.extend([cluster_actions_group.GROUP,
                                negative_cluster_actions_group.GROUP])
 
-instance_actions_groups = list(initial_groups)
+instance_actions_groups = list(instance_create_groups)
 instance_actions_groups.extend([instance_actions_group.GROUP])
 
-replication_groups = list(initial_groups)
+replication_groups = list(instance_create_groups)
 replication_groups.extend([replication_group.GROUP])
 
 # Module based groups
 register(["backup"], backup_groups)
 register(["cluster"], cluster_actions_groups)
-register(["database"], database_actions_group)
+register(["database"], database_actions_groups)
 register(["instance_actions"], instance_actions_groups)
+register(["instance_create"], instance_create_groups)
 register(["user"], user_actions_groups)
 register(["replication"], replication_groups)
 

@@ -62,13 +62,14 @@ class TestRunner(object):
     EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path', None)
     ROOT_PARTITION = not (VOLUME_SUPPORT or CONFIG.get('device_path', None))
 
+    report = CONFIG.get_report()
+
     def __init__(self, sleep_time=10, timeout=1200):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
         self.instance_info = instance_info
         self.auth_client = create_dbaas_client(self.instance_info.user)
         self.unauth_client = None
-        self.report = CONFIG.get_report()
         self._test_helper = None
 
     @classmethod

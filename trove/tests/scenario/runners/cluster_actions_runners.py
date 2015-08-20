@@ -60,6 +60,10 @@ class ClusterActionsRunner(TestRunner):
         return cluster_id
 
     def run_cluster_communication(self):
+        # TODO(pmalik): This will need to be generalized
+        # (using a datastore test_helper) to add and verify data.
+        # Creating and checking databases like this would not work with
+        # datastores that do not support them (Redis).
         databases = []
         databases.append({"name": 'somenewdb'})
         cluster = self.auth_client.clusters.get(self.cluster_id)
@@ -73,7 +77,7 @@ class ClusterActionsRunner(TestRunner):
         for instance in cluster_instances:
             databases_after = self.auth_client.databases.list(
                 cluster_instances[0].id)
-            asserts.assert_true(len(databases_before) < len(databases_after))
+            self.assert_true(len(databases_before) < len(databases_after))
 
     def run_cluster_delete(
             self, expected_last_instance_state='SHUTDOWN',
