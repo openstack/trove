@@ -33,6 +33,7 @@ from testtools.matchers import Is
 from testtools.matchers import Not
 
 from trove.common import cfg
+from trove.common import context as trove_context
 from trove.common.exception import BadRequest
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
@@ -71,6 +72,7 @@ from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 import trove.guestagent.datastore.mysql.service_base as dbaas_base
+import trove.guestagent.datastore.service as base_datastore_service
 from trove.guestagent.datastore.service import BaseDbStatus
 from trove.guestagent.db import models
 from trove.guestagent import dbaas as dbaas_sr
@@ -103,6 +105,7 @@ class FakeAppStatus(BaseDbStatus):
 
     def __init__(self, id, status):
         self.id = id
+        self.status = status
         self.next_fake_status = status
 
     def _get_actual_db_status(self):
@@ -1780,6 +1783,15 @@ class BaseDbStatusTest(testtools.TestCase):
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
         dbaas.CONF.guest_id = self.FAKE_ID
+        patcher_log = patch.object(base_datastore_service, 'LOG')
+        patcher_context = patch.object(trove_context, 'TroveContext')
+        patcher_api = patch.object(conductor_api, 'API')
+        patcher_log.start()
+        patcher_context.start()
+        patcher_api.start()
+        self.addCleanup(patcher_log.stop)
+        self.addCleanup(patcher_context.stop)
+        self.addCleanup(patcher_api.stop)
 
     def tearDown(self):
         super(BaseDbStatusTest, self).tearDown()
@@ -1788,102 +1800,134 @@ class BaseDbStatusTest(testtools.TestCase):
         dbaas.CONF.guest_id = None
 
     def test_begin_install(self):
+        base_db_status = BaseDbStatus()
 
-        self.baseDbStatus = BaseDbStatus()
-
-        self.baseDbStatus.begin_install()
+        base_db_status.begin_install()
 
         self.assertEqual(rd_instance.ServiceStatuses.BUILDING,
-                         self.baseDbStatus.status)
+                         base_db_status.status)
 
     def test_begin_restart(self):
+        base_db_status = BaseDbStatus()
+        base_db_status.restart_mode = False
 
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.restart_mode = False
+        base_db_status.begin_restart()
 
-        self.baseDbStatus.begin_restart()
-
-        self.assertTrue(self.baseDbStatus.restart_mode)
+        self.assertTrue(base_db_status.restart_mode)
 
     def test_end_install_or_restart(self):
-
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus._get_actual_db_status = Mock(
+        base_db_status = BaseDbStatus()
+        base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.SHUTDOWN)
 
-        self.baseDbStatus.end_install_or_restart()
+        base_db_status.end_install_or_restart()
 
         self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
-                         self.baseDbStatus.status)
-        self.assertFalse(self.baseDbStatus.restart_mode)
+                         base_db_status.status)
+        self.assertFalse(base_db_status.restart_mode)
 
     def test_is_installed(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.RUNNING
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.RUNNING
 
-        self.assertTrue(self.baseDbStatus.is_installed)
+        self.assertTrue(base_db_status.is_installed)
 
     def test_is_installed_none(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = None
+        base_db_status = BaseDbStatus()
+        base_db_status.status = None
 
-        self.assertTrue(self.baseDbStatus.is_installed)
+        self.assertTrue(base_db_status.is_installed)
 
     def test_is_installed_building(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.BUILDING
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.BUILDING
 
-        self.assertFalse(self.baseDbStatus.is_installed)
+        self.assertFalse(base_db_status.is_installed)
 
     def test_is_installed_new(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.NEW
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.NEW
 
-        self.assertFalse(self.baseDbStatus.is_installed)
+        self.assertFalse(base_db_status.is_installed)
 
     def test_is_installed_failed(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.FAILED
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.FAILED
 
-        self.assertFalse(self.baseDbStatus.is_installed)
+        self.assertFalse(base_db_status.is_installed)
 
     def test_is_restarting(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.restart_mode = True
+        base_db_status = BaseDbStatus()
+        base_db_status.restart_mode = True
 
-        self.assertTrue(self.baseDbStatus._is_restarting)
+        self.assertTrue(base_db_status._is_restarting)
 
     def test_is_running(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.RUNNING
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.RUNNING
 
-        self.assertTrue(self.baseDbStatus.is_running)
+        self.assertTrue(base_db_status.is_running)
 
     def test_is_running_not(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus.status = rd_instance.ServiceStatuses.SHUTDOWN
+        base_db_status = BaseDbStatus()
+        base_db_status.status = rd_instance.ServiceStatuses.SHUTDOWN
 
-        self.assertFalse(self.baseDbStatus.is_running)
+        self.assertFalse(base_db_status.is_running)
 
     def test_wait_for_real_status_to_change_to(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus._get_actual_db_status = Mock(
+        base_db_status = BaseDbStatus()
+        base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
         time.sleep = Mock()
 
-        self.assertTrue(self.baseDbStatus.
+        self.assertTrue(base_db_status.
                         wait_for_real_status_to_change_to
                         (rd_instance.ServiceStatuses.RUNNING, 10))
 
     def test_wait_for_real_status_to_change_to_timeout(self):
-        self.baseDbStatus = BaseDbStatus()
-        self.baseDbStatus._get_actual_db_status = Mock(
+        base_db_status = BaseDbStatus()
+        base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
         time.sleep = Mock()
 
-        self.assertFalse(self.baseDbStatus.
+        self.assertFalse(base_db_status.
                          wait_for_real_status_to_change_to
                          (rd_instance.ServiceStatuses.SHUTDOWN, 10))
+
+    def _test_set_status(self, initial_status, new_status,
+                         expected_status, force=False):
+        base_db_status = BaseDbStatus()
+        base_db_status.status = initial_status
+        base_db_status.set_status(new_status, force=force)
+
+        self.assertEqual(expected_status,
+                         base_db_status.status)
+
+    def test_set_status_force_heartbeat(self):
+        self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
+                              rd_instance.ServiceStatuses.RUNNING,
+                              rd_instance.ServiceStatuses.RUNNING,
+                              force=True)
+
+    def test_set_status_skip_heartbeat_with_building(self):
+        self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
+                              rd_instance.ServiceStatuses.RUNNING,
+                              rd_instance.ServiceStatuses.BUILDING)
+
+    def test_set_status_skip_heartbeat_with_new(self):
+        self._test_set_status(rd_instance.ServiceStatuses.NEW,
+                              rd_instance.ServiceStatuses.RUNNING,
+                              rd_instance.ServiceStatuses.NEW)
+
+    def test_set_status_to_failed(self):
+        self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
+                              rd_instance.ServiceStatuses.FAILED,
+                              rd_instance.ServiceStatuses.FAILED)
+
+    def test_set_status_to_build_pending(self):
+        self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
+                              rd_instance.ServiceStatuses.BUILD_PENDING,
+                              rd_instance.ServiceStatuses.BUILD_PENDING)
 
 
 class MySqlAppStatusTest(testtools.TestCase):

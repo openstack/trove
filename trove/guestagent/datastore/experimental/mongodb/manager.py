@@ -114,8 +114,7 @@ class Manager(periodic_task.PeriodicTasks):
             self.app.status.set_status(
                 ds_instance.ServiceStatuses.BUILD_PENDING)
         else:
-            self.app.status.set_status(
-                ds_instance.ServiceStatuses.RUNNING)
+            self.app.complete_install_or_restart()
 
         LOG.info(_('Completed setup of MongoDB database instance.'))
 

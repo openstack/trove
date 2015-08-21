@@ -77,7 +77,7 @@ class BaseDbStatus(object):
         self.restart_mode = False
         real_status = self._get_actual_db_status()
         LOG.info(_("Updating database status to %s.") % real_status)
-        self.set_status(real_status)
+        self.set_status(real_status, force=True)
 
     def _get_actual_db_status(self):
         raise NotImplementedError()
@@ -103,8 +103,18 @@ class BaseDbStatus(object):
         return (self.status is not None and
                 self.status == instance.ServiceStatuses.RUNNING)
 
-    def set_status(self, status):
+    def set_status(self, status, force=False):
         """Use conductor to update the DB app status."""
+        force_heartbeat_status = (
+            status == instance.ServiceStatuses.FAILED or
+            status == instance.ServiceStatuses.BUILD_PENDING)
+
+        if (not force_heartbeat_status and not force and
+                (self.status == instance.ServiceStatuses.NEW or
+                 self.status == instance.ServiceStatuses.BUILDING)):
+            LOG.debug("Prepare has not run yet, skipping heartbeat.")
+            return
+
         LOG.debug("Casting set_status message to conductor (status is '%s')." %
                   status.description)
         context = trove_context.TroveContext()

@@ -181,6 +181,9 @@ class MongoDBApp(object):
             raise RuntimeError("Could not start MongoDB.")
         LOG.debug('MongoDB started successfully.')
 
+    def complete_install_or_restart(self):
+        self.status.end_install_or_restart()
+
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
             self.configuration_manager.apply_user_override(overrides)
