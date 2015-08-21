@@ -181,9 +181,9 @@ class MgmtInstanceController(InstanceController):
 
     @admin_context
     def diagnostics(self, req, tenant_id, id):
-        """Return a single instance diagnostics."""
+        """Return instance diagnostics for a single instance."""
         LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing a instance diagnostics for instance '%s'") % id)
+        LOG.info(_("Showing instance diagnostics for the instance '%s'") % id)
         LOG.info(_("id : '%s'\n\n") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]

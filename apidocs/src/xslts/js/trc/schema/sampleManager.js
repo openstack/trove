@@ -199,7 +199,7 @@ trc.schema.sampleManager = {
                               code     /* Code text to set (string) */)
     {
         //
-        // Preprocess the txt if nessesary...
+        // Preprocess the txt if necessary...
         //
         var ieVersion = trc.util.browser.detectIEVersion();
         if ((ieVersion > -1) &&

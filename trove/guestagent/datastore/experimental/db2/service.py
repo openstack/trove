@@ -239,7 +239,7 @@ class DB2Admin(object):
                 next_marker = None
             LOG.debug("databases = %s." % str(databases))
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occured listing databases: %s.") %
+            LOG.exception(_("An error occurred listing databases: %s.") %
                           pe.message)
             pass
         return databases, next_marker
@@ -275,7 +275,7 @@ class DB2Admin(object):
                         LOG.debug(pe)
                         pass
         except exception.ProcessExecutionError as pe:
-            LOG.exception(_("An error occured creating users: %s.") %
+            LOG.exception(_("An error occurred creating users: %s.") %
                           pe.message)
             pass
 
@@ -304,7 +304,7 @@ class DB2Admin(object):
                 LOG.debug("Revoked access for user:%s on database:%s." % (
                     userName, mydb.name))
             except exception.ProcessExecutionError as pe:
-                LOG.debug("Error occured while revoking access to %s." %
+                LOG.debug("Error occurred while revoking access to %s." %
                           mydb.name)
                 pass
             try:

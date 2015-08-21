@@ -96,7 +96,7 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
     def tearDown(self):
         trove_testtools.TestCase.tearDown(self)
 
-        # Remove temprary files in the LIFO order.
+        # Remove temporary files in the LIFO order.
         while self._temp_files_paths:
             try:
                 os.remove(self._temp_files_paths.pop())

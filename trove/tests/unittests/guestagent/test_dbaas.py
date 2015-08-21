@@ -3043,8 +3043,8 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(self.app, 'read_config',
                           return_value=self.test_config):
             self.app.install_cluster(members=['member1', 'member2'])
-        # Verifying nu,ber of shell calls,
-        # as command has already been tested in preceeding tests
+        # Verifying the number of shell calls,
+        # as command has already been tested in preceding tests
         self.assertEqual(5, vertica_system.shell_execute.call_count)
 
     def test__enable_db_on_boot(self):

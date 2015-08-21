@@ -567,7 +567,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         This function is meant to be called with poll_until to check that
         the guest is alive before sending a 'create' message. This prevents
-        over billing a customer for a instance that they can never use.
+        over billing a customer for an instance that they can never use.
 
         Returns: boolean if the service is active.
         Raises: TroveError if the service is in a failure state.
