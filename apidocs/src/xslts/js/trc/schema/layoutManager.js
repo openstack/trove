@@ -11,7 +11,7 @@
 (function()
  {
      //
-     // Make sure dependecies are defined in the global scope, throw
+     // Make sure dependencies are defined in the global scope, throw
      // an error if they are not.
      //
      if ((!window.trc) ||
@@ -91,7 +91,7 @@
                  break;
 
                  //
-                 // The controler doesn't work **at all** in IE 7
+                 // The controller doesn't work **at all** in IE 7
                  // don't even show it.
                  //
                 case 7:

@@ -19,7 +19,7 @@
 (function()
  {
      //
-     // Make sure dependecies are defined in the global scope, throw
+     // Make sure dependencies are defined in the global scope, throw
      // an error if they are not.
      //
      if ((!window.trc) ||
@@ -30,7 +30,7 @@
 
      //
      //  We use YUI to build our controller menu make sure we have the
-     //  proper dependecies loaded, call init when we do...
+     //  proper dependencies loaded, call init when we do...
      //
 
      function InitController()
