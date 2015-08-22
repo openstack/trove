@@ -37,6 +37,7 @@ from trove.common import template
 from trove.common import utils
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
+from trove.datastore.models import DBDatastoreVersionMetadata
 from trove.db import get_db_api
 from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup
@@ -669,6 +670,19 @@ class Instance(BuiltInstance):
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None, configuration_id=None,
                slave_of_id=None, cluster_config=None, replica_count=None):
+
+        # All nova flavors are permitted for a datastore-version unless one
+        # or more entries are found in datastore_version_metadata,
+        # in which case only those are permitted.
+        bound_flavors = DBDatastoreVersionMetadata.find_all(
+            datastore_version_id=datastore_version.id,
+            key='flavor', deleted=False
+        )
+        if bound_flavors.count() > 0:
+            valid_flavors = tuple(f.value for f in bound_flavors)
+            if flavor_id not in valid_flavors:
+                raise exception.DatastoreFlavorAssociationNotFound(
+                    version_id=datastore_version.id, flavor_id=flavor_id)
 
         datastore_cfg = CONF.get(datastore_version.manager)
         client = create_nova_client(context)

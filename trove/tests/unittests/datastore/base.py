@@ -17,6 +17,7 @@ from trove.datastore import models as datastore_models
 from trove.datastore.models import Capability
 from trove.datastore.models import Datastore
 from trove.datastore.models import DatastoreVersion
+from trove.datastore.models import DatastoreVersionMetadata
 from trove.datastore.models import DBCapabilityOverrides
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
@@ -34,12 +35,16 @@ class TestDatastoreBase(trove_testtools.TestCase):
         self.capability_name = "root_on_create" + self.rand_id
         self.capability_desc = "Enables root on create"
         self.capability_enabled = True
+        self.datastore_version_id = str(uuid.uuid4())
+        self.flavor_id = 1
 
         datastore_models.update_datastore(self.ds_name, False)
         self.datastore = Datastore.load(self.ds_name)
 
         datastore_models.update_datastore_version(
             self.ds_name, self.ds_version, "mysql", "", "", True)
+        DatastoreVersionMetadata.add_datastore_version_flavor_association(
+            self.ds_name, self.ds_version, [self.flavor_id])
 
         self.datastore_version = DatastoreVersion.load(self.datastore,
                                                        self.ds_version)
@@ -63,6 +68,11 @@ class TestDatastoreBase(trove_testtools.TestCase):
         self.cap1.delete()
         self.cap2.delete()
         self.cap3.delete()
+        datastore = datastore_models.Datastore.load(self.ds_name)
+        ds_version = datastore_models.DatastoreVersion.load(datastore,
+                                                            self.ds_version)
+        datastore_models.DBDatastoreVersionMetadata.find_by(
+            datastore_version_id=ds_version.id).delete()
         Datastore.load(self.ds_name).delete()
 
     def capability_name_filter(self, capabilities):

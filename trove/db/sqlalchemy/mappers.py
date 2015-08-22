@@ -32,6 +32,8 @@ def map(engine, models):
                Table('datastores', meta, autoload=True))
     orm.mapper(models['datastore_version'],
                Table('datastore_versions', meta, autoload=True))
+    orm.mapper(models['datastore_version_metadata'],
+               Table('datastore_version_metadata', meta, autoload=True))
     orm.mapper(models['capabilities'],
                Table('capabilities', meta, autoload=True))
     orm.mapper(models['capability_overrides'],

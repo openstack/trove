@@ -57,6 +57,13 @@ class API(wsgi.Router):
         mapper.connect("/{tenant_id}/datastores/{datastore}/versions/{id}",
                        controller=datastore_resource,
                        action="version_show")
+        mapper.connect(
+            "/{tenant_id}/datastores/{datastore}/versions/"
+            "{version_id}/flavors",
+            controller=datastore_resource,
+            action="list_associated_flavors",
+            conditions={'method': ['GET']}
+        )
         mapper.connect("/{tenant_id}/datastores/versions/{uuid}",
                        controller=datastore_resource,
                        action="version_show_by_uuid")

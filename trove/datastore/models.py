@@ -14,15 +14,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-#
 
 from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.remote import create_nova_client
 from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
+from trove.flavor.models import Flavor as flavor_model
 
 
 LOG = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ def persisted_models():
         'capabilities': DBCapabilities,
         'datastore_version': DBDatastoreVersion,
         'capability_overrides': DBCapabilityOverrides,
+        'datastore_version_metadata': DBDatastoreVersionMetadata
     }
 
 
@@ -58,6 +60,13 @@ class DBDatastoreVersion(dbmodels.DatabaseModelBase):
 
     _data_fields = ['id', 'datastore_id', 'name', 'manager', 'image_id',
                     'packages', 'active']
+
+
+class DBDatastoreVersionMetadata(dbmodels.DatabaseModelBase):
+
+    _data_fields = ['id', 'datastore_version_id', 'key', 'value',
+                    'created', 'deleted', 'deleted_at', 'updated_at']
+    preserve_on_delete = True
 
 
 class Capabilities(object):
@@ -526,4 +535,126 @@ def update_datastore_version(datastore, name, manager, image_id, packages,
     version.image_id = image_id
     version.packages = packages
     version.active = active
+
     db_api.save(version)
+
+
+class DatastoreVersionMetadata(object):
+    @classmethod
+    def _datastore_version_metadata_add(cls, datastore_version_id,
+                                        key, value, exception_class):
+        """Create an entry in the Datastore Version Metadata table."""
+        # Do we have a mapping in the db?
+        # yes: and its deleted then modify the association
+        # yes: and its not deleted then error on create
+        # no: then just create the new association
+        try:
+            db_record = DBDatastoreVersionMetadata.find_by(
+                datastore_version_id=datastore_version_id,
+                key=key, value=value)
+            if db_record.deleted == 1:
+                db_record.deleted = 0
+                db_record.updated_at = utils.utcnow()
+                db_record.save()
+                return
+            else:
+                raise exception_class(
+                    datastore_version_id=datastore_version_id,
+                    flavor_id=value)
+        except exception.NotFound:
+            pass
+        DBDatastoreVersionMetadata.create(
+            datastore_version_id=datastore_version_id,
+            key=key, value=value)
+
+    @classmethod
+    def _datastore_version_metadata_delete(cls, datastore_version_id,
+                                           key, value, exception_class):
+        try:
+            db_record = DBDatastoreVersionMetadata.find_by(
+                datastore_version_id=datastore_version_id,
+                key=key, value=value)
+            if db_record.deleted == 0:
+                db_record.delete()
+                return
+            else:
+                raise exception_class(
+                    datastore_version_id=datastore_version_id,
+                    flavor_id=value)
+        except exception.ModelNotFoundError:
+            raise exception_class(datastore_version_id=datastore_version_id,
+                                  flavor_id=value)
+
+    @classmethod
+    def add_datastore_version_flavor_association(cls, datastore_name,
+                                                 datastore_version_name,
+                                                 flavor_ids):
+        db_api.configure_db(CONF)
+        db_ds_record = DBDatastore.find_by(
+            name=datastore_name
+        )
+        db_datastore_id = db_ds_record.id
+        db_dsv_record = DBDatastoreVersion.find_by(
+            datastore_id=db_datastore_id,
+            name=datastore_version_name
+        )
+        datastore_version_id = db_dsv_record.id
+        for flavor_id in flavor_ids:
+            cls._datastore_version_metadata_add(
+                datastore_version_id, 'flavor', flavor_id,
+                exception.DatastoreFlavorAssociationAlreadyExists)
+
+    @classmethod
+    def delete_datastore_version_flavor_association(cls, datastore_name,
+                                                    datastore_version_name,
+                                                    flavor_id):
+        db_api.configure_db(CONF)
+        db_ds_record = DBDatastore.find_by(
+            name=datastore_name
+        )
+        db_datastore_id = db_ds_record.id
+        db_dsv_record = DBDatastoreVersion.find_by(
+            datastore_id=db_datastore_id,
+            name=datastore_version_name
+        )
+        datastore_version_id = db_dsv_record.id
+        cls._datastore_version_metadata_delete(
+            datastore_version_id, 'flavor', flavor_id,
+            exception.DatastoreFlavorAssociationNotFound)
+
+    @classmethod
+    def list_datastore_version_flavor_associations(cls, context,
+                                                   datastore_type,
+                                                   datastore_version_id):
+        if datastore_type and datastore_version_id:
+            """
+            All nova flavors are permitted for a datastore_version unless
+            one or more entries are found in datastore_version_metadata,
+            in which case only those are permitted.
+            """
+            (datastore, datastore_version) = get_datastore_version(
+                type=datastore_type, version=datastore_version_id)
+            # If datastore_version_id and flavor key exists in the
+            # metadata table return all the associated flavors for
+            # that datastore version.
+            nova_flavors = create_nova_client(context).flavors.list()
+            bound_flavors = DBDatastoreVersionMetadata.find_all(
+                datastore_version_id=datastore_version.id,
+                key='flavor', deleted=False
+            )
+            if (bound_flavors.count() != 0):
+                bound_flavors = tuple(f.value for f in bound_flavors)
+                # Generate a filtered list of nova flavors
+                ds_nova_flavors = (f for f in nova_flavors
+                                   if f.id in bound_flavors)
+                associated_flavors = tuple(flavor_model(flavor=item)
+                                           for item in ds_nova_flavors)
+            else:
+                # Return all nova flavors if no flavor metadata found
+                # for datastore_version.
+                associated_flavors = tuple(flavor_model(flavor=item)
+                                           for item in nova_flavors)
+            return associated_flavors
+        else:
+            msg = _("Specify both the datastore and datastore_version_id.")
+            raise exception.BadRequest(msg)

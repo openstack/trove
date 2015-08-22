@@ -92,6 +92,30 @@ class Commands(object):
         config_models.load_datastore_configuration_parameters(
             datastore, datastore_version, config_file_location)
 
+    def datastore_version_flavor_add(self, datastore_name,
+                                     datastore_version_name, flavor_ids):
+        """Adds flavors for a given datastore version id."""
+        try:
+            dsmetadata = datastore_models.DatastoreVersionMetadata
+            dsmetadata.add_datastore_version_flavor_association(
+                datastore_name, datastore_version_name, flavor_ids.split(","))
+            print("Added flavors '%s' to the '%s' '%s'."
+                  % (flavor_ids, datastore_name, datastore_version_name))
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
+
+    def datastore_version_flavor_delete(self, datastore_name,
+                                        datastore_version_name, flavor_id):
+        """Deletes a flavor's association with a given datastore."""
+        try:
+            dsmetadata = datastore_models.DatastoreVersionMetadata
+            dsmetadata.delete_datastore_version_flavor_association(
+                datastore_name, datastore_version_name, flavor_id)
+            print("Deleted flavor '%s' from '%s' '%s'."
+                  % (flavor_id, datastore_name, datastore_version_name))
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
+
     def params_of(self, command_name):
         if Commands.has(command_name):
             return utils.MethodInspector(getattr(self, command_name))
@@ -170,6 +194,23 @@ def main():
             help='Fully qualified file path to the configuration group '
             'parameter validation rules.')
 
+        parser = subparser.add_parser(
+            'datastore_version_flavor_add', help='Adds flavor association to '
+            'a given datastore and datastore version.')
+        parser.add_argument('datastore_name', help='Name of the datastore.')
+        parser.add_argument('datastore_version_name', help='Name of the '
+                            'datastore version.')
+        parser.add_argument('flavor_ids', help='Comma separated list of '
+                            'flavor ids.')
+
+        parser = subparser.add_parser(
+            'datastore_version_flavor_delete', help='Deletes a flavor '
+            'associated with a given datastore and datastore version.')
+        parser.add_argument('datastore_name', help='Name of the datastore.')
+        parser.add_argument('datastore_version_name', help='Name of the '
+                            'datastore version.')
+        parser.add_argument('flavor_id', help='The flavor to be deleted for '
+                            'a given datastore and datastore version.')
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)
 
@@ -179,7 +220,7 @@ def main():
         Commands().execute()
         sys.exit(0)
     except TypeError as e:
-        print(_("Possible wrong number of arguments supplied %s") % e)
+        print(_("Possible wrong number of arguments supplied %s.") % e)
         sys.exit(2)
     except Exception:
         print(_("Command failed, please check log for more info."))
