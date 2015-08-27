@@ -41,4 +41,4 @@ TROVE_MANAGE=$TROVE_BIN_DIR/trove-manage
 # Tell Tempest this project is present
 TEMPEST_SERVICES+=,trove
 
-enable_service trove
+enable_service trove tr-api tr-tmgr tr-cond
