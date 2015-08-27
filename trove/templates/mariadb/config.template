@@ -1,0 +1,57 @@
+[client]
+port = 3306
+
+[mysqld_safe]
+nice = 0
+
+[mysqld]
+ignore_builtin_innodb
+plugin_load=innodb=ha_innodb.so
+user = mysql
+port = 3306
+basedir = /usr
+datadir = /var/lib/mysql/data
+####tmpdir = /tmp
+tmpdir = /var/tmp
+pid_file = /var/run/mysqld/mysqld.pid
+skip-external-locking = 1
+key_buffer_size = {{ (50 * flavor['ram']/512)|int }}M
+max_allowed_packet = {{ (1024 * flavor['ram']/512)|int }}K
+thread_stack = 192K
+thread_cache_size = {{ (4 * flavor['ram']/512)|int }}
+myisam-recover = BACKUP
+query_cache_type = 1
+query_cache_limit = 1M
+query_cache_size = {{ (8 * flavor['ram']/512)|int }}M
+innodb_data_file_path = ibdata1:10M:autoextend
+innodb_buffer_pool_size = {{ (150 * flavor['ram']/512)|int }}M
+innodb_file_per_table = 1
+innodb_log_files_in_group = 2
+innodb_log_file_size=50M
+innodb_log_buffer_size=25M
+connect_timeout = 15
+wait_timeout = 120
+join_buffer_size = 1M
+read_buffer_size = 512K
+read_rnd_buffer_size = 512K
+sort_buffer_size = 1M
+tmp_table_size = {{ (16 * flavor['ram']/512)|int }}M
+max_heap_table_size = {{ (16 * flavor['ram']/512)|int }}M
+table_open_cache = {{ (256 * flavor['ram']/512)|int }}
+table_definition_cache = {{ (256 * flavor['ram']/512)|int }}
+open_files_limit = {{ (512 * flavor['ram']/512)|int }}
+max_user_connections = {{ (100 * flavor['ram']/512)|int }}
+max_connections = {{ (100 * flavor['ram']/512)|int }}
+default_storage_engine = innodb
+local-infile = 0
+server_id = {{server_id}}
+
+[mysqldump]
+quick = 1
+quote-names = 1
+max_allowed_packet = 16M
+
+[isamchk]
+key_buffer = 16M
+
+!includedir /etc/mysql/conf.d/

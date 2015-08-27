@@ -1,0 +1,2 @@
+[mysqld]
+log_bin = /var/lib/mysql/data/mysql-bin.log
