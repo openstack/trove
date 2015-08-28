@@ -21,7 +21,6 @@ http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.g
 mock>=1.2
 mox3>=0.7.0
 testtools>=1.4.0
-discover
 testrepository>=0.0.18
 pymongo>=3.0.2
 redis>=2.10.0
