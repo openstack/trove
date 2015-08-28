@@ -85,9 +85,6 @@ class ConfigurationManager(object):
             revision_dir = guestagent_utils.build_file_path(
                 os.path.dirname(base_config_path),
                 self.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
-            operating_system.create_directory(
-                revision_dir, user=owner, group=group, force=True,
-                as_root=requires_root)
             self._override_strategy = OneFileOverrideStrategy(revision_dir)
         else:
             self._override_strategy = override_strategy
@@ -313,6 +310,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         return self._find_revision_file(group_name, change_id) is not None
 
     def apply(self, group_name, change_id, options):
+        self._initialize_import_directory()
         revision_file = self._find_revision_file(group_name, change_id)
         if revision_file is None:
             # Create a new file.
@@ -336,6 +334,14 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
             as_root=self._requires_root)
         operating_system.chmod(
             revision_file, FileMode.ADD_READ_ALL, as_root=self._requires_root)
+
+    def _initialize_import_directory(self):
+        """Lazy-initialize the directory for imported revision files.
+        """
+        if not os.path.exists(self._revision_dir):
+            operating_system.create_directory(
+                self._revision_dir, user=self._owner, group=self._group,
+                force=True, as_root=self._requires_root)
 
     def remove(self, group_name, change_id=None):
         removed = set()

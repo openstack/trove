@@ -42,6 +42,7 @@ from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
 from trove.common import utils
 from trove.conductor import api as conductor_api
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.cassandra import (
@@ -2187,9 +2188,10 @@ class TestRedisApp(testtools.TestCase):
         self.orig_os_path_eu = os.path.expanduser
         os.path.expanduser = Mock(return_value='/tmp/.file')
 
-        with patch.multiple(RedisApp, _build_admin_client=DEFAULT,
-                            _init_overrides_dir=DEFAULT):
-            self.app = RedisApp(state_change_wait_time=0)
+        with patch.object(RedisApp, '_build_admin_client'):
+            with patch.object(ImportOverrideStrategy,
+                              '_initialize_import_directory'):
+                self.app = RedisApp(state_change_wait_time=0)
 
         self.orig_os_path_isfile = os.path.isfile
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
@@ -2783,7 +2785,7 @@ class MongoDBAppTest(testtools.TestCase):
             'cmd_disable': 'disable'
         }
 
-    @patch.object(mongo_service.MongoDBApp, '_init_overrides_dir')
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
         super(MongoDBAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = (mongo_service.

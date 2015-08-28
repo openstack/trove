@@ -17,6 +17,7 @@ from mock import DEFAULT, MagicMock, patch
 from trove.common.context import TroveContext
 from trove.guestagent import backup
 from trove.guestagent.common import configuration
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import (
     service as redis_service)
@@ -28,8 +29,8 @@ from trove.tests.unittests import trove_testtools
 
 class RedisGuestAgentManagerTest(trove_testtools.TestCase):
 
-    @patch.multiple(redis_service.RedisApp,
-                    _build_admin_client=DEFAULT, _init_overrides_dir=DEFAULT)
+    @patch.object(redis_service.RedisApp, '_build_admin_client')
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, *args, **kwargs):
         super(RedisGuestAgentManagerTest, self).setUp()
         self.patch_ope = patch('os.path.expanduser')
@@ -168,8 +169,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.manager.stop_db(self.context)
         redis_mock.assert_any_call(do_not_start_on_reboot=False)
 
-    @patch.object(redis_service.RedisApp, '_init_overrides_dir',
-                  return_value='')
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     @patch.object(backup, 'backup')
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   MagicMock(return_value={'dir': '/var/lib/redis',
