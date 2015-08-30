@@ -428,9 +428,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             msg = _("Error creating DNS entry for instance: %s") % self.id
             err = inst_models.InstanceTasks.BUILDING_ERROR_DNS
             self._log_and_raise(e, msg, err)
-        else:
-            LOG.debug("Successfully created DNS entry for instance: %s" %
-                      self.id)
 
     def attach_replication_slave(self, snapshot, flavor):
         LOG.debug("Calling attach_replication_slave for %s.", self.id)
@@ -924,6 +921,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 raise TroveError("Failed to create DNS entry for instance %s. "
                                  "No IP available." % self.id)
             dns_client.create_instance_entry(self.id, ip)
+            LOG.debug("Successfully created DNS entry for instance: %s" %
+                      self.id)
         else:
             LOG.debug("%(gt)s: DNS not enabled for instance: %(id)s" %
                       {'gt': greenthread.getcurrent(), 'id': self.id})
