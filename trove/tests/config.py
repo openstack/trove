@@ -87,6 +87,7 @@ class TestConfig(object):
             "in_proc_server": True,
             "report_directory": os.environ.get("REPORT_DIRECTORY", None),
             "trove_volume_support": True,
+            "trove_volume_size": 1,
             "trove_max_volumes_per_user": 100,
             "usage_endpoint": USAGE_ENDPOINT,
             "root_on_create": False,

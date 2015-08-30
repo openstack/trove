@@ -622,7 +622,7 @@ class WaitForConfigurationInstanceToFinish(ConfigurationsTestBase):
     @test(depends_on=[test_instance_with_configuration_active])
     @time_out(30)
     def test_get_configuration_details_from_instance_validation(self):
-        # validate that the configuraiton was applied correctly to the instance
+        # validate that the configuration was applied correctly to the instance
         inst = instance_info.dbaas.instances.get(configuration_instance.id)
         configuration_id = inst.configuration['id']
         assert_not_equal(None, inst.configuration['id'])

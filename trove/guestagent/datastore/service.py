@@ -105,7 +105,8 @@ class BaseDbStatus(object):
 
     def set_status(self, status):
         """Use conductor to update the DB app status."""
-        LOG.debug("Casting set_status message to conductor.")
+        LOG.debug("Casting set_status message to conductor (status is '%s')." %
+                  status.description)
         context = trove_context.TroveContext()
 
         heartbeat = {

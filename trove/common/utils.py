@@ -175,14 +175,8 @@ class MethodInspector(object):
         return "%s %s" % (self._func.__name__, args_str)
 
 
-def poll_until(retriever, condition=lambda value: value,
-               sleep_time=1, time_out=None):
-    """Retrieves object until it passes condition, then returns it.
-
-    If time_out_limit is passed in, PollTimeOut will be raised once that
-    amount of time is eclipsed.
-
-    """
+def build_polling_task(retriever, condition=lambda value: value,
+                       sleep_time=1, time_out=None):
     start_time = time.time()
 
     def poll_and_check():
@@ -192,11 +186,21 @@ def poll_until(retriever, condition=lambda value: value,
         if time_out is not None and time.time() - start_time > time_out:
             raise exception.PollTimeOut
 
-    lc = loopingcall.FixedIntervalLoopingCall(
-        f=poll_and_check).start(
-            sleep_time, True)
+    return loopingcall.FixedIntervalLoopingCall(
+        f=poll_and_check).start(sleep_time, True)
 
-    return lc.wait()
+
+def poll_until(retriever, condition=lambda value: value,
+               sleep_time=1, time_out=None):
+    """Retrieves object until it passes condition, then returns it.
+
+    If time_out_limit is passed in, PollTimeOut will be raised once that
+    amount of time is eclipsed.
+
+    """
+
+    return build_polling_task(retriever, condition=condition,
+                              sleep_time=sleep_time, time_out=time_out).wait()
 
 
 # Copied from nova.api.openstack.common in the old code.
