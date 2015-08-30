@@ -1,6 +1,4 @@
-# Copyright 2013 OpenStack Foundation
-# Copyright 2013 Rackspace Hosting
-# Copyright 2013 Hewlett-Packard Development Company, L.P.
+# Copyright 2015 Tesora, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -20,7 +18,6 @@ from oslo_log import log as logging
 from trove.guestagent.datastore.mysql import service_base
 
 LOG = logging.getLogger(__name__)
-CONF = service_base.CONF
 
 
 class KeepAliveConnection(service_base.BaseKeepAliveConnection):
@@ -51,6 +48,3 @@ class MySqlAdmin(service_base.BaseMySqlAdmin):
     def __init__(self):
         super(MySqlAdmin, self).__init__(LocalSqlClient, MySqlRootAccess(),
                                          MySqlApp)
-
-
-get_engine = MySqlApp.get_engine

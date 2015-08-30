@@ -26,6 +26,8 @@ from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
+# TODO(atomic77) The test cases should be made configurable
+# to make it easier to test the various derived datastores.
 from trove.guestagent.datastore.mysql.manager import Manager
 import trove.guestagent.datastore.mysql.service as dbaas
 from trove.guestagent import dbaas as base_dbaas
@@ -55,9 +57,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         # set up common mock objects, etc. for replication testing
         self.patcher_gfvs = patch(
             'trove.guestagent.dbaas.get_filesystem_volume_stats')
-        self.patcher_rs = patch(
-            'trove.guestagent.datastore.mysql.manager.'
-            'REPLICATION_STRATEGY_CLASS')
+        self.patcher_rs = patch(self.manager.replication_namespace + "." +
+                                self.manager.replication_strategy)
         self.mock_gfvs_class = self.patcher_gfvs.start()
         self.mock_rs_class = self.patcher_rs.start()
         self.repl_datastore_manager = 'mysql'
