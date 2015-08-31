@@ -24,6 +24,7 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis.asserts import fail
+from troveclient.openstack.common.apiclient.exceptions import ValidationError
 
 from trove import tests
 from trove.tests.api.databases import TestDatabases
@@ -91,7 +92,7 @@ class TestUsers(object):
         users.append({"name": self.username, "password": self.password,
                       "databases": [{"name": self.db1}]})
         users.append({"name": self.username1, "password": self.password1,
-                     "databases": [{"name": self.db1}, {"name": self.db2}]})
+                      "databases": [{"name": self.db1}, {"name": self.db2}]})
         self.dbaas.users.create(instance_info.id, users)
         assert_equal(202, self.dbaas.last_http_code)
 
@@ -123,7 +124,7 @@ class TestUsers(object):
         users.append({"name": self.username, "password": self.password,
                       "databases": [{"name": self.db1}]})
         users.append({"name": self.username1, "password": self.password1,
-                     "databases": [{"name": self.db1}, {"name": self.db2}]})
+                      "databases": [{"name": self.db1}, {"name": self.db2}]})
         assert_raises(exceptions.BadRequest, self.dbaas.users.create,
                       instance_info.id, users)
         assert_equal(400, self.dbaas.last_http_code)
@@ -320,7 +321,7 @@ class TestUsers(object):
                       "host": hostname, "databases": []})
         self.dbaas.users.create(instance_info.id, users)
         user_new = {}
-        assert_raises(Exception,
+        assert_raises(ValidationError,
                       self.dbaas.users.update_attributes, instance_info.id,
                       username, user_new, hostname)
         # The last_http_code doesn't have to be checked, since the exception
