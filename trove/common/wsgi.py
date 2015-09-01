@@ -53,8 +53,6 @@ eventlet.patcher.monkey_patch(all=False, socket=True)
 
 LOG = logging.getLogger('trove.common.wsgi')
 
-CONF = cfg.CONF
-
 
 def versioned_urlmap(*args, **kwargs):
     urlmap = paste.urlmap.urlmap_factory(*args, **kwargs)
