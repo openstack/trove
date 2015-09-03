@@ -16,8 +16,8 @@
 Extra tests to create an instance, shut down MySQL, and delete it.
 """
 
-from datetime import datetime
 import time
+import uuid
 
 from proboscis import asserts
 from proboscis import before_class
@@ -53,7 +53,7 @@ class TestBase(object):
                 'instance_bigger_flavor_name', 'm1.small')
         flavors = self.client.find_flavors_by_name(flavor_name)
         self.flavor_id = flavors[0].id
-        self.name = "TEST_" + str(datetime.now())
+        self.name = "TEST_" + str(uuid.uuid4())
         # Get the resize to flavor.
         flavors2 = self.client.find_flavors_by_name(flavor2_name)
         self.new_flavor_id = flavors2[0].id

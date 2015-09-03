@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
 import os
 import re
 import time
 from time import sleep
 import unittest
+import uuid
 
 
 from proboscis import after_class
@@ -215,7 +215,7 @@ class InstanceSetup(object):
     def create_instance_name(self):
         id = existing_instance()
         if id is None:
-            instance_info.name = "TEST_" + str(datetime.now())
+            instance_info.name = "TEST_" + str(uuid.uuid4())
         else:
             instance_info.name = dbaas.instances.get(id).name
 
@@ -772,7 +772,7 @@ class CreateInstanceWithNeutron(unittest.TestCase):
 
         self.result = None
         self.instance_name = ("TEST_INSTANCE_CREATION_WITH_NICS"
-                              + str(datetime.now()))
+                              + str(uuid.uuid4()))
         databases = []
         self.default_cidr = CONFIG.values.get('shared_network_subnet', None)
         if VOLUME_SUPPORT:

@@ -17,6 +17,7 @@
 from datetime import datetime
 import json
 from time import sleep
+import uuid
 
 from proboscis import after_class
 from proboscis.asserts import assert_equal
@@ -580,7 +581,7 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
         users.append({"name": "liteconf", "password": "liteconfpass",
                       "databases": [{"name": "firstdbconfig"}]})
         configuration_instance.users = users
-        configuration_instance.name = "TEST_" + str(datetime.now()) + "_config"
+        configuration_instance.name = "TEST_" + str(uuid.uuid4()) + "_config"
         flavor_href = instance_info.dbaas_flavor_href
         configuration_instance.dbaas_flavor_href = flavor_href
         configuration_instance.volume = instance_info.volume
