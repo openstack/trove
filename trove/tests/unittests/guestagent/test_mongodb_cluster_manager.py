@@ -164,9 +164,10 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
     def test_configure_cluster_security(self, get_key_mock, store_key_mock):
         self.manager.app._configure_cluster_security('key')
         store_key_mock.assert_called_once_with('key')
-        self.conf_mgr.apply_system_override.assert_called_once_with(
-            {'security.clusterAuthMode': 'keyFile',
-             'security.keyFile': '/var/keypath'}, 'clustering')
+        # TODO(mvandijk): enable cluster security once Trove features are in
+        # self.conf_mgr.apply_system_override.assert_called_once_with(
+        #     {'security.clusterAuthMode': 'keyFile',
+        #      'security.keyFile': '/var/keypath'}, 'clustering')
 
     @mock.patch.object(netutils, 'get_my_ipv4', return_value="10.0.0.2")
     def test_configure_network(self, ip_mock):

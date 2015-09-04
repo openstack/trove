@@ -304,9 +304,10 @@ class MongoDBApp(object):
         # Store the cluster member authentication key.
         self.store_key(key_value)
 
-        self.configuration_manager.apply_system_override(
-            {'security.clusterAuthMode': 'keyFile',
-             'security.keyFile': self.get_key_file()}, CNF_CLUSTER)
+        # TODO(mvandijk): enable cluster security once Trove features are in
+        # self.configuration_manager.apply_system_override(
+        #     {'security.clusterAuthMode': 'keyFile',
+        #      'security.keyFile': self.get_key_file()}, CNF_CLUSTER)
 
     def _configure_network(self, port=None):
         """Make the service accessible at a given (or default if not) port.
