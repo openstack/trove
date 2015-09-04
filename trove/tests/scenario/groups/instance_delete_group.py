@@ -16,6 +16,7 @@
 from proboscis import test
 
 from trove.tests.api.instances import GROUP_START_SIMPLE
+from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import replication_group
 from trove.tests.scenario.groups.test_group import TestGroup
@@ -25,7 +26,7 @@ GROUP = "scenario.instance_delete_group"
 
 
 @test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after_groups=[replication_group.GROUP,
+      runs_after_groups=[backup_group.GROUP_BACKUP, replication_group.GROUP,
                          instance_actions_group.GROUP])
 class InstanceDeleteGroup(TestGroup):
 

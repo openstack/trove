@@ -1,5 +1,6 @@
 [DEFAULT]
 
+
 #=========== RPC Configuration ======================
 
 # URL representing the messaging driver to use and its full configuration.
@@ -14,6 +15,7 @@
 # The default exchange under which topics are scoped. May be
 # overridden by an exchange name specified in the 'transport_url option.
 control_exchange = trove
+
 
 # ========== Sample RabbitMQ Configuration ==========
 
@@ -40,6 +42,7 @@ rabbit_password=f7999d1955c5014aa32c
 # The RabbitMQ virtual host. (string value)
 # rabbit_virtual_host=/
 
+
 # ========== Configuration options for Swift ==========
 
 # The swift_url can be specified directly or fetched from Keystone catalog.
@@ -51,7 +54,9 @@ rabbit_password=f7999d1955c5014aa32c
 # Service type to use when searching catalog.
 # swift_service_type = object-store
 
+
 # ========== Datastore Manager Configurations ==========
+
 # Datastore manager implementations.
 # Format: list of 'datastore-type:datastore.manager.implementation.module'
 # datastore_registry_ext = mysql:trove.guestagent.datastore.mysql.manager.Manager, percona:trove.guestagent.datastore.mysql.manager.Manager
@@ -93,6 +98,7 @@ root_grant_option = True
 # backup_chunk_size = 65536
 # backup_segment_max_size = 2147483648
 
+
 # ========== Sample Logging Configuration ==========
 
 # Show more verbose log output (sets INFO log level output)
@@ -111,10 +117,10 @@ log_file = logfile.txt
 # If False doesn't trace SQL requests.
 #trace_sqlalchemy = True
 
+
 # ========== Datastore Specific Configuration Options ==========
 
 [mysql]
-
 # For mysql, the following are the defaults for backup, and restore:
 # backup_strategy = InnoBackupEx
 # backup_namespace = trove.guestagent.strategies.backup.mysql_impl
@@ -131,3 +137,9 @@ log_file = logfile.txt
 # mount_point = /var/lib/vertica
 # readahead_size = 2048
 # guestagent_strategy = trove.common.strategies.cluster.experimental.vertica.guestagent.VerticaGuestAgentStrategy
+
+[redis]
+# For redis, the following are the defaults for backup, and restore:
+# backup_strategy = RedisBackup
+# backup_namespace = trove.guestagent.strategies.backup.experimental.redis_impl
+# restore_namespace = trove.guestagent.strategies.restore.experimental.redis_impl

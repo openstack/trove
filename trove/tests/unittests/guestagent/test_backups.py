@@ -16,7 +16,8 @@ from mock import ANY, DEFAULT, patch
 from testtools.testcase import ExpectedException
 from trove.common import exception
 from trove.common import utils
-from trove.guestagent.common.operating_system import FileMode
+from trove.guestagent.common import configuration
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
 from trove.guestagent.strategies.backup import base as backupBase
 from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
@@ -44,6 +45,10 @@ BACKUP_MONGODUMP_CLS = ("trove.guestagent.strategies.backup."
                         "experimental.mongo_impl.MongoDump")
 RESTORE_MONGODUMP_CLS = ("trove.guestagent.strategies.restore."
                          "experimental.mongo_impl.MongoDump")
+BACKUP_REDIS_CLS = ("trove.guestagent.strategies.backup."
+                    "experimental.redis_impl.RedisBackup")
+RESTORE_REDIS_CLS = ("trove.guestagent.strategies.restore."
+                     "experimental.redis_impl.RedisBackup")
 
 PIPE = " | "
 ZIP = "gzip"
@@ -78,12 +83,13 @@ PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql/data "
 CRYPTO_KEY = "default_aes_cbc_key"
 
 CBBACKUP_CMD = "tar cpPf - /tmp/backups"
-
 CBBACKUP_RESTORE = "sudo tar xpPf -"
 
 MONGODUMP_CMD = "sudo tar cPf - /var/lib/mongodb/dump"
-
 MONGODUMP_RESTORE = "sudo tar xPf -"
+
+REDISBACKUP_CMD = "sudo cat /var/lib/redis/dump.rdb"
+REDISBACKUP_RESTORE = "tee /var/lib/redis/dump.rdb"
 
 
 class GuestAgentBackupTest(trove_testtools.TestCase):
@@ -320,8 +326,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             inst = MySQLRestoreMixin()
             inst.reset_root_password()
 
-            chmod.assert_called_once_with(ANY, FileMode.ADD_READ_ALL,
-                                          as_root=True)
+            chmod.assert_called_once_with(
+                ANY, operating_system.FileMode.ADD_READ_ALL, as_root=True)
 
             # Make sure the temporary error log got deleted as root
             # (see bug/1423759).
@@ -369,6 +375,61 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + MONGODUMP_RESTORE)
+
+    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  mock.Mock(return_value={'dir': '/var/lib/redis',
+                                          'dbfilename': 'dump.rdb'}))
+    def test_backup_encrypted_redisbackup_command(self, *mocks):
+        backupBase.BackupRunner.is_encrypted = True
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_REDIS_CLS)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(
+            REDISBACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn("gz.enc", bkp.manifest)
+
+    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  mock.Mock(return_value={'dir': '/var/lib/redis',
+                                          'dbfilename': 'dump.rdb'}))
+    def test_backup_not_encrypted_redisbackup_command(self, *mocks):
+        backupBase.BackupRunner.is_encrypted = False
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_REDIS_CLS)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(REDISBACKUP_CMD + PIPE + ZIP, bkp.command)
+        self.assertIn("gz", bkp.manifest)
+
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  mock.Mock(return_value={'dir': '/var/lib/redis',
+                                          'dbfilename': 'dump.rdb'}))
+    @patch.object(operating_system, 'chown')
+    @patch.object(operating_system, 'create_directory')
+    def test_restore_decrypted_redisbackup_command(self, *mocks):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = False
+        RunnerClass = utils.import_class(RESTORE_REDIS_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd, UNZIP + PIPE + REDISBACKUP_RESTORE)
+
+    @patch.object(configuration.ConfigurationManager, 'parse_configuration',
+                  mock.Mock(return_value={'dir': '/var/lib/redis',
+                                          'dbfilename': 'dump.rdb'}))
+    @patch.object(operating_system, 'chown')
+    @patch.object(operating_system, 'create_directory')
+    def test_restore_encrypted_redisbackup_command(self, *mocks):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = True
+        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_REDIS_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd,
+                         DECRYPT + PIPE + UNZIP + PIPE + REDISBACKUP_RESTORE)
 
 
 class CouchbaseBackupTests(trove_testtools.TestCase):
@@ -527,5 +588,100 @@ class MongodbRestoreTests(trove_testtools.TestCase):
         self.restore_runner._run_restore = mock.Mock(
             side_effect=exception.ProcessExecutionError('Error'))
         self.restore_runner.post_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+
+class RedisBackupTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(RedisBackupTests, self).setUp()
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch.start()
+        self.addCleanup(self.exec_timeout_patch.stop)
+        self.conf_man_patch = patch.object(
+            configuration.ConfigurationManager, 'parse_configuration',
+            mock.Mock(return_value={'dir': '/var/lib/redis',
+                                    'dbfilename': 'dump.rdb'}))
+        self.conf_man_patch.start()
+        self.addCleanup(self.conf_man_patch.stop)
+
+        self.backup_runner = utils.import_class(BACKUP_REDIS_CLS)
+        self.backup_runner_patch = patch.multiple(
+            self.backup_runner, _run=DEFAULT,
+            _run_pre_backup=DEFAULT, _run_post_backup=DEFAULT)
+        self.backup_runner_mocks = self.backup_runner_patch.start()
+        self.addCleanup(self.backup_runner_patch.stop)
+
+    def tearDown(self):
+        super(RedisBackupTests, self).tearDown()
+
+    def test_backup_success(self):
+        with self.backup_runner(12345):
+            pass
+
+        self.backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        self.backup_runner_mocks['_run'].assert_called_once_with()
+        self.backup_runner_mocks['_run_post_backup'].assert_called_once_with()
+
+    def test_backup_failed_due_to_run_backup(self):
+        self.backup_runner_mocks['_run'].configure_mock(
+            side_effect=exception.TroveError('test')
+        )
+        with ExpectedException(exception.TroveError, 'test'):
+            with self.backup_runner(12345):
+                pass
+        self.backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        self.backup_runner_mocks['_run'].assert_called_once_with()
+        self.assertEqual(
+            0, self.backup_runner_mocks['_run_post_backup'].call_count)
+
+
+class RedisRestoreTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(RedisRestoreTests, self).setUp()
+        self.conf_man_patch = patch.object(
+            configuration.ConfigurationManager, 'parse_configuration',
+            mock.Mock(return_value={'dir': '/var/lib/redis',
+                                    'dbfilename': 'dump.rdb'}))
+        self.conf_man_patch.start()
+        self.addCleanup(self.conf_man_patch.stop)
+        self.os_patch = patch.multiple(operating_system,
+                                       chown=DEFAULT,
+                                       create_directory=DEFAULT)
+        self.os_patch.start()
+        self.addCleanup(self.os_patch.stop)
+
+        self.restore_runner = utils.import_class(
+            RESTORE_REDIS_CLS)('swift', location='http://some.where',
+                               checksum='True_checksum',
+                               restore_location='/var/lib/somewhere')
+        self.restore_runner_patch = patch.multiple(
+            self.restore_runner, _run_restore=DEFAULT,
+            pre_restore=DEFAULT, post_restore=DEFAULT)
+        self.restore_runner_mocks = self.restore_runner_patch.start()
+        self.expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=self.expected_content_length)
+        self.addCleanup(self.restore_runner_patch.stop)
+
+    def tearDown(self):
+        super(RedisRestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            self.expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_pre_restore(self):
+        self.restore_runner_mocks['pre_restore'].side_effect = (
+            exception.ProcessExecutionError('Error'))
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner._run_restore.side_effect = (
+            exception.ProcessExecutionError('Error'))
         self.assertRaises(exception.ProcessExecutionError,
                           self.restore_runner.restore)
