@@ -321,7 +321,8 @@ common_opts = [
                          'postgresql': 'ac277e0d-4f21-40aa-b347-1ea31e571720',
                          'couchdb': 'f0a9ab7b-66f7-4352-93d7-071521d44c7c',
                          'vertica': 'a8d805ae-a3b2-c4fd-gb23-b62cee5201ae',
-                         'db2': 'e040cd37-263d-4869-aaa6-c62aa97523b5'},
+                         'db2': 'e040cd37-263d-4869-aaa6-c62aa97523b5',
+                         'mariadb': '7a4f82cc-10d2-4bc6-aadc-d9aacc2a3cb5'},
                 help='Unique ID to tag notification events.'),
     cfg.StrOpt('nova_proxy_admin_user', default='',
                help="Admin username used to connect to Nova.", secret=True),
@@ -935,6 +936,63 @@ db2_opts = [
     cfg.ListOpt('ignore_users', default=['PUBLIC', 'DB2INST1']),
 ]
 
+# MariaDB
+mariadb_group = cfg.OptGroup(
+    'mariadb', title='MariaDB options',
+    help="Oslo option group designed for MariaDB datastore")
+mariadb_opts = [
+    cfg.ListOpt('tcp_ports', default=["3306"],
+                help='List of TCP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.ListOpt('udp_ports', default=[],
+                help='List of UDP ports and/or port ranges to open '
+                     'in the security group (only applicable '
+                     'if trove_security_groups_support is True).'),
+    cfg.StrOpt('backup_strategy', default='InnoBackupEx',
+               help='Default strategy to perform backups.',
+               deprecated_name='backup_strategy',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('replication_strategy', default='MysqlBinlogReplication',
+               help='Default strategy for replication.'),
+    cfg.StrOpt('replication_namespace',
+               default='trove.guestagent.strategies.replication.mysql_binlog',
+               help='Namespace to load replication strategies from.'),
+    cfg.StrOpt('mount_point', default='/var/lib/mysql',
+               help="Filesystem path for mounting "
+                    "volumes if volume support is enabled."),
+    cfg.BoolOpt('root_on_create', default=False,
+                help='Enable the automatic creation of the root user for the '
+                'service during instance-create. The generated password for '
+                'the root user is immediately returned in the response of '
+                "instance-create as the 'password' field."),
+    cfg.IntOpt('usage_timeout', default=400,
+               help='Maximum time (in seconds) to wait for a Guest to become '
+                    'active.'),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.mysql_impl',
+               help='Namespace to load backup strategies from.',
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.mysql_impl',
+               help='Namespace to load restore strategies from.',
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.BoolOpt('volume_support', default=True,
+                help='Whether to provision a Cinder volume for datadir.'),
+    cfg.StrOpt('device_path', default='/dev/vdb',
+               help='Device path for volume if volume support is enabled.'),
+    cfg.DictOpt('backup_incremental_strategy',
+                default={'InnoBackupEx': 'InnoBackupExIncremental'},
+                help='Incremental Backup Runner based on the default '
+                'strategy. For strategies that do not implement an '
+                'incremental backup, the runner will use the default full '
+                'backup.',
+                deprecated_name='backup_incremental_strategy',
+                deprecated_group='DEFAULT'),
+]
+
 # RPC version groups
 upgrade_levels = cfg.OptGroup(
     'upgrade_levels',
@@ -973,6 +1031,7 @@ CONF.register_group(postgresql_group)
 CONF.register_group(couchdb_group)
 CONF.register_group(vertica_group)
 CONF.register_group(db2_group)
+CONF.register_group(mariadb_group)
 
 CONF.register_opts(mysql_opts, mysql_group)
 CONF.register_opts(percona_opts, percona_group)
@@ -984,6 +1043,7 @@ CONF.register_opts(postgresql_opts, postgresql_group)
 CONF.register_opts(couchdb_opts, couchdb_group)
 CONF.register_opts(vertica_opts, vertica_group)
 CONF.register_opts(db2_opts, db2_group)
+CONF.register_opts(mariadb_opts, mariadb_group)
 
 CONF.register_opts(rpcapi_cap_opts, upgrade_levels)
 

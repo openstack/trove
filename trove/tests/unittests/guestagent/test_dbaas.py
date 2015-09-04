@@ -1685,6 +1685,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.db2.'
                          'manager.Manager',
                          test_dict.get('db2'))
+        self.assertEqual('trove.guestagent.datastore.experimental.mariadb.'
+                         'manager.Manager',
+                         test_dict.get('mariadb'))
 
     def test_datastore_registry_with_blank_dict(self):
         datastore_registry_ext_test = dict()
@@ -1718,6 +1721,9 @@ class ServiceRegistryTest(testtools.TestCase):
         self.assertEqual('trove.guestagent.datastore.experimental.db2.'
                          'manager.Manager',
                          test_dict.get('db2'))
+        self.assertEqual('trove.guestagent.datastore.experimental.mariadb.'
+                         'manager.Manager',
+                         test_dict.get('mariadb'))
 
 
 class KeepAliveConnectionTest(testtools.TestCase):
