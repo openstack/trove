@@ -805,7 +805,7 @@ mongodb_opts = [
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.ListOpt('udp_ports', default=[],
-                help='List of UPD ports and/or port ranges to open '
+                help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default='MongoDump',
@@ -886,7 +886,7 @@ postgresql_opts = [
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.ListOpt('udp_ports', default=[],
-                help='List of UPD ports and/or port ranges to open '
+                help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
     cfg.StrOpt('backup_strategy', default='PgDump',
