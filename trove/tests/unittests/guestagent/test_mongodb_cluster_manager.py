@@ -106,28 +106,35 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
             'clustering')
         mock_start_db.assert_called_with(True)
 
+    @mock.patch.object(service.MongoDBApp, '_initialize_writable_run_dir')
     @mock.patch.object(service.MongoDBApp, '_configure_as_query_router')
     @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
-    def test_prepare_mongos(self, mock_secure, mock_config):
+    def test_prepare_mongos(self, mock_secure, mock_config, mock_run_init):
         self._prepare_method("test-id-1", "query_router", None)
+        mock_run_init.assert_called_once_with()
         mock_config.assert_called_once_with()
         mock_secure.assert_called_once_with(None)
         self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.BUILD_PENDING)
 
+    @mock.patch.object(service.MongoDBApp, '_initialize_writable_run_dir')
     @mock.patch.object(service.MongoDBApp, '_configure_as_config_server')
     @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
-    def test_prepare_config_server(self, mock_secure, mock_config):
+    def test_prepare_config_server(
+            self, mock_secure, mock_config, mock_run_init):
         self._prepare_method("test-id-2", "config_server", None)
+        mock_run_init.assert_called_once_with()
         mock_config.assert_called_once_with()
         mock_secure.assert_called_once_with(None)
         self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.BUILD_PENDING)
 
+    @mock.patch.object(service.MongoDBApp, '_initialize_writable_run_dir')
     @mock.patch.object(service.MongoDBApp, '_configure_as_cluster_member')
     @mock.patch.object(service.MongoDBApp, '_configure_cluster_security')
-    def test_prepare_member(self, mock_secure, mock_config):
+    def test_prepare_member(self, mock_secure, mock_config, mock_run_init):
         self._prepare_method("test-id-3", "member", None)
+        mock_run_init.assert_called_once_with()
         mock_config.assert_called_once_with('rs1')
         mock_secure.assert_called_once_with(None)
         self.manager.app.status.set_status.assert_called_with(

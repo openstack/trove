@@ -38,8 +38,7 @@ from trove.guestagent.db import models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-CONFIG_FILE = (operating_system.
-               file_discovery(system.CONFIG_CANDIDATES))
+CONFIG_FILE = operating_system.file_discovery(system.CONFIG_CANDIDATES)
 
 # Configuration group for clustering-related settings.
 CNF_CLUSTER = 'clustering'
@@ -215,6 +214,11 @@ class MongoDBApp(object):
             self, cluster_config, mount_point=None):
         LOG.debug("Applying initial configuration.")
 
+        # Mongodb init scripts assume the PID-file path is writable by the
+        # database service.
+        # See: https://jira.mongodb.org/browse/SERVER-20075
+        self._initialize_writable_run_dir()
+
         # todo mvandijk: enable authorization.
         # 'security.authorization': True
         self.configuration_manager.apply_system_override(
@@ -233,6 +237,16 @@ class MongoDBApp(object):
             self._configure_as_cluster_instance(cluster_config)
         else:
             self._configure_network(MONGODB_PORT)
+
+    def _initialize_writable_run_dir(self):
+        """Create a writable directory for Mongodb's runtime data
+        (e.g. PID-file).
+        """
+        mongodb_run_dir = os.path.dirname(system.MONGO_PID_FILE)
+        LOG.debug("Initializing a runtime directory: %s" % mongodb_run_dir)
+        operating_system.create_directory(
+            mongodb_run_dir, user=system.MONGO_USER, group=system.MONGO_USER,
+            force=True, as_root=True)
 
     def _configure_as_cluster_instance(self, cluster_config):
         """Configure this guest as a cluster instance and return its
