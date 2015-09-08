@@ -57,7 +57,7 @@ class MongoDBApp(object):
         """Initialize a directory for configuration overrides.
         """
         revision_dir = guestagent_utils.build_file_path(
-            os.path.dirname(system.MONGO_USER),
+            os.path.dirname(CONFIG_FILE),
             ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
 
         if not os.path.exists(revision_dir):
