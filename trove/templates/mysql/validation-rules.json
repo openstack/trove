@@ -226,6 +226,11 @@
             "name": "collation_server",
             "restart_required": false,
             "type": "string"
+        },
+        {
+            "name": "performance_schema",
+            "restart_required": true,
+            "type": "boolean"
         }
     ]
 }
