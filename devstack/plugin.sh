@@ -115,6 +115,11 @@ function configure_trove {
         iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_tenant_name trove
         iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
         iniset $TROVE_TASKMANAGER_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
+
+        # TODO(cp16net) use the compute v2 api as default v2.1 is not working.
+        # https://bugs.launchpad.net/python-novaclient/+bug/1493446
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_compute_service_type compute_legacy
+
         setup_trove_logging $TROVE_TASKMANAGER_CONF
     fi
 
