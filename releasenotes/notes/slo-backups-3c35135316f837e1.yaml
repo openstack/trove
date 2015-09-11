@@ -1,0 +1,9 @@
+---
+fixes:
+  - Backups to Swift will now use Static Large Objects
+    for larger backups. A new configuration option
+    'backup_segment_max_size' can be set to adjust the
+    segment size of the SLO. Backups that are smaller
+    than the segment size will be uploaded as regular
+    objects. This is an improvement over old Dynamic
+    Large Object implementation. Bug 1489997.

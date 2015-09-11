@@ -28,7 +28,7 @@ class Storage(Strategy):
         super(Storage, self).__init__()
 
     @abc.abstractmethod
-    def save(self, filename, stream):
+    def save(self, filename, stream, metadata=None):
         """Persist information from the stream."""
 
     @abc.abstractmethod

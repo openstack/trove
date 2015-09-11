@@ -80,9 +80,13 @@ class BackupAgent(object):
                     **parent_metadata) as bkup:
             try:
                 LOG.debug("Starting backup %s.", backup_id)
+                meta = {}
+                meta['datastore'] = backup_info['datastore']
+                meta['datastore_version'] = backup_info['datastore_version']
                 success, note, checksum, location = storage.save(
                     bkup.manifest,
-                    bkup)
+                    bkup,
+                    metadata=meta)
 
                 backup_state.update({
                     'checksum': checksum,
@@ -101,12 +105,6 @@ class BackupAgent(object):
 
                 if not success:
                     raise BackupError(note)
-
-                meta = bkup.metadata()
-                meta['datastore'] = backup_info['datastore']
-                meta['datastore_version'] = backup_info[
-                    'datastore_version']
-                storage.save_metadata(location, meta)
 
                 backup_state.update({'state': BackupState.COMPLETED})
 
