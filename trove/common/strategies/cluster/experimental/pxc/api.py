@@ -60,10 +60,10 @@ class PXCCluster(models.Cluster):
         pxc_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)
 
-        # Matching number of instances with configured cluster_member_count
-        if num_instances != pxc_conf.cluster_member_count:
-            raise exception.ClusterNumInstancesNotSupported(
-                num_instances=pxc_conf.cluster_member_count)
+        # Check number of instances is at least min_cluster_member_count
+        if num_instances < pxc_conf.min_cluster_member_count:
+            raise exception.ClusterNumInstancesNotLargeEnough(
+                num_instances=pxc_conf.min_cluster_member_count)
 
         # Checking flavors
         flavor_ids = [instance['flavor_id'] for instance in instances]

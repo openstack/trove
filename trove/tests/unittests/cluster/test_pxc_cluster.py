@@ -33,9 +33,9 @@ CONF = cfg.CONF
 
 
 class FakeOptGroup(object):
-    def __init__(self, cluster_member_count=3,
+    def __init__(self, min_cluster_member_count=3,
                  volume_support=True, device_path='/dev/vdb'):
-        self.cluster_member_count = cluster_member_count
+        self.min_cluster_member_count = min_cluster_member_count
         self.volume_support = volume_support
         self.device_path = device_path
 
@@ -72,7 +72,7 @@ class ClusterTest(trove_testtools.TestCase):
         super(ClusterTest, self).tearDown()
 
     def test_create_empty_instances(self):
-        self.assertRaises(exception.ClusterNumInstancesNotSupported,
+        self.assertRaises(exception.ClusterNumInstancesNotLargeEnough,
                           Cluster.create,
                           Mock(),
                           self.cluster_name,
@@ -214,6 +214,28 @@ class ClusterTest(trove_testtools.TestCase):
         mock_task_api.return_value.create_cluster.assert_called_with(
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
+
+    @patch.object(inst_models.Instance, 'create')
+    @patch.object(DBCluster, 'create')
+    @patch.object(task_api, 'load')
+    @patch.object(QUOTAS, 'check_quotas')
+    @patch.object(remote, 'create_nova_client')
+    def test_create_over_limit(self, mock_client, mock_check_quotas,
+                               mock_task_api, mock_db_create, mock_ins_create):
+        instances = [{'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'}]
+        flavors = Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {})
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(4, mock_ins_create.call_count)
 
     @patch.object(pxc_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')

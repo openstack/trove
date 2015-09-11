@@ -513,6 +513,11 @@ class ClusterNumInstancesNotSupported(TroveError):
                 "be %(num_instances)s.")
 
 
+class ClusterNumInstancesNotLargeEnough(TroveError):
+    message = _("The number of instances for your initial cluster must "
+                "be at least %(num_instances)s.")
+
+
 class ClusterInstanceOperationNotSupported(TroveError):
     message = _("Operation not supported for instances that are part of a "
                 "cluster.")
