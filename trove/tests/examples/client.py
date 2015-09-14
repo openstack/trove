@@ -192,15 +192,26 @@ class SnippetWriter(object):
                 fail('Error: output files differ for %s:\n%s'
                      % (filename, diff))
 
+        def order_json(json_obj):
+            """Sort the json object so that it can be compared properly."""
+            if isinstance(json_obj, list):
+                return sorted(order_json(elem) for elem in json_obj)
+            if isinstance(json_obj, dict):
+                return sorted(
+                    (key, order_json(value))
+                    for key, value in json_obj.items())
+            else:
+                return json_obj
+
         def assert_json_matches(original):
             try:
-                expected = json.loads(original)
-                actual = json.loads(output)
+                expected_json = json.loads(original)
+                actual_json = json.loads(output)
             except ValueError:
                 fail('Invalid json!\nExpected: %s\nActual: %s'
                      % (original, output))
 
-            if expected != actual:
+            if order_json(expected_json) != order_json(actual_json):
                 # Re-Use the same failure output if the json is different
                 assert_file_matches(original)
 
