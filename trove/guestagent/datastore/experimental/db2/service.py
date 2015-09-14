@@ -27,7 +27,6 @@ from trove.guestagent.db import models
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
-IGNORE_USERS_LIST = CONF.db2.ignore_users
 
 
 class DB2App(object):
@@ -340,8 +339,9 @@ class DB2Admin(object):
                 LOG.debug("item = %r" % item)
                 user = item.split() if item != "" else None
                 LOG.debug("user = %r" % (user))
-                if user is not None and user[0] not in IGNORE_USERS_LIST \
-                        and user[1] == 'Y':
+                if (user is not None
+                    and (user[0] not in cfg.get_ignored_users(manager='db2')
+                         and user[1] == 'Y')):
                     userlist.append(user[0])
             result = iter(userlist)
 

@@ -45,8 +45,6 @@ CNF_CLUSTER = 'clustering'
 
 MONGODB_PORT = CONF.mongodb.mongodb_port
 CONFIGSVR_PORT = CONF.mongodb.configsvr_port
-IGNORED_DBS = CONF.mongodb.ignore_dbs
-IGNORED_USERS = CONF.mongodb.ignore_users
 
 
 class MongoDBApp(object):
@@ -645,7 +643,7 @@ class MongoDBAdmin(object):
             for user_info in admin_client.admin.system.users.find():
                 user = models.MongoDBUser(name=user_info['_id'])
                 user.roles = user_info['roles']
-                if user.name not in IGNORED_USERS:
+                if user.name not in cfg.get_ignored_users(manager='mongodb'):
                     users.append(user.serialize())
         LOG.debug('users = ' + str(users))
         return pagination.paginate_list(users, limit, marker,
@@ -737,7 +735,7 @@ class MongoDBAdmin(object):
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Lists the databases."""
         db_names = self.list_database_names()
-        for hidden in IGNORED_DBS:
+        for hidden in cfg.get_ignored_dbs(manager='mongodb'):
             if hidden in db_names:
                 db_names.remove(hidden)
         databases = [models.MongoDBSchema(db_name).serialize()

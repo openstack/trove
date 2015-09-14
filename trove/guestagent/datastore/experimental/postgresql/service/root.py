@@ -22,7 +22,6 @@ from trove.guestagent.datastore.experimental.postgresql import pgutil
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-IGNORE_USERS_LIST = CONF.get(CONF.datastore_manager).ignore_users
 
 
 class PgSqlRoot(object):
@@ -35,7 +34,7 @@ class PgSqlRoot(object):
         system administration superuser of os_admin.
         """
         results = pgutil.query(
-            pgutil.UserQuery.list_root(ignore=IGNORE_USERS_LIST),
+            pgutil.UserQuery.list_root(ignore=cfg.get_ignored_users()),
             timeout=30,
         )
         # Reduce iter of iters to iter of single values.

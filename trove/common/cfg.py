@@ -129,11 +129,6 @@ common_opts = [
                help='Page size for listing backups.'),
     cfg.IntOpt('configurations_page_size', default=20,
                help='Page size for listing configurations.'),
-    cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
-                help='Users to exclude when listing users.'),
-    cfg.ListOpt('ignore_dbs',
-                default=['mysql', 'information_schema', 'performance_schema'],
-                help='Databases to exclude when listing databases.'),
     cfg.IntOpt('agent_call_low_timeout', default=5,
                help="Maximum time (in seconds) to wait for Guest Agent 'quick'"
                     "requests (such as retrieving a list of users or "
@@ -491,6 +486,15 @@ mysql_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mysql.'),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
+                help='Users to exclude when listing users.',
+                deprecated_name='ignore_users',
+                deprecated_group='DEFAULT'),
+    cfg.ListOpt('ignore_dbs',
+                default=['mysql', 'information_schema', 'performance_schema'],
+                help='Databases to exclude when listing databases.',
+                deprecated_name='ignore_dbs',
+                deprecated_group='DEFAULT'),
 ]
 
 # Percona
@@ -555,6 +559,15 @@ percona_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for percona.'),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
+                help='Users to exclude when listing users.',
+                deprecated_name='ignore_users',
+                deprecated_group='DEFAULT'),
+    cfg.ListOpt('ignore_dbs',
+                default=['mysql', 'information_schema', 'performance_schema'],
+                help='Databases to exclude when listing databases.',
+                deprecated_name='ignore_dbs',
+                deprecated_group='DEFAULT'),
 ]
 
 # Percona XtraDB Cluster
@@ -608,6 +621,9 @@ pxc_opts = [
                 'backup.'),
     cfg.ListOpt('ignore_users', default=['os_admin', 'root', 'clusterrepuser'],
                 help='Users to exclude when listing users.'),
+    cfg.ListOpt('ignore_dbs',
+                default=['mysql', 'information_schema', 'performance_schema'],
+                help='Databases to exclude when listing databases.'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.IntOpt('min_cluster_member_count', default=3,
@@ -1132,6 +1148,15 @@ mariadb_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mysql.'),
+    cfg.ListOpt('ignore_users', default=['os_admin', 'root'],
+                help='Users to exclude when listing users.',
+                deprecated_name='ignore_users',
+                deprecated_group='DEFAULT'),
+    cfg.ListOpt('ignore_dbs',
+                default=['mysql', 'information_schema', 'performance_schema'],
+                help='Databases to exclude when listing databases.',
+                deprecated_name='ignore_dbs',
+                deprecated_group='DEFAULT'),
 ]
 
 # RPC version groups
@@ -1202,3 +1227,31 @@ def parse_args(argv, default_config_files=None):
              project='trove',
              version=trove.__version__,
              default_config_files=default_config_files)
+
+
+def get_ignored_dbs(manager=None):
+    """
+    Get the list of ignored databases taking into account the fact
+    that the manager may not be specified, and the manager (if
+    specified) may not list ignore_dbs.
+    """
+
+    _manager = manager or CONF.datastore_manager or 'mysql'
+
+    _ignore_dbs = CONF.get(_manager).ignore_dbs or CONF.ignore_dbs or []
+
+    return _ignore_dbs
+
+
+def get_ignored_users(manager=None):
+    """
+    Get the list of ignored users taking into account the fact
+    that the manager may not be specified, and the manager (if
+    specified) may not list ignore_users.
+    """
+
+    _manager = manager or CONF.datastore_manager or 'mysql'
+
+    _ignore_users = CONF.get(_manager).ignore_users or CONF.ignore_users or []
+
+    return _ignore_users

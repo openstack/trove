@@ -64,12 +64,6 @@ rabbit_password=f7999d1955c5014aa32c
 
 # ========== Default Users / DBs Configuration ==========
 
-# Users to ignore for user create/list/delete operations
-ignore_users = os_admin
-
-# Databases to ignore for db create/list/delete operations
-ignore_dbs = lost+found, mysql, information_schema
-
 # Permissions to grant "root" user by default
 root_grant = ALL
 root_grant_option = True
@@ -131,6 +125,12 @@ log_file = logfile.txt
 # replication_namespace = trove.guestagent.strategies.replication.mysql_binlog
 # replication_user = slave_user
 # replication_password = slave_password
+
+# Users to ignore for user create/list/delete operations
+# ignore_users = os_admin
+
+# Databases to ignore for db create/list/delete operations
+# ignore_dbs = mysql, information_schema, performance_schema
 
 [vertica]
 # For vertica, following are the defaults needed:

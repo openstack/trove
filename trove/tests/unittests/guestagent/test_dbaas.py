@@ -534,7 +534,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
+                    ("schema_name NOT IN ('" +
+                     "', '".join(cfg.get_ignored_dbs()) +
                      "')"),
                     "ORDER BY schema_name ASC",
                     ]
@@ -550,8 +551,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
-                     "')"),
+                    ("schema_name NOT IN ('" +
+                     "', '".join(cfg.get_ignored_dbs()) + "')"),
                     "ORDER BY schema_name ASC",
                     ]
         for text in expected:
@@ -567,8 +568,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
-                     "')"),
+                    ("schema_name NOT IN ('" +
+                     "', '".join(cfg.get_ignored_dbs()) + "')"),
                     "ORDER BY schema_name ASC",
                     ]
 
@@ -587,8 +588,8 @@ class MySqlAdminTest(testtools.TestCase):
                     "default_character_set_name as charset,",
                     "default_collation_name as collation",
                     "FROM information_schema.schemata",
-                    ("schema_name NOT IN ('" + "', '".join(CONF.ignore_dbs) +
-                     "')"),
+                    ("schema_name NOT IN ('" +
+                     "', '".join(cfg.get_ignored_dbs()) + "')"),
                     "ORDER BY schema_name ASC",
                     ]
         for text in expected:

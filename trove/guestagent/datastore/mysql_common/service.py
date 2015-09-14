@@ -58,7 +58,6 @@ TMP_MYCNF = "/tmp/my.cnf.tmp"
 MYSQL_BASE_DIR = "/var/lib/mysql"
 
 CONF = cfg.CONF
-MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mysql'
 
 INCLUDE_MARKER_OPERATORS = {
     True: ">=",
@@ -420,7 +419,7 @@ class BaseMySqlAdmin(object):
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """List databases the user created on this mysql instance."""
         LOG.debug("---Listing Databases---")
-        ignored_database_names = "'%s'" % "', '".join(CONF.ignore_dbs)
+        ignored_database_names = "'%s'" % "', '".join(cfg.get_ignored_dbs())
         LOG.debug("The following database names are on ignore list and will "
                   "be omitted from the listing: %s" % ignored_database_names)
         databases = []

@@ -189,11 +189,10 @@ class Users(object):
             marker=marker,
             include_marker=include_marker)
         model_users = []
-        ignore_users = CONF.ignore_users
         for user in user_list:
             mysql_user = guest_models.MySQLUser()
             mysql_user.deserialize(user)
-            if mysql_user.name in ignore_users:
+            if mysql_user.name in cfg.get_ignored_users():
                 continue
             # TODO(hub-cap): databases are not being returned in the
             # reference agent
@@ -253,11 +252,10 @@ class Schemas(object):
             marker=marker,
             include_marker=include_marker)
         model_schemas = []
-        ignore_dbs = CONF.ignore_dbs
         for schema in schemas:
             mysql_schema = guest_models.MySQLDatabase()
             mysql_schema.deserialize(schema)
-            if mysql_schema.name in ignore_dbs:
+            if mysql_schema.name in cfg.get_ignored_dbs():
                 continue
             model_schemas.append(Schema(mysql_schema.name,
                                         mysql_schema.collate,

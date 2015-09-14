@@ -23,7 +23,6 @@ from trove.guestagent.datastore.experimental.postgresql import pgutil
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-IGNORE_DBS_LIST = CONF.get(CONF.datastore_manager).ignore_dbs
 
 
 class PgSqlDatabase(object):
@@ -89,7 +88,7 @@ class PgSqlDatabase(object):
             [{"_name": "", "_character_set": "", "_collate": ""}, ...]
         """
         results = pgutil.query(
-            pgutil.DatabaseQuery.list(ignore=IGNORE_DBS_LIST),
+            pgutil.DatabaseQuery.list(ignore=cfg.get_ignored_dbs()),
             timeout=30,
         )
         # Convert results to dictionaries.

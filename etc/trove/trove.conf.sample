@@ -142,10 +142,6 @@ taskmanager_queue = taskmanager
 # Auth
 admin_roles = admin
 
-# Users to ignore for user create/list/delete operations
-ignore_users = os_admin, root
-ignore_dbs = lost+found, mysql, information_schema
-
 # Guest related conf
 agent_heartbeat_time = 10
 agent_call_low_timeout = 5
@@ -218,6 +214,11 @@ root_on_create = False
 tcp_ports = 3306
 volume_support = True
 device_path = /dev/vdb
+
+# Users to ignore for user create/list/delete operations
+ignore_users = os_admin, root
+ignore_dbs = mysql, information_schema, performance_schema
+
 
 [redis]
 tcp_ports = 6379

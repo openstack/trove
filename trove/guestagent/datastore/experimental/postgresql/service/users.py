@@ -25,7 +25,6 @@ from trove.guestagent.datastore.experimental.postgresql.service.access import (
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-IGNORE_USERS_LIST = CONF.get(CONF.datastore_manager).ignore_users
 
 
 class PgSqlUsers(PgSqlAccess):
@@ -87,7 +86,7 @@ class PgSqlUsers(PgSqlAccess):
               "_databases": [{"_name": ""}, ...]}, ...]
         """
         results = pgutil.query(
-            pgutil.UserQuery.list(ignore=IGNORE_USERS_LIST),
+            pgutil.UserQuery.list(ignore=cfg.get_ignored_users()),
             timeout=30,
         )
         # Convert results into dictionaries.
