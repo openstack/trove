@@ -38,7 +38,7 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
 
     class UnableToDetermineBinlogPosition(exception.TroveError):
         message = _("Unable to determine binlog position "
-                    "(from file %(binlog_file)).")
+                    "(from file %(binlog_file)s).")
 
     def connect_to_master(self, service, snapshot):
         logging_config = snapshot['log_position']
@@ -78,4 +78,4 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
         except (IOError, IndexError) as ex:
             LOG.exception(ex)
             raise self.UnableToDetermineBinlogPosition(
-                {'info_file': INFO_FILE})
+                {'binlog_file': INFO_FILE})

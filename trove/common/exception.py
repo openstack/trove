@@ -238,7 +238,7 @@ class CannotResizeToSameSize(TroveError):
 class VolumeAttachmentsNotFound(NotFound):
 
     message = _("Cannot find the volumes attached to compute "
-                "instance %(server_id).")
+                "instance %(server_id)s.")
 
 
 class VolumeCreationFailure(TroveError):
