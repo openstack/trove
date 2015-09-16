@@ -63,7 +63,7 @@ class MongoDump(base.BackupRunner):
 
             operating_system.create_directory(MONGO_DUMP_DIR, as_root=True)
             operating_system.chown(MONGO_DUMP_DIR, mongo_system.MONGO_USER,
-                                   "nogroup", as_root=True)
+                                   mongo_system.MONGO_USER, as_root=True)
 
             # high timeout here since mongodump can take a long time
             utils.execute_with_timeout(
