@@ -39,11 +39,7 @@ class TestGroup(object):
             runner_module_name, class_prefix, runner_base_name,
             self.TEST_RUNNERS_NS)
         runner = runner_cls(*args, **kwargs)
-        helper_cls = self._load_dynamic_class(
-            self.TEST_HELPER_MODULE_NAME, class_prefix,
-            self.TEST_HELPER_BASE_NAME, self.TEST_HELPERS_NS)
-        runner._test_helper = helper_cls(self._build_class_name(
-            class_prefix, self.TEST_HELPER_BASE_NAME, strip_test=True))
+        runner._test_helper = self.get_helper()
         return runner
 
     def get_helper(self):

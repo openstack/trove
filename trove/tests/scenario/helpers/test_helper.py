@@ -20,10 +20,13 @@ from time import sleep
 
 
 class DataType(Enum):
+
     """
     Represent the type of data to add to a datastore.  This allows for
     multiple 'states' of data that can be verified after actions are
     performed by Trove.
+    If new entries are added here, sane values should be added to the
+    _fn_data dictionary defined in TestHelper.
     """
 
     # very tiny amount of data, useful for testing replication
@@ -39,6 +42,7 @@ class DataType(Enum):
 
 
 class TestHelper(object):
+
     """
     Base class for all 'Helper' classes.
 
@@ -48,17 +52,22 @@ class TestHelper(object):
     etc. should be handled by these classes.
     """
 
-    # Define the actions that can be done on each DataType
-    FN_ACTION_ADD = 'add'
-    FN_ACTION_REMOVE = 'remove'
-    FN_ACTION_VERIFY = 'verify'
-    FN_ACTIONS = [FN_ACTION_ADD, FN_ACTION_REMOVE, FN_ACTION_VERIFY]
+    # Define the actions that can be done on each DataType.  When adding
+    # a new action, remember to modify _data_fns
+    FN_ADD = 'add'
+    FN_REMOVE = 'remove'
+    FN_VERIFY = 'verify'
+    FN_TYPES = [FN_ADD, FN_REMOVE, FN_VERIFY]
+
+    # Artificial 'DataType' name to use for the methods that do the
+    # actual data manipulation work.
+    DT_ACTUAL = 'actual'
 
     def __init__(self, expected_override_name):
         """Initialize the helper class by creating a number of stub
         functions that each datastore specific class can chose to
         override.  Basically, the functions are of the form:
-            {FN_ACTION_*}_{DataType.name}_data
+            {FN_TYPE}_{DataType.name}_data
         For example:
             add_tiny_data
             add_small_data
@@ -66,28 +75,51 @@ class TestHelper(object):
             verify_large_data
         and so on.  Add and remove actions throw a SkipTest if not
         implemented, and verify actions by default do nothing.
+        These methods, by default, call the corresponding *_actual_data()
+        passing in 'data_label', 'data_start' and 'data_size' as defined
+        for each DataType in the dictionary below.
         """
         super(TestHelper, self).__init__()
+
+        self._expected_override_name = expected_override_name
 
         self._ds_client = None
         self._current_host = None
 
-        self._expected_override_name = expected_override_name
-
         # For building data access functions
         # name/fn pairs for each action
-        self._data_fns = {self.FN_ACTION_ADD: {},
-                          self.FN_ACTION_REMOVE: {},
-                          self.FN_ACTION_VERIFY: {}}
-        # Types of data functions to create.
+        self._data_fns = {self.FN_ADD: {},
+                          self.FN_REMOVE: {},
+                          self.FN_VERIFY: {}}
         # Pattern used to create the data functions.  The first parameter
-        # is the function type (FN_ACTION_*), the second is the DataType
+        # is the function type (FN_TYPE), the second is the DataType
+        # or DT_ACTUAL.
         self.data_fn_pattern = '%s_%s_data'
+        # Values to distinguish between the different DataTypes.  If these
+        # values don't work for a datastore, it will need to override
+        # the auto-generated {FN_TYPE}_{DataType.name}_data method.
+        self.DATA_START = 'start'
+        self.DATA_SIZE = 'size'
+        self._fn_data = {
+            DataType.tiny.name: {
+                self.DATA_START: 1,
+                self.DATA_SIZE: 100},
+            DataType.tiny2.name: {
+                self.DATA_START: 500,
+                self.DATA_SIZE: 100},
+            DataType.small.name: {
+                self.DATA_START: 1000,
+                self.DATA_SIZE: 1000},
+            DataType.large.name: {
+                self.DATA_START: 100000,
+                self.DATA_SIZE: 100000},
+        }
+
         self._build_data_fns()
 
-    ########################
-    # Client related methods
-    ########################
+    ################
+    # Client related
+    ################
     def get_client(self, host, *args, **kwargs):
         """Gets the datastore client."""
         if not self._ds_client or self._current_host != host:
@@ -99,9 +131,15 @@ class TestHelper(object):
         """Create a datastore client."""
         raise SkipTest('No client defined')
 
-    ######################
-    # Data related methods
-    ######################
+    def get_helper_credentials(self):
+        """Return the credentials that the client will be using to
+        access the database.
+        """
+        return {'name': None, 'password': None, 'database': None}
+
+    ##############
+    # Data related
+    ##############
     def add_data(self, data_type, host, *args, **kwargs):
         """Adds data of type 'data_type' to the database.  Descendant
         classes should implement a function for each DataType value
@@ -112,14 +150,14 @@ class TestHelper(object):
         Since this method may be called multiple times, the implemented
         'add_*_data' functions should be idempotent.
         """
-        self._perform_data_action(self.FN_ACTION_ADD, data_type, host,
+        self._perform_data_action(self.FN_ADD, data_type.name, host,
                                   *args, **kwargs)
 
     def remove_data(self, data_type, host, *args, **kwargs):
         """Removes all data associated with 'data_type'.  See
         instructions for 'add_data' for implementation guidance.
         """
-        self._perform_data_action(self.FN_ACTION_REMOVE, data_type, host,
+        self._perform_data_action(self.FN_REMOVE, data_type.name, host,
                                   *args, **kwargs)
 
     def verify_data(self, data_type, host, *args, **kwargs):
@@ -128,13 +166,12 @@ class TestHelper(object):
         some random elements within the set.  See
         instructions for 'add_data' for implementation guidance.
         """
-        self._perform_data_action(self.FN_ACTION_VERIFY, data_type, host,
+        self._perform_data_action(self.FN_VERIFY, data_type.name, host,
                                   *args, **kwargs)
 
-    def _perform_data_action(self, action_type, data_type, host,
-                             *args, **kwargs):
-        fns = self._data_fns[action_type]
-        data_fn_name = self.data_fn_pattern % (action_type, data_type.name)
+    def _perform_data_action(self, fn_type, fn_name, host, *args, **kwargs):
+        fns = self._data_fns[fn_type]
+        data_fn_name = self.data_fn_pattern % (fn_type, fn_name)
         try:
             fns[data_fn_name](self, host, *args, **kwargs)
         except SkipTest:
@@ -144,55 +181,83 @@ class TestHelper(object):
                                (data_fn_name, self.__class__.__name__, ex))
 
     def _build_data_fns(self):
-        """Build the base data functions specified by FN_ACTION_*
+        """Build the base data functions specified by FN_TYPE_*
         for each of the types defined in the DataType class.  For example,
         'add_small_data' and 'verify_large_data'.  These
-        functions can be overwritten by a descendant class and
-        those overwritten functions will be bound before calling
-        any data functions such as 'add_data' or 'remove_data'.
+        functions are set to call '*_actual_data' and will pass in
+        sane values for label, start and size.  The '*_actual_data'
+        methods should be overwritten by a descendant class, and are the
+        ones that do the actual work.
+        The original 'add_small_data', etc. methods can also be overridden
+        if needed, and those overwritten functions will be bound before
+        calling any data functions such as 'add_data' or 'remove_data'.
         """
-        for fn_type in self.FN_ACTIONS:
+        for fn_type in self.FN_TYPES:
             fn_dict = self._data_fns[fn_type]
             for data_type in DataType:
-                self._data_fn_builder(fn_type, data_type, fn_dict)
+                self._data_fn_builder(fn_type, data_type.name, fn_dict)
+            self._data_fn_builder(fn_type, self.DT_ACTUAL, fn_dict)
         self._override_data_fns()
 
-    def _data_fn_builder(self, fn_type, data_type, fn_dict):
+    def _data_fn_builder(self, fn_type, fn_name, fn_dict):
         """Builds the actual function with a SkipTest exception,
         and changes the name to reflect the pattern.
         """
-        name = self.data_fn_pattern % (fn_type, data_type.name)
+        data_fn_name = self.data_fn_pattern % (fn_type, fn_name)
 
-        def data_fn(self, host, *args, **kwargs):
-            # default action is to skip the test
-            using_str = ''
-            if self._expected_override_name != self.__class__.__name__:
-                using_str = ' (using %s)' % self.__class__.__name__
-            raise SkipTest("Data function '%s' not found in '%s'%s" %
-                           (name, self._expected_override_name, using_str))
+        # Build the overridable 'actual' Data Manipulation methods
+        if fn_name == self.DT_ACTUAL:
+            def data_fn(self, data_label, data_start, data_size, host,
+                        *args, **kwargs):
+                # default action is to skip the test
+                using_str = ''
+                if self._expected_override_name != self.__class__.__name__:
+                    using_str = ' (using %s)' % self.__class__.__name__
+                raise SkipTest("Data function '%s' not found in '%s'%s" % (
+                    data_fn_name, self._expected_override_name, using_str))
+        else:
+            def data_fn(self, host, *args, **kwargs):
+                # call the corresponding 'actual' method
+                fns = self._data_fns[fn_type]
+                var_dict = self._fn_data[fn_name]
+                data_start = var_dict[self.DATA_START]
+                data_size = var_dict[self.DATA_SIZE]
+                actual_fn_name = self.data_fn_pattern % (
+                    fn_type, self.DT_ACTUAL)
+                try:
+                    fns[actual_fn_name](self, fn_name, data_start, data_size,
+                                        host, *args, **kwargs)
+                except SkipTest:
+                    raise
+                except Exception as ex:
+                    raise RuntimeError("Error calling %s from class %s: %s" % (
+                        data_fn_name, self.__class__.__name__, ex))
 
-        data_fn.__name__ = data_fn.func_name = name
-        fn_dict[name] = data_fn
+        data_fn.__name__ = data_fn.func_name = data_fn_name
+        fn_dict[data_fn_name] = data_fn
 
     def _override_data_fns(self):
         """Bind the override methods to the dict."""
         members = inspect.getmembers(self.__class__,
                                      predicate=inspect.ismethod)
-        for fn_action in self.FN_ACTIONS:
-            fns = self._data_fns[fn_action]
+        for fn_type in self.FN_TYPES:
+            fns = self._data_fns[fn_type]
             for name, fn in members:
                 if name in fns:
                     fns[name] = fn
 
-    #############################
-    # Replication related methods
-    #############################
+    #####################
+    # Replication related
+    #####################
     def wait_for_replicas(self):
         """Wait for data to propagate to all the replicas.  Datastore
         specific overrides could increase (or decrease) this delay.
         """
         sleep(30)
 
+    #######################
+    # Database/User related
+    #######################
     def get_valid_database_definitions(self):
         """Return a list of valid database JSON definitions.
         These definitions will be used by tests that create databases.
@@ -207,6 +272,44 @@ class TestHelper(object):
          """
         return list()
 
+    def get_non_existing_database_definition(self):
+        """Return a valid JSON definition for a non-existing database.
+         This definition will be used by negative database tests.
+         The database will not be created by any of the tests.
+         Return None if the datastore does not support databases.
+         """
+        valid_defs = self.get_valid_database_definitions()
+        return self._get_non_existing_definition(valid_defs)
+
+    def get_non_existing_user_definition(self):
+        """Return a valid JSON definition for a non-existing user.
+         This definition will be used by negative user tests.
+         The user will not be created by any of the tests.
+         Return None if the datastore does not support users.
+         """
+        valid_defs = self.get_valid_user_definitions()
+        return self._get_non_existing_definition(valid_defs)
+
+    def _get_non_existing_definition(self, existing_defs):
+        """This will create a unique definition for a non-existing object
+        by randomizing one of an existing object.
+        """
+        if existing_defs:
+            non_existing_def = dict(existing_defs[0])
+            while non_existing_def in existing_defs:
+                non_existing_def = self._randomize_on_name(non_existing_def)
+            return non_existing_def
+
+        return None
+
+    def _randomize_on_name(self, definition):
+        def_copy = dict(definition)
+        def_copy['name'] = ''.join([def_copy['name'], 'rnd'])
+        return def_copy
+
+    #############################
+    # Configuration Group related
+    #############################
     def get_dynamic_group(self):
         """Return a definition of a dynamic configuration group.
         A dynamic group should contain only properties that do not require
