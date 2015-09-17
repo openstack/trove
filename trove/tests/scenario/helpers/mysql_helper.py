@@ -13,18 +13,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.tests.scenario.helpers.test_helper import TestHelper
+from trove.tests.scenario.helpers.sql_helper import SqlHelper
 
 
-class MysqlHelper(TestHelper):
+class MysqlHelper(SqlHelper):
 
     def __init__(self, expected_override_name):
-        super(MysqlHelper, self).__init__(expected_override_name)
+        super(MysqlHelper, self).__init__(expected_override_name, 'mysql')
+
+    def get_helper_credentials(self):
+        return {'name': 'lite', 'password': 'litepass', 'database': 'firstdb'}
 
     def get_valid_database_definitions(self):
         return [{'name': 'db1', 'character_set': 'latin2',
                  'collate': 'latin2_general_ci'},
-                {'name': 'db2'}]
+                {'name': 'db2'}, {"name": 'db3'}]
 
     def get_valid_user_definitions(self):
         return [{'name': 'user1', 'password': 'password1', 'databases': [],

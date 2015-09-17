@@ -76,7 +76,9 @@ class DatabaseActionsRunner(TestRunner):
 
         self.assert_pagination_match(list_page, full_list, 0, limit)
         if marker:
-            self.assert_equal(list_page[-1], marker.name,
+            last_database = list_page[-1]
+            expected_marker = last_database.name
+            self.assert_equal(expected_marker, marker,
                               "Pagination marker should be the last element "
                               "in the page.")
             list_page = self.auth_client.databases.list(
@@ -151,8 +153,9 @@ class DatabaseActionsRunner(TestRunner):
     def run_nonexisting_database_delete(self, expected_http_code=202):
         # Deleting a non-existing database is expected to succeed as if the
         # database was deleted.
+        db_def = self.test_helper.get_non_existing_database_definition()
         self.assert_database_delete(
-            self.instance_info.id, 'justashadow', expected_http_code)
+            self.instance_info.id, db_def['name'], expected_http_code)
 
     def run_system_database_delete(
             self, expected_exception=exceptions.BadRequest,

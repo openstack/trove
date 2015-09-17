@@ -37,7 +37,8 @@ class UserActionsGroup(TestGroup):
     def create_initialized_instance(self):
         """Create an instance with initial users."""
         self.instance_create_runner.run_initialized_instance_create(
-            with_dbs=False, with_users=True, configuration_id=None)
+            with_dbs=False, with_users=True, configuration_id=None,
+            create_helper_user=False)
 
     @test(runs_after=[create_initialized_instance])
     def create_user_databases(self):
@@ -151,7 +152,7 @@ class UserActionsGroup(TestGroup):
         """Ensure deleting a system user fails."""
         self.test_runner.run_system_user_delete()
 
-    @test(runs_after=[delete_system_user])
+    @test(depends_on=[create_user_databases], runs_after=[delete_system_user])
     def delete_user_databases(self):
         """Delete the user databases."""
         self.database_actions_runner.run_database_delete()
