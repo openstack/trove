@@ -16,6 +16,8 @@
 from proboscis import SkipTest
 
 from trove.common import utils
+from trove.tests.scenario import runners
+from trove.tests.scenario.runners.test_runners import SkipKnownBug
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -196,6 +198,9 @@ class PostgresqlRootActionsRunner(RootActionsRunner):
 
     def run_enable_root_with_password(self):
         raise SkipTest("Operation is currently not supported.")
+
+    def run_delete_root(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
 
 
 class CouchbaseRootActionsRunner(RootActionsRunner):

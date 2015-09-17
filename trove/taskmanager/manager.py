@@ -92,6 +92,11 @@ class Manager(periodic_task.PeriodicTasks):
             instance.db_info.save()
 
     def promote_to_replica_source(self, context, instance_id):
+        # TODO(atomic77) Promote and eject need to be able to handle the case
+        # where a datastore like Postgresql needs to treat the slave to be
+        # promoted differently from the old master and the slaves which will
+        # be simply reassigned to a new master. See:
+        # https://bugs.launchpad.net/trove/+bug/1553339
 
         def _promote_to_replica_source(old_master, master_candidate,
                                        replica_models):

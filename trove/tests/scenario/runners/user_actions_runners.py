@@ -19,6 +19,8 @@ from proboscis import SkipTest
 
 from trove.common import exception
 from trove.common.utils import poll_until
+from trove.tests.scenario import runners
+from trove.tests.scenario.runners.test_runners import SkipKnownBug
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -65,29 +67,8 @@ class UserActionsRunner(TestRunner):
                             expected_http_code):
         self.auth_client.users.create(instance_id, serial_users_def)
         self.assert_client_code(expected_http_code)
-        self._wait_for_user_create(instance_id, serial_users_def)
+        self.wait_for_user_create(instance_id, serial_users_def)
         return serial_users_def
-
-    def _wait_for_user_create(self, instance_id, expected_user_defs):
-        expected_user_names = {user_def['name']
-                               for user_def in expected_user_defs}
-        self.report.log("Waiting for all created users to appear in the "
-                        "listing: %s" % expected_user_names)
-
-        def _all_exist():
-            all_users = self._get_user_names(instance_id)
-            return all(usr in all_users for usr in expected_user_names)
-
-        try:
-            poll_until(_all_exist, time_out=self.GUEST_CAST_WAIT_TIMEOUT_SEC)
-            self.report.log("All users now exist on the instance.")
-        except exception.PollTimeOut:
-            self.fail("Some users were not created within the poll "
-                      "timeout: %ds" % self.GUEST_CAST_WAIT_TIMEOUT_SEC)
-
-    def _get_user_names(self, instance_id):
-        full_list = self.auth_client.users.list(instance_id)
-        return {user.name: user for user in full_list}
 
     def run_user_show(self, expected_http_code=200):
         for user_def in self.user_defs:
@@ -368,7 +349,7 @@ class UserActionsRunner(TestRunner):
                 user_def.update(update_attribites)
                 expected_def = user_def
 
-        self._wait_for_user_create(instance_id, self.user_defs)
+        self.wait_for_user_create(instance_id, self.user_defs)
 
         # Verify using 'user-show' and 'user-list'.
         self.assert_user_show(instance_id, expected_def, 200)
@@ -415,7 +396,7 @@ class UserActionsRunner(TestRunner):
                         "listing: %s" % deleted_user_name)
 
         def _db_is_gone():
-            all_users = self._get_user_names(instance_id)
+            all_users = self.get_user_names(instance_id)
             return deleted_user_name not in all_users
 
         try:
@@ -517,3 +498,18 @@ class PxcUserActionsRunner(MysqlUserActionsRunner):
 
     def __init__(self):
         super(PxcUserActionsRunner, self).__init__()
+
+
+class PostgresqlUserActionsRunner(UserActionsRunner):
+
+    def run_user_update_with_existing_name(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
+
+    def run_system_user_show(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
+
+    def run_system_user_attribute_update(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
+
+    def run_system_user_delete(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)

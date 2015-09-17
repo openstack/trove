@@ -1071,6 +1071,13 @@ postgresql_opts = [
                 help='Incremental Backup Runner based on the default '
                 'strategy. For strategies that do not implement an '
                 'incremental, the runner will use the default full backup.'),
+    cfg.StrOpt('replication_strategy',
+               default='PostgresqlReplicationStreaming',
+               help='Default strategy for replication.'),
+    cfg.StrOpt('replication_namespace',
+               default='trove.guestagent.strategies.replication.experimental.'
+                       'postgresql_impl',
+               help='Namespace to load replication strategies from.'),
     cfg.StrOpt('mount_point', default='/var/lib/postgresql',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),

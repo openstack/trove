@@ -14,9 +14,11 @@
 #    under the License.
 
 import os
+import re
 
 from trove.common import cfg
 from trove.guestagent.common import operating_system
+from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.status import (
     PgSqlAppStatus)
 from trove.guestagent import guest_log
@@ -37,6 +39,10 @@ class PgSqlProcess(object):
     @property
     def pgsql_data_dir(self):
         return os.path.dirname(self.pg_version[0])
+
+    @property
+    def pgsql_recovery_config(self):
+        return os.path.join(self.pgsql_data_dir, "recovery.conf")
 
     @property
     def pg_version(self):
@@ -65,3 +71,55 @@ class PgSqlProcess(object):
         PgSqlAppStatus.get().stop_db_service(
             self.SERVICE_CANDIDATES, CONF.state_change_wait_time,
             disable_on_boot=do_not_start_on_reboot, update_db=update_db)
+
+    def pg_checkpoint(self):
+        """Wrapper for CHECKPOINT call"""
+        pgutil.psql("CHECKPOINT")
+
+    def pg_current_xlog_location(self):
+        """Wrapper for pg_current_xlog_location()
+        Cannot be used against a running slave
+        """
+        r = pgutil.query("SELECT pg_current_xlog_location()")
+        return r[0][0]
+
+    def pg_last_xlog_replay_location(self):
+        """Wrapper for pg_last_xlog_replay_location()
+         For use on standby servers
+         """
+        r = pgutil.query("SELECT pg_last_xlog_replay_location()")
+        return r[0][0]
+
+    def pg_is_in_recovery(self):
+        """Wrapper for pg_is_in_recovery() for detecting a server in
+        standby mode
+        """
+        r = pgutil.query("SELECT pg_is_in_recovery()")
+        return r[0][0]
+
+    def pg_primary_host(self):
+        """There seems to be no way to programmatically  determine this
+        on a hot standby, so grab what we have written to the recovery
+        file
+        """
+        r = operating_system.read_file(self.PGSQL_RECOVERY_CONFIG,
+                                       as_root=True)
+        regexp = re.compile("host=(\d+.\d+.\d+.\d+) ")
+        m = regexp.search(r)
+        return m.group(1)
+
+    @classmethod
+    def recreate_wal_archive_dir(cls):
+        wal_archive_dir = CONF.postgresql.wal_archive_location
+        operating_system.remove(wal_archive_dir, force=True, recursive=True,
+                                as_root=True)
+        operating_system.create_directory(wal_archive_dir,
+                                          user=cls.PGSQL_OWNER,
+                                          group=cls.PGSQL_OWNER,
+                                          force=True, as_root=True)
+
+    @classmethod
+    def remove_wal_archive_dir(cls):
+        wal_archive_dir = CONF.postgresql.wal_archive_location
+        operating_system.remove(wal_archive_dir, force=True, recursive=True,
+                                as_root=True)

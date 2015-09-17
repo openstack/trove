@@ -177,7 +177,10 @@ module_create_groups.extend([groups.MODULE_CREATE,
                              groups.MODULE_DELETE])
 
 replication_groups = list(instance_create_groups)
-replication_groups.extend([replication_group.GROUP])
+replication_groups.extend([groups.REPL_INST_DELETE_WAIT])
+
+replication_promote_groups = list(replication_groups)
+replication_promote_groups.extend([replication_group.GROUP])
 
 root_actions_groups = list(instance_create_groups)
 root_actions_groups.extend([root_actions_group.GROUP])
@@ -204,6 +207,7 @@ register(["instance_error_create"], instance_error_create_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
 register(["replication"], replication_groups)
+register(["replication_promote"], replication_promote_groups)
 register(["root"], root_actions_groups)
 register(["user"], user_actions_groups)
 
@@ -221,15 +225,15 @@ register(["couchdb_supported"], common_groups, backup_groups,
 register(["postgresql_supported"], common_groups,
          backup_groups, database_actions_groups, configuration_groups,
          root_actions_groups, user_actions_groups,
-         backup_incremental_groups)
+         backup_incremental_groups, replication_groups)
 register(["mysql_supported", "percona_supported"], common_groups,
          backup_groups, configuration_groups, database_actions_groups,
-         replication_groups, root_actions_groups, user_actions_groups,
+         replication_promote_groups, root_actions_groups, user_actions_groups,
          backup_incremental_groups)
 register(["mariadb_supported"], common_groups,
          backup_groups, cluster_actions_groups, configuration_groups,
-         database_actions_groups, replication_groups, root_actions_groups,
-         user_actions_groups)
+         database_actions_groups, replication_promote_groups,
+         root_actions_groups, user_actions_groups)
 register(["mongodb_supported"], common_groups,
          backup_groups, cluster_actions_groups, configuration_groups,
          database_actions_groups, root_actions_groups, user_actions_groups)
@@ -237,6 +241,6 @@ register(["pxc_supported"], common_groups,
          backup_groups, configuration_groups, database_actions_groups,
          cluster_actions_groups, root_actions_groups, user_actions_groups)
 register(["redis_supported"], common_groups,
-         backup_groups, replication_groups, cluster_actions_groups)
+         backup_groups, replication_promote_groups, cluster_actions_groups)
 register(["vertica_supported"], common_groups,
          cluster_actions_groups, root_actions_groups, configuration_groups)

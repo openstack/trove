@@ -371,7 +371,7 @@ class PropertiesCodec(StreamCodec):
         return container
 
 
-class KeyValueCodec(PropertiesCodec):
+class KeyValueCodec(StreamCodec):
     """
     Read/write data from/into a simple key=value file.
 
@@ -388,12 +388,92 @@ class KeyValueCodec(PropertiesCodec):
     }
     """
 
-    def __init__(self, delimiter='=', comment_markers=('#'),
-                 unpack_singletons=True, string_mappings=None):
-        super(KeyValueCodec, self).__init__(
-            delimiter=delimiter, comment_markers=comment_markers,
-            unpack_singletons=unpack_singletons,
-            string_mappings=string_mappings)
+    BOOL_PYTHON = 0  # True, False
+    BOOL_LOWER = 1   # true, false
+    BOOL_UPPER = 2   # TRUE, FALSE
+
+    def __init__(self, delimiter='=',
+                 comment_marker='#',
+                 line_terminator='\r\n',
+                 value_quoting=False,
+                 value_quote_char="'",
+                 bool_case=BOOL_PYTHON,
+                 big_ints=False,
+                 hidden_marker=None):
+        """
+        :param delimiter:        string placed between key and value
+        :param comment_marker:   string indicating comment line in file
+        :param line_terminator:  string placed between lines
+        :param value_quoting:    whether or not to quote string values
+        :param value_quote_char: character used to quote string values
+        :param bool_case:        BOOL_* setting case of bool values
+        :param big_ints:         treat K/M/G at the end of ints as an int
+        :param hidden_marker:    pattern prefixing hidden param
+        """
+        self._delimeter = delimiter
+        self._comment_marker = comment_marker
+        self._line_terminator = line_terminator
+        self._value_quoting = value_quoting
+        self._value_quote_char = value_quote_char
+        self._bool_case = bool_case
+        self._big_ints = big_ints
+        self._hidden_marker = hidden_marker
+
+    def serialize(self, dict_data):
+        lines = []
+        for k, v in dict_data.items():
+            lines.append(k + self._delimeter + self.serialize_value(v))
+        return self._line_terminator.join(lines)
+
+    def deserialize(self, stream):
+        lines = stream.split(self._line_terminator)
+        result = {}
+        for line in lines:
+            line = line.lstrip().rstrip()
+            if line == '' or line.startswith(self._comment_marker):
+                continue
+            k, v = re.split(re.escape(self._delimeter), line, 1)
+            if self._value_quoting and v.startswith(self._value_quote_char):
+                # remove trailing comments
+                v = re.sub(r'%s *%s.*$' % ("'", '#'), '', v)
+                v = v.lstrip(
+                    self._value_quote_char).rstrip(
+                    self._value_quote_char)
+            else:
+                # remove trailing comments
+                v = re.sub('%s.*$' % self._comment_marker, '', v)
+            if self._hidden_marker and v.startswith(self._hidden_marker):
+                continue
+            result[k.strip()] = v
+        return result
+
+    def serialize_value(self, value):
+        if isinstance(value, bool):
+            if self._bool_case == self.BOOL_PYTHON:
+                value = str(value)
+            elif self._bool_case == self.BOOL_LOWER:
+                value = str(value).lower()
+            elif self._bool_case == self.BOOL_UPPER:
+                value = str(value).upper()
+        if self.should_quote_value(value):
+            value = self._value_quote_char + value + self._value_quote_char
+        return str(value)
+
+    def should_quote_value(self, value):
+        if not self._value_quoting:
+            return False
+        if isinstance(value, bool) or isinstance(value, int):
+            return False
+        if value.lower() in ['true', 'false']:
+            return False
+        try:
+            int(value)
+            return False
+        except ValueError:
+            pass
+        if self._big_ints and re.match(r'\d+[kKmMgGtTpP]', value):
+            return False
+        return True
 
 
 class JsonCodec(StreamCodec):

@@ -168,7 +168,8 @@ class ReplicationInstDeleteNonAffReplWaitGroup(TestGroup):
         self.test_runner.run_delete_non_affinity_master()
 
 
-@test(depends_on_groups=[groups.REPL_INST_DELETE_NON_AFFINITY_WAIT],
+@test(depends_on_groups=[groups.REPL_INST_DELETE_NON_AFFINITY_WAIT,
+                         groups.REPL_INST_MULTI_CREATE],
       groups=[GROUP, groups.REPL_INST_MULTI_CREATE_WAIT])
 class ReplicationInstMultiCreateWaitGroup(TestGroup):
     """Wait for Replication Instance Multi-Create to complete."""
@@ -205,12 +206,12 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
 
     @test(depends_on=[add_data_to_replicate],
           runs_after=[verify_data_to_replicate])
-    def verify_replica_data_orig(self):
+    def verify_replica_data_orig2(self):
         """Verify original data was transferred to replicas."""
         self.test_runner.run_verify_replica_data_orig()
 
     @test(depends_on=[add_data_to_replicate],
-          runs_after=[verify_replica_data_orig])
+          runs_after=[verify_replica_data_orig2])
     def verify_replica_data_new(self):
         """Verify new data was transferred to replicas."""
         self.test_runner.run_verify_replica_data_new()
@@ -239,8 +240,17 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
         """Ensure deleting valid master fails."""
         self.test_runner.run_delete_valid_master()
 
-    @test(depends_on=[wait_for_multiple_replicas],
-          runs_after=[delete_valid_master])
+
+@test(depends_on_groups=[groups.REPL_INST_MULTI_CREATE_WAIT],
+      groups=[GROUP, groups.REPL_INST_MULTI_PROMOTE])
+class ReplicationInstMultiPromoteGroup(TestGroup):
+    """Test Replication Instance Multi-Promote functionality."""
+
+    def __init__(self):
+        super(ReplicationInstMultiPromoteGroup, self).__init__(
+            ReplicationRunnerFactory.instance())
+
+    @test
     def promote_to_replica_source(self):
         """Test promoting a replica to replica source (master)."""
         self.test_runner.run_promote_to_replica_source()
@@ -250,8 +260,7 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
         """Verify data is still on new master."""
         self.test_runner.run_verify_replica_data_new_master()
 
-    @test(depends_on=[wait_for_multiple_replicas,
-                      promote_to_replica_source],
+    @test(depends_on=[promote_to_replica_source],
           runs_after=[verify_replica_data_new_master])
     def add_data_to_replicate2(self):
         """Add data to new master to verify replication."""
@@ -262,8 +271,7 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
         """Verify data exists on new master."""
         self.test_runner.run_verify_data_to_replicate2()
 
-    @test(depends_on=[wait_for_multiple_replicas,
-                      add_data_to_replicate2],
+    @test(depends_on=[add_data_to_replicate2],
           runs_after=[verify_data_to_replicate2])
     def verify_replica_data_new2(self):
         """Verify data was transferred to new replicas."""
@@ -290,20 +298,9 @@ class ReplicationInstMultiCreateWaitGroup(TestGroup):
         """Verify final data was transferred to all replicas."""
         self.test_runner.run_verify_final_data_replicated()
 
-    @test(depends_on=[promote_original_source],
-          runs_after=[verify_final_data_replicated])
-    def remove_replicated_data(self):
-        """Remove replication data."""
-        self.test_runner.run_remove_replicated_data()
-
-    @test(depends_on=[promote_original_source],
-          runs_after=[remove_replicated_data])
-    def detach_replica_from_source(self):
-        """Test detaching a replica from the master."""
-        self.test_runner.run_detach_replica_from_source()
-
 
 @test(depends_on_groups=[groups.REPL_INST_MULTI_CREATE_WAIT],
+      runs_after_groups=[groups.REPL_INST_MULTI_PROMOTE],
       groups=[GROUP, groups.REPL_INST_DELETE])
 class ReplicationInstDeleteGroup(TestGroup):
     """Test Replication Instance Delete functionality."""
@@ -313,6 +310,16 @@ class ReplicationInstDeleteGroup(TestGroup):
             ReplicationRunnerFactory.instance())
 
     @test
+    def remove_replicated_data(self):
+        """Remove replication data."""
+        self.test_runner.run_remove_replicated_data()
+
+    @test(runs_after=[remove_replicated_data])
+    def detach_replica_from_source(self):
+        """Test detaching a replica from the master."""
+        self.test_runner.run_detach_replica_from_source()
+
+    @test(runs_after=[detach_replica_from_source])
     def delete_detached_replica(self):
         """Test deleting the detached replica."""
         self.test_runner.run_delete_detached_replica()

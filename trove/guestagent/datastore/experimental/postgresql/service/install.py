@@ -20,8 +20,6 @@ from trove.common.i18n import _
 from trove.guestagent.datastore.experimental.postgresql.service.process import(
     PgSqlProcess)
 from trove.guestagent import pkg
-from trove.guestagent.strategies.backup.experimental.postgresql_impl import(
-    PgBaseBackupUtil)
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -49,7 +47,7 @@ class PgSqlInstall(PgSqlProcess):
             )
         )
 
-        PgBaseBackupUtil.recreate_wal_archive_dir()
+        PgSqlProcess.recreate_wal_archive_dir()
 
         packager = pkg.Package()
         if not packager.pkg_is_installed(packages):

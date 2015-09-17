@@ -1053,7 +1053,8 @@ class PostgreSQLRootUser(PostgreSQLUser):
     """Represents the PostgreSQL default superuser."""
 
     def __init__(self, password=None, *args, **kwargs):
-        password = password if not None else utils.generate_random_password()
+        if password is None:
+            password = utils.generate_random_password()
         super(PostgreSQLRootUser, self).__init__("postgres", password=password,
                                                  *args, **kwargs)
 

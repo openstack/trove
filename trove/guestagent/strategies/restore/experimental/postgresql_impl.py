@@ -27,8 +27,8 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.postgresql.service.config import(
     PgSqlConfig)
-from trove.guestagent.strategies.backup.experimental.postgresql_impl import(
-    PgBaseBackupUtil)
+from trove.guestagent.datastore.experimental.postgresql.service.process import(
+    PgSqlProcess)
 from trove.guestagent.strategies.restore import base
 
 CONF = cfg.CONF
@@ -113,7 +113,7 @@ class PgBaseBackup(base.RestoreRunner, PgSqlConfig):
 
     def pre_restore(self):
         self.stop_db(context=None)
-        PgBaseBackupUtil.recreate_wal_archive_dir()
+        PgSqlProcess.recreate_wal_archive_dir()
         datadir = self.pgsql_data_dir
         operating_system.remove(datadir, force=True, recursive=True,
                                 as_root=True)

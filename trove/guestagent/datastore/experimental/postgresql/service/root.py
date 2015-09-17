@@ -37,7 +37,7 @@ class PgSqlRoot(PgSqlUsers):
         )
 
         # There should be only one superuser (Trove's administrative account).
-        return len(results) > 1 or (results[0] != self.ADMIN_USER)
+        return len(results) > 1 or (results[0][0] != self.ADMIN_USER)
 
 # TODO(pmalik): For future use by 'root-disable'.
 #     def disable_root(self, context):

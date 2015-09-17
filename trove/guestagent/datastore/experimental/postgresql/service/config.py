@@ -36,6 +36,7 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 BACKUP_CFG_OVERRIDE = 'PgBaseBackupConfig'
+DEBUG_MODE_OVERRIDE = 'DebugLevelOverride'
 
 
 class PgSqlConfig(PgSqlProcess):
@@ -189,6 +190,16 @@ class PgSqlConfig(PgSqlProcess):
         operating_system.chmod(self.pgsql_hba_config, FileMode.SET_USR_RO,
                                as_root=True)
 
+    def disable_backups(self):
+        """Reverse overrides applied by PgBaseBackup strategy"""
+        if not self.configuration_manager.has_system_override(
+                BACKUP_CFG_OVERRIDE):
+            return
+        LOG.info(_("Removing configuration changes for backups"))
+        self.configuration_manager.remove_system_override(BACKUP_CFG_OVERRIDE)
+        self.remove_wal_archive_dir()
+        self.restart(context=None)
+
     def enable_backups(self):
         """Apply necessary changes to config to enable WAL-based backups
            if we are using the PgBaseBackup strategy
@@ -209,7 +220,7 @@ class PgSqlConfig(PgSqlProcess):
         opts = {
             'wal_level': 'hot_standby',
             'archive_mode ': 'on',
-            'max_wal_senders': 3,
+            'max_wal_senders': 8,
             'checkpoint_segments ': 8,
             'wal_keep_segments': 8,
             'archive_command': arch_cmd
@@ -220,3 +231,13 @@ class PgSqlConfig(PgSqlProcess):
         self.configuration_manager.apply_system_override(
             opts, BACKUP_CFG_OVERRIDE)
         self.restart(None)
+
+    def disable_debugging(self, level=1):
+        """Disable debug-level logging in postgres"""
+        self.configuration_manager.remove_system_override(DEBUG_MODE_OVERRIDE)
+
+    def enable_debugging(self, level=1):
+        """Enable debug-level logging in postgres"""
+        opt = {'log_min_messages': 'DEBUG%s' % level}
+        self.configuration_manager.apply_system_override(opt,
+                                                         DEBUG_MODE_OVERRIDE)

@@ -157,14 +157,21 @@ class PgSqlUsers(PgSqlAccess):
         """Delete the specified user.
         """
         with EndNotification(context):
-            self._drop_user(models.PostgreSQLUser.deserialize_user(user))
+            self._drop_user(
+                context, models.PostgreSQLUser.deserialize_user(user))
 
-    def _drop_user(self, user):
+    def _drop_user(self, context, user):
         """Drop a given Postgres user.
 
         :param user:              User to be dropped.
         :type user:               PostgreSQLUser
         """
+        # Postgresql requires that you revoke grants before dropping the user
+        dbs = self.list_access(context, user.name, None)
+        for d in dbs:
+            db = models.PostgreSQLSchema.deserialize_schema(d)
+            self.revoke_access(context, user.name, None, db.name)
+
         LOG.info(
             _("{guest_id}: Dropping user {name}.").format(
                 guest_id=CONF.guest_id,
@@ -184,7 +191,7 @@ class PgSqlUsers(PgSqlAccess):
 
     def _find_user(self, context, username):
         """Lookup a user with a given username.
-        Return a new Postgres user instance or raise if no match is found.
+        Return a new Postgres user instance or None if no match is found.
         """
         results = pgutil.query(
             pgutil.UserQuery.get(name=username),

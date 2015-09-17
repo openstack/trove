@@ -100,6 +100,7 @@ REPL_INST_CREATE_WAIT = "scenario.repl_inst_create_wait_grp"
 REPL_INST_MULTI_CREATE = "scenario.repl_inst_multi_create_grp"
 REPL_INST_DELETE_NON_AFFINITY_WAIT = "scenario.repl_inst_delete_noaff_wait_grp"
 REPL_INST_MULTI_CREATE_WAIT = "scenario.repl_inst_multi_create_wait_grp"
+REPL_INST_MULTI_PROMOTE = "scenario.repl_inst_multi_promote_grp"
 REPL_INST_DELETE = "scenario.repl_inst_delete_grp"
 REPL_INST_DELETE_WAIT = "scenario.repl_inst_delete_wait_grp"
 
