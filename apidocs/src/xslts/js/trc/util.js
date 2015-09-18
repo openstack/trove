@@ -208,7 +208,7 @@ trc.util.text = {
     tabs      : new RegExp ("\t","g"),  /* All tabs */
 
     //
-    // We need this because microsoft browsers before IE 7, connot
+    // We need this because microsoft browsers before IE 7, cannot
     // display pre-formatted text correctly win unix style line
     // endings.
     //
@@ -478,14 +478,14 @@ trc.util.net = {
 
 trc.util.yui = {
     //
-    // A list of dependecies to be passed to the YUI loader.  This is
+    // A list of dependencies to be passed to the YUI loader.  This is
     // essentially a hash set: dep->dep.
     //
     _deps : new Object(),
 
     //
     // An array of callback functions, these should be called when all
-    // dependecies are loaded.
+    // dependencies are loaded.
     //
     _callbacks : new Array(),
 
@@ -517,7 +517,7 @@ trc.util.yui = {
         }
 
         //
-        // Load YUI dependecies...
+        // Load YUI dependencies...
         //
 	var loader = new YAHOO.util.YUILoader({
 	    require: required,
@@ -533,11 +533,11 @@ trc.util.yui = {
     },
 
     //
-    // Called after all dependecies have been loaded
+    // Called after all dependencies have been loaded
     //
     _depsLoaded : function() {
         //
-        //  Dependecies are loaded let everyone know.
+        //  Dependencies are loaded let everyone know.
         //
         for (var i=0;i<this._callbacks.length;i++)
         {
@@ -546,7 +546,7 @@ trc.util.yui = {
     },
 
     //
-    //  Request that one or more YUI dependecies are loaded.
+    //  Request that one or more YUI dependencies are loaded.
     //
     loadYUIDeps : function (deps,     /*An array of dep strings */
                             callback  /*A function to call when deps are loaded*/

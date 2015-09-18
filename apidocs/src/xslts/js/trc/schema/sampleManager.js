@@ -25,7 +25,7 @@
 (function()
  {
      //
-     // Make sure dependecies are defined in the global scope, throw
+     // Make sure dependencies are defined in the global scope, throw
      // an error if they are not.
      //
      if ((!window.trc) ||
@@ -199,7 +199,7 @@ trc.schema.sampleManager = {
                               code     /* Code text to set (string) */)
     {
         //
-        // Preprocess the txt if necessary...
+        // Preprocess the text if necessary...
         //
         var ieVersion = trc.util.browser.detectIEVersion();
         if ((ieVersion > -1) &&
@@ -253,7 +253,7 @@ trc.schema.sampleManager = {
     },
 
     //
-    // Retrives source code text
+    // Retrieves source code text
     //
     _getCodeText : function (codeData /* Info for the code to get*/)
     {
