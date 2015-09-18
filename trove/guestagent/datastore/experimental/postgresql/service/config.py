@@ -119,4 +119,4 @@ class PgSqlConfig(PgSqlProcess):
                 guest_id=CONF.guest_id,
             )
         )
-        PgSqlAppStatus.get().end_install_or_restart()
+        PgSqlAppStatus.get().end_restart()

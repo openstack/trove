@@ -14,7 +14,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-from oslo_service import periodic_task
 
 from trove.common import cfg
 from trove.common import exception
@@ -24,7 +23,7 @@ from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.redis import service
-from trove.guestagent import dbaas
+from trove.guestagent.datastore import manager
 from trove.guestagent.strategies.replication import get_replication_strategy
 from trove.guestagent import volume
 
@@ -38,28 +37,19 @@ REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
                                                       REPLICATION_NAMESPACE)
 
 
-class Manager(periodic_task.PeriodicTasks):
+class Manager(manager.Manager):
     """
     This is the Redis manager class. It is dynamically loaded
     based off of the service_type of the trove instance
     """
 
     def __init__(self):
-        super(Manager, self).__init__(CONF)
+        super(Manager, self).__init__(MANAGER)
         self._app = service.RedisApp()
 
-    @periodic_task.periodic_task
-    def update_status(self, context):
-        """
-        Updates the redis trove instance. It is decorated with
-        perodic task so it is automatically called every 3 ticks.
-        """
-        LOG.debug("Update status called.")
-        self._app.status.update()
-
-    def rpc_ping(self, context):
-        LOG.debug("Responding to RPC ping.")
-        return True
+    @property
+    def status(self):
+        return self._app.status
 
     def change_passwords(self, context, users):
         """
@@ -90,52 +80,38 @@ class Manager(periodic_task.PeriodicTasks):
             raise
         LOG.info(_("Restored database successfully."))
 
-    def prepare(self, context, packages, databases, memory_mb, users,
-                device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None, overrides=None,
-                cluster_config=None, snapshot=None):
-        """
-        This is called when the trove instance first comes online.
-        It is the first rpc message passed from the task manager.
-        prepare handles all the base configuration of the redis instance.
-        """
-        try:
-            self._app.status.begin_install()
-            if device_path:
-                device = volume.VolumeDevice(device_path)
-                # unmount if device is already mounted
-                device.unmount_device(device_path)
-                device.format()
-                device.mount(mount_point)
-                operating_system.chown(mount_point, 'redis', 'redis',
-                                       as_root=True)
-                LOG.debug('Mounted the volume.')
-            self._app.install_if_needed(packages)
-            LOG.info(_('Writing redis configuration.'))
-            if cluster_config:
-                config_contents = (config_contents + "\n"
-                                   + "cluster-enabled yes\n"
-                                   + "cluster-config-file cluster.conf\n")
-            self._app.configuration_manager.save_configuration(config_contents)
-            self._app.apply_initial_guestagent_configuration()
-            if backup_info:
-                persistence_dir = self._app.get_working_dir()
-                self._perform_restore(backup_info, context, persistence_dir,
-                                      self._app)
-            else:
-                self._app.restart()
-            if snapshot:
-                self.attach_replica(context, snapshot, snapshot['config'])
-            if cluster_config:
-                self._app.status.set_status(
-                    rd_instance.ServiceStatuses.BUILD_PENDING)
-            else:
-                self._app.complete_install_or_restart()
-            LOG.info(_('Redis instance has been setup and configured.'))
-        except Exception:
-            LOG.exception(_("Error setting up Redis instance."))
-            self._app.status.set_status(rd_instance.ServiceStatuses.FAILED)
-            raise
+    def do_prepare(self, context, packages, databases, memory_mb, users,
+                   device_path, mount_point, backup_info,
+                   config_contents, root_password, overrides,
+                   cluster_config, snapshot):
+        """This is called from prepare in the base class."""
+        if device_path:
+            device = volume.VolumeDevice(device_path)
+            # unmount if device is already mounted
+            device.unmount_device(device_path)
+            device.format()
+            device.mount(mount_point)
+            operating_system.chown(mount_point, 'redis', 'redis',
+                                   as_root=True)
+            LOG.debug('Mounted the volume.')
+        self._app.install_if_needed(packages)
+        LOG.info(_('Writing redis configuration.'))
+        if cluster_config:
+            config_contents = (config_contents + "\n"
+                               + "cluster-enabled yes\n"
+                               + "cluster-config-file cluster.conf\n")
+        self._app.configuration_manager.save_configuration(config_contents)
+        self._app.apply_initial_guestagent_configuration()
+        if backup_info:
+            persistence_dir = self._app.get_working_dir()
+            self._perform_restore(backup_info, context, persistence_dir,
+                                  self._app)
+        else:
+            # If we're not restoring, we have to force a restart of the
+            # server manually so that the configuration stuff takes effect
+            self._app.restart()
+        if snapshot:
+            self.attach_replica(context, snapshot, snapshot['config'])
 
     def restart(self, context):
         """
@@ -161,13 +137,6 @@ class Manager(periodic_task.PeriodicTasks):
         """
         LOG.debug("Stop DB called.")
         self._app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
-
-    def get_filesystem_stats(self, context, fs_path):
-        """Gets the filesystem stats for the path given."""
-        LOG.debug("Get Filesystem Stats.")
-        mount_point = CONF.get(
-            'mysql' if not MANAGER else MANAGER).mount_point
-        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
         """Create a backup of the database."""
@@ -288,8 +257,7 @@ class Manager(periodic_task.PeriodicTasks):
             replication.snapshot_for_replication(context, self._app, None,
                                                  snapshot_info))
 
-        mount_point = CONF.get(MANAGER).mount_point
-        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+        volume_stats = self.get_filesystem_stats(context, None)
 
         replication_snapshot = {
             'dataset': {
@@ -414,7 +382,3 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Executing cluster_addslots to assign hash slots %s-%s.",
                   first_slot, last_slot)
         self._app.cluster_addslots(first_slot, last_slot)
-
-    def cluster_complete(self, context):
-        LOG.debug("Cluster creation complete, starting status checks.")
-        self._app.complete_install_or_restart()

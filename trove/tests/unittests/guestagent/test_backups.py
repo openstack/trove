@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 import mock
-from mock import ANY, DEFAULT, patch
+from mock import ANY, DEFAULT, Mock, patch
 from testtools.testcase import ExpectedException
 from trove.common import exception
 from trove.common import utils
@@ -96,6 +96,11 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentBackupTest, self).setUp()
+        self.patch_pc = patch('trove.guestagent.datastore.service.'
+                              'BaseDbStatus.prepare_completed')
+        self.mock_pc = self.patch_pc.start()
+        self.mock_pc.__get__ = Mock(return_value=True)
+        self.addCleanup(self.patch_pc.stop)
         self.get_auth_pwd_patch = patch.object(
             MySqlApp, 'get_auth_password', mock.Mock(return_value='password'))
         self.get_auth_pwd_mock = self.get_auth_pwd_patch.start()
@@ -333,7 +338,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             # (see bug/1423759).
             remove.assert_called_once_with(ANY, force=True, as_root=True)
 
-    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir',
+                       return_value='')
     def test_backup_encrypted_mongodump_command(self, _):
         backupBase.BackupRunner.is_encrypted = True
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
@@ -345,7 +351,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             MONGODUMP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
         self.assertIn("gz.enc", bkp.manifest)
 
-    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir',
+                       return_value='')
     def test_backup_not_encrypted_mongodump_command(self, _):
         backupBase.BackupRunner.is_encrypted = False
         backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
@@ -356,7 +363,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         self.assertEqual(MONGODUMP_CMD + PIPE + ZIP, bkp.command)
         self.assertIn("gz", bkp.manifest)
 
-    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir',
+                       return_value='')
     def test_restore_decrypted_mongodump_command(self, _):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = False
@@ -365,7 +373,8 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd, UNZIP + PIPE + MONGODUMP_RESTORE)
 
-    @mock.patch.object(MongoDBApp, '_init_overrides_dir')
+    @mock.patch.object(MongoDBApp, '_init_overrides_dir',
+                       return_value='')
     def test_restore_encrypted_mongodump_command(self, _):
         restoreBase.RestoreRunner.is_zipped = True
         restoreBase.RestoreRunner.is_encrypted = True
@@ -520,7 +529,8 @@ class MongodbBackupTests(trove_testtools.TestCase):
         self.exec_timeout_patch.start()
         self.mongodb_init_overrides_dir_patch = patch.object(
             MongoDBApp,
-            '_init_overrides_dir')
+            '_init_overrides_dir',
+            return_value='')
         self.mongodb_init_overrides_dir_patch.start()
         self.backup_runner = utils.import_class(
             BACKUP_MONGODUMP_CLS)
@@ -558,10 +568,14 @@ class MongodbBackupTests(trove_testtools.TestCase):
 
 class MongodbRestoreTests(trove_testtools.TestCase):
 
-    @patch.object(MongoDBApp, '_init_overrides_dir')
+    @patch.object(MongoDBApp, '_init_overrides_dir',
+                  return_value='')
     def setUp(self, _):
         super(MongodbRestoreTests, self).setUp()
 
+        self.patch_ope = patch('os.path.expanduser')
+        self.mock_ope = self.patch_ope.start()
+        self.addCleanup(self.patch_ope.stop)
         self.restore_runner = utils.import_class(
             RESTORE_MONGODUMP_CLS)('swift', location='http://some.where',
                                    checksum='True_checksum',

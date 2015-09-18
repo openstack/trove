@@ -76,7 +76,7 @@ from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
-import trove.guestagent.datastore.mysql.service_base as dbaas_base
+import trove.guestagent.datastore.mysql_common.service as dbaas_base
 import trove.guestagent.datastore.service as base_datastore_service
 from trove.guestagent.datastore.service import BaseDbStatus
 from trove.guestagent.db import models
@@ -112,6 +112,7 @@ class FakeAppStatus(BaseDbStatus):
         self.id = id
         self.status = status
         self.next_fake_status = status
+        self._prepare_completed = None
 
     def _get_actual_db_status(self):
         return self.next_fake_status
@@ -1822,46 +1823,32 @@ class BaseDbStatusTest(testtools.TestCase):
 
         self.assertTrue(base_db_status.restart_mode)
 
-    def test_end_install_or_restart(self):
+    def test_end_restart(self):
         base_db_status = BaseDbStatus()
         base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.SHUTDOWN)
 
-        base_db_status.end_install_or_restart()
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=True)
+            base_db_status.end_restart()
 
-        self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
-                         base_db_status.status)
-        self.assertFalse(base_db_status.restart_mode)
+            self.assertEqual(rd_instance.ServiceStatuses.SHUTDOWN,
+                             base_db_status.status)
+            self.assertFalse(base_db_status.restart_mode)
 
     def test_is_installed(self):
         base_db_status = BaseDbStatus()
-        base_db_status.status = rd_instance.ServiceStatuses.RUNNING
 
-        self.assertTrue(base_db_status.is_installed)
-
-    def test_is_installed_none(self):
-        base_db_status = BaseDbStatus()
-        base_db_status.status = None
-
-        self.assertTrue(base_db_status.is_installed)
-
-    def test_is_installed_building(self):
-        base_db_status = BaseDbStatus()
-        base_db_status.status = rd_instance.ServiceStatuses.BUILDING
-
-        self.assertFalse(base_db_status.is_installed)
-
-    def test_is_installed_new(self):
-        base_db_status = BaseDbStatus()
-        base_db_status.status = rd_instance.ServiceStatuses.NEW
-
-        self.assertFalse(base_db_status.is_installed)
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=True)
+            self.assertTrue(base_db_status.is_installed)
 
     def test_is_installed_failed(self):
         base_db_status = BaseDbStatus()
-        base_db_status.status = rd_instance.ServiceStatuses.FAILED
 
-        self.assertFalse(base_db_status.is_installed)
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=False)
+            self.assertFalse(base_db_status.is_installed)
 
     def test_is_restarting(self):
         base_db_status = BaseDbStatus()
@@ -1902,13 +1889,15 @@ class BaseDbStatusTest(testtools.TestCase):
                          (rd_instance.ServiceStatuses.SHUTDOWN, 10))
 
     def _test_set_status(self, initial_status, new_status,
-                         expected_status, force=False):
+                         expected_status, install_done=False, force=False):
         base_db_status = BaseDbStatus()
         base_db_status.status = initial_status
-        base_db_status.set_status(new_status, force=force)
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=install_done)
+            base_db_status.set_status(new_status, force=force)
 
-        self.assertEqual(expected_status,
-                         base_db_status.status)
+            self.assertEqual(expected_status,
+                             base_db_status.status)
 
     def test_set_status_force_heartbeat(self):
         self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
@@ -1929,12 +1918,20 @@ class BaseDbStatusTest(testtools.TestCase):
     def test_set_status_to_failed(self):
         self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
                               rd_instance.ServiceStatuses.FAILED,
-                              rd_instance.ServiceStatuses.FAILED)
+                              rd_instance.ServiceStatuses.FAILED,
+                              force=True)
 
     def test_set_status_to_build_pending(self):
         self._test_set_status(rd_instance.ServiceStatuses.BUILDING,
-                              rd_instance.ServiceStatuses.BUILD_PENDING,
-                              rd_instance.ServiceStatuses.BUILD_PENDING)
+                              rd_instance.ServiceStatuses.INSTANCE_READY,
+                              rd_instance.ServiceStatuses.INSTANCE_READY,
+                              force=True)
+
+    def test_set_status_to_shutdown(self):
+        self._test_set_status(rd_instance.ServiceStatuses.RUNNING,
+                              rd_instance.ServiceStatuses.SHUTDOWN,
+                              rd_instance.ServiceStatuses.SHUTDOWN,
+                              install_done=True)
 
     def test_wait_for_database_service_status(self):
         status = BaseDbStatus()
@@ -2087,14 +2084,14 @@ class BaseDbStatusTest(testtools.TestCase):
         # Trove instance status updates are suppressed during restart.
         with patch.multiple(
                 status, start_db_service=DEFAULT, stop_db_service=DEFAULT,
-                begin_restart=DEFAULT, end_install_or_restart=DEFAULT):
+                begin_restart=DEFAULT, end_restart=DEFAULT):
             status.restart_db_service(service_candidates, 10)
             status.begin_restart.assert_called_once_with()
             status.stop_db_service.assert_called_once_with(
                 service_candidates, 10, disable_on_boot=False, update_db=False)
             status.start_db_service.assert_called_once_with(
                 service_candidates, 10, enable_on_boot=False, update_db=False)
-            status.end_install_or_restart.assert_called_once_with()
+            status.end_restart.assert_called_once_with()
 
         # Test a failing call.
         # Assert the status heartbeat gets re-enabled.
@@ -2102,12 +2099,12 @@ class BaseDbStatusTest(testtools.TestCase):
                 status, start_db_service=Mock(
                     side_effect=Exception("Error in database start.")),
                 stop_db_service=DEFAULT, begin_restart=DEFAULT,
-                end_install_or_restart=DEFAULT):
+                end_restart=DEFAULT):
             self.assertRaisesRegexp(
                 RuntimeError, "Database restart failed.",
                 status.restart_db_service, service_candidates, 10)
             status.begin_restart.assert_called_once_with()
-            status.end_install_or_restart.assert_called_once_with()
+            status.end_restart.assert_called_once_with()
 
 
 class MySqlAppStatusTest(testtools.TestCase):
@@ -2187,6 +2184,9 @@ class TestRedisApp(testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
 
+        self.orig_os_path_eu = os.path.expanduser
+        os.path.expanduser = Mock(return_value='/tmp/.file')
+
         with patch.multiple(RedisApp, _build_admin_client=DEFAULT,
                             _init_overrides_dir=DEFAULT):
             self.app = RedisApp(state_change_wait_time=0)
@@ -2200,6 +2200,7 @@ class TestRedisApp(testtools.TestCase):
         super(TestRedisApp, self).tearDown()
         self.app = None
         os.path.isfile = self.orig_os_path_isfile
+        os.path.expanduser = self.orig_os_path_eu
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         rservice.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
@@ -2310,7 +2311,7 @@ class TestRedisApp(testtools.TestCase):
             stop_srv_mock.assert_called_once_with(
                 RedisSystem.SERVICE_CANDIDATES)
             self.assertTrue(RedisApp._disable_redis_on_boot.called)
-            self.assertTrue(mock_status.end_install_or_restart.called)
+            self.assertTrue(mock_status.end_restart.called)
             self.assertTrue(
                 mock_status.wait_for_real_status_to_change_to.called)
 
@@ -2320,13 +2321,13 @@ class TestRedisApp(testtools.TestCase):
         mock_status.begin_restart = MagicMock(return_value=None)
         with patch.object(RedisApp, 'stop_db', return_value=None):
             with patch.object(RedisApp, 'start_redis', return_value=None):
-                mock_status.end_install_or_restart = MagicMock(
+                mock_status.end_restart = MagicMock(
                     return_value=None)
                 self.app.restart()
                 mock_status.begin_restart.assert_any_call()
                 RedisApp.stop_db.assert_any_call()
                 RedisApp.start_redis.assert_any_call()
-                mock_status.end_install_or_restart.assert_any_call()
+                mock_status.end_restart.assert_any_call()
 
     def test_start_redis(self):
         mock_status = MagicMock()
@@ -2340,14 +2341,14 @@ class TestRedisApp(testtools.TestCase):
         mock_status = MagicMock()
         mock_status.wait_for_real_status_to_change_to = MagicMock(
             return_value=False)
-        mock_status.end_install_or_restart = MagicMock()
+        mock_status.end_restart = MagicMock()
 
         self._assert_start_redis(mock_status)
 
         exec_mock.assert_called_once_with('pkill', '-9', 'redis-server',
                                           run_as_root=True, root_helper='sudo')
 
-        mock_status.end_install_or_restart.assert_called_once_with()
+        mock_status.end_restart.assert_called_once_with()
 
     @patch.multiple(operating_system, start_service=DEFAULT,
                     enable_service_on_boot=DEFAULT)
@@ -2633,11 +2634,13 @@ class CouchbaseAppTest(testtools.TestCase):
         self.couchbaseApp.stop_db = Mock()
         self.couchbaseApp.start_db = Mock()
 
-        self.couchbaseApp.restart()
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=True)
+            self.couchbaseApp.restart()
 
-        self.assertTrue(self.couchbaseApp.stop_db.called)
-        self.assertTrue(self.couchbaseApp.start_db.called)
-        self.assertTrue(conductor_api.API.heartbeat.called)
+            self.assertTrue(self.couchbaseApp.stop_db.called)
+            self.assertTrue(self.couchbaseApp.start_db.called)
+            self.assertTrue(conductor_api.API.heartbeat.called)
 
     def test_start_db(self):
         couchservice.utils.execute_with_timeout = Mock()
@@ -2660,8 +2663,10 @@ class CouchbaseAppTest(testtools.TestCase):
         self.couchbaseApp.state_change_wait_time = 1
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
 
-        self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
-        self.assertTrue(conductor_api.API.heartbeat.called)
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=True)
+            self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
+            self.assertTrue(conductor_api.API.heartbeat.called)
 
     def test_install_when_couchbase_installed(self):
         couchservice.packager.pkg_is_installed = Mock(return_value=True)
@@ -2736,11 +2741,13 @@ class CouchDBAppTest(testtools.TestCase):
         self.couchdbApp.stop_db = Mock()
         self.couchdbApp.start_db = Mock()
 
-        self.couchdbApp.restart()
+        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+            patch_pc.__get__ = Mock(return_value=True)
+            self.couchdbApp.restart()
 
-        self.assertTrue(self.couchdbApp.stop_db.called)
-        self.assertTrue(self.couchdbApp.start_db.called)
-        self.assertTrue(conductor_api.API.heartbeat.called)
+            self.assertTrue(self.couchdbApp.stop_db.called)
+            self.assertTrue(self.couchdbApp.start_db.called)
+            self.assertTrue(conductor_api.API.heartbeat.called)
 
     def test_start_db(self):
         couchdb_service.utils.execute_with_timeout = Mock()
@@ -2785,6 +2792,8 @@ class MongoDBAppTest(testtools.TestCase):
         self.orig_packager = mongo_system.PACKAGER
         self.orig_service_discovery = operating_system.service_discovery
         self.orig_os_unlink = os.unlink
+        self.orig_os_path_eu = os.path.expanduser
+        os.path.expanduser = Mock(return_value='/tmp/.file')
 
         operating_system.service_discovery = (
             self.fake_mongodb_service_discovery)
@@ -2807,6 +2816,7 @@ class MongoDBAppTest(testtools.TestCase):
         mongo_system.PACKAGER = self.orig_packager
         operating_system.service_discovery = self.orig_service_discovery
         os.unlink = self.orig_os_unlink
+        os.path.expanduser = self.orig_os_path_eu
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
@@ -3194,7 +3204,7 @@ class VerticaAppTest(testtools.TestCase):
         mock_status.begin_restart = MagicMock(return_value=None)
         with patch.object(VerticaApp, 'stop_db', return_value=None):
             with patch.object(VerticaApp, 'start_db', return_value=None):
-                mock_status.end_install_or_restart = MagicMock(
+                mock_status.end_restart = MagicMock(
                     return_value=None)
                 app.restart()
                 mock_status.begin_restart.assert_any_call()
@@ -3208,7 +3218,7 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(app, '_enable_db_on_boot', return_value=None):
             with patch.object(app, 'read_config',
                               return_value=self.test_config):
-                mock_status.end_install_or_restart = MagicMock(
+                mock_status.end_restart = MagicMock(
                     return_value=None)
                 app.start_db()
                 agent_start, db_start = subprocess.Popen.call_args_list
@@ -3218,7 +3228,7 @@ class VerticaAppTest(testtools.TestCase):
                 db_expected_cmd = [
                     'sudo', 'su', '-', 'dbadmin', '-c',
                     (vertica_system.START_DB % ('db_srvr', 'some_password'))]
-                self.assertTrue(mock_status.end_install_or_restart.called)
+                self.assertTrue(mock_status.end_restart.called)
                 agent_start.assert_called_with(agent_expected_command)
                 db_start.assert_called_with(db_expected_cmd)
 
@@ -3244,7 +3254,7 @@ class VerticaAppTest(testtools.TestCase):
                                                          ['', '']])):
                     mock_status.wait_for_real_status_to_change_to = MagicMock(
                         return_value=True)
-                    mock_status.end_install_or_restart = MagicMock(
+                    mock_status.end_restart = MagicMock(
                         return_value=None)
                     app.stop_db()
 
@@ -3304,7 +3314,7 @@ class VerticaAppTest(testtools.TestCase):
                                                          ['', '']])):
                     mock_status.wait_for_real_status_to_change_to = MagicMock(
                         return_value=None)
-                    mock_status.end_install_or_restart = MagicMock(
+                    mock_status.end_restart = MagicMock(
                         return_value=None)
                     self.assertRaises(RuntimeError, app.stop_db)
 
@@ -3458,11 +3468,6 @@ class VerticaAppTest(testtools.TestCase):
                           side_effect=ConfigParser.Error()):
             self.assertRaises(RuntimeError, self.app.read_config)
 
-    def test_complete_install_or_restart(self):
-        app = VerticaApp(MagicMock())
-        app.complete_install_or_restart()
-        app.status.end_install_or_restart.assert_any_call()
-
     def test_start_db_with_conf_changes(self):
         mock_status = MagicMock()
         type(mock_status)._is_restarting = PropertyMock(return_value=False)
@@ -3470,7 +3475,7 @@ class VerticaAppTest(testtools.TestCase):
         with patch.object(app, 'read_config',
                           return_value=self.test_config):
             app.start_db_with_conf_changes('test_config_contents')
-            app.status.end_install_or_restart.assert_any_call()
+            app.status.end_restart.assert_any_call()
 
 
 class DB2AppTest(testtools.TestCase):

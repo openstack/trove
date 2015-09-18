@@ -13,8 +13,8 @@
 
 from mock import MagicMock
 from mock import patch
+from os import path
 from testtools.matchers import Is
-import trove_testtools
 
 from trove.common.context import TroveContext
 from trove.common.exception import DatastoreOperationNotSupported
@@ -26,6 +26,7 @@ from trove.guestagent.datastore.experimental.vertica.service import VerticaApp
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
+from trove.tests.unittests import trove_testtools
 
 
 class GuestAgentManagerTest(trove_testtools.TestCase):
@@ -45,7 +46,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.origin_start_db = VerticaApp.start_db
         self.origin_restart = VerticaApp.restart
         self.origin_install_if = VerticaApp.install_if_needed
-        self.origin_complete_install = VerticaApp.complete_install_or_restart
         self.origin_enable_root = VerticaApp.enable_root
         self.origin_is_root_enabled = VerticaApp.is_root_enabled
         self.origin_prepare_for_install_vertica = (
@@ -65,7 +65,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         VerticaApp.start_db = self.origin_start_db
         VerticaApp.restart = self.origin_restart
         VerticaApp.install_if_needed = self.origin_install_if
-        VerticaApp.complete_install_or_restart = self.origin_complete_install
         VerticaApp.enable_root = self.origin_enable_root
         VerticaApp.is_root_enabled = self.origin_is_root_enabled
         VerticaApp.prepare_for_install_vertica = (
@@ -77,6 +76,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.manager.update_status(self.context)
         mock_status.update.assert_any_call()
 
+    @patch.object(path, 'exists', MagicMock())
     def _prepare_dynamic(self, packages,
                          config_content='MockContent', device_path='/dev/vdb',
                          backup_id=None,
@@ -94,7 +94,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.manager.appStatus = mock_status
 
         mock_status.begin_install = MagicMock(return_value=None)
-        path_exists_function = MagicMock(return_value=True)
         volume.VolumeDevice.format = MagicMock(return_value=None)
         volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
         volume.VolumeDevice.mount = MagicMock(return_value=None)
@@ -108,7 +107,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         VerticaApp.install_vertica = MagicMock(return_value=None)
         VerticaApp.create_db = MagicMock(return_value=None)
         VerticaApp.prepare_for_install_vertica = MagicMock(return_value=None)
-        VerticaApp.complete_install_or_restart = MagicMock(return_value=None)
         # invocation
         self.manager.prepare(context=self.context, packages=packages,
                              config_contents=config_content,
@@ -118,8 +116,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
                              mount_point="/var/lib/vertica",
                              backup_info=backup_info,
                              overrides=None,
-                             cluster_config=None,
-                             path_exists_function=path_exists_function)
+                             cluster_config=None)
 
         self.assertEqual(expected_vol_count, VolumeDevice.format.call_count)
         self.assertEqual(expected_vol_count,
@@ -135,7 +132,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         VerticaApp.prepare_for_install_vertica.assert_any_call()
         VerticaApp.install_vertica.assert_any_call()
         VerticaApp.create_db.assert_any_call()
-        VerticaApp.complete_install_or_restart.assert_any_call()
 
     def test_prepare_pkg(self):
         self._prepare_dynamic(['vertica'])
@@ -204,7 +200,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
     def test_prepare_member(self, mock_set_status):
         self._prepare_method("test-instance-3", "member")
         mock_set_status.assert_called_with(
-            rd_instance.ServiceStatuses.BUILD_PENDING)
+            rd_instance.ServiceStatuses.INSTANCE_READY, force=True)
 
     def test_reset_configuration(self):
         try:
@@ -219,9 +215,11 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
 
     @patch.object(VerticaAppStatus, 'set_status')
     def test_prepare_invalid_cluster_config(self, mock_set_status):
-        self._prepare_method("test-instance-3", "query_router")
+        self.assertRaises(RuntimeError,
+                          self._prepare_method,
+                          "test-instance-3", "query_router")
         mock_set_status.assert_called_with(
-            rd_instance.ServiceStatuses.FAILED)
+            rd_instance.ServiceStatuses.FAILED, force=True)
 
     def test_get_filesystem_stats(self):
         with patch.object(dbaas, 'get_filesystem_volume_stats'):
@@ -250,14 +248,13 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
             test_resize_fs.assert_called_with('/var/lib/vertica')
 
     def test_cluster_complete(self):
-        mock_status = MagicMock()
-        mock_status.set_status = MagicMock()
-        self.manager.appStatus = mock_status
-        mock_status._get_actual_db_status = MagicMock(
+        mock_set_status = MagicMock()
+        self.manager.appStatus.set_status = mock_set_status
+        self.manager.appStatus._get_actual_db_status = MagicMock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
         self.manager.cluster_complete(self.context)
-        mock_status.set_status.assert_called_with(
-            rd_instance.ServiceStatuses.RUNNING)
+        mock_set_status.assert_called_with(
+            rd_instance.ServiceStatuses.RUNNING, force=True)
 
     def test_get_public_keys(self):
         with patch.object(VerticaApp, 'get_public_keys',

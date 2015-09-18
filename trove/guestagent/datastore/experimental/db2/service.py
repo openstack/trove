@@ -44,9 +44,6 @@ class DB2App(object):
         LOG.debug("state_change_wait_time = %s." % self.state_change_wait_time)
         self.status = status
 
-    def complete_install_or_restart(self):
-        self.status.end_install_or_restart()
-
     def change_ownership(self, mount_point):
         """
         When DB2 server instance is installed, it does not have the
@@ -104,7 +101,7 @@ class DB2App(object):
                 rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Start of DB2 server instance failed."))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError(_("Could not start DB2."))
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
@@ -120,7 +117,7 @@ class DB2App(object):
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db)):
             LOG.error(_("Could not stop DB2."))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError(_("Could not stop DB2."))
 
     def restart(self):
@@ -130,7 +127,7 @@ class DB2App(object):
             self.stop_db()
             self.start_db()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
 
 class DB2AppStatus(service.BaseDbStatus):

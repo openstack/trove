@@ -27,7 +27,8 @@ import trove.tests.unittests.trove_testtools as trove_testtools
 
 class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
-    @mock.patch.object(service.MongoDBApp, '_init_overrides_dir')
+    @mock.patch.object(service.MongoDBApp, '_init_overrides_dir',
+                       return_value='')
     def setUp(self, _):
         super(GuestAgentMongoDBManagerTest, self).setUp()
         self.context = context.TroveContext()

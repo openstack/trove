@@ -108,7 +108,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     @patch.object(InstanceServiceStatus, 'find_by')
     def test_all_instances_ready(self, mock_find):
         (mock_find.return_value.
-         get_status.return_value) = ServiceStatuses.BUILD_PENDING
+         get_status.return_value) = ServiceStatuses.INSTANCE_READY
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
         self.assertEqual(True, ret_val)

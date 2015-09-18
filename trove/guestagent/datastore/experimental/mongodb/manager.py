@@ -16,9 +16,7 @@
 import os
 
 from oslo_log import log as logging
-from oslo_service import periodic_task
 
-from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
@@ -26,39 +24,29 @@ from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import service
 from trove.guestagent.datastore.experimental.mongodb import system
+from trove.guestagent.datastore import manager
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
-MANAGER = CONF.datastore_manager
 
 
-class Manager(periodic_task.PeriodicTasks):
+class Manager(manager.Manager):
 
     def __init__(self):
         self.app = service.MongoDBApp()
-        super(Manager, self).__init__(CONF)
+        super(Manager, self).__init__('mongodb')
 
-    @periodic_task.periodic_task
-    def update_status(self, context):
-        """Update the status of the MongoDB service."""
-        self.app.status.update()
+    @property
+    def status(self):
+        return self.app.status
 
-    def rpc_ping(self, context):
-        LOG.debug("Responding to RPC ping.")
-        return True
-
-    def prepare(self, context, packages, databases, memory_mb, users,
-                device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None, overrides=None,
-                cluster_config=None, snapshot=None):
-        """Makes ready DBAAS on a Guest container."""
-
-        LOG.debug("Preparing MongoDB instance.")
-
-        self.app.status.begin_install()
+    def do_prepare(self, context, packages, databases, memory_mb, users,
+                   device_path, mount_point, backup_info,
+                   config_contents, root_password, overrides,
+                   cluster_config, snapshot):
+        """This is called from prepare in the base class."""
         self.app.install_if_needed(packages)
         self.app.wait_for_start()
         self.app.stop_db()
@@ -105,20 +93,6 @@ class Manager(periodic_task.PeriodicTasks):
             LOG.debug('Root password provided. Enabling root.')
             service.MongoDBAdmin().enable_root(root_password)
 
-        if not cluster_config:
-            if databases:
-                self.create_database(context, databases)
-            if users:
-                self.create_user(context, users)
-
-        if cluster_config:
-            self.app.status.set_status(
-                ds_instance.ServiceStatuses.BUILD_PENDING)
-        else:
-            self.app.complete_install_or_restart()
-
-        LOG.info(_('Completed setup of MongoDB database instance.'))
-
     def restart(self, context):
         LOG.debug("Restarting MongoDB.")
         self.app.restart()
@@ -138,17 +112,18 @@ class Manager(periodic_task.PeriodicTasks):
     def get_filesystem_stats(self, context, fs_path):
         """Gets the filesystem stats for the path given."""
         LOG.debug("Getting file system status.")
+        # TODO(peterstac) - why is this hard-coded?
         return dbaas.get_filesystem_volume_stats(system.MONGODB_MOUNT_POINT)
 
     def change_passwords(self, context, users):
         LOG.debug("Changing password.")
         raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=MANAGER)
+            operation='change_passwords', datastore=self.manager)
 
     def update_attributes(self, context, username, hostname, user_attrs):
         LOG.debug("Updating database attributes.")
         raise exception.DatastoreOperationNotSupported(
-            operation='update_attributes', datastore=MANAGER)
+            operation='update_attributes', datastore=self.manager)
 
     def create_database(self, context, databases):
         LOG.debug("Creating database(s).")
@@ -200,7 +175,7 @@ class Manager(periodic_task.PeriodicTasks):
     def enable_root_with_password(self, context, root_password=None):
         LOG.debug("Enabling root with password.")
         raise exception.DatastoreOperationNotSupported(
-            operation='enable_root_with_password', datastore=MANAGER)
+            operation='enable_root_with_password', datastore=self.manager)
 
     def is_root_enabled(self, context):
         LOG.debug("Checking if root is enabled.")
@@ -253,46 +228,46 @@ class Manager(periodic_task.PeriodicTasks):
                                  replica_source_config=None):
         LOG.debug("Getting replication snapshot.")
         raise exception.DatastoreOperationNotSupported(
-            operation='get_replication_snapshot', datastore=MANAGER)
+            operation='get_replication_snapshot', datastore=self.manager)
 
     def attach_replication_slave(self, context, snapshot, slave_config):
         LOG.debug("Attaching replica.")
         raise exception.DatastoreOperationNotSupported(
-            operation='attach_replication_slave', datastore=MANAGER)
+            operation='attach_replication_slave', datastore=self.manager)
 
     def detach_replica(self, context, for_failover=False):
         LOG.debug("Detaching replica.")
         raise exception.DatastoreOperationNotSupported(
-            operation='detach_replica', datastore=MANAGER)
+            operation='detach_replica', datastore=self.manager)
 
     def get_replica_context(self, context):
         raise exception.DatastoreOperationNotSupported(
-            operation='get_replica_context', datastore=MANAGER)
+            operation='get_replica_context', datastore=self.manager)
 
     def make_read_only(self, context, read_only):
         raise exception.DatastoreOperationNotSupported(
-            operation='make_read_only', datastore=MANAGER)
+            operation='make_read_only', datastore=self.manager)
 
     def enable_as_master(self, context, replica_source_config):
         raise exception.DatastoreOperationNotSupported(
-            operation='enable_as_master', datastore=MANAGER)
+            operation='enable_as_master', datastore=self.manager)
 
     def get_txn_count(self):
         raise exception.DatastoreOperationNotSupported(
-            operation='get_txn_count', datastore=MANAGER)
+            operation='get_txn_count', datastore=self.manager)
 
     def get_latest_txn_id(self):
         raise exception.DatastoreOperationNotSupported(
-            operation='get_latest_txn_id', datastore=MANAGER)
+            operation='get_latest_txn_id', datastore=self.manager)
 
     def wait_for_txn(self, txn):
         raise exception.DatastoreOperationNotSupported(
-            operation='wait_for_txn', datastore=MANAGER)
+            operation='wait_for_txn', datastore=self.manager)
 
     def demote_replication_master(self, context):
         LOG.debug("Demoting replica source.")
         raise exception.DatastoreOperationNotSupported(
-            operation='demote_replication_master', datastore=MANAGER)
+            operation='demote_replication_master', datastore=self.manager)
 
     def add_members(self, context, members):
         try:
@@ -324,12 +299,6 @@ class Manager(periodic_task.PeriodicTasks):
         except Exception:
             self.app.status.set_status(ds_instance.ServiceStatuses.FAILED)
             raise
-
-    def cluster_complete(self, context):
-        # Now that cluster creation is complete, start status checks
-        LOG.debug("Cluster creation complete, starting status checks.")
-        status = self.app.status._get_actual_db_status()
-        self.app.status.set_status(status)
 
     def get_key(self, context):
         # Return the cluster key

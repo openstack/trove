@@ -133,7 +133,7 @@ class MongoDBApp(object):
                 ds_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop MongoDB."))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError(_("Could not stop MongoDB"))
 
     def restart(self):
@@ -143,7 +143,7 @@ class MongoDBApp(object):
             self.stop_db()
             self.start_db()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def start_db(self, update_db=False):
         LOG.info(_("Starting MongoDB."))
@@ -177,12 +177,9 @@ class MongoDBApp(object):
             except exception.ProcessExecutionError:
                 LOG.exception(_("Error killing MongoDB start command."))
                 # There's nothing more we can do...
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError("Could not start MongoDB.")
         LOG.debug('MongoDB started successfully.')
-
-    def complete_install_or_restart(self):
-        self.status.end_install_or_restart()
 
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
