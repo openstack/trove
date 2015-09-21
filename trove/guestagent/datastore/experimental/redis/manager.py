@@ -122,9 +122,10 @@ class Manager(periodic_task.PeriodicTasks):
                 persistence_dir = self._app.get_working_dir()
                 self._perform_restore(backup_info, context, persistence_dir,
                                       self._app)
+            else:
+                self._app.restart()
             if snapshot:
                 self.attach_replica(context, snapshot, snapshot['config'])
-            self._app.restart()
             if cluster_config:
                 self._app.status.set_status(
                     rd_instance.ServiceStatuses.BUILD_PENDING)
