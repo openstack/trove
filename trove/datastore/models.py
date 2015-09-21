@@ -549,7 +549,9 @@ def update_datastore_version(datastore, name, manager, image_id, packages,
 
 class DatastoreVersionMetadata(object):
     @classmethod
-    def _datastore_version_metadata_add(cls, datastore_version_id,
+    def _datastore_version_metadata_add(cls, datastore_name,
+                                        datastore_version_name,
+                                        datastore_version_id,
                                         key, value, exception_class):
         """Create an entry in the Datastore Version Metadata table."""
         # Do we have a mapping in the db?
@@ -567,7 +569,8 @@ class DatastoreVersionMetadata(object):
                 return
             else:
                 raise exception_class(
-                    datastore_version_id=datastore_version_id,
+                    datastore=datastore_name,
+                    datastore_version=datastore_version_name,
                     flavor_id=value)
         except exception.NotFound:
             pass
@@ -576,7 +579,9 @@ class DatastoreVersionMetadata(object):
             key=key, value=value)
 
     @classmethod
-    def _datastore_version_metadata_delete(cls, datastore_version_id,
+    def _datastore_version_metadata_delete(cls, datastore_name,
+                                           datastore_version_name,
+                                           datastore_version_id,
                                            key, value, exception_class):
         try:
             db_record = DBDatastoreVersionMetadata.find_by(
@@ -587,10 +592,12 @@ class DatastoreVersionMetadata(object):
                 return
             else:
                 raise exception_class(
-                    datastore_version_id=datastore_version_id,
+                    datastore=datastore_name,
+                    datastore_version=datastore_version_name,
                     flavor_id=value)
         except exception.ModelNotFoundError:
-            raise exception_class(datastore_version_id=datastore_version_id,
+            raise exception_class(datastore=datastore_name,
+                                  datastore_version=datastore_version_name,
                                   flavor_id=value)
 
     @classmethod
@@ -609,6 +616,7 @@ class DatastoreVersionMetadata(object):
         datastore_version_id = db_dsv_record.id
         for flavor_id in flavor_ids:
             cls._datastore_version_metadata_add(
+                datastore_name, datastore_version_name,
                 datastore_version_id, 'flavor', flavor_id,
                 exception.DatastoreFlavorAssociationAlreadyExists)
 
@@ -627,6 +635,7 @@ class DatastoreVersionMetadata(object):
         )
         datastore_version_id = db_dsv_record.id
         cls._datastore_version_metadata_delete(
+            datastore_name, datastore_version_name,
             datastore_version_id, 'flavor', flavor_id,
             exception.DatastoreFlavorAssociationNotFound)
 

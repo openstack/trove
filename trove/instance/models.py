@@ -682,7 +682,9 @@ class Instance(BuiltInstance):
             valid_flavors = tuple(f.value for f in bound_flavors)
             if flavor_id not in valid_flavors:
                 raise exception.DatastoreFlavorAssociationNotFound(
-                    version_id=datastore_version.id, flavor_id=flavor_id)
+                    datastore=datastore.name,
+                    datastore_version=datastore_version.name,
+                    flavor_id=flavor_id)
 
         datastore_cfg = CONF.get(datastore_version.manager)
         client = create_nova_client(context)

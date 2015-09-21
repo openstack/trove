@@ -37,16 +37,21 @@ class TestDatastoreVersionMetadata(TestDatastoreBase):
 
     def test_add_existing_associations(self):
         dsmetadata = datastore_models.DatastoreVersionMetadata
-        self.assertRaises(exception.DatastoreFlavorAssociationAlreadyExists,
-                          dsmetadata.add_datastore_version_flavor_association,
-                          self.ds_name, self.ds_version, [self.flavor_id])
+        self.assertRaisesRegexp(
+            exception.DatastoreFlavorAssociationAlreadyExists,
+            "Flavor %s is already associated with datastore %s version %s"
+            % (self.flavor_id, self.ds_name, self.ds_version),
+            dsmetadata.add_datastore_version_flavor_association,
+            self.ds_name, self.ds_version, [self.flavor_id])
 
     def test_delete_nonexistent_mapping(self):
         dsmeta = datastore_models.DatastoreVersionMetadata
-        self.assertRaises(exception.DatastoreFlavorAssociationNotFound,
-                          dsmeta.delete_datastore_version_flavor_association,
-                          self.ds_name, self.ds_version,
-                          flavor_id=2)
+        self.assertRaisesRegexp(
+            exception.DatastoreFlavorAssociationNotFound,
+            "Flavor 2 is not supported for datastore %s version %s"
+            % (self.ds_name, self.ds_version),
+            dsmeta.delete_datastore_version_flavor_association,
+            self.ds_name, self.ds_version, flavor_id=2)
 
     def test_delete_mapping(self):
         flavor_id = 2

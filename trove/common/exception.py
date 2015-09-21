@@ -121,14 +121,14 @@ class DatastoresNotFound(NotFound):
 
 class DatastoreFlavorAssociationNotFound(NotFound):
 
-    message = _("Datastore '%(datastore)s' version id %(version_id)s "
-                "and flavor %(flavor_id)s mapping not found.")
+    message = _("Flavor %(flavor_id)s is not supported for datastore "
+                "%(datastore)s version %(datastore_version)s")
 
 
 class DatastoreFlavorAssociationAlreadyExists(TroveError):
 
-    message = _("Datastore '%(datastore)s' version %(datastore_version)s "
-                "and flavor %(flavor_id)s mapping already exists.")
+    message = _("Flavor %(flavor_id)s is already associated with "
+                "datastore %(datastore)s version %(datastore_version)s")
 
 
 class DatastoreNoVersion(TroveError):
