@@ -36,7 +36,7 @@ class Security_Group_Exceptions_Test(trove_testtools.TestCase):
     def setUp(self):
         super(Security_Group_Exceptions_Test, self).setUp()
         self.createNovaClient = trove.common.remote.create_nova_client
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.FakeClient = nova.fake_create_nova_client(self.context)
 
         fException = Mock(
@@ -112,7 +112,7 @@ class SecurityGroupDeleteTest(trove_testtools.TestCase):
         self.inst_model_conf_patch = patch.object(inst_model, 'CONF')
         self.inst_model_conf_mock = self.inst_model_conf_patch.start()
         self.addCleanup(self.inst_model_conf_patch.stop)
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.original_find_by = (
             sec_mod.SecurityGroupInstanceAssociation.find_by)
         self.original_delete = sec_mod.SecurityGroupInstanceAssociation.delete

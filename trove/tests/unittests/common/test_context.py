@@ -13,8 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+from mock import Mock
+
 from testtools.matchers import Equals, Is
 from trove.common import context
+from trove.common.notification import DBaaSInstanceCreate
 from trove.tests.unittests import trove_testtools
 
 
@@ -45,3 +48,18 @@ class TestTroveContext(trove_testtools.TestCase):
         ctx_dict = ctx.to_dict()
         self.assertThat(ctx_dict.get('user'), Equals('test_user_id'))
         self.assertThat(ctx_dict.get('request_id'), Equals('test_req_id'))
+
+    def test_to_dict_with_notification(self):
+        ctx = context.TroveContext(user='test_user_id',
+                                   tenant='the_tenant',
+                                   request_id='test_req_id')
+        ctx.notification = DBaaSInstanceCreate(ctx,
+                                               request=Mock())
+        ctx_dict = ctx.to_dict()
+        self.assertThat(ctx_dict.get('user'), Equals('test_user_id'))
+        self.assertThat(ctx_dict.get('request_id'), Equals('test_req_id'))
+        self.assertTrue('trove_notification' in ctx_dict)
+        n_dict = ctx_dict['trove_notification']
+        self.assertThat(n_dict.get('notification_classname'),
+                        Equals('trove.common.notification.'
+                               'DBaaSInstanceCreate'))

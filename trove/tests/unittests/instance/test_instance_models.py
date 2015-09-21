@@ -108,7 +108,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
     def setUp(self):
         util.init_db()
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self, is_admin=True)
         self.name = "name"
         self.flavor_id = 5
         self.image_id = "UUID"
@@ -189,6 +189,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
         super(CreateInstanceTest, self).tearDown()
 
     def test_exception_on_invalid_backup_size(self):
+        self.assertEqual(self.backup.id, self.backup_id)
         exc = self.assertRaises(
             exception.BackupTooLarge, models.Instance.create,
             self.context, self.name, self.flavor_id,

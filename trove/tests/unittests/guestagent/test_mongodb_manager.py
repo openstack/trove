@@ -15,7 +15,6 @@
 import mock
 import pymongo
 
-import trove.common.context as context
 import trove.common.utils as utils
 import trove.guestagent.backup as backup
 from trove.guestagent.common.configuration import ImportOverrideStrategy
@@ -31,7 +30,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
     @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
         super(GuestAgentMongoDBManagerTest, self).setUp()
-        self.context = context.TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.manager = manager.Manager()
 
         self.execute_with_timeout_patch = mock.patch.object(

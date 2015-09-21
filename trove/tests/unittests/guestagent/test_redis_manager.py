@@ -14,7 +14,6 @@
 
 from mock import DEFAULT, MagicMock, patch
 
-from trove.common.context import TroveContext
 from trove.guestagent import backup
 from trove.guestagent.common import configuration
 from trove.guestagent.common.configuration import ImportOverrideStrategy
@@ -36,7 +35,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.patch_ope = patch('os.path.expanduser')
         self.mock_ope = self.patch_ope.start()
         self.addCleanup(self.patch_ope.stop)
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.replication_strategy = 'RedisSyncReplication'
         self.patch_rs = patch(
             'trove.guestagent.strategies.replication.get_strategy',

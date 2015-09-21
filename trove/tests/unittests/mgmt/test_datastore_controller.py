@@ -42,7 +42,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
         }
 
         self.tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         self.req = Mock()
         self.req.environ = Mock()
         self.req.environ.__getitem__ = Mock(return_value=context)

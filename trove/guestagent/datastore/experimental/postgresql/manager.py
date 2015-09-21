@@ -23,8 +23,11 @@ from .service.database import PgSqlDatabase
 from .service.install import PgSqlInstall
 from .service.root import PgSqlRoot
 from .service.status import PgSqlAppStatus
+
 import pgutil
+
 from trove.common import cfg
+from trove.common.notification import EndNotification
 from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.datastore import manager
@@ -124,4 +127,5 @@ class Manager(
         self.alter_user(context, postgres, 'NOSUPERUSER', 'NOLOGIN')
 
     def create_backup(self, context, backup_info):
-        backup.backup(context, backup_info)
+        with EndNotification(context):
+            backup.backup(context, backup_info)

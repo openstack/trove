@@ -13,13 +13,44 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 import inspect
 import mock
 import os
 import sys
 import testtools
 
+from trove.common.context import TroveContext
+from trove.common.notification import DBaaSAPINotification
 from trove.tests import root_logger
+
+
+def patch_notifier(test_case):
+    notification_notify = mock.patch.object(
+        DBaaSAPINotification, "_notify")
+    notification_notify.start()
+    test_case.addCleanup(notification_notify.stop)
+
+
+class TroveTestNotification(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'test_notification'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return []
+
+
+class TroveTestContext(TroveContext):
+
+    def __init__(self, test_case, **kwargs):
+        super(TroveTestContext, self).__init__(**kwargs)
+        self.notification = TroveTestNotification(
+            self, request_id='req_id', flavor_id='7')
+        self.notification.server_type = 'api'
+        patch_notifier(test_case)
 
 
 class TestCase(testtools.TestCase):

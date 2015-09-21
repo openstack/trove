@@ -16,14 +16,14 @@ from mock import Mock, patch
 from trove.common import exception
 from trove.extensions.mgmt.clusters.models import MgmtCluster
 from trove.extensions.mgmt.clusters.service import MgmtClusterController
-from trove.tests.unittests.trove_testtools import TestCase
+from trove.tests.unittests import trove_testtools
 
 
-class TestClusterController(TestCase):
+class TestClusterController(trove_testtools.TestCase):
     def setUp(self):
         super(TestClusterController, self).setUp()
 
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.req = Mock()
         self.req.environ = Mock()
         self.req.environ.__getitem__ = Mock(return_value=self.context)

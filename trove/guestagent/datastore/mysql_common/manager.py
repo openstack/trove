@@ -25,6 +25,7 @@ from trove.common import configurations
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common.notification import EndNotification
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
@@ -121,27 +122,33 @@ class MySqlManager(manager.Manager):
         }
 
     def change_passwords(self, context, users):
-        return self.mysql_admin().change_passwords(users)
+        with EndNotification(context):
+            self.mysql_admin().change_passwords(users)
 
     def update_attributes(self, context, username, hostname, user_attrs):
-        return self.mysql_admin().update_attributes(
-            username, hostname, user_attrs)
+        with EndNotification(context):
+            self.mysql_admin().update_attributes(
+                username, hostname, user_attrs)
 
     def reset_configuration(self, context, configuration):
         app = self.mysql_app(self.mysql_app_status.get())
         app.reset_configuration(configuration)
 
     def create_database(self, context, databases):
-        return self.mysql_admin().create_database(databases)
+        with EndNotification(context):
+            return self.mysql_admin().create_database(databases)
 
     def create_user(self, context, users):
-        self.mysql_admin().create_user(users)
+        with EndNotification(context):
+            self.mysql_admin().create_user(users)
 
     def delete_database(self, context, database):
-        return self.mysql_admin().delete_database(database)
+        with EndNotification(context):
+            return self.mysql_admin().delete_database(database)
 
     def delete_user(self, context, user):
-        self.mysql_admin().delete_user(user)
+        with EndNotification(context):
+            self.mysql_admin().delete_user(user)
 
     def get_user(self, context, username, hostname):
         return self.mysql_admin().get_user(username, hostname)
@@ -258,7 +265,8 @@ class MySqlManager(manager.Manager):
         :param backup_info: a dictionary containing the db instance id of the
                             backup task, location, type, and other data.
         """
-        backup.backup(context, backup_info)
+        with EndNotification(context):
+            backup.backup(context, backup_info)
 
     def update_overrides(self, context, overrides, remove=False):
         app = self.mysql_app(self.mysql_app_status.get())

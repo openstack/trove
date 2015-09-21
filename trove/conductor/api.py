@@ -17,6 +17,7 @@ import oslo_messaging as messaging
 
 from trove.common import cfg
 from trove.common.rpc import version as rpc_version
+from trove.common.serializable_notification import SerializableNotification
 from trove import rpc
 
 
@@ -72,3 +73,23 @@ class API(object):
         cctxt.cast(self.context, "report_root",
                    instance_id=instance_id,
                    user=user)
+
+    def notify_end(self, **notification_args):
+        LOG.debug("Making async call to cast end notification")
+        cctxt = self.client.prepare(version=self.version_cap)
+        context = self.context
+        serialized = SerializableNotification.serialize(context,
+                                                        context.notification)
+        cctxt.cast(self.context, "notify_end",
+                   serialized_notification=serialized,
+                   notification_args=notification_args)
+
+    def notify_exc_info(self, message, exception):
+        LOG.debug("Making async call to cast error notification")
+        cctxt = self.client.prepare(version=self.version_cap)
+        context = self.context
+        serialized = SerializableNotification.serialize(context,
+                                                        context.notification)
+        cctxt.cast(self.context, "notify_exception",
+                   serialized_notification=serialized,
+                   message=message, exception=exception)

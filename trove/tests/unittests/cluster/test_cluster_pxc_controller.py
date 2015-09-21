@@ -23,7 +23,6 @@ from trove.cluster.service import ClusterController
 from trove.cluster import views
 import trove.common.cfg as cfg
 from trove.common import exception
-from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.tests.unittests import trove_testtools
@@ -101,7 +100,7 @@ class TestClusterController(trove_testtools.TestCase):
                                       mock_cluster_create):
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -126,7 +125,7 @@ class TestClusterController(trove_testtools.TestCase):
                              mock_cluster_create):
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = Mock()
@@ -165,7 +164,7 @@ class TestClusterController(trove_testtools.TestCase):
                           mock_cluster_load):
         tenant_id = Mock()
         id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         req = Mock()
         req.environ = Mock()
         req.environ.__getitem__ = Mock(return_value=context)
@@ -187,7 +186,7 @@ class TestClusterController(trove_testtools.TestCase):
         tenant_id = Mock()
         cluster_id = Mock()
         instance_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         req = Mock()
         req.environ = Mock()
         req.environ.__getitem__ = Mock(return_value=context)
@@ -204,6 +203,7 @@ class TestClusterController(trove_testtools.TestCase):
         cluster_id = Mock()
         req = MagicMock()
         cluster = Mock()
+        trove_testtools.patch_notifier(self)
         mock_cluster_load.return_value = cluster
         self.controller.delete(req, tenant_id, cluster_id)
         cluster.delete.assert_called_with()
@@ -259,7 +259,7 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
 
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -285,7 +285,7 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
 
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -299,51 +299,3 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
         mock_cluster.datastore_version.manager = 'pxc'
         mock_cluster_create.return_value = mock_cluster
         self.controller.create(req, body, tenant_id)
-
-    @patch.object(models.Cluster, 'load')
-    def test_controller_action_no_strategy(self,
-                                           mock_cluster_load):
-
-        body = {'do_stuff2': {}}
-        tenant_id = Mock()
-        context = Mock()
-        id = Mock()
-
-        req = Mock()
-        req.environ = MagicMock()
-        req.environ.get = Mock(return_value=context)
-
-        cluster = Mock()
-        cluster.datastore_version.manager = 'pxc'
-        mock_cluster_load.return_value = cluster
-
-        self.assertRaises(exception.TroveError, self.controller.action, req,
-                          body, tenant_id, id)
-
-    @patch.object(strategy, 'load_api_strategy')
-    @patch.object(models.Cluster, 'load')
-    def test_controller_action_found(self,
-                                     mock_cluster_load,
-                                     mock_cluster_api_strategy):
-
-        body = {'do_stuff': {}}
-        tenant_id = Mock()
-        context = Mock()
-        id = Mock()
-
-        req = Mock()
-        req.environ = MagicMock()
-        req.environ.get = Mock(return_value=context)
-
-        cluster = Mock()
-        cluster.datastore_version.manager = 'pxc'
-        mock_cluster_load.return_value = cluster
-
-        strat = Mock()
-        do_stuff_func = Mock()
-        strat.cluster_controller_actions = \
-            {'do_stuff': do_stuff_func}
-        mock_cluster_api_strategy.return_value = strat
-
-        self.controller.action(req, body, tenant_id, id)
-        self.assertEqual(1, do_stuff_func.call_count)

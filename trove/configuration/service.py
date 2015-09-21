@@ -21,6 +21,8 @@ import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import notification
+from trove.common.notification import StartNotification, EndNotification
 from trove.common import pagination
 from trove.common import wsgi
 from trove.configuration import models
@@ -85,6 +87,9 @@ class ConfigurationsController(wsgi.Controller):
         LOG.debug("req : '%s'\n\n" % req)
         LOG.debug("body : '%s'\n\n" % req)
 
+        context = req.environ[wsgi.CONTEXT_KEY]
+        context.notification = notification.DBaaSConfigurationCreate(
+            context, request=req)
         name = body['configuration']['name']
         description = body['configuration'].get('description')
         values = body['configuration']['values']
@@ -97,25 +102,30 @@ class ConfigurationsController(wsgi.Controller):
         datastore, datastore_version = (
             ds_models.get_datastore_version(**datastore_args))
 
-        configItems = []
-        if values:
-            # validate that the values passed in are permitted by the operator.
-            ConfigurationsController._validate_configuration(
-                body['configuration']['values'],
-                datastore_version,
-                models.DatastoreConfigurationParameters.load_parameters(
-                    datastore_version.id))
+        with StartNotification(context, name=name, datastore=datastore.name,
+                               datastore_version=datastore_version.name):
+            configItems = []
+            if values:
+                # validate that the values passed in are permitted by the
+                # operator.
+                ConfigurationsController._validate_configuration(
+                    body['configuration']['values'],
+                    datastore_version,
+                    models.DatastoreConfigurationParameters.load_parameters(
+                        datastore_version.id))
 
-            for k, v in values.iteritems():
-                configItems.append(DBConfigurationParameter(
-                    configuration_key=k,
-                    configuration_value=v))
+                for k, v in values.iteritems():
+                    configItems.append(DBConfigurationParameter(
+                        configuration_key=k,
+                        configuration_value=v))
 
-        cfg_group = models.Configuration.create(name, description, tenant_id,
-                                                datastore.id,
-                                                datastore_version.id)
-        cfg_group_items = models.Configuration.create_items(cfg_group.id,
-                                                            values)
+            cfg_group = models.Configuration.create(name, description,
+                                                    tenant_id, datastore.id,
+                                                    datastore_version.id)
+            with EndNotification(context, configuration_id=cfg_group.id):
+                cfg_group_items = models.Configuration.create_items(
+                    cfg_group.id, values)
+
         view_data = views.DetailedConfigurationView(cfg_group,
                                                     cfg_group_items)
         return wsgi.Result(view_data.data(), 200)
@@ -126,14 +136,17 @@ class ConfigurationsController(wsgi.Controller):
         LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
-        group = models.Configuration.load(context, id)
-        instances = instances_models.DBInstance.find_all(
-            tenant_id=context.tenant,
-            configuration_id=id,
-            deleted=False).all()
-        if instances:
-            raise exception.InstanceAssignedToConfiguration()
-        models.Configuration.delete(context, group)
+        context.notification = notification.DBaaSConfigurationDelete(
+            context, request=req)
+        with StartNotification(context, configuration_id=id):
+            group = models.Configuration.load(context, id)
+            instances = instances_models.DBInstance.find_all(
+                tenant_id=context.tenant,
+                configuration_id=id,
+                deleted=False).all()
+            if instances:
+                raise exception.InstanceAssignedToConfiguration()
+            models.Configuration.delete(context, group)
         return wsgi.Result(None, 202)
 
     def update(self, req, body, tenant_id, id):
@@ -152,19 +165,29 @@ class ConfigurationsController(wsgi.Controller):
         if 'description' in body['configuration']:
             group.description = body['configuration']['description']
 
-        items = self._configuration_items_list(group, body['configuration'])
-        deleted_at = datetime.utcnow()
-        models.Configuration.remove_all_items(context, group.id, deleted_at)
-        models.Configuration.save(group, items)
-        self._refresh_on_all_instances(context, id)
+        context.notification = notification.DBaaSConfigurationUpdate(
+            context, request=req)
+        with StartNotification(context, configuration_id=id,
+                               name=group.name, description=group.description):
+            items = self._configuration_items_list(group,
+                                                   body['configuration'])
+            deleted_at = datetime.utcnow()
+            models.Configuration.remove_all_items(context, group.id,
+                                                  deleted_at)
+            models.Configuration.save(group, items)
+            self._refresh_on_all_instances(context, id)
         return wsgi.Result(None, 202)
 
     def edit(self, req, body, tenant_id, id):
         context = req.environ[wsgi.CONTEXT_KEY]
-        group = models.Configuration.load(context, id)
-        items = self._configuration_items_list(group, body['configuration'])
-        models.Configuration.save(group, items)
-        self._refresh_on_all_instances(context, id)
+        context.notification = notification.DBaaSConfigurationEdit(
+            context, request=req)
+        with StartNotification(context, configuration_id=id):
+            group = models.Configuration.load(context, id)
+            items = self._configuration_items_list(group,
+                                                   body['configuration'])
+            models.Configuration.save(group, items)
+            self._refresh_on_all_instances(context, id)
 
     def _refresh_on_all_instances(self, context, configuration_id):
         """Refresh a configuration group on all its instances.

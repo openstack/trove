@@ -19,6 +19,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
+from trove.common.notification import EndNotification
 from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.access import (
@@ -66,8 +67,9 @@ class PgSqlUsers(PgSqlAccess):
 
             {"_name": "", "_password": "", "_databases": [{"_name": ""}, ...]}
         """
-        for user in users:
-            self._create_user(context, user, None)
+        with EndNotification(context):
+            for user in users:
+                self._create_user(context, user, None)
 
     def _create_user(self, context, user, encrypt_password=None, *options):
         LOG.info(
@@ -160,16 +162,17 @@ class PgSqlUsers(PgSqlAccess):
 
             {"_name": ""}
         """
-        LOG.info(
-            _("{guest_id}: Dropping user {name}.").format(
-                guest_id=CONF.guest_id,
-                name=user['_name'],
+        with EndNotification(context):
+            LOG.info(
+                _("{guest_id}: Dropping user {name}.").format(
+                    guest_id=CONF.guest_id,
+                    name=user['_name'],
+                )
             )
-        )
-        pgutil.psql(
-            pgutil.UserQuery.drop(name=user['_name']),
-            timeout=30,
-        )
+            pgutil.psql(
+                pgutil.UserQuery.drop(name=user['_name']),
+                timeout=30,
+            )
 
     def get_user(self, context, username, hostname):
         """Return a single user matching the criteria.
@@ -205,8 +208,9 @@ class PgSqlUsers(PgSqlAccess):
 
             {"name": "", "password": ""}
         """
-        for user in users:
-            self.alter_user(context, user, None)
+        with EndNotification(context):
+            for user in users:
+                self.alter_user(context, user, None)
 
     def alter_user(self, context, user, encrypt_password=None, *options):
         """Change the password and options of an existing users.
@@ -246,45 +250,48 @@ class PgSqlUsers(PgSqlAccess):
 
         Each key/value pair in user_attrs is optional.
         """
-        if user_attrs.get('password') is not None:
-            self.change_passwords(
-                context,
-                (
-                    {
-                        "name": username,
-                        "password": user_attrs['password'],
-                    },
-                ),
-            )
+        with EndNotification(context):
+            if user_attrs.get('password') is not None:
+                self.change_passwords(
+                    context,
+                    (
+                        {
+                            "name": username,
+                            "password": user_attrs['password'],
+                        },
+                    ),
+                )
 
-        if user_attrs.get('name') is not None:
-            access = self.list_access(context, username, None)
-            LOG.info(
-                _("{guest_id}: Changing username for {old} to {new}.").format(
-                    guest_id=CONF.guest_id,
-                    old=username,
-                    new=user_attrs['name'],
+            if user_attrs.get('name') is not None:
+                access = self.list_access(context, username, None)
+                LOG.info(
+                    _("{guest_id}: Changing username for {old} to {new}."
+                      ).format(
+                          guest_id=CONF.guest_id,
+                          old=username,
+                          new=user_attrs['name'],
+                    )
                 )
-            )
-            pgutil.psql(
-                pgutil.psql.UserQuery.update_name(
-                    old=username,
-                    new=user_attrs['name'],
-                ),
-                timeout=30,
-            )
-            # Regrant all previous access after the name change.
-            LOG.info(
-                _("{guest_id}: Regranting permissions from {old} to {new}.")
-                .format(
-                    guest_id=CONF.guest_id,
-                    old=username,
-                    new=user_attrs['name'],
+                pgutil.psql(
+                    pgutil.psql.UserQuery.update_name(
+                        old=username,
+                        new=user_attrs['name'],
+                    ),
+                    timeout=30,
                 )
-            )
-            self.grant_access(
-                context,
-                username=user_attrs['name'],
-                hostname=None,
-                databases=(db['_name'] for db in access)
-            )
+                # Regrant all previous access after the name change.
+                LOG.info(
+                    _("{guest_id}: Regranting permissions from {old} "
+                      "to {new}.")
+                    .format(
+                        guest_id=CONF.guest_id,
+                        old=username,
+                        new=user_attrs['name'],
+                    )
+                )
+                self.grant_access(
+                    context,
+                    username=user_attrs['name'],
+                    hostname=None,
+                    databases=(db['_name'] for db in access)
+                )

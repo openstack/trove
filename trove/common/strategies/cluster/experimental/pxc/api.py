@@ -22,7 +22,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster import base
-from trove.common import utils
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
@@ -39,32 +38,6 @@ class PXCAPIStrategy(base.BaseAPIStrategy):
     @property
     def cluster_class(self):
         return PXCCluster
-
-    @property
-    def cluster_controller_actions(self):
-        return {
-            'grow': self._action_grow_cluster,
-            'shrink': self._action_shrink_cluster,
-        }
-
-    def _action_grow_cluster(self, cluster, body):
-        nodes = body['grow']
-        instances = []
-        for node in nodes:
-            instance = {
-                'flavor_id': utils.get_id_from_href(node['flavorRef'])
-            }
-            if 'name' in node:
-                instance['name'] = node['name']
-            if 'volume' in node:
-                instance['volume_size'] = int(node['volume']['size'])
-            instances.append(instance)
-        return cluster.grow(instances)
-
-    def _action_shrink_cluster(self, cluster, body):
-        instances = body['shrink']
-        instance_ids = [instance['id'] for instance in instances]
-        return cluster.shrink(instance_ids)
 
     @property
     def cluster_view_class(self):

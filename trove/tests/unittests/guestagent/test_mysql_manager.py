@@ -20,7 +20,6 @@ from mock import patch
 from proboscis.asserts import assert_equal
 from testtools.matchers import Is, Equals, Not
 
-from trove.common.context import TroveContext
 from trove.common.exception import InsufficientSpaceForReplica
 from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
@@ -41,7 +40,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.replication_strategy = 'MysqlGTIDReplication'
         self.patch_rs = patch(
             'trove.guestagent.strategies.replication.get_strategy',

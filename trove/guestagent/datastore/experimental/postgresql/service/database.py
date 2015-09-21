@@ -19,6 +19,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
+from trove.common.notification import EndNotification
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 
 LOG = logging.getLogger(__name__)
@@ -41,23 +42,24 @@ class PgSqlDatabase(object):
         Encoding and collation values are validated in
         trove.guestagent.db.models.
         """
-        for database in databases:
-            encoding = database.get('_character_set')
-            collate = database.get('_collate')
-            LOG.info(
-                _("{guest_id}: Creating database {name}.").format(
-                    guest_id=CONF.guest_id,
-                    name=database['_name'],
+        with EndNotification(context):
+            for database in databases:
+                encoding = database.get('_character_set')
+                collate = database.get('_collate')
+                LOG.info(
+                    _("{guest_id}: Creating database {name}.").format(
+                        guest_id=CONF.guest_id,
+                        name=database['_name'],
+                    )
                 )
-            )
-            pgutil.psql(
-                pgutil.DatabaseQuery.create(
-                    name=database['_name'],
-                    encoding=encoding,
-                    collation=collate,
-                ),
-                timeout=30,
-            )
+                pgutil.psql(
+                    pgutil.DatabaseQuery.create(
+                        name=database['_name'],
+                        encoding=encoding,
+                        collation=collate,
+                    ),
+                    timeout=30,
+                )
 
     def delete_database(self, context, database):
         """Delete the specified database.
@@ -66,16 +68,17 @@ class PgSqlDatabase(object):
 
             {"_name": ""}
         """
-        LOG.info(
-            _("{guest_id}: Dropping database {name}.").format(
-                guest_id=CONF.guest_id,
-                name=database['_name'],
+        with EndNotification(context):
+            LOG.info(
+                _("{guest_id}: Dropping database {name}.").format(
+                    guest_id=CONF.guest_id,
+                    name=database['_name'],
+                )
             )
-        )
-        pgutil.psql(
-            pgutil.DatabaseQuery.drop(name=database['_name']),
-            timeout=30,
-        )
+            pgutil.psql(
+                pgutil.DatabaseQuery.drop(name=database['_name']),
+                timeout=30,
+            )
 
     def list_databases(
             self,

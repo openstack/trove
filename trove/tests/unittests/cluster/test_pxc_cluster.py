@@ -56,7 +56,7 @@ class ClusterTest(trove_testtools.TestCase):
                                  tenant_id=self.tenant_id,
                                  datastore_version_id=self.dv_id,
                                  task_id=ClusterTasks.NONE._code)
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.datastore = Mock()
         self.dv = Mock()
         self.dv.manager = "pxc"

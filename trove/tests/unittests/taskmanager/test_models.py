@@ -35,6 +35,7 @@ from trove.common.exception import MalformedSecurityGroupRuleError
 from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.instance import ServiceStatuses
+from trove.common.notification import TroveInstanceModifyVolume
 from trove.common import remote
 import trove.common.template as template
 from trove.common import utils
@@ -554,7 +555,8 @@ class ResizeVolumeTest(trove_testtools.TestCase):
         utils.poll_until.side_effect = None
         self.instance.reset_mock()
 
-    def test_resize_volume_active_server_succeeds(self):
+    @patch.object(TroveInstanceModifyVolume, 'notify')
+    def test_resize_volume_active_server_succeeds(self, *args):
         server = Mock(status=InstanceStatus.ACTIVE)
         self.instance.attach_mock(server, 'server')
         self.action.execute()
@@ -798,7 +800,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(BaseInstance, 'update_db')
     def test_attach_replica(self, mock_update_db):
         master = MagicMock()
-        replica_context = Mock()
+        replica_context = trove_testtools.TroveTestContext(self)
         mock_guest = MagicMock()
         mock_guest.get_replica_context = Mock(return_value=replica_context)
         type(master).guest = PropertyMock(return_value=mock_guest)

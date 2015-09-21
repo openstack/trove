@@ -21,6 +21,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.notification import StartNotification
 from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.extensions.common.models import load_and_verify
@@ -89,7 +90,10 @@ class User(object):
     @classmethod
     def delete(cls, context, instance_id, user):
         load_and_verify(context, instance_id)
-        create_guest_client(context, instance_id).delete_user(user)
+
+        with StartNotification(context, instance_id=instance_id,
+                               username=user):
+            create_guest_client(context, instance_id).delete_user(user)
 
     @classmethod
     def access(cls, context, instance_id, username, hostname):

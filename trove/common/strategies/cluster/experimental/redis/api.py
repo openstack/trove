@@ -24,7 +24,6 @@ from trove.common.exception import TroveError
 from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import base
-from trove.common import utils
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance import models as inst_models
 from trove.quota.quota import check_quotas
@@ -38,32 +37,6 @@ class RedisAPIStrategy(base.BaseAPIStrategy):
     @property
     def cluster_class(self):
         return RedisCluster
-
-    @property
-    def cluster_controller_actions(self):
-        return {
-            'grow': self._action_grow_cluster,
-            'shrink': self._action_shrink_cluster
-        }
-
-    def _action_grow_cluster(self, cluster, body):
-        nodes = body['grow']
-        instances = []
-        for node in nodes:
-            instance = {
-                'flavor_id': utils.get_id_from_href(node['flavorRef'])
-            }
-            if 'name' in node:
-                instance['name'] = node['name']
-            if 'volume' in node:
-                instance['volume_size'] = int(node['volume']['size'])
-            instances.append(instance)
-        return cluster.grow(instances)
-
-    def _action_shrink_cluster(self, cluster, body):
-        nodes = body['shrink']
-        instance_ids = [node['id'] for node in nodes]
-        return cluster.shrink(instance_ids)
 
     @property
     def cluster_view_class(self):

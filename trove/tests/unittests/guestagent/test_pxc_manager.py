@@ -15,7 +15,6 @@
 from mock import Mock
 from mock import patch
 
-from trove.common.context import TroveContext
 from trove.guestagent.datastore.experimental.pxc.manager import Manager
 import trove.guestagent.datastore.experimental.pxc.service as dbaas
 import trove.guestagent.datastore.mysql_common.service as mysql_common
@@ -27,7 +26,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
         self.manager = Manager()
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.patcher_rs = patch(
             'trove.guestagent.strategies.replication.get_instance')
         self.mock_rs_class = self.patcher_rs.start()

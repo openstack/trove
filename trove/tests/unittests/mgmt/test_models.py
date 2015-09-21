@@ -23,7 +23,6 @@ from oslo_config import cfg
 from testtools.matchers import Equals, Is, Not
 
 from trove.backup.models import Backup
-from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common import instance as rd_instance
 from trove.common import remote
@@ -69,7 +68,7 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
         super(MockMgmtInstanceTest, cls).tearDownClass()
 
     def setUp(self):
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.context.auth_token = 'some_secret_password'
         self.client = MagicMock(spec=Client)
         self.server_mgr = MagicMock(spec=ServerManager)

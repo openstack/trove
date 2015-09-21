@@ -15,6 +15,7 @@
 
 from oslo_log import log as logging
 
+from trove.common.notification import EndNotification
 from trove.guestagent.datastore.experimental.db2 import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
@@ -72,11 +73,13 @@ class Manager(manager.Manager):
 
     def create_database(self, context, databases):
         LOG.debug("Creating database(s)." % databases)
-        self.admin.create_database(databases)
+        with EndNotification(context):
+            self.admin.create_database(databases)
 
     def delete_database(self, context, database):
         LOG.debug("Deleting database %s." % database)
-        return self.admin.delete_database(database)
+        with EndNotification(context):
+            return self.admin.delete_database(database)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
@@ -85,11 +88,13 @@ class Manager(manager.Manager):
 
     def create_user(self, context, users):
         LOG.debug("Create user(s).")
-        self.admin.create_user(users)
+        with EndNotification(context):
+            self.admin.create_user(users)
 
     def delete_user(self, context, user):
         LOG.debug("Delete a user %s." % user)
-        self.admin.delete_user(user)
+        with EndNotification(context):
+            self.admin.delete_user(user)
 
     def get_user(self, context, username, hostname):
         LOG.debug("Show details of user %s." % username)

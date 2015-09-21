@@ -16,7 +16,6 @@ from mock import patch
 from os import path
 from testtools.matchers import Is
 
-from trove.common.context import TroveContext
 from trove.common.exception import DatastoreOperationNotSupported
 from trove.common import instance as rd_instance
 from trove.guestagent.common import operating_system
@@ -34,7 +33,7 @@ from trove.tests.unittests import trove_testtools
 class GuestAgentManagerTest(trove_testtools.TestCase):
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.manager = Manager()
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data

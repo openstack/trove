@@ -21,7 +21,6 @@ from oslo_messaging._drivers.common import RPCException
 from proboscis import test
 from testtools import TestCase
 
-from trove.common.context import TroveContext
 from trove.common.exception import PollTimeOut
 from trove.common import instance as rd_instance
 from trove.common import template
@@ -33,6 +32,7 @@ from trove.instance.models import InstanceServiceStatus
 from trove.instance.tasks import InstanceTasks
 from trove.taskmanager import models as models
 from trove.tests.fakes import nova
+from trove.tests.unittests import trove_testtools
 from trove.tests.util import test_config
 
 GROUP = 'dbaas.api.instances.resize'
@@ -48,7 +48,7 @@ class ResizeTestBase(TestCase):
     def _init(self):
         self.mock = mox.Mox()
         self.instance_id = 500
-        context = TroveContext()
+        context = trove_testtools.TroveTestContext(self)
         self.db_info = DBInstance.create(
             name="instance",
             flavor_id=OLD_FLAVOR_ID,

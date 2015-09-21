@@ -25,6 +25,7 @@ from oslo_messaging.rpc.client import RemoteError
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.notification import NotificationCastWrapper
 import trove.common.rpc.version as rpc_version
 from trove import rpc
 
@@ -75,8 +76,9 @@ class API(object):
     def _cast(self, method_name, version, **kwargs):
         LOG.debug("Casting %s" % method_name)
         try:
-            cctxt = self.client.prepare(version=version)
-            cctxt.cast(self.context, method_name, **kwargs)
+            with NotificationCastWrapper(self.context, 'guest'):
+                cctxt = self.client.prepare(version=version)
+                cctxt.cast(self.context, method_name, **kwargs)
         except RemoteError as r:
             LOG.exception(_("Error calling %s") % method_name)
             raise exception.GuestError(original_message=r.value)

@@ -22,6 +22,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common.instance import ServiceStatus
 from trove.common.rpc import version as rpc_version
+from trove.common.serializable_notification import SerializableNotification
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as t_models
@@ -138,3 +139,14 @@ class Manager(periodic_task.PeriodicTasks):
 
     def report_root(self, context, instance_id, user):
         mysql_models.RootHistory.create(context, instance_id, user)
+
+    def notify_end(self, context, serialized_notification, notification_args):
+        notification = SerializableNotification.deserialize(
+            context, serialized_notification)
+        notification.notify_end(**notification_args)
+
+    def notify_exc_info(self, context, serialized_notification,
+                        message, exception):
+        notification = SerializableNotification.deserialize(
+            context, serialized_notification)
+        notification.notify_exc_info(message, exception)
