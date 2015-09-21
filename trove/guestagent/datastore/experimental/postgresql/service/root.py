@@ -13,67 +13,74 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
+from trove.guestagent.datastore.experimental.postgresql.service.users import (
+    PgSqlUsers)
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class PgSqlRoot(object):
+class PgSqlRoot(PgSqlUsers):
     """Mixin that provides the root-enable API."""
 
     def is_root_enabled(self, context):
         """Return True if there is a superuser account enabled.
-
-        This ignores the built-in superuser of postgres and the potential
-        system administration superuser of os_admin.
         """
         results = pgutil.query(
-            pgutil.UserQuery.list_root(ignore=cfg.get_ignored_users(
-                manager='postgresql')),
+            pgutil.UserQuery.list_root(),
             timeout=30,
         )
-        # Reduce iter of iters to iter of single values.
-        results = (r[0] for r in results)
-        return len(tuple(results)) > 0
+
+        # There should be only one superuser (Trove's administrative account).
+        return len(results) > 1 or (results[0] != self.ADMIN_USER)
+
+# TODO(pmalik): For future use by 'root-disable'.
+#     def disable_root(self, context):
+#         """Generate a new random password for the public superuser account.
+#         Do not disable its access rights. Once enabled the account should
+#         stay that way.
+#         """
+#         self.enable_root(context)
 
     def enable_root(self, context, root_password=None):
-        """Create a root user or reset the root user password.
+        """Create a superuser user or reset the superuser password.
 
-        The default superuser for PgSql is postgres, but that account is used
-        for administration. Instead, this method will create a new user called
-        root that also has superuser privileges.
+        The default PostgreSQL administration account is 'postgres'.
+        This account always exists and cannot be removed.
+        Its attributes and access can however be altered.
 
-        If no root_password is given then a random UUID will be used for the
-        superuser password.
+        Clients can connect from the localhost or remotely via TCP/IP:
 
-        Return value is a dictionary in the following form:
+        Local clients (e.g. psql) can connect from a preset *system* account
+        called 'postgres'.
+        This system account has no password and is *locked* by default,
+        so that it can be used by *local* users only.
+        It should *never* be enabled (or it's password set)!!!
+        That would just open up a new attack vector on the system account.
 
-            {"_name": "root", "_password": ""}
+        Remote clients should use a build-in *database* account of the same
+        name. It's password can be changed using the "ALTER USER" statement.
+
+        Access to this account is disabled by Trove exposed only once the
+        superuser access is requested.
+        Trove itself creates its own administrative account.
+
+            {"_name": "postgres", "_password": "<secret>"}
         """
         user = {
-            "_name": "root",
-            "_password": root_password or str(uuid.uuid4()),
+            "_name": "postgres",
+            "_password": root_password or utils.generate_random_password(),
         }
-        LOG.debug(
-            "{guest_id}: Creating root user with password {password}.".format(
-                guest_id=CONF.guest_id,
-                password=user['_password'],
-            )
+        query = pgutil.UserQuery.alter_user(
+            user['_name'],
+            user['_password'],
+            None,
+            *self.ADMIN_OPTIONS
         )
-        query = pgutil.UserQuery.create(
-            name=user['_name'],
-            password=user['_password'],
-        )
-        if self.is_root_enabled(context):
-            query = pgutil.UserQuery.update_password(
-                name=user['_name'],
-                password=user['_password'],
-            )
         pgutil.psql(query, timeout=30)
         return user

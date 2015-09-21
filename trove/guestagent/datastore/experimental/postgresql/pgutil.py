@@ -13,78 +13,77 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import tempfile
-import uuid
-
 from oslo_log import log as logging
+import psycopg2
 
-from trove.common import utils
-from trove.guestagent.common import operating_system
-from trove.guestagent.common.operating_system import FileMode
+from trove.common import exception
 
 LOG = logging.getLogger(__name__)
 
-
-def execute(*command, **kwargs):
-    """Execute a command as the 'postgres' user."""
-
-    LOG.debug('Running as postgres: {0}'.format(command))
-    return utils.execute_with_timeout(
-        "sudo", "-u", "postgres", *command, **kwargs
-    )
+PG_ADMIN = 'os_admin'
 
 
-def result(filename):
-    """A generator representing the results of a query.
+class PostgresConnection(object):
 
-    This generator produces result records of a query by iterating over a
-    CSV file created by the query. When the file is out of records it is
-    removed.
+    def __init__(self, autocommit=False, **connection_args):
+        self._autocommit = autocommit
+        self._connection_args = connection_args
 
-    The purpose behind this abstraction is to provide a record set interface
-    with minimal memory consumption without requiring an active DB connection.
-    This makes it possible to iterate over any sized record set without
-    allocating memory for the entire record set and without using a DB cursor.
+    def execute(self, statement, identifiers=None, data_values=None):
+        """Execute a non-returning statement.
+        """
+        self._execute_stmt(statement, identifiers, data_values, False)
 
-    Each row is returned as an iterable of column values. The order of these
-    values is determined by the query.
-    """
+    def query(self, query, identifiers=None, data_values=None):
+        """Execute a query and return the result set.
+        """
+        return self._execute_stmt(query, identifiers, data_values, True)
 
-    operating_system.chmod(filename, FileMode.SET_FULL, as_root=True)
-    with open(filename, 'r+') as file_handle:
-        for line in file_handle:
-            if line != "":
-                yield line.split(',')
-    operating_system.remove(filename, as_root=True)
-    raise StopIteration()
+    def _execute_stmt(self, statement, identifiers, data_values, fetch):
+        if statement:
+            with psycopg2.connect(**self._connection_args) as connection:
+                connection.autocommit = self._autocommit
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        self._bind(statement, identifiers), data_values)
+                    if fetch:
+                        return cursor.fetchall()
+        else:
+            raise exception.UnprocessableEntity(_("Invalid SQL statement: %s")
+                                                % statement)
+
+    def _bind(self, statement, identifiers):
+        if identifiers:
+            return statement.format(*identifiers)
+        return statement
 
 
+class PostgresLocalhostConnection(PostgresConnection):
+
+    HOST = 'localhost'
+
+    def __init__(self, user, password=None, port=5432, autocommit=False):
+        super(PostgresLocalhostConnection, self).__init__(
+            autocommit=autocommit, user=user, password=password,
+            host=self.HOST, port=port)
+
+
+# TODO(pmalik): No need to recreate the connection every time.
 def psql(statement, timeout=30):
-    """Execute a statement using the psql client."""
-
-    LOG.debug('Sending to local db: {0}'.format(statement))
-    return execute('psql', '-c', statement, timeout=timeout)
-
-
-def query(statement, timeout=30):
-    """Execute a pgsql query and get a generator of results.
-
-    This method will pipe a CSV format of the query results into a temporary
-    file. The return value is a generator object that feeds from this file.
+    """Execute a non-returning statement (usually DDL);
+    Turn autocommit ON (this is necessary for statements that cannot run
+    within an implicit transaction, like CREATE DATABASE).
     """
+    return PostgresLocalhostConnection(
+        PG_ADMIN, autocommit=True).execute(statement)
 
-    filename = os.path.join(tempfile.gettempdir(), str(uuid.uuid4()))
-    LOG.debug('Querying: {0}'.format(statement))
-    psql(
-        "Copy ({statement}) To '{filename}' With CSV".format(
-            statement=statement,
-            filename=filename,
-        ),
-        timeout=timeout,
-    )
 
-    return result(filename)
+# TODO(pmalik): No need to recreate the connection every time.
+def query(query, timeout=30):
+    """Execute a query and return the result set.
+    """
+    return PostgresLocalhostConnection(
+        PG_ADMIN, autocommit=False).query(query)
 
 
 class DatabaseQuery(object):
@@ -166,22 +165,48 @@ class UserQuery(object):
         )
 
     @classmethod
-    def create(cls, name, password):
+    def create(cls, name, password, encrypt_password=None, *options):
         """Query to create a user with a password."""
 
-        return "CREATE USER \"{name}\" WITH PASSWORD '{password}'".format(
-            name=name,
-            password=password,
-        )
+        create_clause = "CREATE USER \"{name}\"".format(name=name)
+        with_clause = cls._build_with_clause(
+            password, encrypt_password, *options)
+        return ''.join([create_clause, with_clause])
 
     @classmethod
-    def update_password(cls, name, password):
+    def _build_with_clause(cls, password, encrypt_password=None, *options):
+        tokens = ['WITH']
+        if password:
+            # Do not specify the encryption option if 'encrypt_password'
+            # is None. PostgreSQL will use the configuration default.
+            if encrypt_password is True:
+                tokens.append('ENCRYPTED')
+            elif encrypt_password is False:
+                tokens.append('UNENCRYPTED')
+            tokens.append('PASSWORD')
+            tokens.append("'{password}'".format(password=password))
+        if options:
+            tokens.extend(options)
+
+        if len(tokens) > 1:
+            return ' '.join(tokens)
+
+        return ''
+
+    @classmethod
+    def update_password(cls, name, password, encrypt_password=None):
         """Query to update the password for a user."""
 
-        return "ALTER USER \"{name}\" WITH PASSWORD '{password}'".format(
-            name=name,
-            password=password,
-        )
+        return cls.alter_user(name, password, encrypt_password)
+
+    @classmethod
+    def alter_user(cls, name, password, encrypt_password=None, *options):
+        """Query to alter a user."""
+
+        alter_clause = "ALTER USER \"{name}\"".format(name=name)
+        with_clause = cls._build_with_clause(
+            password, encrypt_password, *options)
+        return ''.join([alter_clause, with_clause])
 
     @classmethod
     def update_name(cls, old, new):

@@ -13,11 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-
 from oslo_log import log as logging
+import psycopg2
 
-from trove.common import exception
 from trove.common import instance
 from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
@@ -25,10 +23,9 @@ from trove.guestagent.datastore import service
 
 LOG = logging.getLogger(__name__)
 
-PGSQL_PID = "'/var/run/postgresql/postgresql.pid'"
-
 
 class PgSqlAppStatus(service.BaseDbStatus):
+
     @classmethod
     def get(cls):
         if not cls._instance:
@@ -36,43 +33,16 @@ class PgSqlAppStatus(service.BaseDbStatus):
         return cls._instance
 
     def _get_actual_db_status(self):
-        """Checks the acutal PgSql process to determine status.
-
-        Status will be one of the following:
-
-            -   RUNNING
-
-                The process is running and responsive.
-
-            -   BLOCKED
-
-                The process is running but unresponsive.
-
-            -   CRASHED
-
-                The process is not running, but should be or the process
-                is running and should not be.
-
-            -   SHUTDOWN
-
-                The process was gracefully shut down.
-        """
-
-        # Run a simple scalar query to make sure the process is responsive.
         try:
-            pgutil.execute('psql', '-c', 'SELECT 1')
+            # Any query will initiate a new database connection.
+            pgutil.psql("SELECT 1")
+            return instance.ServiceStatuses.RUNNING
+        except psycopg2.OperationalError:
+            return instance.ServiceStatuses.SHUTDOWN
         except utils.Timeout:
             return instance.ServiceStatuses.BLOCKED
-        except exception.ProcessExecutionError:
-            try:
-                utils.execute_with_timeout(
-                    "/bin/ps", "-C", "postgres", "h"
-                )
-            except exception.ProcessExecutionError:
-                if os.path.exists(PGSQL_PID):
-                    return instance.ServiceStatuses.CRASHED
-                return instance.ServiceStatuses.SHUTDOWN
-            else:
-                return instance.ServiceStatuses.BLOCKED
-        else:
-            return instance.ServiceStatuses.RUNNING
+        except Exception:
+            LOG.exception(_("Error getting Postgres status."))
+            return instance.ServiceStatuses.CRASHED
+
+        return instance.ServiceStatuses.SHUTDOWN
