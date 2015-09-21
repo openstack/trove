@@ -66,6 +66,8 @@ class RedisSyncReplication(base.Replication):
         if master_passwd:
             connect_options['masterauth'] = master_passwd
             service.admin.config_set('masterauth', master_passwd)
+        else:
+            service.admin.config_set('masterauth', "")
         service.configuration_manager.apply_system_override(
             connect_options, change_id=self.CONF_LABEL_REPLICATION_SLAVE)
         service.admin.set_master(host=master_host, port=master_port)
@@ -75,7 +77,7 @@ class RedisSyncReplication(base.Replication):
         service.configuration_manager.remove_system_override(
             change_id=self.CONF_LABEL_REPLICATION_SLAVE)
         service.admin.set_master(host=None, port=None)
-        service.admin.config_set('masterauth', None)
+        service.admin.config_set('masterauth', "")
         return None
 
     def cleanup_source_on_replica_detach(self, service, replica_info):
