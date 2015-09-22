@@ -99,7 +99,7 @@ class Manager(periodic_task.PeriodicTasks):
         if not cluster_config and backup_info:
             self._perform_restore(backup_info, context, mount_point, self.app)
             if service.MongoDBAdmin().is_root_enabled():
-                self.app.status.report_root('root')
+                self.app.status.report_root(context, 'root')
 
         if not cluster_config and root_password:
             LOG.debug('Root password provided. Enabling root.')
