@@ -36,7 +36,6 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             'test_ds', 'test_vr2', 'mysql',
             '154b350d-4d86-4214-9067-9c54b230c0da', 'pkg-1', '1')
         self.ds = models.Datastore.load('test_ds')
-        self.ds_version1 = models.DatastoreVersion.load(self.ds, 'test_vr1')
         self.ds_version2 = models.DatastoreVersion.load(self.ds, 'test_vr2')
 
         self.context = Mock()
@@ -100,18 +99,20 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             self.version_controller.create, self.req, body, self.tenant_id)
 
     def test_version_delete(self):
+        ds_version1 = models.DatastoreVersion.load(self.ds, 'test_vr1')
+
         output = self.version_controller.delete(self.req,
                                                 self.tenant_id,
-                                                self.ds_version1.id)
+                                                ds_version1.id)
         err_msg = ("Datastore version '%s' cannot be found." %
-                   self.ds_version1.id)
+                   ds_version1.id)
 
         self.assertEqual(202, output.status)
 
         # Try to find deleted version, this should raise exception.
         self.assertRaisesRegexp(
             exception.DatastoreVersionNotFound,
-            err_msg, models.DatastoreVersion.load_by_uuid, self.ds_version1.id)
+            err_msg, models.DatastoreVersion.load_by_uuid, ds_version1.id)
 
     @patch.object(remote, 'create_nova_client')
     def test_version_update(self, mock_client):
@@ -140,7 +141,7 @@ class TestDatastoreVersion(trove_testtools.TestCase):
             self.version_controller.edit, self.req, body,
             self.tenant_id, self.ds_version2.id)
 
-    @patch.object(models.Datastore, 'load')
+    @patch.object(models.DatastoreVersion, 'load_by_uuid')
     def test_version_index(self, mock_load):
         output = self.version_controller.index(
             self.req, self.tenant_id)
