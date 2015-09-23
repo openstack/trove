@@ -23,6 +23,7 @@ from trove.common import context as trove_context
 from trove.common.i18n import _
 from trove.common import instance
 from trove.conductor import api as conductor_api
+from trove.guestagent.common import operating_system
 from trove.guestagent.common import timeutils
 
 LOG = logging.getLogger(__name__)
@@ -141,6 +142,135 @@ class BaseDbStatus(object):
                        "for now we'll skip determining the status of DB on "
                        "this instance."))
 
+    def restart_db_service(self, service_candidates, timeout):
+        """Restart the database.
+        Do not change the service auto-start setting.
+        Disable the Trove instance heartbeat updates during the restart.
+
+        1. Stop the database service.
+        2. Wait for the database to shutdown.
+        3. Start the database service.
+        4. Wait for the database to start running.
+
+        :param service_candidates:   List of possible system service names.
+        :type service_candidates:    list
+
+        :param timeout:              Wait timeout in seconds.
+        :type timeout:               integer
+
+        :raises:              :class:`RuntimeError` on failure.
+        """
+        try:
+            self.begin_restart()
+            self.stop_db_service(service_candidates, timeout,
+                                 disable_on_boot=False, update_db=False)
+            self.start_db_service(service_candidates, timeout,
+                                  enable_on_boot=False, update_db=False)
+        except Exception as e:
+            LOG.exception(e)
+            raise RuntimeError(_("Database restart failed."))
+        finally:
+            self.end_install_or_restart()
+
+    def start_db_service(self, service_candidates, timeout,
+                         enable_on_boot=True, update_db=False):
+        """Start the database service and wait for the database to become
+        available.
+        The service auto-start will be updated only if the service command
+        succeeds.
+
+        :param service_candidates:   List of possible system service names.
+        :type service_candidates:    list
+
+        :param timeout:              Wait timeout in seconds.
+        :type timeout:               integer
+
+        :param enable_on_boot:       Enable service auto-start.
+                                     The auto-start setting will be updated
+                                     only if the service command succeeds.
+        :type enable_on_boot:        boolean
+
+        :param update_db:            Suppress the Trove instance heartbeat.
+        :type update_db:             boolean
+
+        :raises:              :class:`RuntimeError` on failure.
+        """
+        LOG.info(_("Starting database service."))
+        operating_system.start_service(service_candidates)
+
+        LOG.debug("Waiting for database to start up.")
+        if not self._wait_for_database_service_status(
+                instance.ServiceStatuses.RUNNING, timeout, update_db):
+            raise RuntimeError(_("Database failed to start."))
+
+        LOG.info(_("Database has started successfully."))
+
+        if enable_on_boot:
+            LOG.info(_("Enable service auto-start on boot."))
+            operating_system.enable_service_on_boot(service_candidates)
+
+    def stop_db_service(self, service_candidates, timeout,
+                        disable_on_boot=False, update_db=False):
+        """Stop the database service and wait for the database to shutdown.
+
+        :param service_candidates:   List of possible system service names.
+        :type service_candidates:    list
+
+        :param timeout:              Wait timeout in seconds.
+        :type timeout:               integer
+
+        :param disable_on_boot:      Disable service auto-start.
+                                     The auto-start setting will be updated
+                                     only if the service command succeeds.
+        :type disable_on_boot:       boolean
+
+        :param update_db:            Suppress the Trove instance heartbeat.
+        :type update_db:             boolean
+
+        :raises:              :class:`RuntimeError` on failure.
+        """
+        LOG.info(_("Stopping database service."))
+        operating_system.stop_service(service_candidates)
+
+        LOG.debug("Waiting for database to shutdown.")
+        if not self._wait_for_database_service_status(
+                instance.ServiceStatuses.SHUTDOWN, timeout, update_db):
+            raise RuntimeError(_("Database failed to stop."))
+
+        LOG.info(_("Database has stopped successfully."))
+
+        if disable_on_boot:
+            LOG.info(_("Disable service auto-start on boot."))
+            operating_system.disable_service_on_boot(service_candidates)
+
+    def _wait_for_database_service_status(self, status, timeout, update_db):
+        """Wait for the given database status.
+
+        :param status:          The status to wait for.
+        :type status:           BaseDbStatus
+
+        :param timeout:         Wait timeout in seconds.
+        :type timeout:          integer
+
+        :param update_db:       Suppress the Trove instance heartbeat.
+        :type update_db:        boolean
+
+        :returns:               True on success, False otherwise.
+        """
+        if not self.wait_for_real_status_to_change_to(
+                status, timeout, update_db):
+            LOG.info(_("Service status did not change to %(status)s "
+                       "within the given timeout: %(timeout)ds")
+                     % {'status': status, 'timeout': timeout})
+            LOG.debug("Attempting to cleanup stalled services.")
+            try:
+                self.cleanup_stalled_db_services()
+            except Exception:
+                LOG.debug("Cleanup failed.", exc_info=True)
+            return False
+
+        return True
+
     def wait_for_real_status_to_change_to(self, status, max_time,
                                           update_db=False):
         """
@@ -163,6 +293,12 @@ class BaseDbStatus(object):
                 return True
         LOG.error(_("Timeout while waiting for database status to change."))
         return False
+
+    def cleanup_stalled_db_services(self):
+        """An optional datastore-specific code to cleanup stalled
+        database services and other resources after a status change timeout.
+        """
+        LOG.debug("No cleanup action specified for this datastore.")
 
     def report_root(self, context, user):
         """Use conductor to update the root-enable status."""

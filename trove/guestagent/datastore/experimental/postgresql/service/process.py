@@ -16,83 +16,27 @@
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common import utils
-from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.postgresql.service.status import (
     PgSqlAppStatus)
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-
-PGSQL_SERVICE_CANDIDATES = ("postgresql",)
+PGSQL_SERVICE_CANDIDATES = ["postgresql"]
 
 
 class PgSqlProcess(object):
     """Mixin that manages the PgSql process."""
 
-    def start_db(self, context):
-        self._enable_pgsql_on_boot()
-        """Start the PgSql service."""
-        cmd = operating_system.service_discovery(PGSQL_SERVICE_CANDIDATES)
-        LOG.info(
-            _("{guest_id}: Starting database engine with command ({command}).")
-            .format(
-                guest_id=CONF.guest_id,
-                command=cmd['cmd_start'],
-            )
-        )
-        utils.execute_with_timeout(
-            *cmd['cmd_start'].split(),
-            timeout=30
-        )
-
-    def _enable_pgsql_on_boot(self):
-        try:
-            pgsql_service = operating_system.service_discovery(
-                PGSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(pgsql_service['cmd_enable'],
-                                       shell=True)
-        except KeyError:
-            LOG.exception(_("Error enabling PostgreSQL start on boot."))
-            raise RuntimeError("Service is not discovered.")
-
-    def _disable_pgsql_on_boot(self):
-        try:
-            pgsql_service = operating_system.service_discovery(
-                PGSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(pgsql_service['cmd_disable'],
-                                       shell=True)
-        except KeyError:
-            LOG.exception(_("Error disabling PostgreSQL start on boot."))
-            raise RuntimeError("Service is not discovered.")
-
-    def stop_db(self, context, do_not_start_on_reboot=False):
-        """Stop the PgSql service."""
-        if do_not_start_on_reboot:
-            self._disable_pgsql_on_boot()
-        cmd = operating_system.service_discovery(PGSQL_SERVICE_CANDIDATES)
-        LOG.info(
-            _("{guest_id}: Stopping database engine with command ({command}).")
-            .format(
-                guest_id=CONF.guest_id,
-                command=cmd['cmd_stop'],
-            )
-        )
-        utils.execute_with_timeout(
-            *cmd['cmd_stop'].split(),
-            timeout=30
-        )
-
     def restart(self, context):
-        """Restart the PgSql service."""
-        LOG.info(
-            _("{guest_id}: Restarting database engine.").format(
-                guest_id=CONF.guest_id,
-            )
-        )
-        try:
-            PgSqlAppStatus.get().begin_restart()
-            self.stop_db(context)
-            self.start_db(context)
-        finally:
-            PgSqlAppStatus.get().end_install_or_restart()
+        PgSqlAppStatus.get().restart_db_service(
+            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time)
+
+    def start_db(self, context, enable_on_boot=True, update_db=False):
+        PgSqlAppStatus.get().start_db_service(
+            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time,
+            enable_on_boot=enable_on_boot, update_db=update_db)
+
+    def stop_db(self, context, do_not_start_on_reboot=False, update_db=False):
+        PgSqlAppStatus.get().stop_db_service(
+            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)

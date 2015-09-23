@@ -1936,6 +1936,179 @@ class BaseDbStatusTest(testtools.TestCase):
                               rd_instance.ServiceStatuses.BUILD_PENDING,
                               rd_instance.ServiceStatuses.BUILD_PENDING)
 
+    def test_wait_for_database_service_status(self):
+        status = BaseDbStatus()
+        expected_status = rd_instance.ServiceStatuses.RUNNING
+        timeout = 10
+        update_db = False
+
+        # Test a successful call.
+        with patch.multiple(
+                status,
+                wait_for_real_status_to_change_to=Mock(return_value=True),
+                cleanup_stalled_db_services=DEFAULT):
+            self.assertTrue(
+                status._wait_for_database_service_status(
+                    expected_status, timeout, update_db))
+            status.wait_for_real_status_to_change_to.assert_called_once_with(
+                expected_status, timeout, update_db)
+            self.assertFalse(status.cleanup_stalled_db_services.called)
+
+        # Test a failing call.
+        with patch.multiple(
+                status,
+                wait_for_real_status_to_change_to=Mock(return_value=False),
+                cleanup_stalled_db_services=DEFAULT):
+            self.assertFalse(
+                status._wait_for_database_service_status(
+                    expected_status, timeout, update_db))
+            status.wait_for_real_status_to_change_to.assert_called_once_with(
+                expected_status, timeout, update_db)
+            status.cleanup_stalled_db_services.assert_called_once_with()
+
+        # Test a failing call with an error raised from the cleanup code.
+        # No exception should propagate out of the cleanup block.
+        with patch.multiple(
+                status,
+                wait_for_real_status_to_change_to=Mock(return_value=False),
+                cleanup_stalled_db_services=Mock(
+                    side_effect=Exception("Error in cleanup."))):
+            self.assertFalse(
+                status._wait_for_database_service_status(
+                    expected_status, timeout, update_db))
+            status.wait_for_real_status_to_change_to.assert_called_once_with(
+                expected_status, timeout, update_db)
+            status.cleanup_stalled_db_services.assert_called_once_with()
+
+    def test_start_db_service(self):
+        status = BaseDbStatus()
+        service_candidates = ['name1', 'name2']
+
+        # Test a successful call with setting auto-start enabled.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=True) as service_call:
+            with patch.multiple(operating_system, start_service=DEFAULT,
+                                enable_service_on_boot=DEFAULT) as os_cmd:
+                status.start_db_service(
+                    service_candidates, 10, enable_on_boot=True)
+                service_call.assert_called_once_with(
+                    rd_instance.ServiceStatuses.RUNNING, 10, False)
+                os_cmd['start_service'].assert_called_once_with(
+                    service_candidates)
+                os_cmd['enable_service_on_boot'].assert_called_once_with(
+                    service_candidates)
+
+        # Test a successful call without auto-start.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=True) as service_call:
+            with patch.multiple(operating_system, start_service=DEFAULT,
+                                enable_service_on_boot=DEFAULT) as os_cmd:
+                status.start_db_service(
+                    service_candidates, 10, enable_on_boot=False)
+                service_call.assert_called_once_with(
+                    rd_instance.ServiceStatuses.RUNNING, 10, False)
+                os_cmd['start_service'].assert_called_once_with(
+                    service_candidates)
+                self.assertFalse(os_cmd['enable_service_on_boot'].called)
+
+        # Test a failing call.
+        # The auto-start setting should not get updated if the service call
+        # fails.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=False) as service_call:
+            with patch.multiple(operating_system, start_service=DEFAULT,
+                                enable_service_on_boot=DEFAULT) as os_cmd:
+                self.assertRaisesRegexp(
+                    RuntimeError, "Database failed to start.",
+                    status.start_db_service,
+                    service_candidates, 10, enable_on_boot=True)
+                os_cmd['start_service'].assert_called_once_with(
+                    service_candidates)
+                self.assertFalse(os_cmd['enable_service_on_boot'].called)
+
+    def test_stop_db_service(self):
+        status = BaseDbStatus()
+        service_candidates = ['name1', 'name2']
+
+        # Test a successful call with setting auto-start disabled.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=True) as service_call:
+            with patch.multiple(operating_system, stop_service=DEFAULT,
+                                disable_service_on_boot=DEFAULT) as os_cmd:
+                status.stop_db_service(
+                    service_candidates, 10, disable_on_boot=True)
+                service_call.assert_called_once_with(
+                    rd_instance.ServiceStatuses.SHUTDOWN, 10, False)
+                os_cmd['stop_service'].assert_called_once_with(
+                    service_candidates)
+                os_cmd['disable_service_on_boot'].assert_called_once_with(
+                    service_candidates)
+
+        # Test a successful call without auto-start.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=True) as service_call:
+            with patch.multiple(operating_system, stop_service=DEFAULT,
+                                disable_service_on_boot=DEFAULT) as os_cmd:
+                status.stop_db_service(
+                    service_candidates, 10, disable_on_boot=False)
+                service_call.assert_called_once_with(
+                    rd_instance.ServiceStatuses.SHUTDOWN, 10, False)
+                os_cmd['stop_service'].assert_called_once_with(
+                    service_candidates)
+                self.assertFalse(os_cmd['disable_service_on_boot'].called)
+
+        # Test a failing call.
+        # The auto-start setting should not get updated if the service call
+        # fails.
+        with patch.object(
+                status, '_wait_for_database_service_status',
+                return_value=False) as service_call:
+            with patch.multiple(operating_system, stop_service=DEFAULT,
+                                disable_service_on_boot=DEFAULT) as os_cmd:
+                self.assertRaisesRegexp(
+                    RuntimeError, "Database failed to stop.",
+                    status.stop_db_service,
+                    service_candidates, 10, disable_on_boot=True)
+                os_cmd['stop_service'].assert_called_once_with(
+                    service_candidates)
+                self.assertFalse(os_cmd['disable_service_on_boot'].called)
+
+    def test_restart_db_service(self):
+        status = BaseDbStatus()
+        service_candidates = ['name1', 'name2']
+
+        # Test the restart flow (stop followed by start).
+        # Assert that the auto-start setting does not get changed and the
+        # Trove instance status updates are suppressed during restart.
+        with patch.multiple(
+                status, start_db_service=DEFAULT, stop_db_service=DEFAULT,
+                begin_restart=DEFAULT, end_install_or_restart=DEFAULT):
+            status.restart_db_service(service_candidates, 10)
+            status.begin_restart.assert_called_once_with()
+            status.stop_db_service.assert_called_once_with(
+                service_candidates, 10, disable_on_boot=False, update_db=False)
+            status.start_db_service.assert_called_once_with(
+                service_candidates, 10, enable_on_boot=False, update_db=False)
+            status.end_install_or_restart.assert_called_once_with()
+
+        # Test a failing call.
+        # Assert the status heartbeat gets re-enabled.
+        with patch.multiple(
+                status, start_db_service=Mock(
+                    side_effect=Exception("Error in database start.")),
+                stop_db_service=DEFAULT, begin_restart=DEFAULT,
+                end_install_or_restart=DEFAULT):
+            self.assertRaisesRegexp(
+                RuntimeError, "Database restart failed.",
+                status.restart_db_service, service_candidates, 10)
+            status.begin_restart.assert_called_once_with()
+            status.end_install_or_restart.assert_called_once_with()
+
 
 class MySqlAppStatusTest(testtools.TestCase):
 
