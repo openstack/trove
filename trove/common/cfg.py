@@ -604,8 +604,8 @@ pxc_opts = [
                 help='Users to exclude when listing users.'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
-    cfg.IntOpt('cluster_member_count', default=3,
-               help='Number of members in PXC cluster.'),
+    cfg.IntOpt('min_cluster_member_count', default=3,
+               help='Minimum number of members in PXC cluster.'),
     cfg.StrOpt('api_strategy',
                default='trove.common.strategies.cluster.experimental.'
                'pxc.api.PXCAPIStrategy',
