@@ -161,9 +161,10 @@ class ClusterController(wsgi.Controller):
         instances = []
         for node in nodes:
             flavor_id = utils.get_id_from_href(node['flavorRef'])
-            volume_size = nics = availability_zone = None
+            volume_size = volume_type = nics = availability_zone = None
             if 'volume' in node:
                 volume_size = int(node['volume']['size'])
+                volume_type = node['volume'].get('volume_type')
             if 'nics' in node:
                 nics = node['nics']
             if 'availability_zone' in node:
@@ -171,6 +172,7 @@ class ClusterController(wsgi.Controller):
 
             instances.append({"flavor_id": flavor_id,
                               "volume_size": volume_size,
+                              "volume_type": volume_type,
                               "nics": nics,
                               "availability_zone": availability_zone})
 

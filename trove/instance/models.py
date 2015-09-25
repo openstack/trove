@@ -668,8 +668,9 @@ class Instance(BuiltInstance):
     @classmethod
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
-               availability_zone=None, nics=None, configuration_id=None,
-               slave_of_id=None, cluster_config=None, replica_count=None):
+               availability_zone=None, nics=None,
+               configuration_id=None, slave_of_id=None, cluster_config=None,
+               replica_count=None, volume_type=None):
 
         # All nova flavors are permitted for a datastore-version unless one
         # or more entries are found in datastore_version_metadata,
@@ -843,7 +844,8 @@ class Instance(BuiltInstance):
                 instance_id, instance_name, flavor, image_id, databases, users,
                 datastore_version.manager, datastore_version.packages,
                 volume_size, backup_id, availability_zone, root_password,
-                nics, overrides, slave_of_id, cluster_config)
+                nics, overrides, slave_of_id, cluster_config,
+                volume_type=volume_type)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password)

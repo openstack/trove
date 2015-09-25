@@ -219,9 +219,12 @@ class InstanceController(wsgi.Controller):
             raise exception.BadRequest(msg=ve)
 
         if 'volume' in body['instance']:
-            volume_size = int(body['instance']['volume']['size'])
+            volume_info = body['instance']['volume']
+            volume_size = int(volume_info['size'])
+            volume_type = volume_info.get('type')
         else:
             volume_size = None
+            volume_type = None
 
         if 'restorePoint' in body['instance']:
             backupRef = body['instance']['restorePoint']['backupRef']
@@ -242,7 +245,8 @@ class InstanceController(wsgi.Controller):
                                           volume_size, backup_id,
                                           availability_zone, nics,
                                           configuration, slave_of_id,
-                                          replica_count=replica_count)
+                                          replica_count=replica_count,
+                                          volume_type=volume_type)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

@@ -203,7 +203,7 @@ class TestManager(trove_testtools.TestCase):
                                          'mysql', 'mysql-server', 2,
                                          'temp-backup-id', None,
                                          'some_password', None, Mock(),
-                                         'some-master-id', None)
+                                         'some-master-id', None, None)
         mock_tasks.get_replication_master_snapshot.assert_called_with(
             self.context, 'some-master-id', mock_flavor, 'temp-backup-id',
             replica_number=1)
@@ -219,14 +219,15 @@ class TestManager(trove_testtools.TestCase):
                           self.context, ['id1', 'id2'], Mock(), Mock(),
                           Mock(), None, None, 'mysql', 'mysql-server', 2,
                           'temp-backup-id', None, 'some_password', None,
-                          Mock(), 'some-master-id', None)
+                          Mock(), 'some-master-id', None, None)
 
     def test_AttributeError_create_instance(self):
         self.assertRaisesRegexp(
             AttributeError, 'Cannot create multiple non-replica instances.',
             self.manager.create_instance, self.context, ['id1', 'id2'],
             Mock(), Mock(), Mock(), None, None, 'mysql', 'mysql-server', 2,
-            'temp-backup-id', None, 'some_password', None, Mock(), None, None)
+            'temp-backup-id', None, 'some_password', None, Mock(), None, None,
+            None)
 
     def test_create_instance(self):
         mock_tasks = Mock()
@@ -238,14 +239,15 @@ class TestManager(trove_testtools.TestCase):
                                          mock_flavor, 'mysql-image-id', None,
                                          None, 'mysql', 'mysql-server', 2,
                                          'temp-backup-id', None, 'password',
-                                         None, mock_override, None, None)
+                                         None, mock_override, None, None, None)
         mock_tasks.create_instance.assert_called_with(mock_flavor,
                                                       'mysql-image-id', None,
                                                       None, 'mysql',
                                                       'mysql-server', 2,
                                                       'temp-backup-id', None,
                                                       'password', None,
-                                                      mock_override, None)
+                                                      mock_override,
+                                                      None, None, None)
         mock_tasks.wait_for_instance.assert_called_with(36000, mock_flavor)
 
     def test_create_cluster(self):

@@ -139,6 +139,7 @@ class TestClusterController(trove_testtools.TestCase):
         instances = [
             {
                 'volume_size': 1,
+                'volume_type': None,
                 'flavor_id': '1234',
                 'availability_zone': 'az',
                 'nics': [

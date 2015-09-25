@@ -154,6 +154,7 @@ class TestClusterController(trove_testtools.TestCase):
         instances = [
             {
                 "volume_size": None,
+                'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
                 "nics": [
@@ -162,6 +163,7 @@ class TestClusterController(trove_testtools.TestCase):
             },
             {
                 "volume_size": None,
+                'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
                 "nics": [
@@ -170,6 +172,7 @@ class TestClusterController(trove_testtools.TestCase):
             },
             {
                 "volume_size": None,
+                'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
                 "nics": [
