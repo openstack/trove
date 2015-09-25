@@ -180,7 +180,7 @@ class Cluster(object):
 
     @property
     def db_instances(self):
-        """DBInstance objects are persistant, therefore cacheable."""
+        """DBInstance objects are persistent, therefore cacheable."""
         if not self._db_instances:
             self._db_instances = inst_models.DBInstance.find_all(
                 cluster_id=self.id, deleted=False).all()
