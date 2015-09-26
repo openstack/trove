@@ -396,6 +396,13 @@ common_opts = [
     cfg.IntOpt('timeout_wait_for_service', default=120,
                help='Maximum time (in seconds) to wait for a service to '
                     'become alive.'),
+    cfg.StrOpt('guest_log_container_name',
+               default='database_logs',
+               help='Name of container that stores guest log components.'),
+    cfg.IntOpt('guest_log_limit', default=1000000,
+               help='Maximum size of a chunk saved in guest log container.'),
+    cfg.IntOpt('guest_log_expiry', default=2592000,
+               help='Expiry (in seconds) of objects in guest log container.'),
 ]
 
 # Profiling specific option groups
@@ -539,6 +546,11 @@ mysql_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
+    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
+               help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('guest_log_long_query_time', default=1000,
+               help='The time in milliseconds that a statement must take in '
+                    'in order to be logged in the slow_query log.'),
 ]
 
 # Percona
@@ -612,6 +624,11 @@ percona_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
+    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
+               help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('guest_log_long_query_time', default=1000,
+               help='The time in milliseconds that a statement must take in '
+                    'in order to be logged in the slow_query log.'),
 ]
 
 # Percona XtraDB Cluster
@@ -689,6 +706,11 @@ pxc_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for pxc.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
+               help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('guest_log_long_query_time', default=1000,
+               help='The time in milliseconds that a statement must take in '
+                    'in order to be logged in the slow_query log.'),
 ]
 
 # Redis
@@ -758,6 +780,8 @@ redis_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for redis.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # Cassandra
@@ -803,6 +827,8 @@ cassandra_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for cassandra.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # Couchbase
@@ -859,6 +885,8 @@ couchbase_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for couchbase.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # MongoDB
@@ -940,6 +968,8 @@ mongodb_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for mongodb.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # PostgreSQL
@@ -987,6 +1017,13 @@ postgresql_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for postgresql.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='general',
+               help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('guest_log_long_query_time', default=0,
+               help="The time in milliseconds that a statement must take in "
+                    "in order to be logged in the 'general' log.  A value of "
+                    "'0' logs all statements, while '-1' turns off "
+                    "statement logging."),
 ]
 
 # Apache CouchDB
@@ -1030,6 +1067,8 @@ couchdb_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for couchdb.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # Vertica
@@ -1090,6 +1129,8 @@ vertica_opts = [
                default='trove.extensions.vertica.service.'
                        'VerticaRootController',
                help='Root controller implementation for Vertica.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # DB2
@@ -1134,6 +1175,8 @@ db2_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for db2.'),
+    cfg.StrOpt('guest_log_exposed_logs', default='',
+               help='List of Guest Logs to expose for publishing.'),
 ]
 
 # MariaDB
@@ -1203,6 +1246,11 @@ mariadb_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
+    cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
+               help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('guest_log_long_query_time', default=1000,
+               help='The time in milliseconds that a statement must take in '
+                    'in order to be logged in the slow_query log.'),
 ]
 
 # RPC version groups

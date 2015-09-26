@@ -1263,6 +1263,27 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         finally:
             self.reset_task_status()
 
+    def guest_log_list(self):
+        LOG.info(_("Retrieving guest log list for instance %s.") % self.id)
+        try:
+            return self.guest.guest_log_list()
+        except GuestError:
+            LOG.error(_("Failed to retrieve guest log list for instance "
+                        "%s.") % self.id)
+        finally:
+            self.reset_task_status()
+
+    def guest_log_action(self, log_name, enable, disable, publish, discard):
+        LOG.info(_("Processing guest log for instance %s.") % self.id)
+        try:
+            return self.guest.guest_log_action(log_name, enable, disable,
+                                               publish, discard)
+        except GuestError:
+            LOG.error(_("Failed to process guest log for instance %s.")
+                      % self.id)
+        finally:
+            self.reset_task_status()
+
     def refresh_compute_server_info(self):
         """Refreshes the compute server field."""
         server = self.nova_client.servers.get(self.server.id)

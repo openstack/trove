@@ -439,6 +439,8 @@ class SetServerVariable(object):
             return "SET GLOBAL %s=%s" % (self.key, 0)
         elif self.value is None:
             return "SET GLOBAL %s" % (self.key)
+        elif isinstance(self.value, str):
+            return "SET GLOBAL %s='%s'" % (self.key, self.value)
         else:
             return "SET GLOBAL %s=%s" % (self.key, self.value)
 

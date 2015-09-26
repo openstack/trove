@@ -297,6 +297,8 @@ class SimpleInstance(object):
             return InstanceStatus.PROMOTE
         if InstanceTasks.EJECTING.action == action:
             return InstanceStatus.EJECT
+        if InstanceTasks.LOGGING.action == action:
+            return InstanceStatus.LOGGING
 
         # Check for server status.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",

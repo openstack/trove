@@ -427,3 +427,17 @@ class API(object):
         LOG.debug("Demoting instance %s to non-master.", self.id)
         self._call("demote_replication_master", AGENT_HIGH_TIMEOUT,
                    self.version_cap)
+
+    def guest_log_list(self):
+        LOG.debug("Retrieving guest log list for %s.", self.id)
+        result = self._call("guest_log_list", AGENT_HIGH_TIMEOUT,
+                            self.version_cap)
+        LOG.debug("guest_log_list 1 returns %s", result)
+        return result
+
+    def guest_log_action(self, log_name, enable, disable, publish, discard):
+        LOG.debug("Processing guest log '%s' for %s.", log_name, self.id)
+        return self._call("guest_log_action", AGENT_HIGH_TIMEOUT,
+                          self.version_cap, log_name=log_name,
+                          enable=enable, disable=disable,
+                          publish=publish, discard=discard)

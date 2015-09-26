@@ -230,6 +230,11 @@ class UnprocessableEntity(TroveError):
     message = _("Unable to process the contained request.")
 
 
+class UnauthorizedRequest(TroveError):
+
+    message = _("Unauthorized request.")
+
+
 class CannotResizeToSameSize(TroveError):
 
     message = _("No change was requested in the size of the instance.")

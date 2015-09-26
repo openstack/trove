@@ -172,6 +172,20 @@ function init_trove {
     # Initialize the trove database
     $TROVE_MANAGE db_sync
 
+    # Add an admin user to the 'tempest' alt_demo tenant.
+    # This is needed to test the guest_log functionality.
+    # The first part mimics the tempest setup, so make sure we have that.
+    ALT_USERNAME=${ALT_USERNAME:-alt_demo}
+    ALT_TENANT_NAME=${ALT_TENANT_NAME:-alt_demo}
+    get_or_create_project ${ALT_TENANT_NAME} default
+    get_or_create_user ${ALT_USERNAME} "$ADMIN_PASSWORD" "default" "alt_demo@example.com"
+    get_or_add_user_project_role Member ${ALT_USERNAME} ${ALT_TENANT_NAME}
+
+    # The second part adds an admin user to the tenant.
+    ADMIN_ALT_USERNAME=${ADMIN_ALT_USERNAME:-admin_${ALT_USERNAME}}
+    get_or_create_user ${ADMIN_ALT_USERNAME} "$ADMIN_PASSWORD" "default" "admin_alt_demo@example.com"
+    get_or_add_user_project_role admin ${ADMIN_ALT_USERNAME} ${ALT_TENANT_NAME}
+
     # If no guest image is specified, skip remaining setup
     [ -z "$TROVE_GUEST_IMAGE_URL" ] && return 0
 
