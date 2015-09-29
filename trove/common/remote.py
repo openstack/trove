@@ -98,7 +98,7 @@ def nova_client(context):
                            endpoint_type=CONF.nova_compute_endpoint_type)
 
     client = Client(context.user, context.auth_token,
-                    bypass_url=url, project_id=context.tenant,
+                    bypass_url=url, tenant_id=context.tenant,
                     auth_url=PROXY_AUTH_URL)
     client.client.auth_token = context.auth_token
     client.client.management_url = url
@@ -112,8 +112,6 @@ def create_admin_nova_client(context):
     """
     client = create_nova_client(context)
     client.client.auth_token = None
-    client.client.management_url = ("%s/%s" %
-                                    (CONF.nova_compute_url, context.tenant))
     return client
 
 
