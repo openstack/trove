@@ -6,58 +6,91 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 4.0.0.0b3.dev14\n"
+"Project-Id-Version: trove 5.0.0.dev1\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-08-03 06:13+0000\n"
+"POT-Creation-Date: 2015-09-29 06:12+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.0\n"
+"Generated-By: Babel 2.1.1\n"
 
-#: trove/instance/models.py:631
+#: trove/extensions/common/service.py:60 trove/extensions/vertica/service.py:38
+#, python-format
+msgid "Getting root enabled for instance '%s'."
+msgstr ""
+
+#: trove/extensions/common/service.py:61 trove/extensions/common/service.py:71
+#: trove/extensions/vertica/service.py:39
+#: trove/extensions/vertica/service.py:59
+#, python-format
+msgid ""
+"req : '%s'\n"
+"\n"
+msgstr ""
+
+#: trove/extensions/common/service.py:70 trove/extensions/vertica/service.py:58
+#, python-format
+msgid "Enabling root for instance '%s'."
+msgstr ""
+
+#: trove/extensions/vertica/service.py:45
+#, python-format
+msgid "Getting root enabled for cluster '%s'."
+msgstr ""
+
+#: trove/extensions/vertica/service.py:71
+#, python-format
+msgid "Enabling root for cluster '%s'."
+msgstr ""
+
+#: trove/guestagent/datastore/experimental/vertica/service.py:281
+msgid "Enabling root."
+msgstr ""
+
+#: trove/instance/models.py:632
 #, python-format
 msgid "Resetting task status to NONE on instance %s."
 msgstr ""
 
-#: trove/instance/models.py:856
+#: trove/instance/models.py:870
 #, python-format
 msgid "Resizing instance %(instance_id)s flavor to %(flavor_id)s."
 msgstr ""
 
-#: trove/instance/models.py:893
+#: trove/instance/models.py:907
 #, python-format
 msgid "Resizing volume of instance %s."
 msgstr ""
 
-#: trove/instance/models.py:916
+#: trove/instance/models.py:930
 #, python-format
 msgid "Rebooting instance %s."
 msgstr ""
 
-#: trove/instance/models.py:924
+#: trove/instance/models.py:938
 #, python-format
 msgid "Restarting datastore on instance %s."
 msgstr ""
 
-#: trove/instance/models.py:938
+#: trove/instance/models.py:952
 #, python-format
 msgid "Detaching instance %s from its replication source."
 msgstr ""
 
-#: trove/instance/models.py:947
+#: trove/instance/models.py:961
 #, python-format
 msgid "Promoting instance %s to replication source."
 msgstr ""
 
-#: trove/instance/models.py:962
+#: trove/instance/models.py:976
 #, python-format
 msgid "Ejecting replica source %s from it's replication set."
 msgstr ""
 
-#: trove/instance/models.py:985
+#: trove/instance/models.py:999
 #, python-format
 msgid "Migrating instance id = %(instance_id)s to host = %(host)s."
 msgstr ""
