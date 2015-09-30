@@ -40,6 +40,8 @@ pydev_debug_opts = [
                help="Pydev debug server host (localhost by default)."),
 
     cfg.IntOpt("pydev_debug_port",
+               default=5678,
+               min=1, max=65535,
                help="Pydev debug server port (5678 by default)."),
 
     cfg.StrOpt("pydev_path",
@@ -121,8 +123,6 @@ def __setup_remote_pydev_debug(pydev_debug_host=None, pydev_debug_port=None,
         otherwise exception should be raised
     """
 
-    if pydev_debug_port is None:
-        pydev_debug_port = 5678
     try:
         import pydevd
         LOG.debug("pydevd module was imported from system path")
