@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.guestagent.datastore.experimental.postgresql import pgutil
+from trove.guestagent.db import models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -73,21 +74,20 @@ class PgSqlAccess(object):
 
     def list_access(self, context, username, hostname):
         """List database for which the given user as access.
-
-        The username and hostname parameters are strings.
-
-        Return value is a list of dictionaries in the following form:
-
-            [{"_name": "", "_collate": None, "_character_set": None}, ...]
+        Return a list of serialized Postgres databases.
         """
+
+        if self.user_exists(username):
+            return [db.serialize() for db in self._get_databases_for(username)]
+
+        raise exception.UserNotFound(username)
+
+    def _get_databases_for(self, username):
+        """Return all Postgres databases accessible by a given user."""
         results = pgutil.query(
             pgutil.AccessQuery.list(user=username),
             timeout=30,
         )
-
-        # Convert to dictionaries.
-        results = (
-            {'_name': r[0].strip(), '_collate': None, '_character_set': None}
-            for r in results
-        )
-        return tuple(results)
+        return [models.PostgreSQLSchema(
+            row[0].strip(), character_set=row[1], collate=row[2])
+            for row in results]

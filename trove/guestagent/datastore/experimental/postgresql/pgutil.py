@@ -207,7 +207,10 @@ class UserQuery(object):
 
     @classmethod
     def update_name(cls, old, new):
-        """Query to update the name of a user."""
+        """Query to update the name of a user.
+        This statement also results in an automatic permission transfer to the
+        new username.
+        """
 
         return "ALTER USER \"{old}\" RENAME TO \"{new}\"".format(
             old=old,
@@ -231,7 +234,8 @@ class AccessQuery(object):
             "SELECT datname, pg_encoding_to_char(encoding), datcollate "
             "FROM pg_database "
             "WHERE datistemplate = false "
-            "AND 'user {user}=CTc' = ANY (datacl)".format(user=user)
+            "AND 'user \"{user}\"=CTc/{admin}' = ANY (datacl)".format(
+                user=user, admin=PG_ADMIN)
         )
 
     @classmethod

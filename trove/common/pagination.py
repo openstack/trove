@@ -24,26 +24,48 @@ def url_quote(s):
     return urllib_parse.quote(str(s))
 
 
-def paginate_list(li, limit=None, marker=None, include_marker=False):
+def paginate_list(li, limit=None, marker=None, include_marker=False,
+                  key=lambda x: x):
     """Sort the given list and return a sublist containing a page of items.
 
     :param list li:             The list to be paginated.
     :param int limit:           Maximum number of iterms to be returned.
     :param marker:              Key of the first item to appear on the sublist.
     :param bool include_marker: Include the marker value itself in the sublist.
+    :param lambda key:          Sorting expression.
     :return:
     """
-    li.sort()
+    sli = sorted(li, key=key)
+    index = [key(item) for item in sli]
     if include_marker:
-        pos = bisect.bisect_left(li, marker)
+        pos = bisect.bisect_left(index, marker)
     else:
-        pos = bisect.bisect(li, marker)
+        pos = bisect.bisect(index, marker)
 
-    if limit and pos + limit < len(li):
-        page = li[pos:pos + limit]
-        return page, page[-1]
+    if limit and pos + limit < len(sli):
+        page = sli[pos:pos + limit]
+        return page, key(page[-1])
     else:
-        return li[pos:], None
+        return sli[pos:], None
+
+
+def paginate_object_list(li, attr_name, limit=None, marker=None,
+                         include_marker=False):
+    """Wrapper for paginate_list to handle lists of generic objects paginated
+    based on an attribute.
+    """
+    return paginate_list(li, limit=limit, marker=marker,
+                         include_marker=include_marker,
+                         key=lambda x: getattr(x, attr_name))
+
+
+def paginate_dict_list(li, key, limit=None, marker=None, include_marker=False):
+    """Wrapper for paginate_list to handle lists of dicts paginated
+    based on a key.
+    """
+    return paginate_list(li, limit=limit, marker=marker,
+                         include_marker=include_marker,
+                         key=lambda x: x[key])
 
 
 class PaginatedDataView(object):
