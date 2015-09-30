@@ -18,6 +18,7 @@ import re
 import string
 
 import netaddr
+from six import u
 
 from trove.common import cfg
 from trove.common import exception
@@ -225,6 +226,37 @@ class CouchDBSchema(DatastoreSchema):
             return True
         else:
             return False
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
+
+
+class PostgreSQLSchema(DatastoreSchema):
+    """Represents a PostgreSQL schema and its associated properties.
+
+    Permitted characters in quoted identifiers include the full
+    Unicode Basic Multilingual Plane (BMP), except U+0000.
+    Database, table, and column names cannot end with space characters.
+    """
+    name_regex = re.compile(u(r'^[\u0001-\u007F\u0080-\uFFFF]+[^\s]$'))
+
+    def __init__(self, name=None, deserializing=False):
+        super(PostgreSQLSchema, self).__init__()
+        if not (bool(deserializing) != bool(name)):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+
+    @property
+    def _max_schema_name_length(self):
+        return 63
+
+    def _is_valid_schema_name(self, value):
+        return self.name_regex.match(value) is not None
 
     @classmethod
     def _dict_requirements(cls):
@@ -1010,8 +1042,49 @@ class MySQLUser(Base):
             self._host = value
 
 
+class PostgreSQLUser(DatastoreUser):
+    """Represents a PostgreSQL user and its associated properties."""
+
+    def __init__(self, name=None, password=None, deserializing=False):
+        super(PostgreSQLUser, self).__init__()
+
+        if ((not (bool(deserializing) != bool(name))) or
+                (bool(deserializing) and bool(password))):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "password %(pass)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'pass': bool(password),
+                                 'deser': bool(deserializing)}))
+
+        if not deserializing:
+            self.name = name
+            self.password = password
+
+    def _build_database_schema(self, name):
+        return PostgreSQLSchema(name)
+
+    @property
+    def _max_username_length(self):
+        return 63
+
+    def _is_valid_name(self, value):
+        return True
+
+    def _is_valid_host_name(self, value):
+        return True
+
+    def _is_valid_password(self, value):
+        return True
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['name']
+
+
 class RootUser(MySQLUser):
     """Overrides _ignore_users from the MySQLUser class."""
+
     def __init__(self):
         self._ignore_users = []
 
@@ -1037,3 +1110,11 @@ class CassandraRootUser(CassandraUser):
             password = utils.generate_random_password()
         super(CassandraRootUser, self).__init__("cassandra", password=password,
                                                 *args, **kwargs)
+
+
+class PostgreSQLRootUser(PostgreSQLUser):
+    """Represents the PostgreSQL default superuser."""
+
+    def __init__(self, password=None):
+        password = password if not None else utils.generate_random_password()
+        super(PostgreSQLRootUser, self).__init__("postgres", password=password)
