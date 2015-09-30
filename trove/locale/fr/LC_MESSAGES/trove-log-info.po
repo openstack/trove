@@ -5,13 +5,15 @@
 # Translators:
 # Corinne Verheyde <cverheyd@hotmail.com>, 2015
 # Frédéric <frosmont@free.fr>, 2014
+# Corinne Verheyde <cverheyd@gmail.com>, 2015. #zanata
+# OpenStack Infra <zanata@openstack.org>, 2015. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: trove\n"
+"Project-Id-Version: trove 5.0.0.dev47\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-08-06 06:30+0000\n"
-"PO-Revision-Date: 2015-07-24 22:02+0000\n"
-"Last-Translator: Corinne Verheyde <cverheyd@hotmail.com>\n"
+"POT-Creation-Date: 2015-09-29 06:12+0000\n"
+"PO-Revision-Date: 2015-09-22 11:06+0000\n"
+"Last-Translator: Corinne Verheyde <cverheyd@gmail.com>\n"
 "Language-Team: French (http://www.transifex.com/openstack/trove/language/"
 "fr/)\n"
 "Language: fr\n"
@@ -20,6 +22,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.0\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Zanata 3.7.1\n"
 
 #, python-format
 msgid "Creating a database instance for tenant '%s'"
@@ -42,6 +45,17 @@ msgstr "Édition de l'instance for tenant_id %s."
 #, python-format
 msgid "Ejecting replica source %s from it's replication set."
 msgstr "Éviction du source replica %s de son jeu de réplication "
+
+#, python-format
+msgid "Enabling root for cluster '%s'."
+msgstr "Activation de root pour le cluster '%s'."
+
+#, python-format
+msgid "Enabling root for instance '%s'."
+msgstr "Activation de root pour l'instance '%s'."
+
+msgid "Enabling root."
+msgstr "Activation de root."
 
 #, python-format
 msgid "Getting default configuration for instance %s"
@@ -105,3 +119,11 @@ msgid "Updating database instance '%(instance_id)s' for tenant '%(tenant_id)s'"
 msgstr ""
 "Mise à jour de l'instance de base de données '%(instance_id)s' pour le "
 "tenant '%(tenant_id)s'"
+
+#, python-format
+msgid ""
+"req : '%s'\n"
+"\n"
+msgstr ""
+"req : '%s'\n"
+"\n"
