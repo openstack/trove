@@ -240,8 +240,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info.dbaas_datastore = CONFIG.dbaas_datastore
 
     def tearDown(self):
-        quota_dict = {'instances': CONFIG.trove_max_instances_per_user,
-                      'volumes': CONFIG.trove_max_volumes_per_user}
+        quota_dict = {'instances': CONFIG.trove_max_instances_per_tenant,
+                      'volumes': CONFIG.trove_max_volumes_per_tenant}
         dbaas_admin.quota.update(self.test_info.user.tenant_id,
                                  quota_dict)
 
@@ -283,7 +283,7 @@ class CreateInstanceQuotaTest(unittest.TestCase):
         self.test_info.volume = None
 
         if VOLUME_SUPPORT:
-            assert_equal(CONFIG.trove_max_volumes_per_user,
+            assert_equal(CONFIG.trove_max_volumes_per_tenant,
                          verify_quota['volumes'])
             self.test_info.volume = {'size':
                                      CONFIG.get('trove_volume_size', 1)}

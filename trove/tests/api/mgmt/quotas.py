@@ -42,8 +42,9 @@ class QuotasBase(object):
         self.client2 = create_dbaas_client(self.user2)
         self.mgmt_client = create_client(is_admin=True)
         ''' Orig quotas from config
-            "trove_max_instances_per_user": 55,
-            "trove_max_volumes_per_user": 100,    '''
+
+            "trove_max_instances_per_tenant": 55,
+            "trove_max_volumes_per_tenant": 100,    '''
         self.original_quotas1 = self.mgmt_client.quota.show(self.user1.tenant)
         self.original_quotas2 = self.mgmt_client.quota.show(self.user2.tenant)
 
@@ -69,7 +70,8 @@ class DefaultQuotasTest(QuotasBase):
     def check_quotas_are_set_to_defaults(self):
         quotas = self.mgmt_client.quota.show(self.user1.tenant)
         with Check() as check:
-            check.equal(CONFIG.trove_max_instances_per_user,
+
+            check.equal(CONFIG.trove_max_instances_per_tenant,
                         quotas["instances"])
             check.equal(CONFIG.trove_max_volumes_per_user,
                         quotas["volumes"])
@@ -103,7 +105,7 @@ class ChangeInstancesQuota(QuotasBase):
         quotas = self.mgmt_client.quota.show(self.user1.tenant)
         with Check() as check:
             check.equal(0, quotas["instances"])
-            check.equal(CONFIG.trove_max_volumes_per_user,
+            check.equal(CONFIG.trove_max_volumes_per_tenant,
                         quotas["volumes"])
         asserts.assert_equal(len(quotas), 2)
 
@@ -154,7 +156,8 @@ class ChangeVolumesQuota(QuotasBase):
     def verify_correct_update(self):
         quotas = self.mgmt_client.quota.show(self.user1.tenant)
         with Check() as check:
-            check.equal(CONFIG.trove_max_instances_per_user,
+
+            check.equal(CONFIG.trove_max_instances_per_tenant,
                         quotas["instances"])
             check.equal(0, quotas["volumes"])
         asserts.assert_equal(len(quotas), 2)

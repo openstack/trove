@@ -33,8 +33,10 @@ Unit tests for the classes and functions in DbQuotaDriver.py.
 
 CONF = cfg.CONF
 resources = {
-    Resource.INSTANCES: Resource(Resource.INSTANCES, 'max_instances_per_user'),
-    Resource.VOLUMES: Resource(Resource.VOLUMES, 'max_volumes_per_user')
+
+    Resource.INSTANCES: Resource(Resource.INSTANCES,
+                                 'max_instances_per_tenant'),
+    Resource.VOLUMES: Resource(Resource.VOLUMES, 'max_volumes_per_tenant')
 }
 
 FAKE_TENANT1 = "123456"
@@ -173,9 +175,10 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
 
     def test_get_defaults(self):
         defaults = self.driver.get_defaults(resources)
-        self.assertEqual(CONF.max_instances_per_user,
+
+        self.assertEqual(CONF.max_instances_per_tenant,
                          defaults[Resource.INSTANCES])
-        self.assertEqual(CONF.max_volumes_per_user,
+        self.assertEqual(CONF.max_volumes_per_tenant,
                          defaults[Resource.VOLUMES])
 
     def test_get_quota_by_tenant(self):
@@ -202,7 +205,7 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
 
         self.assertEqual(FAKE_TENANT1, quota.tenant_id)
         self.assertEqual(Resource.VOLUMES, quota.resource)
-        self.assertEqual(CONF.max_volumes_per_user, quota.hard_limit)
+        self.assertEqual(CONF.max_volumes_per_tenant, quota.hard_limit)
 
     def test_get_all_quotas_by_tenant(self):
 
@@ -236,11 +239,12 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.assertEqual(FAKE_TENANT1, quotas[Resource.INSTANCES].tenant_id)
         self.assertEqual(Resource.INSTANCES,
                          quotas[Resource.INSTANCES].resource)
-        self.assertEqual(CONF.max_instances_per_user,
+
+        self.assertEqual(CONF.max_instances_per_tenant,
                          quotas[Resource.INSTANCES].hard_limit)
         self.assertEqual(FAKE_TENANT1, quotas[Resource.VOLUMES].tenant_id)
         self.assertEqual(Resource.VOLUMES, quotas[Resource.VOLUMES].resource)
-        self.assertEqual(CONF.max_volumes_per_user,
+        self.assertEqual(CONF.max_volumes_per_tenant,
                          quotas[Resource.VOLUMES].hard_limit)
 
     def test_get_all_quotas_by_tenant_with_one_default(self):
@@ -260,7 +264,7 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.assertEqual(22, quotas[Resource.INSTANCES].hard_limit)
         self.assertEqual(FAKE_TENANT1, quotas[Resource.VOLUMES].tenant_id)
         self.assertEqual(Resource.VOLUMES, quotas[Resource.VOLUMES].resource)
-        self.assertEqual(CONF.max_volumes_per_user,
+        self.assertEqual(CONF.max_volumes_per_tenant,
                          quotas[Resource.VOLUMES].hard_limit)
 
     def test_get_quota_usage_by_tenant(self):
@@ -434,7 +438,7 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.mock_quota_result.all = Mock(return_value=[])
         self.mock_usage_result.all = Mock(return_value=FAKE_QUOTAS)
 
-        delta = {'instances': 1, 'volumes': CONF.max_volumes_per_user + 1}
+        delta = {'instances': 1, 'volumes': CONF.max_volumes_per_tenant + 1}
         self.assertRaises(exception.QuotaExceeded,
                           self.driver.reserve,
                           FAKE_TENANT1,

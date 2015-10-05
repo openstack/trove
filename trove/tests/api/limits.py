@@ -35,9 +35,10 @@ CONF = cfg.CONF
 
 GROUP = "dbaas.api.limits"
 DEFAULT_RATE = CONF.http_get_rate
-DEFAULT_MAX_VOLUMES = CONF.max_volumes_per_user
-DEFAULT_MAX_INSTANCES = CONF.max_instances_per_user
-DEFAULT_MAX_BACKUPS = CONF.max_backups_per_user
+
+DEFAULT_MAX_VOLUMES = CONF.max_volumes_per_tenant
+DEFAULT_MAX_INSTANCES = CONF.max_instances_per_tenant
+DEFAULT_MAX_BACKUPS = CONF.max_backups_per_tenant
 
 
 def ensure_limits_are_not_faked(func):

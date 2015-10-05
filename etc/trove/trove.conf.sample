@@ -104,10 +104,10 @@ block_device_mapping = vdb
 device_path = /dev/vdb
 # Maximum volume size for an instance
 max_accepted_volume_size = 10
-max_instances_per_user = 5
+max_instances_per_tenant = 5
 # Maximum volume capacity (in GB) spanning across all trove volumes per tenant
-max_volumes_per_user = 100
-max_backups_per_user = 5
+max_volumes_per_tenant = 100
+max_backups_per_tenant = 5
 volume_time_out=30
 
 # Config options for rate limits
