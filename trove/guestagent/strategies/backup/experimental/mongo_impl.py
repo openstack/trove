@@ -40,8 +40,6 @@ class MongoDump(base.BackupRunner):
     """Implementation of Backup Strategy for MongoDump."""
     __strategy_name__ = 'mongodump'
 
-    backup_cmd = 'mongodump --out ' + MONGO_DUMP_DIR
-
     def __init__(self, *args, **kwargs):
         self.app = mongo_service.MongoDBApp()
         super(MongoDump, self).__init__(*args, **kwargs)
