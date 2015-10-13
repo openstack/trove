@@ -27,8 +27,7 @@ class Replication(Strategy):
     __strategy_type__ = 'replication'
     __strategy_ns__ = 'trove.guestagent.strategies.replication'
 
-    def __init__(self, context):
-        self.context = context
+    def __init__(self):
         super(Replication, self).__init__()
 
     @abc.abstractmethod

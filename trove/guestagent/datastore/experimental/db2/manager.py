@@ -15,7 +15,6 @@
 
 from oslo_log import log as logging
 
-from trove.common import exception
 from trove.guestagent.datastore.experimental.db2 import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
@@ -105,80 +104,6 @@ class Manager(manager.Manager):
         LOG.debug("List all the databases the user has access to.")
         return self.admin.list_access(username, hostname)
 
-    def mount_volume(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.mount(mount_point, write_to_fstab=False)
-        LOG.debug("Mounted the device %s at the mount point %s." %
-                  (device_path, mount_point))
-
-    def unmount_volume(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.unmount(mount_point)
-        LOG.debug("Unmounted the device %s from the mount point %s." %
-                  (device_path, mount_point))
-
-    def resize_fs(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.resize_fs(mount_point)
-        LOG.debug("Resized the filesystem %s." % mount_point)
-
     def start_db_with_conf_changes(self, context, config_contents):
         LOG.debug("Starting DB2 with configuration changes.")
         self.app.start_db_with_conf_changes(config_contents)
-
-    def grant_access(self, context, username, hostname, databases):
-        LOG.debug("Granting acccess.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='grant_access', datastore=self.manager)
-
-    def revoke_access(self, context, username, hostname, database):
-        LOG.debug("Revoking access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='revoke_access', datastore=self.manager)
-
-    def reset_configuration(self, context, configuration):
-        """
-         Currently this method does nothing. This method needs to be
-         implemented to enable rollback of flavor-resize on guestagent side.
-        """
-        LOG.debug("Resetting DB2 configuration.")
-        pass
-
-    def change_passwords(self, context, users):
-        LOG.debug("Changing password.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=self.manager)
-
-    def update_attributes(self, context, username, hostname, user_attrs):
-        LOG.debug("Updating database attributes.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='update_attributes', datastore=self.manager)
-
-    def enable_root(self, context):
-        LOG.debug("Enabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=self.manager)
-
-    def enable_root_with_password(self, context, root_password=None):
-        LOG.debug("Enabling root with password.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root_with_password', datastore=self.manager)
-
-    def is_root_enabled(self, context):
-        LOG.debug("Checking if root is enabled.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=self.manager)
-
-    def _perform_restore(self, backup_info, context, restore_location, app):
-        raise exception.DatastoreOperationNotSupported(
-            operation='_perform_restore', datastore=self.manager)
-
-    def create_backup(self, context, backup_info):
-        LOG.debug("Creating backup.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_backup', datastore=self.manager)
-
-    def get_config_changes(self, cluster_config, mount_point=None):
-        LOG.debug("Get configuration changes")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_configuration_changes', datastore=self.manager)

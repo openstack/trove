@@ -15,24 +15,15 @@
 #
 
 from oslo_utils import importutils
-from trove.common import cfg
 from trove.guestagent.datastore.mysql_common import manager
-from trove.guestagent.strategies.replication import get_replication_strategy
 
 
-CONF = cfg.CONF
-MANAGER = CONF.datastore_manager or 'mysql'
-REPLICATION_STRATEGY = CONF.get(MANAGER).replication_strategy
-REPLICATION_NAMESPACE = CONF.get(MANAGER).replication_namespace
-REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
-                                                      REPLICATION_NAMESPACE)
-
-MYSQL_APP = "trove.guestagent.datastore.experimental.percona." \
-            "service.MySqlApp"
-MYSQL_APP_STATUS = "trove.guestagent.datastore.experimental.percona." \
-                   "service.MySqlAppStatus"
-MYSQL_ADMIN = "trove.guestagent.datastore.experimental.percona." \
-              "service.MySqlAdmin"
+MYSQL_APP = ("trove.guestagent.datastore.experimental.percona.service."
+             "MySqlApp")
+MYSQL_APP_STATUS = ("trove.guestagent.datastore.experimental.percona.service."
+                    "MySqlAppStatus")
+MYSQL_ADMIN = ("trove.guestagent.datastore.experimental.percona.service."
+               "MySqlAdmin")
 
 
 class Manager(manager.MySqlManager):
@@ -42,7 +33,4 @@ class Manager(manager.MySqlManager):
         mysql_app_status = importutils.import_class(MYSQL_APP_STATUS)
         mysql_admin = importutils.import_class(MYSQL_ADMIN)
 
-        super(Manager, self).__init__(mysql_app, mysql_app_status,
-                                      mysql_admin, REPLICATION_STRATEGY,
-                                      REPLICATION_NAMESPACE,
-                                      REPLICATION_STRATEGY_CLASS, MANAGER)
+        super(Manager, self).__init__(mysql_app, mysql_app_status, mysql_admin)

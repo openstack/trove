@@ -67,21 +67,20 @@ class BaseDbStatus(object):
         self.status = None
         self.restart_mode = False
 
-        self._prepare_completed = None
+        self.__prepare_completed = None
 
     @property
     def prepare_completed(self):
-        if self._prepare_completed is None:
+        if self.__prepare_completed is None:
             # Force the file check
-            self.prepare_completed = None
-        return self._prepare_completed
+            self.__refresh_prepare_completed()
+        return self.__prepare_completed
 
-    @prepare_completed.setter
-    def prepare_completed(self, value):
-        # Set the value based on the existence of the file; 'value' is ignored
-        # This is required as the value of prepare_completed is cached, so
-        # this must be referenced any time the existence of the file changes
-        self._prepare_completed = os.path.isfile(
+    def __refresh_prepare_completed(self):
+        # Set the value of __prepared_completed based on the existence of
+        # the file.  This is required as the state is cached so this method
+        # must be called any time the existence of the file changes.
+        self.__prepare_completed = os.path.isfile(
             guestagent_utils.build_file_path(
                 self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME))
 
@@ -90,7 +89,7 @@ class BaseDbStatus(object):
         prepare_start_file = guestagent_utils.build_file_path(
             self.GUESTAGENT_DIR, self.PREPARE_START_FILENAME)
         operating_system.write_file(prepare_start_file, '')
-        self.prepare_completed = False
+        self.__refresh_prepare_completed()
 
         self.set_status(instance.ServiceStatuses.BUILDING, True)
 
@@ -107,7 +106,7 @@ class BaseDbStatus(object):
             prepare_end_file = guestagent_utils.build_file_path(
                 self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME)
             operating_system.write_file(prepare_end_file, '')
-            self.prepare_completed = True
+            self.__refresh_prepare_completed()
 
         final_status = None
         if error_occurred:

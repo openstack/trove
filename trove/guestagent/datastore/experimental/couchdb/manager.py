@@ -17,7 +17,6 @@ import os
 
 from oslo_log import log as logging
 
-from trove.common import exception
 from trove.guestagent.datastore.experimental.couchdb import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
@@ -79,113 +78,6 @@ class Manager(manager.Manager):
         LOG.debug("Restarting the CouchDB instance.")
         self.app.restart()
 
-    def reset_configuration(self, context, configuration):
-        """
-         Currently this method does nothing. This method needs to be
-         implemented to enable rollback of flavor-resize on guestagent side.
-        """
-        LOG.debug("Resetting CouchDB configuration.")
-        pass
-
-    def change_passwords(self, context, users):
-        LOG.debug("Changing password.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=self.manager)
-
-    def update_attributes(self, context, username, hostname, user_attrs):
-        LOG.debug("Updating database attributes.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='update_attributes', datastore=self.manager)
-
-    def create_database(self, context, databases):
-        LOG.debug("Creating database.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_database', datastore=self.manager)
-
-    def create_user(self, context, users):
-        LOG.debug("Creating user.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_user', datastore=self.manager)
-
-    def delete_database(self, context, database):
-        LOG.debug("Deleting database.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='delete_database', datastore=self.manager)
-
-    def delete_user(self, context, user):
-        LOG.debug("Deleting user.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='delete_user', datastore=self.manager)
-
-    def get_user(self, context, username, hostname):
-        LOG.debug("Getting user.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='get_user', datastore=self.manager)
-
-    def grant_access(self, context, username, hostname, databases):
-        LOG.debug("Granting acccess.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='grant_access', datastore=self.manager)
-
-    def revoke_access(self, context, username, hostname, database):
-        LOG.debug("Revoking access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='revoke_access', datastore=self.manager)
-
-    def list_access(self, context, username, hostname):
-        LOG.debug("Listing access.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_access', datastore=self.manager)
-
-    def list_databases(self, context, limit=None, marker=None,
-                       include_marker=False):
-        LOG.debug("Listing databases.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_databases', datastore=self.manager)
-
-    def list_users(self, context, limit=None, marker=None,
-                   include_marker=False):
-        LOG.debug("Listing users.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='list_users', datastore=self.manager)
-
-    def enable_root(self, context):
-        LOG.debug("Enabling root.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root', datastore=self.manager)
-
-    def enable_root_with_password(self, context, root_password=None):
-        LOG.debug("Enabling root with password.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root_with_password', datastore=self.manager)
-
-    def is_root_enabled(self, context):
-        LOG.debug("Checking if root is enabled.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='is_root_enabled', datastore=self.manager)
-
-    def create_backup(self, context, backup_info):
-        LOG.debug("Creating backup.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_backup', datastore=self.manager)
-
     def start_db_with_conf_changes(self, context, config_contents):
         LOG.debug("Starting CouchDB with configuration changes.")
         self.app.start_db_with_conf_changes(config_contents)
-
-    def mount_volume(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.mount(mount_point, write_to_fstab=False)
-        LOG.debug("Mounted the device %s at the mount_point %s." %
-                  (device_path, mount_point))
-
-    def unmount_volume(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.unmount(mount_point)
-        LOG.debug("Unmounted the device %s from the mount point %s." %
-                  (device_path, mount_point))
-
-    def resize_fs(self, context, device_path=None, mount_point=None):
-        device = volume.VolumeDevice(device_path)
-        device.resize_fs(mount_point)
-        LOG.debug("Resized the filesystem at %s." % mount_point)

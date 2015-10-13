@@ -37,6 +37,12 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.mock_ope = self.patch_ope.start()
         self.addCleanup(self.patch_ope.stop)
         self.context = TroveContext()
+        self.replication_strategy = 'RedisSyncReplication'
+        self.patch_rs = patch(
+            'trove.guestagent.strategies.replication.get_strategy',
+            return_value=self.replication_strategy)
+        self.mock_rs = self.patch_rs.start()
+        self.addCleanup(self.patch_rs.stop)
         self.manager = RedisManager()
         self.packages = 'redis-server'
         self.origin_RedisAppStatus = redis_service.RedisAppStatus
@@ -49,18 +55,14 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.origin_mount = VolumeDevice.mount
         self.origin_mount_points = VolumeDevice.mount_points
         self.origin_restore = backup.restore
-        self.patch_rs = patch(
-            'trove.guestagent.datastore.experimental.redis.manager.'
-            'REPLICATION_STRATEGY_CLASS')
-        self.mock_rs_class = self.patch_rs.start()
-        self.addCleanup(self.patch_rs.stop)
+        self.patch_repl = patch(
+            'trove.guestagent.strategies.replication.get_instance')
+        self.mock_repl = self.patch_repl.start()
+        self.addCleanup(self.patch_repl.stop)
         self.patch_gfvs = patch(
             'trove.guestagent.dbaas.get_filesystem_volume_stats')
         self.mock_gfvs_class = self.patch_gfvs.start()
         self.addCleanup(self.patch_gfvs.stop)
-
-        self.repl_datastore_manager = 'redis'
-        self.repl_replication_strategy = 'RedisSyncReplication'
 
     def tearDown(self):
         super(RedisGuestAgentManagerTest, self).tearDown()
@@ -85,7 +87,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self._prepare_dynamic(is_redis_installed=False)
 
     def test_prepare_redis_with_snapshot(self):
-        snapshot = {'replication_strategy': self.repl_replication_strategy,
+        snapshot = {'replication_strategy': self.replication_strategy,
                     'dataset': {'dataset_size': 1.0},
                     'config': None}
         self._prepare_dynamic(snapshot=snapshot)
@@ -130,7 +132,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         backup.restore = MagicMock(return_value=None)
         mock_replication = MagicMock()
         mock_replication.enable_as_slave = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         self.manager.prepare(self.context, self.packages,
                              None, '2048',
@@ -184,7 +186,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_backup_required_for_replication(self):
         mock_replication = MagicMock()
         mock_replication.backup_required_for_replication = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         self.manager.backup_required_for_replication(self.context)
         self.assertEqual(
@@ -193,9 +195,9 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_attach_replica(self):
         mock_replication = MagicMock()
         mock_replication.enable_as_slave = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
-        snapshot = {'replication_strategy': self.repl_replication_strategy,
+        snapshot = {'replication_strategy': self.replication_strategy,
                     'dataset': {'dataset_size': 1.0}}
 
         self.manager.attach_replica(self.context, snapshot, None)
@@ -204,7 +206,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_detach_replica(self):
         mock_replication = MagicMock()
         mock_replication.detach_slave = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         self.manager.detach_replica(self.context)
         self.assertEqual(1, mock_replication.detach_slave.call_count)
@@ -212,7 +214,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_enable_as_master(self):
         mock_replication = MagicMock()
         mock_replication.enable_as_master = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         self.manager.enable_as_master(self.context, None)
         self.assertEqual(mock_replication.enable_as_master.call_count, 1)
@@ -220,7 +222,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_demote_replication_master(self):
         mock_replication = MagicMock()
         mock_replication.demote_master = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         self.manager.demote_replication_master(self.context)
         self.assertEqual(1, mock_replication.demote_master.call_count)
@@ -233,8 +235,8 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
     def test_cleanup_source_on_replica_detach(self):
         mock_replication = MagicMock()
         mock_replication.cleanup_source_on_replica_detach = MagicMock()
-        self.mock_rs_class.return_value = mock_replication
-        snapshot = {'replication_strategy': self.repl_replication_strategy,
+        self.mock_repl.return_value = mock_replication
+        snapshot = {'replication_strategy': self.replication_strategy,
                     'dataset': {'dataset_size': '1.0'}}
 
         self.manager.cleanup_source_on_replica_detach(self.context, snapshot)
@@ -254,18 +256,18 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
             return_value=(snapshot_id, log_position))
         mock_replication.get_master_ref = MagicMock(
             return_value=master_ref)
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
         self.mock_gfvs_class.return_value = (
             {'used': used_size, 'total': total_size})
 
         expected_replication_snapshot = {
             'dataset': {
-                'datastore_manager': self.repl_datastore_manager,
+                'datastore_manager': self.manager.manager,
                 'dataset_size': used_size,
                 'volume_size': total_size,
                 'snapshot_id': snapshot_id
             },
-            'replication_strategy': self.repl_replication_strategy,
+            'replication_strategy': self.replication_strategy,
             'master': master_ref,
             'log_position': log_position
         }
@@ -292,7 +294,7 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         mock_replication = MagicMock()
         mock_replication.get_replica_context = MagicMock(
             return_value=expected_info)
-        self.mock_rs_class.return_value = mock_replication
+        self.mock_repl.return_value = mock_replication
 
         replica_info = self.manager.get_replica_context(self.context)
         self.assertEqual(1, mock_replication.get_replica_context.call_count)
