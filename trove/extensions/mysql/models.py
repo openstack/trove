@@ -18,13 +18,13 @@ Model classes that extend the instances functionality for MySQL instances.
 """
 
 from trove.common import cfg
+from trove.common.db.mysql import models as guest_models
 from trove.common import exception
 from trove.common.notification import StartNotification
 from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.extensions.common.models import load_and_verify
 from trove.extensions.common.models import RootHistory
-from trove.guestagent.db import models as guest_models
 
 CONF = cfg.CONF
 
@@ -46,12 +46,10 @@ class User(object):
     @classmethod
     def load(cls, context, instance_id, username, hostname, root_user=False):
         load_and_verify(context, instance_id)
+        validate = guest_models.MySQLUser(name=username, host=hostname)
         if root_user:
-            validate = guest_models.RootUser()
-        else:
-            validate = guest_models.MySQLUser()
-        validate.name = username
-        validate.host = hostname
+            validate.make_root()
+        validate.check_reserved()
         client = create_guest_client(context, instance_id)
         found_user = client.get_user(username=username, hostname=hostname)
         if not found_user:
@@ -138,14 +136,12 @@ class User(object):
         user_changed = user_attrs.get('name')
         host_changed = user_attrs.get('host')
 
-        validate = guest_models.MySQLUser()
-        if host_changed:
-            validate.host = host_changed
-        if user_changed:
-            validate.name = user_changed
-
         user = user_changed or username
         host = host_changed or hostname
+
+        validate = guest_models.MySQLUser(name=user, host=host)
+        validate.check_reserved()
+
         userhost = "%s@%s" % (user, host)
         if user_changed or host_changed:
             existing_users, _nadda = Users.load_with_client(
@@ -194,8 +190,8 @@ class Users(object):
             include_marker=include_marker)
         model_users = []
         for user in user_list:
-            mysql_user = guest_models.MySQLUser()
-            mysql_user.deserialize(user)
+            mysql_user = guest_models.MySQLUser.deserialize(user,
+                                                            verify=False)
             if mysql_user.name in cfg.get_ignored_users():
                 continue
             # TODO(hub-cap): databases are not being returned in the
@@ -257,8 +253,8 @@ class Schemas(object):
             include_marker=include_marker)
         model_schemas = []
         for schema in schemas:
-            mysql_schema = guest_models.MySQLDatabase()
-            mysql_schema.deserialize(schema)
+            mysql_schema = guest_models.MySQLSchema.deserialize(schema,
+                                                                verify=False)
             if mysql_schema.name in cfg.get_ignored_dbs():
                 continue
             model_schemas.append(Schema(mysql_schema.name,

@@ -19,6 +19,7 @@ import os
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as trove_instance
@@ -29,7 +30,6 @@ from trove.guestagent.datastore.experimental.postgresql.service import (
     PgSqlAdmin)
 from trove.guestagent.datastore.experimental.postgresql.service import PgSqlApp
 from trove.guestagent.datastore import manager
-from trove.guestagent.db import models
 from trove.guestagent import guest_log
 from trove.guestagent import volume
 

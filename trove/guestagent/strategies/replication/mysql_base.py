@@ -21,11 +21,11 @@ from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
+from trove.common.db.mysql import models
 from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.datastore.mysql.service import MySqlAdmin
-from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
 
@@ -65,14 +65,20 @@ class MysqlReplicationBase(base.Replication):
         replication_user = None
         replication_password = utils.generate_random_password(16)
 
-        mysql_user = models.MySQLUser()
-        mysql_user.password = replication_password
+        mysql_user = None  # cache the model as we just want name validation
 
         retry_count = 0
 
         while replication_user is None:
             try:
-                mysql_user.name = 'slave_' + str(uuid.uuid4())[:8]
+                name = 'slave_' + str(uuid.uuid4())[:8]
+                if mysql_user:
+                    mysql_user.name = name
+                else:
+                    mysql_user = models.MySQLUser(
+                        name=name, password=replication_password
+                    )
+                    mysql_user.check_create()
                 MySqlAdmin().create_user([mysql_user.serialize()])
                 LOG.debug("Trying to create replication user " +
                           mysql_user.name)

@@ -19,6 +19,7 @@ from oslo_log import log as logging
 from oslo_utils import encodeutils
 
 from trove.common import cfg
+from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
@@ -30,7 +31,6 @@ from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.db2 import system
 from trove.guestagent.datastore import service
-from trove.guestagent.db import models
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
@@ -346,8 +346,8 @@ class DB2Admin(object):
         db_create_failed = []
         LOG.debug("Creating DB2 databases.")
         for item in databases:
-            mydb = models.ValidatedMySQLDatabase()
-            mydb.deserialize(item)
+            mydb = models.DatastoreSchema.deserialize(item)
+            mydb.check_create()
             dbName = mydb.name
             LOG.debug("Creating DB2 database: %s." % dbName)
             try:
@@ -385,8 +385,8 @@ class DB2Admin(object):
         """Delete the specified database."""
         dbName = None
         try:
-            mydb = models.ValidatedMySQLDatabase()
-            mydb.deserialize(database)
+            mydb = models.DatastoreSchema.deserialize(database)
+            mydb.check_delete()
             dbName = mydb.name
             LOG.debug("Deleting DB2 database: %s." % dbName)
             run_command(system.DELETE_DB_COMMAND % {'dbname': dbName})
@@ -423,11 +423,8 @@ class DB2Admin(object):
                 while item:
                     count = count + 1
                     if (limit and count <= limit) or limit is None:
-                        db2_db = models.MySQLDatabase()
-                        db2_db.name = item
+                        db2_db = models.DatastoreSchema(name=item)
                         LOG.debug("database = %s ." % item)
-                        db2_db.character_set = None
-                        db2_db.collate = None
                         next_marker = db2_db.name
                         databases.append(db2_db.serialize())
                         item = next(result)
@@ -448,8 +445,8 @@ class DB2Admin(object):
         LOG.debug("Creating user(s) for accessing DB2 database(s).")
         try:
             for item in users:
-                user = models.MySQLUser()
-                user.deserialize(item)
+                user = models.DatastoreUser.deserialize(item)
+                user.check_create()
                 try:
                     LOG.debug("Creating OS user: %s." % user.name)
                     utils.execute_with_timeout(
@@ -461,8 +458,7 @@ class DB2Admin(object):
                     continue
 
                 for database in user.databases:
-                    mydb = models.ValidatedMySQLDatabase()
-                    mydb.deserialize(database)
+                    mydb = models.DatastoreSchema.deserialize(database)
                     try:
                         LOG.debug("Granting user: %s access to database: %s."
                                   % (user.name, mydb.name))
@@ -481,8 +477,8 @@ class DB2Admin(object):
 
     def delete_user(self, user):
         LOG.debug("Delete a given user.")
-        db2_user = models.MySQLUser()
-        db2_user.deserialize(user)
+        db2_user = models.DatastoreUser.deserialize(user)
+        db2_user.check_delete()
         userName = db2_user.name
         user_dbs = db2_user.databases
         LOG.debug("For user %s, databases to be deleted = %r." % (
@@ -495,8 +491,7 @@ class DB2Admin(object):
 
         LOG.debug("databases for user = %r." % databases)
         for database in databases:
-            mydb = models.ValidatedMySQLDatabase()
-            mydb.deserialize(database)
+            mydb = models.DatastoreSchema.deserialize(database)
             try:
                 run_command(system.REVOKE_USER_ACCESS % {
                     'dbname': mydb.name,
@@ -526,8 +521,7 @@ class DB2Admin(object):
 
         databases, marker = self.list_databases()
         for database in databases:
-            db2_db = models.MySQLDatabase()
-            db2_db.deserialize(database)
+            db2_db = models.DatastoreSchema.deserialize(database)
             out = None
             try:
                 out, err = run_command(
@@ -562,8 +556,6 @@ class DB2Admin(object):
 
             try:
                 item = next(result)
-                db2db = models.MySQLDatabase()
-                db2db.name = db2_db.name
 
                 while item:
                     '''
@@ -572,7 +564,7 @@ class DB2Admin(object):
                     '''
                     if item in user_map:
                         db2user = user_map.get(item)
-                        db2user.databases.append(db2db.serialize())
+                        db2user.databases = db2_db.name
                         item = next(result)
                         continue
                     '''
@@ -581,9 +573,8 @@ class DB2Admin(object):
                     '''
                     count = count + 1
                     if (limit and count <= limit) or limit is None:
-                        db2_user = models.MySQLUser()
-                        db2_user.name = item
-                        db2_user.databases.append(db2db.serialize())
+                        db2_user = models.DatastoreUser(name=item,
+                                                        databases=db2_db.name)
                         users.append(db2_user.serialize())
                         user_map.update({item: db2_user})
                         item = next(result)
@@ -606,13 +597,11 @@ class DB2Admin(object):
 
     def _get_user(self, username, hostname):
         LOG.debug("Get details of a given database user %s." % username)
-        user = models.MySQLUser()
-        user.name = username
+        user = models.DatastoreUser(name=username)
         databases, marker = self.list_databases()
         out = None
         for database in databases:
-            db2_db = models.MySQLDatabase()
-            db2_db.deserialize(database)
+            db2_db = models.DatastoreSchema.deserialize(database)
             try:
                 out, err = run_command(
                     system.LIST_DB_USERS % {'dbname': db2_db.name})

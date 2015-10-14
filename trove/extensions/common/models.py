@@ -15,11 +15,11 @@
 
 from oslo_log import log as logging
 
+from trove.common.db import models as guest_models
 from trove.common import exception
 from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.db import get_db_api
-from trove.guestagent.db import models as guest_models
 from trove.instance import models as base_models
 
 
@@ -64,8 +64,9 @@ class Root(object):
         else:
             root = create_guest_client(context, instance_id).enable_root()
 
-        root_user = guest_models.RootUser()
-        root_user.deserialize(root)
+        root_user = guest_models.DatastoreUser.deserialize(root,
+                                                           verify=False)
+        root_user.make_root()
 
         # if cluster_instances_list none, then root create is called for
         # single instance, adding an RootHistory entry for the instance_id

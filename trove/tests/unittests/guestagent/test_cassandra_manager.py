@@ -26,6 +26,7 @@ from mock import patch
 from oslo_utils import netutils
 from testtools import ExpectedException
 
+from trove.common.db.cassandra import models
 from trove.common import exception
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import backup
@@ -35,7 +36,6 @@ from trove.guestagent.datastore.experimental.cassandra import (
     manager as cass_manager)
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
-from trove.guestagent.db import models
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
 from trove.tests.unittests.guestagent.test_datastore_manager import \
@@ -52,7 +52,7 @@ class GuestAgentCassandraDBManagerTest(DatastoreManagerTest):
     __N_BU = '_build_user'
     __N_RU = '_rename_user'
     __N_AUP = '_alter_user_password'
-    __N_CAU = 'trove.guestagent.db.models.CassandraUser'
+    __N_CAU = 'trove.common.db.cassandra.models.CassandraUser'
     __N_CU = '_create_user'
     __N_GFA = '_grant_full_access_on_keyspace'
     __N_DU = '_drop_user'

@@ -32,6 +32,7 @@ import sqlalchemy
 
 from trove.common import cfg
 from trove.common import context as trove_context
+from trove.common.db.mysql import models as mysql_models
 from trove.common.exception import BadRequest
 from trove.common.exception import GuestError
 from trove.common.exception import PollTimeOut
@@ -77,7 +78,6 @@ from trove.guestagent.datastore.mysql.service import MySqlRootAccess
 import trove.guestagent.datastore.mysql_common.service as mysql_common_service
 import trove.guestagent.datastore.service as base_datastore_service
 from trove.guestagent.datastore.service import BaseDbStatus
-from trove.guestagent.db import models
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent import pkg
@@ -414,7 +414,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
         local_client_patcher.start()
 
         self.orig_MySQLUser_is_valid_user_name = (
-            models.MySQLUser._is_valid_user_name)
+            mysql_models.MySQLUser._is_valid_user_name)
         dbaas.get_engine = MagicMock(name='get_engine')
 
         # trove.guestagent.common.configuration import ConfigurationManager
@@ -430,7 +430,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
 
     def tearDown(self):
         dbaas.get_engine = self.orig_get_engine
-        models.MySQLUser._is_valid_user_name = (
+        mysql_models.MySQLUser._is_valid_user_name = (
             self.orig_MySQLUser_is_valid_user_name)
         dbaas.MySqlApp.configuration_manager = \
             dbaas.orig_configuration_manager
@@ -1515,7 +1515,6 @@ class TextClauseMatcher(object):
         return "TextClause(%s)" % self.text
 
     def __eq__(self, arg):
-        print("Matching %s" % arg.text)
         return self.text in arg.text
 
 
@@ -3398,7 +3397,8 @@ class DB2AdminTest(trove_testtools.TestCase):
 
     def test_delete_users_without_db(self):
         FAKE_USER.append(
-            {"_name": "random2", "_password": "guesswhat", "_databases": []})
+            {"_name": "random2", "_password": "guesswhat", "_host": '%',
+             "_databases": []})
         with patch.object(db2service, 'run_command',
                           MagicMock(return_value=None)):
             with patch.object(db2service.DB2Admin, 'list_access',
@@ -3418,6 +3418,7 @@ class DB2AdminTest(trove_testtools.TestCase):
                     expected, args[0],
                     "Revoke database access queries are not the same")
                 self.assertEqual(1, db2service.run_command.call_count)
+        FAKE_USER.pop()
 
     def test_list_users(self):
         databases = []

@@ -15,12 +15,12 @@
 import mock
 import pymongo
 
+import trove.common.db.mongodb.models as models
 import trove.common.utils as utils
 import trove.guestagent.backup as backup
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 import trove.guestagent.datastore.experimental.mongodb.manager as manager
 import trove.guestagent.datastore.experimental.mongodb.service as service
-import trove.guestagent.db.models as models
 import trove.guestagent.volume as volume
 from trove.tests.unittests.guestagent.test_datastore_manager import \
     DatastoreManagerTest
@@ -46,6 +46,17 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
         self.pymongo_patch.start()
 
         self.mount_point = '/var/lib/mongodb'
+        self.host_wildcard = '%'  # This is used in the test_*_user tests below
+        self.serialized_user = {
+            '_name': 'testdb.testuser', '_password': None,
+            '_roles': [{'db': 'testdb', 'role': 'testrole'}],
+            '_username': 'testuser', '_databases': [],
+            '_host': self.host_wildcard,
+            '_database': {'_name': 'testdb',
+                          '_character_set': None,
+                          '_collate': None},
+            '_is_root': False
+        }
 
     def tearDown(self):
         super(GuestAgentMongoDBManagerTest, self).tearDown()
@@ -152,21 +163,12 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
 
         mocked_enable_root.assert_called_with('test_password')
 
-    # This is used in the test_*_user tests below
-    _serialized_user = {'_name': 'testdb.testuser', '_password': None,
-                        '_roles': [{'db': 'testdb', 'role': 'testrole'}],
-                        '_username': 'testuser', '_databases': [],
-                        '_host': None,
-                        '_database': {'_name': 'testdb',
-                                      '_character_set': None,
-                                      '_collate': None}}
-
     @mock.patch.object(service, 'MongoDBClient')
     @mock.patch.object(service.MongoDBAdmin, '_admin_user')
     @mock.patch.object(service.MongoDBAdmin, '_get_user_record')
     def test_create_user(self, mocked_get_user, mocked_admin_user,
                          mocked_client):
-        user = self._serialized_user.copy()
+        user = self.serialized_user.copy()
         user['_password'] = 'testpassword'
         users = [user]
 
@@ -184,7 +186,7 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
     def test_delete_user(self, mocked_admin_user, mocked_client):
         client = mocked_client().__enter__()['testdb']
 
-        self.manager.delete_user(self.context, self._serialized_user)
+        self.manager.delete_user(self.context, self.serialized_user)
 
         client.remove_user.assert_called_with('testuser')
 
@@ -202,20 +204,20 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
         result = self.manager.get_user(self.context, 'testdb.testuser', None)
 
         mocked_find.assert_called_with({'user': 'testuser', 'db': 'testdb'})
-        self.assertEqual(self._serialized_user, result)
+        self.assertEqual(self.serialized_user, result)
 
     @mock.patch.object(service, 'MongoDBClient')
     @mock.patch.object(service.MongoDBAdmin, '_admin_user')
     def test_list_users(self, mocked_admin_user, mocked_client):
         # roles are NOT returned by list_users
-        user1 = self._serialized_user.copy()
-        user2 = self._serialized_user.copy()
+        user1 = self.serialized_user.copy()
+        user2 = self.serialized_user.copy()
         user2['_name'] = 'testdb.otheruser'
         user2['_username'] = 'otheruser'
         user2['_roles'] = [{'db': 'testdb2', 'role': 'readWrite'}]
         user2['_databases'] = [{'_name': 'testdb2',
-                                         '_character_set': None,
-                                         '_collate': None}]
+                                '_character_set': None,
+                                '_collate': None}]
 
         mocked_find = mock.MagicMock(return_value=[
             {
@@ -256,7 +258,8 @@ class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
                      '_password': 'password',
                      '_roles': [{'db': 'admin', 'role': 'root'}],
                      '_databases': [],
-                     '_host': None}
+                     '_host': self.host_wildcard,
+                     '_is_root': True}
 
         result = self.manager.enable_root(self.context)
 

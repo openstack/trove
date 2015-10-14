@@ -1,4 +1,4 @@
-# Copyright 2015 Tesora Inc.
+# Copyright 2016 Tesora, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,16 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.common.db.cassandra import models as guest_models
-from trove.extensions.common.service import DefaultRootController
-from trove.extensions.mysql import models
+from trove.common.db import models
 
 
-class CassandraRootController(DefaultRootController):
+class CouchDBSchema(models.DatastoreSchema):
+    """Represents a CouchDB schema and its associated properties."""
 
-    def _find_root_user(self, context, instance_id):
-        user = guest_models.CassandraUser.root()
-        # TODO(pmalik): Using MySQL model until we have datastore specific
-        # extensions (bug/1498573).
-        return models.User.load(
-            context, instance_id, user.name, user.host, root_user=True)
+    @property
+    def _max_schema_name_length(self):
+        return 32
+
+
+class CouchDBUser(models.DatastoreUser):
+    """Represents a CouchDB user and its associated properties."""
+
+    @property
+    def schema_model(self):
+        return CouchDBSchema

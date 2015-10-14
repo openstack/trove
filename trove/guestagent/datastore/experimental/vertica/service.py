@@ -20,6 +20,7 @@ from oslo_utils import netutils
 from six.moves import configparser
 
 from trove.common import cfg
+from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.i18n import _LI
@@ -33,7 +34,6 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.vertica import system
 from trove.guestagent.datastore import service
-from trove.guestagent.db import models
 from trove.guestagent import pkg
 from trove.guestagent import volume
 
@@ -475,10 +475,7 @@ class VerticaApp(object):
     def enable_root(self, root_password=None):
         """Resets the root password."""
         LOG.info(_LI("Enabling root."))
-        user = models.RootUser()
-        user.name = "root"
-        user.host = "%"
-        user.password = root_password or utils.generate_random_password()
+        user = models.DatastoreUser.root(password=root_password)
         if not self.is_root_enabled():
             self._create_user(user.name, user.password, 'pseudosuperuser')
         else:

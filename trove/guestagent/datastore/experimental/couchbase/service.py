@@ -25,6 +25,7 @@ import pexpect
 import six
 
 from trove.common import cfg
+from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
@@ -32,7 +33,6 @@ from trove.common import utils as utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import system
 from trove.guestagent.datastore import service
-from trove.guestagent.db import models
 from trove.guestagent import pkg
 
 
@@ -210,10 +210,7 @@ class CouchbaseRootAccess(object):
 
     @classmethod
     def enable_root(cls, root_password=None):
-        user = models.RootUser()
-        user.name = "root"
-        user.host = "%"
-        user.password = root_password or utils.generate_random_password()
+        user = models.DatastoreUser.root(password=root_password)
 
         if root_password:
             CouchbaseRootAccess().write_password_to_file(root_password)

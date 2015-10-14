@@ -14,13 +14,13 @@
 # under the License.
 
 from oslo_log import log as logging
+from trove.common.db import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.db2 import service
 from trove.guestagent.datastore.experimental.db2 import system
-from trove.guestagent.db import models
 from trove.guestagent.strategies.backup import base
 
 LOG = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class DB2Backup(base.BackupRunner):
         dbNames = []
         databases, marker = self.admin.list_databases()
         for database in databases:
-            mydb = models.MySQLDatabase()
+            mydb = models.DatastoreSchema()
             mydb.deserialize(database)
             dbNames.append(mydb.name)
         return dbNames

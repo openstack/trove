@@ -23,6 +23,7 @@ from oslo_log import log as logging
 import psycopg2
 
 from trove.common import cfg
+from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance
@@ -35,7 +36,6 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.postgresql import pgsql_query
 from trove.guestagent.datastore import service
-from trove.guestagent.db import models
 from trove.guestagent import pkg
 
 LOG = logging.getLogger(__name__)
@@ -505,7 +505,7 @@ class PgSqlApp(object):
         return user.serialize()
 
     def build_root_user(self, password=None):
-        return models.PostgreSQLRootUser(password=password)
+        return models.PostgreSQLUser.root(password=password)
 
     def pg_start_backup(self, backup_label):
         r = self.build_admin().query(
@@ -662,7 +662,7 @@ class PgSqlAdmin(object):
         for database in databases:
             self._create_database(
                 context,
-                models.PostgreSQLSchema.deserialize_schema(database))
+                models.PostgreSQLSchema.deserialize(database))
 
     def _create_database(self, context, database):
         """Create a database.
@@ -689,7 +689,7 @@ class PgSqlAdmin(object):
         """Delete the specified database.
         """
         self._drop_database(
-            models.PostgreSQLSchema.deserialize_schema(database))
+            models.PostgreSQLSchema.deserialize(database))
 
     def _drop_database(self, database):
         """Drop a given Postgres database.
@@ -736,7 +736,7 @@ class PgSqlAdmin(object):
         for user in users:
             self._create_user(
                 context,
-                models.PostgreSQLUser.deserialize_user(user), None)
+                models.PostgreSQLUser.deserialize(user), None)
 
     def _create_user(self, context, user, encrypt_password=None, *options):
         """Create a user and grant privileges for the specified databases.
@@ -775,7 +775,7 @@ class PgSqlAdmin(object):
         )
         self._grant_access(
             context, user.name,
-            [models.PostgreSQLSchema.deserialize_schema(db)
+            [models.PostgreSQLSchema.deserialize(db)
              for db in user.databases])
 
     def _create_admin_user(self, context, user, encrypt_password=None):
@@ -827,7 +827,7 @@ class PgSqlAdmin(object):
         """Delete the specified user.
         """
         self._drop_user(
-            context, models.PostgreSQLUser.deserialize_user(user))
+            context, models.PostgreSQLUser.deserialize(user))
 
     def _drop_user(self, context, user):
         """Drop a given Postgres user.
@@ -838,7 +838,7 @@ class PgSqlAdmin(object):
         # Postgresql requires that you revoke grants before dropping the user
         dbs = self.list_access(context, user.name, None)
         for d in dbs:
-            db = models.PostgreSQLSchema.deserialize_schema(d)
+            db = models.PostgreSQLSchema.deserialize(d)
             self.revoke_access(context, user.name, None, db.name)
 
         LOG.info(
@@ -888,7 +888,7 @@ class PgSqlAdmin(object):
         for user in users:
             self.alter_user(
                 context,
-                models.PostgreSQLUser.deserialize_user(user), None)
+                models.PostgreSQLUser.deserialize(user), None)
 
     def alter_user(self, context, user, encrypt_password=None, *options):
         """Change the password and options of an existing users.

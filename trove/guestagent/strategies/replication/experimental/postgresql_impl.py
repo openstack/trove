@@ -19,6 +19,7 @@ import os
 from oslo_log import log as logging
 from oslo_utils import netutils
 from trove.common import cfg
+from trove.common.db.postgresql import models
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import stream_codecs
@@ -26,7 +27,6 @@ from trove.common import utils
 from trove.guestagent.backup.backupagent import BackupAgent
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.guestagent.db import models
 from trove.guestagent.strategies import backup
 from trove.guestagent.strategies.replication import base
 
