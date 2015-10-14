@@ -54,10 +54,8 @@ class Configurations(object):
                 LOG.debug("No configurations found for tenant %s"
                           % context.tenant)
 
-        limit = int(context.limit or Configurations.DEFAULT_LIMIT)
-        if limit > Configurations.DEFAULT_LIMIT:
-            limit = Configurations.DEFAULT_LIMIT
-
+        limit = utils.pagination_limit(context.limit,
+                                       Configurations.DEFAULT_LIMIT)
         data_view = DBConfiguration.find_by_pagination('configurations',
                                                        db_info,
                                                        "foo",

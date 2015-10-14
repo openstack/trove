@@ -1172,9 +1172,7 @@ class Instances(object):
             db_infos = DBInstance.find_all(tenant_id=context.tenant,
                                            cluster_id=None,
                                            deleted=False)
-        limit = int(context.limit or Instances.DEFAULT_LIMIT)
-        if limit > Instances.DEFAULT_LIMIT:
-            limit = Instances.DEFAULT_LIMIT
+        limit = utils.pagination_limit(context.limit, Instances.DEFAULT_LIMIT)
         data_view = DBInstance.find_by_pagination('instances', db_infos, "foo",
                                                   limit=limit,
                                                   marker=context.marker)
