@@ -24,6 +24,84 @@ race conditions that would normally be present from testing multi-threaded
 scenarios. It also means that the simulated time.sleep does not actually have
 to sit around for the designated time, which greatly speeds up the time it
 takes to run the tests.
+
+Event Simulator Overview
+========================
+
+We use this to simulate all the threads of Trove running.
+i.e (api,taskmanager,probocsis tests) All the services end
+up sleeping and having to wait for something to happen at times.
+
+Monkey Patching Methods
+-----------------------
+We monkey patch a few method to make this happen.
+
+A few sleep methods with a fake_sleep.
+* time.sleep
+* eventlet.sleep
+* greenthread.sleep
+
+A few spawn methods with a fake_spawn
+* eventlet.spawn_after
+* eventlet.spawn_n
+
+Raise an error if you try this one.
+* eventlet.spawn
+
+Replace the poll_until with a fake_poll_until.
+
+Coroutine Object
+----------------
+
+There is a Coroutine object here that mimics the behavior of a thread.
+It takes in a function with args and kwargs and executes it. If at any
+point that method calls time.sleep(seconds) then the event simulator will
+put that method on the stack of threads and run the fake_sleep method
+that will then iterate over all the threads in the stack updating the time
+they still need to sleep. Then as the threads hit the end of their sleep
+time period they will continue to execute.
+
+fake_threads
+------------
+
+One thing to note here is the idea of a stack of threads being kept in
+fake_threads list. Any new thread created is added to this stack.
+
+A fake_thread attributes:
+
+fake_thread = {
+    'sleep': time_from_now_in_seconds,
+    'greenlet': Coroutine(method_to_execute),
+    'name': str(func)
+}
+
+'sleep' is the time it should wait to execute this method.
+'greenlet' is the thread object
+'name' is the unique name of the thread to track
+
+main_loop Method
+----------------
+
+The main_loop method is a loop that runs forever waiting on all the
+threads to complete while running pulse every 0.1 seconds. This is the
+key to simulated the threads quickly. We are pulsing every 0.1
+seconds looking to make sure there are no threads just waiting around for
+no reason rather than waiting a full second to respond.
+
+pulse Method
+------------
+
+The pulse method is going through the stack(list) of threads looking for
+the the next thread to execute while updating the 'sleep' time and the if
+the 'sleep' time is <=0 then it will run this thread until it calls for
+another time.sleep.
+
+If the method/thread running calls time.sleep for what ever reason then
+the thread's 'sleep' parameter is updated to the new 'next_sleep_time'.
+
+If the method/thread running completes without calling time.sleep because it
+finished all work needed to be done then there the 'next_sleep_time' is set
+to None and the method/thread is deleted from the stack(list) of threads.
 """
 import eventlet
 from eventlet.event import Event
@@ -103,15 +181,14 @@ class Coroutine(object):
         self.my_sem.release()
         self.caller_sem.acquire()  # Wait for it to finish.
 
-
-sleep_entrance_count = 0
-
+# Main global thread to run.
 main_greenlet = None
 
-
+# Stack of threads currently running or sleeping
 fake_threads = []
 
-
+# Allow a sleep method to be called at least this number of times before
+# raising an error that there are not other active threads waiting to run.
 allowable_empty_sleeps = 1
 sleep_allowance = allowable_empty_sleeps
 
