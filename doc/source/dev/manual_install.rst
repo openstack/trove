@@ -56,7 +56,7 @@ The following information about the existing environment is required:
     - Cinder URL
     - Swift URL
     - Heat URL
-    - AMPQ connection credentials (server URL, user, password)
+    - AMQP connection credentials (server URL, user, password)
     - Trove's controller backend connection string (MySQL, SQLite, PostgreSQL)
 
 --------------------
