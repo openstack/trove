@@ -88,12 +88,6 @@ class UserActionsGroup(TestGroup):
 
     @test(depends_on=[create_users],
           runs_after=[create_existing_user])
-    def update_user_with_no_attributes(self):
-        """Ensure updating a user with blank specification fails."""
-        self.test_runner.run_user_update_with_no_attributes()
-
-    @test(depends_on=[create_users],
-          runs_after=[update_user_with_no_attributes])
     def update_user_with_blank_name(self):
         """Ensure updating a user with blank name fails."""
         self.test_runner.run_user_update_with_blank_name()

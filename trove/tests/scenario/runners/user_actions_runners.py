@@ -17,7 +17,6 @@ import urllib
 
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
-from troveclient.openstack.common.apiclient.exceptions import ValidationError
 
 
 class UserActionsRunner(TestRunner):
@@ -174,12 +173,6 @@ class UserActionsRunner(TestRunner):
         self.assert_raises(
             expected_exception, expected_http_code,
             self.auth_client.users.create, instance_id, serial_users_def)
-
-    def run_user_update_with_no_attributes(self):
-        # Note: this is caught on the client-side.
-        self.assert_user_attribute_update_failure(
-            self.instance_info.id, self.user_defs[0],
-            {}, ValidationError, None)
 
     def run_user_update_with_blank_name(
             self, expected_exception=exceptions.BadRequest,
