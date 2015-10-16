@@ -30,12 +30,14 @@ from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common import pagination
 from trove.common.stream_codecs import IniCodec
+from trove.common.stream_codecs import PropertiesCodec
 from trove.common.stream_codecs import SafeYamlCodec
 from trove.common import utils
 from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import OneFileOverrideStrategy
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
 from trove.guestagent import pkg
@@ -59,6 +61,13 @@ class CassandraApp(object):
     _CONF_DIR_MODS = stat.S_IRWXU
     _CONF_FILE_MODS = stat.S_IRUSR
 
+    CASSANDRA_CONF_FILE = "cassandra.yaml"
+    CASSANDRA_TOPOLOGY_FILE = 'cassandra-rackdc.properties'
+
+    _TOPOLOGY_CODEC = PropertiesCodec(
+        delimiter='=', unpack_singletons=True, string_mappings={
+            'true': True, 'false': False})
+
     CASSANDRA_KILL_CMD = "sudo killall java  || true"
 
     def __init__(self):
@@ -79,15 +88,22 @@ class CassandraApp(object):
         return ['cassandra']
 
     @property
-    def cassandra_conf(self):
+    def cassandra_conf_dir(self):
         return {
-            operating_system.REDHAT:
-                "/etc/cassandra/default.conf/cassandra.yaml",
-            operating_system.DEBIAN:
-                "/etc/cassandra/cassandra.yaml",
-            operating_system.SUSE:
-                "/etc/cassandra/default.conf/cassandra.yaml"
+            operating_system.REDHAT: "/etc/cassandra/default.conf/",
+            operating_system.DEBIAN: "/etc/cassandra/",
+            operating_system.SUSE: "/etc/cassandra/default.conf/"
         }[operating_system.get_os()]
+
+    @property
+    def cassandra_conf(self):
+        return guestagent_utils.build_file_path(self.cassandra_conf_dir,
+                                                self.CASSANDRA_CONF_FILE)
+
+    @property
+    def cassandra_topology(self):
+        return guestagent_utils.build_file_path(self.cassandra_conf_dir,
+                                                self.CASSANDRA_TOPOLOGY_FILE)
 
     @property
     def cassandra_owner(self):
@@ -248,7 +264,10 @@ class CassandraApp(object):
         finally:
             self.stop_db()  # Always restore the initial state of the service.
 
-    def secure(self, update_user=None):
+    def cluster_secure(self, password):
+        return self.secure(password=password).serialize()
+
+    def secure(self, update_user=None, password=None):
         """Configure the Trove administrative user.
         Update an existing user if given.
         Create a new one using the default database credentials
@@ -256,28 +275,38 @@ class CassandraApp(object):
         """
         LOG.info(_('Configuring Trove superuser.'))
 
-        current_superuser = update_user or models.CassandraUser(
-            self.default_superuser_name,
-            self.default_superuser_password)
+        if password is None:
+            password = utils.generate_random_password()
+
+        admin_username = update_user.name if update_user else self._ADMIN_USER
+        os_admin = models.CassandraUser(admin_username, password)
 
         if update_user:
-            os_admin = models.CassandraUser(update_user.name,
-                                            utils.generate_random_password())
-            CassandraAdmin(current_superuser).alter_user_password(os_admin)
+            CassandraAdmin(update_user).alter_user_password(os_admin)
         else:
-            os_admin = models.CassandraUser(self._ADMIN_USER,
-                                            utils.generate_random_password())
-            CassandraAdmin(current_superuser)._create_superuser(os_admin)
-            CassandraAdmin(os_admin).drop_user(current_superuser)
+            cassandra = models.CassandraUser(
+                self.default_superuser_name, self.default_superuser_password)
+            CassandraAdmin(cassandra)._create_superuser(os_admin)
+            CassandraAdmin(os_admin).drop_user(cassandra)
 
-        self.__create_cqlsh_config({self._CONF_AUTH_SEC:
-                                    {self._CONF_USR_KEY: os_admin.name,
-                                     self._CONF_PWD_KEY: os_admin.password}})
-
-        # Update the internal status with the new user.
-        self.status = CassandraAppStatus(os_admin)
+        self._update_admin_credentials(os_admin)
 
         return os_admin
+
+    def _update_admin_credentials(self, user):
+        self.__create_cqlsh_config({self._CONF_AUTH_SEC:
+                                    {self._CONF_USR_KEY: user.name,
+                                     self._CONF_PWD_KEY: user.password}})
+
+        # Update the internal status with the new user.
+        self.status = CassandraAppStatus(user)
+
+    def store_admin_credentials(self, admin_credentials):
+        user = models.CassandraUser.deserialize_user(admin_credentials)
+        self._update_admin_credentials(user)
+
+    def get_admin_credentials(self):
+        return self.get_current_superuser().serialize()
 
     def _reset_admin_password(self):
         """
@@ -424,6 +453,14 @@ class CassandraApp(object):
             {'data_file_directories': [self.cassandra_data_dir]})
         self._make_host_reachable()
         self._update_cluster_name_property(cluster_name or CONF.guest_id)
+        # A single-node instance may use the SimpleSnitch
+        # (keyspaces use SimpleStrategy).
+        # A network-aware snitch has to be used otherwise.
+        if cluster_name is None:
+            updates = {'endpoint_snitch': 'SimpleSnitch'}
+        else:
+            updates = {'endpoint_snitch': 'GossipingPropertyFileSnitch'}
+        self.configuration_manager.apply_system_override(updates)
 
     def _make_host_reachable(self):
         """
@@ -498,6 +535,21 @@ class CassandraApp(object):
     def remove_overrides(self):
         self.configuration_manager.remove_user_override()
 
+    def write_cluster_topology(self, data_center, rack, prefer_local=True):
+        LOG.info(_('Saving Cassandra cluster topology configuration.'))
+
+        config = {'dc': data_center,
+                  'rack': rack,
+                  'prefer_local': prefer_local}
+
+        operating_system.write_file(self.cassandra_topology, config,
+                                    codec=self._TOPOLOGY_CODEC, as_root=True)
+        operating_system.chown(
+            self.cassandra_topology,
+            self.cassandra_owner, self.cassandra_owner, as_root=True)
+        operating_system.chmod(
+            self.cassandra_topology, FileMode.ADD_READ_ALL, as_root=True)
+
     def start_db_with_conf_changes(self, config_contents):
         LOG.debug("Starting database with configuration changes.")
         if self.status.is_running:
@@ -517,6 +569,106 @@ class CassandraApp(object):
     def _get_cqlsh_conf_path(self):
         return os.path.expanduser(self.cqlsh_conf_path)
 
+    def get_data_center(self):
+        config = operating_system.read_file(self.cassandra_topology,
+                                            codec=self._TOPOLOGY_CODEC)
+        return config['dc']
+
+    def get_rack(self):
+        config = operating_system.read_file(self.cassandra_topology,
+                                            codec=self._TOPOLOGY_CODEC)
+        return config['rack']
+
+    def set_seeds(self, seeds):
+        LOG.debug("Setting seed nodes: %s" % seeds)
+        updates = {
+            'seed_provider': {'parameters':
+                              [{'seeds': ','.join(seeds)}]
+                              }
+        }
+
+        self.configuration_manager.apply_system_override(updates)
+
+    def get_seeds(self):
+        """Return a list of seed node IPs if any.
+
+        The seed IPs are stored as a comma-separated string in the
+        seed-provider parameters:
+        [{'class_name': '<name>', 'parameters': [{'seeds': '<ip>,<ip>'}, ...]}]
+        """
+
+        def find_first(key, dict_list):
+            for item in dict_list:
+                if key in item:
+                    return item[key]
+            return []
+
+        sp_property = self.configuration_manager.get_value('seed_provider', [])
+        seeds_str = find_first('seeds', find_first('parameters', sp_property))
+        return seeds_str.split(',') if seeds_str else []
+
+    def set_auto_bootstrap(self, enabled):
+        """Auto-bootstrap makes new (non-seed) nodes automatically migrate the
+        right data to themselves.
+        The feature has to be turned OFF when initializing a fresh cluster
+        without data.
+        It must be turned back ON once the cluster is initialized.
+        """
+        LOG.debug("Setting auto-bootstrapping: %s" % enabled)
+        updates = {'auto_bootstrap': enabled}
+        self.configuration_manager.apply_system_override(updates)
+
+    def node_cleanup_begin(self):
+        """Suspend periodic status updates and mark the instance busy
+        throughout the operation.
+        """
+        self.status.begin_restart()
+        self.status.set_status(rd_instance.ServiceStatuses.BLOCKED)
+
+    def node_cleanup(self):
+        """Cassandra does not automatically remove data from nodes that
+        lose part of their partition range to a newly added node.
+        Cleans up keyspaces and partition keys no longer belonging to the node.
+
+        Do not treat cleanup failures as fatal. Resume the heartbeat after
+        finishing and let it signal the true state of the instance to the
+        caller.
+        """
+        LOG.debug("Running node cleanup.")
+        # nodetool -h <HOST> -p <PORT> -u <USER> -pw <PASSWORD> cleanup
+        try:
+            self._run_nodetool_command('cleanup')
+            self.status.set_status(rd_instance.ServiceStatuses.RUNNING)
+        except Exception:
+            LOG.exception(_("The node failed to complete its cleanup."))
+        finally:
+            self.status.end_restart()
+
+    def node_decommission(self):
+        """Causes a live node to decommission itself,
+        streaming its data to the next node on the ring.
+
+        Shutdown the database after successfully finishing the operation,
+        or leave the node in a failed state otherwise.
+
+        Suspend periodic status updates, so that the caller can poll for the
+        database shutdown.
+        """
+        LOG.debug("Decommissioning the node.")
+        # nodetool -h <HOST> -p <PORT> -u <USER> -pw <PASSWORD> decommission
+        self.status.begin_restart()
+        try:
+            self._run_nodetool_command('decommission')
+        except Exception:
+            LOG.exception(_("The node failed to decommission itself."))
+            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            return
+
+        try:
+            self.stop_db(update_db=True, do_not_start_on_reboot=True)
+        finally:
+            self.status.end_restart()
+
     def flush_tables(self, keyspace, *tables):
         """Flushes one or more tables from the memtable.
         """
@@ -528,11 +680,8 @@ class CassandraApp(object):
     def _run_nodetool_command(self, cmd, *args, **kwargs):
         """Execute a nodetool command on this node.
         """
-        cassandra = self.get_current_superuser()
-        return utils.execute('nodetool',
-                             '-h', 'localhost',
-                             '-u', cassandra.name,
-                             '-pw', cassandra.password, cmd, *args, **kwargs)
+        return utils.execute('nodetool', '-h', 'localhost',
+                             cmd, *args, **kwargs)
 
     def enable_root(self, root_password=None):
         """Cassandra's 'root' user is called 'cassandra'.
