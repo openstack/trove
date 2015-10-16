@@ -165,7 +165,7 @@ api_paste_config = api-paste.ini
 # notification_driver=noop
 
 # Topics used for OpenStack notifications, list value. Default is 'notifications'.
-# notification_topics=['notifications', ]
+# notification_topics=notifications
 
 # ============ Logging information =============================
 #log_dir = /integration/report
