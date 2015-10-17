@@ -170,7 +170,9 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
     @patch.object(VerticaAppStatus, 'set_status')
     @patch.object(VerticaApp, 'install_cluster',
                   side_effect=RuntimeError("Boom!"))
-    def test_install_cluster_failure(self, mock_install, mock_set_status):
+    @patch('trove.guestagent.datastore.experimental.vertica.manager.LOG')
+    def test_install_cluster_failure(self, mock_logging,
+                                     mock_install, mock_set_status):
         members = ["test1", "test2"]
         self.assertRaises(RuntimeError, self.manager.install_cluster,
                           self.context, members)
@@ -214,7 +216,9 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.assertTrue(output)
 
     @patch.object(VerticaAppStatus, 'set_status')
-    def test_prepare_invalid_cluster_config(self, mock_set_status):
+    @patch('trove.guestagent.datastore.manager.LOG')
+    def test_prepare_invalid_cluster_config(self, mock_logging,
+                                            mock_set_status):
         self.assertRaises(RuntimeError,
                           self._prepare_method,
                           "test-instance-3", "query_router")

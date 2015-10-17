@@ -92,12 +92,14 @@ class ApiTest(trove_testtools.TestCase):
         self._verify_rpc_prepare_before_cast()
         self._verify_cast('create_user', users='test_user')
 
-    def test_api_cast_exception(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_cast_exception(self, mock_logging):
         self.call_context.cast.side_effect = IOError('host down')
         self.assertRaises(exception.GuestError, self.api.create_user,
                           'test_user')
 
-    def test_api_call_exception(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_call_exception(self, mock_logging):
         self.call_context.call.side_effect = IOError('host_down')
         self.assertRaises(exception.GuestError, self.api.list_users)
 
@@ -105,12 +107,14 @@ class ApiTest(trove_testtools.TestCase):
         self.call_context.call.side_effect = Timeout()
         self.assertRaises(exception.GuestTimeout, self.api.restart)
 
-    def test_api_cast_remote_error(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_cast_remote_error(self, mock_logging):
         self.call_context.cast.side_effect = RemoteError('Error')
         self.assertRaises(exception.GuestError, self.api.delete_database,
                           'test_db')
 
-    def test_api_call_remote_error(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_call_remote_error(self, mock_logging):
         self.call_context.call.side_effect = RemoteError('Error')
         self.assertRaises(exception.GuestError, self.api.stop_db)
 

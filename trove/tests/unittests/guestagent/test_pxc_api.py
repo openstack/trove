@@ -49,12 +49,14 @@ class ApiTest(trove_testtools.TestCase):
         self.assertEqual('guestagent.instance-id-x23d2d',
                          self.api._get_routing_key())
 
-    def test_api_cast_exception(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_cast_exception(self, mock_logging):
         self.call_context.cast.side_effect = IOError('host down')
         self.assertRaises(exception.GuestError, self.api.create_user,
                           'test_user')
 
-    def test_api_call_exception(self):
+    @mock.patch('trove.guestagent.api.LOG')
+    def test_api_call_exception(self, mock_logging):
         self.call_context.call.side_effect = IOError('host_down')
         self.assertRaises(exception.GuestError, self.api.list_users)
 

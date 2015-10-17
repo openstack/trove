@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from trove.backup import models as bkup_models
 from trove.backup import state
 from trove.common import exception as t_exception
@@ -74,7 +76,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
         self.assertRaises(t_exception.ModelNotFoundError,
                           self.cond_mgr.heartbeat, None, new_id, {})
 
-    def test_heartbeat_instance_no_changes(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_heartbeat_instance_no_changes(self, mock_logging):
         iss_id = self._create_iss()
         old_iss = self._get_iss(iss_id)
         self.cond_mgr.heartbeat(None, self.instance_id, {})
@@ -83,7 +86,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
         self.assertEqual(old_iss.status_description,
                          new_iss.status_description)
 
-    def test_heartbeat_instance_status_bogus_change(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_heartbeat_instance_status_bogus_change(self, mock_logging):
         iss_id = self._create_iss()
         old_iss = self._get_iss(iss_id)
         new_status = 'potato salad'
@@ -97,7 +101,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
         self.assertEqual(old_iss.status_description,
                          new_iss.status_description)
 
-    def test_heartbeat_instance_status_changed(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_heartbeat_instance_status_changed(self, mock_logging):
         iss_id = self._create_iss()
         payload = {'service_status': ServiceStatuses.BUILDING.description}
         self.cond_mgr.heartbeat(None, self.instance_id, payload)
@@ -112,7 +117,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
                           self.cond_mgr.update_backup,
                           None, self.instance_id, new_bkup_id)
 
-    def test_backup_instance_id_nomatch(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_backup_instance_id_nomatch(self, mock_logging):
         new_iid = utils.generate_uuid()
         bkup_id = self._create_backup('nomatch')
         old_name = self._get_backup(bkup_id).name
@@ -121,14 +127,16 @@ class ConductorMethodTests(trove_testtools.TestCase):
         bkup = self._get_backup(bkup_id)
         self.assertEqual(old_name, bkup.name)
 
-    def test_backup_bogus_fields_not_changed(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_backup_bogus_fields_not_changed(self, mock_logging):
         bkup_id = self._create_backup('bogus')
         self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
                                     not_a_valid_field="INVALID")
         bkup = self._get_backup(bkup_id)
         self.assertFalse(hasattr(bkup, 'not_a_valid_field'))
 
-    def test_backup_real_fields_changed(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_backup_real_fields_changed(self, mock_logging):
         bkup_id = self._create_backup('realrenamed')
         new_name = "recently renamed"
         self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
@@ -137,8 +145,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
         self.assertEqual(new_name, bkup.name)
 
     # --- Tests for discarding old messages ---
-
-    def test_heartbeat_newer_timestamp_accepted(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_heartbeat_newer_timestamp_accepted(self, mock_logging):
         new_p = {'service_status': ServiceStatuses.NEW.description}
         build_p = {'service_status': ServiceStatuses.BUILDING.description}
         iss_id = self._create_iss()
@@ -150,7 +158,8 @@ class ConductorMethodTests(trove_testtools.TestCase):
         iss = self._get_iss(iss_id)
         self.assertEqual(ServiceStatuses.BUILDING, iss.status)
 
-    def test_heartbeat_older_timestamp_discarded(self):
+    @patch('trove.conductor.manager.LOG')
+    def test_heartbeat_older_timestamp_discarded(self, mock_logging):
         new_p = {'service_status': ServiceStatuses.NEW.description}
         build_p = {'service_status': ServiceStatuses.BUILDING.description}
         iss_id = self._create_iss()

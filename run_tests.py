@@ -35,6 +35,7 @@ from trove.common.rpc import version as rpc_version
 from trove.common import utils
 from trove import rpc
 from trove.tests.config import CONFIG
+from trove.tests import root_logger
 
 eventlet.monkey_patch(thread=False)
 
@@ -60,6 +61,8 @@ def add_support_for_localization():
 
 def initialize_trove(config_file):
     from trove.common import pastedeploy
+
+    root_logger.DefaultRootLogger()
 
     cfg.CONF(args=[],
              project='trove',

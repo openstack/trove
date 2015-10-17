@@ -19,6 +19,8 @@ import os
 import sys
 import testtools
 
+from trove.tests import root_logger
+
 
 class TestCase(testtools.TestCase):
     """Base class of Trove unit tests.
@@ -42,6 +44,7 @@ class TestCase(testtools.TestCase):
             'TROVE_TESTS_UNMOCK_ONLY_UNIQUE', True))
 
         cls._dangling_mocks = set()
+        root_logger.DefaultRootLogger()
 
     @classmethod
     def is_bool(cls, val):
@@ -55,6 +58,14 @@ class TestCase(testtools.TestCase):
         super(TestCase, self).setUp()
         self.addCleanup(self._assert_modules_unmocked)
         self._mocks_before = self._find_mock_refs()
+        root_logger.DefaultRootHandler.set_info(self.id())
+
+    def tearDown(self):
+        # yes, this is gross and not thread aware.
+        # but the only way to make it thread aware would require that
+        # we single thread all testing
+        root_logger.DefaultRootHandler.set_info(info=None)
+        super(TestCase, self).tearDown()
 
     def _assert_modules_unmocked(self):
         """Check that all members of loaded modules are currently unmocked.

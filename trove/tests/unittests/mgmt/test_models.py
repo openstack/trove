@@ -121,7 +121,8 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
     def setUpClass(cls):
         super(TestNotificationTransformer, cls).setUpClass()
 
-    def test_tranformer(self):
+    @patch('trove.instance.models.LOG')
+    def test_transformer(self, mock_logging):
         status = rd_instance.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
@@ -144,7 +145,8 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(transformer._get_service_id('mysql', id_map),
                         Equals('123'))
 
-    def test_get_service_id_unknown(self):
+    @patch('trove.extensions.mgmt.instances.models.LOG')
+    def test_get_service_id_unknown(self, mock_logging):
         id_map = {
             'mysql': '123',
             'percona': 'abc'
@@ -182,7 +184,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
             self.assertThat(transformer._lookup_flavor('2'),
                             Equals('unknown'))
 
-    def test_tranformer(self):
+    def test_transformer(self):
         status = rd_instance.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
@@ -220,7 +222,8 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                 self.assertThat(payload['service_id'], Equals('123'))
         self.addCleanup(self.do_cleanup, instance, service_status)
 
-    def test_tranformer_invalid_datastore_manager(self):
+    @patch('trove.extensions.mgmt.instances.models.LOG')
+    def test_transformer_invalid_datastore_manager(self, mock_logging):
         status = rd_instance.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
@@ -265,7 +268,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
         version.update(manager='mysql')
         self.addCleanup(self.do_cleanup, instance, service_status)
 
-    def test_tranformer_shutdown_instance(self):
+    def test_transformer_shutdown_instance(self):
         status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
         instance, service_status = self.build_db_instance(status)
         service_status.set_status(rd_instance.ServiceStatuses.SHUTDOWN)
@@ -293,7 +296,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                                       for db in payloads])
         self.addCleanup(self.do_cleanup, instance, service_status)
 
-    def test_tranformer_no_nova_instance(self):
+    def test_transformer_no_nova_instance(self):
         status = rd_instance.ServiceStatuses.SHUTDOWN.api_status
         instance, service_status = self.build_db_instance(status)
         service_status.set_status(rd_instance.ServiceStatuses.SHUTDOWN)
@@ -318,7 +321,7 @@ class TestNovaNotificationTransformer(MockMgmtInstanceTest):
                                       for db in payloads])
         self.addCleanup(self.do_cleanup, instance, service_status)
 
-    def test_tranformer_flavor_cache(self):
+    def test_transformer_flavor_cache(self):
         status = rd_instance.ServiceStatuses.BUILDING.api_status
         instance, service_status = self.build_db_instance(
             status, InstanceTasks.BUILDING)
