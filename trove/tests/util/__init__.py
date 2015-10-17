@@ -38,6 +38,7 @@ from sqlalchemy import create_engine
 from troveclient.compat import Dbaas
 from troveclient.compat import exceptions
 
+from trove.common import cfg
 from trove.common.utils import import_class
 from trove.common.utils import import_object
 from trove.tests.config import CONFIG as test_config
@@ -47,6 +48,7 @@ from trove.tests.util.users import Requirements
 
 
 WHITE_BOX = test_config.white_box
+CONF = cfg.CONF
 
 
 def assert_http_code(expected_http_code, func, *args, **kwargs):
@@ -162,10 +164,10 @@ def create_nova_client(user, service_type=None):
     if test_config.nova_client is None:
         raise SkipTest("No nova_client info specified in the Test Config "
                        "so this test will be skipped.")
-    from novaclient.v2.client import Client
+    from novaclient.client import Client
     if not service_type:
         service_type = test_config.nova_client['nova_service_type']
-    openstack = Client(user.auth_user, user.auth_key,
+    openstack = Client(CONF.nova_client_version, user.auth_user, user.auth_key,
                        user.tenant, test_config.nova_client['auth_url'],
                        service_type=service_type, no_cache=True,
                        cacert=test_config.values.get('cacert', None))

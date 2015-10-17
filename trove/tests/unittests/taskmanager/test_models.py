@@ -634,7 +634,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
         self.instance_task._guest = MagicMock(spec=trove.guestagent.api.API)
         self.instance_task._nova_client = MagicMock(
-            spec=novaclient.v2.Client)
+            spec=novaclient.client)
         self.stub_server_mgr = MagicMock(
             spec=novaclient.v2.servers.ServerManager)
         self.stub_running_server = MagicMock(
