@@ -144,4 +144,4 @@ class TestGuestagentUtils(trove_testtools.TestCase):
         self.assertEqual(1024, guestagent_utils.to_bytes(1024))
         self.assertEqual('Hello!', guestagent_utils.to_bytes('Hello!'))
         self.assertEqual('', guestagent_utils.to_bytes(''))
-        self.assertEqual(None, guestagent_utils.to_bytes(None))
+        self.assertIsNone(guestagent_utils.to_bytes(None))

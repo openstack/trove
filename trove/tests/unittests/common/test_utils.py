@@ -68,7 +68,7 @@ class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
         self.assertEqual('test', utils.unpack_singleton('test'))
         self.assertEqual('test', utils.unpack_singleton(['test']))
         self.assertEqual([], utils.unpack_singleton([]))
-        self.assertEqual(None, utils.unpack_singleton(None))
+        self.assertIsNone(utils.unpack_singleton(None))
         self.assertEqual([None, None], utils.unpack_singleton([None, None]))
         self.assertEqual('test', utils.unpack_singleton([['test']]))
         self.assertEqual([1, 2, 3], utils.unpack_singleton([[1, 2, 3]]))

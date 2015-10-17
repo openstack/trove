@@ -237,7 +237,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
         users, next_marker = self.manager.list_users(self.context)
 
-        self.assertEqual(None, next_marker)
+        self.assertIsNone(next_marker)
         self.assertEqual(sorted([user1, user2]), users)
 
     @mock.patch.object(service.MongoDBAdmin, 'create_user')

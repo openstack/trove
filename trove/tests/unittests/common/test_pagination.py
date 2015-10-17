@@ -52,7 +52,7 @@ class TestPaginatedDataView(trove_testtools.TestCase):
         # continue list, do not include marker in result
         li_2, marker_2 = self._do_paginate_list(limit=2, marker=marker_1)
         self.assertEqual(['d', 'e'], li_2)
-        self.assertEqual(None, marker_2)
+        self.assertIsNone(marker_2)
 
         # alternate continue list, include marker in result
         li_3, marker_3 = self._do_paginate_list(limit=2, marker=marker_1,
@@ -63,4 +63,4 @@ class TestPaginatedDataView(trove_testtools.TestCase):
         # bad marker
         li_4, marker_4 = self._do_paginate_list(marker='f')
         self.assertEqual([], li_4)
-        self.assertEqual(None, marker_4)
+        self.assertIsNone(marker_4)

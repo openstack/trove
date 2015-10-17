@@ -248,7 +248,7 @@ class LimitTest(BaseLimitTestSuite):
 
         limit._get_time = MagicMock(return_value=0.0)
         delay = limit("GET", "/anything")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
         self.assertEqual(0, limit.next_request)
         self.assertEqual(0, limit.last_request)
 
@@ -258,7 +258,7 @@ class LimitTest(BaseLimitTestSuite):
         limit._get_time = MagicMock(return_value=0.0)
 
         delay = limit("GET", "/anything")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
         delay = limit("GET", "/anything")
         self.assertEqual(1, delay)
@@ -268,7 +268,7 @@ class LimitTest(BaseLimitTestSuite):
         limit._get_time = MagicMock(return_value=4.0)
 
         delay = limit("GET", "/anything")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
         self.assertEqual(4, limit.next_request)
         self.assertEqual(4, limit.last_request)
 
@@ -528,25 +528,25 @@ class WsgiLimiterTest(BaseLimitTestSuite):
 
     def test_good_url(self):
         delay = self._request("GET", "/something")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
     def test_escaping(self):
         delay = self._request("GET", "/something/jump%20up")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
     def test_response_to_delays(self):
         delay = self._request("GET", "/delayed")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
         delay = self._request("GET", "/delayed")
         self.assertAlmostEqual(float(delay), 60, 1)
 
     def test_response_to_delays_usernames(self):
         delay = self._request("GET", "/delayed", "user1")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
         delay = self._request("GET", "/delayed", "user2")
-        self.assertEqual(None, delay)
+        self.assertIsNone(delay)
 
         delay = self._request("GET", "/delayed", "user1")
         self.assertAlmostEqual(float(delay), 60, 1)

@@ -247,7 +247,7 @@ class MigrateTests(ResizeTestBase):
     def _execute_action(self):
         self.instance.update_db(task_status=InstanceTasks.NONE)
         self.mock.ReplayAll()
-        self.assertEqual(None, self.action.execute())
+        self.assertIsNone(self.action.execute())
         self.mock.VerifyAll()
 
     def _start_mysql(self):
