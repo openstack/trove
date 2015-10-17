@@ -769,7 +769,7 @@ couchbase_opts = [
     cfg.StrOpt('mount_point', default='/var/lib/couchbase',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
-    cfg.BoolOpt('root_on_create', default=True,
+    cfg.BoolOpt('root_on_create', default=False,
                 help='Enable the automatic creation of the root user for the '
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
