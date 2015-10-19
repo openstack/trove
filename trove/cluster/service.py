@@ -51,10 +51,10 @@ class ClusterController(wsgi.Controller):
         return action_schema
 
     def action(self, req, body, tenant_id, id):
-        LOG.debug("Committing Action Against Cluster for "
-                  "Tenant '%s'" % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.debug(("Committing Action Against Cluster for "
+                   "Tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                  {"req": req, "id": id, "tenant_id": tenant_id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -82,9 +82,9 @@ class ClusterController(wsgi.Controller):
 
     def show(self, req, tenant_id, id):
         """Return a single cluster."""
-        LOG.debug("Showing a Cluster for Tenant '%s'" % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.debug(("Showing a Cluster for Tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                  {"req": req, "id": id, "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
@@ -92,11 +92,14 @@ class ClusterController(wsgi.Controller):
 
     def show_instance(self, req, tenant_id, cluster_id, instance_id):
         """Return a single instance belonging to a cluster."""
-        LOG.debug("Showing an Instance in a Cluster for Tenant '%s'"
-                  % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("cluster_id : '%s'\n\n") % cluster_id)
-        LOG.info(_("instance_id : '%s'\n\n") % instance_id)
+        LOG.debug(("Showing an Instance in a Cluster for Tenant "
+                   "'%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n"
+                   "cluster_id : '%(cluster_id)s'\n\n"
+                   "instance_id : '%(instance_id)s;\n\n") %
+                  {"req": req, "tenant_id": tenant_id,
+                   "cluster_id": cluster_id,
+                   "instance_id": instance_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, cluster_id)
@@ -107,9 +110,9 @@ class ClusterController(wsgi.Controller):
 
     def delete(self, req, tenant_id, id):
         """Delete a cluster."""
-        LOG.debug("Deleting a Cluster for Tenant '%s'" % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.debug(("Deleting a Cluster for Tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\nid : '%(id)s'\n\n") %
+                  {"req": req, "id": id, "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
@@ -118,8 +121,9 @@ class ClusterController(wsgi.Controller):
 
     def index(self, req, tenant_id):
         """Return a list of clusters."""
-        LOG.debug("Showing a list of clusters for Tenant '%s'" % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
+        LOG.debug(("Showing a list of clusters for Tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {"req": req,
+                                             "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         if not context.is_admin and context.tenant != tenant_id:
@@ -133,9 +137,9 @@ class ClusterController(wsgi.Controller):
         return wsgi.Result(paged.data(), 200)
 
     def create(self, req, body, tenant_id):
-        LOG.debug("Creating a Cluster for Tenant '%s'" % tenant_id)
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("body : '%s'\n\n") % body)
+        LOG.debug(("Creating a Cluster for Tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\nbody : '%(body)s'\n\n") %
+                  {"tenant_id": tenant_id, "req": req, "body": body})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         name = body['cluster']['name']

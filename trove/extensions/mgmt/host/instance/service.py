@@ -28,9 +28,11 @@ class HostInstanceController(wsgi.Controller):
     """Controller for all instances on specific hosts."""
 
     def action(self, req, body, tenant_id, host_id):
-        LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Committing an ACTION against host %s for tenant '%s'"
-                 % (host_id, tenant_id))
+        LOG.info(_("Committing an ACTION against host %(host_id)s for "
+                   "tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {"req": req, "host_id": host_id,
+                                             "tenant_id": tenant_id})
+
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]

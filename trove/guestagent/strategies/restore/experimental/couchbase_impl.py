@@ -192,7 +192,7 @@ class CbBackup(base.RestoreRunner):
                         # http://www.couchbase.com/issues/browse/MB-10832
                         # Retrying typically works
                         LOG.error(p)
-                        LOG.error("cbrestore failed. Retrying...")
+                        LOG.error(_("cbrestore failed. Retrying..."))
                         utils.execute_with_timeout(restore_cmd,
                                                    shell=True,
                                                    timeout=300)

@@ -33,9 +33,9 @@ class UpgradeController(wsgi.Controller):
 
     @admin_context
     def create(self, req, body, tenant_id, instance_id):
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Sending upgrade notification"))
-        LOG.debug(_("Admin tenant_id: %s") % tenant_id)
+        LOG.info(_("Sending upgrade notifications\nreq : '%(req)s'\n"
+                   "Admin tenant_id: %(tenant_id)s") %
+                 {"tenant_id": tenant_id, "req": req})
 
         context = req.environ.get(wsgi.CONTEXT_KEY)
         upgrade = body['upgrade']

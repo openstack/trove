@@ -124,8 +124,8 @@ class CouchbaseApp(object):
         return CouchbaseRootAccess.enable_root(root_password)
 
     def start_db_with_conf_changes(self, config_contents):
-        LOG.info(_("Starting Couchbase with configuration changes."))
-        LOG.info(_("Configuration contents:\n %s.") % config_contents)
+        LOG.info(_("Starting Couchbase with configuration changes.\n"
+                   "Configuration contents:\n %s.") % config_contents)
         if self.status.is_running:
             LOG.error(_("Cannot start Couchbase with configuration changes. "
                         "Couchbase state == %s.") % self.status)

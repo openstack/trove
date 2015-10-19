@@ -47,8 +47,9 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def index(self, req, tenant_id, detailed=False):
         """Return all instances."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Indexing a database instance for tenant '%s'") % tenant_id)
+        LOG.info(_("Indexing a database instance for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted = None
         deleted_q = req.GET.get('deleted', '').lower()
@@ -71,9 +72,10 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def show(self, req, tenant_id, id):
         """Return a single instance."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing a database instance for tenant '%s'") % tenant_id)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.info(_("Showing a database instance %(id)s for tenant "
+                   "'%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
         context = req.environ[wsgi.CONTEXT_KEY]
         deleted_q = req.GET.get('deleted', '').lower()
         include_deleted = deleted_q == 'true'
@@ -90,9 +92,10 @@ class MgmtInstanceController(InstanceController):
 
     @admin_context
     def action(self, req, body, tenant_id, id):
-        LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Committing an ACTION against instance %s for tenant '%s'"
-                 % (id, tenant_id))
+        LOG.info(_("Committing an ACTION against a database "
+                   "instance %(id)s for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
         context = req.environ[wsgi.CONTEXT_KEY]
@@ -151,9 +154,11 @@ class MgmtInstanceController(InstanceController):
         """Return the date and time root was enabled on an instance,
             if ever.
         """
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing root history for tenant '%s'") % tenant_id)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.info(_("Showing root history for a database "
+                   "instance %(id)s for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
+
         context = req.environ[wsgi.CONTEXT_KEY]
         try:
             instance_models.Instance.load(context=context, id=id)
@@ -170,8 +175,10 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def hwinfo(self, req, tenant_id, id):
         """Return a single instance hardware info."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing hardware info for instance '%s'") % id)
+        LOG.info(_("Showing hardware info for a database "
+                   "instance %(id)s for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.MgmtInstance.load(context=context, id=id)
@@ -182,9 +189,10 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def diagnostics(self, req, tenant_id, id):
         """Return instance diagnostics for a single instance."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Showing instance diagnostics for the instance '%s'") % id)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.info(_("Showing diagnostic info for a database "
+                   "instance %(id)s for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.MgmtInstance.load(context=context, id=id)
@@ -195,8 +203,11 @@ class MgmtInstanceController(InstanceController):
     @admin_context
     def rpc_ping(self, req, tenant_id, id):
         """Checks if instance is reachable via rpc."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("id : '%s'\n\n") % id)
+        LOG.info(_("Sending RPC PING for a database "
+                   "instance %(id)s for tenant '%(tenant_id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "tenant_id": tenant_id, "req": req, "id": id})
+
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.MgmtInstance.load(context=context, id=id)
 
