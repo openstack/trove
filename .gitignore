@@ -5,6 +5,7 @@ trove_test.sqlite
 run_tests.log
 guest-agent-files.txt
 trove.egg*
+.eggs/
 trove/vcsversion.py
 *py*.egg
 .coverage
