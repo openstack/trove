@@ -75,3 +75,7 @@ class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
         self.assertEqual(1, utils.unpack_singleton([[[1]]]))
         self.assertEqual([[1], [2]], utils.unpack_singleton([[1], [2]]))
         self.assertEqual(['a', 'b'], utils.unpack_singleton(['a', 'b']))
+
+    def test_pagination_limit(self):
+        self.assertEqual(5, utils.pagination_limit(5, 9))
+        self.assertEqual(5, utils.pagination_limit(9, 5))

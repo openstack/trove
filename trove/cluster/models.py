@@ -22,6 +22,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import strategy
+from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db import models as dbmodels
 from trove.instance import models as inst_models
@@ -96,9 +97,7 @@ class Cluster(object):
     def load_all(cls, context, tenant_id):
         db_infos = DBCluster.find_all(tenant_id=tenant_id,
                                       deleted=False)
-        limit = int(context.limit or Cluster.DEFAULT_LIMIT)
-        if limit > Cluster.DEFAULT_LIMIT:
-            limit = Cluster.DEFAULT_LIMIT
+        limit = utils.pagination_limit(context.limit, Cluster.DEFAULT_LIMIT)
         data_view = DBCluster.find_by_pagination('clusters', db_infos, "foo",
                                                  limit=limit,
                                                  marker=context.marker)

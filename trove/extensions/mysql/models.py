@@ -22,6 +22,7 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.remote import create_guest_client
+from trove.common import utils
 from trove.extensions.common.models import load_and_verify
 from trove.extensions.common.models import RootHistory
 from trove.guestagent.db import models as guest_models
@@ -166,8 +167,7 @@ class UserAccess(object):
 def load_via_context(cls, context, instance_id):
     """Creates guest and fetches pagination arguments from the context."""
     load_and_verify(context, instance_id)
-    limit = int(context.limit or cls.DEFAULT_LIMIT)
-    limit = cls.DEFAULT_LIMIT if limit > cls.DEFAULT_LIMIT else limit
+    limit = utils.pagination_limit(context.limit, cls.DEFAULT_LIMIT)
     client = create_guest_client(context, instance_id)
     # The REST API standard dictates that we *NEVER* include the marker.
     return cls.load_with_client(client=client, limit=limit,
