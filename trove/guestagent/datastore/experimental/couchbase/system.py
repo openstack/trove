@@ -32,7 +32,8 @@ cmd_node_init = ('sudo /opt/couchbase/bin/couchbase-cli node-init '
 cmd_cluster_init = ('sudo /opt/couchbase/bin/couchbase-cli cluster-init '
                     '-c %(IP)s:8091 --cluster-init-username=root '
                     '--cluster-init-password=%(PWD)s '
-                    '--cluster-init-port=8091')
+                    '--cluster-init-port=8091 '
+                    '-u root -p %(PWD)s')
 cmd_kill = 'sudo pkill -u couchbase'
 """ For optimal couchbase operations, swappiness of vm should be set to 0.
 Reference link: http://docs.couchbase.com/couchbase-manual-2
