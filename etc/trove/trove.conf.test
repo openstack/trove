@@ -68,9 +68,9 @@ nova_volume_service_type = volume
 nova_volume_service_name = Volume Service
 device_path = /dev/vdb
 max_accepted_volume_size = 25
-max_instances_per_user = 55
-max_volumes_per_user = 100
-max_backups_per_user = 5
+max_instances_per_tenant = 55
+max_volumes_per_tenant = 100
+max_backups_per_tenant = 5
 volume_time_out=30
 
 # Config options for rate limits

@@ -88,7 +88,8 @@ class TestConfig(object):
             "report_directory": os.environ.get("REPORT_DIRECTORY", None),
             "trove_volume_support": True,
             "trove_volume_size": 1,
-            "trove_max_volumes_per_user": 100,
+            "trove_max_volumes_per_tenant": 100,
+            "trove_max_instances_per_tenant": 55,
             "usage_endpoint": USAGE_ENDPOINT,
             "root_on_create": False,
             "mysql": {
