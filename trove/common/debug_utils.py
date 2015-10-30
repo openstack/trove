@@ -83,6 +83,23 @@ def enabled():
     """
     assert __debug_state is not None, ("debug_utils are not initialized. "
                                        "Please call setup() method first")
+
+    # if __debug_state is set and we have monkey patched
+    # eventlet.thread, issue a warning.
+    # You can't safely use eventlet.is_monkey_patched() on the
+    # threading module so you have to do this little dance.
+    # Discovered after much head scratching, see also
+    #
+    # http://stackoverflow.com/questions/32452110/
+    #     does-eventlet-do-monkey-patch-for-threading-module
+    #
+    # note multi-line URL
+    if __debug_state:
+        import threading
+        if threading.current_thread.__module__ == 'eventlet.green.threading':
+            LOG.warn(_("Enabling debugging with eventlet monkey patched "
+                       "could produce unexpected behavior."))
+
     return __debug_state
 
 
