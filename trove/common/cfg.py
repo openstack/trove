@@ -143,6 +143,8 @@ common_opts = [
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
     cfg.IntOpt('state_change_wait_time', default=3 * 60,
                help='Maximum time (in seconds) to wait for a state change.'),
+    cfg.IntOpt('state_change_poll_time', default=3,
+               help='Interval between state change poll requests (seconds).'),
     cfg.IntOpt('agent_heartbeat_time', default=10,
                help='Maximum time (in seconds) for the Guest Agent to reply '
                     'to a heartbeat request.'),
