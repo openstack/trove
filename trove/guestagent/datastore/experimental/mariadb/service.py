@@ -15,36 +15,36 @@
 #
 
 from oslo_log import log as logging
-from trove.guestagent.datastore.mysql import service_base
+from trove.guestagent.datastore.mysql_common import service
 
 LOG = logging.getLogger(__name__)
 
 
-class KeepAliveConnection(service_base.BaseKeepAliveConnection):
+class KeepAliveConnection(service.BaseKeepAliveConnection):
     pass
 
 
-class MySqlAppStatus(service_base.BaseMySqlAppStatus):
+class MySqlAppStatus(service.BaseMySqlAppStatus):
     pass
 
 
-class LocalSqlClient(service_base.BaseLocalSqlClient):
+class LocalSqlClient(service.BaseLocalSqlClient):
     pass
 
 
-class MySqlApp(service_base.BaseMySqlApp):
+class MySqlApp(service.BaseMySqlApp):
     def __init__(self, status):
         super(MySqlApp, self).__init__(status, LocalSqlClient,
                                        KeepAliveConnection)
 
 
-class MySqlRootAccess(service_base.BaseMySqlRootAccess):
+class MySqlRootAccess(service.BaseMySqlRootAccess):
     def __init__(self):
         super(MySqlRootAccess, self).__init__(LocalSqlClient,
                                               MySqlApp(MySqlAppStatus.get()))
 
 
-class MySqlAdmin(service_base.BaseMySqlAdmin):
+class MySqlAdmin(service.BaseMySqlAdmin):
     def __init__(self):
         super(MySqlAdmin, self).__init__(LocalSqlClient, MySqlRootAccess(),
                                          MySqlApp)

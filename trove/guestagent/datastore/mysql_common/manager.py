@@ -19,38 +19,36 @@
 import os
 
 from oslo_log import log as logging
-from oslo_service import periodic_task
 
-from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.mysql import service_base
-from trove.guestagent import dbaas
+from trove.guestagent.datastore import manager
+from trove.guestagent.datastore.mysql_common import service
 from trove.guestagent.strategies.replication import get_replication_strategy
 from trove.guestagent import volume
 
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
 
 
-class BaseMySqlManager(periodic_task.PeriodicTasks):
+class MySqlManager(manager.Manager):
 
     def __init__(self, mysql_app, mysql_app_status, mysql_admin,
                  replication_strategy, replication_namespace,
-                 replication_strategy_class, manager):
+                 replication_strategy_class, manager_name):
 
-        super(BaseMySqlManager, self).__init__(CONF)
+        super(MySqlManager, self).__init__(manager_name)
         self._mysql_app = mysql_app
         self._mysql_app_status = mysql_app_status
         self._mysql_admin = mysql_admin
         self._replication_strategy = replication_strategy
         self._replication_namespace = replication_namespace
         self._replication_strategy_class = replication_strategy_class
-        self._manager = manager
+
+        self.volume_do_not_start_on_reboot = False
 
     @property
     def mysql_app(self):
@@ -78,17 +76,8 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
                                         self._replication_namespace)
 
     @property
-    def manager(self):
-        return self._manager
-
-    @periodic_task.periodic_task
-    def update_status(self, context):
-        """Update the status of the MySQL service."""
-        self.mysql_app_status.get().update()
-
-    def rpc_ping(self, context):
-        LOG.debug("Responding to RPC ping.")
-        return True
+    def status(self):
+        return self.mysql_app_status.get()
 
     def change_passwords(self, context, users):
         return self.mysql_admin().change_passwords(users)
@@ -156,18 +145,17 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
             raise
         LOG.info(_("Restored database successfully."))
 
-    def prepare(self, context, packages, databases, memory_mb, users,
-                device_path=None, mount_point=None, backup_info=None,
-                config_contents=None, root_password=None, overrides=None,
-                cluster_config=None, snapshot=None):
-        """Makes ready DBAAS on a Guest container."""
-        self.mysql_app_status.get().begin_install()
-        # status end_mysql_install set with secure()
+    def do_prepare(self, context, packages, databases, memory_mb, users,
+                   device_path, mount_point, backup_info,
+                   config_contents, root_password, overrides,
+                   cluster_config, snapshot):
+        """This is called from prepare in the base class."""
         app = self.mysql_app(self.mysql_app_status.get())
         app.install_if_needed(packages)
         if device_path:
             # stop and do not update database
-            app.stop_db()
+            app.stop_db(
+                do_not_start_on_reboot=self.volume_do_not_start_on_reboot)
             device = volume.VolumeDevice(device_path)
             # unmount if device is already mounted
             device.unmount_device(device_path)
@@ -178,8 +166,8 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
                 device.migrate_data(mount_point, target_subdir="data")
             # mount the volume
             device.mount(mount_point)
-            operating_system.chown(mount_point, service_base.MYSQL_OWNER,
-                                   service_base.MYSQL_OWNER,
+            operating_system.chown(mount_point, service.MYSQL_OWNER,
+                                   service.MYSQL_OWNER,
                                    recursive=False, as_root=True)
 
             LOG.debug("Mounted the volume at %s." % mount_point)
@@ -205,18 +193,8 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
         else:
             app.secure_root(secure_remote_root=True)
 
-        app.complete_install_or_restart()
-
-        if databases:
-            self.create_database(context, databases)
-
-        if users:
-            self.create_user(context, users)
-
         if snapshot:
             self.attach_replica(context, snapshot, snapshot['config'])
-
-        LOG.info(_('Completed setup of MySQL database instance.'))
 
     def restart(self, context):
         app = self.mysql_app(self.mysql_app_status.get())
@@ -229,11 +207,6 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
     def stop_db(self, context, do_not_start_on_reboot=False):
         app = self.mysql_app(self.mysql_app_status.get())
         app.stop_db(do_not_start_on_reboot=do_not_start_on_reboot)
-
-    def get_filesystem_stats(self, context, fs_path):
-        """Gets the filesystem stats for the path given."""
-        mount_point = CONF.get(self.manager).mount_point
-        return dbaas.get_filesystem_volume_stats(mount_point)
 
     def create_backup(self, context, backup_info):
         """
@@ -291,8 +264,7 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
             replication.snapshot_for_replication(context, app, None,
                                                  snapshot_info))
 
-        mount_point = CONF.get(self.manager).mount_point
-        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+        volume_stats = self.get_filesystem_stats(context, None)
 
         replication_snapshot = {
             'dataset': {
@@ -352,8 +324,7 @@ class BaseMySqlManager(periodic_task.PeriodicTasks):
                     'guest_strategy': self.replication_strategy
                 }))
 
-        mount_point = CONF.get(self.manager).mount_point
-        volume_stats = dbaas.get_filesystem_volume_stats(mount_point)
+        volume_stats = self.get_filesystem_stats(context, None)
         if (volume_stats.get('total', 0.0) <
                 replica_info['dataset']['dataset_size']):
             raise exception.InsufficientSpaceForReplica(

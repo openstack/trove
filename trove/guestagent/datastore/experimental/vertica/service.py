@@ -107,7 +107,7 @@ class VerticaApp(object):
                             rd_instance.ServiceStatuses.SHUTDOWN,
                             self.state_change_wait_time, update_db):
                         LOG.error(_("Could not stop Vertica."))
-                        self.status.end_install_or_restart()
+                        self.status.end_restart()
                         raise RuntimeError("Could not stop Vertica!")
                 LOG.debug("Database stopped.")
             else:
@@ -131,7 +131,7 @@ class VerticaApp(object):
                                 (system.START_DB % (DB_NAME, db_password))]
             subprocess.Popen(start_db_command)
             if not self.status._is_restarting:
-                self.status.end_install_or_restart()
+                self.status.end_restart()
             LOG.debug("Database started.")
         except Exception:
             raise RuntimeError("Could not start Vertica!")
@@ -151,7 +151,7 @@ class VerticaApp(object):
             self.stop_db()
             self.start_db()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def create_db(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
@@ -181,9 +181,6 @@ class VerticaApp(object):
             raise RuntimeError(_("install_vertica failed."))
         self._generate_database_password()
         LOG.info(_("install_vertica completed."))
-
-    def complete_install_or_restart(self):
-        self.status.end_install_or_restart()
 
     def _generate_database_password(self):
         """Generate and write the password to vertica.cnf file."""

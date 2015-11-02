@@ -32,6 +32,9 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
                     _build_admin_client=DEFAULT, _init_overrides_dir=DEFAULT)
     def setUp(self, *args, **kwargs):
         super(RedisGuestAgentManagerTest, self).setUp()
+        self.patch_ope = patch('os.path.expanduser')
+        self.mock_ope = self.patch_ope.start()
+        self.addCleanup(self.patch_ope.stop)
         self.context = TroveContext()
         self.manager = RedisManager()
         self.packages = 'redis-server'
@@ -41,8 +44,6 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.origin_install_redis = redis_service.RedisApp._install_redis
         self.origin_install_if_needed = \
             redis_service.RedisApp.install_if_needed
-        self.origin_complete_install_or_restart = \
-            redis_service.RedisApp.complete_install_or_restart
         self.origin_format = VolumeDevice.format
         self.origin_mount = VolumeDevice.mount
         self.origin_mount_points = VolumeDevice.mount_points
@@ -68,8 +69,6 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         redis_service.RedisApp._install_redis = self.origin_install_redis
         redis_service.RedisApp.install_if_needed = \
             self.origin_install_if_needed
-        redis_service.RedisApp.complete_install_or_restart = \
-            self.origin_complete_install_or_restart
         VolumeDevice.format = self.origin_format
         VolumeDevice.mount = self.origin_mount
         VolumeDevice.mount_points = self.origin_mount_points
@@ -169,6 +168,8 @@ class RedisGuestAgentManagerTest(trove_testtools.TestCase):
         self.manager.stop_db(self.context)
         redis_mock.assert_any_call(do_not_start_on_reboot=False)
 
+    @patch.object(redis_service.RedisApp, '_init_overrides_dir',
+                  return_value='')
     @patch.object(backup, 'backup')
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   MagicMock(return_value={'dir': '/var/lib/redis',

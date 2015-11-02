@@ -14,6 +14,7 @@
 #    under the License.
 
 
+import os
 import time
 
 from oslo_log import log as logging
@@ -23,6 +24,7 @@ from trove.common import context as trove_context
 from trove.common.i18n import _
 from trove.common import instance
 from trove.conductor import api as conductor_api
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common import timeutils
 
@@ -46,7 +48,7 @@ class BaseDbStatus(object):
     not (so if there is a Python Pete crash update() will set the status to
     show a failure).
     These modes are exited and functionality to update() returns when
-    end_install_or_restart() is called, at which point the status again
+    end_install or end_restart() is called, at which point the status again
     reflects the actual status of the DB app.
 
     This is a base class, subclasses must implement real logic for
@@ -55,30 +57,82 @@ class BaseDbStatus(object):
 
     _instance = None
 
+    GUESTAGENT_DIR = '~'
+    PREPARE_START_FILENAME = '.guestagent.prepare.start'
+    PREPARE_END_FILENAME = '.guestagent.prepare.end'
+
     def __init__(self):
         if self._instance is not None:
             raise RuntimeError("Cannot instantiate twice.")
         self.status = None
         self.restart_mode = False
 
+        self._prepare_completed = None
+
+    @property
+    def prepare_completed(self):
+        if self._prepare_completed is None:
+            # Force the file check
+            self.prepare_completed = None
+        return self._prepare_completed
+
+    @prepare_completed.setter
+    def prepare_completed(self, value):
+        # Set the value based on the existence of the file; 'value' is ignored
+        # This is required as the value of prepare_completed is cached, so
+        # this must be referenced any time the existence of the file changes
+        self._prepare_completed = os.path.isfile(
+            guestagent_utils.build_file_path(
+                self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME))
+
     def begin_install(self):
-        """Called right before DB is prepared."""
-        self.set_status(instance.ServiceStatuses.BUILDING)
+        """First call of the DB prepare."""
+        prepare_start_file = guestagent_utils.build_file_path(
+            self.GUESTAGENT_DIR, self.PREPARE_START_FILENAME)
+        operating_system.write_file(prepare_start_file, '')
+        self.prepare_completed = False
+
+        self.set_status(instance.ServiceStatuses.BUILDING, True)
 
     def begin_restart(self):
         """Called before restarting DB server."""
         self.restart_mode = True
 
-    def end_install_or_restart(self):
-        """Called after DB is installed or restarted.
+    def end_install(self, error_occurred=False, post_processing=False):
+        """Called after prepare has ended."""
 
+        # Set the "we're done" flag if there's no error and
+        # no post_processing is necessary
+        if not (error_occurred or post_processing):
+            prepare_end_file = guestagent_utils.build_file_path(
+                self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME)
+            operating_system.write_file(prepare_end_file, '')
+            self.prepare_completed = True
+
+        final_status = None
+        if error_occurred:
+            final_status = instance.ServiceStatuses.FAILED
+        elif post_processing:
+            final_status = instance.ServiceStatuses.INSTANCE_READY
+
+        if final_status:
+            LOG.info(_("Set final status to %s.") % final_status)
+            self.set_status(final_status, force=True)
+        else:
+            self._end_install_or_restart(True)
+
+    def end_restart(self):
+        self.restart_mode = False
+        LOG.info(_("Ending restart."))
+        self._end_install_or_restart(False)
+
+    def _end_install_or_restart(self, force):
+        """Called after DB is installed or restarted.
         Updates the database with the actual DB server status.
         """
-        LOG.debug("Ending install_if_needed or restart.")
-        self.restart_mode = False
         real_status = self._get_actual_db_status()
-        LOG.info(_("Updating database status to %s.") % real_status)
-        self.set_status(real_status, force=True)
+        LOG.info(_("Current database status is '%s'.") % real_status)
+        self.set_status(real_status, force=force)
 
     def _get_actual_db_status(self):
         raise NotImplementedError()
@@ -89,10 +143,7 @@ class BaseDbStatus(object):
         True if DB app should be installed and attempts to ascertain
         its status won't result in nonsense.
         """
-        return (self.status != instance.ServiceStatuses.NEW and
-                self.status != instance.ServiceStatuses.BUILDING and
-                self.status != instance.ServiceStatuses.BUILD_PENDING and
-                self.status != instance.ServiceStatuses.FAILED)
+        return self.prepare_completed
 
     @property
     def _is_restarting(self):
@@ -106,28 +157,19 @@ class BaseDbStatus(object):
 
     def set_status(self, status, force=False):
         """Use conductor to update the DB app status."""
-        force_heartbeat_status = (
-            status == instance.ServiceStatuses.FAILED or
-            status == instance.ServiceStatuses.BUILD_PENDING)
 
-        if (not force_heartbeat_status and not force and
-                (self.status == instance.ServiceStatuses.NEW or
-                 self.status == instance.ServiceStatuses.BUILDING)):
-            LOG.debug("Prepare has not run yet, skipping heartbeat.")
-            return
+        if force or self.is_installed:
+            LOG.debug("Casting set_status message to conductor "
+                      "(status is '%s')." % status.description)
+            context = trove_context.TroveContext()
 
-        LOG.debug("Casting set_status message to conductor (status is '%s')." %
-                  status.description)
-        context = trove_context.TroveContext()
-
-        heartbeat = {
-            'service_status': status.description,
-        }
-        conductor_api.API(context).heartbeat(CONF.guest_id,
-                                             heartbeat,
-                                             sent=timeutils.float_utcnow())
-        LOG.debug("Successfully cast set_status.")
-        self.status = status
+            heartbeat = {'service_status': status.description}
+            conductor_api.API(context).heartbeat(
+                CONF.guest_id, heartbeat, sent=timeutils.float_utcnow())
+            LOG.debug("Successfully cast set_status.")
+            self.status = status
+        else:
+            LOG.debug("Prepare has not completed yet, skipping heartbeat.")
 
     def update(self):
         """Find and report status of DB on this machine.
@@ -170,7 +212,7 @@ class BaseDbStatus(object):
             LOG.exception(e)
             raise RuntimeError(_("Database restart failed."))
         finally:
-            self.end_install_or_restart()
+            self.end_restart()
 
     def start_db_service(self, service_candidates, timeout,
                          enable_on_boot=True, update_db=False):

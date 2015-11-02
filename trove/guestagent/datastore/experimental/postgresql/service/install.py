@@ -17,11 +17,8 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
-from trove.common import instance
 from trove.guestagent.datastore.experimental.postgresql.service.process import(
     PgSqlProcess)
-from trove.guestagent.datastore.experimental.postgresql.service.status import(
-    PgSqlAppStatus)
 from trove.guestagent import pkg
 
 LOG = logging.getLogger(__name__)
@@ -46,7 +43,6 @@ class PgSqlInstall(PgSqlProcess):
                 guest_id=CONF.guest_id
             )
         )
-        PgSqlAppStatus.get().begin_install()
         packager = pkg.Package()
         if not packager.pkg_is_installed(packages):
             try:
@@ -69,10 +65,7 @@ class PgSqlInstall(PgSqlProcess):
                         packages=packages,
                     )
                 )
-                PgSqlAppStatus.get().end_install_or_restart()
-                PgSqlAppStatus.get().set_status(
-                    instance.ServiceStatuses.FAILED
-                )
+                raise
             except Exception:
                 LOG.exception(
                     "{guest_id}: The package manager encountered an unknown "
@@ -81,13 +74,9 @@ class PgSqlInstall(PgSqlProcess):
                         packages=packages,
                     )
                 )
-                PgSqlAppStatus.get().end_install_or_restart()
-                PgSqlAppStatus.get().set_status(
-                    instance.ServiceStatuses.FAILED
-                )
+                raise
             else:
                 self.start_db(context)
-                PgSqlAppStatus.get().end_install_or_restart()
                 LOG.debug(
                     "{guest_id}: Completed package installation.".format(
                         guest_id=CONF.guest_id,

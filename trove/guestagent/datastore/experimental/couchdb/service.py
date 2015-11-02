@@ -64,12 +64,6 @@ class CouchDBApp(object):
             packager.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing CouchDB server."))
 
-    def complete_install_or_restart(self):
-        """
-        Finalize status updates for install or restart.
-        """
-        self.status.end_install_or_restart()
-
     def change_permissions(self):
         """
         When CouchDB is installed, a default user 'couchdb' is created.
@@ -152,7 +146,7 @@ class CouchDBApp(object):
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Could not stop CouchDB."))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError(_("Could not stop CouchDB."))
 
     def start_db(self, update_db=False):
@@ -176,7 +170,7 @@ class CouchDBApp(object):
                 rd_instance.ServiceStatuses.RUNNING,
                 self.state_change_wait_time, update_db):
             LOG.error(_("Start up of CouchDB server failed."))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError("Could not start CouchDB server.")
 
     def restart(self):
@@ -186,7 +180,7 @@ class CouchDBApp(object):
             self.stop_db()
             self.start_db()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def make_host_reachable(self):
         try:

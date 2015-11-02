@@ -47,8 +47,6 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         self.origin_start_db = couch_service.CouchbaseApp.start_db
         self.origin_restart = couch_service.CouchbaseApp.restart
         self.origin_install_if = couch_service.CouchbaseApp.install_if_needed
-        self.origin_complete_install = \
-            couch_service.CouchbaseApp.complete_install_or_restart
         netutils.get_my_ipv4 = MagicMock()
 
     def tearDown(self):
@@ -61,8 +59,6 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         couch_service.CouchbaseApp.start_db = self.origin_start_db
         couch_service.CouchbaseApp.restart = self.origin_restart
         couch_service.CouchbaseApp.install_if_needed = self.origin_install_if
-        couch_service.CouchbaseApp.complete_install_or_restart = \
-            self.origin_complete_install
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -97,8 +93,6 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             return_value=None)
         couch_service.CouchbaseApp.initial_setup = MagicMock(
             return_value=None)
-        couch_service.CouchbaseApp.complete_install_or_restart = MagicMock(
-            return_value=None)
         backup.restore = MagicMock(return_value=None)
 
         # invocation
@@ -112,8 +106,6 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         mock_status.begin_install.assert_any_call()
         couch_service.CouchbaseApp.install_if_needed.assert_any_call(
             self.packages)
-        couch_service.CouchbaseApp.complete_install_or_restart.\
-            assert_any_call()
         if backup_info:
             backup.restore.assert_any_call(self.context,
                                            backup_info,

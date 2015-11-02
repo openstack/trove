@@ -214,7 +214,7 @@ class ClusterTasks(Cluster):
                         LOG.debug("Instance %s in %s, exiting polling." % (
                             instance_id, status))
                         return True
-                if status != ServiceStatuses.BUILD_PENDING:
+                if status != ServiceStatuses.INSTANCE_READY:
                         # if one is not in a cluster-ready state,
                         # continue polling
                         LOG.debug("Instance %s in %s, continue polling." % (
@@ -574,7 +574,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         service = InstanceServiceStatus.find_by(instance_id=self.id)
         status = service.get_status()
         if (status == rd_instance.ServiceStatuses.RUNNING or
-           status == rd_instance.ServiceStatuses.BUILD_PENDING):
+           status == rd_instance.ServiceStatuses.INSTANCE_READY):
                 return True
         elif status not in [rd_instance.ServiceStatuses.NEW,
                             rd_instance.ServiceStatuses.BUILDING]:

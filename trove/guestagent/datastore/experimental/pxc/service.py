@@ -22,28 +22,28 @@ from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import sql_query
 from trove.guestagent.datastore.experimental.pxc import system
-from trove.guestagent.datastore.mysql import service_base
+from trove.guestagent.datastore.mysql_common import service
 
 
 LOG = logging.getLogger(__name__)
-CONF = service_base.CONF
+CONF = service.CONF
 
 CNF_CLUSTER = "cluster"
 
 
-class KeepAliveConnection(service_base.BaseKeepAliveConnection):
+class KeepAliveConnection(service.BaseKeepAliveConnection):
     pass
 
 
-class PXCAppStatus(service_base.BaseMySqlAppStatus):
+class PXCAppStatus(service.BaseMySqlAppStatus):
     pass
 
 
-class LocalSqlClient(service_base.BaseLocalSqlClient):
+class LocalSqlClient(service.BaseLocalSqlClient):
     pass
 
 
-class PXCApp(service_base.BaseMySqlApp):
+class PXCApp(service.BaseMySqlApp):
     def __init__(self, status):
         super(PXCApp, self).__init__(status, LocalSqlClient,
                                      KeepAliveConnection)
@@ -66,7 +66,7 @@ class PXCApp(service_base.BaseMySqlApp):
     def secure(self, config_contents, overrides):
         LOG.info(_("Generating admin password."))
         admin_password = utils.generate_random_password()
-        service_base.clear_expired_password()
+        service.clear_expired_password()
         engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
                                           echo=True)
         with LocalSqlClient(engine) as client:
@@ -113,7 +113,7 @@ class PXCApp(service_base.BaseMySqlApp):
         LOG.info(_("Bootstraping cluster."))
         try:
             mysql_service = system.service_discovery(
-                service_base.MYSQL_SERVICE_CANDIDATES)
+                service.MYSQL_SERVICE_CANDIDATES)
             utils.execute_with_timeout(
                 mysql_service['cmd_bootstrap_pxc_cluster'],
                 shell=True, timeout=timeout)
@@ -137,13 +137,13 @@ class PXCApp(service_base.BaseMySqlApp):
             self.start_mysql(timeout=CONF.restore_usage_timeout)
 
 
-class PXCRootAccess(service_base.BaseMySqlRootAccess):
+class PXCRootAccess(service.BaseMySqlRootAccess):
     def __init__(self):
         super(PXCRootAccess, self).__init__(LocalSqlClient,
                                             PXCApp(PXCAppStatus.get()))
 
 
-class PXCAdmin(service_base.BaseMySqlAdmin):
+class PXCAdmin(service.BaseMySqlAdmin):
     def __init__(self):
         super(PXCAdmin, self).__init__(LocalSqlClient, PXCRootAccess(),
                                        PXCApp)

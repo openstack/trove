@@ -92,12 +92,6 @@ class CouchbaseApp(object):
             LOG.exception(_('Error performing initial Couchbase setup.'))
             raise RuntimeError("Couchbase Server initial setup failed")
 
-    def complete_install_or_restart(self):
-        """
-        finalize status updates for install or restart.
-        """
-        self.status.end_install_or_restart()
-
     def _install_couchbase(self, packages):
         """
         Install the Couchbase Server.
@@ -156,7 +150,7 @@ class CouchbaseApp(object):
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_('Could not stop Couchbase Server.'))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError(_("Could not stop Couchbase Server."))
 
     def restart(self):
@@ -166,7 +160,7 @@ class CouchbaseApp(object):
             self.stop_db()
             self.start_db()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def start_db(self, update_db=False):
         """
@@ -193,7 +187,7 @@ class CouchbaseApp(object):
                 utils.execute_with_timeout(system.cmd_kill)
             except exception.ProcessExecutionError:
                 LOG.exception(_('Error killing Couchbase start command.'))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
             raise RuntimeError("Could not start Couchbase Server")
 
     def enable_root(self, root_password=None):

@@ -97,7 +97,7 @@ def build_file_path(base_dir, base_name, *extensions):
     :returns:    Path such as: 'base_dir/base_name.ext1.ext2.ext3'
     """
     file_name = os.extsep.join([base_name] + list(extensions))
-    return os.path.join(base_dir, file_name)
+    return os.path.expanduser(os.path.join(base_dir, file_name))
 
 
 def to_bytes(value):

@@ -128,13 +128,6 @@ class RedisApp(object):
             self._install_redis(packages)
         LOG.info(_('Redis installed completely.'))
 
-    def complete_install_or_restart(self):
-        """
-        finalize status updates for install or restart.
-        """
-        LOG.debug("Complete install or restart called.")
-        self.status.end_install_or_restart()
-
     def _install_redis(self, packages):
         """
         Install the redis server.
@@ -175,7 +168,7 @@ class RedisApp(object):
                 rd_instance.ServiceStatuses.SHUTDOWN,
                 self.state_change_wait_time, update_db):
             LOG.error(_('Could not stop Redis.'))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def restart(self):
         """
@@ -187,7 +180,7 @@ class RedisApp(object):
             self.stop_db()
             self.start_redis()
         finally:
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
@@ -271,7 +264,7 @@ class RedisApp(object):
                                            root_helper='sudo')
             except exception.ProcessExecutionError:
                 LOG.exception(_('Error killing stalled redis start command.'))
-            self.status.end_install_or_restart()
+            self.status.end_restart()
 
     def apply_initial_guestagent_configuration(self):
         """Update guestagent-controlled configuration properties.
