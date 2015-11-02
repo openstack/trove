@@ -13,12 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
-# Apply whole eventlet.monkey_patch excluding 'thread' module.
-# Decision for 'thread' module patching will be made
-# after debug_utils setting up
-eventlet.monkey_patch(all=True, thread=False)
-
 import gettext
 gettext.install('trove', unicode=1)
 
@@ -42,10 +36,6 @@ def main():
     logging.setup(CONF, None)
 
     debug_utils.setup()
-
-    # Patch 'thread' module if debug is disabled
-    if not debug_utils.enabled():
-        eventlet.monkey_patch(thread=True)
 
     from trove.guestagent import dbaas
     manager = dbaas.datastore_registry().get(CONF.datastore_manager)

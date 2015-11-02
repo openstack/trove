@@ -19,12 +19,6 @@ def initialize(extra_opts=None, pre_logging=None):
     import gettext
     gettext.install('trove', unicode=1)
 
-    # Apply whole eventlet.monkey_patch excluding 'thread' module.
-    # Decision for 'thread' module patching will be made
-    # after debug_utils is set up.
-    import eventlet
-    eventlet.monkey_patch(all=True, thread=False)
-
     # Import only the modules necessary to initialize logging and determine if
     # debug_utils are enabled.
     import sys
@@ -44,10 +38,6 @@ def initialize(extra_opts=None, pre_logging=None):
 
     logging.setup(conf, None)
     debug_utils.setup()
-
-    # Patch 'thread' module if debug is disabled.
-    if not debug_utils.enabled():
-        eventlet.monkey_patch(thread=True)
 
     # rpc module must be loaded after decision about thread monkeypatching
     # because if thread module is not monkeypatched we can't use eventlet
