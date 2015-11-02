@@ -16,7 +16,7 @@
 import uuid
 
 from mock import MagicMock, patch, ANY
-from novaclient.v2 import Client
+from novaclient.client import Client
 from novaclient.v2.flavors import FlavorManager, Flavor
 from novaclient.v2.servers import Server, ServerManager
 from oslo_config import cfg
