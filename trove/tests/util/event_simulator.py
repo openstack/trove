@@ -208,14 +208,15 @@ def fake_sleep(time_to_sleep):
     Puts the coroutine which calls it to sleep. If a coroutine object is not
     associated with the caller this will fail.
     """
-    global sleep_allowance
-    sleep_allowance -= 1
-    if not other_threads_are_active():
-        if sleep_allowance < -1:
-            raise RuntimeError("Sleeping for no reason.")
-        else:
-            return  # Forgive the thread for calling this for one time.
-    sleep_allowance = allowable_empty_sleeps
+    if time_to_sleep:
+        global sleep_allowance
+        sleep_allowance -= 1
+        if not other_threads_are_active():
+            if sleep_allowance < -1:
+                raise RuntimeError("Sleeping for no reason.")
+            else:
+                return  # Forgive the thread for calling this for one time.
+        sleep_allowance = allowable_empty_sleeps
 
     cr = Coroutine.get_current()
     for ft in fake_threads:

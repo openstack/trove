@@ -424,7 +424,46 @@ database_opts = [
     cfg.BoolOpt('query_log',
                 default=False,
                 deprecated_name='sql_query_log',
-                deprecated_group='DEFAULT'),
+                deprecated_group='DEFAULT',
+                deprecated_for_removal=True),
+    cfg.BoolOpt('sqlite_synchronous',
+                default=True,
+                help='If True, SQLite uses synchronous mode.'),
+    cfg.StrOpt('slave_connection',
+               secret=True,
+               help='The SQLAlchemy connection string to use to connect to the'
+                    ' slave database.'),
+    cfg.StrOpt('mysql_sql_mode',
+               default='TRADITIONAL',
+               help='The SQL mode to be used for MySQL sessions. '
+                    'This option, including the default, overrides any '
+                    'server-set SQL mode. To use whatever SQL mode '
+                    'is set by the server configuration, '
+                    'set this to no value. Example: mysql_sql_mode='),
+    cfg.IntOpt('max_pool_size',
+               help='Maximum number of SQL connections to keep open in a '
+                    'pool.'),
+    cfg.IntOpt('max_retries',
+               default=10,
+               help='Maximum number of database connection retries '
+                    'during startup. Set to -1 to specify an infinite '
+                    'retry count.'),
+    cfg.IntOpt('retry_interval',
+               default=10,
+               help='Interval between retries of opening a SQL connection.'),
+    cfg.IntOpt('max_overflow',
+               help='If set, use this value for max_overflow with '
+                    'SQLAlchemy.'),
+    cfg.IntOpt('connection_debug',
+               default=0,
+               help='Verbosity of SQL debugging information: 0=None, '
+                    '100=Everything.'),
+    cfg.BoolOpt('connection_trace',
+                default=False,
+                help='Add Python stack traces to SQL as comment strings.'),
+    cfg.IntOpt('pool_timeout',
+               help='If set, use this value for pool_timeout with '
+                    'SQLAlchemy.'),
 ]
 
 
