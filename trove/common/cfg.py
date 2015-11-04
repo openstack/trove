@@ -20,7 +20,7 @@ import os.path
 from oslo_config import cfg
 from oslo_log import log as logging
 
-import trove
+from trove.version import version_info as version
 
 
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
@@ -1200,5 +1200,5 @@ def custom_parser(parsername, parser):
 def parse_args(argv, default_config_files=None):
     cfg.CONF(args=argv[1:],
              project='trove',
-             version=trove.__version__,
+             version=version.cached_version_string(),
              default_config_files=default_config_files)
