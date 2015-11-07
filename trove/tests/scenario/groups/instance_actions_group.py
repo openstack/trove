@@ -15,16 +15,14 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import GROUP_START_SIMPLE
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
+from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
 
 
 GROUP = "scenario.instance_actions_group"
 
 
-@test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after=[WaitForGuestInstallationToFinish])
+@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
 class InstanceActionsGroup(TestGroup):
 
     def __init__(self):
@@ -33,12 +31,15 @@ class InstanceActionsGroup(TestGroup):
 
     @test
     def instance_restart(self):
+        """Restart an existing instance."""
         self.test_runner.run_instance_restart()
 
     @test(depends_on=[instance_restart])
     def instance_resize_volume(self):
+        """Resize attached volume."""
         self.test_runner.run_instance_resize_volume()
 
     @test(depends_on=[instance_resize_volume])
     def instance_resize_flavor(self):
+        """Resize instance flavor."""
         self.test_runner.run_instance_resize_flavor()

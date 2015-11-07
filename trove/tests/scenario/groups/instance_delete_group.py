@@ -15,19 +15,25 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import GROUP_START_SIMPLE
 from trove.tests.scenario.groups import backup_group
+from trove.tests.scenario.groups import database_actions_group
 from trove.tests.scenario.groups import instance_actions_group
+from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups import replication_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.groups import user_actions_group
 
 
 GROUP = "scenario.instance_delete_group"
 
 
-@test(depends_on_groups=[GROUP_START_SIMPLE], groups=[GROUP],
-      runs_after_groups=[backup_group.GROUP_BACKUP, replication_group.GROUP,
-                         instance_actions_group.GROUP])
+@test(depends_on_groups=[instance_create_group.GROUP],
+      groups=[GROUP],
+      runs_after_groups=[backup_group.GROUP_BACKUP,
+                         database_actions_group.GROUP,
+                         instance_actions_group.GROUP,
+                         replication_group.GROUP,
+                         user_actions_group.GROUP])
 class InstanceDeleteGroup(TestGroup):
 
     def __init__(self):
@@ -36,4 +42,5 @@ class InstanceDeleteGroup(TestGroup):
 
     @test
     def instance_delete(self):
+        """Delete an existing instance."""
         self.test_runner.run_instance_delete()
