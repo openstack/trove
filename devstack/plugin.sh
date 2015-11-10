@@ -202,6 +202,8 @@ function init_trove {
     # The image is uploaded by stack.sh -- see $IMAGE_URLS handling
     GUEST_IMAGE_NAME=$(basename "$TROVE_GUEST_IMAGE_URL")
     GUEST_IMAGE_NAME=${GUEST_IMAGE_NAME%.*}
+
+    TOKEN=$(openstack token issue -c id -f value)
     TROVE_GUEST_IMAGE_ID=$(openstack --os-token $TOKEN --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT image list | grep "${GUEST_IMAGE_NAME}" | get_field 1)
     if [ -z "$TROVE_GUEST_IMAGE_ID" ]; then
         # If no glance id is found, skip remaining setup
@@ -216,6 +218,15 @@ function init_trove {
     $TROVE_MANAGE datastore_version_update "$TROVE_DATASTORE_TYPE" "inactive_version" "inactive_manager" "$TROVE_GUEST_IMAGE_ID" "" 0
     $TROVE_MANAGE datastore_update "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION"
     $TROVE_MANAGE datastore_update "Inactive_Datastore" ""
+
+    # Some datastores provide validation rules.
+    # if one is provided, configure it.
+    if [ -f "${TROVE_DIR}/trove/templates/${TROVE_DATASTORE_TYPE}"/validation-rules.json ]; then
+        echo "Configuring validation rules for ${TROVE_DATASTORE_TYPE}"
+        $TROVE_MANAGE db_load_datastore_config_parameters \
+            "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" \
+            "${TROVE_DIR}/trove/templates/${TROVE_DATASTORE_TYPE}"/validation-rules.json
+    fi
 }
 
 # finalize_trove_network() - do the last thing(s) before starting Trove
