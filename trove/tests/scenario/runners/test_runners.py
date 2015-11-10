@@ -68,7 +68,15 @@ class TestRunner(object):
     def __init__(self, sleep_time=10, timeout=1200):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
+
         self.instance_info = instance_info
+        instance_info.dbaas_datastore = CONFIG.dbaas_datastore
+        instance_info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
+        if self.VOLUME_SUPPORT:
+            instance_info.volume = {'size': CONFIG.get('trove_volume_size', 1)}
+        else:
+            instance_info.volume = None
+
         self.auth_client = create_dbaas_client(self.instance_info.user)
         self.unauth_client = None
         self._test_helper = None
@@ -173,7 +181,12 @@ class TestRunner(object):
 
     @property
     def is_using_existing_instance(self):
-        return os.environ.get(self.USE_INSTANCE_ID_FLAG, None) is not None
+        return self.has_env_flag(self.USE_INSTANCE_ID_FLAG)
+
+    @staticmethod
+    def has_env_flag(flag_name):
+        """Return whether a given flag was set."""
+        return os.environ.get(flag_name, None) is not None
 
     def get_existing_instance(self):
         if self.is_using_existing_instance:
@@ -184,8 +197,7 @@ class TestRunner(object):
 
     @property
     def has_do_not_delete_instance(self):
-        return os.environ.get(
-            self.DO_NOT_DELETE_INSTANCE_FLAG, None) is not None
+        return self.has_env_flag(self.DO_NOT_DELETE_INSTANCE_FLAG)
 
     def assert_instance_action(
             self, instance_ids, expected_states, expected_http_code):

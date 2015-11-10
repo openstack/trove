@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import SkipTest
+
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -72,3 +74,18 @@ class MongodbNegativeClusterActionsRunner(NegativeClusterActionsRunner):
         super(NegativeClusterActionsRunner,
               self).run_create_constrained_size_cluster(min_nodes=3,
                                                         max_nodes=3)
+
+
+class RedisNegativeClusterActionsRunner(NegativeClusterActionsRunner):
+
+    def run_create_constrained_size_cluster(self):
+        raise SkipTest("No constraints apply to the number of cluster nodes.")
+
+    def run_create_heterogeneous_cluster(self):
+        raise SkipTest("No constraints apply to the size of cluster nodes.")
+
+
+class PxcNegativeClusterActionsRunner(NegativeClusterActionsRunner):
+
+    def run_create_constrained_size_cluster(self):
+        raise SkipTest("No constraints apply to the number of cluster nodes.")
