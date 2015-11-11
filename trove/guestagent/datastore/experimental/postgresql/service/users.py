@@ -86,7 +86,8 @@ class PgSqlUsers(PgSqlAccess):
               "_databases": [{"_name": ""}, ...]}, ...]
         """
         results = pgutil.query(
-            pgutil.UserQuery.list(ignore=cfg.get_ignored_users()),
+            pgutil.UserQuery.list(ignore=cfg.get_ignored_users(
+                manager='postgresql')),
             timeout=30,
         )
         # Convert results into dictionaries.

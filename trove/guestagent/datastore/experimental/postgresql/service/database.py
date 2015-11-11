@@ -88,7 +88,8 @@ class PgSqlDatabase(object):
             [{"_name": "", "_character_set": "", "_collate": ""}, ...]
         """
         results = pgutil.query(
-            pgutil.DatabaseQuery.list(ignore=cfg.get_ignored_dbs()),
+            pgutil.DatabaseQuery.list(ignore=cfg.get_ignored_dbs(
+                manager='postgresql')),
             timeout=30,
         )
         # Convert results to dictionaries.

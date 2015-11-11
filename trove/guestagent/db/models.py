@@ -27,6 +27,7 @@ CONF = cfg.CONF
 
 
 class Base(object):
+
     def serialize(self):
         return self.__dict__
 
@@ -158,8 +159,6 @@ class MongoDBSchema(DatastoreSchema):
 
 class MySQLDatabase(Base):
     """Represents a Database and its properties."""
-
-    _ignore_dbs = cfg.get_ignored_dbs()
 
     # Defaults
     __charset__ = "utf8"
@@ -400,6 +399,7 @@ class MySQLDatabase(Base):
         self._name = None
         self._collate = None
         self._character_set = None
+        self._ignore_dbs = cfg.get_ignored_dbs()
 
     @property
     def name(self):
@@ -459,6 +459,7 @@ class MySQLDatabase(Base):
 
 
 class ValidatedMySQLDatabase(MySQLDatabase):
+
     @MySQLDatabase.name.setter
     def name(self, value):
         if any([not value,
@@ -748,13 +749,13 @@ class MySQLUser(Base):
     """Represents a MySQL User and its associated properties."""
 
     not_supported_chars = re.compile("^\s|\s$|'|\"|;|`|,|/|\\\\")
-    _ignore_users = cfg.get_ignored_users()
 
     def __init__(self):
         self._name = None
         self._host = None
         self._password = None
         self._databases = []
+        self._ignore_users = cfg.get_ignored_users()
 
     def _is_valid(self, value):
         if (not value or
@@ -840,4 +841,5 @@ class MySQLUser(Base):
 class RootUser(MySQLUser):
     """Overrides _ignore_users from the MySQLUser class."""
 
-    _ignore_users = []
+    def __init__(self):
+        self._ignore_users = []

@@ -34,7 +34,8 @@ class PgSqlRoot(object):
         system administration superuser of os_admin.
         """
         results = pgutil.query(
-            pgutil.UserQuery.list_root(ignore=cfg.get_ignored_users()),
+            pgutil.UserQuery.list_root(ignore=cfg.get_ignored_users(
+                manager='postgresql')),
             timeout=30,
         )
         # Reduce iter of iters to iter of single values.
