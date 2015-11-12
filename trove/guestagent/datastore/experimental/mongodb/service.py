@@ -50,26 +50,12 @@ CONFIGSVR_PORT = CONF.mongodb.configsvr_port
 class MongoDBApp(object):
     """Prepares DBaaS on a Guest container."""
 
-    @classmethod
-    def _init_overrides_dir(cls):
-        """Initialize a directory for configuration overrides.
-        """
-        revision_dir = guestagent_utils.build_file_path(
-            os.path.dirname(CONFIG_FILE),
-            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
-
-        if not os.path.exists(revision_dir):
-            operating_system.create_directory(
-                revision_dir,
-                user=system.MONGO_USER, group=system.MONGO_USER,
-                force=True, as_root=True)
-
-        return revision_dir
-
     def __init__(self):
         self.state_change_wait_time = CONF.state_change_wait_time
 
-        revision_dir = self._init_overrides_dir()
+        revision_dir = guestagent_utils.build_file_path(
+            os.path.dirname(CONFIG_FILE),
+            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
         self.configuration_manager = ConfigurationManager(
             CONFIG_FILE, system.MONGO_USER, system.MONGO_USER,
             SafeYamlCodec(default_flow_style=False),

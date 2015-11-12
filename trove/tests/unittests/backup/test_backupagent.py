@@ -26,7 +26,7 @@ from trove.common import utils
 from trove.conductor import api as conductor_api
 from trove.guestagent.backup import backupagent
 from trove.guestagent.common import configuration
-from trove.guestagent.datastore.experimental.mongodb.service import MongoDBApp
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
@@ -251,7 +251,7 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(cbbackup.manifest)
         self.assertIn('gz.enc', cbbackup.manifest)
 
-    @mock.patch.object(MongoDBApp, '_init_overrides_dir', return_value='')
+    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def test_backup_impl_MongoDump(self, _):
         netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
         utils.execute_with_timeout = Mock(return_value=None)

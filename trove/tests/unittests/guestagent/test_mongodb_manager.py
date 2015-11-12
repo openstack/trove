@@ -18,6 +18,7 @@ import pymongo
 import trove.common.context as context
 import trove.common.utils as utils
 import trove.guestagent.backup as backup
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 import trove.guestagent.datastore.experimental.mongodb.manager as manager
 import trove.guestagent.datastore.experimental.mongodb.service as service
 import trove.guestagent.db.models as models
@@ -27,8 +28,7 @@ import trove.tests.unittests.trove_testtools as trove_testtools
 
 class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
 
-    @mock.patch.object(service.MongoDBApp, '_init_overrides_dir',
-                       return_value='')
+    @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
         super(GuestAgentMongoDBManagerTest, self).setUp()
         self.context = context.TroveContext()

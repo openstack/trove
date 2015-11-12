@@ -72,22 +72,6 @@ class RedisApp(object):
     on a trove instance.
     """
 
-    @classmethod
-    def _init_overrides_dir(cls):
-        """Initialize a directory for configuration overrides.
-        """
-        revision_dir = guestagent_utils.build_file_path(
-            os.path.dirname(system.REDIS_CONFIG),
-            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
-
-        if not os.path.exists(revision_dir):
-            operating_system.create_directory(
-                revision_dir,
-                user=system.REDIS_OWNER, group=system.REDIS_OWNER,
-                force=True, as_root=True)
-
-        return revision_dir
-
     def __init__(self, state_change_wait_time=None):
         """
         Sets default status and state_change_wait_time
@@ -97,7 +81,9 @@ class RedisApp(object):
         else:
             self.state_change_wait_time = CONF.state_change_wait_time
 
-        revision_dir = self._init_overrides_dir()
+        revision_dir = guestagent_utils.build_file_path(
+            os.path.dirname(system.REDIS_CONFIG),
+            ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
         config_value_mappings = {'yes': True, 'no': False, "''": None}
         self._value_converter = StringConverter(config_value_mappings)
         self.configuration_manager = ConfigurationManager(
