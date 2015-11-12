@@ -819,6 +819,10 @@ class TestOperatingSystem(trove_testtools.TestCase):
             config_file = operating_system.file_discovery(
                 ["/etc/mongodb.conf", "/etc/mongod.conf"])
         self.assertEqual('/etc/mongod.conf', config_file)
+        with patch.object(os.path, 'isfile', side_effect=[False]):
+            config_file = operating_system.file_discovery(
+                ["/etc/mongodb.conf"])
+        self.assertEqual('', config_file)
 
     def test_list_files_in_directory(self):
         root_path = tempfile.mkdtemp()

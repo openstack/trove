@@ -248,6 +248,7 @@ def file_discovery(file_candidates):
     for file in file_candidates:
         if os.path.isfile(file):
             return file
+    return ''
 
 
 def start_service(service_candidates):
