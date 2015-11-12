@@ -53,14 +53,6 @@ class CassandraApp(object):
             self._install_db(packages)
         LOG.debug("Cassandra install_if_needed complete")
 
-    def _enable_db_on_boot(self):
-        utils.execute_with_timeout(system.ENABLE_CASSANDRA_ON_BOOT,
-                                   shell=True)
-
-    def _disable_db_on_boot(self):
-        utils.execute_with_timeout(system.DISABLE_CASSANDRA_ON_BOOT,
-                                   shell=True)
-
     def init_storage_structure(self, mount_point):
         try:
             operating_system.create_directory(mount_point, as_root=True)
@@ -68,49 +60,18 @@ class CassandraApp(object):
             LOG.exception(_("Error while initiating storage structure."))
 
     def start_db(self, update_db=False):
-        self._enable_db_on_boot()
-        try:
-            utils.execute_with_timeout(system.START_CASSANDRA,
-                                       shell=True)
-        except exception.ProcessExecutionError:
-            LOG.exception(_("Error starting Cassandra"))
-            pass
-
-        if not (self.status.
-                wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.RUNNING,
-                self.state_change_wait_time,
-                update_db)):
-            try:
-                utils.execute_with_timeout(system.CASSANDRA_KILL,
-                                           shell=True)
-            except exception.ProcessExecutionError:
-                LOG.exception(_("Error killing Cassandra start command."))
-            self.status.end_restart()
-            raise RuntimeError(_("Could not start Cassandra"))
+        self.status.start_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            enable_on_boot=True, update_db=update_db)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        if do_not_start_on_reboot:
-            self._disable_db_on_boot()
-        utils.execute_with_timeout(system.STOP_CASSANDRA,
-                                   shell=True,
-                                   timeout=system.SERVICE_STOP_TIMEOUT)
-
-        if not (self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.SHUTDOWN,
-                self.state_change_wait_time, update_db)):
-            LOG.error(_("Could not stop Cassandra."))
-            self.status.end_restart()
-            raise RuntimeError(_("Could not stop Cassandra."))
+        self.status.stop_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)
 
     def restart(self):
-        try:
-            self.status.begin_restart()
-            LOG.info(_("Restarting Cassandra server."))
-            self.stop_db()
-            self.start_db()
-        finally:
-            self.status.end_restart()
+        self.status.restart_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time)
 
     def _install_db(self, packages):
         """Install cassandra server"""
@@ -235,3 +196,6 @@ class CassandraAppStatus(service.BaseDbStatus):
         except (exception.ProcessExecutionError, OSError):
             LOG.exception(_("Error getting Cassandra status"))
             return rd_instance.ServiceStatuses.SHUTDOWN
+
+    def cleanup_stalled_db_services(self):
+        utils.execute_with_timeout(system.CASSANDRA_KILL, shell=True)

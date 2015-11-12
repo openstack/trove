@@ -21,7 +21,6 @@ import pymongo
 
 from trove.common import cfg
 from trove.common import exception
-from trove.common.exception import ProcessExecutionError
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
 from trove.common import pagination
@@ -75,96 +74,24 @@ class MongoDBApp(object):
             system.PACKAGER.pkg_install(packages, {}, system.TIME_OUT)
         LOG.info(_("Finished installing MongoDB server."))
 
-    def _get_service(self):
+    def _get_service_candidates(self):
         if self.is_query_router:
-            return (operating_system.
-                    service_discovery(system.MONGOS_SERVICE_CANDIDATES))
-        else:
-            return (operating_system.
-                    service_discovery(system.MONGOD_SERVICE_CANDIDATES))
-
-    def _enable_db_on_boot(self):
-        LOG.info(_("Enabling MongoDB on boot."))
-        try:
-            mongo_service = self._get_service()
-            utils.execute_with_timeout(mongo_service['cmd_enable'],
-                                       shell=True)
-        except KeyError:
-            raise RuntimeError(_("MongoDB service is not discovered."))
-
-    def _disable_db_on_boot(self):
-        LOG.info(_("Disabling MongoDB on boot."))
-        try:
-            mongo_service = self._get_service()
-            utils.execute_with_timeout(mongo_service['cmd_disable'],
-                                       shell=True)
-        except KeyError:
-            raise RuntimeError("MongoDB service is not discovered.")
+            return system.MONGOS_SERVICE_CANDIDATES
+        return system.MONGOD_SERVICE_CANDIDATES
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        LOG.info(_("Stopping MongoDB."))
-        if do_not_start_on_reboot:
-            self._disable_db_on_boot()
-
-        try:
-            mongo_service = self._get_service()
-            # TODO(ramashri) see if hardcoded values can be removed
-            utils.execute_with_timeout(mongo_service['cmd_stop'],
-                                       shell=True, timeout=100)
-        except KeyError:
-            raise RuntimeError(_("MongoDB service is not discovered."))
-
-        if not self.status.wait_for_real_status_to_change_to(
-                ds_instance.ServiceStatuses.SHUTDOWN,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Could not stop MongoDB."))
-            self.status.end_restart()
-            raise RuntimeError(_("Could not stop MongoDB"))
+        self.status.stop_db_service(
+            self._get_service_candidates(), self.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)
 
     def restart(self):
-        LOG.info(_("Restarting MongoDB."))
-        try:
-            self.status.begin_restart()
-            self.stop_db()
-            self.start_db()
-        finally:
-            self.status.end_restart()
+        self.status.restart_db_service(
+            self._get_service_candidates(), self.state_change_wait_time)
 
     def start_db(self, update_db=False):
-        LOG.info(_("Starting MongoDB."))
-
-        self._enable_db_on_boot()
-
-        try:
-            mongo_service = self._get_service()
-            utils.execute_with_timeout(mongo_service['cmd_start'],
-                                       shell=True)
-        except ProcessExecutionError:
-            pass
-        except KeyError:
-            raise RuntimeError("MongoDB service is not discovered.")
-        self.wait_for_start(update_db=update_db)
-
-    def wait_for_start(self, update_db=False):
-        LOG.debug('Waiting for MongoDB to start.')
-        if not self.status.wait_for_real_status_to_change_to(
-                ds_instance.ServiceStatuses.RUNNING,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of MongoDB failed."))
-            # If it won't start, but won't die either, kill it by hand so we
-            # don't let a rouge process wander around.
-            try:
-                out, err = utils.execute_with_timeout(
-                    system.FIND_PID, shell=True)
-                pid = "".join(out.split(" ")[1:2])
-                utils.execute_with_timeout(
-                    system.MONGODB_KILL % pid, shell=True)
-            except exception.ProcessExecutionError:
-                LOG.exception(_("Error killing MongoDB start command."))
-                # There's nothing more we can do...
-            self.status.end_restart()
-            raise RuntimeError("Could not start MongoDB.")
-        LOG.debug('MongoDB started successfully.')
+        self.status.start_db_service(
+            self._get_service_candidates(), self.state_change_wait_time,
+            enable_on_boot=True, update_db=update_db)
 
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
@@ -537,6 +464,11 @@ class MongoDBAppStatus(service.BaseDbStatus):
             LOG.exception(_("Error getting MongoDB status."))
 
         return ds_instance.ServiceStatuses.SHUTDOWN
+
+    def cleanup_stalled_db_services(self):
+        out, err = utils.execute_with_timeout(system.FIND_PID, shell=True)
+        pid = "".join(out.split(" ")[1:2])
+        utils.execute_with_timeout(system.MONGODB_KILL % pid, shell=True)
 
 
 class MongoDBAdmin(object):

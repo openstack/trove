@@ -58,7 +58,7 @@ class RedisBackup(base.RestoreRunner):
         operating_system.chown(self.restore_location,
                                system.REDIS_OWNER, system.REDIS_OWNER,
                                as_root=True)
-        self.app.start_redis()
+        self.app.start_db()
 
         # IF AOF was set, we need to put back the original file
         if self.aof_set:
@@ -70,4 +70,4 @@ class RedisBackup(base.RestoreRunner):
             self.app.stop_db()
             self.app.configuration_manager.remove_system_override(
                 change_id=self.CONF_LABEL_AOF_TEMP_OFF)
-            self.app.start_redis()
+            self.app.start_db()

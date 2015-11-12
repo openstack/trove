@@ -239,16 +239,29 @@ class BaseDbStatus(object):
         LOG.info(_("Starting database service."))
         operating_system.start_service(service_candidates)
 
+        self.wait_for_database_service_start(timeout, update_db=update_db)
+
+        if enable_on_boot:
+            LOG.info(_("Enable service auto-start on boot."))
+            operating_system.enable_service_on_boot(service_candidates)
+
+    def wait_for_database_service_start(self, timeout, update_db=False):
+        """Wait for the database to become available.
+
+        :param timeout:              Wait timeout in seconds.
+        :type timeout:               integer
+
+        :param update_db:            Suppress the Trove instance heartbeat.
+        :type update_db:             boolean
+
+        :raises:              :class:`RuntimeError` on failure.
+        """
         LOG.debug("Waiting for database to start up.")
         if not self._wait_for_database_service_status(
                 instance.ServiceStatuses.RUNNING, timeout, update_db):
             raise RuntimeError(_("Database failed to start."))
 
         LOG.info(_("Database has started successfully."))
-
-        if enable_on_boot:
-            LOG.info(_("Enable service auto-start on boot."))
-            operating_system.enable_service_on_boot(service_candidates)
 
     def stop_db_service(self, service_candidates, timeout,
                         disable_on_boot=False, update_db=False):
