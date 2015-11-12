@@ -188,6 +188,7 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
             [system_overrides_v1, system_overrides_v2],
             [user_overrides_v1, user_overrides_v2], False)
 
+    @patch.multiple(operating_system, chmod=Mock(), chown=Mock())
     def _test_import_override_strategy(
             self, system_overrides, user_overrides, test_multi_rev):
         base_config_contents = {'Section_1': {'name': 'pi',
@@ -356,6 +357,7 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
         self._assert_get_value(ImportOverrideStrategy(revision_dir, 'ext'))
         self._assert_get_value(OneFileOverrideStrategy(revision_dir))
 
+    @patch.multiple(operating_system, chmod=Mock(), chown=Mock())
     def _assert_get_value(self, override_strategy):
         base_config_contents = {'Section_1': {'name': 'pi',
                                               'is_number': 'True',
