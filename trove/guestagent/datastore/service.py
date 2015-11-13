@@ -320,20 +320,39 @@ class BaseDbStatus(object):
         specified. Does not update the publicly viewable status Unless
         "update_db" is True.
         """
-        WAIT_TIME = 3
-        waited_time = 0
-        while waited_time < max_time:
-            time.sleep(WAIT_TIME)
-            waited_time += WAIT_TIME
-            LOG.debug("Waiting for DB status to change to %s." % status)
+        end_time = time.time() + max_time
+
+        # since python does not support a real do-while loop, we have
+        # to emulate one. Hence these shenanigans. We force at least
+        # one pass into the loop and therefore it is safe that
+        # actual_status is initialized in the loop while it is used
+        # outside.
+        loop = True
+
+        while loop:
             actual_status = self._get_actual_db_status()
-            LOG.debug("DB status was %s after %d seconds."
-                      % (actual_status, waited_time))
             if actual_status == status:
                 if update_db:
                     self.set_status(actual_status)
                 return True
-        LOG.error(_("Timeout while waiting for database status to change."))
+
+            # should we remain in this loop? this is the thing
+            # that emulates the do-while construct.
+            loop = (time.time() < end_time)
+
+            # no point waiting if our time is up and we're
+            # just going to error out anyway.
+            if loop:
+                LOG.debug("Waiting for DB status to change from "
+                          "%(actual_status)s to %(status)s." %
+                          {"actual_status": actual_status, "status": status})
+
+                time.sleep(CONF.state_change_poll_time)
+
+        LOG.error(_("Timeout while waiting for database status to change."
+                    "Expected state %(status)s, "
+                    "current state is %(actual_status)s") %
+                  {"status": status, "actual_status": actual_status})
         return False
 
     def cleanup_stalled_db_services(self):

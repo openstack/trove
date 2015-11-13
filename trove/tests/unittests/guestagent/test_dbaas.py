@@ -107,6 +107,19 @@ conductor_api.API.get_client = Mock()
 conductor_api.API.heartbeat = Mock()
 
 
+class FakeTime:
+    COUNTER = 0
+
+    @classmethod
+    def time(cls):
+        cls.COUNTER += 1
+        return cls.COUNTER
+
+
+def faketime(*args, **kwargs):
+    return FakeTime.time()
+
+
 class FakeAppStatus(BaseDbStatus):
 
     def __init__(self, id, status):
@@ -771,6 +784,7 @@ class MySqlAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = \
             dbaas_base.utils.execute_with_timeout
         self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
         self.orig_unlink = os.unlink
         self.orig_get_auth_password = MySqlApp.get_auth_password
         self.orig_service_discovery = operating_system.service_discovery
@@ -791,6 +805,7 @@ class MySqlAppTest(testtools.TestCase):
         pxc_system.service_discovery = Mock(
             return_value=mysql_service)
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
         os.unlink = Mock()
         MySqlApp.get_auth_password = Mock()
         self.mock_client = Mock()
@@ -807,6 +822,7 @@ class MySqlAppTest(testtools.TestCase):
         dbaas_base.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
         os.unlink = self.orig_unlink
         operating_system.service_discovery = self.orig_service_discovery
         MySqlApp.get_auth_password = self.orig_get_auth_password
@@ -1810,6 +1826,7 @@ class BaseDbStatusTest(testtools.TestCase):
         super(BaseDbStatusTest, self).setUp()
         util.init_db()
         self.orig_dbaas_time_sleep = time.sleep
+        self.orig_time_time = time.time
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -1827,6 +1844,7 @@ class BaseDbStatusTest(testtools.TestCase):
     def tearDown(self):
         super(BaseDbStatusTest, self).tearDown()
         time.sleep = self.orig_dbaas_time_sleep
+        time.time = self.orig_time_time
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
@@ -1896,6 +1914,7 @@ class BaseDbStatusTest(testtools.TestCase):
         base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
 
         self.assertTrue(base_db_status.
                         wait_for_real_status_to_change_to
@@ -1906,6 +1925,7 @@ class BaseDbStatusTest(testtools.TestCase):
         base_db_status._get_actual_db_status = Mock(
             return_value=rd_instance.ServiceStatuses.RUNNING)
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
 
         self.assertFalse(base_db_status.
                          wait_for_real_status_to_change_to
@@ -2140,6 +2160,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.orig_load_mysqld_options = dbaas_base.load_mysqld_options
         self.orig_dbaas_base_os_path_exists = dbaas_base.os.path.exists
         self.orig_dbaas_time_sleep = time.sleep
+        self.orig_time_time = time.time
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
@@ -2152,6 +2173,7 @@ class MySqlAppStatusTest(testtools.TestCase):
         dbaas_base.load_mysqld_options = self.orig_load_mysqld_options
         dbaas_base.os.path.exists = self.orig_dbaas_base_os_path_exists
         time.sleep = self.orig_dbaas_time_sleep
+        time.time = self.orig_time_time
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
@@ -2402,6 +2424,7 @@ class CassandraDBAppTest(testtools.TestCase):
         self.utils_execute_with_timeout = (
             cass_service.utils.execute_with_timeout)
         self.sleep = time.sleep
+        self.orig_time_time = time.time
         self.pkg_version = cass_service.packager.pkg_version
         self.pkg = cass_service.packager
         util.init_db()
@@ -2419,6 +2442,7 @@ class CassandraDBAppTest(testtools.TestCase):
         cass_service.utils.execute_with_timeout = (self.
                                                    utils_execute_with_timeout)
         time.sleep = self.sleep
+        time.time = self.orig_time_time
         cass_service.packager.pkg_version = self.pkg_version
         cass_service.packager = self.pkg
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
@@ -2622,7 +2646,9 @@ class CouchbaseAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = (
             couchservice.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
         self.orig_service_discovery = operating_system.service_discovery
         self.orig_get_ip = netutils.get_my_ipv4
         operating_system.service_discovery = (
@@ -2643,6 +2669,7 @@ class CouchbaseAppTest(testtools.TestCase):
         netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
@@ -2734,7 +2761,9 @@ class CouchDBAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = (
             couchdb_service.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
         self.orig_service_discovery = operating_system.service_discovery
         self.orig_get_ip = netutils.get_my_ipv4
         operating_system.service_discovery = (
@@ -2756,6 +2785,7 @@ class CouchDBAppTest(testtools.TestCase):
         netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
@@ -2835,6 +2865,7 @@ class MongoDBAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = (mongo_service.
                                                 utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
         self.orig_packager = mongo_system.PACKAGER
         self.orig_service_discovery = operating_system.service_discovery
         self.orig_os_unlink = os.unlink
@@ -2852,6 +2883,7 @@ class MongoDBAppTest(testtools.TestCase):
         self.mongoDbApp.status = FakeAppStatus(self.FAKE_ID,
                                                rd_instance.ServiceStatuses.NEW)
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
         os.unlink = Mock()
 
     def tearDown(self):
@@ -2859,6 +2891,7 @@ class MongoDBAppTest(testtools.TestCase):
         mongo_service.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
         time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
         mongo_system.PACKAGER = self.orig_packager
         operating_system.service_discovery = self.orig_service_discovery
         os.unlink = self.orig_os_unlink
@@ -3742,6 +3775,7 @@ class PXCAppTest(testtools.TestCase):
         self.orig_utils_execute_with_timeout = \
             dbaas_base.utils.execute_with_timeout
         self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
         self.orig_unlink = os.unlink
         self.orig_get_auth_password = pxc_service.PXCApp.get_auth_password
         self.orig_service_discovery = operating_system.service_discovery
@@ -3761,6 +3795,7 @@ class PXCAppTest(testtools.TestCase):
         pxc_system.service_discovery = Mock(
             return_value=mysql_service)
         time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
         os.unlink = Mock()
         pxc_service.PXCApp.get_auth_password = Mock()
         self.mock_client = Mock()
@@ -3779,6 +3814,7 @@ class PXCAppTest(testtools.TestCase):
         dbaas_base.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
         os.unlink = self.orig_unlink
         operating_system.service_discovery = self.orig_service_discovery
         pxc_system.service_discovery = self.orig_pxc_system_service_discovery
