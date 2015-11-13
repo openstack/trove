@@ -364,7 +364,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         # assertions
         self.assertEqual(1, mock_replication.enable_as_slave.call_count)
 
-    def test_attach_replication_slave_invalid(self):
+    @patch('trove.guestagent.datastore.mysql_common.manager.LOG')
+    def test_attach_replication_slave_invalid(self, *args):
         mock_status = MagicMock()
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
 
@@ -666,7 +667,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         # assertions
         self.assertEqual(mock_replication.enable_as_master.call_count, 1)
 
-    def test__perform_restore(self):
+    @patch('trove.guestagent.datastore.mysql_common.manager.LOG')
+    def test__perform_restore(self, *args):
         backup_info = {'id': 'backup_id_123abc',
                        'location': 'fake-location',
                        'type': 'InnoBackupEx',

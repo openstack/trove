@@ -257,7 +257,8 @@ class TestReplication(trove_testtools.TestCase):
         models.create_nova_client = self.safe_nova_client
         super(TestReplication, self).tearDown()
 
-    def test_replica_of_not_active_master(self):
+    @patch('trove.instance.models.LOG')
+    def test_replica_of_not_active_master(self, mock_logging):
         self.master.set_task_status(InstanceTasks.BUILDING)
         self.master.save()
         self.master_status.set_status(ServiceStatuses.BUILDING)
@@ -268,7 +269,8 @@ class TestReplication(trove_testtools.TestCase):
                           self.datastore_version, 1,
                           None, slave_of_id=self.master.id)
 
-    def test_replica_with_invalid_slave_of_id(self):
+    @patch('trove.instance.models.LOG')
+    def test_replica_with_invalid_slave_of_id(self, mock_logging):
         self.assertRaises(exception.NotFound,
                           Instance.create,
                           None, 'name', 1, "UUID", [], [], None,

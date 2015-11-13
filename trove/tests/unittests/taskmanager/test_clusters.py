@@ -96,7 +96,8 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(InstanceServiceStatus, 'find_by')
-    def test_all_instances_ready_bad_status(self,
+    @patch('trove.taskmanager.models.LOG')
+    def test_all_instances_ready_bad_status(self, mock_logging,
                                             mock_find, mock_update):
         (mock_find.return_value.
          get_status.return_value) = ServiceStatuses.FAILED
@@ -118,7 +119,9 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     @patch.object(ClusterTasks, 'get_ip')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
-    def test_init_replica_set_failure(self, mock_dv, mock_ds,
+    @patch(
+        'trove.common.strategies.cluster.experimental.mongodb.taskmanager.LOG')
+    def test_init_replica_set_failure(self, mock_logging, mock_dv, mock_ds,
                                       mock_ip, mock_guest,
                                       mock_update):
         member1 = BaseInstance(Mock(), self.dbinst1, Mock(),
@@ -169,8 +172,11 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     @patch.object(ClusterTasks, 'get_ip')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
-    def test_create_shard_failure(self, mock_dv, mock_ds, mock_ip,
-                                  mock_guest, mock_init_rs, mock_update):
+    @patch(
+        'trove.common.strategies.cluster.experimental.mongodb.taskmanager.LOG')
+    def test_create_shard_failure(self, mock_logging, mock_dv, mock_ds,
+                                  mock_ip, mock_guest, mock_init_rs,
+                                  mock_update):
         member1 = BaseInstance(Mock(), self.dbinst1, Mock(),
                                InstanceServiceStatus(ServiceStatuses.NEW))
         member2 = BaseInstance(Mock(), self.dbinst2, Mock(),
@@ -320,12 +326,11 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     @patch.object(ClusterTasks, 'get_cluster_admin_password')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
+    @patch(
+        'trove.common.strategies.cluster.experimental.mongodb.taskmanager.LOG')
     def test_add_query_routers_failure(self,
-                                       mock_dv,
-                                       mock_ds,
-                                       mock_password,
-                                       mock_guest,
-                                       mock_update):
+                                       mock_logging, mock_dv, mock_ds,
+                                       mock_password, mock_guest, mock_update):
         query_router = BaseInstance(
             Mock(), self.dbinst3, Mock(),
             InstanceServiceStatus(ServiceStatuses.NEW)

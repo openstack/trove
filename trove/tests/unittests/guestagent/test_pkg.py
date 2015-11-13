@@ -301,7 +301,8 @@ class PkgRPMVersionTestCase(trove_testtools.TestCase):
         super(PkgRPMVersionTestCase, self).tearDown()
         commands.getstatusoutput = self.commands_output
 
-    def test_version_no_output(self):
+    @patch('trove.guestagent.pkg.LOG')
+    def test_version_no_output(self, mock_logging):
         cmd_out = ''
         commands.getstatusoutput = Mock(return_value=(0, cmd_out))
         self.assertIsNone(pkg.RedhatPackagerMixin().pkg_version(self.pkgName))

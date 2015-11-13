@@ -87,7 +87,8 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(InstanceServiceStatus, 'find_by')
-    def test_all_instances_ready_bad_status(self,
+    @patch('trove.taskmanager.models.LOG')
+    def test_all_instances_ready_bad_status(self, mock_logging,
                                             mock_find, mock_update):
         (mock_find.return_value.
          get_status.return_value) = ServiceStatuses.FAILED
@@ -151,7 +152,10 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
     @patch.object(DBInstance, 'find_all')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
-    def test_create_cluster_fail(self, mock_dv, mock_ds, mock_find_all,
+    @patch(
+        'trove.common.strategies.cluster.experimental.vertica.taskmanager.LOG')
+    def test_create_cluster_fail(self, mock_logging, mock_dv, mock_ds,
+                                 mock_find_all,
                                  mock_load, mock_ready, mock_ip,
                                  mock_reset_task, mock_update_status):
         mock_find_all.return_value.all.return_value = [self.dbinst1]

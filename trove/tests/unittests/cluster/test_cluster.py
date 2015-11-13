@@ -143,7 +143,8 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
-    def test_delete_bad_task_status(self):
+    @patch('trove.cluster.models.LOG')
+    def test_delete_bad_task_status(self, mock_logging):
         self.cluster.db_info.task_status = ClusterTasks.BUILDING_INITIAL
         self.assertRaises(exception.UnprocessableEntity,
                           self.cluster.delete)
@@ -170,7 +171,8 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster.delete()
         mock_update_db.assert_called_with(task_status=ClusterTasks.DELETING)
 
-    def test_add_shard_bad_task_status(self):
+    @patch('trove.common.strategies.cluster.experimental.mongodb.api.LOG')
+    def test_add_shard_bad_task_status(self, mock_logging):
         task_status = ClusterTasks.BUILDING_INITIAL
         self.cluster.db_info.task_status = task_status
         self.assertRaises(exception.UnprocessableEntity,

@@ -125,6 +125,7 @@ class TestManager(trove_testtools.TestCase):
                                                 InstanceTasks.NONE)
 
     @patch.object(Manager, '_set_task_status')
+    @patch('trove.taskmanager.manager.LOG')
     def test_exception_TroveError_promote_to_replica_source(self, *args):
         self.mock_slave2.detach_replica = Mock(side_effect=TroveError)
         with patch.object(models.BuiltInstanceTasks, 'load',
@@ -136,8 +137,10 @@ class TestManager(trove_testtools.TestCase):
 
     @patch.object(Manager, '_set_task_status')
     @patch.object(Manager, '_most_current_replica')
+    @patch('trove.taskmanager.manager.LOG')
     def test_exception_TroveError_eject_replica_source(
-            self, mock_most_current_replica, mock_set_tast_status):
+            self, mock_logging, mock_most_current_replica,
+            mock_set_tast_status):
         self.mock_slave2.detach_replica = Mock(side_effect=TroveError)
         mock_most_current_replica.return_value = self.mock_slave1
         with patch.object(models.BuiltInstanceTasks, 'load',
@@ -159,7 +162,9 @@ class TestManager(trove_testtools.TestCase):
                                     self.manager.promote_to_replica_source,
                                     self.context, 'some-inst-id')
 
-    def test_error_demote_replication_master_promote_to_replica_source(self):
+    @patch('trove.taskmanager.manager.LOG')
+    def test_error_demote_replication_master_promote_to_replica_source(
+            self, mock_logging):
         self.mock_old_master.demote_replication_master = Mock(
             side_effect=RuntimeError('Error'))
 
@@ -206,7 +211,9 @@ class TestManager(trove_testtools.TestCase):
 
     @patch.object(models.FreshInstanceTasks, 'load')
     @patch.object(Backup, 'delete')
-    def test_exception_create_replication_slave(self, mock_delete, mock_load):
+    @patch('trove.taskmanager.manager.LOG')
+    def test_exception_create_replication_slave(self, mock_logging,
+                                                mock_delete, mock_load):
         mock_load.return_value.create_instance = Mock(side_effect=TroveError)
         self.assertRaises(TroveError, self.manager.create_instance,
                           self.context, ['id1', 'id2'], Mock(), Mock(),

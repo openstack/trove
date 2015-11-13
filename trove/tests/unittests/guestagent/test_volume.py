@@ -64,7 +64,8 @@ class VolumeDeviceTest(trove_testtools.TestCase):
         self.assertEqual(1, utils.execute.call_count)
         utils.execute = origin_execute
 
-    def test_fail__check_device_exists(self):
+    @patch('trove.guestagent.volume.LOG')
+    def test_fail__check_device_exists(self, mock_logging):
         with patch.object(utils, 'execute', side_effect=ProcessExecutionError):
             self.assertRaises(GuestError,
                               self.volumeDevice._check_device_exists)
@@ -142,7 +143,8 @@ class VolumeDeviceTest(trove_testtools.TestCase):
 
     @patch.object(os.path, 'ismount', return_value=True)
     @patch.object(utils, 'execute', side_effect=ProcessExecutionError)
-    def test_fail_resize_fs(self, mock_execute, mock_mount):
+    @patch('trove.guestagent.volume.LOG')
+    def test_fail_resize_fs(self, mock_logging, mock_execute, mock_mount):
         with patch.object(self.volumeDevice, '_check_device_exists'):
             self.assertRaises(GuestError,
                               self.volumeDevice.resize_fs, '/mnt/volume')
@@ -175,7 +177,8 @@ class VolumeDeviceTest(trove_testtools.TestCase):
         self.assertEqual(['/var/lib/mysql'], mount_point)
 
     @patch.object(utils, 'execute', side_effect=ProcessExecutionError)
-    def test_fail_mount_points(self, mock_execute):
+    @patch('trove.guestagent.volume.LOG')
+    def test_fail_mount_points(self, mock_logging, mock_execute):
         self.assertRaises(GuestError, self.volumeDevice.mount_points,
                           '/mnt/volume')
 
@@ -192,7 +195,8 @@ class VolumeDeviceTest(trove_testtools.TestCase):
                                     readahead_size, "/dev/vdb")
         self.volumeDevice._check_device_exists = origin_check_device_exists
 
-    def test_fail_set_readahead_size(self):
+    @patch('trove.guestagent.volume.LOG')
+    def test_fail_set_readahead_size(self, mock_logging):
         mock_execute = MagicMock(side_effect=ProcessExecutionError)
         readahead_size = 2048
         with patch.object(self.volumeDevice, '_check_device_exists'):

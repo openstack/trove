@@ -273,7 +273,8 @@ class ClusterTest(trove_testtools.TestCase):
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
 
-    def test_delete_bad_task_status(self):
+    @patch('trove.cluster.models.LOG')
+    def test_delete_bad_task_status(self, mock_logging):
         self.cluster.db_info.task_status = ClusterTasks.BUILDING_INITIAL
         self.assertRaises(exception.UnprocessableEntity,
                           self.cluster.delete)

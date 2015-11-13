@@ -61,24 +61,28 @@ class Security_Group_Exceptions_Test(trove_testtools.TestCase):
     def _raise(self, ex):
         raise ex
 
-    def test_failed_to_create_security_group(self):
+    @patch('trove.network.nova.LOG')
+    def test_failed_to_create_security_group(self, mock_logging):
         self.assertRaises(exception.SecurityGroupCreationError,
                           sec_mod.RemoteSecurityGroup.create,
                           "TestName",
                           "TestDescription",
                           self.context)
 
-    def test_failed_to_delete_security_group(self):
+    @patch('trove.network.nova.LOG')
+    def test_failed_to_delete_security_group(self, mock_logging):
         self.assertRaises(exception.SecurityGroupDeletionError,
                           sec_mod.RemoteSecurityGroup.delete,
                           1, self.context)
 
-    def test_failed_to_create_security_group_rule(self):
+    @patch('trove.network.nova.LOG')
+    def test_failed_to_create_security_group_rule(self, mock_logging):
         self.assertRaises(exception.SecurityGroupRuleCreationError,
                           sec_mod.RemoteSecurityGroup.add_rule,
                           1, "tcp", 3306, 3306, "0.0.0.0/0", self.context)
 
-    def test_failed_to_delete_security_group_rule(self):
+    @patch('trove.network.nova.LOG')
+    def test_failed_to_delete_security_group_rule(self, mock_logging):
         self.assertRaises(exception.SecurityGroupRuleDeletionError,
                           sec_mod.RemoteSecurityGroup.delete_rule,
                           1, self.context)
