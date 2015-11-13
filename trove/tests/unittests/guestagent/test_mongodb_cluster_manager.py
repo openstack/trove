@@ -21,10 +21,8 @@ import trove.common.context as context
 import trove.common.instance as ds_instance
 import trove.common.utils as utils
 from trove.guestagent.common.configuration import ImportOverrideStrategy
-from trove.guestagent.common import operating_system
 import trove.guestagent.datastore.experimental.mongodb.manager as manager
 import trove.guestagent.datastore.experimental.mongodb.service as service
-import trove.guestagent.datastore.experimental.mongodb.system as system
 import trove.guestagent.volume as volume
 import trove.tests.unittests.trove_testtools as trove_testtools
 
@@ -142,15 +140,12 @@ class GuestAgentMongoDBClusterManagerTest(trove_testtools.TestCase):
         self.manager.app.status.set_status.assert_called_with(
             ds_instance.ServiceStatuses.INSTANCE_READY, force=True)
 
-    @mock.patch.object(operating_system, 'write_file')
     @mock.patch.object(service.MongoDBApp, '_configure_network')
-    def test_configure_as_query_router(self, net_conf, os_write_file):
+    def test_configure_as_query_router(self, net_conf):
         self.conf_mgr.parse_configuration = mock.Mock(
             return_value={'storage.mmapv1.smallFiles': False,
                           'storage.journal.enabled': True})
         self.manager.app._configure_as_query_router()
-        os_write_file.assert_called_once_with(system.MONGOS_UPSTART, mock.ANY,
-                                              as_root=True)
         self.conf_mgr.save_configuration.assert_called_once_with({})
         net_conf.assert_called_once_with(service.MONGODB_PORT)
         self.conf_mgr.apply_system_override.assert_called_once_with(
