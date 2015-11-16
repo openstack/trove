@@ -122,3 +122,25 @@ class ApiTest(trove_testtools.TestCase):
         self._verify_rpc_prepare_before_call()
         self._verify_call('cluster_complete')
         self.assertEqual(exp_resp, resp)
+
+    def test_get_cluster_context(self):
+        exp_resp = None
+        self.call_context.call.return_value = exp_resp
+
+        resp = self.api.get_cluster_context()
+
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('get_cluster_context')
+        self.assertEqual(exp_resp, resp)
+
+    def test_write_cluster_configuration_overrides(self):
+        exp_resp = None
+        self.call_context.call.return_value = exp_resp
+
+        resp = self.api.write_cluster_configuration_overrides(
+            cluster_configuration="cluster-configuration")
+
+        self._verify_rpc_prepare_before_call()
+        self._verify_call('write_cluster_configuration_overrides',
+                          cluster_configuration="cluster-configuration",)
+        self.assertEqual(exp_resp, resp)

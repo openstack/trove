@@ -504,6 +504,14 @@ class ClusterFlavorsNotEqual(TroveError):
     message = _("The flavor for each instance in a cluster must be the same.")
 
 
+class ClusterNetworksNotEqual(TroveError):
+    message = _("The network for each instance in a cluster must be the same.")
+
+
+class NetworkNotFound(TroveError):
+    message = _("Network Resource %(uuid)s cannot be found.")
+
+
 class ClusterVolumeSizeRequired(TroveError):
     message = _("A volume size is required for each instance in the cluster.")
 
@@ -521,6 +529,11 @@ class ClusterNumInstancesNotSupported(TroveError):
 class ClusterNumInstancesNotLargeEnough(TroveError):
     message = _("The number of instances for your initial cluster must "
                 "be at least %(num_instances)s.")
+
+
+class ClusterShrinkMustNotLeaveClusterEmpty(TroveError):
+    message = _("Must leave at least one instance in the cluster when "
+                "shrinking.")
 
 
 class ClusterInstanceOperationNotSupported(TroveError):

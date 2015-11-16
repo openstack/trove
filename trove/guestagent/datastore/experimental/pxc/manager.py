@@ -69,3 +69,14 @@ class Manager(manager.MySqlManager):
         LOG.debug("Storing the admin password on the instance.")
         app = self.mysql_app(self.mysql_app_status.get())
         app.reset_admin_password(admin_password)
+
+    def get_cluster_context(self, context):
+        LOG.debug("Getting the cluster context.")
+        app = self.mysql_app(self.mysql_app_status.get())
+        return app.get_cluster_context()
+
+    def write_cluster_configuration_overrides(self, context,
+                                              cluster_configuration):
+        LOG.debug("Apply the updated cluster configuration.")
+        app = self.mysql_app(self.mysql_app_status.get())
+        app.write_cluster_configuration_overrides(cluster_configuration)

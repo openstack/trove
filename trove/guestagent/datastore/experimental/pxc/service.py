@@ -63,7 +63,7 @@ class PXCApp(service.BaseMySqlApp):
     def _wait_for_mysql_to_be_really_alive(self, max_time):
         utils.poll_until(self._test_mysql, sleep_time=3, time_out=max_time)
 
-    def secure(self, config_contents, overrides):
+    def secure(self, config_contents):
         LOG.info(_("Generating admin password."))
         admin_password = utils.generate_random_password()
         service.clear_expired_password()
@@ -74,7 +74,6 @@ class PXCApp(service.BaseMySqlApp):
             self._create_admin_user(client, admin_password)
         self.stop_db()
         self._reset_configuration(config_contents, admin_password)
-        self._apply_user_overrides(overrides)
         self.start_mysql()
         # TODO(cp16net) figure out reason for PXC not updating the password
         try:
@@ -93,7 +92,6 @@ class PXCApp(service.BaseMySqlApp):
         self.stop_db()
 
         self._reset_configuration(config_contents, admin_password)
-        self._apply_user_overrides(overrides)
         self.start_mysql()
         self._wait_for_mysql_to_be_really_alive(
             CONF.timeout_wait_for_service)
@@ -121,13 +119,16 @@ class PXCApp(service.BaseMySqlApp):
             LOG.exception(_("Error bootstrapping cluster."))
             raise RuntimeError(_("Service is not discovered."))
 
+    def write_cluster_configuration_overrides(self, cluster_configuration):
+        self.configuration_manager.apply_system_override(
+            cluster_configuration, CNF_CLUSTER)
+
     def install_cluster(self, replication_user, cluster_configuration,
                         bootstrap=False):
         LOG.info(_("Installing cluster configuration."))
         self._grant_cluster_replication_privilege(replication_user)
         self.stop_db()
-        self.configuration_manager.apply_system_override(cluster_configuration,
-                                                         CNF_CLUSTER)
+        self.write_cluster_configuration_overrides(cluster_configuration)
         self.wipe_ib_logfiles()
         LOG.debug("bootstrap the instance? : %s" % bootstrap)
         # Have to wait to sync up the joiner instances with the donor instance.
@@ -135,6 +136,20 @@ class PXCApp(service.BaseMySqlApp):
             self._bootstrap_cluster(timeout=CONF.restore_usage_timeout)
         else:
             self.start_mysql(timeout=CONF.restore_usage_timeout)
+
+    def get_cluster_context(self):
+        auth = self.configuration_manager.get_value('mysqld').get(
+            "wsrep_sst_auth").replace('"', '')
+        cluster_name = self.configuration_manager.get_value(
+            'mysqld').get("wsrep_cluster_name")
+        return {
+            'replication_user': {
+                'name': auth.split(":")[0],
+                'password': auth.split(":")[1],
+            },
+            'cluster_name': cluster_name,
+            'admin_password': self.get_auth_password()
+        }
 
 
 class PXCRootAccess(service.BaseMySqlRootAccess):

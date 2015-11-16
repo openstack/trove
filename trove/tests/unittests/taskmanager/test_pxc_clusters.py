@@ -18,7 +18,7 @@ from mock import patch
 
 from trove.cluster.models import ClusterTasks as ClusterTaskStatus
 from trove.cluster.models import DBCluster
-from trove.common.exception import GuestError
+from trove.common import exception
 from trove.common.strategies.cluster.experimental.pxc.taskmanager import (
     PXCClusterTasks as ClusterTasks)
 from trove.common.strategies.cluster.experimental.pxc.taskmanager import (
@@ -82,6 +82,14 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
                                          self.db_cluster,
                                          datastore=mock_ds1,
                                          datastore_version=mock_dv1)
+        self.cluster_context = {
+            'replication_user': {
+                'name': "name",
+                'password': "password",
+            },
+            'cluster_name': self.cluster_name,
+            'admin_password': "admin_password"
+        }
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(InstanceServiceStatus, 'find_by')
@@ -103,7 +111,8 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
                                                          self.cluster_id)
         self.assertTrue(ret_val)
 
-    @patch.object(ClusterTasks, 'reset_task')
+    @patch('trove.common.strategies.cluster.experimental.pxc.taskmanager.LOG')
+    @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(ClusterTasks, '_all_instances_ready', return_value=False)
     @patch.object(Instance, 'load')
     @patch.object(DBInstance, 'find_all')
@@ -111,14 +120,15 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     def test_create_cluster_instance_not_ready(self, mock_dv, mock_ds,
                                                mock_find_all, mock_load,
-                                               mock_ready, mock_reset_task):
+                                               mock_ready, mock_update,
+                                               mock_logging):
         mock_find_all.return_value.all.return_value = [self.dbinst1]
         mock_load.return_value = BaseInstance(Mock(),
                                               self.dbinst1, Mock(),
                                               InstanceServiceStatus(
                                                   ServiceStatuses.NEW))
         self.clustertasks.create_cluster(Mock(), self.cluster_id)
-        mock_reset_task.assert_called_with()
+        mock_update.assert_called_with(self.cluster_id)
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(ClusterTasks, 'reset_task')
@@ -139,12 +149,82 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
                                                   ServiceStatuses.NEW))
         mock_ip.return_value = "10.0.0.2"
         guest_client = Mock()
-        guest_client.install_cluster = Mock(side_effect=GuestError("Error"))
+        guest_client.install_cluster = Mock(
+            side_effect=exception.GuestError("Error"))
         with patch.object(ClusterTasks, 'get_guest',
                           return_value=guest_client):
             self.clustertasks.create_cluster(Mock(), self.cluster_id)
             mock_update_status.assert_called_with('1232')
             mock_reset_task.assert_called_with()
+
+    @patch.object(ClusterTasks, 'update_statuses_on_failure')
+    @patch('trove.common.strategies.cluster.experimental.pxc.taskmanager.LOG')
+    def test_grow_cluster_does_not_exist(self, mock_logging,
+                                         mock_update_status):
+        context = Mock()
+        bad_cluster_id = '1234'
+        new_instances = [Mock(), Mock()]
+        self.clustertasks.grow_cluster(context, bad_cluster_id, new_instances)
+        mock_update_status.assert_called_with(
+            '1234',
+            status=InstanceTasks.GROWING_ERROR)
+
+    @patch.object(ClusterTasks, 'reset_task')
+    @patch.object(ClusterTasks, '_render_cluster_config')
+    @patch.object(ClusterTasks, 'get_ip')
+    @patch.object(ClusterTasks, 'get_guest')
+    @patch.object(ClusterTasks, '_all_instances_ready', return_value=True)
+    @patch.object(Instance, 'load')
+    @patch.object(DBInstance, 'find_all')
+    @patch.object(datastore_models.Datastore, 'load')
+    @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
+    def test_grow_cluster_successs(self, mock_dv, mock_ds, mock_find_all,
+                                   mock_load, mock_ready, mock_guest, mock_ip,
+                                   mock_render, mock_reset_task):
+        mock_find_all.return_value.all.return_value = [self.dbinst1]
+
+        mock_ip.return_value = "10.0.0.2"
+        context = Mock()
+        new_instances = [Mock(), Mock()]
+        mock_guest.get_cluster_context = Mock(
+            return_value=self.cluster_context)
+        mock_guest.reset_admin_password = Mock()
+        self.clustertasks.grow_cluster(context, self.cluster_id,
+                                       new_instances)
+        mock_reset_task.assert_called_with()
+
+    @patch.object(ClusterTasks, 'reset_task')
+    @patch.object(Instance, 'load')
+    @patch.object(Instance, 'delete')
+    @patch.object(DBInstance, 'find_all')
+    @patch.object(ClusterTasks, 'get_guest')
+    @patch.object(ClusterTasks, 'get_ip')
+    @patch.object(ClusterTasks, '_render_cluster_config')
+    def test_shrink_cluster_success(self, mock_render, mock_ip, mock_guest,
+                                    mock_find_all, mock_delete, mock_load,
+                                    mock_reset_task):
+        mock_find_all.return_value.all.return_value = [self.dbinst1]
+        context = Mock()
+        remove_instances = [Mock()]
+        mock_ip.return_value = "10.0.0.2"
+        mock_guest.get_cluster_context = Mock(
+            return_value=self.cluster_context)
+        self.clustertasks.shrink_cluster(context, self.cluster_id,
+                                         remove_instances)
+        mock_reset_task.assert_called_with()
+
+    @patch.object(ClusterTasks, 'update_statuses_on_failure')
+    @patch('trove.common.strategies.cluster.experimental.pxc.taskmanager.LOG')
+    def test_shrink_cluster_does_not_exist(self, mock_logging,
+                                           mock_update_status):
+        context = Mock()
+        bad_cluster_id = '1234'
+        remove_instances = [Mock()]
+        self.clustertasks.shrink_cluster(context, bad_cluster_id,
+                                         remove_instances)
+        mock_update_status.assert_called_with(
+            '1234',
+            status=InstanceTasks.SHRINKING_ERROR)
 
 
 class PXCTaskManagerStrategyTest(trove_testtools.TestCase):
