@@ -349,7 +349,6 @@ instance = {
                 "required": [],
                 "additionalProperties": False,
                 "properties": {
-                    "slave_of": {},
                     "replica_of": {},
                     "name": non_empty_string,
                     "configuration": configuration_id,

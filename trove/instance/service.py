@@ -235,9 +235,7 @@ class InstanceController(wsgi.Controller):
         availability_zone = body['instance'].get('availability_zone')
         nics = body['instance'].get('nics')
 
-        slave_of_id = body['instance'].get('replica_of',
-                                           # also check for older name
-                                           body['instance'].get('slave_of'))
+        slave_of_id = body['instance'].get('replica_of')
         replica_count = body['instance'].get('replica_count')
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
@@ -308,8 +306,7 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
 
         args = {}
-        args['detach_replica'] = ('replica_of' in body['instance'] or
-                                  'slave_of' in body['instance'])
+        args['detach_replica'] = 'replica_of' in body['instance']
 
         if 'name' in body['instance']:
             args['name'] = body['instance']['name']
