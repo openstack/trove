@@ -34,6 +34,9 @@ apidocs/src/samples/.DS_Store
 apidocs/includewars.xml
 apidocs/src/bookinfo.xml
 
+# Files created by releasenotes build
+releasenotes/build
+
 # Generated files
 target/
 publish-docs/
