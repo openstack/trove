@@ -38,7 +38,7 @@ copyright = u'2013, OpenStack Foundation'
 # built documents.
 #
 # The short X.Y version.
-from trove import version as trove_version
+from trove.version import version_info as trove_version
 # The full version, including alpha/beta/rc tags.
 release = trove_version.version_string_with_vcs()
 # The short X.Y version.
