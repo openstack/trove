@@ -23,6 +23,9 @@ ENABLE_AUTOSTART = (
 DISABLE_AUTOSTART = (
     "/opt/ibm/db2/V10.5/instance/db2iauto -off " + DB2_INSTANCE_OWNER)
 START_DB2 = "db2start"
+QUIESCE_DB2 = ("db2 QUIESCE INSTANCE DB2INST1 RESTRICTED ACCESS IMMEDIATE "
+               "FORCE CONNECTIONS")
+UNQUIESCE_DB2 = "db2 UNQUIESCE INSTANCE DB2INST1"
 STOP_DB2 = "db2 force application all; db2 terminate; db2stop"
 DB2_STATUS = ("ps -ef | grep " + DB2_INSTANCE_OWNER + " | grep db2sysc |"
               "grep -v grep | wc -l")
@@ -47,3 +50,11 @@ LIST_DB_USERS = (
     "db2 +o  connect to %(dbname)s; "
     "db2 -x  select grantee, dataaccessauth from sysibm.sysdbauth; "
     "db2 connect reset")
+BACKUP_DB = "db2 backup database %(dbname)s to %(dir)s"
+RESTORE_DB = (
+    "db2 restore database %(dbname)s from %(dir)s")
+GET_DB_SIZE = (
+    "db2 connect to %(dbname)s;"
+    "db2 call get_dbsize_info(?, ?, ?, -1) ")
+GET_DB_NAMES = ("find /home/db2inst1/db2inst1/backup/ -type f -name '*.001' |"
+                " grep -Po \"(?<=backup/)[^.']*(?=\.)\"")

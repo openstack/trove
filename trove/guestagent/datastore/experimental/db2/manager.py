@@ -15,7 +15,10 @@
 
 from oslo_log import log as logging
 
+from trove.common.i18n import _
+from trove.common import instance as ds_instance
 from trove.common.notification import EndNotification
+from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.db2 import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
@@ -53,6 +56,8 @@ class Manager(manager.Manager):
         self.app.update_hostname()
         self.app.change_ownership(mount_point)
         self.app.start_db()
+        if backup_info:
+            self._perform_restore(backup_info, context, mount_point)
 
     def restart(self, context):
         """
@@ -113,3 +118,18 @@ class Manager(manager.Manager):
     def start_db_with_conf_changes(self, context, config_contents):
         LOG.debug("Starting DB2 with configuration changes.")
         self.app.start_db_with_conf_changes(config_contents)
+
+    def _perform_restore(self, backup_info, context, restore_location):
+        LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
+        try:
+            backup.restore(context, backup_info, restore_location)
+        except Exception:
+            LOG.exception(_("Error performing restore from backup %s.") %
+                          backup_info['id'])
+            self.status.set_status(ds_instance.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully."))
+
+    def create_backup(self, context, backup_info):
+        LOG.debug("Creating backup.")
+        backup.backup(context, backup_info)

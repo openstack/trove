@@ -17,6 +17,7 @@ from mock import patch
 from testtools.matchers import Is, Equals, Not
 
 from trove.common.instance import ServiceStatuses
+from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.db2 import (
     manager as db2_manager)
 from trove.guestagent.datastore.experimental.db2 import (
@@ -56,6 +57,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
         self.orig_list_users = db2_service.DB2Admin.list_users
         self.orig_delete_user = db2_service.DB2Admin.delete_user
         self.orig_update_hostname = db2_service.DB2App.update_hostname
+        self.orig_backup_restore = backup.restore
 
     def tearDown(self):
         super(GuestAgentDB2ManagerTest, self).tearDown()
@@ -75,6 +77,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
         db2_service.DB2Admin.list_users = self.orig_list_users
         db2_service.DB2Admin.delete_user = self.orig_delete_user
         db2_service.DB2App.update_hostname = self.orig_update_hostname
+        backup.restore = self.orig_backup_restore
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -91,9 +94,18 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
     def test_prepare_database(self):
         self._prepare_dynamic(databases=['db1'])
 
+    def test_prepare_from_backup(self):
+        self._prepare_dynamic(['db2'], backup_id='123backup')
+
     def _prepare_dynamic(self, packages=None, databases=None, users=None,
                          config_content=None, device_path='/dev/vdb',
                          is_db_installed=True, backup_id=None, overrides=None):
+
+        backup_info = {'id': backup_id,
+                       'location': 'fake-location',
+                       'type': 'DB2Backup',
+                       'checksum': 'fake-checksum'} if backup_id else None
+
         mock_status = MagicMock()
         mock_app = MagicMock()
         self.manager.appStatus = mock_status
@@ -109,6 +121,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
         volume.VolumeDevice.mount_points = MagicMock(return_value=[])
         db2_service.DB2Admin.create_user = MagicMock(return_value=None)
         db2_service.DB2Admin.create_database = MagicMock(return_value=None)
+        backup.restore = MagicMock(return_value=None)
 
         with patch.object(pkg.Package, 'pkg_is_installed',
                           return_value=MagicMock(
@@ -119,7 +132,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
                                  memory_mb='2048', users=users,
                                  device_path=device_path,
                                  mount_point="/home/db2inst1/db2inst1",
-                                 backup_info=None,
+                                 backup_info=backup_info,
                                  overrides=None,
                                  cluster_config=None)
 
@@ -134,6 +147,11 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
             self.assertTrue(db2_service.DB2Admin.create_user.called)
         else:
             self.assertFalse(db2_service.DB2Admin.create_user.called)
+
+        if backup_id:
+            backup.restore.assert_any_call(self.context,
+                                           backup_info,
+                                           '/home/db2inst1/db2inst1')
 
     def test_restart(self):
         mock_status = MagicMock()
