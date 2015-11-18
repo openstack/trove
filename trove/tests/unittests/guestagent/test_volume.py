@@ -127,9 +127,11 @@ class VolumeDeviceTest(testtools.TestCase):
         os.path.exists = origin_os_path_exists
         utils.execute = origin_execute
 
+    @patch.object(pexpect, 'spawn', Mock())
     def test_unmount_positive(self):
         self._test_unmount()
 
+    @patch.object(pexpect, 'spawn', Mock())
     def test_unmount_negative(self):
         self._test_unmount(False)
 
@@ -168,18 +170,19 @@ class VolumeMountPointTest(testtools.TestCase):
     def tearDown(self):
         super(VolumeMountPointTest, self).tearDown()
 
+    @patch.object(pexpect, 'spawn', Mock())
+    @patch.object(utils, 'execute', Mock())
     def test_mount(self):
         origin_ = os.path.exists
         os.path.exists = MagicMock(return_value=False)
         fake_spawn = _setUp_fake_spawn()
 
-        utils.execute = Mock()
+        with patch.object(utils, 'execute_with_timeout'):
+            self.volumeMountPoint.mount()
 
-        self.volumeMountPoint.mount()
-
-        self.assertEqual(1, os.path.exists.call_count)
-        self.assertEqual(1, utils.execute.call_count)
-        self.assertEqual(1, fake_spawn.expect.call_count)
+            self.assertEqual(1, os.path.exists.call_count)
+            self.assertEqual(1, utils.execute.call_count)
+            self.assertEqual(1, fake_spawn.expect.call_count)
 
         os.path.exists = origin_
 

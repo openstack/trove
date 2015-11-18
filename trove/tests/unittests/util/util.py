@@ -13,7 +13,13 @@
 #    under the License.
 
 
+DB_SETUP = None
+
+
 def init_db():
+    global DB_SETUP
+    if DB_SETUP:
+        return
     from trove.common import cfg
     from trove.db import get_db_api
     from trove.db.sqlalchemy import session
@@ -21,3 +27,4 @@ def init_db():
     db_api = get_db_api()
     db_api.db_sync(CONF)
     session.configure_db(CONF)
+    DB_SETUP = True

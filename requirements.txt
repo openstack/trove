@@ -1,40 +1,40 @@
 # The order of packages is significant, because pip processes them in the order
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
-pbr>=0.6,!=0.7,<1.0
-SQLAlchemy>=0.9.7,<=0.9.99
-eventlet>=0.16.1,!=0.17.0
-keystonemiddleware>=1.5.0,<1.6.0
+pbr!=0.7,<1.0,>=0.6
+SQLAlchemy<=0.9.99,>=0.9.7
+eventlet!=0.17.0,>=0.16.1
+keystonemiddleware<1.6.0,>=1.5.0
 kombu>=2.5.0
-Routes>=1.12.3,!=2.0
+Routes!=2.0,>=1.12.3
 WebOb>=1.2.3
 PasteDeploy>=1.5.0
 Paste
-sqlalchemy-migrate>=0.9.5
+sqlalchemy-migrate!=0.9.8,<0.10.0,>=0.9.5
 netaddr>=0.7.12
 netifaces>=0.10.4
 httplib2>=0.7.5
 lxml>=2.3
 passlib
-python-heatclient>=0.3.0,<0.5.0
-python-novaclient>=2.22.0,<2.24.0
-python-cinderclient>=1.1.0,<1.2.0
-python-keystoneclient>=1.1.0,<1.4.0
-python-swiftclient>=2.2.0,<2.5.0
-python-designateclient>=1.0.0,<1.2.0
-python-neutronclient>=2.3.11,<2.5.0
+python-heatclient<0.5.0,>=0.3.0
+python-novaclient<2.24.0,>=2.22.0
+python-cinderclient<1.2.0,>=1.1.0
+python-keystoneclient<1.4.0,>=1.2.0
+python-swiftclient<2.5.0,>=2.2.0
+python-designateclient<1.2.0,>=1.0.0
+python-neutronclient<2.5.0,>=2.4.0
 iso8601>=0.1.9
-jsonschema>=2.0.0,<3.0.0
-Jinja2>=2.6  # BSD License (3 clause)
-pexpect>=3.1,!=3.3 # ISC License
-oslo.config>=1.9.3,<1.10.0  # Apache-2.0
-oslo.i18n>=1.5.0,<1.6.0  # Apache-2.0
-oslo.serialization>=1.4.0,<1.5.0               # Apache-2.0
-oslo.utils>=1.4.0,<1.5.0                       # Apache-2.0
-oslo.concurrency>=1.8.0,<1.9.0         # Apache-2.0
+jsonschema<3.0.0,>=2.0.0
+Jinja2>=2.6 # BSD License (3 clause)
+pexpect!=3.3,>=3.1 # ISC License
+oslo.config<1.10.0,>=1.9.3 # Apache-2.0
+oslo.i18n<1.6.0,>=1.5.0 # Apache-2.0
+oslo.serialization<1.5.0,>=1.4.0 # Apache-2.0
+oslo.utils!=1.4.1,<1.5.0,>=1.4.0 # Apache-2.0
+oslo.concurrency<1.9.0,>=1.8.2 # Apache-2.0
 MySQL-python
 Babel>=1.3
 six>=1.9.0
-stevedore>=1.3.0,<1.4.0  # Apache-2.0
-oslo.messaging>=1.8.0,<1.9.0  # Apache-2.0
-osprofiler>=0.3.0                       # Apache-2.0
+stevedore<1.4.0,>=1.3.0 # Apache-2.0
+oslo.messaging<1.9.0,>=1.8.0 # Apache-2.0
+osprofiler>=0.3.0 # Apache-2.0
