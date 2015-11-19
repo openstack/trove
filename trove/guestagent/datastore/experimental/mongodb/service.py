@@ -39,6 +39,7 @@ from trove.guestagent.db import models
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 CONFIG_FILE = operating_system.file_discovery(system.CONFIG_CANDIDATES)
+MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mongodb'
 
 # Configuration group for clustering-related settings.
 CNF_CLUSTER = 'clustering'
@@ -456,7 +457,7 @@ class MongoDBApp(object):
         # the driver engine is already cached, but we need to change it it
         with MongoDBClient(None, host='localhost',
                            port=MONGODB_PORT) as client:
-            MongoDBAdmin().create_user(user, client=client)
+            MongoDBAdmin().create_validated_user(user, client=client)
         # now revert to the normal engine
         self.status.set_host(host=netutils.get_my_ipv4(),
                              port=MONGODB_PORT)
@@ -555,6 +556,12 @@ class MongoDBAdmin(object):
             type(self).admin_user = user
         return type(self).admin_user
 
+    def _is_modifiable_user(self, name):
+        if ((name in cfg.get_ignored_users(manager=MANAGER)) or
+                name == system.MONGO_ADMIN_NAME):
+            return False
+        return True
+
     @property
     def cmd_admin_auth_params(self):
         """Returns a list of strings that constitute MongoDB command line
@@ -571,8 +578,11 @@ class MongoDBAdmin(object):
             user.username, password=user.password, roles=user.roles
         )
 
-    def create_user(self, user, client=None):
-        """Creates a user on their database."""
+    def create_validated_user(self, user, client=None):
+        """Creates a user on their database. The caller should ensure that
+        this action is valid.
+        :param user:   a MongoDBUser object
+        """
         LOG.debug('Creating user %s on database %s with roles %s.'
                   % (user.username, user.database.name, str(user.roles)))
 
@@ -586,24 +596,50 @@ class MongoDBAdmin(object):
                 self._create_user_with_client(user, admin_client)
 
     def create_users(self, users):
-        """Create the given user(s)."""
+        """Create the given user(s).
+        :param users:   list of serialized user objects
+        """
         with MongoDBClient(self._admin_user()) as client:
-            for user in users:
-                self.create_user(models.MongoDBUser.deserialize_user(user),
-                                 client)
+            for item in users:
+                user = models.MongoDBUser.deserialize_user(item)
+                if not self._is_modifiable_user(user.name):
+                    LOG.warning('Skipping creation of user with reserved '
+                                'name %(user)s' % {'user': user.name})
+                elif self._get_user_record(user.name):
+                    LOG.warning('Skipping creation of user with pre-existing '
+                                'name %(user)s' % {'user': user.name})
+                else:
+                    self.create_validated_user(user, client)
+
+    def delete_validated_user(self, user):
+        """Deletes a user from their database. The caller should ensure that
+        this action is valid.
+        :param user:   a MongoDBUser object
+        """
+        LOG.debug('Deleting user %s from database %s.'
+                  % (user.username, user.database.name))
+        with MongoDBClient(self._admin_user()) as admin_client:
+            admin_client[user.database.name].remove_user(user.username)
 
     def delete_user(self, user):
-        """Delete the given user."""
+        """Delete the given user.
+        :param user:   a serialized user object
+        """
         user = models.MongoDBUser.deserialize_user(user)
-        username = user.username
-        db_name = user.database.name
-        LOG.debug('Deleting user %s from database %s.' % (username, db_name))
-        with MongoDBClient(self._admin_user()) as admin_client:
-            admin_client[db_name].remove_user(username)
+        if not self._is_modifiable_user(user.name):
+            raise exception.BadRequest(_(
+                'Cannot delete user with reserved name %(user)s')
+                % {'user': user.name})
+        else:
+            self.delete_validated_user(user)
 
     def _get_user_record(self, name):
         """Get the user's record."""
         user = models.MongoDBUser(name)
+        if not self._is_modifiable_user(user.name):
+            LOG.warning('Skipping retrieval of user with reserved '
+                        'name %(user)s' % {'user': user.name})
+            return None
         with MongoDBClient(self._admin_user()) as admin_client:
             user_info = admin_client.admin.system.users.find_one(
                 {'user': user.username, 'db': user.database.name})
@@ -615,7 +651,10 @@ class MongoDBAdmin(object):
     def get_user(self, name):
         """Get information for the given user."""
         LOG.debug('Getting user %s.' % name)
-        return self._get_user_record(name).serialize()
+        user = self._get_user_record(name)
+        if not user:
+            return None
+        return user.serialize()
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         """Get a list of all users."""
@@ -624,11 +663,40 @@ class MongoDBAdmin(object):
             for user_info in admin_client.admin.system.users.find():
                 user = models.MongoDBUser(name=user_info['_id'])
                 user.roles = user_info['roles']
-                if user.name not in cfg.get_ignored_users(manager='mongodb'):
+                if self._is_modifiable_user(user.name):
                     users.append(user.serialize())
         LOG.debug('users = ' + str(users))
         return pagination.paginate_list(users, limit, marker,
                                         include_marker)
+
+    def change_passwords(self, users):
+        with MongoDBClient(self._admin_user()) as admin_client:
+            for item in users:
+                user = models.MongoDBUser.deserialize_user(item)
+                if not self._is_modifiable_user(user.name):
+                    LOG.warning('Skipping password change for user with '
+                                'reserved name %(user)s.'
+                                % {'user': user.name})
+                    return None
+                LOG.debug('Changing password for user %(user)s'
+                          % {'user': user.name})
+                self._create_user_with_client(user, admin_client)
+
+    def update_attributes(self, name, user_attrs):
+        """Update user attributes."""
+        user = self._get_user_record(name)
+        if not user:
+            raise exception.BadRequest(_(
+                'Cannot update attributes for user %(user)s as it either does '
+                'not exist or is a reserved user.') % {'user': name})
+        password = user_attrs.get('password')
+        if password:
+            user.password = password
+            self.change_passwords([user.serialize()])
+        if user_attrs.get('name'):
+            LOG.warning('Changing user name is not supported.')
+        if user_attrs.get('host'):
+            LOG.warning('Changing user host is not supported.')
 
     def enable_root(self, password=None):
         """Create a user 'root' with role 'root'."""
@@ -637,7 +705,7 @@ class MongoDBAdmin(object):
             password = utils.generate_random_password()
         root_user = models.MongoDBUser(name='admin.root', password=password)
         root_user.roles = {'db': 'admin', 'role': 'root'}
-        self.create_user(root_user)
+        self.create_validated_user(root_user)
         return root_user.serialize()
 
     def is_root_enabled(self):
@@ -656,6 +724,10 @@ class MongoDBAdmin(object):
     def grant_access(self, username, databases):
         """Adds the RW role to the user for each specified database."""
         user = self._get_user_record(username)
+        if not user:
+            raise exception.BadRequest(_(
+                'Cannot grant access for reserved or non-existant user '
+                '%(user)s') % {'user': username})
         for db_name in databases:
             # verify the database name
             models.MongoDBSchema(db_name)
@@ -673,6 +745,10 @@ class MongoDBAdmin(object):
     def revoke_access(self, username, database):
         """Removes the RW role from the user for the specified database."""
         user = self._get_user_record(username)
+        if not user:
+            raise exception.BadRequest(_(
+                'Cannot revoke access for reserved or non-existant user '
+                '%(user)s') % {'user': username})
         # verify the database name
         models.MongoDBSchema(database)
         role = {'db': database, 'role': 'readWrite'}
@@ -686,6 +762,10 @@ class MongoDBAdmin(object):
         """Returns a list of all databases for which the user has the RW role.
         """
         user = self._get_user_record(username)
+        if not user:
+            raise exception.BadRequest(_(
+                'Cannot list access for reserved or non-existant user '
+                '%(user)s') % {'user': username})
         return user.databases
 
     def create_database(self, databases):
@@ -716,7 +796,7 @@ class MongoDBAdmin(object):
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Lists the databases."""
         db_names = self.list_database_names()
-        for hidden in cfg.get_ignored_dbs(manager='mongodb'):
+        for hidden in cfg.get_ignored_dbs(manager=MANAGER):
             if hidden in db_names:
                 db_names.remove(hidden)
         databases = [models.MongoDBSchema(db_name).serialize()

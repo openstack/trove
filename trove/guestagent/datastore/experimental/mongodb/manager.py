@@ -114,6 +114,14 @@ class Manager(manager.Manager):
         # TODO(peterstac) - why is this hard-coded?
         return dbaas.get_filesystem_volume_stats(system.MONGODB_MOUNT_POINT)
 
+    def change_passwords(self, context, users):
+        LOG.debug("Changing password.")
+        return service.MongoDBAdmin().change_passwords(users)
+
+    def update_attributes(self, context, username, hostname, user_attrs):
+        LOG.debug("Updating database attributes.")
+        return service.MongoDBAdmin().update_attributes(username, user_attrs)
+
     def create_database(self, context, databases):
         LOG.debug("Creating database(s).")
         return service.MongoDBAdmin().create_database(databases)
