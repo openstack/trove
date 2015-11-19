@@ -287,7 +287,8 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
                                       mock_cluster_create,
                                       mock_get_datastore_version):
 
-        cfg.CONF.set_override('cluster_support', False, group='redis')
+        cfg.CONF.set_override('cluster_support', False, group='redis',
+                              enforce_type=True)
 
         body = self.cluster
         tenant_id = Mock()
@@ -316,7 +317,8 @@ class TestClusterControllerWithStrategy(trove_testtools.TestCase):
                                      mock_get_datastore_version,
                                      mock_cluster_view_data):
 
-        cfg.CONF.set_override('cluster_support', True, group='redis')
+        cfg.CONF.set_override('cluster_support', True, group='redis',
+                              enforce_type=True)
 
         body = self.cluster
         tenant_id = Mock()

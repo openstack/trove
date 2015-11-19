@@ -296,7 +296,8 @@ class TestCreateCinderClient(trove_testtools.TestCase):
     def test_create_with_conf_override(self):
         cinder_url_from_conf = 'http://example.com'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('cinder_url', cinder_url_from_conf)
+        cfg.CONF.set_override('cinder_url', cinder_url_from_conf,
+                              enforce_type=True)
 
         client = remote.create_cinder_client(
             TroveContext(tenant=tenant_from_ctx))
@@ -306,7 +307,8 @@ class TestCreateCinderClient(trove_testtools.TestCase):
     def test_create_with_conf_override_trailing_slash(self):
         cinder_url_from_conf = 'http://example.com/'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('cinder_url', cinder_url_from_conf)
+        cfg.CONF.set_override('cinder_url', cinder_url_from_conf,
+                              enforce_type=True)
         client = remote.create_cinder_client(
             TroveContext(tenant=tenant_from_ctx))
         self.assertEqual('%s%s' % (cinder_url_from_conf, tenant_from_ctx),
@@ -319,8 +321,10 @@ class TestCreateCinderClient(trove_testtools.TestCase):
                          client.client.management_url)
 
     def test_create_with_catalog_all_opts(self):
-        cfg.CONF.set_override('cinder_service_type', 'volume')
-        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        cfg.CONF.set_override('cinder_service_type', 'volume',
+                              enforce_type=True)
+        cfg.CONF.set_override('os_region_name', 'RegionTwo',
+                              enforce_type=True)
         client = remote.create_cinder_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.volume_public_url_region_two,
@@ -371,7 +375,8 @@ class TestCreateNovaClient(trove_testtools.TestCase):
     def test_create_with_conf_override(self):
         nova_url_from_conf = 'http://example.com'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf)
+        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf,
+                              enforce_type=True)
 
         client = remote.create_nova_client(
             TroveContext(tenant=tenant_from_ctx))
@@ -381,7 +386,8 @@ class TestCreateNovaClient(trove_testtools.TestCase):
     def test_create_with_conf_override_trailing_slash(self):
         nova_url_from_conf = 'http://example.com/'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf)
+        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf,
+                              enforce_type=True)
         client = remote.create_nova_client(
             TroveContext(tenant=tenant_from_ctx))
         self.assertEqual('%s%s' % (nova_url_from_conf, tenant_from_ctx),
@@ -394,8 +400,10 @@ class TestCreateNovaClient(trove_testtools.TestCase):
                          client.client.management_url)
 
     def test_create_with_catalog_all_opts(self):
-        cfg.CONF.set_override('nova_compute_service_type', 'computev3')
-        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        cfg.CONF.set_override('nova_compute_service_type', 'computev3',
+                              enforce_type=True)
+        cfg.CONF.set_override('os_region_name', 'RegionTwo',
+                              enforce_type=True)
         client = remote.create_nova_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.computev3_public_url_region_two,
@@ -403,7 +411,8 @@ class TestCreateNovaClient(trove_testtools.TestCase):
 
     def test_create_admin_client(self):
         nova_url_from_conf = 'http://adminexample.com/'
-        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf)
+        cfg.CONF.set_override('nova_compute_url', nova_url_from_conf,
+                              enforce_type=True)
         admin_user = 'admin1'
         admin_pass = 'adminpwd'
         admin_tenant_id = uuid.uuid4().hex
@@ -461,7 +470,8 @@ class TestCreateHeatClient(trove_testtools.TestCase):
     def test_create_with_conf_override(self):
         heat_url_from_conf = 'http://example.com'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('heat_url', heat_url_from_conf)
+        cfg.CONF.set_override('heat_url', heat_url_from_conf,
+                              enforce_type=True)
 
         client = remote.create_heat_client(
             TroveContext(tenant=tenant_from_ctx))
@@ -471,7 +481,8 @@ class TestCreateHeatClient(trove_testtools.TestCase):
     def test_create_with_conf_override_trailing_slash(self):
         heat_url_from_conf = 'http://example.com/'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('heat_url', heat_url_from_conf)
+        cfg.CONF.set_override('heat_url', heat_url_from_conf,
+                              enforce_type=True)
         client = remote.create_heat_client(
             TroveContext(tenant=tenant_from_ctx))
         self.assertEqual('%s%s' % (heat_url_from_conf, tenant_from_ctx),
@@ -484,8 +495,10 @@ class TestCreateHeatClient(trove_testtools.TestCase):
                          client.http_client.endpoint)
 
     def test_create_with_catalog_all_opts(self):
-        cfg.CONF.set_override('heat_service_type', 'orchestrationv3')
-        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        cfg.CONF.set_override('heat_service_type', 'orchestrationv3',
+                              enforce_type=True)
+        cfg.CONF.set_override('os_region_name', 'RegionTwo',
+                              enforce_type=True)
         client = remote.create_heat_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.heatv3_public_url_region_two,
@@ -536,7 +549,8 @@ class TestCreateSwiftClient(trove_testtools.TestCase):
     def test_create_with_conf_override(self):
         swift_url_from_conf = 'http://example.com/AUTH_'
         tenant_from_ctx = uuid.uuid4().hex
-        cfg.CONF.set_override('swift_url', swift_url_from_conf)
+        cfg.CONF.set_override('swift_url', swift_url_from_conf,
+                              enforce_type=True)
 
         client = remote.create_swift_client(
             TroveContext(tenant=tenant_from_ctx))
@@ -550,8 +564,10 @@ class TestCreateSwiftClient(trove_testtools.TestCase):
                          client.url)
 
     def test_create_with_catalog_all_opts(self):
-        cfg.CONF.set_override('swift_service_type', 'object-storev3')
-        cfg.CONF.set_override('os_region_name', 'RegionTwo')
+        cfg.CONF.set_override('swift_service_type', 'object-storev3',
+                              enforce_type=True)
+        cfg.CONF.set_override('os_region_name', 'RegionTwo',
+                              enforce_type=True)
         client = remote.create_swift_client(
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.swiftv3_public_url_region_two,
