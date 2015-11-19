@@ -18,6 +18,7 @@
 import os.path
 
 from oslo_config import cfg
+from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
 
 from trove.version import version_info as version
@@ -1232,28 +1233,36 @@ def parse_args(argv, default_config_files=None):
 
 
 def get_ignored_dbs(manager=None):
-    """
-    Get the list of ignored databases taking into account the fact
-    that the manager may not be specified, and the manager (if
-    specified) may not list ignore_dbs.
-    """
-
-    _manager = manager or CONF.datastore_manager or 'mysql'
-
-    _ignore_dbs = CONF.get(_manager).ignore_dbs or CONF.ignore_dbs or []
-
-    return _ignore_dbs
+    try:
+        return get_configuration_property('ignore_dbs', manager=manager)
+    except NoSuchOptError:
+        return []
 
 
 def get_ignored_users(manager=None):
+    try:
+        return get_configuration_property('ignore_users', manager=manager)
+    except NoSuchOptError:
+        return []
+
+
+def get_configuration_property(property_name, manager=None):
     """
-    Get the list of ignored users taking into account the fact
-    that the manager may not be specified, and the manager (if
-    specified) may not list ignore_users.
+    Get a configuration property.
+    Try to get it from the datastore-specific section first.
+    If it is not available, retrieve it from the DEFAULT section.
     """
 
-    _manager = manager or CONF.datastore_manager or 'mysql'
+    # TODO(pmalik): Note that the unit and fake-integration tests
+    # do not define 'CONF.datastore_manager'. *MySQL* options will
+    # be loaded unless the caller passes a manager name explicitly.
+    #
+    # Once the tests are fixed this conditional expression should be removed
+    # and the proper value should always be either loaded from
+    # 'CONF.datastore_manager' or passed-in by the caller.
+    datastore_manager = manager or CONF.datastore_manager or 'mysql'
 
-    _ignore_users = CONF.get(_manager).ignore_users or CONF.ignore_users or []
-
-    return _ignore_users
+    try:
+        return CONF.get(datastore_manager).get(property_name)
+    except NoSuchOptError:
+        return CONF.get(property_name)
