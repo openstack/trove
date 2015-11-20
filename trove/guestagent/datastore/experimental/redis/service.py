@@ -227,11 +227,6 @@ class RedisApp(object):
         self.apply_initial_guestagent_configuration()
         self.start_redis(True)
 
-    def reset_configuration(self, configuration):
-        LOG.info(_("Resetting configuration."))
-        config_contents = configuration['config_contents']
-        self.configuration_manager.save_configuration(config_contents)
-
     def start_redis(self, update_db=False):
         """
         Start the redis daemon.

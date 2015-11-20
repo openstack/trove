@@ -27,8 +27,8 @@ class GuestAgentManagerTest(testtools.TestCase):
         super(GuestAgentManagerTest, self).setUp()
         self.manager = Manager()
         self.context = TroveContext()
-        self.patcher_rs = patch(self.manager.replication_namespace + "." +
-                                self.manager.replication_strategy)
+        self.patcher_rs = patch(
+            'trove.guestagent.strategies.replication.get_instance')
         self.mock_rs_class = self.patcher_rs.start()
 
     def tearDown(self):

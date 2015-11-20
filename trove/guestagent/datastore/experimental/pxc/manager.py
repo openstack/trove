@@ -17,27 +17,19 @@
 from oslo_log import log as logging
 from oslo_utils import importutils
 
-from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.guestagent.datastore.mysql_common import manager
-from trove.guestagent.strategies.replication import get_replication_strategy
 
+
+MYSQL_APP = ("trove.guestagent.datastore.experimental.pxc.service."
+             "PXCApp")
+MYSQL_APP_STATUS = ("trove.guestagent.datastore.experimental.pxc.service."
+                    "PXCAppStatus")
+MYSQL_ADMIN = ("trove.guestagent.datastore.experimental.pxc.service."
+               "PXCAdmin")
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
-MANAGER = CONF.datastore_manager or 'mysql'
-REPLICATION_STRATEGY = CONF.get(MANAGER).replication_strategy
-REPLICATION_NAMESPACE = CONF.get(MANAGER).replication_namespace
-REPLICATION_STRATEGY_CLASS = get_replication_strategy(REPLICATION_STRATEGY,
-                                                      REPLICATION_NAMESPACE)
-
-MYSQL_APP = "trove.guestagent.datastore.experimental.pxc." \
-            "service.PXCApp"
-MYSQL_APP_STATUS = "trove.guestagent.datastore.experimental.pxc." \
-                   "service.PXCAppStatus"
-MYSQL_ADMIN = "trove.guestagent.datastore.experimental.pxc." \
-              "service.PXCAdmin"
 
 
 class Manager(manager.MySqlManager):
@@ -47,10 +39,7 @@ class Manager(manager.MySqlManager):
         mysql_app_status = importutils.import_class(MYSQL_APP_STATUS)
         mysql_admin = importutils.import_class(MYSQL_ADMIN)
 
-        super(Manager, self).__init__(mysql_app, mysql_app_status,
-                                      mysql_admin, REPLICATION_STRATEGY,
-                                      REPLICATION_NAMESPACE,
-                                      REPLICATION_STRATEGY_CLASS, MANAGER)
+        super(Manager, self).__init__(mysql_app, mysql_app_status, mysql_admin)
 
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,

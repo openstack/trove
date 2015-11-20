@@ -186,11 +186,6 @@ class MongoDBApp(object):
             None, mount_point=system.MONGODB_MOUNT_POINT)
         self.start_db(True)
 
-    def reset_configuration(self, configuration):
-        LOG.info(_("Resetting configuration."))
-        config_contents = configuration['config_contents']
-        self.configuration_manager.save_configuration(config_contents)
-
     def apply_initial_guestagent_configuration(
             self, cluster_config, mount_point=None):
         LOG.debug("Applying initial configuration.")

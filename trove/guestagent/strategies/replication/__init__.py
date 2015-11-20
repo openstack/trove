@@ -16,11 +16,42 @@
 
 from oslo_log import log as logging
 
+from trove.common import cfg
 from trove.guestagent.strategy import Strategy
 
+
 LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
-def get_replication_strategy(replication_driver, ns=__name__):
-    LOG.debug("Getting replication strategy: %s.", replication_driver)
+__replication_instance = None
+__replication_manager = None
+__replication_namespace = None
+__replication_strategy = None
+
+
+def get_instance(manager):
+    global __replication_instance
+    global __replication_manager
+    global __replication_namespace
+    if not __replication_instance or manager != __replication_manager:
+        replication_strategy = get_strategy(manager)
+        __replication_namespace = CONF.get(manager).replication_namespace
+        replication_strategy_cls = get_strategy_cls(
+            replication_strategy, __replication_namespace)
+        __replication_instance = replication_strategy_cls()
+        __replication_manager = manager
+    LOG.debug('Got replication instance from: %s.%s' % (
+        __replication_namespace, __replication_strategy))
+    return __replication_instance
+
+
+def get_strategy(manager):
+    global __replication_strategy
+    if not __replication_strategy or manager != __replication_manager:
+        __replication_strategy = CONF.get(manager).replication_strategy
+    return __replication_strategy
+
+
+def get_strategy_cls(replication_driver, ns=__name__):
     return Strategy.get_strategy(replication_driver, ns)
