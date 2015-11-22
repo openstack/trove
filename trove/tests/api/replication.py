@@ -43,6 +43,7 @@ class SlaveInstanceTestInfo(object):
 GROUP = "dbaas.api.replication"
 slave_instance = SlaveInstanceTestInfo()
 existing_db_on_master = generate_uuid()
+backup_count = None
 
 
 def _get_user_count(server_info):
@@ -64,6 +65,15 @@ def slave_is_running(running=True):
         return stdout.rstrip() == expected
 
     return check_slave_is_running
+
+
+def backup_count_matches(count):
+
+    def check_backup_count_matches():
+        backup = instance_info.dbaas.instances.backups(instance_info.id)
+        return count == len(backup)
+
+    return check_backup_count_matches
 
 
 def instance_is_active(id):
@@ -128,6 +138,9 @@ class CreateReplicationSlave(object):
 
     @test(runs_after=['test_create_db_on_master'])
     def test_create_slave(self):
+        global backup_count
+        backup_count = len(
+            instance_info.dbaas.instances.backups(instance_info.id))
         slave_instance.id = create_slave()
 
 
@@ -161,9 +174,9 @@ class VerifySlave(object):
         poll_until(slave_is_running())
 
     @test(runs_after=[test_correctly_started_replication])
+    @time_out(60)
     def test_backup_deleted(self):
-        backup = instance_info.dbaas.instances.backups(instance_info.id)
-        assert_equal(len(backup), 0)
+        poll_until(backup_count_matches(backup_count))
 
     @test(depends_on=[test_correctly_started_replication])
     def test_slave_is_read_only(self):
