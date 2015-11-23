@@ -39,10 +39,9 @@ pydev_debug_opts = [
     cfg.StrOpt("pydev_debug_host",
                help="Pydev debug server host (localhost by default)."),
 
-    cfg.IntOpt("pydev_debug_port",
-               default=5678,
-               min=1, max=65535,
-               help="Pydev debug server port (5678 by default)."),
+    cfg.PortOpt("pydev_debug_port",
+                default=5678,
+                help="Pydev debug server port (5678 by default)."),
 
     cfg.StrOpt("pydev_path",
                help="Set path to pydevd library, used if pydevd is "
