@@ -314,10 +314,11 @@ class BaseDbStatus(object):
 
     def wait_for_real_status_to_change_to(self, status, max_time,
                                           update_db=False):
-        """
-        Waits the given time for the real status to change to the one
-        specified. Does not update the publicly viewable status Unless
-        "update_db" is True.
+        """Waits the given time for the real status to change to the one
+        specified.
+        The internal status is always updated. The public instance
+        state stored in the Trove database is updated only if "update_db" is
+        True.
         """
         end_time = time.time() + max_time
 
@@ -329,10 +330,10 @@ class BaseDbStatus(object):
         loop = True
 
         while loop:
-            actual_status = self._get_actual_db_status()
-            if actual_status == status:
+            self.status = self._get_actual_db_status()
+            if self.status == status:
                 if update_db:
-                    self.set_status(actual_status)
+                    self.set_status(self.status)
                 return True
 
             # should we remain in this loop? this is the thing
@@ -344,14 +345,14 @@ class BaseDbStatus(object):
             if loop:
                 LOG.debug("Waiting for DB status to change from "
                           "%(actual_status)s to %(status)s." %
-                          {"actual_status": actual_status, "status": status})
+                          {"actual_status": self.status, "status": status})
 
                 time.sleep(CONF.state_change_poll_time)
 
         LOG.error(_("Timeout while waiting for database status to change."
                     "Expected state %(status)s, "
                     "current state is %(actual_status)s") %
-                  {"status": status, "actual_status": actual_status})
+                  {"status": status, "actual_status": self.status})
         return False
 
     def cleanup_stalled_db_services(self):
