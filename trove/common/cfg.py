@@ -407,7 +407,9 @@ profiler_opts = [
     cfg.BoolOpt("enabled", default=False,
                 help="If False fully disable profiling feature."),
     cfg.BoolOpt("trace_sqlalchemy", default=True,
-                help="If False doesn't trace SQL requests.")
+                help="If False doesn't trace SQL requests."),
+    cfg.StrOpt("hmac_keys", default="SECRET_KEY",
+               help="Secret key to use to sign tracing messages."),
 ]
 
 
