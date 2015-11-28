@@ -16,7 +16,7 @@ Steps to set up a Trove Developer Environment
 Installing trove-integration
 ----------------------------
 
-* Install a fresh Ubuntu 12.04 (Precise Pangolin) image (preferably a
+* Install a fresh Ubuntu 14.04 (Trusty Tahr) image (preferably a
   virtual machine)
 
 * Make sure we have git installed::
@@ -62,7 +62,7 @@ options that you can run.
     # ./redstack
 
 * Install all the dependencies and then install Trove. This brings up
-  trove (rd-api rd-tmgr) and initializes the trove database::
+  trove (tr-api tr-tmgr tr-cond) and initializes the trove database::
 
     # ./redstack install
 
@@ -71,7 +71,7 @@ options that you can run.
 
     # ./redstack kick-start mysql
 
-* You probably need to add this iptables rule, so be sure to save it!::
+* You may need to add this iptables rule, so be sure to save it!::
 
     # sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o eth0 -j
     MASQUERADE
