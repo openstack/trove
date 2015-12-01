@@ -44,7 +44,7 @@ class TestCase(testtools.TestCase):
             'TROVE_TESTS_UNMOCK_ONLY_UNIQUE', True))
 
         cls._dangling_mocks = set()
-        root_logger.DefaultRootLogger()
+        root_logger.DefaultRootLogger(enable_backtrace=False)
 
     @classmethod
     def is_bool(cls, val):
