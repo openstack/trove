@@ -22,15 +22,17 @@ class DefaultRootHandler(logging.StreamHandler):
     __handler = logging.StreamHandler()
     __singleton = None
     __info = None
+    __enable_backtrace = False
 
     @classmethod
-    def activate(cls):
+    def activate(cls, enable_backtrace=False):
         # leverage the singleton __handler which has an
         # acquire() method to create a critical section.
         cls.__handler.acquire()
         if cls.__singleton is None:
             cls.__singleton = DefaultRootHandler()
 
+        cls.__enable_backtrace = enable_backtrace
         cls.__handler.release()
         return cls.__singleton
 
@@ -47,21 +49,26 @@ class DefaultRootHandler(logging.StreamHandler):
         super(DefaultRootHandler, self).__init__()
 
     def emit(self, record):
-        msg = ("[" + record.name + "]\n" +
-               self.format(record) + "\n" +
-               (("\tFrom: " + DefaultRootHandler.__info + "\n")
-                if DefaultRootHandler.__info
-                else (''.join(traceback.format_stack()))))
-        self.stream.write(msg)
-        self.flush()
+        if DefaultRootHandler.__info:
+            msg = ("*************************\n" +
+                   "Unhandled message logged from " +
+                   DefaultRootHandler.__info + ", " +
+                   record.name + "\n")
+
+            if DefaultRootHandler.__enable_backtrace:
+                msg += ''.join(traceback.format_stack()) + "\n"
+
+            msg += "*************************\n"
+            self.stream.write(msg)
+            self.flush()
 
 
 class DefaultRootLogger(object):
     """A root logger that uses the singleton handler"""
 
-    def __init__(self):
+    def __init__(self, enable_backtrace=False):
         super(DefaultRootLogger, self).__init__()
-        handler = DefaultRootHandler.activate()
+        handler = DefaultRootHandler.activate(enable_backtrace=False)
 
         handler.acquire()
         if handler not in logging.getLogger('').handlers:
