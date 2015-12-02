@@ -48,6 +48,8 @@ functionality, the following resources are provided.
   dev/install
   dev/manual_install.rst
   dev/building_guest_images.rst
+  dev/notifier.rst
+  dev/trove_api_extensions.rst
 
 * Source Code Repositories
 
