@@ -377,7 +377,7 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
             'Error creating security group for instance',
             self.freshinstancetasks.create_instance, mock_flavor,
             'mysql-image-id', None, None, 'mysql', 'mysql-server', 2,
-            None, None, None, None, Mock(), None)
+            None, None, None, None, Mock(), None, None, None)
 
     @patch.object(BaseInstance, 'update_db')
     @patch.object(backup_models.Backup, 'get_by_id')
@@ -399,7 +399,7 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
             'Error creating DNS entry for instance',
             self.freshinstancetasks.create_instance, mock_flavor,
             'mysql-image-id', None, None, 'mysql', 'mysql-server',
-            2, Mock(), None, 'root_password', None, Mock(), None)
+            2, Mock(), None, 'root_password', None, Mock(), None, None, None)
 
     @patch.object(BaseInstance, 'update_db')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry')
@@ -424,9 +424,11 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
                                                 None, None, 'mysql',
                                                 'mysql-server', 2,
                                                 None, None, None, None,
-                                                overrides, None)
+                                                overrides, None, None,
+                                                'volume_type')
         mock_create_secgroup.assert_called_with('mysql')
-        mock_build_volume_info.assert_called_with('mysql', volume_size=2)
+        mock_build_volume_info.assert_called_with('mysql', volume_size=2,
+                                                  volume_type='volume_type')
         mock_guest_prepare.assert_called_with(
             768, mock_build_volume_info(), 'mysql-server', None, None, None,
             config_content, None, overrides, None, None)

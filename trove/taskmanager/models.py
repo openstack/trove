@@ -333,7 +333,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
                         backup_id, availability_zone, root_password, nics,
-                        overrides, cluster_config, snapshot=None):
+                        overrides, cluster_config, snapshot, volume_type):
         # It is the caller's responsibility to ensure that
         # FreshInstanceTasks.wait_for_instance is called after
         # create_instance to ensure that the proper usage event gets sent
@@ -359,7 +359,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                           "instance: %s" % self.id)
 
         files = self._get_injected_files(datastore_manager)
-
+        cinder_volume_type = volume_type or CONF.cinder_volume_type
         if use_heat:
             volume_info = self._create_server_volume_heat(
                 flavor,
@@ -368,7 +368,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_size,
                 availability_zone,
                 nics,
-                files)
+                files,
+                cinder_volume_type)
         elif use_nova_server_volume:
             volume_info = self._create_server_volume(
                 flavor['id'],
@@ -388,7 +389,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 volume_size,
                 availability_zone,
                 nics,
-                files)
+                files,
+                cinder_volume_type)
 
         config = self._render_config(flavor)
 
@@ -643,7 +645,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
     def _create_server_volume_heat(self, flavor, image_id,
                                    datastore_manager, volume_size,
-                                   availability_zone, nics, files):
+                                   availability_zone, nics, files,
+                                   volume_type):
         LOG.debug("Begin _create_server_volume_heat for id: %s" % self.id)
         try:
             client = create_heat_client(self.context)
@@ -668,6 +671,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
             parameters = {"Flavor": flavor["name"],
                           "VolumeSize": volume_size,
+                          "VolumeType": volume_type,
                           "InstanceId": self.id,
                           "ImageId": image_id,
                           "DatastoreManager": datastore_manager,
@@ -739,12 +743,13 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
     def _create_server_volume_individually(self, flavor_id, image_id,
                                            security_groups, datastore_manager,
                                            volume_size, availability_zone,
-                                           nics, files):
+                                           nics, files, volume_type):
         LOG.debug("Begin _create_server_volume_individually for id: %s" %
                   self.id)
         server = None
         volume_info = self._build_volume_info(datastore_manager,
-                                              volume_size=volume_size)
+                                              volume_size=volume_size,
+                                              volume_type=volume_type)
         block_device_mapping = volume_info['block_device']
         try:
             server = self._create_server(flavor_id, image_id, security_groups,
@@ -762,7 +767,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                   self.id)
         return volume_info
 
-    def _build_volume_info(self, datastore_manager, volume_size=None):
+    def _build_volume_info(self, datastore_manager, volume_size=None,
+                           volume_type=None):
         volume_info = None
         volume_support = self.volume_support
         device_path = self.device_path
@@ -771,7 +777,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         if volume_support:
             try:
                 volume_info = self._create_volume(
-                    volume_size, datastore_manager)
+                    volume_size, volume_type, datastore_manager)
             except Exception as e:
                 msg = _("Failed to create volume for instance %s") % self.id
                 err = inst_models.InstanceTasks.BUILDING_ERROR_VOLUME
@@ -794,13 +800,14 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         self.update_db(task_status=task_status)
         raise TroveError(message=message)
 
-    def _create_volume(self, volume_size, datastore_manager):
+    def _create_volume(self, volume_size, volume_type, datastore_manager):
         LOG.debug("Begin _create_volume for id: %s" % self.id)
         volume_client = create_cinder_client(self.context)
         volume_desc = ("datastore volume for %s" % self.id)
         volume_ref = volume_client.volumes.create(
             volume_size, name="datastore-%s" % self.id,
-            description=volume_desc, volume_type=CONF.cinder_volume_type)
+            description=volume_desc,
+            volume_type=volume_type)
 
         # Record the volume ID in case something goes wrong.
         self.update_db(volume_id=volume_ref.id)
