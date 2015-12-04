@@ -19,6 +19,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
+from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.access import (
     PgSqlAccess)
@@ -33,6 +34,31 @@ class PgSqlUsers(PgSqlAccess):
     This mixin has a dependency on the PgSqlAccess mixin.
     """
 
+    @property
+    def ADMIN_USER(self):
+        """Trove's administrative user."""
+        return 'os_admin'
+
+    @property
+    def ADMIN_OPTIONS(self):
+        """Default set of options of an administrative account."""
+        return [
+            'SUPERUSER',
+            'CREATEDB',
+            'CREATEROLE',
+            'INHERIT',
+            'REPLICATION',
+            'LOGIN']
+
+    def _create_admin_user(self, context):
+        """Create an administrative user for Trove.
+        Force password encryption.
+        """
+        password = utils.generate_random_password()
+        os_admin = {'_name': self.ADMIN_USER, '_password': password,
+                    '_databases': [{'_name': self.ADMIN_USER}]}
+        self._create_user(context, os_admin, True, *self.ADMIN_OPTIONS)
+
     def create_user(self, context, users):
         """Create users and grant privileges for the specified databases.
 
@@ -41,35 +67,36 @@ class PgSqlUsers(PgSqlAccess):
             {"_name": "", "_password": "", "_databases": [{"_name": ""}, ...]}
         """
         for user in users:
-            LOG.debug(
-                "{guest_id}: Creating user {name} with password {password}."
-                .format(
-                    guest_id=CONF.guest_id,
-                    name=user['_name'],
-                    password=user['_password'],
-                )
-            )
-            LOG.info(
-                _("{guest_id}: Creating user {name} with password {password}.")
-                .format(
-                    guest_id=CONF.guest_id,
-                    name=user['_name'],
-                    password="<SANITIZED>",
-                )
-            )
-            pgutil.psql(
-                pgutil.UserQuery.create(
-                    name=user['_name'],
-                    password=user['_password'],
+            self._create_user(context, user, None)
+
+    def _create_user(self, context, user, encrypt_password=None, *options):
+        LOG.info(
+            _("{guest_id}: Creating user {user} {with_clause}.")
+            .format(
+                guest_id=CONF.guest_id,
+                user=user['_name'],
+                with_clause=pgutil.UserQuery._build_with_clause(
+                    '<SANITIZED>',
+                    encrypt_password,
+                    *options
                 ),
-                timeout=30,
             )
-            self.grant_access(
-                context,
+        )
+        pgutil.psql(
+            pgutil.UserQuery.create(
                 user['_name'],
-                None,
-                [d['_name'] for d in user['_databases']],
-            )
+                user['_password'],
+                encrypt_password,
+                *options
+            ),
+            timeout=30,
+        )
+        self.grant_access(
+            context,
+            user['_name'],
+            None,
+            [d['_name'] for d in user['_databases']],
+        )
 
     def list_users(
             self,
@@ -179,29 +206,35 @@ class PgSqlUsers(PgSqlAccess):
             {"name": "", "password": ""}
         """
         for user in users:
-            LOG.debug(
-                "{guest_id}: Changing password for {user} to {password}."
-                .format(
-                    guest_id=CONF.guest_id,
-                    user=user['name'],
-                    password=user['password'],
-                )
-            )
-            LOG.info(
-                _("{guest_id}: Changing password for {user} to {password}.")
-                .format(
-                    guest_id=CONF.guest_id,
-                    user=user['name'],
-                    password="<SANITIZED>",
-                )
-            )
-            pgutil.psql(
-                pgutil.UserQuery.update_password(
-                    user=user['name'],
-                    password=user['password'],
+            self.alter_user(context, user, None)
+
+    def alter_user(self, context, user, encrypt_password=None, *options):
+        """Change the password and options of an existing users.
+
+        The user parameter is a dictionary of the following form:
+
+            {"name": "", "password": ""}
+        """
+        LOG.info(
+            _("{guest_id}: Altering user {user} {with_clause}.")
+            .format(
+                guest_id=CONF.guest_id,
+                user=user['_name'],
+                with_clause=pgutil.UserQuery._build_with_clause(
+                    '<SANITIZED>',
+                    encrypt_password,
+                    *options
                 ),
-                timeout=30,
             )
+        )
+        pgutil.psql(
+            pgutil.UserQuery.alter_user(
+                user['_name'],
+                user['_password'],
+                encrypt_password,
+                *options),
+            timeout=30,
+        )
 
     def update_attributes(self, context, username, hostname, user_attrs):
         """Change the attributes of one existing user.

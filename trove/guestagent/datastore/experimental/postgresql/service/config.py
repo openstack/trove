@@ -21,7 +21,6 @@ from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
-from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.process import(
     PgSqlProcess)
 from trove.guestagent.datastore.experimental.postgresql.service.status import(
@@ -50,7 +49,7 @@ class PgSqlConfig(PgSqlProcess):
                 guest_id=CONF.guest_id,
             )
         )
-        out, err = pgutil.execute('psql', '--version', timeout=30)
+        out, err = utils.execute('psql', '--version')
         pattern = re.compile('\d\.\d')
         return pattern.search(out).group(0)
 
@@ -78,22 +77,37 @@ class PgSqlConfig(PgSqlProcess):
 
     def set_db_to_listen(self, context):
         """Allow remote connections with encrypted passwords."""
-        # Using cat to read file due to read permissions issues.
-        out, err = utils.execute_with_timeout(
-            'sudo', 'cat',
-            PGSQL_HBA_CONFIG.format(
-                version=self._get_psql_version(),
-            ),
-            timeout=30,
-        )
         LOG.debug(
             "{guest_id}: Writing hba file to /tmp/pgsql_hba_config.".format(
                 guest_id=CONF.guest_id,
             )
         )
+        # Local access from administrative users is implicitly trusted.
+        #
+        # Remote access from the Trove's account is always rejected as
+        # it is not needed and could be used by malicious users to hijack the
+        # instance.
+        #
+        # Connections from other accounts always require a hashed password.
         with open('/tmp/pgsql_hba_config', 'w+') as config_file:
-            config_file.write(out)
-            config_file.write("host    all     all     0.0.0.0/0   md5\n")
+            config_file.write(
+                "local  all  postgres,os_admin    trust\n")
+            config_file.write(
+                "local  all  all    md5\n")
+            config_file.write(
+                "host  all  postgres,os_admin  127.0.0.1/32  trust\n")
+            config_file.write(
+                "host  all  postgres,os_admin  ::1/128  trust\n")
+            config_file.write(
+                "host  all  postgres,os_admin  localhost  trust\n")
+            config_file.write(
+                "host  all  os_admin  0.0.0.0/0  reject\n")
+            config_file.write(
+                "host  all  os_admin  ::/0  reject\n")
+            config_file.write(
+                "host  all  all  0.0.0.0/0  md5\n")
+            config_file.write(
+                "host  all  all  ::/0  md5\n")
 
         operating_system.chown('/tmp/pgsql_hba_config',
                                'postgres', None, recursive=False, as_root=True)
