@@ -52,7 +52,8 @@ class TestConfigurationManager(trove_testtools.TestCase):
             override_strategy=sample_strategy)
 
         manager.parse_configuration()
-        read_file.assert_called_with(sample_path, codec=sample_codec)
+        read_file.assert_called_with(sample_path, codec=sample_codec,
+                                     as_root=sample_requires_root)
 
         with patch.object(manager, 'parse_configuration',
                           return_value={'key1': 'v1', 'key2': 'v2'}):

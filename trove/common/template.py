@@ -34,6 +34,7 @@ SERVICE_PARSERS = {
     'mongodb': configurations.MongoDBConfParser,
     'mysql': configurations.MySQLConfParser,
     'percona': configurations.MySQLConfParser,
+    'postgresql': configurations.PostgresqlConfParser,
     'redis': configurations.RedisConfParser,
 }
 

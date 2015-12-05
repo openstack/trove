@@ -27,6 +27,9 @@ CONF = cfg.CONF
 
 class PgSqlDatabase(object):
 
+    def __init__(self, *args, **kwargs):
+        super(PgSqlDatabase, self).__init__(*args, **kwargs)
+
     def create_database(self, context, databases):
         """Create the list of specified databases.
 

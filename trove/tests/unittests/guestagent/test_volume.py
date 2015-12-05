@@ -221,7 +221,8 @@ class VolumeMountPointTest(trove_testtools.TestCase):
         os.path.exists = MagicMock(return_value=False)
         fake_spawn = _setUp_fake_spawn()
 
-        with patch.object(utils, 'execute_with_timeout'):
+        with patch.object(utils, 'execute_with_timeout',
+                          return_value=('0', '')):
             self.volumeMountPoint.mount()
 
             self.assertEqual(1, os.path.exists.call_count)

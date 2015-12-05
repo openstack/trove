@@ -52,13 +52,39 @@ def read_file(path, codec=IdentityCodec(), as_root=False):
     :raises:                :class:`UnprocessableEntity` if file doesn't exist.
     :raises:                :class:`UnprocessableEntity` if codec not given.
     """
-    if path and os.path.exists(path):
+    if path and exists(path, is_directory=False, as_root=as_root):
         if as_root:
             return _read_file_as_root(path, codec)
+
         with open(path, 'r') as fp:
             return codec.deserialize(fp.read())
 
     raise exception.UnprocessableEntity(_("File does not exist: %s") % path)
+
+
+def exists(path, is_directory=False, as_root=False):
+    """Check a given path exists.
+
+    :param path                Path to be checked.
+    :type path                 string
+
+    :param is_directory:       Check that the path exists and is a directory.
+                               Check for a regular file otherwise.
+    :type is_directory:        boolean
+
+    :param as_root:            Execute as root.
+    :type as_root:             boolean
+    """
+    if as_root:
+        test_flag = '-d' if is_directory else '-f'
+        cmd = 'test %s %s && echo 1 || echo 0' % (test_flag, path)
+        stdout, _ = utils.execute_with_timeout(
+            cmd, shell=True, check_exit_code=False,
+            run_as_root=True, root_helper='sudo')
+        return bool(int(stdout))
+
+    return (not is_directory and os.path.isfile(path) or
+            (is_directory and os.path.isdir(path)))
 
 
 def _read_file_as_root(path, codec):
@@ -91,8 +117,8 @@ def write_file(path, data, codec=IdentityCodec(), as_root=False):
     :param codec:              A codec used to serialize the data.
     :type codec:               StreamCodec
 
-    :param codec:              Execute as root.
-    :type codec:               boolean
+    :param as_root:            Execute as root.
+    :type as_root:             boolean
 
     :raises:                   :class:`UnprocessableEntity` if path not given.
     """
@@ -599,6 +625,42 @@ def get_bytes_free_on_fs(path):
     return v.f_bsize * v.f_bavail
 
 
+def list_files_in_directory(root_dir, recursive=False, pattern=None,
+                            include_dirs=False, as_root=False):
+    """
+    Return absolute paths to all files in a given root directory.
+
+    :param root_dir            Path to the root directory.
+    :type root_dir             string
+
+    :param recursive           Also descend into sub-directories if True.
+    :type recursive            boolean
+
+    :param pattern             Return only names matching the pattern.
+    :type pattern              string
+
+    :param include_dirs        Include paths to individual sub-directories.
+    :type include_dirs         boolean
+    """
+    if as_root:
+        cmd_args = [root_dir, '-noleaf']
+        if not recursive:
+            cmd_args.extend(['-maxdepth', '0'])
+        if not include_dirs:
+            cmd_args.extend(['-type', 'f'])
+        if pattern:
+            cmd_args.extend(['-regextype', 'posix-extended',
+                             '-regex', os.path.join('.*', pattern) + '$'])
+        files = _execute_shell_cmd('find', [], *cmd_args, as_root=True)
+        return {fp for fp in files.splitlines()}
+
+    return {os.path.abspath(os.path.join(root, name))
+            for (root, dirs, files) in os.walk(root_dir, topdown=True)
+            if recursive or (root == root_dir)
+            for name in (files + (dirs if include_dirs else []))
+            if not pattern or re.match(pattern, name)}
+
+
 def _execute_shell_cmd(cmd, options, *args, **kwargs):
     """Execute a given shell command passing it
     given options (flags) and arguments.
@@ -628,7 +690,8 @@ def _execute_shell_cmd(cmd, options, *args, **kwargs):
 
     cmd_flags = _build_command_options(options)
     cmd_args = cmd_flags + list(args)
-    utils.execute_with_timeout(cmd, *cmd_args, **exec_args)
+    stdout, stderr = utils.execute_with_timeout(cmd, *cmd_args, **exec_args)
+    return stdout
 
 
 def _build_command_options(options):
@@ -638,23 +701,3 @@ def _build_command_options(options):
     """
 
     return ['-' + item[0] for item in options if item[1]]
-
-
-def list_files_in_directory(root_dir, recursive=False, pattern=None):
-    """
-    Return absolute paths to all files in a given root directory.
-
-    :param root_dir            Path to the root directory.
-    :type root_dir             string
-
-    :param recursive           Also probe subdirectories if True.
-    :type recursive            boolean
-
-    :param pattern             Return only files matching the pattern.
-    :type pattern              string
-    """
-    return {os.path.abspath(os.path.join(root, name))
-            for (root, _, files) in os.walk(root_dir, topdown=True)
-            if recursive or (root == root_dir)
-            for name in files
-            if not pattern or re.match(pattern, name)}

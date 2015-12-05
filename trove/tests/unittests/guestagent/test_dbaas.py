@@ -63,7 +63,7 @@ from trove.guestagent.datastore.experimental.mongodb import (
 from trove.guestagent.datastore.experimental.postgresql import (
     manager as pg_manager)
 from trove.guestagent.datastore.experimental.postgresql.service import (
-    process as pg_process)
+    config as pg_config)
 from trove.guestagent.datastore.experimental.postgresql.service import (
     status as pg_status)
 from trove.guestagent.datastore.experimental.pxc import (
@@ -967,7 +967,7 @@ class MySqlAppTest(testtools.TestCase):
                 {'service_status':
                  rd_instance.ServiceStatuses.SHUTDOWN.description}))
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_stop_mysql_do_not_start_on_reboot(self, mock_execute):
 
         self.appStatus.set_next_status(
@@ -995,7 +995,7 @@ class MySqlAppTest(testtools.TestCase):
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch.object(operating_system, 'service_discovery',
                   side_effect=KeyError('error'))
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_stop_mysql_key_error(self, mock_execute, mock_service,
                                   mock_logging):
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
@@ -1147,7 +1147,7 @@ class MySqlAppTest(testtools.TestCase):
                         'password': auth_pwd_mock.return_value}})
         wipe_ib_mock.assert_called_once_with()
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__enable_mysql_on_boot(self, mock_execute):
         mysql_service = \
             dbaas_base.operating_system.service_discovery(["mysql"])
@@ -1159,14 +1159,14 @@ class MySqlAppTest(testtools.TestCase):
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch.object(operating_system, 'service_discovery',
                   side_effect=KeyError('error'))
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_fail__enable_mysql_on_boot(self, mock_execute, mock_service,
                                         mock_logging):
         self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
                                 self.mySqlApp._enable_mysql_on_boot)
         self.assertEqual(0, mock_execute.call_count)
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__disable_mysql_on_boot(self, mock_execute):
         mysql_service = \
             dbaas_base.operating_system.service_discovery(["mysql"])
@@ -1178,7 +1178,7 @@ class MySqlAppTest(testtools.TestCase):
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch.object(operating_system, 'service_discovery',
                   side_effect=KeyError('error'))
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_fail__disable_mysql_on_boot(self, mock_execute, mock_service,
                                          mock_logging):
         self.assertRaisesRegexp(RuntimeError, 'Service is not discovered.',
@@ -2384,7 +2384,8 @@ class TestRedisApp(BaseAppTest.AppTestCase):
                 RedisApp._install_redis.assert_any_call('asdf')
 
     def test_install_redis(self):
-        with patch.object(utils, 'execute_with_timeout'):
+        with patch.object(utils, 'execute_with_timeout',
+                          return_value=('0', '')):
             with patch.object(pkg.Package, 'pkg_install', return_value=None):
                 with patch.object(RedisApp, 'start_db', return_value=None):
                     self.app._install_redis('redis')
@@ -2392,7 +2393,7 @@ class TestRedisApp(BaseAppTest.AppTestCase):
                     RedisApp.start_db.assert_any_call()
                     self.assertTrue(utils.execute_with_timeout.called)
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_service_cleanup(self, exec_mock):
         rservice.RedisAppStatus(Mock()).cleanup_stalled_db_services()
         exec_mock.assert_called_once_with('pkill', '-9', 'redis-server',
@@ -3591,7 +3592,7 @@ class PXCAppTest(testtools.TestCase):
         self.assertEqual(expected, args[0].text,
                          "Sql statements are not the same")
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__bootstrap_cluster(self, mock_execute):
         pxc_service_cmds = pxc_system.service_discovery(['mysql'])
         self.PXCApp._bootstrap_cluster(timeout=20)
@@ -3657,7 +3658,8 @@ class PostgresAppTest(BaseAppTest.AppTestCase):
         def stop_db(self):
             super(PostgresAppTest.FakePostgresApp, self).stop_db(Mock())
 
-    def setUp(self):
+    @patch.object(pg_config.PgSqlConfig, '_find_config_file', return_value='')
+    def setUp(self, _):
         super(PostgresAppTest, self).setUp(str(uuid4()))
         self.orig_time_sleep = time.sleep
         self.orig_time_time = time.time
@@ -3685,7 +3687,7 @@ class PostgresAppTest(BaseAppTest.AppTestCase):
 
     @property
     def expected_service_candidates(self):
-        return pg_process.SERVICE_CANDIDATES
+        return self.postgres.SERVICE_CANDIDATES
 
     def tearDown(self):
         time.sleep = self.orig_time_sleep

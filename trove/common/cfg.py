@@ -955,6 +955,8 @@ postgresql_opts = [
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
+    cfg.PortOpt('postgresql_port', default=5432,
+                help='The TCP port the server listens on.'),
     cfg.StrOpt('backup_strategy', default='PgDump',
                help='Default strategy to perform backups.'),
     cfg.DictOpt('backup_incremental_strategy', default={},

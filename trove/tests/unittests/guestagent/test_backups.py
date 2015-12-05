@@ -360,7 +360,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + MONGODUMP_RESTORE)
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   mock.Mock(return_value={'dir': '/var/lib/redis',
                                           'dbfilename': 'dump.rdb'}))
@@ -373,7 +373,7 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
             REDISBACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
         self.assertIn("gz.enc", bkp.manifest)
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   mock.Mock(return_value={'dir': '/var/lib/redis',
                                           'dbfilename': 'dump.rdb'}))
@@ -416,7 +416,8 @@ class CouchbaseBackupTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(CouchbaseBackupTests, self).setUp()
-        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout',
+                                               return_value=('0', ''))
         self.exec_timeout_patch.start()
         self.backup_runner = utils.import_class(BACKUP_CBBACKUP_CLS)
         self.backup_runner_patch = patch.multiple(
@@ -496,8 +497,8 @@ class MongodbBackupTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(MongodbBackupTests, self).setUp()
-
-        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout',
+                                               return_value=('0', ''))
         self.exec_timeout_mock = self.exec_timeout_patch.start()
         self.addCleanup(self.exec_timeout_patch.stop)
 
@@ -586,7 +587,8 @@ class RedisBackupTests(trove_testtools.TestCase):
 
     def setUp(self):
         super(RedisBackupTests, self).setUp()
-        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout',
+                                               return_value=('0', ''))
         self.exec_timeout_patch.start()
         self.addCleanup(self.exec_timeout_patch.stop)
         self.conf_man_patch = patch.object(

@@ -48,10 +48,18 @@ bool_from_string = strutils.bool_from_string
 execute = processutils.execute
 isotime = timeutils.isotime
 
-ENV = jinja2.Environment(loader=jinja2.ChoiceLoader([
-                         jinja2.FileSystemLoader(CONF.template_path),
-                         jinja2.PackageLoader("trove", "templates")
-                         ]))
+
+def build_jinja_environment():
+    env = jinja2.Environment(loader=jinja2.ChoiceLoader([
+        jinja2.FileSystemLoader(CONF.template_path),
+        jinja2.PackageLoader("trove", "templates")
+    ]))
+    # Add some basic operation not built-in.
+    env.globals['max'] = max
+    env.globals['min'] = min
+    return env
+
+ENV = build_jinja_environment()
 
 
 def pagination_limit(limit, default_limit):

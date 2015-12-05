@@ -34,11 +34,11 @@ LOG = logging.getLogger(__name__)
 
 
 class Manager(
-        manager.Manager,
         PgSqlDatabase,
         PgSqlRoot,
         PgSqlConfig,
         PgSqlInstall,
+        manager.Manager
 ):
 
     PG_BUILTIN_ADMIN = 'postgres'
@@ -49,6 +49,10 @@ class Manager(
     @property
     def status(self):
         return PgSqlAppStatus.get()
+
+    @property
+    def configuration_manager(self):
+        return self._configuration_manager
 
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info, config_contents,
@@ -62,8 +66,8 @@ class Manager(
             if os.path.exists(mount_point):
                 device.migrate_data(mount_point)
             device.mount(mount_point)
-        self.reset_configuration(context, config_contents)
-        self.set_db_to_listen(context)
+        self.configuration_manager.save_configuration(config_contents)
+        self.apply_initial_guestagent_configuration()
         self.start_db(context)
 
         if backup_info:
