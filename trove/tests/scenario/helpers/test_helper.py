@@ -124,6 +124,18 @@ class TestHelper(object):
 
         self._build_data_fns()
 
+    #################
+    # Utility methods
+    #################
+    def get_class_name(self):
+        """Builds a string of the expected class name, plus the actual one
+        being used if it's not the same.
+        """
+        class_name_str = "'%s'" % self._expected_override_name
+        if self._expected_override_name != self.__class__.__name__:
+            class_name_str += ' (using %s)' % self.__class__.__name__
+        return class_name_str
+
     ################
     # Client related
     ################
@@ -135,7 +147,9 @@ class TestHelper(object):
         return self.create_client(host, *args, **kwargs)
 
     def create_client(self, host, *args, **kwargs):
-        """Create a datastore client."""
+        """Create a datastore client.  This is datastore specific, so this
+        method should be overridden if datastore access is desired.
+        """
         raise SkipTest('No client defined')
 
     def get_helper_credentials(self):
@@ -336,6 +350,7 @@ class TestHelper(object):
 
     def get_invalid_groups(self):
         """Return a list of configuration groups with invalid values.
+        An empty list indicates that no 'invalid' tests should be run.
         """
         return []
 
