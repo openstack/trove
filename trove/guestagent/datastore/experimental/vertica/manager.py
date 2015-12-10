@@ -109,3 +109,32 @@ class Manager(manager.Manager):
             LOG.exception(_('Cluster installation failed.'))
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise
+
+    def grow_cluster(self, context, members):
+        try:
+            LOG.debug("Growing cluster to members: %s." % members)
+            self.app.grow_cluster(members)
+            LOG.debug("grow_cluster call has finished.")
+        except Exception:
+            LOG.exception(_('Cluster grow failed.'))
+            self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
+            raise
+
+    def shrink_cluster(self, context, members):
+        try:
+            LOG.debug("Shrinking cluster members: %s." % members)
+            self.app.shrink_cluster(members)
+            LOG.debug("shrink_cluster call has finished.")
+        except Exception:
+            LOG.exception(_('Cluster shrink failed.'))
+            self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
+            raise
+
+    def mark_design_ksafe(self, context, k):
+        try:
+            LOG.debug("Setting vertica k-safety to %s." % k)
+            self.app.mark_design_ksafe(k)
+        except Exception:
+            LOG.exception(_('K-safety setting failed.'))
+            self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
+            raise

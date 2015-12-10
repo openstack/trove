@@ -47,6 +47,21 @@ class VerticaGuestAgentAPI(guest_api.API):
         return self._call("install_cluster", CONF.cluster_usage_timeout,
                           self.version_cap, members=members)
 
+    def grow_cluster(self, members):
+        LOG.debug("Growing Vertica cluster with members: %s." % members)
+        return self._call("grow_cluster", CONF.cluster_usage_timeout,
+                          self.version_cap, members=members)
+
+    def shrink_cluster(self, members):
+        LOG.debug("Shrinking Vertica cluster with members: %s." % members)
+        return self._call("shrink_cluster", CONF.cluster_usage_timeout,
+                          self.version_cap, members=members)
+
+    def mark_design_ksafe(self, k):
+        LOG.debug("Setting vertica k-safety level to : %s." % k)
+        return self._call("mark_design_ksafe", CONF.cluster_usage_timeout,
+                          self.version_cap, k=k)
+
     def cluster_complete(self):
         LOG.debug("Notifying cluster install completion.")
         return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,

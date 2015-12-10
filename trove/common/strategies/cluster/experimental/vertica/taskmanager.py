@@ -17,6 +17,8 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.strategies.cluster import base
+from trove.common.strategies.cluster.experimental.vertica.api import \
+    VerticaCluster
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.taskmanager import api as task_api
@@ -47,7 +49,8 @@ class VerticaClusterTasks(task_models.ClusterTasks):
         def _create_cluster():
 
             # Fetch instances by cluster_id against instances table.
-            db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+            db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
             instance_ids = [db_instance.id for db_instance in db_instances]
 
             # Wait for cluster members to get to cluster-ready status.
@@ -105,6 +108,116 @@ class VerticaClusterTasks(task_models.ClusterTasks):
             timeout.cancel()
 
         LOG.debug("End create_cluster for id: %s." % cluster_id)
+
+    def grow_cluster(self, context, cluster_id, new_instance_ids):
+
+        def _grow_cluster():
+            LOG.debug("begin grow_cluster for Vertica cluster %s" % cluster_id)
+
+            db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
+
+            instance_ids = [db_instance.id for db_instance in db_instances]
+
+            # Wait for new cluster members to get to cluster-ready status.
+            if not self._all_instances_ready(new_instance_ids, cluster_id):
+                return
+
+            new_insts = [Instance.load(context, instance_id)
+                         for instance_id in new_instance_ids]
+
+            existing_instances = [Instance.load(context, instance_id)
+                                  for instance_id
+                                  in instance_ids
+                                  if instance_id not in new_instance_ids]
+
+            existing_guests = [self.get_guest(i) for i in existing_instances]
+            new_guests = [self.get_guest(i) for i in new_insts]
+            all_guests = new_guests + existing_guests
+
+            authorized_users_without_password = ['root', 'dbadmin']
+            new_ips = [self.get_ip(instance) for instance in new_insts]
+
+            for user in authorized_users_without_password:
+                pub_key = [guest.get_public_keys(user) for guest in all_guests]
+                for guest in all_guests:
+                    guest.authorize_public_keys(user, pub_key)
+
+            for db_instance in db_instances:
+                if db_instance['type'] == 'master':
+                    LOG.debug("Found 'master' instance, calling grow on guest")
+                    master_instance = Instance.load(context,
+                                                    db_instance.id)
+                    self.get_guest(master_instance).grow_cluster(new_ips)
+                    break
+
+            for guest in new_guests:
+                guest.cluster_complete()
+
+        timeout = Timeout(CONF.cluster_usage_timeout)
+
+        try:
+            _grow_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise  # not my timeout
+            LOG.exception(_("Timeout for growing cluster."))
+            self.update_statuses_on_failure(cluster_id)
+        except Exception:
+            LOG.exception(_("Error growing cluster %s.") % cluster_id)
+            self.update_statuses_on_failure(cluster_id)
+        finally:
+            timeout.cancel()
+
+    def shrink_cluster(self, context, cluster_id, instance_ids):
+        def _shrink_cluster():
+            db_instances = DBInstance.find_all(cluster_id=cluster_id,
+                                               deleted=False).all()
+
+            all_instance_ids = [db_instance.id for db_instance in db_instances]
+
+            remove_instances = [Instance.load(context, instance_id)
+                                for instance_id in instance_ids]
+
+            left_instances = [Instance.load(context, instance_id)
+                              for instance_id
+                              in all_instance_ids
+                              if instance_id not in instance_ids]
+
+            remove_member_ips = [self.get_ip(instance)
+                                 for instance in remove_instances]
+
+            k = VerticaCluster.k_safety(len(left_instances))
+
+            for db_instance in db_instances:
+                if db_instance['type'] == 'master':
+                    master_instance = Instance.load(context,
+                                                    db_instance.id)
+                    if self.get_ip(master_instance) in remove_member_ips:
+                        raise RuntimeError(_("Cannot remove master instance!"))
+                    LOG.debug(_("Marking cluster k-safety: %s") % k)
+                    self.get_guest(master_instance).mark_design_ksafe(k)
+                    self.get_guest(master_instance).shrink_cluster(
+                        remove_member_ips)
+                    break
+
+            for r in remove_instances:
+                Instance.delete(r)
+
+        timeout = Timeout(CONF.cluster_usage_timeout)
+        try:
+            _shrink_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise
+            LOG.exception(_("Timeout for shrinking cluster."))
+            self.update_statuses_on_failure(cluster_id)
+        finally:
+            timeout.cancel()
+
+        LOG.debug("end shrink_cluster for Vertica cluster id %s" % self.id)
 
 
 class VerticaTaskManagerAPI(task_api.API):

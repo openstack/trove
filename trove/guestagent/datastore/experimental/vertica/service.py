@@ -153,6 +153,43 @@ class VerticaApp(object):
         finally:
             self.status.end_restart()
 
+    def add_db_to_node(self, members=netutils.get_my_ipv4()):
+        """Add db to host with admintools"""
+        LOG.info(_("Calling admintools to add DB to host"))
+        try:
+            # Create db after install
+            db_password = self._get_database_password()
+            create_db_command = (system.ADD_DB_TO_NODE % (members,
+                                                          DB_NAME,
+                                                          db_password))
+            system.shell_execute(create_db_command, "dbadmin")
+        except exception.ProcessExecutionError:
+            # Give vertica some time to get the the node up, won't be available
+            # by the time adminTools -t db_add_node completes
+            LOG.info(_("adminTools failed as expected - wait for node"))
+        self.wait_for_node_status()
+        LOG.info(_("Vertica add db to host completed."))
+
+    def remove_db_from_node(self, members=netutils.get_my_ipv4()):
+        """Remove db from node with admintools"""
+        LOG.info(_("Removing db from node"))
+        try:
+            # Create db after install
+            db_password = self._get_database_password()
+            create_db_command = (system.REMOVE_DB_FROM_NODE % (members,
+                                                               DB_NAME,
+                                                               db_password))
+            system.shell_execute(create_db_command, "dbadmin")
+        except exception.ProcessExecutionError:
+            # Give vertica some time to get the the node up, won't be available
+            # by the time adminTools -t db_add_node completes
+            LOG.info(_("adminTools failed as expected - wait for node"))
+
+        # Give vertica some time to take the node down - it won't be available
+        # by the time adminTools -t db_add_node completes
+        self.wait_for_node_status()
+        LOG.info(_("Vertica remove host from db completed."))
+
     def create_db(self, members=netutils.get_my_ipv4()):
         """Prepare the guest machine with a Vertica db creation."""
         LOG.info(_("Creating database on Vertica host."))
@@ -181,6 +218,18 @@ class VerticaApp(object):
             raise RuntimeError(_("install_vertica failed."))
         self._generate_database_password()
         LOG.info(_("install_vertica completed."))
+
+    def update_vertica(self, command, members=netutils.get_my_ipv4()):
+        LOG.info(_("Calling update_vertica with command %s") % command)
+        try:
+            update_vertica_cmd = (system.UPDATE_VERTICA % (command, members,
+                                                           MOUNT_POINT))
+            system.shell_execute(update_vertica_cmd)
+        except exception.ProcessExecutionError:
+            LOG.exception(_("update_vertica failed."))
+            raise RuntimeError(_("update_vertica failed."))
+        # self._generate_database_password()
+        LOG.info(_("update_vertica completed."))
 
     def add_udls(self):
         """Load the user defined load libraries into the database."""
@@ -286,6 +335,17 @@ class VerticaApp(object):
         except exception.ProcessExecutionError:
             LOG.exception(_("Failed to prepare for install_vertica."))
             raise
+
+    def mark_design_ksafe(self, k):
+        """Wrapper for mark_design_ksafe function for setting k-safety """
+        LOG.info(_("Setting Vertica k-safety to %s") % str(k))
+        out, err = system.exec_vsql_command(self._get_database_password(),
+                                            system.MARK_DESIGN_KSAFE % k)
+        # Only fail if we get an ERROR as opposed to a warning complaining
+        # about setting k = 0
+        if "ERROR" in err:
+            LOG.error(err)
+            raise RuntimeError(_("Failed to set k-safety level %s.") % k)
 
     def _create_user(self, username, password, role):
         """Creates a user, granting and enabling the given role for it."""
@@ -418,3 +478,41 @@ class VerticaApp(object):
         LOG.debug("Creating database with members: %s." % cluster_members)
         self.create_db(cluster_members)
         LOG.debug("Cluster configured on members: %s." % cluster_members)
+
+    def grow_cluster(self, members):
+        """Adds nodes to cluster."""
+        cluster_members = ','.join(members)
+        LOG.debug("Growing cluster with members: %s." % cluster_members)
+        self.update_vertica("--add-hosts", cluster_members)
+        self._export_conf_to_members(members)
+        LOG.debug("Creating database with members: %s." % cluster_members)
+        self.add_db_to_node(cluster_members)
+        LOG.debug("Cluster configured on members: %s." % cluster_members)
+
+    def shrink_cluster(self, members):
+        """Removes nodes from cluster."""
+        cluster_members = ','.join(members)
+        LOG.debug("Shrinking cluster with members: %s." % cluster_members)
+        self.remove_db_from_node(cluster_members)
+        self.update_vertica("--remove-hosts", cluster_members)
+
+    def wait_for_node_status(self, status='UP'):
+        """Wait until all nodes are the same status"""
+        # select node_state from nodes where node_state <> 'UP'
+        def _wait_for_node_status():
+            out, err = system.exec_vsql_command(self._get_database_password(),
+                                                system.NODE_STATUS % status)
+            LOG.debug("Polled vertica node states: %s" % out)
+
+            if err:
+                LOG.error(err)
+                raise RuntimeError(_("Failed to query for root user."))
+
+            return "0 rows" in out
+
+        try:
+            utils.poll_until(_wait_for_node_status, time_out=600,
+                             sleep_time=15)
+        except exception.PollTimeOut:
+            raise RuntimeError(_("Timed out waiting for cluster to"
+                                 "change to status %s") % status)
