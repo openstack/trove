@@ -80,6 +80,8 @@ def create_slave():
         instance_info.name + "_slave",
         instance_info.dbaas_flavor_href,
         instance_info.volume,
+        datastore=instance_info.dbaas_datastore,
+        datastore_version=instance_info.dbaas_datastore_version,
         slave_of=instance_info.id)
     assert_equal(200, instance_info.dbaas.last_http_code)
     assert_equal("BUILD", result.status)
