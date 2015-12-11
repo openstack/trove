@@ -20,7 +20,7 @@ from oslo_log import log as logging
 
 from eventlet.green import subprocess
 from trove.common import cfg, utils
-from trove.guestagent.strategy import Strategy
+from trove.common.strategies.strategy import Strategy
 
 CONF = cfg.CONF
 

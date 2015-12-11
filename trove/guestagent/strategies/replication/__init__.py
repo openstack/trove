@@ -17,7 +17,7 @@
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.guestagent.strategy import Strategy
+from trove.common.strategies.strategy import Strategy
 
 
 LOG = logging.getLogger(__name__)

@@ -22,6 +22,7 @@ from webob.exc import HTTPNotFound
 
 from trove.backup.state import BackupState
 from trove.common.context import TroveContext
+from trove.common.strategies.storage.base import Storage
 from trove.common import utils
 from trove.conductor import api as conductor_api
 from trove.guestagent.backup import backupagent
@@ -35,7 +36,6 @@ from trove.guestagent.strategies.backup.experimental import redis_impl
 from trove.guestagent.strategies.backup import mysql_impl
 from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore.base import RestoreRunner
-from trove.guestagent.strategies.storage.base import Storage
 from trove.tests.unittests import trove_testtools
 
 
