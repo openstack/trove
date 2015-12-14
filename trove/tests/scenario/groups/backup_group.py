@@ -25,11 +25,21 @@ GROUP_BACKUP = "scenario.backup_group"
 GROUP_BACKUP_LIST = "scenario.backup_list_group"
 GROUP_RESTORE = "scenario.restore_group"
 
+GROUP_INCREMENTAL = "scenario.incremental_backup_restore_group"
+GROUP_INCREMENTAL_BACKUP = "scenario.incremental_backup_group"
+GROUP_INCREMENTAL_RESTORE = "scenario.incremental_restore_group"
+
 
 class BackupRunnerFactory(test_runners.RunnerFactory):
 
     _runner_ns = 'backup_runners'
     _runner_cls = 'BackupRunner'
+
+
+class IncrementalBackupRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'backup_runners'
+    _runner_cls = 'IncrementalBackupRunner'
 
 
 @test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
@@ -194,3 +204,43 @@ class BackupGroup(TestGroup):
     def check_for_incremental_backup(self):
         """Test that backup children are deleted."""
         self.test_runner.run_check_for_incremental_backup()
+
+
+@test(depends_on_groups=[instance_create_group.GROUP],
+      groups=[GROUP_INCREMENTAL])
+class IncrementalBackupGroup(TestGroup):
+    """Test Incremental Backup and Restore functionality."""
+
+    def __init__(self):
+        super(IncrementalBackupGroup, self).__init__(
+            IncrementalBackupRunnerFactory.instance())
+
+    @test(groups=[GROUP_INCREMENTAL_BACKUP])
+    def backup_run_single_incremental(self):
+        """Run a full and a single incremental backup"""
+        self.test_runner.run_backup_incremental(increments=1)
+
+    @test(groups=[GROUP_INCREMENTAL_BACKUP],
+          depends_on=[backup_run_single_incremental])
+    def restore_from_incremental(self):
+        """Launch a restore from a single incremental backup"""
+        self.test_runner.run_restore_from_incremental(increment=1)
+
+    @test(groups=[GROUP_INCREMENTAL_RESTORE],
+          depends_on=[restore_from_incremental])
+    def restore_from_backup_completed(self):
+        """Wait until restoring an instance from an incr. backup completes."""
+        self.test_runner.run_restore_from_backup_completed()
+
+    @test(groups=[GROUP_INCREMENTAL_RESTORE],
+          depends_on=[restore_from_backup_completed])
+    def verify_data_in_restored_instance(self):
+        """Verify data in restored instance."""
+        self.test_runner.run_verify_data_in_restored_instance()
+
+    @test(groups=[GROUP_INCREMENTAL_RESTORE],
+          depends_on=[restore_from_backup_completed],
+          runs_after=[verify_data_in_restored_instance])
+    def delete_restored_instance(self):
+        """Test deleting the restored instance."""
+        self.test_runner.run_delete_restored_instance()

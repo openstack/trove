@@ -11,7 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import mock
+import os
 from mock import ANY, DEFAULT, Mock, patch, PropertyMock
 from testtools.testcase import ExpectedException
 from trove.common import exception
@@ -23,6 +25,8 @@ from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service
 )
 from trove.guestagent.strategies.backup import base as backupBase
+from trove.guestagent.strategies.backup.experimental.postgresql_impl \
+    import PgBaseBackupUtil
 from trove.guestagent.strategies.backup.mysql_impl import MySqlApp
 from trove.guestagent.strategies.restore import base as restoreBase
 from trove.guestagent.strategies.restore.mysql_impl import MySQLRestoreMixin
@@ -888,6 +892,56 @@ class RedisRestoreTests(trove_testtools.TestCase):
             exception.ProcessExecutionError('Error'))
         self.assertRaises(exception.ProcessExecutionError,
                           self.restore_runner.restore)
+
+
+class PostgresqlBackupTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(PostgresqlBackupTests, self).setUp()
+        self.bkutil = PgBaseBackupUtil()
+
+        self.b1 = ['000000010000000000000003',
+                   '000000010000000000000004',
+                   '000000010000000000000005',
+                   '000000010000000000000006',
+                   '000000010000000000000006.00000168.backup']
+
+        self.b2 = ['000000010000000000000007',
+                   '000000010000000000000008',
+                   '000000010000000000000009',
+                   '000000010000000000000010',
+                   '000000010000000000000009.0008A168.backup']
+
+    def tearDown(self):
+        super(PostgresqlBackupTests, self).tearDown()
+
+    def test_check_most_recent_backup(self):
+
+        with patch.object(os, 'listdir', return_value=self.b1):
+            mrb = self.bkutil.most_recent_backup_file()
+            self.assertEqual(mrb, self.b1[4])
+            mrbfile = self.bkutil.most_recent_backup_wal()
+            self.assertEqual(mrbfile, self.b1[3])
+
+        with patch.object(os, 'listdir', return_value=self.b1 + self.b2):
+            mrb = self.bkutil.most_recent_backup_file()
+            self.assertEqual(mrb, self.b2[4])
+            mrbfile = self.bkutil.most_recent_backup_wal()
+            self.assertEqual(mrbfile, self.b2[2])
+
+    def test_check_most_recent_wal_list(self):
+
+        with patch.object(os, 'listdir', return_value=self.b1):
+            logs = self.bkutil.log_files_since_last_backup()
+            self.assertEqual(logs, [self.b1[3]])
+
+        with patch.object(os, 'listdir', return_value=self.b2):
+            logs = self.bkutil.log_files_since_last_backup()
+            self.assertEqual(logs, [self.b2[2], self.b2[3]])
+
+        with patch.object(os, 'listdir', return_value=self.b1 + self.b2):
+            logs = self.bkutil.log_files_since_last_backup()
+            self.assertEqual(logs, [self.b2[2], self.b2[3]])
 
 
 class DB2BackupTests(trove_testtools.TestCase):

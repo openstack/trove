@@ -103,12 +103,14 @@ class Manager(
             device.mount(mount_point)
         self.configuration_manager.save_configuration(config_contents)
         self.apply_initial_guestagent_configuration()
-        self.start_db(context)
 
         if backup_info:
-            backup.restore(context, backup_info, '/tmp')
             pgutil.PG_ADMIN = self.ADMIN_USER
-        else:
+            backup.restore(context, backup_info, '/tmp')
+
+        self.start_db(context)
+
+        if not backup_info:
             self._secure(context)
 
     def _secure(self, context):
@@ -123,4 +125,5 @@ class Manager(
 
     def create_backup(self, context, backup_info):
         with EndNotification(context):
+            self.enable_backups()
             backup.backup(context, backup_info)

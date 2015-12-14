@@ -1044,15 +1044,20 @@ postgresql_opts = [
                      'if trove_security_groups_support is True).'),
     cfg.PortOpt('postgresql_port', default=5432,
                 help='The TCP port the server listens on.'),
-    cfg.StrOpt('backup_strategy', default='PgDump',
+    cfg.StrOpt('backup_strategy', default='PgBaseBackup',
                help='Default strategy to perform backups.'),
-    cfg.DictOpt('backup_incremental_strategy', default={},
+    cfg.DictOpt('backup_incremental_strategy',
+                default={'PgBaseBackup': 'PgBaseBackupIncremental'},
                 help='Incremental Backup Runner based on the default '
                 'strategy. For strategies that do not implement an '
                 'incremental, the runner will use the default full backup.'),
     cfg.StrOpt('mount_point', default='/var/lib/postgresql',
                help="Filesystem path for mounting "
                "volumes if volume support is enabled."),
+    cfg.StrOpt('wal_archive_location', default='/mnt/wal_archive',
+               help="Filesystem path storing WAL archive files when "
+                    "WAL-shipping based backups or replication "
+                    "is enabled."),
     cfg.BoolOpt('root_on_create', default=False,
                 help='Enable the automatic creation of the root user for the '
                 'service during instance-create. The generated password for '

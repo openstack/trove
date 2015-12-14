@@ -35,6 +35,8 @@ from trove.guestagent.datastore.experimental.postgresql import pgutil
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
+BACKUP_CFG_OVERRIDE = 'PgBaseBackupConfig'
+
 
 class PgSqlConfig(PgSqlProcess):
     """Mixin that implements the config API.
@@ -62,6 +64,17 @@ class PgSqlConfig(PgSqlProcess):
                 string_mappings={'on': True, 'off': False, "''": None}),
             requires_root=True,
             override_strategy=OneFileOverrideStrategy(revision_dir))
+
+    @property
+    def pgsql_extra_bin_dir(self):
+        """Redhat and Ubuntu packages for PgSql do not place 'extra' important
+        binaries in /usr/bin, but rather in a directory like /usr/pgsql-9.4/bin
+        in the case of PostgreSQL 9.4 for RHEL/CentOS
+        """
+        version = self.pg_version[1]
+        return {operating_system.DEBIAN: '/usr/lib/postgresql/%s/bin',
+                operating_system.REDHAT: '/usr/pgsql-%s/bin',
+                operating_system.SUSE: '/usr/bin'}[self.OS] % version
 
     @property
     def pgsql_config(self):
@@ -156,7 +169,8 @@ class PgSqlConfig(PgSqlProcess):
         # The OrderedDict is necessary to guarantee the iteration order.
         access_rules = OrderedDict(
             [('local', [['all', 'postgres,os_admin', None, 'trust'],
-                        ['all', 'all', None, 'md5']]),
+                        ['all', 'all', None, 'md5'],
+                        ['replication', 'postgres,os_admin', None, 'trust']]),
              ('host', [['all', 'postgres,os_admin', '127.0.0.1/32', 'trust'],
                        ['all', 'postgres,os_admin', '::1/128', 'trust'],
                        ['all', 'postgres,os_admin', 'localhost', 'trust'],
@@ -174,3 +188,35 @@ class PgSqlConfig(PgSqlProcess):
                                as_root=True)
         operating_system.chmod(self.pgsql_hba_config, FileMode.SET_USR_RO,
                                as_root=True)
+
+    def enable_backups(self):
+        """Apply necessary changes to config to enable WAL-based backups
+           if we are using the PgBaseBackup strategy
+        """
+        if not CONF.postgresql.backup_strategy == 'PgBaseBackup':
+            return
+        if self.configuration_manager.has_system_override(BACKUP_CFG_OVERRIDE):
+            return
+
+        LOG.info("Applying changes to WAL config for use by base backups")
+        wal_arch_loc = CONF.postgresql.wal_archive_location
+        if not os.path.isdir(wal_arch_loc):
+            raise RuntimeError(_("Cannot enable backup as WAL dir '%s' does "
+                                 "not exist.") % wal_arch_loc)
+        arch_cmd = "'test ! -f {wal_arch}/%f && cp %p {wal_arch}/%f'".format(
+            wal_arch=wal_arch_loc
+        )
+        opts = {
+            'wal_level': 'hot_standby',
+            'archive_mode ': 'on',
+            'max_wal_senders': 3,
+            'checkpoint_segments ': 8,
+            'wal_keep_segments': 8,
+            'archive_command': arch_cmd
+        }
+        if not self.pg_version[1] in ('9.3'):
+            opts['wal_log_hints'] = 'on'
+
+        self.configuration_manager.apply_system_override(
+            opts, BACKUP_CFG_OVERRIDE)
+        self.restart(None)
