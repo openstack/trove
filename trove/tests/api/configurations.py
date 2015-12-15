@@ -588,6 +588,7 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
         configuration_instance.dbaas_datastore = instance_info.dbaas_datastore
         configuration_instance.dbaas_datastore_version = \
             instance_info.dbaas_datastore_version
+        configuration_instance.nics = instance_info.nics
 
         result = instance_info.dbaas.instances.create(
             configuration_instance.name,
@@ -595,6 +596,7 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
             configuration_instance.volume,
             configuration_instance.databases,
             configuration_instance.users,
+            nics=configuration_instance.nics,
             availability_zone="nova",
             datastore=configuration_instance.dbaas_datastore,
             datastore_version=configuration_instance.dbaas_datastore_version,

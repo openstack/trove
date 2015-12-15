@@ -50,6 +50,7 @@ class TestRootOnCreate(object):
             instance_info.volume,
             instance_info.databases,
             instance_info.users,
+            nics=instance_info.nics,
             availability_zone="nova",
             datastore=instance_info.dbaas_datastore,
             datastore_version=instance_info.dbaas_datastore_version)
