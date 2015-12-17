@@ -534,6 +534,28 @@ class CassandraApp(object):
                              '-u', cassandra.name,
                              '-pw', cassandra.password, cmd, *args, **kwargs)
 
+    def enable_root(self, root_password=None):
+        """Cassandra's 'root' user is called 'cassandra'.
+        Create a new superuser if it does not exist and grant it full
+        superuser-level access to all keyspaces.
+        """
+        cassandra = models.CassandraRootUser(password=root_password)
+        admin = CassandraAdmin(self.get_current_superuser())
+        if self.is_root_enabled():
+            admin.alter_user_password(cassandra)
+        else:
+            admin._create_superuser(cassandra)
+
+        return cassandra.serialize()
+
+    def is_root_enabled(self):
+        """The Trove administrative user ('os_admin') should normally be the
+        only superuser in the system.
+        """
+        found = CassandraAdmin(self.get_current_superuser()).list_superusers()
+        return len([user for user in found
+                    if user.name != self._ADMIN_USER]) > 0
+
 
 class CassandraAppStatus(service.BaseDbStatus):
 

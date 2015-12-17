@@ -925,3 +925,13 @@ class MySQLRootUser(RootUser):
             self._password = utils.generate_random_password()
         else:
             self._password = password
+
+
+class CassandraRootUser(CassandraUser):
+    """Represents the Cassandra default superuser."""
+
+    def __init__(self, password=None, *args, **kwargs):
+        if password is None:
+            password = utils.generate_random_password()
+        super(CassandraRootUser, self).__init__("cassandra", password=password,
+                                                *args, **kwargs)

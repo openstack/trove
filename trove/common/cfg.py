@@ -818,8 +818,9 @@ cassandra_opts = [
                deprecated_name='restore_namespace',
                deprecated_group='DEFAULT'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.common.service.DefaultRootController',
-               help='Root controller implementation for cassandra.'),
+               default='trove.extensions.cassandra.service'
+               '.CassandraRootController',
+               help='Root controller implementation for Cassandra.'),
     cfg.ListOpt('ignore_users', default=['os_admin'],
                 help='Users to exclude when listing users.'),
     cfg.ListOpt('ignore_dbs', default=['system', 'system_auth',
