@@ -14,20 +14,18 @@
 #    under the License.
 
 import contextlib
+import threading
 
+from oslo_db.sqlalchemy import session
 from oslo_log import log as logging
-import osprofiler.sqlalchemy
-import sqlalchemy
-from sqlalchemy import create_engine
 from sqlalchemy import MetaData
-from sqlalchemy.orm import sessionmaker
 
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.db.sqlalchemy import mappers
 
-_ENGINE = None
-_MAKER = None
+_FACADE = None
+_LOCK = threading.Lock()
 
 
 LOG = logging.getLogger(__name__)
@@ -36,11 +34,9 @@ CONF = cfg.CONF
 
 
 def configure_db(options, models_mapper=None):
-    global _ENGINE
-    if not _ENGINE:
-        _ENGINE = _create_engine(options)
+    facade = _create_facade(options)
     if models_mapper:
-        models_mapper.map(_ENGINE)
+        models_mapper.map(facade)
     else:
         from trove.backup import models as backup_models
         from trove.cluster import models as cluster_models
@@ -71,44 +67,69 @@ def configure_db(options, models_mapper=None):
         models = {}
         for module in model_modules:
             models.update(module.persisted_models())
-        mappers.map(_ENGINE, models)
+        mappers.map(get_engine(), models)
 
 
-def _create_engine(options):
-    engine_args = {
-        "pool_recycle": CONF.database.idle_timeout,
-        "echo": CONF.database.query_log
-    }
-    LOG.info(_("Creating SQLAlchemy engine with args: %s") % engine_args)
-    db_engine = create_engine(options['database']['connection'], **engine_args)
-    if CONF.profiler.enabled and CONF.profiler.trace_sqlalchemy:
-        osprofiler.sqlalchemy.add_tracing(sqlalchemy, db_engine, "db")
-    return db_engine
+def _create_facade(options):
+    global _LOCK, _FACADE
+    # TODO(mvandijk): Refactor this once oslo.db spec is implemented:
+    # https://specs.openstack.org/openstack/oslo-specs/specs/kilo/
+    #     make-enginefacade-a-facade.html
+    if _FACADE is None:
+        with _LOCK:
+            if _FACADE is None:
+                conf = CONF.database
+                # pop the deprecated config option 'query_log'
+                if conf.query_log:
+                    if conf.connection_debug < 50:
+                        conf['connection_debug'] = 50
+                    LOG.warning(_('Configuration option "query_log" has been '
+                                  'depracated. Use "connection_debug" '
+                                  'instead. Setting connection_debug = '
+                                  '%(debug_level)s instead.')
+                                % conf.get('connection_debug'))
+                # TODO(mvandijk): once query_log is removed,
+                #                 use enginefacade.from_config() instead
+                database_opts = dict(CONF.database)
+                database_opts.pop('query_log')
+                _FACADE = session.EngineFacade(
+                    options['database']['connection'],
+                    **database_opts
+                )
+    return _FACADE
 
 
-def get_session(autocommit=True, expire_on_commit=False):
-    """Helper method to grab session."""
-    global _MAKER, _ENGINE
-    if not _MAKER:
-        if not _ENGINE:
-            msg = "***The Database has not been setup!!!***"
-            LOG.exception(msg)
-            raise RuntimeError(msg)
-        _MAKER = sessionmaker(bind=_ENGINE,
-                              autocommit=autocommit,
-                              expire_on_commit=expire_on_commit)
-    return _MAKER()
+def _check_facade():
+    if _FACADE is None:
+        msg = _("***The Database has not been setup!!!***")
+        LOG.exception(msg)
+        raise RuntimeError(msg)
 
 
-def raw_query(model, autocommit=True, expire_on_commit=False):
-    return get_session(autocommit, expire_on_commit).query(model)
+def get_facade():
+    _check_facade()
+    return _FACADE
+
+
+def get_engine(use_slave=False):
+    _check_facade()
+    return _FACADE.get_engine(use_slave=use_slave)
+
+
+def get_session(**kwargs):
+    return get_facade().get_session(**kwargs)
+
+
+def raw_query(model, **kwargs):
+    return get_session(**kwargs).query(model)
 
 
 def clean_db():
-    global _ENGINE
+    engine = get_engine()
     meta = MetaData()
-    meta.reflect(bind=_ENGINE)
-    with contextlib.closing(_ENGINE.connect()) as con:
+    meta.bind = engine
+    meta.reflect()
+    with contextlib.closing(engine.connect()) as con:
         trans = con.begin()
         for table in reversed(meta.sorted_tables):
             if table.name != "migrate_version":
@@ -117,8 +138,10 @@ def clean_db():
 
 
 def drop_db(options):
+    if options:
+        _create_facade(options)
+    engine = get_engine()
     meta = MetaData()
-    engine = _create_engine(options)
     meta.bind = engine
     meta.reflect()
     meta.drop_all()

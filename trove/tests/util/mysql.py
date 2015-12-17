@@ -18,8 +18,8 @@
 
 import re
 
+from oslo_db.sqlalchemy import session
 import pexpect
-from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 try:
     from sqlalchemy.exc import ResourceClosedError
@@ -114,8 +114,10 @@ class SqlAlchemyConnection(object):
 
     @staticmethod
     def _init_engine(user, password, host):
-        return create_engine("mysql://%s:%s@%s:3306" % (user, password, host),
-                             pool_recycle=1800, echo=True)
+        return session.EngineFacade(
+            "mysql://%s:%s@%s:3306" % (user, password, host),
+            pool_recycle=1800, echo=True
+        ).get_engine()
 
 
 class PexpectMySqlConnection(object):

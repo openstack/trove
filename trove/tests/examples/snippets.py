@@ -829,7 +829,7 @@ class Backups(ActiveMixin):
         assert_equal(len(results), 1)
         self.json_backup = results[JSON_INDEX]
 
-    @test
+    @test(depends_on=[create_backup])
     def create_incremental_backup(self):
         set_fake_stuff(uuid=EXAMPLE_BACKUP_INCREMENTAL_ID)
         results = self.snippet(
@@ -844,9 +844,9 @@ class Backups(ActiveMixin):
 
         self._wait_for_active("BACKUP")
         assert_equal(len(results), 1)
-        self.json_backup = results[JSON_INDEX]
+        self.json_backup2 = results[JSON_INDEX]
 
-    @test(depends_on=[create_backup])
+    @test(depends_on=[create_incremental_backup])
     def get_backup(self):
         results = self.snippet(
             "backup_get",
@@ -855,7 +855,7 @@ class Backups(ActiveMixin):
             lambda client: client.backups.get(self.json_backup.id))
         assert_equal(len(results), 1)
 
-    @test(depends_on=[create_backup])
+    @test(depends_on=[create_incremental_backup])
     def get_backups_for_instance(self):
         results = self.snippet(
             "backups_by_instance",
@@ -864,7 +864,7 @@ class Backups(ActiveMixin):
             lambda client: client.instances.backups(json_instance.id))
         assert_equal(len(results), 1)
 
-    @test(depends_on=[create_backup])
+    @test(depends_on=[create_incremental_backup])
     def list_backups(self):
         results = self.snippet(
             "backup_list",
