@@ -64,9 +64,12 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster = vertica_api.VerticaCluster(self.context, self.db_info,
                                                   self.datastore,
                                                   self.datastore_version)
-        self.instances = [{'volume_size': 1, 'flavor_id': '1234'},
-                          {'volume_size': 1, 'flavor_id': '1234'},
-                          {'volume_size': 1, 'flavor_id': '1234'}]
+        self.instances = [{'volume_size': 1, 'flavor_id': '1234',
+                           'instance_type': 'master'},
+                          {'volume_size': 1, 'flavor_id': '1234',
+                           'instance_type': 'member'},
+                          {'volume_size': 1, 'flavor_id': '1234',
+                           'instance_type': 'member'}]
 
     def tearDown(self):
         super(ClusterTest, self).tearDown()

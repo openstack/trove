@@ -43,9 +43,9 @@ class VerticaRootController(BaseDatastoreRootController):
 
     def cluster_root_index(self, req, tenant_id, cluster_id):
         LOG.info(_LI("Getting root enabled for cluster '%s'.") % cluster_id)
-        instance_id, cluster_instances = self._get_cluster_instance_id(
+        master_instance_id, cluster_instances = self._get_cluster_instance_id(
             tenant_id, cluster_id)
-        return self.instance_root_index(req, tenant_id, instance_id)
+        return self.instance_root_index(req, tenant_id, master_instance_id)
 
     def root_create(self, req, body, tenant_id, instance_id, is_cluster):
         if is_cluster:
@@ -69,14 +69,17 @@ class VerticaRootController(BaseDatastoreRootController):
 
     def cluster_root_create(self, req, body, tenant_id, cluster_id):
         LOG.info(_LI("Enabling root for cluster '%s'.") % cluster_id)
-        instance_id, cluster_instances = self._get_cluster_instance_id(
+        master_instance_id, cluster_instances = self._get_cluster_instance_id(
             tenant_id, cluster_id)
-        return self.instance_root_create(req, body, instance_id,
+        return self.instance_root_create(req, body, master_instance_id,
                                          cluster_instances)
 
     def _get_cluster_instance_id(self, tenant_id, cluster_id):
         args = {'tenant_id': tenant_id, 'cluster_id': cluster_id}
         cluster_instances = DBInstance.find_all(**args).all()
         instance_ids = [db_instance.id for db_instance in cluster_instances]
-        instance_id = instance_ids[0]
-        return (instance_id, instance_ids)
+        args = {'tenant_id': tenant_id, 'cluster_id': cluster_id, 'type':
+                'master'}
+        master_instance = DBInstance.find_by(**args)
+        master_instance_id = master_instance.id
+        return master_instance_id, instance_ids

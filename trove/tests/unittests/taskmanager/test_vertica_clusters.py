@@ -59,7 +59,7 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
                                   volume_id="volume-1",
                                   datastore_version_id="1",
                                   cluster_id=self.cluster_id,
-                                  type="member")
+                                  type="master")
         self.dbinst2 = DBInstance(InstanceTasks.NONE, id="2", name="member2",
                                   compute_instance_id="compute-2",
                                   task_id=InstanceTasks.NONE._code,
@@ -132,15 +132,19 @@ class VerticaClusterTasksTest(trove_testtools.TestCase):
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     def test_create_cluster(self, mock_dv, mock_ds, mock_find_all, mock_load,
                             mock_ready, mock_ip, mock_guest, mock_reset_task):
-        mock_find_all.return_value.all.return_value = [self.dbinst1]
+        cluster_instances = [self.dbinst1, self.dbinst2, self.dbinst3]
+        for instance in cluster_instances:
+            if instance['type'] == "master":
+                mock_find_all.return_value.all.return_value = [self.dbinst1]
+            mock_ready.return_value = True
         mock_load.return_value = BaseInstance(Mock(),
                                               self.dbinst1, Mock(),
                                               InstanceServiceStatus(
                                                   ServiceStatuses.NEW))
         mock_ip.return_value = "10.0.0.2"
         self.clustertasks.create_cluster(Mock(), self.cluster_id)
-        mock_guest.return_value.install_cluster.assert_called_with(['10.0.0.2']
-                                                                   )
+        mock_guest.return_value.install_cluster.assert_called_with(
+            ['10.0.0.2'])
         mock_reset_task.assert_called_with()
         mock_guest.return_value.cluster_complete.assert_called_with()
 

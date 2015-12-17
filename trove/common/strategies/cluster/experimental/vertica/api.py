@@ -108,11 +108,12 @@ class VerticaCluster(models.Cluster):
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
 
-        member_config = {"id": db_info.id,
-                         "instance_type": "member"}
-
         # Creating member instances
         for i in range(0, num_instances):
+            if i == 0:
+                member_config = {"id": db_info.id, "instance_type": "master"}
+            else:
+                member_config = {"id": db_info.id, "instance_type": "member"}
             instance_name = "%s-member-%s" % (name, str(i + 1))
             inst_models.Instance.create(context, instance_name,
                                         flavor_id,
@@ -135,10 +136,12 @@ class VerticaCluster(models.Cluster):
 class VerticaClusterView(ClusterView):
 
     def build_instances(self):
-        return self._build_instances(['member'], ['member'])
+        return self._build_instances(['member', 'master'],
+                                     ['member', 'master'])
 
 
 class VerticaMgmtClusterView(MgmtClusterView):
 
     def build_instances(self):
-        return self._build_instances(['member'], ['member'])
+        return self._build_instances(['member', 'master'],
+                                     ['member', 'master'])
