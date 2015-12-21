@@ -419,3 +419,11 @@ class TestHelper(object):
         restart of the datastore.
         """
         return False
+
+    ##############
+    # Root related
+    ##############
+    def get_valid_root_password(self):
+        """Return a valid password that can be used by a 'root' user.
+        """
+        return "RootTestPass"

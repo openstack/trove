@@ -265,7 +265,7 @@ class TestRunner(object):
                 self.fail(str(task.poll_exception()))
 
     def _assert_instance_states(self, instance_id, expected_states,
-                                fast_fail_status='ERROR',
+                                fast_fail_status=['ERROR', 'FAILED'],
                                 require_all_states=False):
         """Keep polling for the expected instance states until the instance
         acquires either the last or fast-fail state.
@@ -357,10 +357,11 @@ class TestRunner(object):
                    sleep_time=sleep_time, time_out=time_out)
 
     def _has_status(self, instance_id, status, fast_fail_status=None):
+        fast_fail_status = fast_fail_status or []
         instance = self.get_instance(instance_id)
         self.report.log("Polling instance '%s' for state '%s', was '%s'."
                         % (instance_id, status, instance.status))
-        if fast_fail_status and instance.status == fast_fail_status:
+        if instance.status in fast_fail_status:
             raise RuntimeError("Instance '%s' acquired a fast-fail status: %s"
                                % (instance_id, instance.status))
         return instance.status == status
