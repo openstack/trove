@@ -112,6 +112,10 @@ class TestCase(testtools.TestCase):
                                 full_name, member, container, depth + 1)
             except ImportError:
                 pass  # Module cannot be imported - ignore it.
+            except RuntimeError:
+                # Something else went wrong when probing the class member.
+                # See: https://bugs.launchpad.net/trove/+bug/1524918
+                pass
 
     def _get_loaded_modules(self):
         return {name: obj for name, obj in sys.modules.items() if obj}
