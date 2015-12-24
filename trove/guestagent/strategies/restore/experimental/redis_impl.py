@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 from oslo_log import log as logging
 
 from trove.common.i18n import _
-from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.redis import service
@@ -44,11 +44,13 @@ class RedisBackup(base.RestoreRunner):
 
     def pre_restore(self):
         self.app.stop_db()
-        LOG.info(_("Cleaning out restore location: %s."),
+        LOG.info(_("Removing old persistence file: %s."),
                  self.restore_location)
-        operating_system.chmod(self.restore_location, FileMode.SET_FULL,
-                               as_root=True)
-        utils.clean_out(self.restore_location)
+        operating_system.remove(self.restore_location, force=True,
+                                as_root=True)
+        dir = os.path.dirname(self.restore_location)
+        operating_system.create_directory(dir, as_root=True)
+        operating_system.chmod(dir, FileMode.SET_FULL, as_root=True)
         # IF AOF is set, we need to turn it off temporarily
         if self.aof_set:
             self.app.configuration_manager.apply_system_override(
