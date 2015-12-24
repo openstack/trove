@@ -13,7 +13,8 @@
 #    under the License.
 
 import time
-import urllib
+
+from six.moves.urllib import parse as urllib_parse
 
 from proboscis import after_class
 from proboscis.asserts import assert_equal
@@ -443,7 +444,7 @@ class TestUsers(object):
         assert_true(len(users) <= limit)
         assert_true(users.next is not None)
         expected_marker = "%s@%s" % (users[-1].name, users[-1].host)
-        expected_marker = urllib.quote(expected_marker)
+        expected_marker = urllib_parse.quote(expected_marker)
         assert_equal(marker, expected_marker)
         marker = users.next
 

@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
+from six.moves.urllib import parse as urllib_parse
 
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
@@ -101,7 +101,7 @@ class UserActionsRunner(TestRunner):
         self.assert_pagination_match(list_page, full_list, 0, limit)
         if marker:
             last_user = list_page[-1]
-            expected_marker = urllib.quote(
+            expected_marker = urllib_parse.quote(
                 '%s@%s' % (last_user.name, last_user.host))
             self.assert_equal(expected_marker, marker,
                               "Pagination marker should be the last element "
