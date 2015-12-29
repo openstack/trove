@@ -456,7 +456,7 @@ def load_any_instance(context, id, load_server=True):
         return load_instance(BuiltInstance, context, id,
                              needs_server=load_server)
     except exception.UnprocessableEntity:
-        LOG.warn(_LW("Could not load instance %s."), id)
+        LOG.warning(_LW("Could not load instance %s."), id)
         return load_instance(FreshInstance, context, id, needs_server=False)
 
 
@@ -569,7 +569,7 @@ class BaseInstance(SimpleInstance):
 
             if self.slaves:
                 msg = _("Detach replicas before deleting replica source.")
-                LOG.warn(msg)
+                LOG.warning(msg)
                 raise exception.ReplicaSourceDeleteForbidden(msg)
 
             self.update_db(task_status=InstanceTasks.DELETING,

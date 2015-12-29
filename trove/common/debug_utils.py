@@ -96,8 +96,8 @@ def enabled():
     if __debug_state:
         import threading
         if threading.current_thread.__module__ == 'eventlet.green.threading':
-            LOG.warn(_("Enabling debugging with eventlet monkey patched "
-                       "could produce unexpected behavior."))
+            LOG.warning(_("Enabling debugging with eventlet monkey"
+                          " patched produce unexpected behavior."))
 
     return __debug_state
 
@@ -117,8 +117,9 @@ def __setup_remote_pydev_debug_safe(pydev_debug_host=None,
             pydev_debug_port=pydev_debug_port,
             pydev_path=pydev_path)
     except Exception as e:
-        LOG.warn(_("Can't connect to remote debug server. Continuing to "
-                 "work in standard mode. Error: %s."), e)
+        LOG.warning(_("Can't connect to remote debug server."
+                      " Continuing to work in standard mode."
+                      " Error: %s."), e)
         return False
 
 
