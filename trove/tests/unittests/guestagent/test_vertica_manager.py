@@ -19,6 +19,7 @@ from testtools.matchers import Is
 from trove.common.context import TroveContext
 from trove.common.exception import DatastoreOperationNotSupported
 from trove.common import instance as rd_instance
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.vertica.manager import Manager
 from trove.guestagent.datastore.experimental.vertica.service import (
     VerticaAppStatus)
@@ -251,7 +252,8 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
             test_resize_fs = volume.VolumeDevice.resize_fs.call_args_list[0]
             test_resize_fs.assert_called_with('/var/lib/vertica')
 
-    def test_cluster_complete(self):
+    @patch.object(operating_system, 'write_file')
+    def test_cluster_complete(self, mock_write_file):
         mock_set_status = MagicMock()
         self.manager.appStatus.set_status = mock_set_status
         self.manager.appStatus._get_actual_db_status = MagicMock(

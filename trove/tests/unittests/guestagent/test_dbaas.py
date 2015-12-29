@@ -1870,7 +1870,8 @@ class BaseDbStatusTest(testtools.TestCase):
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
 
-    def test_begin_install(self):
+    @patch.object(operating_system, 'write_file')
+    def test_begin_install(self, mock_write_file):
         base_db_status = BaseDbStatus()
 
         base_db_status.begin_install()
