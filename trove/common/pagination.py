@@ -18,14 +18,13 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
-import six.moves.urllib.parse as urlparse
-import urllib
+import six.moves.urllib.parse as urllib_parse
 
 
 def url_quote(s):
     if s is None:
         return s
-    return urllib.quote(str(s))
+    return urllib_parse.quote(str(s))
 
 
 def paginate_list(li, limit=None, marker=None, include_marker=False):
@@ -112,18 +111,18 @@ class AppUrl(object):
         # from the kwargs given. So change_query_params(foo='bar')
         # would remove from the URL any old instance of foo=something and
         # then add &foo=bar to the URL.
-        parsed_url = urlparse.urlparse(self.url)
+        parsed_url = urllib_parse.urlparse(self.url)
         # Build a dictionary out of the query parameters in the URL
         # with an OrderedDict to preserve the order of the URL.
-        query_params = OrderedDict(urlparse.parse_qsl(parsed_url.query))
+        query_params = OrderedDict(urllib_parse.parse_qsl(parsed_url.query))
         # Use kwargs to change or update any values in the query dict.
         query_params.update(kwargs)
 
         # Build a new query based on the updated query dict.
-        new_query_params = urllib.urlencode(query_params)
+        new_query_params = urllib_parse.urlencode(query_params)
         return self.__class__(
             # Force HTTPS.
-            urlparse.ParseResult('https',
-                                 parsed_url.netloc, parsed_url.path,
-                                 parsed_url.params, new_query_params,
-                                 parsed_url.fragment).geturl())
+            urllib_parse.ParseResult('https',
+                                     parsed_url.netloc, parsed_url.path,
+                                     parsed_url.params, new_query_params,
+                                     parsed_url.fragment).geturl())
