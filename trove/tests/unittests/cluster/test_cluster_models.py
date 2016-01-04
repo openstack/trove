@@ -35,4 +35,4 @@ class TestClusterModel(trove_testtools.TestCase):
         dsv.manager = 'mongodb'
         mock_load_dsv_by_uuid.return_value = dsv
         cluster = models.Cluster.load(context, id)
-        self.assertTrue(isinstance(cluster, MongoDbCluster))
+        self.assertIsInstance(cluster, MongoDbCluster)
