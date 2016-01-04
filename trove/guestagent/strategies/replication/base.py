@@ -17,7 +17,7 @@
 import abc
 
 import six
-from trove.guestagent.strategy import Strategy
+from trove.common.strategies.strategy import Strategy
 
 
 @six.add_metaclass(abc.ABCMeta)

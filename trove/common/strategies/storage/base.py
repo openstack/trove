@@ -15,13 +15,13 @@
 #
 
 import abc
-from trove.guestagent.strategy import Strategy
+from trove.common.strategies.strategy import Strategy
 
 
 class Storage(Strategy):
     """Base class for Storage Strategy implementation."""
     __strategy_type__ = 'storage'
-    __strategy_ns__ = 'trove.guestagent.strategies.storage'
+    __strategy_ns__ = 'trove.common.strategies.storage'
 
     def __init__(self, context):
         self.context = context

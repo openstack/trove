@@ -81,7 +81,7 @@ root_grant_option = True
 
 # For storage to Swift, use the following as defaults:
 # storage_strategy = SwiftStorage
-# storage_namespace = trove.guestagent.strategies.storage.swift
+# storage_namespace = trove.common.strategies.storage.swift
 
 # Default config options for storing backups to swift
 # backup_swift_container = database_backups

@@ -268,7 +268,7 @@ common_opts = [
     cfg.StrOpt('storage_strategy', default='SwiftStorage',
                help="Default strategy to store backups."),
     cfg.StrOpt('storage_namespace',
-               default='trove.guestagent.strategies.storage.swift',
+               default='trove.common.strategies.storage.swift',
                help='Namespace to load the default storage strategy from.'),
     cfg.StrOpt('backup_swift_container', default='database_backups',
                help='Swift container to put backups in.'),
