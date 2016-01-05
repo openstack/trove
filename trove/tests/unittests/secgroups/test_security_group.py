@@ -133,9 +133,9 @@ class SecurityGroupDeleteTest(trove_testtools.TestCase):
     def test_failed_to_get_assoc_on_delete(self):
 
         sec_mod.SecurityGroupInstanceAssociation.find_by = self.fException
-        self.assertEqual(None,
-                         sec_mod.SecurityGroup.delete_for_instance(
-                             uuid.uuid4(), self.context))
+        self.assertIsNone(
+            sec_mod.SecurityGroup.delete_for_instance(
+                uuid.uuid4(), self.context))
 
     def test_get_security_group_from_assoc_with_db_exception(self):
 
@@ -154,9 +154,9 @@ class SecurityGroupDeleteTest(trove_testtools.TestCase):
 
         sec_mod.SecurityGroupInstanceAssociation.find_by = Mock(
             return_value=new_fake_RemoteSecGrAssoc())
-        self.assertEqual(None,
-                         sec_mod.SecurityGroup.delete_for_instance(
-                             i_id, self.context))
+        self.assertIsNone(
+            sec_mod.SecurityGroup.delete_for_instance(
+                i_id, self.context))
 
     def test_delete_secgr_assoc_with_db_exception(self):
 
@@ -169,6 +169,6 @@ class SecurityGroupDeleteTest(trove_testtools.TestCase):
         self.assertTrue(hasattr(sec_mod.SecurityGroupInstanceAssociation.
                                 find_by(i_id, deleted=False).
                                 get_security_group(), 'delete'))
-        self.assertEqual(None,
-                         sec_mod.SecurityGroup.delete_for_instance(
-                             i_id, self.context))
+        self.assertIsNone(
+            sec_mod.SecurityGroup.delete_for_instance(
+                i_id, self.context))
