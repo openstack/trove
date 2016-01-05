@@ -41,6 +41,7 @@ class BackupRunner(TestRunner):
         self.backup_host = None
         self.backup_info = None
         self.backup_count_prior_to_create = 0
+        self.backup_count_for_ds_prior_to_create = 0
         self.backup_count_for_instance_prior_to_create = 0
 
         self.incremental_backup_info = None
@@ -91,6 +92,9 @@ class BackupRunner(TestRunner):
         # Necessary to test that the count increases.
         self.backup_count_prior_to_create = len(
             self.auth_client.backups.list())
+        self.backup_count_for_ds_prior_to_create = len(
+            self.auth_client.backups.list(
+                datastore=self.instance_info.dbaas_datastore))
         self.backup_count_for_instance_prior_to_create = len(
             self.auth_client.instances.backups(self.instance_info.id))
 
@@ -170,8 +174,8 @@ class BackupRunner(TestRunner):
 
     def run_backup_list(self):
         backup_list = self.auth_client.backups.list()
-        self.assert_backup_list(backup_list,
-                                self.backup_count_prior_to_create + 1)
+        self.assert_backup_list(
+            backup_list, self.backup_count_prior_to_create + 1)
 
     def assert_backup_list(self, backup_list, expected_count):
         self.assert_equal(expected_count, len(backup_list),
@@ -191,8 +195,8 @@ class BackupRunner(TestRunner):
     def run_backup_list_filter_datastore(self):
         backup_list = self.auth_client.backups.list(
             datastore=self.instance_info.dbaas_datastore)
-        self.assert_backup_list(backup_list,
-                                self.backup_count_prior_to_create + 1)
+        self.assert_backup_list(
+            backup_list, self.backup_count_for_ds_prior_to_create + 1)
 
     def run_backup_list_filter_different_datastore(self):
         backup_list = self.auth_client.backups.list(
@@ -210,8 +214,8 @@ class BackupRunner(TestRunner):
     def run_backup_list_for_instance(self):
         backup_list = self.auth_client.instances.backups(
             self.instance_info.id)
-        self.assert_backup_list(backup_list,
-                                self.backup_count_prior_to_create + 1)
+        self.assert_backup_list(
+            backup_list, self.backup_count_for_instance_prior_to_create + 1)
 
     def run_backup_get(self):
         backup = self.auth_client.backups.get(self.backup_info.id)
