@@ -725,7 +725,7 @@ redis_opts = [
                "volumes if volume support is enabled."),
     cfg.BoolOpt('volume_support', default=True,
                 help='Whether to provision a Cinder volume for datadir.'),
-    cfg.StrOpt('device_path', default=None,
+    cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
     cfg.StrOpt('backup_namespace',
                default="trove.guestagent.strategies.backup.experimental."
