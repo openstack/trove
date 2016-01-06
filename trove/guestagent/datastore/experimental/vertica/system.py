@@ -39,6 +39,17 @@ USER_EXISTS = ("/opt/vertica/bin/vsql -w '%s' -c "
 VERTICA_AGENT_SERVICE_COMMAND = "service vertica_agent %s"
 VERTICA_CONF = "/etc/vertica.cnf"
 INSTALL_TIMEOUT = 1000
+CREATE_LIBRARY = "CREATE LIBRARY %s AS '%s'"
+CREATE_SOURCE = "CREATE SOURCE %s AS LANGUAGE '%s' NAME '%s' LIBRARY %s"
+UDL_LIBS = [
+    {
+        'func_name': "curl",
+        'lib_name': "curllib",
+        'language': "C++",
+        'factory': "CurlSourceFactory",
+        'path': "/opt/vertica/sdk/examples/build/cURLLib.so"
+    },
+]
 
 
 def shell_execute(command, command_executor="root"):

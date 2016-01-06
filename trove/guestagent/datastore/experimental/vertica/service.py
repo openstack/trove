@@ -182,6 +182,44 @@ class VerticaApp(object):
         self._generate_database_password()
         LOG.info(_("install_vertica completed."))
 
+    def add_udls(self):
+        """Load the user defined load libraries into the database."""
+        LOG.info(_("Adding configured user defined load libraries."))
+        password = self._get_database_password()
+        loaded_udls = []
+        for lib in system.UDL_LIBS:
+            func_name = lib['func_name']
+            lib_name = lib['lib_name']
+            language = lib['language']
+            factory = lib['factory']
+            path = lib['path']
+            if os.path.isfile(path):
+                LOG.debug("Adding the %s library as %s." %
+                          (func_name, lib_name))
+                out, err = system.exec_vsql_command(
+                    password,
+                    system.CREATE_LIBRARY % (lib_name, path)
+                )
+                if err:
+                    LOG.error(err)
+                    raise RuntimeError(_("Failed to create library %s.")
+                                       % lib_name)
+                out, err = system.exec_vsql_command(
+                    password,
+                    system.CREATE_SOURCE % (func_name, language,
+                                            factory, lib_name)
+                )
+                if err:
+                    LOG.error(err)
+                    raise RuntimeError(_("Failed to create source %s.")
+                                       % func_name)
+                loaded_udls.append(func_name)
+            else:
+                LOG.warning("Skipping %s as path %s not found." %
+                            (func_name, path))
+        LOG.info(_("The following UDL functions are available for use: %s")
+                 % loaded_udls)
+
     def _generate_database_password(self):
         """Generate and write the password to vertica.cnf file."""
         config = ConfigParser.ConfigParser()
