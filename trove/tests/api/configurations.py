@@ -585,6 +585,9 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
         flavor_href = instance_info.dbaas_flavor_href
         configuration_instance.dbaas_flavor_href = flavor_href
         configuration_instance.volume = instance_info.volume
+        configuration_instance.dbaas_datastore = instance_info.dbaas_datastore
+        configuration_instance.dbaas_datastore_version = \
+            instance_info.dbaas_datastore_version
 
         result = instance_info.dbaas.instances.create(
             configuration_instance.name,
@@ -593,6 +596,8 @@ class StartInstanceWithConfiguration(ConfigurationsTestBase):
             configuration_instance.databases,
             configuration_instance.users,
             availability_zone="nova",
+            datastore=configuration_instance.dbaas_datastore,
+            datastore_version=configuration_instance.dbaas_datastore_version,
             configuration=configuration_href)
         assert_equal(200, instance_info.dbaas.last_http_code)
         assert_equal("BUILD", result.status)
