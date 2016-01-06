@@ -104,7 +104,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
         mock_update.assert_called_with(self.cluster_id, None)
-        self.assertEqual(False, ret_val)
+        self.assertFalse(ret_val)
 
     @patch.object(InstanceServiceStatus, 'find_by')
     def test_all_instances_ready(self, mock_find):
@@ -112,7 +112,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
          get_status.return_value) = ServiceStatuses.INSTANCE_READY
         ret_val = self.clustertasks._all_instances_ready(["1", "2", "3", "4"],
                                                          self.cluster_id)
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(ClusterTasks, 'get_guest')
@@ -141,7 +141,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
                                                       other_members)
 
         mock_update.assert_called_with(self.cluster_id, shard_id='shard-1')
-        self.assertEqual(False, ret_val)
+        self.assertFalse(ret_val)
 
     @patch.object(ClusterTasks, 'get_guest')
     @patch.object(ClusterTasks, 'get_ip')
@@ -164,7 +164,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         mock_guest.return_value.add_members.assert_called_with(
             ["10.0.0.3"]
         )
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'update_statuses_on_failure')
     @patch.object(ClusterTasks, '_init_replica_set')
@@ -196,7 +196,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
 
         mock_init_rs.assert_called_with(member1, [member2])
         mock_update.assert_called_with(self.cluster_id, shard_id="shard-1")
-        self.assertEqual(False, ret_val)
+        self.assertFalse(ret_val)
 
     @patch.object(ClusterTasks, '_init_replica_set')
     @patch.object(ClusterTasks, 'get_guest')
@@ -224,7 +224,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
 
         mock_init_rs.assert_called_with(member1, [member2])
         mock_add_shard.assert_called_with("testrs", "10.0.0.2")
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')
@@ -340,7 +340,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         ret_val = self.clustertasks._add_query_routers([query_router],
                                                        ['10.0.0.5'])
         mock_update.assert_called_with(self.cluster_id)
-        self.assertEqual(False, ret_val)
+        self.assertFalse(ret_val)
 
     @patch.object(ClusterTasks, 'get_guest')
     @patch.object(ClusterTasks, 'get_cluster_admin_password')
@@ -362,7 +362,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         mock_guest.assert_called_with(query_router)
         mock_guest().add_config_servers.assert_called_with(['10.0.0.5'])
         mock_guest().store_admin_password.assert_called_with('pwd')
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'get_guest')
     @patch.object(utils, 'generate_random_password')
@@ -385,7 +385,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         mock_guest.assert_called_with(query_router)
         mock_guest().add_config_servers.assert_called_with(['10.0.0.5'])
         mock_guest().create_admin_user.assert_called_with('pwd')
-        self.assertEqual(True, ret_val)
+        self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, 'get_guest')
