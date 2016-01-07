@@ -91,6 +91,7 @@ from trove.guestagent.db import models
 from trove.guestagent import dbaas as dbaas_sr
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.dbaas import to_gb
+from trove.guestagent.dbaas import to_mb
 from trove.guestagent import pkg
 from trove.guestagent.volume import VolumeDevice
 from trove.instance.models import InstanceServiceStatus
@@ -1728,8 +1729,24 @@ class InterrogatorTest(testtools.TestCase):
         result = to_gb(123456789)
         self.assertEqual(0.11, result)
 
+    def test_to_gb_small(self):
+        result = to_gb(2)
+        self.assertEqual(0.01, result)
+
     def test_to_gb_zero(self):
         result = to_gb(0)
+        self.assertEqual(0.0, result)
+
+    def test_to_mb(self):
+        result = to_mb(123456789)
+        self.assertEqual(117.74, result)
+
+    def test_to_mb_small(self):
+        result = to_mb(2)
+        self.assertEqual(0.01, result)
+
+    def test_to_mb_zero(self):
+        result = to_mb(0)
         self.assertEqual(0.0, result)
 
     def test_get_filesystem_volume_stats(self):

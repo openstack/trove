@@ -75,14 +75,16 @@ def to_gb(bytes):
     if bytes == 0:
         return 0.0
     size = bytes / 1024.0 ** 3
-    return round(size, 2)
+    # Make sure we don't return 0.0 if the size is greater than 0
+    return max(round(size, 2), 0.01)
 
 
 def to_mb(bytes):
     if bytes == 0:
         return 0.0
     size = bytes / 1024.0 ** 2
-    return round(size, 2)
+    # Make sure we don't return 0.0 if the size is greater than 0
+    return max(round(size, 2), 0.01)
 
 
 def get_filesystem_volume_stats(fs_path):
