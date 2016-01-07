@@ -27,8 +27,6 @@ from trove.tests.api.mgmt import datastore_versions
 from trove.tests.api.mgmt import hosts
 from trove.tests.api.mgmt import instances as mgmt_instances
 from trove.tests.api.mgmt import storage
-from trove.tests.api import pxc
-from trove.tests.api import redis
 from trove.tests.api import replication
 from trove.tests.api import root
 from trove.tests.api import user_access
@@ -46,6 +44,7 @@ from trove.tests.scenario.groups import user_actions_group
 
 
 GROUP_SERVICES_INITIALIZE = "services.initialize"
+GROUP_SETUP = 'dbaas.setup'
 
 
 def build_group(*groups):
@@ -120,13 +119,16 @@ proboscis.register(groups=["blackbox_mgmt"],
 #
 # Group designations for datastore agnostic int-tests
 #
-instance_create_groups = [
+base_groups = [
     GROUP_SERVICES_INITIALIZE,
     flavors.GROUP,
     versions.GROUP,
-    instance_create_group.GROUP,
-    instance_delete_group.GROUP
+    GROUP_SETUP
 ]
+
+instance_create_groups = list(base_groups)
+instance_create_groups.extend([instance_create_group.GROUP,
+                               instance_delete_group.GROUP])
 
 backup_groups = list(instance_create_groups)
 backup_groups.extend([backup_group.GROUP])
@@ -137,7 +139,7 @@ user_actions_groups.extend([user_actions_group.GROUP])
 database_actions_groups = list(instance_create_groups)
 database_actions_groups.extend([database_actions_group.GROUP])
 
-cluster_actions_groups = list(instance_create_groups)
+cluster_actions_groups = list(base_groups)
 cluster_actions_groups.extend([cluster_actions_group.GROUP,
                                negative_cluster_actions_group.GROUP])
 
@@ -171,22 +173,3 @@ register(["redis_supported"], backup_groups, instance_actions_groups,
 register(["vertica_supported"], cluster_actions_groups,
          instance_actions_groups)
 register(["pxc_supported"], instance_actions_groups, cluster_actions_groups)
-
-# Redis int-tests
-redis_group = [
-    GROUP_SERVICES_INITIALIZE,
-    flavors.GROUP,
-    versions.GROUP,
-    instances.GROUP_START_SIMPLE,
-    instances.GROUP_QUOTAS,
-    redis.REDIS_GROUP,
-]
-proboscis.register(groups=["redis"],
-                   depends_on_groups=redis_group)
-
-# PXC int-tests
-pxc_group = [
-    pxc.PXC_GROUP,
-]
-proboscis.register(groups=["pxc"],
-                   depends_on_groups=pxc_group)

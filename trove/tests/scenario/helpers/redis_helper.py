@@ -37,32 +37,87 @@ class RedisHelper(TestHelper):
     # Add data overrides
     def add_actual_data(self, data_label, data_start, data_size, host,
                         *args, **kwargs):
-        client = self.get_client(host, *args, **kwargs)
-        test_set = client.get(data_label)
+        test_set = self._get_data_point(host, data_label, *args, **kwargs)
         if not test_set:
             for num in range(data_start, data_start + data_size):
-                client.set(self.key_pattern % str(num),
-                           self.value_pattern % str(num))
+                self._set_data_point(
+                    host,
+                    self.key_pattern % str(num), self.value_pattern % str(num),
+                    *args, **kwargs)
             # now that the data is there, add the label
-            client.set(data_label, self.label_value)
+            self._set_data_point(
+                host,
+                data_label, self.label_value,
+                *args, **kwargs)
+
+    def _set_data_point(self, host, key, value, *args, **kwargs):
+        def set_point(client, key, value):
+            return client.set(key, value)
+
+        self._execute_with_redirection(
+            host, set_point, [key, value], *args, **kwargs)
+
+    def _get_data_point(self, host, key, *args, **kwargs):
+        def get_point(client, key):
+            return client.get(key)
+
+        return self._execute_with_redirection(
+            host, get_point, [key], *args, **kwargs)
+
+    def _execute_with_redirection(self, host, callback, callback_args,
+                                  *args, **kwargs):
+        """Redis clustering is a relatively new feature still not supported
+        in a fully transparent way by all clients.
+        The application itself is responsible for connecting to the right node
+        when accessing a key in a Redis cluster instead.
+
+        Clients may be redirected to other nodes by redirection errors:
+
+            redis.exceptions.ResponseError: MOVED 10778 10.64.0.2:6379
+
+        This method tries to execute a given callback on a given host.
+        If it gets a redirection error it parses the new host from the response
+        and issues the same callback on this new host.
+        """
+        client = self.get_client(host, *args, **kwargs)
+        try:
+            return callback(client, *callback_args)
+        except redis.exceptions.ResponseError as ex:
+            response = str(ex)
+            if response:
+                tokens = response.split()
+                if tokens[0] == 'MOVED':
+                    redirected_host = tokens[2].split(':')[0]
+                    if redirected_host:
+                        return self._execute_with_redirection(
+                            redirected_host, callback, callback_args,
+                            *args, **kwargs)
+            raise ex
 
     # Remove data overrides
     def remove_actual_data(self, data_label, data_start, data_size, host,
                            *args, **kwargs):
-        client = self.get_client(host, *args, **kwargs)
-        test_set = client.get(data_label)
+        test_set = self._get_data_point(host, data_label, *args, **kwargs)
         if test_set:
             for num in range(data_start, data_start + data_size):
-                client.expire(self.key_pattern % str(num), 0)
+                self._expire_data_point(host, self.key_pattern % str(num),
+                                        *args, **kwargs)
             # now that the data is gone, remove the label
-            client.expire(data_label, 0)
+            self._expire_data_point(host, data_label, *args, **kwargs)
+
+    def _expire_data_point(self, host, key, *args, **kwargs):
+        def expire_point(client, key):
+            return client.expire(key, 0)
+
+        self._execute_with_redirection(
+            host, expire_point, [key], *args, **kwargs)
 
     # Verify data overrides
     def verify_actual_data(self, data_label, data_start, data_size, host,
                            *args, **kwargs):
-        client = self.get_client(host, *args, **kwargs)
         # make sure the data is there - tests edge cases and a random one
-        self._verify_data_point(client, data_label, self.label_value)
+        self._verify_data_point(host, data_label, self.label_value,
+                                *args, **kwargs)
         midway_num = data_start + int(data_size / 2)
         random_num = random.randint(data_start + 2,
                                     data_start + data_size - 3)
@@ -72,16 +127,18 @@ class RedisHelper(TestHelper):
                     random_num,
                     data_start + data_size - 2,
                     data_start + data_size - 1]:
-            self._verify_data_point(client,
+            self._verify_data_point(host,
                                     self.key_pattern % num,
-                                    self.value_pattern % num)
+                                    self.value_pattern % num,
+                                    *args, **kwargs)
         # negative tests
         for num in [data_start - 1,
                     data_start + data_size]:
-            self._verify_data_point(client, self.key_pattern % num, None)
+            self._verify_data_point(host, self.key_pattern % num, None,
+                                    *args, **kwargs)
 
-    def _verify_data_point(self, client, key, expected_value):
-        value = client.get(key)
+    def _verify_data_point(self, host, key, expected_value, *args, **kwargs):
+        value = self._get_data_point(host, key, *args, **kwargs)
         TestRunner.assert_equal(expected_value, value,
                                 "Unexpected value '%s' returned from Redis "
                                 "key '%s'" % (value, key))
