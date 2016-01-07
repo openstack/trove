@@ -162,3 +162,8 @@ class ReplicationGroup(TestGroup):
     def delete_all_replicas(self):
         """Test deleting all the remaining replicas."""
         self.test_runner.run_delete_all_replicas()
+
+    @test(runs_after=[delete_all_replicas])
+    def test_backup_deleted(self):
+        """Test that the created backup is now gone."""
+        self.test_runner.run_test_backup_deleted()

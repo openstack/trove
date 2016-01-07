@@ -30,6 +30,7 @@ class ReplicationRunner(TestRunner):
         self.replica_2_id = 0
         self.master_host = self.get_instance_host(self.master_id)
         self.replica_1_host = None
+        self.master_backup_count = None
 
     def run_add_data_for_replication(self, data_type=DataType.small):
         self.assert_add_replication_data(data_type, self.master_host)
@@ -52,6 +53,8 @@ class ReplicationRunner(TestRunner):
     def run_create_single_replica(self, expected_states=['BUILD', 'ACTIVE'],
                                   expected_http_code=200):
         master_id = self.instance_info.id
+        self.master_backup_count = len(
+            self.auth_client.instances.backups(master_id))
         self.replica_1_id = self.assert_replica_create(
             master_id, 'replica1', 1, expected_states, expected_http_code)
         self.replica_1_host = self.get_instance_host(self.replica_1_id)
@@ -266,3 +269,7 @@ class ReplicationRunner(TestRunner):
         replica_ids = self._get_replica_set(master_id)
         self.assert_delete_instances(replica_ids, expected_last_state,
                                      expected_http_code)
+
+    def run_test_backup_deleted(self):
+        backup = self.auth_client.instances.backups(self.master_id)
+        self.assert_equal(self.master_backup_count, len(backup))
