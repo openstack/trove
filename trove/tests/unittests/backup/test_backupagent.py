@@ -264,7 +264,7 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(mongodump.manifest)
         self.assertIn('gz.enc', mongodump.manifest)
 
-    @patch.object(utils, 'execute_with_timeout')
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     @patch.object(configuration.ConfigurationManager, 'parse_configuration',
                   Mock(return_value={'dir': '/var/lib/redis',
                                      'dbfilename': 'dump.rdb'}))

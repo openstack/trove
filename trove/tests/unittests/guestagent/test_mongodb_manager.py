@@ -35,7 +35,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
         self.manager = manager.Manager()
 
         self.execute_with_timeout_patch = mock.patch.object(
-            utils, 'execute_with_timeout'
+            utils, 'execute_with_timeout', return_value=('0', '')
         )
         self.addCleanup(self.execute_with_timeout_patch.stop)
         self.execute_with_timeout_patch.start()

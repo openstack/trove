@@ -141,7 +141,8 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
         if self.tempname:
             os.unlink(self.tempname)
 
-    @mock.patch.object(utils, 'execute_with_timeout', Mock(return_value=0))
+    @mock.patch.object(utils, 'execute_with_timeout',
+                       Mock(return_value=('0', '')))
     def test_write_password_to_file1(self):
         self.original_mkstemp = tempfile.mkstemp
         self.tempname = None
@@ -157,7 +158,8 @@ class GuestAgentCouchbaseManagerTest(testtools.TestCase):
             filepermissions = os.stat(self.tempname).st_mode
             self.assertEqual(stat.S_IRUSR, filepermissions & 0o777)
 
-    @mock.patch.object(utils, 'execute_with_timeout', Mock(return_value=0))
+    @mock.patch.object(utils, 'execute_with_timeout',
+                       Mock(return_value=('0', '')))
     @mock.patch(
         'trove.guestagent.datastore.experimental.couchbase.service.LOG')
     def test_write_password_to_file2(self, mock_logging):

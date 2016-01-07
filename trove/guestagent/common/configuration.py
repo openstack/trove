@@ -108,7 +108,8 @@ class ConfigurationManager(object):
         """
 
         base_options = operating_system.read_file(
-            self._base_config_path, codec=self._codec)
+            self._base_config_path, codec=self._codec,
+            as_root=self._requires_root)
 
         updates = self._override_strategy.parse_updates()
         guestagent_utils.update_dict(updates, base_options)
@@ -266,7 +267,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
     within their set got applied.
     """
 
-    FILE_NAME_PATTERN = '^%s-([0-9]+)-%s\.%s$'
+    FILE_NAME_PATTERN = '%s-([0-9]+)-%s\.%s$'
 
     def __init__(self, revision_dir, revision_ext):
         """
@@ -323,7 +324,7 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         else:
             # Update the existing file.
             current = operating_system.read_file(
-                revision_file, codec=self._codec)
+                revision_file, codec=self._codec, as_root=self._requires_root)
             options = guestagent_utils.update_dict(options, current)
 
         operating_system.write_file(
@@ -361,7 +362,8 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
     def parse_updates(self):
         parsed_options = {}
         for path in self._collect_revision_files():
-            options = operating_system.read_file(path, codec=self._codec)
+            options = operating_system.read_file(path, codec=self._codec,
+                                                 as_root=self._requires_root)
             guestagent_utils.update_dict(options, parsed_options)
 
         return parsed_options
@@ -370,7 +372,10 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
     def has_revisions(self):
         """Return True if there currently are any revision files.
         """
-        return len(self._collect_revision_files()) > 0
+        return (operating_system.exists(
+            self._revision_dir, is_directory=True,
+            as_root=self._requires_root) and
+            (len(self._collect_revision_files()) > 0))
 
     def _get_last_file_index(self, group_name):
         """Get the index of the most current file in a given group.
@@ -392,12 +397,14 @@ class ImportOverrideStrategy(ConfigurationOverrideStrategy):
         """
         name_pattern = self._build_rev_name_pattern(group_name=group_name)
         return sorted(operating_system.list_files_in_directory(
-            self._revision_dir, recursive=False, pattern=name_pattern))
+            self._revision_dir, recursive=True, pattern=name_pattern,
+            as_root=self._requires_root))
 
     def _find_revision_file(self, group_name, change_id):
         name_pattern = self._build_rev_name_pattern(group_name, change_id)
         found = operating_system.list_files_in_directory(
-            self._revision_dir, recursive=False, pattern=name_pattern)
+            self._revision_dir, recursive=True, pattern=name_pattern,
+            as_root=self._requires_root)
         return next(iter(found), None)
 
     def _build_rev_name_pattern(self, group_name='.+', change_id='.+'):
@@ -488,7 +495,8 @@ class OneFileOverrideStrategy(ConfigurationOverrideStrategy):
                 force=True, preserve=True, as_root=self._requires_root)
 
         base_revision = operating_system.read_file(
-            self._base_revision_file, codec=self._codec)
+            self._base_revision_file, codec=self._codec,
+            as_root=self._requires_root)
         changes = self._import_strategy.parse_updates()
         updated_revision = guestagent_utils.update_dict(changes, base_revision)
         operating_system.write_file(

@@ -31,6 +31,9 @@ class PgSqlInstall(PgSqlProcess):
     This mixin has a dependency on the PgSqlProcess mixin.
     """
 
+    def __init__(self, *args, **kwargs):
+        super(PgSqlInstall, self).__init__(*args, **kwargs)
+
     def install(self, context, packages):
         """Install one or more packages that postgresql needs to run.
 

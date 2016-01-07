@@ -28,6 +28,9 @@ CONF = cfg.CONF
 class PgSqlRoot(PgSqlUsers):
     """Mixin that provides the root-enable API."""
 
+    def __init__(self, *args, **kwargs):
+        super(PgSqlRoot, self).__init__(*args, **kwargs)
+
     def is_root_enabled(self, context):
         """Return True if there is a superuser account enabled.
         """

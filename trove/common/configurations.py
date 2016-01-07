@@ -51,3 +51,14 @@ class MongoDBConfParser(object):
 
     def parse(self):
         return self.CODEC.deserialize(self.config).items()
+
+
+class PostgresqlConfParser(object):
+
+    CODEC = stream_codecs.PropertiesCodec(delimiter='=')
+
+    def __init__(self, config):
+        self.config = config
+
+    def parse(self):
+        return self.CODEC.deserialize(self.config).items()

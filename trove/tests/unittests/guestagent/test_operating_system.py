@@ -97,7 +97,8 @@ class TestOperatingSystem(trove_testtools.TestCase):
                 'key7': 0,
                 'key8': None,
                 'key9': [['str1', 'str2'], ['str3', 'str4']],
-                'key10': [['str1', 'str2', 'str3'], ['str3', 'str4'], 'str5']
+                'key10': [['str1', 'str2', 'str3'], ['str3', 'str4'], 'str5'],
+                'key11': True
                 }
 
         self._test_file_codec(data, PropertiesCodec())
@@ -713,6 +714,31 @@ class TestOperatingSystem(trove_testtools.TestCase):
                               "Got unknown keyword args: {'_unknown_kw': 0}"),
             'path', _unknown_kw=0)
 
+    def test_exists(self):
+        self.assertFalse(
+            operating_system.exists(tempfile.gettempdir(), is_directory=False))
+        self.assertTrue(
+            operating_system.exists(tempfile.gettempdir(), is_directory=True))
+
+        with tempfile.NamedTemporaryFile() as test_file:
+            self.assertTrue(
+                operating_system.exists(test_file.name, is_directory=False))
+            self.assertFalse(
+                operating_system.exists(test_file.name, is_directory=True))
+
+        self._assert_execute_call(
+            [['test -f path && echo 1 || echo 0']],
+            [{'shell': True, 'check_exit_code': False,
+              'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.exists, None, 'path', is_directory=False,
+            as_root=True)
+        self._assert_execute_call(
+            [['test -d path && echo 1 || echo 0']],
+            [{'shell': True, 'check_exit_code': False,
+              'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.exists, None, 'path', is_directory=True,
+            as_root=True)
+
     def _assert_execute_call(self, exec_args, exec_kwargs,
                              fun, return_value, *args, **kwargs):
         """
@@ -746,7 +772,8 @@ class TestOperatingSystem(trove_testtools.TestCase):
         :type kwargs:             dict
         """
 
-        with patch.object(utils, 'execute_with_timeout') as exec_call:
+        with patch.object(utils, 'execute_with_timeout',
+                          return_value=('0', '')) as exec_call:
             if isinstance(return_value, ExpectedException):
                 with return_value:
                     fun(*args, **kwargs)
@@ -832,39 +859,67 @@ class TestOperatingSystem(trove_testtools.TestCase):
                 root_path, 3, 3, ['txt', 'py', ''], 1, all_paths)
 
             # All files in the top directory.
-            self._assert_list_files(root_path, False, None, all_paths, 9)
+            self._assert_list_files(
+                root_path, False, None, False, all_paths, 9)
+
+            # All files & directories in the top directory.
+            self._assert_list_files(
+                root_path, False, None, True, all_paths, 10)
 
             # All files recursive.
-            self._assert_list_files(root_path, True, None, all_paths, 27)
+            self._assert_list_files(
+                root_path, True, None, False, all_paths, 27)
+
+            # All files & directories recursive.
+            self._assert_list_files(
+                root_path, True, None, True, all_paths, 29)
 
             # Only '*.txt' in the top directory.
-            self._assert_list_files(root_path, False, '.*\.txt$', all_paths, 3)
+            self._assert_list_files(
+                root_path, False, '.*\.txt$', False, all_paths, 3)
+
+            # Only '*.txt' (including directories) in the top directory.
+            self._assert_list_files(
+                root_path, False, '.*\.txt$', True, all_paths, 3)
 
             # Only '*.txt' recursive.
-            self._assert_list_files(root_path, True, '.*\.txt$', all_paths, 9)
+            self._assert_list_files(
+                root_path, True, '.*\.txt$', True, all_paths, 9)
+
+            # Only '*.txt' (including directories) recursive.
+            self._assert_list_files(
+                root_path, True, '.*\.txt$', False, all_paths, 9)
 
             # Only extension-less files in the top directory.
-            self._assert_list_files(root_path, False, '[^\.]*$', all_paths, 3)
+            self._assert_list_files(
+                root_path, False, '[^\.]*$', False, all_paths, 3)
 
             # Only extension-less files recursive.
-            self._assert_list_files(root_path, True, '[^\.]*$', all_paths, 9)
+            self._assert_list_files(
+                root_path, True, '[^\.]*$', False, all_paths, 9)
 
             # Non-existing extension in the top directory.
-            self._assert_list_files(root_path, False, '.*\.bak$', all_paths, 0)
+            self._assert_list_files(
+                root_path, False, '.*\.bak$', False, all_paths, 0)
 
             # Non-existing extension recursive.
-            self._assert_list_files(root_path, True, '.*\.bak$', all_paths, 0)
+            self._assert_list_files(
+                root_path, True, '.*\.bak$', False, all_paths, 0)
         finally:
             try:
                 os.remove(root_path)
             except Exception:
                 pass  # Do not fail in the cleanup.
 
-    def _assert_list_files(self, root, recursive, pattern, all_paths, count):
+    def _assert_list_files(self, root, recursive, pattern, include_dirs,
+                           all_paths, count):
         found = operating_system.list_files_in_directory(
-            root, recursive=recursive, pattern=pattern)
+            root, recursive=recursive, pattern=pattern,
+            include_dirs=include_dirs)
         expected = {
-            path for path in all_paths if (
+            path for path in filter(
+                lambda item: include_dirs or not os.path.isdir(item),
+                all_paths) if (
                 (recursive or os.path.dirname(path) == root) and (
                     not pattern or re.match(
                         pattern, os.path.basename(path))))}
@@ -884,6 +939,7 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
         if level < num_levels:
             path = tempfile.mkdtemp(dir=root_path)
+            created_paths.add(path)
             self._create_temp_fs_structure(
                 path, num_levels, num_files_per_extension,
                 file_extensions, level + 1, created_paths)
