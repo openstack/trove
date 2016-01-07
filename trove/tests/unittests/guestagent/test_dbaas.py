@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 import ConfigParser
 import os
 import subprocess
@@ -59,6 +60,12 @@ from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb import (
     system as mongo_system)
+from trove.guestagent.datastore.experimental.postgresql import (
+    manager as pg_manager)
+from trove.guestagent.datastore.experimental.postgresql.service import (
+    process as pg_process)
+from trove.guestagent.datastore.experimental.postgresql.service import (
+    status as pg_status)
 from trove.guestagent.datastore.experimental.pxc import (
     service as pxc_service)
 from trove.guestagent.datastore.experimental.pxc import (
@@ -87,6 +94,7 @@ from trove.guestagent.dbaas import to_gb
 from trove.guestagent import pkg
 from trove.guestagent.volume import VolumeDevice
 from trove.instance.models import InstanceServiceStatus
+from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 
 CONF = cfg.CONF
@@ -127,6 +135,9 @@ class FakeAppStatus(BaseDbStatus):
         self.status = status
         self.next_fake_status = status
         self._prepare_completed = None
+        self.start_db_service = MagicMock()
+        self.stop_db_service = MagicMock()
+        self.restart_db_service = MagicMock()
 
     def _get_actual_db_status(self):
         return self.next_fake_status
@@ -271,6 +282,75 @@ class ResultSetStub(object):
 
     def __repr__(self):
         return self._rows.__repr__()
+
+
+class BaseAppTest(object):
+    """A wrapper to inhibit the base test methods from executing during a
+    normal test run.
+    """
+
+    class AppTestCase(trove_testtools.TestCase):
+
+        def setUp(self, fake_id):
+            super(BaseAppTest.AppTestCase, self).setUp()
+            self.FAKE_ID = fake_id
+            InstanceServiceStatus.create(
+                instance_id=self.FAKE_ID,
+                status=rd_instance.ServiceStatuses.NEW)
+
+        def tearDown(self):
+            InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+            super(BaseAppTest.AppTestCase, self).tearDown()
+
+        @abc.abstractproperty
+        def appStatus(self):
+            pass
+
+        @abc.abstractproperty
+        def expected_state_change_timeout(self):
+            pass
+
+        @abc.abstractproperty
+        def expected_service_candidates(self):
+            pass
+
+        def test_start_db(self):
+            with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.appStatus.set_next_status(
+                    rd_instance.ServiceStatuses.RUNNING)
+                self.app.start_db()
+                self.appStatus.start_db_service.assert_called_once_with(
+                    self.expected_service_candidates,
+                    self.expected_state_change_timeout,
+                    enable_on_boot=True, update_db=False)
+                self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+        def test_stop_db(self):
+            with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.appStatus.set_next_status(
+                    rd_instance.ServiceStatuses.SHUTDOWN)
+                self.app.stop_db()
+                self.appStatus.stop_db_service.assert_called_once_with(
+                    self.expected_service_candidates,
+                    self.expected_state_change_timeout,
+                    disable_on_boot=False, update_db=False)
+                self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+        def test_restart_db(self):
+            self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+            with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.app.restart()
+                self.appStatus.restart_db_service.assert_called_once_with(
+                    self.expected_service_candidates,
+                    self.expected_state_change_timeout)
+
+        def assert_reported_status(self, expected_status):
+            service_status = InstanceServiceStatus.find_by(
+                instance_id=self.FAKE_ID)
+            self.assertEqual(expected_status, service_status.status)
 
 
 class MySqlAdminMockTest(testtools.TestCase):
@@ -2248,35 +2328,46 @@ class MySqlAppStatusTest(testtools.TestCase):
         self.assertEqual(rd_instance.ServiceStatuses.BLOCKED, status)
 
 
-class TestRedisApp(testtools.TestCase):
+class TestRedisApp(BaseAppTest.AppTestCase):
 
     def setUp(self):
-        super(TestRedisApp, self).setUp()
-        self.FAKE_ID = 1000
-        self.appStatus = FakeAppStatus(self.FAKE_ID,
-                                       rd_instance.ServiceStatuses.NEW)
-
+        super(TestRedisApp, self).setUp(str(uuid4()))
         self.orig_os_path_eu = os.path.expanduser
         os.path.expanduser = Mock(return_value='/tmp/.file')
 
         with patch.object(RedisApp, '_build_admin_client'):
             with patch.object(ImportOverrideStrategy,
                               '_initialize_import_directory'):
-                self.app = RedisApp(state_change_wait_time=0)
+                self.redis = RedisApp(state_change_wait_time=0)
+                self.redis.status = FakeAppStatus(
+                    self.FAKE_ID,
+                    rd_instance.ServiceStatuses.NEW)
 
         self.orig_os_path_isfile = os.path.isfile
         self.orig_utils_execute_with_timeout = utils.execute_with_timeout
         utils.execute_with_timeout = Mock()
-        rservice.utils.execute_with_timeout = Mock()
+
+    @property
+    def app(self):
+        return self.redis
+
+    @property
+    def appStatus(self):
+        return self.redis.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return self.redis.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return RedisSystem.SERVICE_CANDIDATES
 
     def tearDown(self):
-        super(TestRedisApp, self).tearDown()
-        self.app = None
         os.path.isfile = self.orig_os_path_isfile
         os.path.expanduser = self.orig_os_path_eu
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
-        rservice.utils.execute_with_timeout = \
-            self.orig_utils_execute_with_timeout
+        super(TestRedisApp, self).tearDown()
 
     def test_install_if_needed_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):
@@ -2295,288 +2386,70 @@ class TestRedisApp(testtools.TestCase):
     def test_install_redis(self):
         with patch.object(utils, 'execute_with_timeout'):
             with patch.object(pkg.Package, 'pkg_install', return_value=None):
-                with patch.object(RedisApp, 'start_redis', return_value=None):
+                with patch.object(RedisApp, 'start_db', return_value=None):
                     self.app._install_redis('redis')
                     pkg.Package.pkg_install.assert_any_call('redis', {}, 1200)
-                    RedisApp.start_redis.assert_any_call()
+                    RedisApp.start_db.assert_any_call()
                     self.assertTrue(utils.execute_with_timeout.called)
 
-    def test_enable_redis_on_boot_without_upstart(self):
-        cmd = '123'
-        with patch.object(operating_system, 'service_discovery',
-                          return_value={'cmd_enable': cmd}):
-            with patch.object(utils, 'execute_with_timeout',
-                              return_value=None):
-                self.app._enable_redis_on_boot()
-                operating_system.service_discovery.assert_any_call(
-                    RedisSystem.SERVICE_CANDIDATES)
-                utils.execute_with_timeout.assert_any_call(
-                    cmd, shell=True)
-
-    def test_enable_redis_on_boot_with_upstart(self):
-        cmd = '123'
-        with patch.object(operating_system, 'service_discovery',
-                          return_value={'cmd_enable': cmd}):
-            with patch.object(utils, 'execute_with_timeout',
-                              return_value=None):
-                self.app._enable_redis_on_boot()
-                operating_system.service_discovery.assert_any_call(
-                    RedisSystem.SERVICE_CANDIDATES)
-                utils.execute_with_timeout.assert_any_call(
-                    cmd, shell=True)
-
-    def test_disable_redis_on_boot_with_upstart(self):
-        cmd = '123'
-        with patch.object(operating_system, 'service_discovery',
-                          return_value={'cmd_disable': cmd}):
-            with patch.object(utils, 'execute_with_timeout',
-                              return_value=None):
-                self.app._disable_redis_on_boot()
-                operating_system.service_discovery.assert_any_call(
-                    RedisSystem.SERVICE_CANDIDATES)
-                utils.execute_with_timeout.assert_any_call(
-                    cmd, shell=True)
-
-    def test_disable_redis_on_boot_without_upstart(self):
-        cmd = '123'
-        with patch.object(operating_system, 'service_discovery',
-                          return_value={'cmd_disable': cmd}):
-            with patch.object(utils, 'execute_with_timeout',
-                              return_value=None):
-                self.app._disable_redis_on_boot()
-                operating_system.service_discovery.assert_any_call(
-                    RedisSystem.SERVICE_CANDIDATES)
-                utils.execute_with_timeout.assert_any_call(
-                    cmd, shell=True)
-
-    def test_stop_db_without_fail(self):
-        mock_status = MagicMock()
-        mock_status.wait_for_real_status_to_change_to = MagicMock(
-            return_value=True)
-        self.app.status = mock_status
-        RedisApp._disable_redis_on_boot = MagicMock(
-            return_value=None)
-
-        with patch.object(operating_system, 'stop_service') as stop_srv_mock:
-            mock_status.wait_for_real_status_to_change_to = MagicMock(
-                return_value=True)
-            self.app.stop_db(do_not_start_on_reboot=True)
-
-            stop_srv_mock.assert_called_once_with(
-                RedisSystem.SERVICE_CANDIDATES)
-            self.assertTrue(RedisApp._disable_redis_on_boot.called)
-            self.assertTrue(
-                mock_status.wait_for_real_status_to_change_to.called)
-
-    @patch('trove.guestagent.datastore.experimental.redis.service.LOG')
-    def test_stop_db_with_failure(self, *args):
-        mock_status = MagicMock()
-        mock_status.wait_for_real_status_to_change_to = MagicMock(
-            return_value=True)
-        self.app.status = mock_status
-        RedisApp._disable_redis_on_boot = MagicMock(
-            return_value=None)
-
-        with patch.object(operating_system, 'stop_service') as stop_srv_mock:
-            mock_status.wait_for_real_status_to_change_to = MagicMock(
-                return_value=False)
-            self.app.stop_db(do_not_start_on_reboot=True)
-
-            stop_srv_mock.assert_called_once_with(
-                RedisSystem.SERVICE_CANDIDATES)
-            self.assertTrue(RedisApp._disable_redis_on_boot.called)
-            self.assertTrue(mock_status.end_restart.called)
-            self.assertTrue(
-                mock_status.wait_for_real_status_to_change_to.called)
-
-    def test_restart(self):
-        mock_status = MagicMock()
-        self.app.status = mock_status
-        mock_status.begin_restart = MagicMock(return_value=None)
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            with patch.object(RedisApp, 'stop_db', return_value=None):
-                with patch.object(RedisApp, 'start_redis', return_value=None):
-                    mock_status.end_restart = MagicMock(
-                        return_value=None)
-                    self.app.restart()
-                    mock_status.begin_restart.assert_any_call()
-                    RedisApp.stop_db.assert_any_call()
-                    RedisApp.start_redis.assert_any_call()
-                    mock_status.end_restart.assert_any_call()
-
-    def test_start_redis(self):
-        mock_status = MagicMock()
-        mock_status.wait_for_real_status_to_change_to = MagicMock(
-            return_value=True)
-
-        self._assert_start_redis(mock_status)
-
-    @patch('trove.guestagent.datastore.experimental.redis.service.LOG')
     @patch.object(utils, 'execute_with_timeout')
-    def test_start_redis_with_failure(self, exec_mock, mock_logging):
-        mock_status = MagicMock()
-        mock_status.wait_for_real_status_to_change_to = MagicMock(
-            return_value=False)
-        mock_status.end_restart = MagicMock()
-
-        self._assert_start_redis(mock_status)
-
+    def test_service_cleanup(self, exec_mock):
+        rservice.RedisAppStatus(Mock()).cleanup_stalled_db_services()
         exec_mock.assert_called_once_with('pkill', '-9', 'redis-server',
                                           run_as_root=True, root_helper='sudo')
 
-        mock_status.end_restart.assert_called_once_with()
 
-    @patch.multiple(operating_system, start_service=DEFAULT,
-                    enable_service_on_boot=DEFAULT)
-    def _assert_start_redis(self, mock_status, start_service,
-                            enable_service_on_boot):
-        self.app.status = mock_status
-
-        self.app.start_redis()
-
-        mock_status.wait_for_real_status_to_change_to.assert_called_once_with(
-            rd_instance.ServiceStatuses.RUNNING, ANY, False)
-        enable_service_on_boot.assert_called_once_with(
-            RedisSystem.SERVICE_CANDIDATES)
-        start_service.assert_called_once_with(RedisSystem.SERVICE_CANDIDATES)
-
-
-class CassandraDBAppTest(testtools.TestCase):
+class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
     def setUp(self):
-        super(CassandraDBAppTest, self).setUp()
-        self.utils_execute_with_timeout = (
-            cass_service.utils.execute_with_timeout)
+        super(CassandraDBAppTest, self).setUp(str(uuid4()))
+        self.exec_patch = patch.object(utils, 'execute_with_timeout')
+        self.addCleanup(self.exec_patch.stop)
+        self.exec_mock = self.exec_patch.start()
         self.sleep = time.sleep
         self.orig_time_time = time.time
         self.pkg_version = cass_service.packager.pkg_version
         self.pkg = cass_service.packager
         util.init_db()
-        self.FAKE_ID = str(uuid4())
-        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=rd_instance.ServiceStatuses.NEW)
-        self.appStatus = FakeAppStatus(self.FAKE_ID,
-                                       rd_instance.ServiceStatuses.NEW)
-        self.cassandra = cass_service.CassandraApp(self.appStatus)
+        status = FakeAppStatus(self.FAKE_ID,
+                               rd_instance.ServiceStatuses.NEW)
+        self.cassandra = cass_service.CassandraApp(status)
         self.orig_unlink = os.unlink
 
-    def tearDown(self):
+    @property
+    def app(self):
+        return self.cassandra
 
+    @property
+    def appStatus(self):
+        return self.cassandra.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return self.cassandra.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return cass_system.SERVICE_CANDIDATES
+
+    def tearDown(self):
         super(CassandraDBAppTest, self).tearDown()
-        cass_service.utils.execute_with_timeout = (self.
-                                                   utils_execute_with_timeout)
         time.sleep = self.sleep
         time.time = self.orig_time_time
         cass_service.packager.pkg_version = self.pkg_version
         cass_service.packager = self.pkg
-        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
 
     def assert_reported_status(self, expected_status):
         service_status = InstanceServiceStatus.find_by(
             instance_id=self.FAKE_ID)
         self.assertEqual(expected_status, service_status.status)
 
-    def test_stop_db(self):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-        self.cassandra.stop_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    def test_stop_db_with_db_update(self):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.cassandra.stop_db(True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.SHUTDOWN.description}))
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    @patch('trove.guestagent.datastore.service.LOG')
-    def test_stop_db_error(self, *args):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.cassandra.state_change_wait_time = 1
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.cassandra.stop_db)
-
-    def test_restart(self):
-
-        self.cassandra.stop_db = Mock()
-        self.cassandra.start_db = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.cassandra.restart()
-
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.RUNNING.description}))
-            self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    def test_start_cassandra(self):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-
-        self.cassandra.start_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_start_cassandra_runs_forever(self, *args):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        (self.cassandra.status.
-         wait_for_real_status_to_change_to) = Mock(return_value=False)
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.cassandra.stop_db)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.SHUTDOWN.description}))
-
-    def test_start_db_with_db_update(self):
-
-        cass_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(
-            rd_instance.ServiceStatuses.RUNNING)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.cassandra.start_db(True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.RUNNING.description}))
-            self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    @patch('trove.guestagent.datastore.service.LOG')
-    def test_start_cassandra_error(self, *args):
-        self.cassandra._enable_db_on_boot = Mock()
-        self.cassandra.state_change_wait_time = 1
-        cass_service.utils.execute_with_timeout = Mock(
-            side_effect=ProcessExecutionError('Error'))
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.cassandra.start_db)
+    @patch.object(utils, 'execute_with_timeout')
+    def test_service_cleanup(self, exec_mock):
+        cass_service.CassandraAppStatus().cleanup_stalled_db_services()
+        exec_mock.assert_called_once_with(
+            cass_system.CASSANDRA_KILL,
+            shell=True)
 
     def test_install(self):
 
@@ -2668,7 +2541,7 @@ class CassandraDBAppTest(testtools.TestCase):
         os.unlink(temp_config_name)
 
 
-class CouchbaseAppTest(testtools.TestCase):
+class CouchbaseAppTest(BaseAppTest.AppTestCase):
 
     def fake_couchbase_service_discovery(self, candidates):
         return {
@@ -2679,7 +2552,7 @@ class CouchbaseAppTest(testtools.TestCase):
         }
 
     def setUp(self):
-        super(CouchbaseAppTest, self).setUp()
+        super(CouchbaseAppTest, self).setUp(str(uuid4()))
         self.orig_utils_execute_with_timeout = (
             couchservice.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -2691,92 +2564,41 @@ class CouchbaseAppTest(testtools.TestCase):
         operating_system.service_discovery = (
             self.fake_couchbase_service_discovery)
         netutils.get_my_ipv4 = Mock()
-        self.FAKE_ID = str(uuid4())
-        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=rd_instance.ServiceStatuses.NEW)
-        self.appStatus = FakeAppStatus(self.FAKE_ID,
-                                       rd_instance.ServiceStatuses.NEW)
-        self.couchbaseApp = couchservice.CouchbaseApp(self.appStatus)
+        status = FakeAppStatus(self.FAKE_ID,
+                               rd_instance.ServiceStatuses.NEW)
+        self.couchbaseApp = couchservice.CouchbaseApp(status)
         dbaas.CONF.guest_id = self.FAKE_ID
 
+    @property
+    def app(self):
+        return self.couchbaseApp
+
+    @property
+    def appStatus(self):
+        return self.couchbaseApp.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return self.couchbaseApp.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return couchservice.system.SERVICE_CANDIDATES
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test_service_cleanup(self, exec_mock):
+        couchservice.CouchbaseAppStatus().cleanup_stalled_db_services()
+        exec_mock.assert_called_once_with(couchservice.system.cmd_kill)
+
     def tearDown(self):
-        super(CouchbaseAppTest, self).tearDown()
         couchservice.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
         netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
         time.time = self.orig_time_time
-        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
-
-    def assert_reported_status(self, expected_status):
-        service_status = InstanceServiceStatus.find_by(
-            instance_id=self.FAKE_ID)
-        self.assertEqual(expected_status, service_status.status)
-
-    def test_stop_db(self):
-        couchservice.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
-
-        self.couchbaseApp.stop_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.couchbase.service.LOG')
-    def test_stop_db_error(self, *args):
-        couchservice.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchbaseApp.state_change_wait_time = 1
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.couchbaseApp.stop_db)
-
-    def test_restart(self):
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchbaseApp.stop_db = Mock()
-        self.couchbaseApp.start_db = Mock()
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.couchbaseApp.restart()
-
-            self.assertTrue(self.couchbaseApp.stop_db.called)
-            self.assertTrue(self.couchbaseApp.start_db.called)
-            self.assertTrue(conductor_api.API.heartbeat.called)
-
-    def test_start_db(self):
-        couchservice.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchbaseApp._enable_db_on_boot = Mock()
-
-        self.couchbaseApp.start_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.couchbase.service.LOG')
-    def test_start_db_error(self, *args):
-        mocked = Mock(side_effect=ProcessExecutionError('Error'))
-        couchservice.utils.execute_with_timeout = mocked
-        self.couchbaseApp._enable_db_on_boot = Mock()
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.couchbase.service.LOG')
-    def test_start_db_runs_forever(self, *args):
-        couchservice.utils.execute_with_timeout = Mock()
-        self.couchbaseApp._enable_db_on_boot = Mock()
-        self.couchbaseApp.state_change_wait_time = 1
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.couchbaseApp.start_db)
-            self.assertTrue(conductor_api.API.heartbeat.called)
+        super(CouchbaseAppTest, self).tearDown()
 
     def test_install_when_couchbase_installed(self):
         couchservice.packager.pkg_is_installed = Mock(return_value=True)
@@ -2787,7 +2609,7 @@ class CouchbaseAppTest(testtools.TestCase):
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
 
-class CouchDBAppTest(testtools.TestCase):
+class CouchDBAppTest(BaseAppTest.AppTestCase):
 
     def fake_couchdb_service_discovery(self, candidates):
         return {
@@ -2798,7 +2620,7 @@ class CouchDBAppTest(testtools.TestCase):
         }
 
     def setUp(self):
-        super(CouchDBAppTest, self).setUp()
+        super(CouchDBAppTest, self).setUp(str(uuid4()))
         self.orig_utils_execute_with_timeout = (
             couchdb_service.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -2811,79 +2633,36 @@ class CouchDBAppTest(testtools.TestCase):
             self.fake_couchdb_service_discovery)
         netutils.get_my_ipv4 = Mock()
         util.init_db()
-        self.FAKE_ID = str(uuid4())
-        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=rd_instance.ServiceStatuses.NEW)
-        self.appStatus = FakeAppStatus(self.FAKE_ID,
-                                       rd_instance.ServiceStatuses.NEW)
-        self.couchdbApp = couchdb_service.CouchDBApp(self.appStatus)
+        status = FakeAppStatus(self.FAKE_ID,
+                               rd_instance.ServiceStatuses.NEW)
+        self.couchdbApp = couchdb_service.CouchDBApp(status)
         dbaas.CONF.guest_id = self.FAKE_ID
 
+    @property
+    def app(self):
+        return self.couchdbApp
+
+    @property
+    def appStatus(self):
+        return self.couchdbApp.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return self.couchdbApp.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return couchdb_service.system.SERVICE_CANDIDATES
+
     def tearDown(self):
-        super(CouchDBAppTest, self).tearDown()
         couchdb_service.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
         netutils.get_my_ipv4 = self.orig_get_ip
         operating_system.service_discovery = self.orig_service_discovery
         time.sleep = self.orig_time_sleep
         time.time = self.orig_time_time
-        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
         dbaas.CONF.guest_id = None
-
-    def assert_reported_status(self, expected_status):
-        service_status = InstanceServiceStatus.find_by(
-            instance_id=self.FAKE_ID)
-        self.assertEqual(expected_status, service_status.status)
-
-    def test_stop_db(self):
-        couchdb_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
-
-        self.couchdbApp.stop_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.couchdb.service.LOG')
-    def test_stop_db_error(self, *args):
-        couchdb_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchdbApp.state_change_wait_time = 1
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.couchdbApp.stop_db)
-
-    def test_restart(self):
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchdbApp.stop_db = Mock()
-        self.couchdbApp.start_db = Mock()
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.couchdbApp.restart()
-
-            self.assertTrue(self.couchdbApp.stop_db.called)
-            self.assertTrue(self.couchdbApp.start_db.called)
-            self.assertTrue(conductor_api.API.heartbeat.called)
-
-    def test_start_db(self):
-        couchdb_service.utils.execute_with_timeout = Mock()
-        self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
-        self.couchdbApp._enable_db_on_boot = Mock()
-
-        self.couchdbApp.start_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.couchdb.service.LOG')
-    def test_start_db_error(self, *args):
-        couchdb_service.utils.execute_with_timeout = Mock(
-            side_effect=ProcessExecutionError('Error'))
-        self.couchdbApp._enable_db_on_boot = Mock()
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.couchdbApp.start_db)
+        super(CouchDBAppTest, self).tearDown()
 
     def test_install_when_couchdb_installed(self):
         couchdb_service.packager.pkg_is_installed = Mock(return_value=True)
@@ -2894,7 +2673,7 @@ class CouchDBAppTest(testtools.TestCase):
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
 
-class MongoDBAppTest(testtools.TestCase):
+class MongoDBAppTest(BaseAppTest.AppTestCase):
 
     def fake_mongodb_service_discovery(self, candidates):
         return {
@@ -2906,7 +2685,7 @@ class MongoDBAppTest(testtools.TestCase):
 
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
-        super(MongoDBAppTest, self).setUp()
+        super(MongoDBAppTest, self).setUp(str(uuid4()))
         self.orig_utils_execute_with_timeout = (mongo_service.
                                                 utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -2920,9 +2699,6 @@ class MongoDBAppTest(testtools.TestCase):
         operating_system.service_discovery = (
             self.fake_mongodb_service_discovery)
         util.init_db()
-        self.FAKE_ID = str(uuid4())
-        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
-                                     status=rd_instance.ServiceStatuses.NEW)
 
         self.mongoDbApp = mongo_service.MongoDBApp()
         self.mongoDbApp.status = FakeAppStatus(self.FAKE_ID,
@@ -2931,8 +2707,31 @@ class MongoDBAppTest(testtools.TestCase):
         time.time = Mock(side_effect=faketime)
         os.unlink = Mock()
 
+    @property
+    def app(self):
+        return self.mongoDbApp
+
+    @property
+    def appStatus(self):
+        return self.mongoDbApp.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return self.mongoDbApp.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return mongo_system.MONGOD_SERVICE_CANDIDATES
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test_service_cleanup(self, exec_mock):
+        self.appStatus.cleanup_stalled_db_services()
+#     def cleanup_stalled_db_services(self):
+#         out, err = utils.execute_with_timeout(system.FIND_PID, shell=True)
+#         pid = "".join(out.split(" ")[1:2])
+#         utils.execute_with_timeout(system.MONGODB_KILL % pid, shell=True)
+
     def tearDown(self):
-        super(MongoDBAppTest, self).tearDown()
         mongo_service.utils.execute_with_timeout = (
             self.orig_utils_execute_with_timeout)
         time.sleep = self.orig_time_sleep
@@ -2941,119 +2740,10 @@ class MongoDBAppTest(testtools.TestCase):
         operating_system.service_discovery = self.orig_service_discovery
         os.unlink = self.orig_os_unlink
         os.path.expanduser = self.orig_os_path_eu
-        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
-
-    def assert_reported_status(self, expected_status):
-        service_status = InstanceServiceStatus.find_by(
-            instance_id=self.FAKE_ID)
-        self.assertEqual(expected_status, service_status.status)
-
-    def test_stopdb(self):
-        mongo_service.utils.execute_with_timeout = Mock()
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-        self.mongoDbApp.stop_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    def test_stop_db_with_db_update(self):
-
-        mongo_service.utils.execute_with_timeout = Mock()
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mongoDbApp.stop_db(True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID, {'service_status': 'shutdown'}))
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.mongodb.service.LOG')
-    def test_stop_db_error(self, *args):
-
-        mongo_service.utils.execute_with_timeout = Mock()
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.RUNNING)
-        self.mongoDbApp.state_change_wait_time = 1
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.mongoDbApp.stop_db)
-
-    def test_restart(self):
-
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.RUNNING)
-        self.mongoDbApp.stop_db = Mock()
-        self.mongoDbApp.start_db = Mock()
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mongoDbApp.restart()
-
-            self.assertTrue(self.mongoDbApp.stop_db.called)
-            self.assertTrue(self.mongoDbApp.start_db.called)
-
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID, {'service_status': 'shutdown'}))
-
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID, {'service_status': 'running'}))
-
-    def test_start_db(self):
-
-        mongo_service.utils.execute_with_timeout = Mock()
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.RUNNING)
-
-        self.mongoDbApp.start_db()
-        self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
-
-    def test_start_db_with_update(self):
-
-        mongo_service.utils.execute_with_timeout = Mock()
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.RUNNING)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mongoDbApp.start_db(True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID, {'service_status': 'running'}))
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.mongodb.service.LOG')
-    def test_start_db_runs_forever(self, *args):
-
-        mongo_service.utils.execute_with_timeout = Mock(
-            return_value=["ubuntu 17036  0.0  0.1 618960 "
-                          "29232 pts/8    Sl+  Jan29   0:07 mongod", ""])
-        self.mongoDbApp.state_change_wait_time = 1
-        self.mongoDbApp.status.set_next_status(
-            rd_instance.ServiceStatuses.SHUTDOWN)
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.mongoDbApp.start_db)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID, {'service_status': 'shutdown'}))
-
-    @patch('trove.guestagent.datastore.service.LOG')
-    @patch('trove.guestagent.datastore.experimental.mongodb.service.LOG')
-    def test_start_db_error(self, *args):
-
-        self.mongoDbApp._enable_db_on_boot = Mock()
-        mocked = Mock(side_effect=ProcessExecutionError('Error'))
-        mongo_service.utils.execute_with_timeout = mocked
-
-        with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.mongoDbApp.start_db)
+        super(MongoDBAppTest, self).tearDown()
 
     def test_start_db_with_conf_changes_db_is_running(self):
-
         self.mongoDbApp.start_db = Mock()
-
         self.mongoDbApp.status.status = rd_instance.ServiceStatuses.RUNNING
         self.assertRaises(RuntimeError,
                           self.mongoDbApp.start_db_with_conf_changes,
@@ -3146,35 +2836,35 @@ class VerticaAppTest(testtools.TestCase):
         app = VerticaApp(MagicMock())
         with patch.object(app, 'read_config', return_value=self.test_config):
             with patch.object(app, 'is_root_enabled', return_value=False):
-                    with patch.object(vertica_system, 'exec_vsql_command',
-                                      MagicMock(side_effect=[['', ''],
-                                                             ['', ''],
-                                                             ['', '']])):
-                        app.enable_root('root_password')
-                        create_user_arguments = (
-                            vertica_system.exec_vsql_command.call_args_list[0])
-                        expected_create_user_cmd = (
-                            vertica_system.CREATE_USER % ('root',
-                                                          'root_password'))
-                        create_user_arguments.assert_called_with(
-                            'some_password', expected_create_user_cmd)
+                with patch.object(vertica_system, 'exec_vsql_command',
+                                  MagicMock(side_effect=[['', ''],
+                                                         ['', ''],
+                                                         ['', '']])):
+                    app.enable_root('root_password')
+                    create_user_arguments = (
+                        vertica_system.exec_vsql_command.call_args_list[0])
+                    expected_create_user_cmd = (
+                        vertica_system.CREATE_USER % ('root',
+                                                      'root_password'))
+                    create_user_arguments.assert_called_with(
+                        'some_password', expected_create_user_cmd)
 
-                        grant_role_arguments = (
-                            vertica_system.exec_vsql_command.call_args_list[1])
-                        expected_grant_role_cmd = (
-                            vertica_system.GRANT_TO_USER % ('pseudosuperuser',
-                                                            'root'))
-                        grant_role_arguments.assert_called_with(
-                            'some_password', expected_grant_role_cmd)
+                    grant_role_arguments = (
+                        vertica_system.exec_vsql_command.call_args_list[1])
+                    expected_grant_role_cmd = (
+                        vertica_system.GRANT_TO_USER % ('pseudosuperuser',
+                                                        'root'))
+                    grant_role_arguments.assert_called_with(
+                        'some_password', expected_grant_role_cmd)
 
-                        enable_user_arguments = (
-                            vertica_system.exec_vsql_command.call_args_list[2])
-                        expected_enable_user_cmd = (
-                            vertica_system.ENABLE_FOR_USER % ('root',
-                                                              'pseudosuperuser'
-                                                              ))
-                        enable_user_arguments.assert_called_with(
-                            'some_password', expected_enable_user_cmd)
+                    enable_user_arguments = (
+                        vertica_system.exec_vsql_command.call_args_list[2])
+                    expected_enable_user_cmd = (
+                        vertica_system.ENABLE_FOR_USER % ('root',
+                                                          'pseudosuperuser'
+                                                          ))
+                    enable_user_arguments.assert_called_with(
+                        'some_password', expected_enable_user_cmd)
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_enable_root_is_root_not_enabled_failed(self, *args):
@@ -3948,3 +3638,56 @@ class PXCAppTest(testtools.TestCase):
         self.assertEqual(1, self.PXCApp.wipe_ib_logfiles.call_count)
         self.assertEqual(1, apply_mock.call_count)
         self.assertEqual(1, self.PXCApp._bootstrap_cluster.call_count)
+
+
+class PostgresAppTest(BaseAppTest.AppTestCase):
+
+    class FakePostgresApp(pg_manager.Manager):
+        """Postgresql design is currently different than other datastores.
+        It does not have an App class, only the Manager, so we fake one.
+        The fake App just passes the calls onto the Postgres manager.
+        """
+
+        def restart(self):
+            super(PostgresAppTest.FakePostgresApp, self).restart(Mock())
+
+        def start_db(self):
+            super(PostgresAppTest.FakePostgresApp, self).start_db(Mock())
+
+        def stop_db(self):
+            super(PostgresAppTest.FakePostgresApp, self).stop_db(Mock())
+
+    def setUp(self):
+        super(PostgresAppTest, self).setUp(str(uuid4()))
+        self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
+        time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
+        status = FakeAppStatus(self.FAKE_ID,
+                               rd_instance.ServiceStatuses.NEW)
+        self.pg_status_patcher = patch.object(pg_status.PgSqlAppStatus, 'get',
+                                              return_value=status)
+        self.addCleanup(self.pg_status_patcher.stop)
+        self.pg_status_patcher.start()
+        self.postgres = PostgresAppTest.FakePostgresApp()
+
+    @property
+    def app(self):
+        return self.postgres
+
+    @property
+    def appStatus(self):
+        return self.postgres.status
+
+    @property
+    def expected_state_change_timeout(self):
+        return CONF.state_change_wait_time
+
+    @property
+    def expected_service_candidates(self):
+        return pg_process.SERVICE_CANDIDATES
+
+    def tearDown(self):
+        time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
+        super(PostgresAppTest, self).tearDown()

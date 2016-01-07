@@ -51,7 +51,8 @@ class Manager(manager.Manager):
                    cluster_config, snapshot):
         """This is called from prepare in the base class."""
         self.app.install_if_needed(packages)
-        self.app.wait_for_start()
+        self.status.wait_for_database_service_start(
+            self.app.state_change_wait_time)
         self.app.stop_db()
         self.app.clear_storage()
         mount_point = system.MONGODB_MOUNT_POINT

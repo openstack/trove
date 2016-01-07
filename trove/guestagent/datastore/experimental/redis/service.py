@@ -65,6 +65,12 @@ class RedisAppStatus(service.BaseDbStatus):
 
         return rd_instance.ServiceStatuses.CRASHED
 
+    def cleanup_stalled_db_services(self):
+        utils.execute_with_timeout('pkill', '-9',
+                                   'redis-server',
+                                   run_as_root=True,
+                                   root_helper='sudo')
+
 
 class RedisApp(object):
     """
@@ -124,49 +130,17 @@ class RedisApp(object):
         operating_system.create_directory(system.REDIS_CONF_DIR, as_root=True)
         pkg_opts = {}
         packager.pkg_install(packages, pkg_opts, TIME_OUT)
-        self.start_redis()
+        self.start_db()
         LOG.debug('Finished installing redis server.')
 
-    def _enable_redis_on_boot(self):
-        """
-        Enables redis on boot.
-        """
-        LOG.info(_('Enabling Redis on boot.'))
-        operating_system.enable_service_on_boot(system.SERVICE_CANDIDATES)
-
-    def _disable_redis_on_boot(self):
-        """
-        Disables redis on boot.
-        """
-        LOG.info(_("Disabling Redis on boot."))
-        operating_system.disable_service_on_boot(system.SERVICE_CANDIDATES)
-
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        """
-        Stops the redis application on the trove instance.
-        """
-        LOG.info(_('Stopping redis.'))
-        if do_not_start_on_reboot:
-            self._disable_redis_on_boot()
-
-        operating_system.stop_service(system.SERVICE_CANDIDATES)
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.SHUTDOWN,
-                self.state_change_wait_time, update_db):
-            LOG.error(_('Could not stop Redis.'))
-            self.status.end_restart()
+        self.status.stop_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)
 
     def restart(self):
-        """
-        Restarts the redis daemon.
-        """
-        LOG.debug("Restarting Redis daemon.")
-        try:
-            self.status.begin_restart()
-            self.stop_db()
-            self.start_redis()
-        finally:
-            self.status.end_restart()
+        self.status.restart_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time)
 
     def update_overrides(self, context, overrides, remove=False):
         if overrides:
@@ -225,27 +199,12 @@ class RedisApp(object):
         # The configuration template has to be updated with
         # guestagent-controlled settings.
         self.apply_initial_guestagent_configuration()
-        self.start_redis(True)
+        self.start_db(True)
 
-    def start_redis(self, update_db=False):
-        """
-        Start the redis daemon.
-        """
-        LOG.info(_("Starting redis."))
-        self._enable_redis_on_boot()
-        operating_system.start_service(system.SERVICE_CANDIDATES)
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.RUNNING,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of redis failed."))
-            try:
-                utils.execute_with_timeout('pkill', '-9',
-                                           'redis-server',
-                                           run_as_root=True,
-                                           root_helper='sudo')
-            except exception.ProcessExecutionError:
-                LOG.exception(_('Error killing stalled redis start command.'))
-            self.status.end_restart()
+    def start_db(self, update_db=False):
+        self.status.start_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            enable_on_boot=True, update_db=update_db)
 
     def apply_initial_guestagent_configuration(self):
         """Update guestagent-controlled configuration properties.

@@ -43,6 +43,7 @@ class CouchDBApp(object):
     Handles installation and configuration of CouchDB
     on a Trove instance.
     """
+
     def __init__(self, status, state_change_wait_time=None):
         """
         Sets default status and state_change_wait_time.
@@ -107,80 +108,19 @@ class CouchDBApp(object):
                                                   stderr=err,
                                                   stdout=out)
 
-    def _disable_db_on_boot(self):
-        try:
-            LOG.debug("Disable CouchDB on boot.")
-            couchdb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchdb_service['cmd_disable'], shell=True)
-        except KeyError:
-            raise RuntimeError(
-                "Command to disable CouchDB server on boot not found.")
-
-    def _enable_db_on_boot(self):
-        try:
-            LOG.debug("Enable CouchDB on boot.")
-            couchdb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchdb_service['cmd_enable'], shell=True)
-        except KeyError:
-            raise RuntimeError(
-                "Command to disable CouchDB server on boot not found.")
-
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        LOG.info(_("Stopping CouchDB."))
-        if do_not_start_on_reboot:
-            self._disable_db_on_boot()
-
-        try:
-            couchdb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(couchdb_service['cmd_stop'],
-                                       shell=True)
-        except KeyError:
-            raise RuntimeError(_("CouchDB service is not discovered."))
-
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.SHUTDOWN,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Could not stop CouchDB."))
-            self.status.end_restart()
-            raise RuntimeError(_("Could not stop CouchDB."))
+        self.status.stop_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)
 
     def start_db(self, update_db=False):
-        """
-        Start the CouchDB server.
-        """
-        LOG.info(_("Starting CouchDB server."))
-
-        self._enable_db_on_boot()
-        try:
-            couchdb_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchdb_service['cmd_start'], shell=True)
-        except exception.ProcessExecutionError:
-            pass
-        except KeyError:
-            raise RuntimeError("Command to start CouchDB server not found.")
-
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.RUNNING,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of CouchDB server failed."))
-            self.status.end_restart()
-            raise RuntimeError("Could not start CouchDB server.")
+        self.status.start_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            enable_on_boot=True, update_db=update_db)
 
     def restart(self):
-        LOG.info(_("Restarting CouchDB server."))
-        try:
-            self.status.begin_restart()
-            self.stop_db()
-            self.start_db()
-        finally:
-            self.status.end_restart()
+        self.status.restart_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time)
 
     def make_host_reachable(self):
         try:
@@ -192,7 +132,7 @@ class CouchDBApp(object):
             self.start_db()
         except exception.ProcessExecutionError:
             LOG.exception(_("Error while trying to update bind address of"
-                          " CouchDB server."))
+                            " CouchDB server."))
 
     def start_db_with_conf_changes(self, config_contents):
         '''
@@ -214,6 +154,7 @@ class CouchDBAppStatus(service.BaseDbStatus):
         The response will be similar to:
           {"couchdb":"Welcome","version":"1.6.0"}
     """
+
     def _get_actual_db_status(self):
         try:
             out, err = utils.execute_with_timeout(

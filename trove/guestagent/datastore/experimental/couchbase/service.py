@@ -45,6 +45,7 @@ class CouchbaseApp(object):
     Handles installation and configuration of couchbase
     on a trove instance.
     """
+
     def __init__(self, status, state_change_wait_time=None):
         """
         Sets default status and state_change_wait_time
@@ -105,90 +106,19 @@ class CouchbaseApp(object):
         self.start_db()
         LOG.debug('Finished installing Couchbase Server.')
 
-    def _enable_db_on_boot(self):
-        """
-        Enables Couchbase Server on boot.
-        """
-        LOG.info(_('Enabling Couchbase Server on boot.'))
-        try:
-            couchbase_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchbase_service['cmd_enable'], shell=True)
-        except KeyError:
-            raise RuntimeError(_(
-                "Command to enable Couchbase Server on boot not found."))
-
-    def _disable_db_on_boot(self):
-        LOG.debug("Disabling Couchbase Server on boot.")
-        try:
-            couchbase_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchbase_service['cmd_disable'], shell=True)
-        except KeyError:
-            raise RuntimeError(
-                "Command to disable Couchbase Server on boot not found.")
-
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
-        """
-        Stops Couchbase Server on the trove instance.
-        """
-        LOG.debug('Stopping Couchbase Server.')
-        if do_not_start_on_reboot:
-            self._disable_db_on_boot()
-
-        try:
-            couchbase_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchbase_service['cmd_stop'], shell=True)
-        except KeyError:
-            raise RuntimeError("Command to stop Couchbase Server not found.")
-
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.SHUTDOWN,
-                self.state_change_wait_time, update_db):
-            LOG.error(_('Could not stop Couchbase Server.'))
-            self.status.end_restart()
-            raise RuntimeError(_("Could not stop Couchbase Server."))
+        self.status.stop_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            disable_on_boot=do_not_start_on_reboot, update_db=update_db)
 
     def restart(self):
-        LOG.info(_("Restarting Couchbase Server."))
-        try:
-            self.status.begin_restart()
-            self.stop_db()
-            self.start_db()
-        finally:
-            self.status.end_restart()
+        self.status.restart_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time)
 
     def start_db(self, update_db=False):
-        """
-        Start the Couchbase Server.
-        """
-        LOG.info(_("Starting Couchbase Server."))
-
-        self._enable_db_on_boot()
-        try:
-            couchbase_service = operating_system.service_discovery(
-                system.SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                couchbase_service['cmd_start'], shell=True)
-        except exception.ProcessExecutionError:
-            pass
-        except KeyError:
-            raise RuntimeError("Command to start Couchbase Server not found.")
-
-        if not self.status.wait_for_real_status_to_change_to(
-                rd_instance.ServiceStatuses.RUNNING,
-                self.state_change_wait_time, update_db):
-            LOG.error(_("Start up of Couchbase Server failed."))
-            try:
-                utils.execute_with_timeout(system.cmd_kill)
-            except exception.ProcessExecutionError:
-                LOG.exception(_('Error killing Couchbase start command.'))
-            self.status.end_restart()
-            raise RuntimeError("Could not start Couchbase Server")
+        self.status.start_db_service(
+            system.SERVICE_CANDIDATES, self.state_change_wait_time,
+            enable_on_boot=True, update_db=update_db)
 
     def enable_root(self, root_password=None):
         return CouchbaseRootAccess.enable_root(root_password)
@@ -219,6 +149,7 @@ class CouchbaseAppStatus(service.BaseDbStatus):
     """
     Handles all of the status updating for the couchbase guest agent.
     """
+
     def _get_actual_db_status(self):
         self.ip_address = netutils.get_my_ipv4()
         pwd = None
@@ -269,6 +200,9 @@ class CouchbaseAppStatus(service.BaseDbStatus):
             return rd_instance.ServiceStatuses.RUNNING
         else:
             return rd_instance.ServiceStatuses.SHUTDOWN
+
+    def cleanup_stalled_db_services(self):
+        utils.execute_with_timeout(system.cmd_kill)
 
 
 class CouchbaseRootAccess(object):

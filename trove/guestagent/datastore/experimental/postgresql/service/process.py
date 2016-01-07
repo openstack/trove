@@ -21,7 +21,7 @@ from trove.guestagent.datastore.experimental.postgresql.service.status import (
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-PGSQL_SERVICE_CANDIDATES = ["postgresql"]
+SERVICE_CANDIDATES = ["postgresql"]
 
 
 class PgSqlProcess(object):
@@ -29,14 +29,14 @@ class PgSqlProcess(object):
 
     def restart(self, context):
         PgSqlAppStatus.get().restart_db_service(
-            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time)
+            SERVICE_CANDIDATES, CONF.state_change_wait_time)
 
     def start_db(self, context, enable_on_boot=True, update_db=False):
         PgSqlAppStatus.get().start_db_service(
-            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time,
+            SERVICE_CANDIDATES, CONF.state_change_wait_time,
             enable_on_boot=enable_on_boot, update_db=update_db)
 
     def stop_db(self, context, do_not_start_on_reboot=False, update_db=False):
         PgSqlAppStatus.get().stop_db_service(
-            PGSQL_SERVICE_CANDIDATES, CONF.state_change_wait_time,
+            SERVICE_CANDIDATES, CONF.state_change_wait_time,
             disable_on_boot=do_not_start_on_reboot, update_db=update_db)
