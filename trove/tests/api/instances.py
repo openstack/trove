@@ -85,6 +85,7 @@ class InstanceTestInfo(object):
         self.id = None  # The ID of the instance in the database.
         self.local_id = None
         self.address = None
+        self.nics = None  # The dict of type/id for nics used on the intance.
         self.initial_result = None  # The initial result from the create call.
         self.user_ip = None  # The IP address of the instance, given to user.
         self.infra_ip = None  # The infrastructure network IP address.
@@ -656,6 +657,10 @@ class CreateInstance(object):
         else:
             instance_info.volume = None
 
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            instance_info.nics = [{'net-id': shared_network}]
+
         if create_new_instance():
             instance_info.initial_result = dbaas.instances.create(
                 instance_info.name,
@@ -663,6 +668,7 @@ class CreateInstance(object):
                 instance_info.volume,
                 databases,
                 users,
+                nics=instance_info.nics,
                 availability_zone="nova",
                 datastore=instance_info.dbaas_datastore,
                 datastore_version=instance_info.dbaas_datastore_version)

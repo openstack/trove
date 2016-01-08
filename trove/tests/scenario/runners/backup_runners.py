@@ -268,6 +268,7 @@ class BackupRunner(TestRunner):
             self.instance_info.name + '_restore',
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
+            nics=self.instance_info.nics,
             restorePoint=restore_point)
         return result
 

@@ -163,10 +163,15 @@ class InstanceCreateRunner(TestRunner):
         else:
             instance_info.volume = None
 
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            instance_info.nics = [{'net-id': shared_network}]
+
         self.report.log("Testing create instance: %s"
                         % {'name': name,
                            'flavor': flavor.id,
                            'volume': trove_volume_size,
+                           'nics': instance_info.nics,
                            'databases': databases,
                            'users': users,
                            'configuration': configuration_id,
@@ -187,6 +192,7 @@ class InstanceCreateRunner(TestRunner):
                 instance_info.volume,
                 instance_info.databases,
                 instance_info.users,
+                nics=instance_info.nics,
                 configuration=configuration_id,
                 availability_zone="nova",
                 datastore=instance_info.dbaas_datastore,
