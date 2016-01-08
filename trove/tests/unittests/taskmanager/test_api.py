@@ -111,6 +111,6 @@ class TestAPI(trove_testtools.TestCase):
         context = Mock()
         manager = 'mongodb'
 
-        self.assertTrue(isinstance(task_api.load(context), task_api.API))
-        self.assertTrue(isinstance(task_api.load(context, manager),
-                                   MongoDbTaskManagerAPI))
+        self.assertIsInstance(task_api.load(context), task_api.API)
+        self.assertIsInstance(task_api.load(context, manager),
+                              MongoDbTaskManagerAPI)

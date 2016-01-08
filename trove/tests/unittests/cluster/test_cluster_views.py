@@ -73,7 +73,7 @@ class ClusterViewTest(trove_testtools.TestCase):
         cluster = Mock()
         cluster.datastore_version.manager = 'mongodb'
         view = load_view(cluster, Mock())
-        self.assertTrue(isinstance(view, MongoDbClusterView))
+        self.assertIsInstance(view, MongoDbClusterView)
 
     def test__build_instances(self, *args):
         cluster = Mock()
