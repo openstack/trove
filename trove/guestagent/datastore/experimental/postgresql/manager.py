@@ -113,9 +113,6 @@ class Manager(
         else:
             self._secure(context)
 
-        if root_password and not backup_info:
-            self.enable_root(context, root_password)
-
     def _secure(self, context):
         # Create a new administrative user for Trove and also
         # disable the built-in superuser.

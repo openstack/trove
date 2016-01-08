@@ -280,8 +280,9 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Completed setup of '%s' datastore successfully.") %
                  self.manager)
 
-        # We only create databases and users automatically for non-cluster
-        # instances.
+        # The following block performs single-instance initialization.
+        # Failures will be recorded, but won't stop the provisioning
+        # or change the instance state.
         if not cluster_config:
             try:
                 if databases:
@@ -295,7 +296,18 @@ class Manager(periodic_task.PeriodicTasks):
             except Exception as ex:
                 LOG.exception(_("An error occurred creating databases/users: "
                                 "%s") % ex.message)
-                raise
+
+            # We only enable-root automatically if not restoring a backup
+            # that may already have root enabled in which case we keep it
+            # unchanged.
+            if root_password and not backup_info:
+                try:
+                    LOG.info(_("Enabling root user (with password)."))
+                    self.enable_root_on_prepare(context, root_password)
+                    LOG.info(_('Root enabled successfully.'))
+                except Exception as ex:
+                    LOG.exception(_("An error occurred enabling root user: "
+                                    "%s") % ex.message)
 
         try:
             LOG.info(_("Calling post_prepare for '%s' datastore.") %
@@ -314,6 +326,9 @@ class Manager(periodic_task.PeriodicTasks):
     def apply_overrides_on_prepare(self, context, overrides):
         self.update_overrides(context, overrides)
         self.restart(context)
+
+    def enable_root_on_prepare(self, context, root_password):
+        self.enable_root_with_password(context, root_password)
 
     @abc.abstractmethod
     def do_prepare(self, context, packages, databases, memory_mb, users,
