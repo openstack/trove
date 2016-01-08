@@ -162,14 +162,18 @@ register(["replication"], replication_groups)
 # currently supported by the datastore
 register(["cassandra_supported"], backup_groups, instance_actions_groups)
 register(["couchbase_supported"], instance_actions_groups)
+register(["couchdb_supported"], instance_actions_groups)
 register(["postgresql_supported"], backup_groups, database_actions_groups,
          instance_actions_groups, user_actions_groups)
 register(["mongodb_supported"], backup_groups, cluster_actions_groups,
          database_actions_groups, instance_actions_groups, user_actions_groups)
-register(["mysql_supported"], backup_groups, database_actions_groups,
-         instance_actions_groups, replication_groups, user_actions_groups)
+register(["mysql_supported", "mariadb_supported", "percona_supported"],
+         backup_groups, database_actions_groups, instance_actions_groups,
+         replication_groups, user_actions_groups)
 register(["redis_supported"], backup_groups, instance_actions_groups,
          replication_groups)
 register(["vertica_supported"], cluster_actions_groups,
          instance_actions_groups)
 register(["pxc_supported"], instance_actions_groups, cluster_actions_groups)
+register(["db2_supported"], database_actions_groups,
+         instance_actions_groups, user_actions_groups)
