@@ -25,7 +25,6 @@ MONGO_PID_FILE = '/var/run/mongodb/mongodb.pid'
 MONGO_LOG_FILE = '/var/log/mongodb/mongod.log'
 
 CONFIG_CANDIDATES = ["/etc/mongodb.conf", "/etc/mongod.conf"]
-MONGOS_UPSTART = "/etc/init/mongos.conf"
 MONGO_ADMIN_NAME = 'os_admin'
 MONGO_ADMIN_ROLES = [{'db': 'admin', 'role': 'userAdminAnyDatabase'},
                      {'db': 'admin', 'role': 'dbAdminAnyDatabase'},
@@ -43,28 +42,5 @@ TIME_OUT = 1000
 MONGO_USER = {operating_system.REDHAT: "mongod",
               operating_system.DEBIAN: "mongodb",
               operating_system.SUSE: "mongod"}[OS_NAME]
-
-INIT_EXEC_MONGOS = ("start-stop-daemon --start --quiet --chuid %s "
-                    "--exec  /usr/bin/mongos -- "
-                    "--config {config_file_placeholder}" % MONGO_USER)
-
-MONGOS_UPSTART_CONTENTS = """limit fsize unlimited unlimited  # (file size)
-limit cpu unlimited unlimited    # (cpu time)
-limit as unlimited unlimited     # (virtual memory size)
-limit nofile 64000 64000         # (open files)
-limit nproc 64000 64000          # (processes/threads)
-
-pre-start script
-    mkdir -p /var/log/mongodb/
-end script
-
-start on runlevel [2345]
-stop on runlevel [06]
-
-script
-  ENABLE_MONGOS="yes"
-  if [ -f /etc/default/mongos ]; then . /etc/default/mongos; fi
-  if [ "x$ENABLE_MONGOS" = "xyes" ]; then exec %s; fi
-end script """ % INIT_EXEC_MONGOS
 
 PACKAGER = pkg.Package()

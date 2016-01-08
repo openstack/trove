@@ -175,16 +175,6 @@ class MongoDBApp(object):
         LOG.info(_("Configuring instance as a cluster query router."))
         self.is_query_router = True
 
-        # Write the 'mongos' upstart script.
-        # FIXME(pmalik): The control script should really be written in the
-        # elements.
-        # The guestagent will choose the right daemon ('mongod' or 'mongos')
-        # based on the 'cluster_config' values.
-        upstart_contents = (system.MONGOS_UPSTART_CONTENTS.
-                            format(config_file_placeholder=CONFIG_FILE))
-        operating_system.write_file(system.MONGOS_UPSTART, upstart_contents,
-                                    as_root=True)
-
         # FIXME(pmalik): We should really have a separate configuration
         # template for the 'mongos' process.
         # Remove all storage configurations from the template.
