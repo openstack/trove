@@ -418,6 +418,8 @@ class MongoDbCluster(models.Cluster):
                 self.datastore_version.image_id, [], [],
                 self.datastore, self.datastore_version,
                 instance['volume_size'], None,
+                availability_zone=instance.get('availability_zone', None),
+                nics=instance.get('nics', None),
                 cluster_config=cluster_config
             )
             instance_ids.append(new_instance.id)
