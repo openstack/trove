@@ -37,6 +37,7 @@ class ClusterActionsRunner(TestRunner):
         super(ClusterActionsRunner, self).__init__()
 
         self.cluster_id = 0
+        self.current_root_creds = None
 
     @property
     def is_using_existing_cluster(self):
@@ -100,6 +101,32 @@ class ClusterActionsRunner(TestRunner):
             return self.auth_client.clusters.get(cluster_id)
 
         return None
+
+    def run_cluster_root_enable(self, expected_task_name=None,
+                                expected_http_code=200):
+        root_credentials = self.test_helper.get_helper_credentials_root()
+        self.current_root_creds = self.auth_client.root.create_cluster_root(
+            self.cluster_id, root_credentials['password'])
+        self.assert_equal(root_credentials['name'],
+                          self.current_root_creds[0])
+        self.assert_equal(root_credentials['password'],
+                          self.current_root_creds[1])
+        self._assert_cluster_action(self.cluster_id, expected_task_name,
+                                    expected_http_code)
+
+    def run_verify_cluster_root_enable(self):
+        if not self.current_root_creds:
+            raise SkipTest("Root not enabled.")
+        cluster = self.auth_client.clusters.get(self.cluster_id)
+        for instance in cluster.instances:
+            root_enabled_test = self.auth_client.root.is_instance_root_enabled(
+                instance['id'])
+            self.assert_true(root_enabled_test.rootEnabled)
+        self.test_helper.ping(
+            cluster.ip[0],
+            username=self.current_root_creds[0],
+            password=self.current_root_creds[1]
+        )
 
     def run_add_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_add_cluster_data(data_type, self.cluster_id)

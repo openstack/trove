@@ -130,3 +130,15 @@ class CouchbaseRootActionsRunner(RootActionsRunner):
 
     def run_disable_root(self):
         raise SkipTest("Operation is currently not supported.")
+
+
+class PxcRootActionsRunner(RootActionsRunner):
+
+    def run_disable_root_before_enabled(self):
+        raise SkipTest("Operation is currently not supported.")
+
+    def run_disable_root(self):
+        raise SkipTest("Operation is currently not supported.")
+
+    def check_root_still_enabled_after_disable(self):
+        raise SkipTest("Operation is currently not supported.")

@@ -43,11 +43,26 @@ class ClusterActionsGroup(TestGroup):
         """Verify the initial data exists on cluster."""
         self.test_runner.run_verify_initial_cluster_data()
 
+    @test(depends_on=[cluster_create])
+    def cluster_root_enable(self):
+        """Root Enable."""
+        self.test_runner.run_cluster_root_enable()
+
+    @test(depends_on=[cluster_root_enable])
+    def verify_cluster_root_enable(self):
+        """Verify Root Enable."""
+        self.test_runner.run_verify_cluster_root_enable()
+
     @test(depends_on=[cluster_create],
-          runs_after=[verify_initial_cluster_data])
+          runs_after=[verify_initial_cluster_data, verify_cluster_root_enable])
     def cluster_grow(self):
         """Grow cluster."""
         self.test_runner.run_cluster_grow()
+
+    @test(depends_on=[cluster_grow])
+    def verify_cluster_root_enable_after_grow(self):
+        """Verify Root Enabled after grow."""
+        self.test_runner.run_verify_cluster_root_enable()
 
     @test(depends_on=[cluster_grow, add_initial_cluster_data])
     def verify_initial_cluster_data_after_grow(self):
@@ -72,10 +87,16 @@ class ClusterActionsGroup(TestGroup):
         self.test_runner.run_remove_extra_cluster_data()
 
     @test(depends_on=[cluster_create],
-          runs_after=[remove_extra_cluster_data_after_grow])
+          runs_after=[remove_extra_cluster_data_after_grow,
+                      verify_cluster_root_enable_after_grow])
     def cluster_shrink(self):
         """Shrink cluster."""
         self.test_runner.run_cluster_shrink()
+
+    @test(depends_on=[cluster_shrink])
+    def verify_cluster_root_enable_after_shrink(self):
+        """Verify Root Enable after shrink."""
+        self.test_runner.run_verify_cluster_root_enable()
 
     @test(depends_on=[cluster_shrink, add_initial_cluster_data])
     def verify_initial_cluster_data_after_shrink(self):
@@ -106,7 +127,8 @@ class ClusterActionsGroup(TestGroup):
         self.test_runner.run_remove_initial_cluster_data()
 
     @test(depends_on=[cluster_create],
-          runs_after=[remove_initial_cluster_data])
+          runs_after=[remove_initial_cluster_data,
+                      verify_cluster_root_enable_after_shrink])
     def cluster_delete(self):
         """Delete an existing cluster."""
         self.test_runner.run_cluster_delete()

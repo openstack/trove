@@ -399,7 +399,7 @@ class TestRunner(object):
         These are for internal use by the test framework and should
         not be changed by individual test-cases.
         """
-        database_def, user_def = self.build_helper_defs()
+        database_def, user_def, root_def = self.build_helper_defs()
         if database_def:
             self.report.log(
                 "Creating a helper database '%s' on instance: %s"
@@ -412,22 +412,33 @@ class TestRunner(object):
                 % (user_def['name'], user_def['password'], instance_id))
             self.auth_client.users.create(instance_id, [user_def])
 
+        if root_def:
+            # Not enabling root on a single instance of the cluster here
+            # because we want to test the cluster root enable instead.
+            pass
+
     def build_helper_defs(self):
         """Build helper database and user JSON definitions if credentials
         are defined by the helper.
         """
         database_def = None
-        user_def = None
+
+        def _get_credentials(creds):
+            if creds:
+                username = creds.get('name')
+                if username:
+                    password = creds.get('password', '')
+                    return {'name': username, 'password': password,
+                            'databases': [{'name': database}]}
+            return None
+
         credentials = self.test_helper.get_helper_credentials()
         if credentials:
             database = credentials.get('database')
             if database:
                 database_def = {'name': database}
+        credentials_root = self.test_helper.get_helper_credentials_root()
 
-            username = credentials.get('name')
-            if username:
-                password = credentials.get('password', '')
-                user_def = {'name': username, 'password': password,
-                            'databases': [{'name': database}]}
-
-        return database_def, user_def
+        return (database_def,
+                _get_credentials(credentials),
+                _get_credentials(credentials_root))

@@ -101,3 +101,9 @@ class RootActionsGroup(TestGroup):
         """Check the root is also enabled on the restored instance."""
         instance_id = self.backup_runner.restore_instance_id
         self.test_runner.run_check_root_enabled_after_restore(instance_id)
+
+    @test(depends_on=[wait_for_restored_instance],
+          runs_after=[check_root_enabled_after_restore])
+    def delete_restored_instance(self):
+        """Delete root restored instances."""
+        self.backup_runner.run_delete_restored_instance()

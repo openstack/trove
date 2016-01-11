@@ -33,23 +33,31 @@ class SqlHelper(TestHelper):
         self.protocol = protocol
         self.port = port
         self.credentials = self.get_helper_credentials()
+        self.credentials_root = self.get_helper_credentials_root()
         self.test_schema = self.credentials['database']
 
         self._schema_metadata = MetaData()
         self._data_cache = dict()
 
     def create_client(self, host, *args, **kwargs):
-        return sqlalchemy.create_engine(self._get_connection_string(host))
+        username = kwargs.get("username")
+        password = kwargs.get("password")
+        if username and password:
+            creds = {"name": username, "password": password}
+            return sqlalchemy.create_engine(
+                self._build_connection_string(host, creds))
+        return sqlalchemy.create_engine(
+            self._build_connection_string(host, self.credentials))
 
-    def _get_connection_string(self, host):
+    def _build_connection_string(self, host, creds):
         if self.port:
             host = "%s:%d" % (host, self.port)
 
         credentials = {'protocol': self.protocol,
                        'host': host,
-                       'user': self.credentials.get('name', ''),
-                       'password': self.credentials.get('password', ''),
-                       'database': self.credentials.get('database', '')}
+                       'user': creds.get('name', ''),
+                       'password': creds.get('password', ''),
+                       'database': creds.get('database', '')}
         return ('%(protocol)s://%(user)s:%(password)s@%(host)s/%(database)s'
                 % credentials)
 
@@ -123,3 +131,7 @@ class SqlHelper(TestHelper):
     def _select_data_rows(self, client, schema_name, table_name):
         data_table = self._get_schema_table(schema_name, table_name)
         return client.execute(data_table.select()).fetchall()
+
+    def ping(self, host, *args, **kwargs):
+        root_client = self.get_client(host, *args, **kwargs)
+        root_client.execute("SELECT 1;")

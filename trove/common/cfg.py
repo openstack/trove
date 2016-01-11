@@ -691,7 +691,7 @@ pxc_opts = [
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.common.service.DefaultRootController',
+               default='trove.extensions.pxc.service.PxcRootController',
                help='Root controller implementation for pxc.'),
     cfg.StrOpt('guest_log_exposed_logs', default='general,slow_query',
                help='List of Guest Logs to expose for publishing.'),

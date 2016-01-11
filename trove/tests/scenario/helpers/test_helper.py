@@ -158,6 +158,12 @@ class TestHelper(object):
         """
         return {'name': None, 'password': None, 'database': None}
 
+    def get_helper_credentials_root(self):
+        """Return the credentials that the client will be using to
+        access the database as root.
+        """
+        return {'name': None, 'password': None}
+
     ##############
     # Data related
     ##############

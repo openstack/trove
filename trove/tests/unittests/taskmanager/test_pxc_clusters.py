@@ -169,6 +169,7 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
             '1234',
             status=InstanceTasks.GROWING_ERROR)
 
+    @patch.object(ClusterTasks, '_check_cluster_for_root')
     @patch.object(ClusterTasks, 'reset_task')
     @patch.object(ClusterTasks, '_render_cluster_config')
     @patch.object(ClusterTasks, 'get_ip')
@@ -180,7 +181,8 @@ class PXCClusterTasksTest(trove_testtools.TestCase):
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     def test_grow_cluster_successs(self, mock_dv, mock_ds, mock_find_all,
                                    mock_load, mock_ready, mock_guest, mock_ip,
-                                   mock_render, mock_reset_task):
+                                   mock_render, mock_reset_task,
+                                   mock_check_root):
         mock_find_all.return_value.all.return_value = [self.dbinst1]
 
         mock_ip.return_value = "10.0.0.2"

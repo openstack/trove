@@ -22,6 +22,7 @@ from trove.common.remote import create_nova_client
 from trove.common.strategies.cluster import base
 from trove.common.template import ClusterConfigTemplate
 from trove.common import utils
+from trove.extensions.common import models as ext_models
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
 from trove.instance import tasks as inst_tasks
@@ -151,6 +152,16 @@ class PXCClusterTasks(task_models.ClusterTasks):
 
         LOG.debug("End create_cluster for id: %s." % cluster_id)
 
+    def _check_cluster_for_root(self, context, existing_instances,
+                                new_instances):
+        """Check for existing instances root enabled"""
+        for instance in existing_instances:
+            if ext_models.Root.load(context, instance.id):
+                for new_instance in new_instances:
+                    ext_models.RootHistory.create(context, new_instance.id,
+                                                  context.user)
+                return
+
     def grow_cluster(self, context, cluster_id, new_instance_ids):
         LOG.debug("Begin pxc grow_cluster for id: %s." % cluster_id)
 
@@ -202,6 +213,10 @@ class PXCClusterTasks(task_models.ClusterTasks):
                 guest.install_cluster(cluster_context['replication_user'],
                                       cluster_configuration,
                                       bootstrap)
+
+            self._check_cluster_for_root(context,
+                                         existing_instances,
+                                         new_instances)
 
             # apply the new config to all instances
             for instance in existing_instances + new_instances:
