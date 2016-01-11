@@ -80,9 +80,11 @@ class MockMgmtInstanceTest(trove_testtools.TestCase):
             remote, 'create_admin_nova_client', return_value=self.client)
         self.addCleanup(self.admin_client_patch.stop)
         self.admin_client_patch.start()
-        CONF.set_override('host', 'test_host')
-        CONF.set_override('exists_notification_interval', 1)
-        CONF.set_override('notification_service_id', {'mysql': '123'})
+        CONF.set_override('host', '127.0.0.1', enforce_type=True)
+        CONF.set_override('exists_notification_interval', 1,
+                          enforce_type=True)
+        CONF.set_override('notification_service_id', {'mysql': '123'},
+                          enforce_type=True)
 
         super(MockMgmtInstanceTest, self).setUp()
 
