@@ -83,9 +83,6 @@ class TestHelper(object):
 
         self._expected_override_name = expected_override_name
 
-        self._ds_client = None
-        self._current_host = None
-
         # For building data access functions
         # name/fn pairs for each action
         self._data_fns = {self.FN_ADD: {},
@@ -121,11 +118,11 @@ class TestHelper(object):
     # Client related
     ################
     def get_client(self, host, *args, **kwargs):
-        """Gets the datastore client."""
-        if not self._ds_client or self._current_host != host:
-            self._ds_client = self.create_client(host, *args, **kwargs)
-            self._current_host = host
-        return self._ds_client
+        """Gets the datastore client. This isn't cached as the
+        database may be restarted in between calls, causing
+        lost connection errors.
+        """
+        return self.create_client(host, *args, **kwargs)
 
     def create_client(self, host, *args, **kwargs):
         """Create a datastore client."""
@@ -210,11 +207,12 @@ class TestHelper(object):
             def data_fn(self, data_label, data_start, data_size, host,
                         *args, **kwargs):
                 # default action is to skip the test
-                using_str = ''
+                cls_str = ''
                 if self._expected_override_name != self.__class__.__name__:
-                    using_str = ' (using %s)' % self.__class__.__name__
+                    cls_str = (' (%s not loaded)' %
+                               self._expected_override_name)
                 raise SkipTest("Data function '%s' not found in '%s'%s" % (
-                    data_fn_name, self._expected_override_name, using_str))
+                    data_fn_name, self.__class__.__name__, cls_str))
         else:
             def data_fn(self, host, *args, **kwargs):
                 # call the corresponding 'actual' method
