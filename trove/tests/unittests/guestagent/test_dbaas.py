@@ -206,18 +206,20 @@ class DbaasTest(trove_testtools.TestCase):
         self.assertEqual(1, mock_execute.call_count)
         mock_remove.assert_not_called()
 
-    @patch.object(MySqlApp.configuration_manager, 'get_value',
-                  return_value=MagicMock({'get': 'some password'}))
-    def test_get_auth_password(self, get_cnf_mock):
+    @patch.object(operating_system, 'read_file',
+                  return_value={'client':
+                                {'password': 'some password'}})
+    def test_get_auth_password(self, read_file_mock):
         password = MySqlApp.get_auth_password()
-        get_cnf_mock.assert_called_once_with('client')
-        get_cnf_mock.return_value.get.assert_called_once_with('password')
-        self.assertEqual(get_cnf_mock.return_value.get.return_value, password)
+        read_file_mock.assert_called_once_with(MySqlApp.get_client_auth_file(),
+                                               codec=MySqlApp.CFG_CODEC)
+        self.assertEqual("some password", password)
 
-    @patch.object(MySqlApp.configuration_manager, 'get_value',
-                  side_effect=RuntimeError('Error'))
-    def test_get_auth_password_error(self, get_cnf_mock):
-        self.assertRaises(RuntimeError, MySqlApp.get_auth_password)
+    @patch.object(operating_system, 'read_file',
+                  side_effect=RuntimeError('read_file error'))
+    def test_get_auth_password_error(self, _):
+        self.assertRaisesRegexp(RuntimeError, "read_file error",
+                                MySqlApp.get_auth_password)
 
     def test_service_discovery(self):
         with patch.object(os.path, 'isfile', return_value=True):
@@ -418,6 +420,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
         # trove.guestagent.common.configuration import ConfigurationManager
         dbaas.orig_configuration_manager = dbaas.MySqlApp.configuration_manager
         dbaas.MySqlApp.configuration_manager = Mock()
+        dbaas.orig_get_auth_password = dbaas.MySqlApp.get_auth_password
+        dbaas.MySqlApp.get_auth_password = Mock()
 
         self.mySqlAdmin = MySqlAdmin()
 
@@ -427,6 +431,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
             self.orig_MySQLUser_is_valid_user_name)
         dbaas.MySqlApp.configuration_manager = \
             dbaas.orig_configuration_manager
+        dbaas.MySqlApp.get_auth_password = \
+            dbaas.orig_get_auth_password
         super(MySqlAdminTest, self).tearDown()
 
     def test__associate_dbs(self):
@@ -1056,20 +1062,19 @@ class MySqlAppTest(trove_testtools.TestCase):
                   return_value='some_password')
     def test_reset_configuration(self, auth_pwd_mock):
         save_cfg_mock = Mock()
-        apply_mock = Mock()
+        save_auth_mock = Mock()
         wipe_ib_mock = Mock()
 
         configuration = {'config_contents': 'some junk'}
 
         self.mySqlApp.configuration_manager.save_configuration = save_cfg_mock
-        self.mySqlApp.configuration_manager.apply_system_override = apply_mock
+        self.mySqlApp._save_authentication_properties = save_auth_mock
         self.mySqlApp.wipe_ib_logfiles = wipe_ib_mock
         self.mySqlApp.reset_configuration(configuration=configuration)
 
         save_cfg_mock.assert_called_once_with('some junk')
-        apply_mock.assert_called_once_with(
-            {'client': {'user': dbaas_base.ADMIN_USER_NAME,
-                        'password': auth_pwd_mock.return_value}})
+        save_auth_mock.assert_called_once_with(
+            auth_pwd_mock.return_value)
         wipe_ib_mock.assert_called_once_with()
 
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
@@ -1355,6 +1360,16 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.assertTrue(pkg_install.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
+    @patch.object(operating_system, 'write_file')
+    def test_save_authentication_properties(self, write_file_mock):
+        self.mySqlApp._save_authentication_properties("some_password")
+        write_file_mock.assert_called_once_with(
+            MySqlApp.get_client_auth_file(),
+            {'client': {'host': '127.0.0.1',
+                        'password': 'some_password',
+                        'user': dbaas_base.ADMIN_USER_NAME}},
+            codec=MySqlApp.CFG_CODEC)
+
     @patch.object(utils, 'generate_random_password',
                   return_value='some_password')
     @patch.object(dbaas_base, 'clear_expired_password')
@@ -1472,18 +1487,16 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.assertFalse(self.mySqlApp.start_mysql.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
+    @patch.object(dbaas.MySqlApp, '_save_authentication_properties')
     @patch.object(dbaas, 'get_engine',
                   return_value=MagicMock(name='get_engine'))
-    def test_reset_admin_password(self, mock_engine):
+    def test_reset_admin_password(self, mock_engine, mock_save_auth):
         with patch.object(dbaas.MySqlApp, 'local_sql_client',
                           return_value=self.mock_client):
-            config_manager = self.mySqlApp.configuration_manager
-            config_manager.apply_system_override = Mock()
             self.mySqlApp._create_admin_user = Mock()
             self.mySqlApp.reset_admin_password("newpassword")
-            self.assertEqual(1,
-                             config_manager.apply_system_override.call_count)
             self.assertEqual(1, self.mySqlApp._create_admin_user.call_count)
+            mock_save_auth.assert_called_once_with("newpassword")
 
 
 class TextClauseMatcher(object):

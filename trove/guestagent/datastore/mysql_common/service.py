@@ -567,6 +567,7 @@ class BaseMySqlApp(object):
     """Prepares DBaaS on a Guest container."""
 
     TIME_OUT = 1000
+    CFG_CODEC = IniCodec()
 
     @property
     def local_sql_client(self):
@@ -577,7 +578,7 @@ class BaseMySqlApp(object):
         return self._keep_alive_connection_cls
 
     configuration_manager = ConfigurationManager(
-        MYSQL_CONFIG, MYSQL_OWNER, MYSQL_OWNER, IniCodec(), requires_root=True,
+        MYSQL_CONFIG, MYSQL_OWNER, MYSQL_OWNER, CFG_CODEC, requires_root=True,
         override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT))
 
     def get_engine(self):
@@ -601,7 +602,9 @@ class BaseMySqlApp(object):
 
     @classmethod
     def get_auth_password(cls):
-        return cls.configuration_manager.get_value('client').get('password')
+        auth_config = operating_system.read_file(
+            cls.get_client_auth_file(), codec=cls.CFG_CODEC)
+        return auth_config['client']['password']
 
     @classmethod
     def get_data_dir(cls):
@@ -612,6 +615,10 @@ class BaseMySqlApp(object):
     def set_data_dir(cls, value):
         cls.configuration_manager.apply_system_override(
             {MySQLConfParser.SERVER_CONF_SECTION: {'datadir': value}})
+
+    @classmethod
+    def get_client_auth_file(self):
+        return guestagent_utils.build_file_path("~", ".my.cnf")
 
     def __init__(self, status, local_sql_client, keep_alive_connection_cls):
         """By default login with root no password for initial setup."""
@@ -684,8 +691,11 @@ class BaseMySqlApp(object):
         self.wipe_ib_logfiles()
 
     def _save_authentication_properties(self, admin_password):
-        self.configuration_manager.apply_system_override(
-            {'client': {'user': ADMIN_USER_NAME, 'password': admin_password}})
+        client_sect = {'client': {'user': ADMIN_USER_NAME,
+                                  'password': admin_password,
+                                  'host': '127.0.0.1'}}
+        operating_system.write_file(self.get_client_auth_file(),
+                                    client_sect, codec=self.CFG_CODEC)
 
     def secure_root(self, secure_remote_root=True):
         with self.local_sql_client(self.get_engine()) as client:
