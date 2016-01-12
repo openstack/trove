@@ -262,6 +262,7 @@ class API(object):
         finally:
             if server is not None:
                 server.stop()
+                server.wait()
 
     def restart(self):
         """Restart the database server."""
