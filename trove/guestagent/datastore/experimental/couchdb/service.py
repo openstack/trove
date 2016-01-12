@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import getpass
 import json
-
 from oslo_log import log as logging
 
 from trove.common import cfg
@@ -69,44 +69,21 @@ class CouchDBApp(object):
         """
         When CouchDB is installed, a default user 'couchdb' is created.
         Inorder to start/stop/restart CouchDB service as the current
-        OS user, add this user to the 'couchdb' group and provide read/
-        write access to the 'couchdb' group.
+        OS user, add the current OS user to the 'couchdb' group and provide
+        read/write access to the 'couchdb' group.
         """
         try:
             LOG.debug("Changing permissions.")
-            operating_system.chown(
-                COUCHDB_LIB_DIR, 'couchdb', 'couchdb', as_root=True
-            )
-            operating_system.chown(
-                COUCHDB_LOG_DIR, 'couchdb', 'couchdb', as_root=True
-            )
-            operating_system.chown(
-                COUCHDB_BIN_DIR, 'couchdb', 'couchdb', as_root=True
-            )
-            operating_system.chown(
-                COUCHDB_CONFIG_DIR, 'couchdb', 'couchdb', as_root=True
-            )
-            operating_system.chmod(COUCHDB_LIB_DIR, FileMode.ADD_GRP_RW,
-                                   as_root=True)
-            operating_system.chmod(COUCHDB_LOG_DIR, FileMode.ADD_GRP_RW,
-                                   as_root=True)
-            operating_system.chmod(COUCHDB_BIN_DIR, FileMode.ADD_GRP_RW,
-                                   as_root=True)
-            operating_system.chmod(COUCHDB_CONFIG_DIR, FileMode.ADD_GRP_RW,
-                                   as_root=True)
-            self.execute_change_permission_commands(
-                system.UPDATE_GROUP_MEMBERSHIP
-            )
+            for dir in [COUCHDB_LIB_DIR, COUCHDB_LOG_DIR,
+                        COUCHDB_BIN_DIR, COUCHDB_CONFIG_DIR]:
+                operating_system.chown(dir, 'couchdb', 'couchdb', as_root=True)
+                operating_system.chmod(dir, FileMode.ADD_GRP_RW, as_root=True)
+
+            operating_system.change_user_group(getpass.getuser(), 'couchdb',
+                                               as_root=True)
             LOG.debug("Successfully changed permissions.")
         except exception.ProcessExecutionError:
             LOG.exception(_("Error changing permissions."))
-
-    def execute_change_permission_commands(self, chng_perm_cmd):
-        out, err = utils.execute_with_timeout(chng_perm_cmd, shell=True)
-        if err:
-            raise exception.ProcessExecutionError(cmd=chng_perm_cmd,
-                                                  stderr=err,
-                                                  stdout=out)
 
     def stop_db(self, update_db=False, do_not_start_on_reboot=False):
         self.status.stop_db_service(

@@ -628,6 +628,74 @@ class TestOperatingSystem(trove_testtools.TestCase):
                               "Got unknown keyword args: {'_unknown_kw': 0}"),
             'path', 'usr', None, _unknown_kw=0)
 
+    def test_change_user_group(self):
+        self._assert_execute_call(
+            [['usermod', '-a', '-G', 'user', 'group']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.change_user_group, None, 'group', 'user',
+            as_root=True)
+
+        self._assert_execute_call(
+            [['usermod', '-a', '-G', 'user', 'group']],
+            [{'run_as_root': True, 'root_helper': 'sudo'}],
+            operating_system.change_user_group, None, 'group', 'user',
+            append=True, add_group=True, as_root=True)
+
+        self._assert_execute_call(
+            [['usermod', '-a', '-G', 'user', 'group']],
+            [{'timeout': 100}],
+            operating_system.change_user_group, None, 'group', 'user',
+            timeout=100)
+
+        self._assert_execute_call(
+            [['usermod', '-a', '-G', 'user', 'group']],
+            [{'run_as_root': True, 'root_helper': "sudo", 'timeout': None}],
+            operating_system.change_user_group, None, 'group', 'user',
+            timeout=None, as_root=True)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing user."), '', 'group')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing user."), None, 'group')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing group."), 'user', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing group."), 'user', None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing user."), '', '')
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(exception.UnprocessableEntity,
+                              "Missing user."), None, None)
+
+        self._assert_execute_call(
+            None, None,
+            operating_system.change_user_group,
+            ExpectedException(UnknownArgumentError,
+                              "Got unknown keyword args: {'_unknown_kw': 0}"),
+            'user', 'add_group', _unknown_kw=0)
+
     def test_create_directory(self):
         self._assert_execute_call(
             [['mkdir', '-p', 'path']],

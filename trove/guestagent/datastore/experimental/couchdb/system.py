@@ -18,6 +18,5 @@ UPDATE_BIND_ADDRESS = (
     "sudo sed -i -r 's/;bind_address = 127.0.0.1/bind_address = 0.0.0.0/' "
     "/etc/couchdb/local.ini")
 TIME_OUT = 1200
-UPDATE_GROUP_MEMBERSHIP = "sudo usermod -a -G couchdb $(whoami)"
 COUCHDB_HTTPD_PORT = "5984"
 COUCHDB_SERVER_STATUS = "curl http://127.0.0.1:" + COUCHDB_HTTPD_PORT
