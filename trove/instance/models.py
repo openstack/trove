@@ -15,7 +15,6 @@
 #    under the License.
 
 """Model classes that form the core of instances functionality."""
-from __builtin__ import setattr
 from datetime import datetime
 from datetime import timedelta
 import re
