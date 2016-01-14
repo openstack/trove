@@ -44,11 +44,11 @@ class InstanceController(wsgi.Controller):
 
     @classmethod
     def get_action_schema(cls, body, action_schema):
-        action_type = body.keys()[0]
+        action_type = list(body.keys())[0]
         action_schema = action_schema.get(action_type, {})
         if action_type == 'resize':
             # volume or flavorRef
-            resize_action = body[action_type].keys()[0]
+            resize_action = list(body[action_type].keys())[0]
             action_schema = action_schema.get(resize_action, {})
         return action_schema
 

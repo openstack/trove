@@ -471,7 +471,7 @@ class XMLDictSerializer(DictSerializer):
 
     def default(self, data):
         # We expect data to contain a single key which is the XML root.
-        root_key = data.keys()[0]
+        root_key = list(data.keys())[0]
         doc = minidom.Document()
         node = self._to_xml_node(doc, self.metadata, root_key, data[root_key])
 
