@@ -372,7 +372,7 @@ class PaginationTests(trove_testtools.TestCase):
             'size': 2.0,
             'deleted': False
         }
-        for backup in xrange(50):
+        for backup in range(50):
             bkup_info.update({'name': 'Backup-%s' % backup})
             models.DBBackup.create(**bkup_info)
 
