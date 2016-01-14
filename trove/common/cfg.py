@@ -1153,10 +1153,11 @@ mariadb_opts = [
                help='Default strategy to perform backups.',
                deprecated_name='backup_strategy',
                deprecated_group='DEFAULT'),
-    cfg.StrOpt('replication_strategy', default='MysqlBinlogReplication',
+    cfg.StrOpt('replication_strategy', default='MariaDBGTIDReplication',
                help='Default strategy for replication.'),
     cfg.StrOpt('replication_namespace',
-               default='trove.guestagent.strategies.replication.mysql_binlog',
+               default='trove.guestagent.strategies.replication.experimental'
+               '.mariadb_gtid',
                help='Namespace to load replication strategies from.'),
     cfg.StrOpt('mount_point', default='/var/lib/mysql',
                help="Filesystem path for mounting "

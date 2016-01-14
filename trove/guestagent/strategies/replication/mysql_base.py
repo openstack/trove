@@ -81,6 +81,13 @@ class MysqlReplicationBase(base.Replication):
 
         return replication_user
 
+    def backup_runner_for_replication(self):
+        return {
+            'runner': REPL_BACKUP_RUNNER,
+            'extra_opts': REPL_EXTRA_OPTS,
+            'incremental_runner': REPL_BACKUP_INCREMENTAL_RUNNER
+        }
+
     def snapshot_for_replication(self, context, service,
                                  location, snapshot_info):
         snapshot_id = snapshot_info['id']
@@ -90,9 +97,8 @@ class MysqlReplicationBase(base.Replication):
         # Only create a backup if it's the first replica
         if replica_number == 1:
             AGENT.execute_backup(
-                context, snapshot_info, runner=REPL_BACKUP_RUNNER,
-                extra_opts=REPL_EXTRA_OPTS,
-                incremental_runner=REPL_BACKUP_INCREMENTAL_RUNNER)
+                context, snapshot_info,
+                **self.backup_runner_for_replication())
         else:
             LOG.debug("Using existing backup created for previous replica.")
         LOG.debug("Replication snapshot %s used for replica number %d."
@@ -119,13 +125,9 @@ class MysqlReplicationBase(base.Replication):
 
     def enable_as_slave(self, service, snapshot, slave_config):
         try:
-            LOG.debug("enable_as_slave: about to call write_overrides")
             service.write_replication_replica_overrides(slave_config)
-            LOG.debug("enable_as_slave: about to call restart")
             service.restart()
-            LOG.debug("enable_as_slave: about to call connect_to_master")
             self.connect_to_master(service, snapshot)
-            LOG.debug("enable_as_slave: after call connect_to_master")
         except Exception:
             LOG.exception(_("Exception enabling guest as replica"))
             raise

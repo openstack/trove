@@ -1,2 +1,2 @@
 [mysqld]
-log_bin = /var/lib/mysql/data/mysql-bin.log
+log_bin = /var/lib/mysql/data/mariadb-bin.log
