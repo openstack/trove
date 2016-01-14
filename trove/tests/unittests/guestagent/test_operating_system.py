@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import itertools
 import os
 import re
 import stat
@@ -21,6 +20,7 @@ import tempfile
 
 from mock import call, patch
 from oslo_concurrency.processutils import UnknownArgumentError
+import six
 from testtools import ExpectedException
 
 from trove.common import exception
@@ -783,7 +783,7 @@ class TestOperatingSystem(trove_testtools.TestCase):
                     self.assertEqual(return_value, actual_value,
                                      "Return value mismatch.")
                 expected_calls = []
-                for arg, kw in itertools.izip(exec_args, exec_kwargs):
+                for arg, kw in six.moves.zip(exec_args, exec_kwargs):
                     expected_calls.append(call(*arg, **kw))
 
                 self.assertEqual(expected_calls, exec_call.mock_calls,
