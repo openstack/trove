@@ -14,10 +14,7 @@
 #    under the License.
 
 import bisect
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+import collections
 import six.moves.urllib.parse as urllib_parse
 
 
@@ -114,7 +111,8 @@ class AppUrl(object):
         parsed_url = urllib_parse.urlparse(self.url)
         # Build a dictionary out of the query parameters in the URL
         # with an OrderedDict to preserve the order of the URL.
-        query_params = OrderedDict(urllib_parse.parse_qsl(parsed_url.query))
+        query_params = collections.OrderedDict(
+            urllib_parse.parse_qsl(parsed_url.query))
         # Use kwargs to change or update any values in the query dict.
         query_params.update(kwargs)
 
