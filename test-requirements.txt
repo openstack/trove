@@ -24,3 +24,4 @@ redis>=2.10.0 # MIT
 psycopg2>=2.5 # LGPL/ZPL
 cassandra-driver>=2.1.4 # Apache-2.0
 pycrypto>=2.6 # Public Domain
+couchdb>=0.8 # Apache-2.0

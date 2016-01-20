@@ -161,3 +161,9 @@ restore_namespace = trove.guestagent.strategies.restore.experimental.cassandra_i
 # backup_strategy = DB2Backup
 # backup_namespace = trove.guestagent.strategies.backup.experimental.db2_impl
 # restore_namespace = trove.guestagent.strategies.restore.experimental.db2_impl
+
+[couchdb]
+#For CouchDB, the following are the defaults for backup and restore:
+# backup_strategy = CouchDBBackup
+# backup_namespace = trove.guestagent.strategies.backup.experimental.couchdb_impl
+# restore_namespace = trove.guestagent.strategies.restore.experimental.couchdb_impl

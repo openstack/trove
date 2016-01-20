@@ -17,10 +17,12 @@ import os
 
 from oslo_log import log as logging
 
+from trove.common.i18n import _
+from trove.common import instance as rd_instance
+from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchdb import service
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
-
 
 LOG = logging.getLogger(__name__)
 
@@ -59,6 +61,8 @@ class Manager(manager.Manager):
             self.app.start_db()
         self.app.change_permissions()
         self.app.make_host_reachable()
+        if backup_info:
+            self._perform_restore(backup_info, context, mount_point)
 
     def stop_db(self, context, do_not_start_on_reboot=False):
         """
@@ -81,3 +85,23 @@ class Manager(manager.Manager):
     def start_db_with_conf_changes(self, context, config_contents):
         LOG.debug("Starting CouchDB with configuration changes.")
         self.app.start_db_with_conf_changes(config_contents)
+
+    def _perform_restore(self, backup_info, context, restore_location):
+        """
+        Restores all CouchDB databases and their documents from the
+        backup.
+        """
+        LOG.info(_("Restoring database from backup %s") %
+                 backup_info['id'])
+        try:
+            backup.restore(context, backup_info, restore_location)
+        except Exception:
+            LOG.exception(_("Error performing restore from backup %s") %
+                          backup_info['id'])
+            self.status.set_status(rd_instance.ServiceStatuses.FAILED)
+            raise
+        LOG.info(_("Restored database successfully"))
+
+    def create_backup(self, context, backup_info):
+        LOG.debug("Creating backup for CouchDB.")
+        backup.backup(context, backup_info)

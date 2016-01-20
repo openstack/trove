@@ -60,7 +60,10 @@ BACKUP_DB2_CLS = ("trove.guestagent.strategies.backup."
                   "experimental.db2_impl.DB2Backup")
 RESTORE_DB2_CLS = ("trove.guestagent.strategies.restore."
                    "experimental.db2_impl.DB2Backup")
-
+BACKUP_COUCHDB_BACKUP_CLS = ("trove.guestagent.strategies.backup."
+                             "experimental.couchdb_impl.CouchDBBackup")
+RESTORE_COUCHDB_BACKUP_CLS = ("trove.guestagent.strategies.restore."
+                              "experimental.couchdb_impl.CouchDBBackup")
 
 PIPE = " | "
 ZIP = "gzip"
@@ -105,6 +108,9 @@ REDISBACKUP_RESTORE = "tee /var/lib/redis/dump.rdb"
 
 DB2BACKUP_CMD = "sudo tar cPf - /home/db2inst1/db2inst1/backup"
 DB2BACKUP_RESTORE = "sudo tar xPf -"
+
+COUCHDB_BACKUP_CMD = "sudo tar cpPf - /var/lib/couchdb"
+COUCHDB_RESTORE_CMD = "sudo tar xPf -"
 
 
 class GuestAgentBackupTest(trove_testtools.TestCase):
@@ -464,6 +470,39 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + DB2BACKUP_RESTORE)
+
+    def test_backup_encrypted_couchdbbackup_command(self):
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_COUCHDB_BACKUP_CLS)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(
+            COUCHDB_BACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn("gz.enc", bkp.manifest)
+
+    def test_backup_not_encrypted_couchdbbackup_command(self):
+        backupBase.BackupRunner.is_encrypted = False
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_COUCHDB_BACKUP_CLS)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(COUCHDB_BACKUP_CMD + PIPE + ZIP, bkp.command)
+        self.assertIn("gz", bkp.manifest)
+
+    def test_restore_decrypted_couchdbbackup_command(self):
+        restoreBase.RestoreRunner.is_encrypted = False
+        RunnerClass = utils.import_class(RESTORE_COUCHDB_BACKUP_CLS)
+        restr = RunnerClass(None, restore_location="/var/lib/couchdb",
+                            location="filename", checksum="md5")
+        self.assertEqual(UNZIP + PIPE + COUCHDB_RESTORE_CMD, restr.restore_cmd)
+
+    def test_restore_encrypted_couchdbbackup_command(self):
+        restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_COUCHDB_BACKUP_CLS)
+        restr = RunnerClass(None, restore_location="/var/lib/couchdb",
+                            location="filename", checksum="md5")
+        self.assertEqual(DECRYPT + PIPE + UNZIP + PIPE + COUCHDB_RESTORE_CMD,
+                         restr.restore_cmd)
 
 
 class CassandraBackupTest(trove_testtools.TestCase):
@@ -905,6 +944,75 @@ class DB2RestoreTests(trove_testtools.TestCase):
             expected_content_length, actual_content_length)
 
     def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner._run_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner.post_restore = mock.Mock()
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+
+class CouchDBBackupTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(CouchDBBackupTests, self).setUp()
+        self.backup_runner = utils.import_class(BACKUP_COUCHDB_BACKUP_CLS)
+        self.backup_runner_patch = patch.multiple(
+            self.backup_runner, _run=DEFAULT,
+            _run_pre_backup=DEFAULT, _run_post_backup=DEFAULT)
+
+    def tearDown(self):
+        super(CouchDBBackupTests, self).tearDown()
+        self.backup_runner_patch.stop()
+
+    def test_backup_success(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        with self.backup_runner(12345):
+            pass
+
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        backup_runner_mocks['_run_post_backup'].assert_called_once_with()
+
+    def test_backup_failed_due_to_run_backup(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        backup_runner_mocks['_run'].configure_mock(
+            side_effect=exception.TroveError('test')
+        )
+        with ExpectedException(exception.TroveError, 'test'):
+            with self.backup_runner(12345):
+                pass
+
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        self.assertEqual(0, backup_runner_mocks['_run_post_backup'].call_count)
+
+
+class CouchDBRestoreTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(CouchDBRestoreTests, self).setUp()
+
+        self.restore_runner = utils.import_class(
+            RESTORE_COUCHDB_BACKUP_CLS)(
+                'swift', location='http://some.where',
+                checksum='True_checksum',
+                restore_location='/tmp/somewhere')
+
+    def tearDown(self):
+        super(CouchDBRestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=expected_content_length)
+        self.restore_runner.pre_restore = mock.Mock()
+        self.restore_runner.post_restore = mock.Mock()
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner.pre_restore = mock.Mock()
         self.restore_runner._run_restore = mock.Mock(
             side_effect=exception.ProcessExecutionError('Error'))
         self.restore_runner.post_restore = mock.Mock()
