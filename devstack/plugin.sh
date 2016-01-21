@@ -101,6 +101,11 @@ function configure_trove {
     setup_trove_logging $TROVE_CONF
     iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
 
+    # Increase default quota.
+    iniset $TROVE_CONF DEFAULT max_accepted_volume_size 10
+    iniset $TROVE_CONF DEFAULT max_instances_per_user 10
+    iniset $TROVE_CONF DEFAULT max_volumes_per_user 10
+
     configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
 
     # (Re)create trove taskmanager conf file if needed
@@ -121,6 +126,10 @@ function configure_trove {
         iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_compute_service_type compute_legacy
 
         setup_trove_logging $TROVE_TASKMANAGER_CONF
+
+        # Increase default timeouts (required by the tests).
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout 300
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout 1200
     fi
 
     # (Re)create trove conductor conf file if needed

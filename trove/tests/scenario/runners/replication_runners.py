@@ -31,6 +31,7 @@ class ReplicationRunner(TestRunner):
         self.master_host = self.get_instance_host(self.master_id)
         self.replica_1_host = None
         self.master_backup_count = None
+        self.used_data_sets = set()
 
     def run_add_data_for_replication(self, data_type=DataType.small):
         self.assert_add_replication_data(data_type, self.master_host)
@@ -40,6 +41,7 @@ class ReplicationRunner(TestRunner):
         'helper' class should implement the 'add_<data_type>_data' method.
         """
         self.test_helper.add_data(data_type, host)
+        self.used_data_sets.add(data_type)
 
     def run_verify_data_for_replication(self, data_type=DataType.small):
         self.assert_verify_replication_data(data_type, self.master_host)
@@ -203,9 +205,9 @@ class ReplicationRunner(TestRunner):
         """In order for this to work, the corresponding datastore
         'helper' class should implement the 'remove_<type>_data' method.
         """
-        self.test_helper.remove_data(DataType.small, host)
-        self.test_helper.remove_data(DataType.tiny, host)
-        self.test_helper.remove_data(DataType.tiny2, host)
+        for data_set in self.used_data_sets:
+            self.report.log("Removing replicated data set: %s" % data_set)
+            self.test_helper.remove_data(data_set, host)
 
     def run_detach_replica_from_source(self,
                                        expected_states=['ACTIVE'],

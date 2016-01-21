@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import SkipTest
+
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -25,10 +27,23 @@ class DatabaseActionsRunner(TestRunner):
     # likely require replacing GA casts with calls which I believe are
     # more appropriate anyways.
 
+    def __init__(self):
+        super(DatabaseActionsRunner, self).__init__()
+        self.db_defs = []
+
+    @property
+    def first_db_def(self):
+        if self.db_defs:
+            return self.db_defs[0]
+        raise SkipTest("No valid database definitions provided.")
+
     def run_databases_create(self, expected_http_code=202):
         databases = self.test_helper.get_valid_database_definitions()
-        self.db_defs = self.assert_databases_create(
-            self.instance_info.id, databases, expected_http_code)
+        if databases:
+            self.db_defs = self.assert_databases_create(
+                self.instance_info.id, databases, expected_http_code)
+        else:
+            raise SkipTest("No valid database definitions provided.")
 
     def assert_databases_create(self, instance_id, serial_databases_def,
                                 expected_http_code):
@@ -104,7 +119,7 @@ class DatabaseActionsRunner(TestRunner):
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
         self.assert_databases_create_failure(
-            self.instance_info.id, self.db_defs[0],
+            self.instance_info.id, self.first_db_def,
             expected_exception, expected_http_code)
 
     def assert_databases_create_failure(
