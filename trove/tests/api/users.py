@@ -25,7 +25,6 @@ from proboscis.asserts import fail
 from proboscis import before_class
 from proboscis import test
 from troveclient.compat import exceptions
-from troveclient.openstack.common.apiclient.exceptions import ValidationError
 
 from trove import tests
 from trove.tests.api.databases import TestDatabases
@@ -308,23 +307,6 @@ class TestUsers(object):
                       self.dbaas.users.update_attributes, instance_info.id,
                       username, user_new, hostname)
         assert_equal(400, self.dbaas.last_http_code)
-        self.dbaas.users.delete(instance_info.id, username, hostname=hostname)
-
-    @test()
-    def test_updateuser_nochanges(self):
-        # Cannot update the user without passing in at least one change
-        users = []
-        username = "testuser_nochg"
-        hostname = "192.168.0.1"
-        users.append({"name": username, "password": "password",
-                      "host": hostname, "databases": []})
-        self.dbaas.users.create(instance_info.id, users)
-        user_new = {}
-        assert_raises(ValidationError,
-                      self.dbaas.users.update_attributes, instance_info.id,
-                      username, user_new, hostname)
-        # The last_http_code doesn't have to be checked, since the exception
-        # is thrown before the actual http request is executed
         self.dbaas.users.delete(instance_info.id, username, hostname=hostname)
 
     @test(depends_on=[test_create_users])
