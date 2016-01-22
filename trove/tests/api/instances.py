@@ -1583,7 +1583,7 @@ class CheckInstance(AttrCheck):
             self.instance['volume'], allowed_attrs,
             msg="Volume")
 
-    def slave_of(self):
+    def replica_of(self):
         if 'replica_of' not in self.instance:
             self.fail("'replica_of' not found in instance.")
         else:
