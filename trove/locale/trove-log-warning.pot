@@ -1,34 +1,34 @@
 # Translations template for trove.
-# Copyright (C) 2015 ORGANIZATION
+# Copyright (C) 2016 ORGANIZATION
 # This file is distributed under the same license as the trove project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2015.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 4.0.0.0b3.dev14\n"
+"Project-Id-Version: trove 5.0.0.0b2\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-08-03 06:13+0000\n"
+"POT-Creation-Date: 2016-01-22 06:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.0\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: trove/common/profile.py:38
+#: trove/common/profile.py:39
 msgid ""
 "The OpenStack Profiler is enabled. Using one of the hmac_keys specified "
-"in the api-paste.ini file (typically in /etc/trove), a trace can be made "
-"of all requests. Only an admin user can retrieve the trace information, "
+"in the trove.conf file (typically in /etc/trove), a trace can be made of "
+"all requests. Only an admin user can retrieve the trace information, "
 "however.\n"
 "To disable the profiler, add the following to the configuration file:\n"
 "[profiler]\n"
 "enabled=false"
 msgstr ""
 
-#: trove/instance/models.py:458
+#: trove/instance/models.py:459
 #, python-format
 msgid "Could not load instance %s."
 msgstr ""
