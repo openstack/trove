@@ -47,7 +47,7 @@ class UserController(wsgi.Controller):
     def get_schema(cls, action, body):
         action_schema = super(UserController, cls).get_schema(action, body)
         if 'update_all' == action:
-            update_type = body.keys()[0]
+            update_type = list(body.keys())[0]
             action_schema = action_schema.get(update_type, {})
         return action_schema
 

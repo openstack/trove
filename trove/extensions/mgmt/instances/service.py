@@ -41,7 +41,7 @@ class MgmtInstanceController(InstanceController):
 
     @classmethod
     def get_action_schema(cls, body, action_schema):
-        action_type = body.keys()[0]
+        action_type = list(body.keys())[0]
         return action_schema.get(action_type, {})
 
     @admin_context
