@@ -43,7 +43,7 @@ def create_fake_data():
     from random import choice
     from string import ascii_letters
 
-    return ''.join([choice(ascii_letters) for _ in xrange(1024)])
+    return ''.join([choice(ascii_letters) for _ in range(1024)])
 
 
 class MockBackup(BackupRunner):

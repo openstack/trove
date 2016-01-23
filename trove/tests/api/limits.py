@@ -122,7 +122,7 @@ class Limits(object):
         """Test_limits_get_remaining."""
 
         limits = ()
-        for i in xrange(5):
+        for i in range(5):
             limits = self.rd_client.limits.list()
 
         d = self._get_limits_as_dict(limits)
@@ -148,7 +148,7 @@ class Limits(object):
 
         get = None
         encountered = False
-        for i in xrange(DEFAULT_RATE + 50):
+        for i in range(DEFAULT_RATE + 50):
             try:
                 limits = rd_client.limits.list()
                 d = self._get_limits_as_dict(limits)

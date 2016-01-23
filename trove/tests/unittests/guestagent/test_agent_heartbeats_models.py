@@ -128,7 +128,7 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
         # create some unique records with the same version
         version = str(uuid.uuid4())
 
-        for x in xrange(5):
+        for x in range(5):
             instance_id = str(uuid.uuid4())
             heartbeat = AgentHeartBeat.create(
                 instance_id=instance_id,
