@@ -43,13 +43,14 @@ class Manager(periodic_task.PeriodicTasks):
             "method": method_name,
             "sent": sent,
         }
-        LOG.debug("Instance %(instance)s sent %(method)s at %(sent)s "
-                  % fields)
 
         if sent is None:
             LOG.error(_("[Instance %s] sent field not present. Cannot "
                         "compare.") % instance_id)
             return False
+
+        LOG.debug("Instance %(instance)s sent %(method)s at %(sent)s "
+                  % fields)
 
         seen = None
         try:
@@ -76,14 +77,14 @@ class Manager(periodic_task.PeriodicTasks):
             seen.save()
             return False
 
-        else:
-            LOG.info(_("[Instance %s] Rec'd message is older than last seen. "
-                       "Discarding.") % instance_id)
-            return True
+        LOG.info(_("[Instance %s] Rec'd message is older than last seen. "
+                   "Discarding.") % instance_id)
+        return True
 
     def heartbeat(self, context, instance_id, payload, sent=None):
-        LOG.debug("Instance ID: %s" % str(instance_id))
-        LOG.debug("Payload: %s" % str(payload))
+        LOG.debug("Instance ID: %(instance)s, Payload: %(payload)s" %
+                  {"instance": str(instance_id),
+                   "payload": str(payload)})
         status = t_models.InstanceServiceStatus.find_by(
             instance_id=instance_id)
         if self._message_too_old(instance_id, 'heartbeat', sent):
@@ -95,8 +96,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def update_backup(self, context, instance_id, backup_id,
                       sent=None, **backup_fields):
-        LOG.debug("Instance ID: %s" % str(instance_id))
-        LOG.debug("Backup ID: %s" % str(backup_id))
+        LOG.debug("Instance ID: %(instance)s, Backup ID: %(backup)s" %
+                  {"instance": str(instance_id),
+                   "backup": str(backup_id)})
         backup = bkup_models.DBBackup.find_by(id=backup_id)
         # TODO(datsun180b): use context to verify tenant matches
 

@@ -63,7 +63,7 @@ class MySQLRestoreMixin(object):
     def mysql_is_not_running(self):
         try:
             utils.execute_with_timeout("/usr/bin/pgrep", "mysqld")
-            LOG.info("MySQL is still running.")
+            LOG.info(_("MySQL is still running."))
             return False
         except exception.ProcessExecutionError:
             LOG.debug("MySQL is not running.")

@@ -17,6 +17,7 @@ from oslo_log import log as logging
 
 from trove.common.auth import admin_context
 from trove.common import exception
+from trove.common.i18n import _
 from trove.common import wsgi
 from trove.extensions.mgmt.quota import views
 from trove.quota.models import Quota
@@ -31,15 +32,19 @@ class QuotaController(wsgi.Controller):
     @admin_context
     def show(self, req, tenant_id, id):
         """Return all quotas for this tenant."""
-        LOG.info(_("req : '%s'\n\n") % req)
-        LOG.info(_("Indexing quota info for tenant '%s'") % id)
+        LOG.info(_("Indexing quota info for tenant '%(id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "id": id, "req": req})
+
         quotas = quota_engine.get_all_quotas_by_tenant(id)
         return wsgi.Result(views.QuotaView(quotas).data(), 200)
 
     @admin_context
     def update(self, req, body, tenant_id, id):
-        LOG.info("req : '%s'\n\n" % req)
-        LOG.info("Updating quota limits for tenant '%s'" % id)
+        LOG.info(_("Updating quota limits for tenant '%(id)s'\n"
+                   "req : '%(req)s'\n\n") % {
+                       "id": id, "req": req})
+
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
 

@@ -73,8 +73,8 @@ class SecurityGroupRuleController(wsgi.Controller):
         sec_group = sec_group_rule.get_security_group(tenant_id)
 
         if sec_group is None:
-            LOG.error("Attempting to delete Group Rule that does not exist or "
-                      "does not belong to tenant %s" % tenant_id)
+            LOG.error(_("Attempting to delete Group Rule that does not "
+                        "exist or does not belong to tenant %s") % tenant_id)
             raise exception.Forbidden("Unauthorized")
 
         sec_group_rule.delete(context)

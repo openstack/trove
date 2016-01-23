@@ -659,23 +659,23 @@ class RequestDeserializer(object):
 
     def deserialize_body(self, request, action):
         if not len(request.body) > 0:
-            LOG.debug(_("Empty body provided in request"))
+            LOG.debug("Empty body provided in request")
             return {}
 
         try:
             content_type = request.get_content_type()
         except base_exception.InvalidContentType:
-            LOG.debug(_("Unrecognized Content-Type provided in request"))
+            LOG.debug("Unrecognized Content-Type provided in request")
             raise
 
         if content_type is None:
-            LOG.debug(_("No Content-Type provided in request"))
+            LOG.debug("No Content-Type provided in request")
             return {}
 
         try:
             deserializer = self.get_body_deserializer(content_type)
         except base_exception.InvalidContentType:
-            LOG.debug(_("Unable to deserialize body as provided Content-Type"))
+            LOG.debug("Unable to deserialize body as provided Content-Type")
             raise
 
         return deserializer.deserialize(request.body, action)
