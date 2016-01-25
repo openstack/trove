@@ -21,7 +21,7 @@ def service_discovery(service_candidates):
         result['cmd_bootstrap_pxc_cluster'] = ("sudo service %s bootstrap-pxc"
                                                % result['service'])
     elif result['type'] == 'systemd':
-        result['cmd_bootstrap_pxc_cluster'] = ("systemctl start "
+        result['cmd_bootstrap_pxc_cluster'] = ("sudo systemctl start "
                                                "%s@bootstrap.service"
                                                % result['service'])
     return result
