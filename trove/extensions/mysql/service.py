@@ -266,7 +266,7 @@ class SchemaController(wsgi.Controller):
 
     def create(self, req, body, tenant_id, instance_id):
         """Creates a set of schemas."""
-        LOG.info(_("Creating schemafor instance '%(id)s'\n"
+        LOG.info(_("Creating schema for instance '%(id)s'\n"
                    "req : '%(req)s'\n\n"
                    "body: '%(body)s'\n'n") %
                  {"id": instance_id,
