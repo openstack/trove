@@ -337,8 +337,6 @@ class DetachReplica(object):
     @test
     @time_out(5 * 60)
     def test_detach_replica(self):
-        raise SkipTest("Skip test to allow changeset 245845 to merge.")
-
         if CONFIG.fake_mode:
             raise SkipTest("Detach replica not supported in fake mode")
 
@@ -351,8 +349,6 @@ class DetachReplica(object):
     @test(depends_on=[test_detach_replica])
     @time_out(5 * 60)
     def test_slave_is_not_read_only(self):
-        raise SkipTest("Skip test to allow changeset 245845 to merge.")
-
         if CONFIG.fake_mode:
             raise SkipTest("Test not_read_only not supported in fake mode")
 
