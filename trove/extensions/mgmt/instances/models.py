@@ -189,11 +189,11 @@ class NotificationTransformer(object):
     @staticmethod
     def _get_audit_period():
         now = datetime.datetime.now()
-        audit_start = utils.isotime(now, subsecond=True)
-        audit_end = utils.isotime(
-            now + datetime.timedelta(
+        audit_start = utils.isotime(
+            now - datetime.timedelta(
                 seconds=CONF.exists_notification_interval),
             subsecond=True)
+        audit_end = utils.isotime(now, subsecond=True)
         return audit_start, audit_end
 
     def _get_service_id(self, datastore_manager, id_map):
