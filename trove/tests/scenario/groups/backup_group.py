@@ -62,27 +62,6 @@ class BackupGroup(TestGroup):
 
     @test(groups=[GROUP_BACKUP],
           depends_on=[backup_create])
-    def restore_instance_from_not_completed_backup(self):
-        """Ensure a restore fails while the backup is running."""
-        self.test_runner.run_restore_instance_from_not_completed_backup()
-
-    @test(groups=[GROUP_BACKUP],
-          depends_on=[backup_create],
-          runs_after=[restore_instance_from_not_completed_backup])
-    def instance_action_right_after_backup_create(self):
-        """Ensure any instance action fails while backup is running."""
-        self.test_runner.run_instance_action_right_after_backup_create()
-
-    @test(groups=[GROUP_BACKUP],
-          depends_on=[backup_create],
-          runs_after=[instance_action_right_after_backup_create])
-    def backup_create_another_backup_running(self):
-        """Ensure create backup fails when another backup is running."""
-        self.test_runner.run_backup_create_another_backup_running()
-
-    @test(groups=[GROUP_BACKUP],
-          depends_on=[backup_create],
-          runs_after=[backup_create_another_backup_running])
     def backup_delete_while_backup_running(self):
         """Ensure delete backup fails while it is running."""
         self.test_runner.run_backup_delete_while_backup_running()
@@ -90,11 +69,30 @@ class BackupGroup(TestGroup):
     @test(groups=[GROUP_BACKUP],
           depends_on=[backup_create],
           runs_after=[backup_delete_while_backup_running])
+    def restore_instance_from_not_completed_backup(self):
+        """Ensure a restore fails while the backup is running."""
+        self.test_runner.run_restore_instance_from_not_completed_backup()
+
+    @test(groups=[GROUP_BACKUP],
+          depends_on=[backup_create],
+          runs_after=[restore_instance_from_not_completed_backup])
+    def backup_create_another_backup_running(self):
+        """Ensure create backup fails when another backup is running."""
+        self.test_runner.run_backup_create_another_backup_running()
+
+    @test(groups=[GROUP_BACKUP],
+          depends_on=[backup_create],
+          runs_after=[backup_create_another_backup_running])
+    def instance_action_right_after_backup_create(self):
+        """Ensure any instance action fails while backup is running."""
+        self.test_runner.run_instance_action_right_after_backup_create()
+
+    @test(groups=[GROUP_BACKUP],
+          depends_on=[backup_create],
+          runs_after=[instance_action_right_after_backup_create])
     def backup_create_completed(self):
         """Check that the backup completes successfully."""
         self.test_runner.run_backup_create_completed()
-
-    # TODO(peterstac) - Add support for incremental backups
 
     @test(groups=[GROUP_BACKUP, GROUP_BACKUP_LIST],
           depends_on=[backup_create_completed])

@@ -25,7 +25,7 @@ class RedisHelper(TestHelper):
     def __init__(self, expected_override_name):
         super(RedisHelper, self).__init__(expected_override_name)
 
-        self.key_pattern = 'user:%s'
+        self.key_patterns = ['user_a:%s', 'user_b:%s']
         self.value_pattern = 'id:%s'
         self.label_value = 'value_set'
 
@@ -40,12 +40,11 @@ class RedisHelper(TestHelper):
         # (TIME_WAIT) before the port can be released.
         # This is a feature of the operating system that helps it dealing with
         # packets that arrive after the connection is closed.
-        if host in self._ds_client_cache:
-            return self._ds_client_cache[host]
+        if host not in self._ds_client_cache:
+            self._ds_client_cache[host] = (
+                self.create_client(host, *args, **kwargs))
 
-        client = self.create_client(host, *args, **kwargs)
-        self._ds_client_cache[host] = client
-        return client
+        return self._ds_client_cache[host]
 
     def create_client(self, host, *args, **kwargs):
         user = self.get_helper_credentials()
@@ -53,15 +52,17 @@ class RedisHelper(TestHelper):
         return client
 
     # Add data overrides
+    # We use multiple keys to make the Redis backup take longer
     def add_actual_data(self, data_label, data_start, data_size, host,
                         *args, **kwargs):
         test_set = self._get_data_point(host, data_label, *args, **kwargs)
         if not test_set:
             for num in range(data_start, data_start + data_size):
-                self._set_data_point(
-                    host,
-                    self.key_pattern % str(num), self.value_pattern % str(num),
-                    *args, **kwargs)
+                for key_pattern in self.key_patterns:
+                    self._set_data_point(
+                        host,
+                        key_pattern % str(num), self.value_pattern % str(num),
+                        *args, **kwargs)
             # now that the data is there, add the label
             self._set_data_point(
                 host,
@@ -113,13 +114,15 @@ class RedisHelper(TestHelper):
             raise ex
 
     # Remove data overrides
+    # We use multiple keys to make the Redis backup take longer
     def remove_actual_data(self, data_label, data_start, data_size, host,
                            *args, **kwargs):
         test_set = self._get_data_point(host, data_label, *args, **kwargs)
         if test_set:
             for num in range(data_start, data_start + data_size):
-                self._expire_data_point(host, self.key_pattern % str(num),
-                                        *args, **kwargs)
+                for key_pattern in self.key_patterns:
+                    self._expire_data_point(host, key_pattern % str(num),
+                                            *args, **kwargs)
             # now that the data is gone, remove the label
             self._expire_data_point(host, data_label, *args, **kwargs)
 
@@ -131,6 +134,7 @@ class RedisHelper(TestHelper):
             host, expire_point, [key], *args, **kwargs)
 
     # Verify data overrides
+    # We use multiple keys to make the Redis backup take longer
     def verify_actual_data(self, data_label, data_start, data_size, host,
                            *args, **kwargs):
         # make sure the data is there - tests edge cases and a random one
@@ -145,15 +149,17 @@ class RedisHelper(TestHelper):
                     random_num,
                     data_start + data_size - 2,
                     data_start + data_size - 1]:
-            self._verify_data_point(host,
-                                    self.key_pattern % num,
-                                    self.value_pattern % num,
-                                    *args, **kwargs)
+            for key_pattern in self.key_patterns:
+                self._verify_data_point(host,
+                                        key_pattern % num,
+                                        self.value_pattern % num,
+                                        *args, **kwargs)
         # negative tests
         for num in [data_start - 1,
                     data_start + data_size]:
-            self._verify_data_point(host, self.key_pattern % num, None,
-                                    *args, **kwargs)
+            for key_pattern in self.key_patterns:
+                self._verify_data_point(host, key_pattern % num, None,
+                                        *args, **kwargs)
 
     def _verify_data_point(self, host, key, expected_value, *args, **kwargs):
         value = self._get_data_point(host, key, *args, **kwargs)
