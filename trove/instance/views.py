@@ -165,3 +165,30 @@ class DefaultConfigurationView(object):
         for key, val in self.config:
             config_dict[key] = val
         return {"instance": {"configuration": config_dict}}
+
+
+class GuestLogView(object):
+
+    def __init__(self, guest_log):
+        self.guest_log = guest_log
+
+    def data(self):
+        return {
+            'name': self.guest_log.name,
+            'type': self.guest_log.type,
+            'status': self.guest_log.status,
+            'published': self.guest_log.published,
+            'pending': self.guest_log.pending,
+            'container': self.guest_log.container,
+            'prefix': self.guest_log.prefix,
+            'metafile': self.guest_log.metafile,
+        }
+
+
+class GuestLogsView(object):
+
+    def __init__(self, guest_logs):
+        self.guest_logs = guest_logs
+
+    def data(self):
+        return [GuestLogView(l).data() for l in self.guest_logs]

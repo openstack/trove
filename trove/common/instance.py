@@ -93,12 +93,15 @@ class ServiceStatuses(object):
     BUILDING = ServiceStatus(0x09, 'building', 'BUILD')
     PROMOTING = ServiceStatus(0x10, 'promoting replica', 'PROMOTE')
     EJECTING = ServiceStatus(0x11, 'ejecting replica source', 'EJECT')
+    LOGGING = ServiceStatus(0x12, 'transferring guest logs', 'LOGGING')
     UNKNOWN = ServiceStatus(0x16, 'unknown', 'ERROR')
     NEW = ServiceStatus(0x17, 'new', 'NEW')
     DELETED = ServiceStatus(0x05, 'deleted', 'DELETED')
     FAILED_TIMEOUT_GUESTAGENT = ServiceStatus(0x18, 'guestagent error',
                                               'ERROR')
     INSTANCE_READY = ServiceStatus(0x19, 'instance ready', 'BUILD')
+    RESTART_REQUIRED = ServiceStatus(0x20, 'restart required',
+                                     'RESTART_REQUIRED')
 
 # Dissuade further additions at run-time.
 ServiceStatus.__init__ = None

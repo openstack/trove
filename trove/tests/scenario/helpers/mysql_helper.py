@@ -46,3 +46,9 @@ class MysqlHelper(SqlHelper):
 
     def get_invalid_groups(self):
         return [{'key_buffer_size': 4}, {"join_buffer_size": 'string_value'}]
+
+    def get_exposed_user_log_names(self):
+        return ['general', 'slow_query']
+
+    def get_unexposed_sys_log_names(self):
+        return ['guest', 'error']

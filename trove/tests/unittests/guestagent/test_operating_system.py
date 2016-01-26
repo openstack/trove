@@ -808,7 +808,7 @@ class TestOperatingSystem(trove_testtools.TestCase):
             as_root=True)
 
     def _assert_execute_call(self, exec_args, exec_kwargs,
-                             fun, return_value, *args, **kwargs):
+                             func, return_value, *args, **kwargs):
         """
         Execute a function with given arguments.
         Assert a return value and appropriate sequence of calls to the
@@ -826,8 +826,8 @@ class TestOperatingSystem(trove_testtools.TestCase):
                                   'utils.execute_with_timeout'.
         :type exec_kwargs:        list-of-dicts
 
-        :param fun:               Tested function call.
-        :type fun:                callable
+        :param func:              Tested function call.
+        :type func:               callable
 
         :param return_value:      Expected return value or exception
                                   from the tested call if any.
@@ -844,9 +844,9 @@ class TestOperatingSystem(trove_testtools.TestCase):
                           return_value=('0', '')) as exec_call:
             if isinstance(return_value, ExpectedException):
                 with return_value:
-                    fun(*args, **kwargs)
+                    func(*args, **kwargs)
             else:
-                actual_value = fun(*args, **kwargs)
+                actual_value = func(*args, **kwargs)
                 if return_value is not None:
                     self.assertEqual(return_value, actual_value,
                                      "Return value mismatch.")

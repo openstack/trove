@@ -35,6 +35,7 @@ from trove.tests.api import versions
 from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import cluster_actions_group
 from trove.tests.scenario.groups import database_actions_group
+from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups import instance_delete_group
@@ -126,6 +127,12 @@ base_groups = [
     GROUP_SETUP
 ]
 
+# cluster groups
+cluster_actions_groups = list(base_groups)
+cluster_actions_groups.extend([cluster_actions_group.GROUP,
+                               negative_cluster_actions_group.GROUP])
+
+# instance groups
 instance_create_groups = list(base_groups)
 instance_create_groups.extend([instance_create_group.GROUP,
                                instance_delete_group.GROUP])
@@ -139,9 +146,8 @@ user_actions_groups.extend([user_actions_group.GROUP])
 database_actions_groups = list(instance_create_groups)
 database_actions_groups.extend([database_actions_group.GROUP])
 
-cluster_actions_groups = list(base_groups)
-cluster_actions_groups.extend([cluster_actions_group.GROUP,
-                               negative_cluster_actions_group.GROUP])
+guest_log_groups = list(instance_create_groups)
+guest_log_groups.extend([guest_log_group.GROUP])
 
 instance_actions_groups = list(instance_create_groups)
 instance_actions_groups.extend([instance_actions_group.GROUP])
@@ -149,31 +155,40 @@ instance_actions_groups.extend([instance_actions_group.GROUP])
 replication_groups = list(instance_create_groups)
 replication_groups.extend([replication_group.GROUP])
 
+# groups common to all datastores
+common_groups = list(instance_actions_groups)
+common_groups.extend([guest_log_groups])
+
 # Module based groups
 register(["backup"], backup_groups)
 register(["cluster"], cluster_actions_groups)
 register(["database"], database_actions_groups)
-register(["instance_actions"], instance_actions_groups)
+register(["guest_log"], guest_log_groups)
+register(["instance", "instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
 register(["user"], user_actions_groups)
 register(["replication"], replication_groups)
 
 # Datastore based groups - these should contain all functionality
 # currently supported by the datastore
-register(["cassandra_supported"], backup_groups, instance_actions_groups)
-register(["couchbase_supported"], instance_actions_groups)
-register(["couchdb_supported"], instance_actions_groups)
-register(["postgresql_supported"], backup_groups, database_actions_groups,
-         instance_actions_groups, user_actions_groups)
-register(["mongodb_supported"], backup_groups, cluster_actions_groups,
-         database_actions_groups, instance_actions_groups, user_actions_groups)
+register(["cassandra_supported"], common_groups,
+         backup_groups)
+register(["couchbase_supported"], common_groups)
+register(["couchdb_supported"], common_groups)
+register(["postgresql_supported"], common_groups,
+         backup_groups, database_actions_groups, user_actions_groups)
+register(["mongodb_supported"], common_groups,
+         backup_groups, cluster_actions_groups,
+         database_actions_groups, user_actions_groups)
 register(["mysql_supported", "mariadb_supported", "percona_supported"],
-         backup_groups, database_actions_groups, instance_actions_groups,
+         common_groups,
+         backup_groups, database_actions_groups,
          replication_groups, user_actions_groups)
-register(["redis_supported"], backup_groups, instance_actions_groups,
-         replication_groups)
-register(["vertica_supported"], cluster_actions_groups,
-         instance_actions_groups)
-register(["pxc_supported"], instance_actions_groups, cluster_actions_groups)
-register(["db2_supported"], database_actions_groups,
-         instance_actions_groups, user_actions_groups)
+register(["redis_supported"], common_groups,
+         backup_groups, replication_groups)
+register(["vertica_supported"], common_groups,
+         cluster_actions_groups)
+register(["pxc_supported"], common_groups,
+         cluster_actions_groups)
+register(["db2_supported"], common_groups,
+         database_actions_groups, user_actions_groups)

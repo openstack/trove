@@ -19,7 +19,6 @@ import csv
 import json
 import re
 import six
-import StringIO
 import yaml
 
 from ConfigParser import SafeConfigParser
@@ -198,7 +197,7 @@ class IniCodec(StreamCodec):
 
     def serialize(self, dict_data):
         parser = self._init_config_parser(dict_data)
-        output = StringIO.StringIO()
+        output = six.StringIO()
         parser.write(output)
 
         return output.getvalue()
@@ -212,8 +211,8 @@ class IniCodec(StreamCodec):
                 for s in parser.sections()}
 
     def _pre_parse(self, stream):
-        buf = StringIO.StringIO()
-        for line in StringIO.StringIO(stream):
+        buf = six.StringIO()
+        for line in six.StringIO(stream):
             # Ignore commented lines.
             if not line.startswith(self._comment_markers):
                 # Strip leading and trailing whitespaces from each line.
@@ -285,7 +284,7 @@ class PropertiesCodec(StreamCodec):
         self._unpack_singletons = unpack_singletons
 
     def serialize(self, dict_data):
-        output = StringIO.StringIO()
+        output = six.StringIO()
         writer = csv.writer(output, delimiter=self._delimiter,
                             quoting=self.QUOTING_MODE,
                             strict=self.STRICT_MODE,
@@ -297,7 +296,7 @@ class PropertiesCodec(StreamCodec):
         return output.getvalue()
 
     def deserialize(self, stream):
-        reader = csv.reader(StringIO.StringIO(stream),
+        reader = csv.reader(six.StringIO(stream),
                             delimiter=self._delimiter,
                             quoting=self.QUOTING_MODE,
                             strict=self.STRICT_MODE,
@@ -373,4 +372,4 @@ class JsonCodec(StreamCodec):
         return json.dumps(dict_data)
 
     def deserialize(self, stream):
-        return json.load(StringIO.StringIO(stream))
+        return json.load(six.StringIO(stream))

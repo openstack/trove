@@ -70,6 +70,7 @@ class TestConfig(object):
             'dbaas_url': "http://localhost:8775/v1.0/dbaas",
             'version_url': "http://localhost:8775/",
             'nova_url': "http://localhost:8774/v2",
+            'swift_url': "http://localhost:8080/v1/AUTH_",
             'dbaas_datastore': "mysql",
             'dbaas_datastore_id': "a00000a0-00a0-0a00-00a0-000a000000aa",
             'dbaas_datastore_name_no_versions': "Test_Datastore_1",

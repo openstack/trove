@@ -21,6 +21,8 @@ from trove.common import cfg
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.postgresql.service.status import (
     PgSqlAppStatus)
+from trove.guestagent import guest_log
+
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -55,6 +57,7 @@ class PgSqlProcess(object):
     def restart(self, context):
         PgSqlAppStatus.get().restart_db_service(
             self.SERVICE_CANDIDATES, CONF.state_change_wait_time)
+        self.set_guest_log_status(guest_log.LogStatus.Restart_Completed)
 
     def start_db(self, context, enable_on_boot=True, update_db=False):
         PgSqlAppStatus.get().start_db_service(

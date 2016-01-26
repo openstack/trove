@@ -200,7 +200,7 @@ def build_polling_task(retriever, condition=lambda value: value,
             raise exception.PollTimeOut
 
     return loopingcall.FixedIntervalLoopingCall(
-        f=poll_and_check).start(sleep_time, True)
+        f=poll_and_check).start(sleep_time, initial_delay=False)
 
 
 def poll_until(retriever, condition=lambda value: value,

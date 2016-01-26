@@ -25,6 +25,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common.i18n import _LI
 from trove.common import pagination
+from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
@@ -328,3 +329,33 @@ class InstanceController(wsgi.Controller):
                   {'instance_id': id, 'config': config})
         return wsgi.Result(views.DefaultConfigurationView(
                            config).data(), 200)
+
+    def guest_log_list(self, req, tenant_id, id):
+        """Return all information about all logs for an instance."""
+        LOG.debug("Listing logs for tenant %s" % tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        client = create_guest_client(context, id)
+        guest_log_list = client.guest_log_list()
+        return wsgi.Result({'logs': guest_log_list}, 200)
+
+    def guest_log_action(self, req, body, tenant_id, id):
+        """Processes a guest log."""
+        LOG.info(_("Processing log for tenant %s"), tenant_id)
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        log_name = body['name']
+        enable = body.get('enable', None)
+        disable = body.get('disable', None)
+        publish = body.get('publish', None)
+        discard = body.get('discard', None)
+        if enable and disable:
+            raise exception.BadRequest(_("Cannot enable and disable log."))
+        client = create_guest_client(context, id)
+        guest_log = client.guest_log_action(log_name, enable, disable,
+                                            publish, discard)
+        return wsgi.Result({'log': guest_log}, 200)

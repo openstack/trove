@@ -6,7 +6,6 @@ hacking<0.11,>=0.10.0
 sphinx!=1.2.0,!=1.3b1,<1.3,>=1.1.2 # BSD
 oslosphinx!=3.4.0,>=2.5.0 # Apache-2.0
 reno>=0.1.1 # Apache2
-
 coverage>=3.6 # Apache-2.0
 nose # LGPL
 nosexcover # BSD
@@ -16,7 +15,6 @@ WebTest>=2.0 # MIT
 wsgi-intercept>=0.6.1 # MIT License
 proboscis>=1.2.5.3 # Apache-2.0
 http://tarballs.openstack.org/python-troveclient/python-troveclient-master.tar.gz#egg=python-troveclient
-
 mock>=1.2 # BSD
 mox3>=0.7.0 # Apache-2.0
 testtools>=1.4.0 # MIT

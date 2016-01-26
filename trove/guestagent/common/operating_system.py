@@ -75,16 +75,21 @@ def exists(path, is_directory=False, as_root=False):
     :param as_root:            Execute as root.
     :type as_root:             boolean
     """
-    if as_root:
+
+    found = (not is_directory and os.path.isfile(path) or
+             (is_directory and os.path.isdir(path)))
+
+    # Only check as root if we can't see it as the regular user, since
+    # this is more expensive
+    if not found and as_root:
         test_flag = '-d' if is_directory else '-f'
         cmd = 'test %s %s && echo 1 || echo 0' % (test_flag, path)
         stdout, _ = utils.execute_with_timeout(
             cmd, shell=True, check_exit_code=False,
             run_as_root=True, root_helper='sudo')
-        return bool(int(stdout))
+        found = bool(int(stdout))
 
-    return (not is_directory and os.path.isfile(path) or
-            (is_directory and os.path.isdir(path)))
+    return found
 
 
 def _read_file_as_root(path, codec):
@@ -182,8 +187,12 @@ class FileMode(object):
     """
 
     @classmethod
-    def SET_FULL(cls):
+    def SET_ALL_RWX(cls):
         return cls(reset=[stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO])  # =0777
+
+    @classmethod
+    def SET_FULL(cls):
+        return cls.SET_ALL_RWX()
 
     @classmethod
     def SET_GRP_RW_OTH_R(cls):
@@ -198,12 +207,36 @@ class FileMode(object):
         return cls(reset=[stat.S_IRUSR | stat.S_IWUSR])  # =0600
 
     @classmethod
-    def ADD_READ_ALL(cls):
+    def ADD_ALL_R(cls):
         return cls(add=[stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH])  # +0444
+
+    @classmethod
+    def ADD_READ_ALL(cls):
+        return cls.ADD_ALL_R()
+
+    @classmethod
+    def ADD_USR_RW_GRP_RW(cls):
+        return cls(add=[stat.S_IRUSR | stat.S_IWUSR |
+                        stat.S_IRGRP | stat.S_IWGRP])  # +0660
+
+    @classmethod
+    def ADD_USR_RW_GRP_RW_OTH_R(cls):
+        return cls(add=[stat.S_IRUSR | stat.S_IWUSR |
+                        stat.S_IRGRP | stat.S_IWGRP |
+                        stat.S_IROTH])  # +0664
 
     @classmethod
     def ADD_GRP_RW(cls):
         return cls(add=[stat.S_IRGRP | stat.S_IWGRP])  # +0060
+
+    @classmethod
+    def ADD_GRP_RX(cls):
+        return cls(add=[stat.S_IRGRP | stat.S_IXGRP])  # +0050
+
+    @classmethod
+    def ADD_GRP_RX_OTH_RX(cls):
+        return cls(add=[stat.S_IRGRP | stat.S_IXGRP |
+                        stat.S_IROTH | stat.S_IXOTH])  # +0055
 
     def __init__(self, reset=None, add=None, remove=None):
         self._reset = list(reset) if reset is not None else []

@@ -79,6 +79,7 @@ class InstanceTasks(object):
                              'Promoting the instance to replica source.')
     EJECTING = InstanceTask(0x09, 'EJECTING',
                             'Ejecting the replica source.')
+    LOGGING = InstanceTask(0x0a, 'LOGGING', 'Transferring guest logs.')
 
     BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
                                       is_error=True)
