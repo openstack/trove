@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ast
 import getpass
 import json
 from oslo_log import log as logging
@@ -21,16 +22,20 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common import pagination
+from trove.common.stream_codecs import JsonCodec
 from trove.common import utils as utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.couchdb import system
 from trove.guestagent.datastore import service
+from trove.guestagent.db import models
 from trove.guestagent import pkg
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 packager = pkg.Package()
+MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'couchdb'
 
 COUCHDB_LIB_DIR = "/var/lib/couchdb"
 COUCHDB_LOG_DIR = "/var/log/couchdb"
@@ -122,6 +127,40 @@ class CouchDBApp(object):
         LOG.info(_("Starting CouchDB with configuration changes."))
         self.start_db(True)
 
+    def store_admin_password(self, password):
+        LOG.debug('Storing the admin password.')
+        creds = CouchDBCredentials(username=system.COUCHDB_ADMIN_NAME,
+                                   password=password)
+        creds.write(system.COUCHDB_ADMIN_CREDS_FILE)
+        return creds
+
+    def create_admin_user(self, password):
+        '''
+        Creating the admin user, os_admin, for the couchdb instance
+        '''
+        LOG.debug('Creating the admin user.')
+        creds = self.store_admin_password(password)
+        out, err = utils.execute_with_timeout(
+            system.COUCHDB_CREATE_ADMIN % {'password': creds.password},
+            shell=True)
+        LOG.debug('Created admin user.')
+
+    def secure(self):
+        '''
+        Create the Trove admin user.
+        The service should not be running at this point.
+        '''
+        self.start_db(update_db=False)
+        password = utils.generate_random_password()
+        self.create_admin_user(password)
+        LOG.debug("CouchDB secure complete.")
+
+    @property
+    def admin_password(self):
+        creds = CouchDBCredentials()
+        creds.read(system.COUCHDB_ADMIN_CREDS_FILE)
+        return creds.password
+
 
 class CouchDBAppStatus(service.BaseDbStatus):
     """
@@ -149,3 +188,401 @@ class CouchDBAppStatus(service.BaseDbStatus):
         except exception.ProcessExecutionError:
             LOG.exception(_("Error getting CouchDB status."))
             return rd_instance.ServiceStatuses.SHUTDOWN
+
+
+class CouchDBAdmin(object):
+    '''Handles administrative functions on CouchDB.'''
+
+    # user is cached by making it a class attribute
+    admin_user = None
+
+    def _admin_user(self):
+        if not type(self).admin_user:
+            creds = CouchDBCredentials()
+            creds.read(system.COUCHDB_ADMIN_CREDS_FILE)
+            user = models.CouchDBUser()
+            user.name = creds.username
+            user.password = creds.password
+            type(self).admin_user = user
+        return type(self).admin_user
+
+    def _is_modifiable_user(self, name):
+        if name in cfg.get_ignored_users(manager=MANAGER):
+            return False
+        elif name == system.COUCHDB_ADMIN_NAME:
+            return False
+        return True
+
+    def create_user(self, users):
+        LOG.debug("Creating user(s) for accessing CouchDB database(s).")
+        self._admin_user()
+        try:
+            for item in users:
+                user = models.CouchDBUser()
+                user.deserialize(item)
+                try:
+                    LOG.debug("Creating user: %s." % user.name)
+                    utils.execute_with_timeout(
+                        system.CREATE_USER_COMMAND %
+                        {'admin_name': self._admin_user().name,
+                         'admin_password': self._admin_user().password,
+                         'username': user.name,
+                         'username': user.name,
+                         'password': user.password},
+                        shell=True)
+                except exception.ProcessExecutionError as pe:
+                    LOG.exception(_("Error creating user: %s.") % user.name)
+                    pass
+
+                for database in user.databases:
+                    mydb = models.CouchDBSchema()
+                    mydb.deserialize(database)
+                    try:
+                        LOG.debug("Granting user: %s access to database: %s."
+                                  % (user.name, mydb.name))
+                        out, err = utils.execute_with_timeout(
+                            system.GRANT_ACCESS_COMMAND %
+                            {'admin_name': self._admin_user().name,
+                             'admin_password': self._admin_user().password,
+                             'dbname': mydb.name,
+                             'username': user.name},
+                            shell=True)
+                    except exception.ProcessExecutionError as pe:
+                        LOG.debug("Error granting user: %s access to"
+                                  "database: %s." % (user.name, mydb.name))
+                        LOG.debug(pe)
+                        pass
+        except exception.ProcessExecutionError as pe:
+            LOG.exception(_("An error occurred creating users: %s.") %
+                          pe.message)
+            pass
+
+    def delete_user(self, user):
+        LOG.debug("Delete a given CouchDB user.")
+        couchdb_user = models.CouchDBUser()
+        couchdb_user.deserialize(user)
+        db_names = self.list_database_names()
+
+        for db in db_names:
+            userlist = []
+            try:
+                out, err = utils.execute_with_timeout(
+                    system.DB_ACCESS_COMMAND %
+                    {'admin_name': self._admin_user().name,
+                     'admin_password': self._admin_user().password,
+                     'dbname': db},
+                    shell=True)
+            except exception.ProcessExecutionError:
+                LOG.debug(
+                    "Error while trying to get the users for database: %s." %
+                    db)
+                continue
+
+            evalout = ast.literal_eval(out)
+            if evalout:
+                members = evalout['members']
+                names = members['names']
+                for i in range(0, len(names)):
+                    couchdb_user.databases = db
+                    userlist.append(names[i])
+                if couchdb_user.name in userlist:
+                    userlist.remove(couchdb_user.name)
+            out2, err2 = utils.execute_with_timeout(
+                system.REVOKE_ACCESS_COMMAND % {
+                    'admin_name': self._admin_user().name,
+                    'admin_password': self._admin_user().password,
+                    'dbname': db,
+                    'username': userlist},
+                shell=True)
+
+        try:
+            out2, err = utils.execute_with_timeout(
+                system.DELETE_REV_ID %
+                {'admin_name': self._admin_user().name,
+                 'admin_password': self._admin_user().password},
+                shell=True)
+            evalout2 = ast.literal_eval(out2)
+            rows = evalout2['rows']
+            userlist = []
+
+            for i in range(0, len(rows)):
+                row = rows[i]
+                username = "org.couchdb.user:" + couchdb_user.name
+                if row['key'] == username:
+                    rev = row['value']
+                    revid = rev['rev']
+            utils.execute_with_timeout(
+                system.DELETE_USER_COMMAND % {
+                    'admin_name': self._admin_user().name,
+                    'admin_password': self._admin_user().password,
+                    'username': couchdb_user.name,
+                    'revid': revid},
+                shell=True)
+        except exception.ProcessExecutionError as pe:
+            LOG.exception(_(
+                "There was an error while deleting user: %s.") % pe)
+            raise exception.GuestError(_("Unable to delete user: %s.") %
+                                       couchdb_user.name)
+
+    def list_users(self, limit=None, marker=None, include_marker=False):
+        '''List all users and the databases they have access to.'''
+        users = []
+        db_names = self.list_database_names()
+        try:
+            out, err = utils.execute_with_timeout(
+                system.ALL_USERS_COMMAND %
+                {'admin_name': self._admin_user().name,
+                 'admin_password': self._admin_user().password},
+                shell=True)
+        except exception.ProcessExecutionError:
+            LOG.debug("Error while trying to get list of all couchdb users")
+        evalout = ast.literal_eval(out)
+        rows = evalout['rows']
+        userlist = []
+        for i in range(0, len(rows)):
+            row = rows[i]
+            uname = row['key']
+            if not self._is_modifiable_user(uname):
+                break
+            elif uname[17:]:
+                userlist.append(uname[17:])
+        for i in range(len(userlist)):
+            user = models.CouchDBUser()
+            user.name = userlist[i]
+            for db in db_names:
+                try:
+                    out2, err = utils.execute_with_timeout(
+                        system.DB_ACCESS_COMMAND %
+                        {'admin_name': self._admin_user().name,
+                         'admin_password': self._admin_user().password,
+                         'dbname': db},
+                        shell=True)
+                except exception.ProcessExecutionError:
+                    LOG.debug(
+                        "Error while trying to get users for database: %s."
+                        % db)
+                    continue
+                evalout2 = ast.literal_eval(out2)
+                if evalout2:
+                    members = evalout2['members']
+                    names = members['names']
+                    for i in range(0, len(names)):
+                        if user.name == names[i]:
+                            user.databases = db
+            users.append(user.serialize())
+        next_marker = None
+        return users, next_marker
+
+    def get_user(self, username, hostname):
+        '''Get Information about the given user.'''
+        LOG.debug('Getting user %s.' % username)
+        user = self._get_user(username, hostname)
+        if not user:
+            return None
+        return user.serialize()
+
+    def _get_user(self, username, hostname):
+        user = models.CouchDBUser()
+        user.name = username
+        db_names = self.list_database_names()
+        for db in db_names:
+            try:
+                out, err = utils.execute_with_timeout(
+                    system.DB_ACCESS_COMMAND %
+                    {'admin_name': self._admin_user().name,
+                     'admin_password': self._admin_user().password,
+                     'dbname': db},
+                    shell=True)
+            except exception.ProcessExecutionError:
+                LOG.debug(
+                    "Error while trying to get the users for database: %s." %
+                    db)
+                continue
+
+            evalout = ast.literal_eval(out)
+            if evalout:
+                members = evalout['members']
+                names = members['names']
+                for i in range(0, len(names)):
+                    if user.name == names[i]:
+                        user.databases = db
+        return user
+
+    def grant_access(self, username, databases):
+        if self._get_user(username, None).name != username:
+            raise exception.BadRequest(_(
+                'Cannot grant access for non-existant user: '
+                '%(user)s') % {'user': username})
+        else:
+            user = models.CouchDBUser()
+            user.name = username
+            if not self._is_modifiable_user(user.name):
+                LOG.warning(_('Cannot grant access for reserved user '
+                            '%(user)s') % {'user': username})
+            if not user:
+                raise exception.BadRequest(_(
+                    'Cannot grant access for reserved or non-existant user '
+                    '%(user)s') % {'user': username})
+            for db_name in databases:
+                out, err = utils.execute_with_timeout(
+                    system.GRANT_ACCESS_COMMAND %
+                    {'admin_name': self._admin_user().name,
+                     'admin_password': self._admin_user().password,
+                     'dbname': db_name,
+                     'username': username},
+                    shell=True)
+
+    def revoke_access(self, username, database):
+        userlist = []
+        if self._is_modifiable_user(username):
+            out, err = utils.execute_with_timeout(
+                system.DB_ACCESS_COMMAND %
+                {'admin_name': self._admin_user().name,
+                 'admin_password': self._admin_user().password,
+                 'dbname': database},
+                shell=True)
+            evalout = ast.literal_eval(out)
+            members = evalout['members']
+            names = members['names']
+            for i in range(0, len(names)):
+                userlist.append(names[i])
+            if username in userlist:
+                userlist.remove(username)
+        out2, err2 = utils.execute_with_timeout(
+            system.REVOKE_ACCESS_COMMAND %
+            {'admin_name': self._admin_user().name,
+             'admin_password': self._admin_user().password,
+             'dbname': database,
+             'username': userlist},
+            shell=True)
+
+    def list_access(self, username, hostname):
+        '''Returns a list of all databases which the user has access to'''
+        user = self._get_user(username, hostname)
+        return user.databases
+
+    def enable_root(self, root_pwd=None):
+        '''Create admin user root'''
+        if not root_pwd:
+            LOG.debug('Generating root user password.')
+            root_pwd = utils.generate_random_password()
+        root_user = models.CouchDBUser()
+        root_user.name = 'root'
+        root_user.password = root_pwd
+        out, err = utils.execute_with_timeout(
+            system.ENABLE_ROOT %
+            {'admin_name': self._admin_user().name,
+             'admin_password': self._admin_user().password,
+             'password': root_pwd},
+            shell=True)
+        return root_user.serialize()
+
+    def is_root_enabled(self):
+        '''Check if user root exists'''
+        out, err = utils.execute_with_timeout(
+            system.IS_ROOT_ENABLED %
+            {'admin_name': self._admin_user().name,
+             'admin_password': self._admin_user().password},
+            shell=True)
+        evalout = ast.literal_eval(out)
+        if evalout['root']:
+            return True
+        else:
+            return False
+
+    def create_database(self, databases):
+        '''Create the given database(s).'''
+        dbName = None
+        db_create_failed = []
+        LOG.debug("Creating CouchDB databases.")
+
+        for database in databases:
+            dbName = models.CouchDBSchema.deserialize_schema(database).name
+            LOG.debug('Creating CouchDB database %s' % dbName)
+            try:
+                utils.execute_with_timeout(
+                    system.CREATE_DB_COMMAND %
+                    {'admin_name': self._admin_user().name,
+                     'admin_password': self._admin_user().password,
+                     'dbname': dbName},
+                    shell=True)
+            except exception.ProcessExecutionError:
+                LOG.exception(_(
+                    "There was an error creating database: %s.") % dbName)
+                db_create_failed.append(dbName)
+                pass
+        if len(db_create_failed) > 0:
+            LOG.exception(_("Creating the following databases failed: %s.") %
+                          db_create_failed)
+
+    def list_database_names(self):
+        '''Get the list of database names.'''
+        out, err = utils.execute_with_timeout(
+            system.LIST_DB_COMMAND %
+            {'admin_name': self._admin_user().name,
+             'admin_password': self._admin_user().password},
+            shell=True)
+        dbnames_list = eval(out)
+        for hidden in cfg.get_ignored_dbs(manager=MANAGER):
+            if hidden in dbnames_list:
+                dbnames_list.remove(hidden)
+        return dbnames_list
+
+    def list_databases(self, limit=None, marker=None, include_marker=False):
+        '''Lists all the CouchDB databases.'''
+        databases = []
+        db_names = self.list_database_names()
+        pag_dblist, marker = pagination.paginate_list(db_names, limit, marker,
+                                                      include_marker)
+        databases = [models.CouchDBSchema(db_name).serialize()
+                     for db_name in pag_dblist]
+        LOG.debug('databases = ' + str(databases))
+        return databases, marker
+
+    def delete_database(self, database):
+        '''Delete the specified database.'''
+        dbName = None
+        try:
+            dbName = models.CouchDBSchema.deserialize_schema(database).name
+            LOG.debug("Deleting CouchDB database: %s." % dbName)
+            utils.execute_with_timeout(
+                system.DELETE_DB_COMMAND %
+                {'admin_name': self._admin_user().name,
+                 'admin_password': self._admin_user().password,
+                 'dbname': dbName},
+                shell=True)
+        except exception.ProcessExecutionError:
+            LOG.exception(_(
+                "There was an error while deleting database:%s.") % dbName)
+            raise exception.GuestError(_("Unable to delete database: %s.") %
+                                       dbName)
+
+
+class CouchDBCredentials(object):
+    """Handles storing/retrieving credentials. Stored as json in files"""
+    def __init__(self, username=None, password=None):
+        self.username = username
+        self.password = password
+
+    def read(self, filename):
+        credentials = operating_system.read_file(filename, codec=JsonCodec())
+        self.username = credentials['username']
+        self.password = credentials['password']
+
+    def write(self, filename):
+        self.clear_file(filename)
+        credentials = {'username': self.username,
+                       'password': self.password}
+        operating_system.write_file(filename, credentials, codec=JsonCodec())
+        operating_system.chmod(filename, operating_system.FileMode.SET_USR_RW)
+
+    @staticmethod
+    def clear_file(filename):
+        LOG.debug("Creating clean file %s" % filename)
+        if operating_system.file_discovery([filename]):
+            operating_system.remove(filename)
+        # force file creation by just opening it
+        open(filename, 'wb')
+        operating_system.chmod(filename,
+                               operating_system.FileMode.SET_USR_RW,
+                               as_root=True)
