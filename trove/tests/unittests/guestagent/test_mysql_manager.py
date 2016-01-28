@@ -37,6 +37,7 @@ from trove.guestagent.volume import VolumeDevice
 
 
 class GuestAgentManagerTest(testtools.TestCase):
+
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
         self.context = TroveContext()
@@ -282,7 +283,7 @@ class GuestAgentManagerTest(testtools.TestCase):
                                            '/var/lib/mysql/data')
         dbaas.MySqlApp.install_if_needed.assert_any_call(None)
         # We don't need to make sure the exact contents are there
-        dbaas.MySqlApp.secure.assert_any_call(None, None)
+        dbaas.MySqlApp.secure.assert_any_call(None)
         dbaas.MySqlApp.secure_root.assert_any_call(
             secure_remote_root=not is_root_enabled)
 

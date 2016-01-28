@@ -1,4 +1,5 @@
 # Copyright 2015 Tesora Inc.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,11 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 import getpass
 import os
 
+from mock import ANY
 from mock import DEFAULT
 from mock import MagicMock
+from mock import Mock
 from mock import patch
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -30,6 +34,7 @@ from trove.tests.unittests import trove_testtools
 
 
 class MockManager(manager.Manager):
+
     def __init__(self):
         super(MockManager, self).__init__('mysql')
         self._app = MagicMock()
@@ -50,6 +55,7 @@ class MockManager(manager.Manager):
 
 
 class ManagerTest(trove_testtools.TestCase):
+
     def setUp(self):
         super(ManagerTest, self).setUp()
 
@@ -312,3 +318,146 @@ class ManagerTest(trove_testtools.TestCase):
             for key in os_mocks.keys():
                 assert_true(os_mocks[key].call_count == 1,
                             "%s not called" % key)
+
+    def test_prepare_single(self):
+        packages = Mock()
+        databases = Mock()
+        memory_mb = Mock()
+        users = Mock()
+        device_path = Mock()
+        mount_point = Mock()
+        backup_info = Mock()
+        config_contents = Mock()
+        root_password = Mock()
+        overrides = Mock()
+        snapshot = Mock()
+
+        self._assert_prepare(
+            self.context, packages, databases, memory_mb, users, device_path,
+            mount_point, backup_info, config_contents, root_password,
+            overrides, None, snapshot)
+
+    def test_prepare_cluster(self):
+        packages = Mock()
+        databases = Mock()
+        memory_mb = Mock()
+        users = Mock()
+        device_path = Mock()
+        mount_point = Mock()
+        backup_info = Mock()
+        config_contents = Mock()
+        root_password = Mock()
+        overrides = Mock()
+        cluster_config = Mock()
+        snapshot = Mock()
+
+        self._assert_prepare(
+            self.context, packages, databases, memory_mb, users, device_path,
+            mount_point, backup_info, config_contents, root_password,
+            overrides, cluster_config, snapshot)
+
+    def _assert_prepare(self, context, packages, databases, memory_mb, users,
+                        device_path, mount_point, backup_info, config_contents,
+                        root_password, overrides, cluster_config, snapshot):
+
+        is_error_expected = False
+        is_post_process_expected = cluster_config is not None
+
+        with patch.multiple(self.manager,
+                            do_prepare=DEFAULT, post_prepare=DEFAULT,
+                            apply_overrides_on_prepare=DEFAULT,
+                            create_database=DEFAULT, create_user=DEFAULT):
+            self.manager.prepare(
+                context, packages, databases, memory_mb, users,
+                device_path, mount_point, backup_info, config_contents,
+                root_password, overrides, cluster_config, snapshot)
+
+            self.manager.status.begin_install.assert_called_once_with()
+            self.manager.do_prepare.assert_called_once_with(
+                context,
+                packages,
+                databases,
+                memory_mb,
+                users,
+                device_path,
+                mount_point,
+                backup_info,
+                config_contents,
+                root_password,
+                overrides,
+                cluster_config,
+                snapshot)
+            self.manager.apply_overrides_on_prepare.assert_called_once_with(
+                context,
+                overrides)
+            self.manager.status.end_install(
+                error_occurred=is_error_expected,
+                post_processing=is_post_process_expected)
+            self.manager.post_prepare.assert_called_once_with(
+                context,
+                packages,
+                databases,
+                memory_mb,
+                users,
+                device_path,
+                mount_point,
+                backup_info,
+                config_contents,
+                root_password,
+                overrides,
+                cluster_config,
+                snapshot)
+
+            if not is_post_process_expected:
+                self.manager.create_database.assert_called_once_with(
+                    context,
+                    databases)
+                self.manager.create_user.assert_called_once_with(
+                    context,
+                    users)
+            else:
+                self.assertEqual(0, self.manager.create_database.call_count)
+                self.assertEqual(0, self.manager.create_user.call_count)
+
+    def test_apply_overrides_on_prepare(self):
+        overrides = Mock()
+        with patch.multiple(self.manager,
+                            update_overrides=DEFAULT, restart=DEFAULT):
+            self.manager.apply_overrides_on_prepare(self.context, overrides)
+
+            self.manager.update_overrides.assert_called_once_with(
+                self.context, overrides)
+            self.manager.restart.assert_called_once_with(self.context)
+
+    def test_apply_overrides_on_prepare_failure(self):
+        packages = Mock()
+        databases = Mock()
+        memory_mb = Mock()
+        users = Mock()
+        device_path = Mock()
+        mount_point = Mock()
+        backup_info = Mock()
+        config_contents = Mock()
+        root_password = Mock()
+        overrides = Mock()
+        cluster_config = Mock()
+        snapshot = Mock()
+
+        expected_failure = Exception("Error in 'apply_overrides_on_prepare'.")
+
+        with patch.multiple(
+                self.manager, do_prepare=DEFAULT,
+                apply_overrides_on_prepare=MagicMock(
+                    side_effect=expected_failure
+                )):
+            self.assertRaisesRegexp(
+                Exception, "Error in 'apply_overrides_on_prepare'.",
+                self.manager.prepare,
+                self.context, packages, databases, memory_mb, users,
+                device_path, mount_point, backup_info, config_contents,
+                root_password, overrides, cluster_config, snapshot)
+
+            self.manager.status.begin_install.assert_called_once_with()
+            self.manager.status.end_install(
+                error_occurred=True,
+                post_processing=ANY)

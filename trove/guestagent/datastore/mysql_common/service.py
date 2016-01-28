@@ -656,7 +656,7 @@ class BaseMySqlApp(object):
             LOG.info(_("Finished installing MySQL server."))
         self.start_mysql()
 
-    def secure(self, config_contents, overrides):
+    def secure(self, config_contents):
         LOG.info(_("Generating admin password."))
         admin_password = utils.generate_random_password()
         clear_expired_password()
@@ -669,7 +669,6 @@ class BaseMySqlApp(object):
         self.stop_db()
 
         self._reset_configuration(config_contents, admin_password)
-        self._apply_user_overrides(overrides)
         self.start_mysql()
 
         LOG.debug("MySQL secure complete.")

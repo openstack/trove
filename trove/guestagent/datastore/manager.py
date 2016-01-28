@@ -260,6 +260,10 @@ class Manager(periodic_task.PeriodicTasks):
                             users, device_path, mount_point, backup_info,
                             config_contents, root_password, overrides,
                             cluster_config, snapshot)
+            if overrides:
+                LOG.info(_("Applying user-specified configuration "
+                           "(called from 'prepare')."))
+                self.apply_overrides_on_prepare(context, overrides)
         except Exception as ex:
             self.prepare_error = True
             LOG.exception(_("An error occurred preparing datastore: %s") %
@@ -307,6 +311,10 @@ class Manager(periodic_task.PeriodicTasks):
                           ex.message)
             raise
 
+    def apply_overrides_on_prepare(self, context, overrides):
+        self.update_overrides(context, overrides)
+        self.restart(context)
+
     @abc.abstractmethod
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info, config_contents,
@@ -334,6 +342,14 @@ class Manager(periodic_task.PeriodicTasks):
         informed of the error.
         """
         LOG.info(_('No post_prepare work has been defined.'))
+        pass
+
+    #################
+    # Service related
+    #################
+    @abc.abstractmethod
+    def restart(self, context):
+        """Restart the database service."""
         pass
 
     #####################
