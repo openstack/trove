@@ -257,7 +257,9 @@ class BackupRunner(TestRunner):
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
             nics=self.instance_info.nics,
-            restorePoint=restore_point)
+            restorePoint=restore_point,
+            datastore=self.instance_info.dbaas_datastore,
+            datastore_version=self.instance_info.dbaas_datastore_version)
         return result
 
     def run_restore_from_backup_completed(

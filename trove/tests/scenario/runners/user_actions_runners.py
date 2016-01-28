@@ -15,6 +15,8 @@
 
 from six.moves.urllib import parse as urllib_parse
 
+from proboscis import SkipTest
+
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -27,10 +29,23 @@ class UserActionsRunner(TestRunner):
     # likely require replacing GA casts with calls which I believe are
     # more appropriate anyways.
 
+    def __init__(self):
+        super(UserActionsRunner, self).__init__()
+        self.user_defs = []
+
+    @property
+    def first_user_def(self):
+        if self.user_defs:
+            return self.user_defs[0]
+        raise SkipTest("No valid user definitions provided.")
+
     def run_users_create(self, expected_http_code=202):
         users = self.test_helper.get_valid_user_definitions()
-        self.user_defs = self.assert_users_create(
-            self.instance_info.id, users, expected_http_code)
+        if users:
+            self.user_defs = self.assert_users_create(
+                self.instance_info.id, users, expected_http_code)
+        else:
+            raise SkipTest("No valid user definitions provided.")
 
     def assert_users_create(self, instance_id, serial_users_def,
                             expected_http_code):
@@ -57,8 +72,9 @@ class UserActionsRunner(TestRunner):
         user_name = expected_user_def['name']
         self.assert_equal(user.name, expected_user_def['name'],
                           "Mismatch of names for user: %s" % user_name)
-        self.assert_equal(user.databases, expected_user_def['databases'],
-                          "Mismatch of databases for user: %s" % user_name)
+        self.assert_list_elements_equal(
+            user.databases, expected_user_def['databases'],
+            "Mismatch of databases for user: %s" % user_name)
 
     def run_users_list(self, expected_http_code=200):
         self.assert_users_list(
@@ -153,7 +169,7 @@ class UserActionsRunner(TestRunner):
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
         self.assert_users_create_failure(
-            self.instance_info.id, self.user_defs[0],
+            self.instance_info.id, self.first_user_def,
             expected_exception, expected_http_code)
 
     def run_system_user_create(
@@ -181,15 +197,15 @@ class UserActionsRunner(TestRunner):
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
         self.assert_user_attribute_update_failure(
-            self.instance_info.id, self.user_defs[0], {'name': ''},
+            self.instance_info.id, self.first_user_def, {'name': ''},
             expected_exception, expected_http_code)
 
     def run_user_update_with_existing_name(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
         self.assert_user_attribute_update_failure(
-            self.instance_info.id, self.user_defs[0],
-            {'name': self.user_defs[0]['name']},
+            self.instance_info.id, self.first_user_def,
+            {'name': self.first_user_def['name']},
             expected_exception, expected_http_code)
 
     def assert_user_attribute_update_failure(
@@ -220,7 +236,7 @@ class UserActionsRunner(TestRunner):
                     expected_exception, expected_http_code)
 
     def run_user_attribute_update(self, expected_http_code=202):
-        updated_def = self.user_defs[0]
+        updated_def = self.first_user_def
         # Update the name by appending a random string to it.
         updated_name = ''.join([updated_def['name'], 'upd'])
         update_attribites = {'name': updated_name,

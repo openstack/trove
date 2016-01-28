@@ -20,3 +20,14 @@ class MariadbHelper(MysqlHelper):
 
     def __init__(self, expected_override_name):
         super(MariadbHelper, self).__init__(expected_override_name)
+
+    # Mariadb currently does not support configuration groups.
+    # see: bug/1532256
+    def get_dynamic_group(self):
+        return dict()
+
+    def get_non_dynamic_group(self):
+        return dict()
+
+    def get_invalid_groups(self):
+        return []

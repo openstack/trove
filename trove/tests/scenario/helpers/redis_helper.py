@@ -29,6 +29,24 @@ class RedisHelper(TestHelper):
         self.value_pattern = 'id:%s'
         self.label_value = 'value_set'
 
+        self._ds_client_cache = dict()
+
+    def get_client(self, host, *args, **kwargs):
+        # We need to cache the Redis client in order to prevent Error 99
+        # (Cannot assign requested address) when working with large data sets.
+        # A new client may be created frequently due to how the redirection
+        # works (see '_execute_with_redirection').
+        # The old (now closed) connections however have to wait for about 60s
+        # (TIME_WAIT) before the port can be released.
+        # This is a feature of the operating system that helps it dealing with
+        # packets that arrive after the connection is closed.
+        if host in self._ds_client_cache:
+            return self._ds_client_cache[host]
+
+        client = self.create_client(host, *args, **kwargs)
+        self._ds_client_cache[host] = client
+        return client
+
     def create_client(self, host, *args, **kwargs):
         user = self.get_helper_credentials()
         client = redis.StrictRedis(password=user['password'], host=host)
