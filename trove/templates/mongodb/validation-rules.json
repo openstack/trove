@@ -150,7 +150,7 @@
         {
             "name": "security.authorization",
             "restart_required": true,
-            "type": "boolean"
+            "type": "string"
         },
         {
             "name": "security.sasl.hostName",
