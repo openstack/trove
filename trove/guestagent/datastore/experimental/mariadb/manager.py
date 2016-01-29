@@ -14,23 +14,16 @@
 #    under the License.
 #
 
-from oslo_utils import importutils
-from trove.guestagent.datastore.mysql_common import manager
+from trove.guestagent.datastore.experimental.mariadb import (
+    service as mariadb_service)
+from trove.guestagent.datastore.galera_common import manager as galera_manager
+from trove.guestagent.datastore.mysql_common import service as mysql_service
 
 
-MYSQL_APP = ("trove.guestagent.datastore.experimental.mariadb.service."
-             "MySqlApp")
-MYSQL_APP_STATUS = ("trove.guestagent.datastore.experimental.mariadb.service."
-                    "MySqlAppStatus")
-MYSQL_ADMIN = ("trove.guestagent.datastore.experimental.mariadb.service."
-               "MySqlAdmin")
-
-
-class Manager(manager.MySqlManager):
+class Manager(galera_manager.GaleraManager):
 
     def __init__(self):
-        mysql_app = importutils.import_class(MYSQL_APP)
-        mysql_app_status = importutils.import_class(MYSQL_APP_STATUS)
-        mysql_admin = importutils.import_class(MYSQL_ADMIN)
-
-        super(Manager, self).__init__(mysql_app, mysql_app_status, mysql_admin)
+        super(Manager, self).__init__(
+            mariadb_service.MariaDBApp,
+            mysql_service.BaseMySqlAppStatus,
+            mariadb_service.MariaDBAdmin)

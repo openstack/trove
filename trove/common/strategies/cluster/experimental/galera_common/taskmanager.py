@@ -1,4 +1,5 @@
 # Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Copyright 2016 Tesora Inc.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,7 +20,7 @@ from trove.common.exception import PollTimeOut
 from trove.common.exception import TroveError
 from trove.common.i18n import _
 from trove.common.remote import create_nova_client
-from trove.common.strategies.cluster import base
+from trove.common.strategies.cluster import base as cluster_base
 from trove.common.template import ClusterConfigTemplate
 from trove.common import utils
 from trove.extensions.common import models as ext_models
@@ -32,10 +33,9 @@ import trove.taskmanager.models as task_models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-USAGE_SLEEP_TIME = CONF.usage_sleep_time  # seconds.
 
 
-class PXCTaskManagerStrategy(base.BaseTaskManagerStrategy):
+class GaleraCommonTaskManagerStrategy(cluster_base.BaseTaskManagerStrategy):
 
     @property
     def task_manager_api_class(self):
@@ -43,10 +43,10 @@ class PXCTaskManagerStrategy(base.BaseTaskManagerStrategy):
 
     @property
     def task_manager_cluster_tasks_class(self):
-        return PXCClusterTasks
+        return GaleraCommonClusterTasks
 
 
-class PXCClusterTasks(task_models.ClusterTasks):
+class GaleraCommonClusterTasks(task_models.ClusterTasks):
 
     CLUSTER_REPLICATION_USER = "clusterrepuser"
 
@@ -89,16 +89,16 @@ class PXCClusterTasks(task_models.ClusterTasks):
                                for instance in instances]
 
             # Create replication user and password for synchronizing the
-            # PXC cluster
+            # galera cluster
             replication_user = {
                 "name": self.CLUSTER_REPLICATION_USER,
                 "password": utils.generate_random_password(),
             }
 
-            # PXC cluster name must be unique and be shorter than a full
+            # Galera cluster name must be unique and be shorter than a full
             # uuid string so we remove the hyphens and chop it off. It was
             # recommended to be 16 chars or less.
-            # (this is not currently documented on PXC docs)
+            # (this is not currently documented on Galera docs)
             cluster_name = utils.generate_uuid().replace("-", "")[:16]
 
             LOG.debug("Configuring cluster configuration.")
@@ -163,7 +163,7 @@ class PXCClusterTasks(task_models.ClusterTasks):
                 return
 
     def grow_cluster(self, context, cluster_id, new_instance_ids):
-        LOG.debug("Begin pxc grow_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin Galera grow_cluster for id: %s." % cluster_id)
 
         def _grow_cluster():
 
@@ -256,7 +256,7 @@ class PXCClusterTasks(task_models.ClusterTasks):
         LOG.debug("End grow_cluster for id: %s." % cluster_id)
 
     def shrink_cluster(self, context, cluster_id, removal_instance_ids):
-        LOG.debug("Begin pxc shrink_cluster for id: %s." % cluster_id)
+        LOG.debug("Begin Galera shrink_cluster for id: %s." % cluster_id)
 
         def _shrink_cluster():
             removal_instances = [Instance.load(context, instance_id)

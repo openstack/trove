@@ -50,6 +50,8 @@ from trove.guestagent.datastore.experimental.couchdb import (
     service as couchdb_service)
 from trove.guestagent.datastore.experimental.db2 import (
     service as db2service)
+from trove.guestagent.datastore.experimental.mariadb import (
+    service as mariadb_service)
 from trove.guestagent.datastore.experimental.mongodb import (
     service as mongo_service)
 from trove.guestagent.datastore.experimental.mongodb import (
@@ -62,8 +64,6 @@ from trove.guestagent.datastore.experimental.postgresql.service import (
     status as pg_status)
 from trove.guestagent.datastore.experimental.pxc import (
     service as pxc_service)
-from trove.guestagent.datastore.experimental.pxc import (
-    system as pxc_system)
 from trove.guestagent.datastore.experimental.redis import service as rservice
 from trove.guestagent.datastore.experimental.redis.service import RedisApp
 from trove.guestagent.datastore.experimental.redis import system as RedisSystem
@@ -78,7 +78,7 @@ from trove.guestagent.datastore.mysql.service import MySqlAdmin
 from trove.guestagent.datastore.mysql.service import MySqlApp
 from trove.guestagent.datastore.mysql.service import MySqlAppStatus
 from trove.guestagent.datastore.mysql.service import MySqlRootAccess
-import trove.guestagent.datastore.mysql_common.service as dbaas_base
+import trove.guestagent.datastore.mysql_common.service as mysql_common_service
 import trove.guestagent.datastore.service as base_datastore_service
 from trove.guestagent.datastore.service import BaseDbStatus
 from trove.guestagent.db import models
@@ -149,32 +149,32 @@ class DbaasTest(trove_testtools.TestCase):
     def setUp(self):
         super(DbaasTest, self).setUp()
         self.orig_utils_execute_with_timeout = \
-            dbaas_base.utils.execute_with_timeout
-        self.orig_utils_execute = dbaas_base.utils.execute
+            mysql_common_service.utils.execute_with_timeout
+        self.orig_utils_execute = mysql_common_service.utils.execute
 
     def tearDown(self):
         super(DbaasTest, self).tearDown()
-        dbaas_base.utils.execute_with_timeout = \
+        mysql_common_service.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
-        dbaas_base.utils.execute = self.orig_utils_execute
+        mysql_common_service.utils.execute = self.orig_utils_execute
 
     @patch.object(operating_system, 'remove')
     def test_clear_expired_password(self, mock_remove):
         secret_content = ("# The random password set for the "
                           "root user at Wed May 14 14:06:38 2014 "
                           "(local time): somepassword")
-        with patch.object(dbaas_base.utils, 'execute',
+        with patch.object(mysql_common_service.utils, 'execute',
                           return_value=(secret_content, None)):
-            dbaas_base.clear_expired_password()
-            self.assertEqual(2, dbaas_base.utils.execute.call_count)
+            mysql_common_service.clear_expired_password()
+            self.assertEqual(2, mysql_common_service.utils.execute.call_count)
             self.assertEqual(1, mock_remove.call_count)
 
     @patch.object(operating_system, 'remove')
     def test_no_secret_content_clear_expired_password(self, mock_remove):
-        with patch.object(dbaas_base.utils, 'execute',
+        with patch.object(mysql_common_service.utils, 'execute',
                           return_value=('', None)):
-            dbaas_base.clear_expired_password()
-            self.assertEqual(1, dbaas_base.utils.execute.call_count)
+            mysql_common_service.clear_expired_password()
+            self.assertEqual(1, mysql_common_service.utils.execute.call_count)
             mock_remove.assert_not_called()
 
     @patch.object(operating_system, 'remove')
@@ -185,44 +185,50 @@ class DbaasTest(trove_testtools.TestCase):
         secret_content = ("# The random password set for the "
                           "root user at Wed May 14 14:06:38 2014 "
                           "(local time): somepassword")
-        with patch.object(dbaas_base.utils, 'execute',
+        with patch.object(mysql_common_service.utils, 'execute',
                           side_effect=[(secret_content, None),
                                        ProcessExecutionError]):
-            dbaas_base.clear_expired_password()
-            self.assertEqual(2, dbaas_base.utils.execute.call_count)
+            mysql_common_service.clear_expired_password()
+            self.assertEqual(2, mysql_common_service.utils.execute.call_count)
             mock_remove.assert_not_called()
 
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch.object(operating_system, 'remove')
-    @patch.object(dbaas_base.utils, 'execute',
+    @patch.object(mysql_common_service.utils, 'execute',
                   side_effect=ProcessExecutionError)
     def test_fail_retrieve_secret_content_clear_expired_password(self,
                                                                  mock_execute,
                                                                  mock_remove,
                                                                  mock_logging):
-        dbaas_base.clear_expired_password()
+        mysql_common_service.clear_expired_password()
         self.assertEqual(1, mock_execute.call_count)
         mock_remove.assert_not_called()
 
     @patch.object(operating_system, 'read_file',
                   return_value={'client':
                                 {'password': 'some password'}})
-    def test_get_auth_password(self, read_file_mock):
+    @patch.object(mysql_common_service.BaseMySqlApp.configuration_manager,
+                  'get_value',
+                  return_value=MagicMock({'get': 'some password'}))
+    def test_get_auth_password(self, get_cnf_mock, read_file_mock):
         password = MySqlApp.get_auth_password()
         read_file_mock.assert_called_once_with(MySqlApp.get_client_auth_file(),
                                                codec=MySqlApp.CFG_CODEC)
         self.assertEqual("some password", password)
 
+    @patch.object(mysql_common_service.BaseMySqlApp.configuration_manager,
+                  'get_value',
+                  side_effect=RuntimeError('Error'))
     @patch.object(operating_system, 'read_file',
                   side_effect=RuntimeError('read_file error'))
-    def test_get_auth_password_error(self, _):
+    def test_get_auth_password_error(self, _, get_cnf_mock):
         self.assertRaisesRegexp(RuntimeError, "read_file error",
                                 MySqlApp.get_auth_password)
 
     def test_service_discovery(self):
         with patch.object(os.path, 'isfile', return_value=True):
-            mysql_service = \
-                dbaas_base.operating_system.service_discovery(["mysql"])
+            mysql_service = mysql_common_service.operating_system.\
+                service_discovery(["mysql"])
         self.assertIsNotNone(mysql_service['cmd_start'])
         self.assertIsNotNone(mysql_service['cmd_enable'])
 
@@ -233,8 +239,9 @@ class DbaasTest(trove_testtools.TestCase):
                  "--tmpdir=/tmp --skip-external-locking"
 
         with patch.object(os.path, 'isfile', return_value=True):
-            dbaas_base.utils.execute = Mock(return_value=(output, None))
-            options = dbaas_base.load_mysqld_options()
+            mysql_common_service.utils.execute = Mock(
+                return_value=(output, None))
+            options = mysql_common_service.load_mysqld_options()
 
         self.assertEqual(5, len(options))
         self.assertEqual(["mysql"], options["user"])
@@ -249,8 +256,9 @@ class DbaasTest(trove_testtools.TestCase):
                   "--plugin-load=federated=ha_federated.so")
 
         with patch.object(os.path, 'isfile', return_value=True):
-            dbaas_base.utils.execute = Mock(return_value=(output, None))
-            options = dbaas_base.load_mysqld_options()
+            mysql_common_service.utils.execute = Mock(
+                return_value=(output, None))
+            options = mysql_common_service.load_mysqld_options()
 
         self.assertEqual(1, len(options))
         self.assertEqual(["blackhole=ha_blackhole.so",
@@ -260,9 +268,10 @@ class DbaasTest(trove_testtools.TestCase):
     @patch.object(os.path, 'isfile', return_value=True)
     def test_load_mysqld_options_error(self, mock_exists):
 
-        dbaas_base.utils.execute = Mock(side_effect=ProcessExecutionError())
+        mysql_common_service.utils.execute = Mock(
+            side_effect=ProcessExecutionError())
 
-        self.assertFalse(dbaas_base.load_mysqld_options())
+        self.assertFalse(mysql_common_service.load_mysqld_options())
 
 
 class ResultSetStub(object):
@@ -379,9 +388,9 @@ class MySqlAdminMockTest(trove_testtools.TestCase):
     def tearDown(self):
         super(MySqlAdminMockTest, self).tearDown()
 
-    @patch('trove.guestagent.datastore.mysql.service.MySqlApp'
-           '.get_auth_password', return_value='some_password')
-    def test_list_databases(self, auth_pwd_mock):
+    @patch.object(mysql_common_service.BaseMySqlApp, 'get_auth_password',
+                  Mock(return_value='some_password'))
+    def test_list_databases(self):
         with patch.object(self.mock_client, 'execute',
                           return_value=ResultSetStub(
                 [('db1', 'utf8', 'utf8_bin'),
@@ -420,6 +429,9 @@ class MySqlAdminTest(trove_testtools.TestCase):
         dbaas.MySqlApp.configuration_manager = Mock()
         dbaas.orig_get_auth_password = dbaas.MySqlApp.get_auth_password
         dbaas.MySqlApp.get_auth_password = Mock()
+        self.orig_configuration_manager = \
+            mysql_common_service.BaseMySqlApp.configuration_manager
+        mysql_common_service.BaseMySqlApp.configuration_manager = Mock()
 
         self.mySqlAdmin = MySqlAdmin()
 
@@ -431,6 +443,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
             dbaas.orig_configuration_manager
         dbaas.MySqlApp.get_auth_password = \
             dbaas.orig_get_auth_password
+        mysql_common_service.BaseMySqlApp.configuration_manager = \
+            self.orig_configuration_manager
         super(MySqlAdminTest, self).tearDown()
 
     def test__associate_dbs(self):
@@ -587,9 +601,9 @@ class MySqlAdminTest(trove_testtools.TestCase):
             self._assert_execute_call(access_grants_expected,
                                       mock_execute, call_idx=1)
 
-    @patch('trove.guestagent.datastore.mysql.service.MySqlApp'
-           '.get_auth_password', return_value='some_password')
-    def test_list_databases(self, auth_pwd_mock):
+    @patch.object(mysql_common_service.BaseMySqlApp, 'get_auth_password',
+                  Mock(return_value='some_password'))
+    def test_list_databases(self):
         expected = ("SELECT schema_name as name,"
                     " default_character_set_name as charset,"
                     " default_collation_name as collation"
@@ -798,13 +812,13 @@ class MySqlAppTest(trove_testtools.TestCase):
     def setUp(self):
         super(MySqlAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = \
-            dbaas_base.utils.execute_with_timeout
+            mysql_common_service.utils.execute_with_timeout
         self.orig_time_sleep = time.sleep
         self.orig_time_time = time.time
         self.orig_unlink = os.unlink
-        self.orig_get_auth_password = MySqlApp.get_auth_password
         self.orig_service_discovery = operating_system.service_discovery
-        mysql_app_patcher = patch.multiple(MySqlApp, get_engine=DEFAULT,
+        mysql_app_patcher = patch.multiple(mysql_common_service.BaseMySqlApp,
+                                           get_engine=DEFAULT,
                                            get_auth_password=DEFAULT,
                                            configuration_manager=DEFAULT)
         self.addCleanup(mysql_app_patcher.stop)
@@ -819,7 +833,7 @@ class MySqlAppTest(trove_testtools.TestCase):
                          'cmd_stop': Mock(),
                          'cmd_enable': Mock(),
                          'cmd_disable': Mock(),
-                         'cmd_bootstrap_pxc_cluster': Mock(),
+                         'cmd_bootstrap_galera_cluster': Mock(),
                          'bin': Mock()}
         operating_system.service_discovery = Mock(
             return_value=mysql_service)
@@ -834,7 +848,7 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.orig_create_engine = sqlalchemy.create_engine
 
     def tearDown(self):
-        dbaas_base.utils.execute_with_timeout = \
+        mysql_common_service.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
         time.time = self.orig_time_time
@@ -877,7 +891,7 @@ class MySqlAppTest(trove_testtools.TestCase):
 
     def test_stop_mysql(self):
 
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(
             rd_instance.ServiceStatuses.SHUTDOWN)
 
@@ -888,7 +902,7 @@ class MySqlAppTest(trove_testtools.TestCase):
 
     def test_stop_mysql_with_db_update(self):
 
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(
             rd_instance.ServiceStatuses.SHUTDOWN)
 
@@ -918,7 +932,7 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch('trove.guestagent.datastore.service.LOG')
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     def test_stop_mysql_error(self, *args):
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         self.mySqlApp.state_change_wait_time = 1
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
@@ -975,14 +989,14 @@ class MySqlAppTest(trove_testtools.TestCase):
     def test_wipe_ib_logfiles_error(self, get_datadir_mock, mock_logging):
 
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
-        dbaas_base.utils.execute_with_timeout = mocked
+        mysql_common_service.utils.execute_with_timeout = mocked
 
         self.assertRaises(ProcessExecutionError,
                           self.mySqlApp.wipe_ib_logfiles)
 
     def test_start_mysql(self):
 
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.mySqlApp.start_mysql()
@@ -990,7 +1004,7 @@ class MySqlAppTest(trove_testtools.TestCase):
 
     def test_start_mysql_with_db_update(self):
 
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
 
@@ -1006,7 +1020,7 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch('trove.guestagent.datastore.service.LOG')
     def test_start_mysql_runs_forever(self, *args):
 
-        dbaas_base.utils.execute_with_timeout = Mock()
+        mysql_common_service.utils.execute_with_timeout = Mock()
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.mySqlApp.state_change_wait_time = 1
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
@@ -1025,7 +1039,7 @@ class MySqlAppTest(trove_testtools.TestCase):
 
         self.mySqlApp._enable_mysql_on_boot = Mock()
         mocked = Mock(side_effect=ProcessExecutionError('Error'))
-        dbaas_base.utils.execute_with_timeout = mocked
+        mysql_common_service.utils.execute_with_timeout = mocked
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
             patch_pc.__get__ = Mock(return_value=True)
@@ -1060,8 +1074,8 @@ class MySqlAppTest(trove_testtools.TestCase):
             self.mySqlApp.reset_configuration(configuration=configuration)
             cfg_reset.assert_called_once_with('some junk')
 
-    @patch.object(dbaas.MySqlApp, 'get_auth_password',
-                  return_value='some_password')
+    @patch.object(dbaas.MySqlApp,
+                  'get_auth_password', return_value='some_password')
     def test_reset_configuration(self, auth_pwd_mock):
         save_cfg_mock = Mock()
         save_auth_mock = Mock()
@@ -1077,12 +1091,13 @@ class MySqlAppTest(trove_testtools.TestCase):
         save_cfg_mock.assert_called_once_with('some junk')
         save_auth_mock.assert_called_once_with(
             auth_pwd_mock.return_value)
+
         wipe_ib_mock.assert_called_once_with()
 
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__enable_mysql_on_boot(self, mock_execute):
         mysql_service = \
-            dbaas_base.operating_system.service_discovery(["mysql"])
+            mysql_common_service.operating_system.service_discovery(["mysql"])
         self.mySqlApp._enable_mysql_on_boot()
         self.assertEqual(1, mock_execute.call_count)
         mock_execute.assert_called_with(mysql_service['cmd_enable'],
@@ -1101,7 +1116,7 @@ class MySqlAppTest(trove_testtools.TestCase):
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__disable_mysql_on_boot(self, mock_execute):
         mysql_service = \
-            dbaas_base.operating_system.service_discovery(["mysql"])
+            mysql_common_service.operating_system.service_discovery(["mysql"])
         self.mySqlApp._disable_mysql_on_boot()
         self.assertEqual(1, mock_execute.call_count)
         mock_execute.assert_called_with(mysql_service['cmd_disable'],
@@ -1134,27 +1149,29 @@ class MySqlAppTest(trove_testtools.TestCase):
         with patch.object(self.mySqlApp.configuration_manager,
                           'apply_system_override') as apply_sys_mock:
             self.mySqlApp.write_replication_source_overrides('something')
-            apply_sys_mock.assert_called_once_with('something',
-                                                   dbaas_base.CNF_MASTER)
+            apply_sys_mock.assert_called_once_with(
+                'something', mysql_common_service.CNF_MASTER)
 
     def test_write_replication_replica_overrides(self):
         with patch.object(self.mySqlApp.configuration_manager,
                           'apply_system_override') as apply_sys_mock:
             self.mySqlApp.write_replication_replica_overrides('something')
-            apply_sys_mock.assert_called_once_with('something',
-                                                   dbaas_base.CNF_SLAVE)
+            apply_sys_mock.assert_called_once_with(
+                'something', mysql_common_service.CNF_SLAVE)
 
     def test_remove_replication_source_overrides(self):
         with patch.object(self.mySqlApp.configuration_manager,
                           'remove_system_override') as remove_sys_mock:
             self.mySqlApp.remove_replication_source_overrides()
-            remove_sys_mock.assert_called_once_with(dbaas_base.CNF_MASTER)
+            remove_sys_mock.assert_called_once_with(
+                mysql_common_service.CNF_MASTER)
 
     def test_remove_replication_replica_overrides(self):
         with patch.object(self.mySqlApp.configuration_manager,
                           'remove_system_override') as remove_sys_mock:
             self.mySqlApp.remove_replication_replica_overrides()
-            remove_sys_mock.assert_called_once_with(dbaas_base.CNF_SLAVE)
+            remove_sys_mock.assert_called_once_with(
+                mysql_common_service.CNF_SLAVE)
 
     def test_exists_replication_source_overrides(self):
         with patch.object(self.mySqlApp.configuration_manager,
@@ -1369,12 +1386,12 @@ class MySqlAppTest(trove_testtools.TestCase):
             MySqlApp.get_client_auth_file(),
             {'client': {'host': '127.0.0.1',
                         'password': 'some_password',
-                        'user': dbaas_base.ADMIN_USER_NAME}},
+                        'user': mysql_common_service.ADMIN_USER_NAME}},
             codec=MySqlApp.CFG_CODEC)
 
     @patch.object(utils, 'generate_random_password',
                   return_value='some_password')
-    @patch.object(dbaas_base, 'clear_expired_password')
+    @patch.object(mysql_common_service, 'clear_expired_password')
     def test_secure(self, clear_pwd_mock, auth_pwd_mock):
 
         self.mySqlApp.start_mysql = Mock()
@@ -1471,7 +1488,7 @@ class MySqlAppTest(trove_testtools.TestCase):
 
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
-    @patch.object(dbaas_base, 'clear_expired_password')
+    @patch.object(mysql_common_service, 'clear_expired_password')
     def test_secure_write_conf_error(self, clear_pwd_mock):
 
         self.mySqlApp.start_mysql = Mock()
@@ -1538,7 +1555,7 @@ class MySqlAppMockTest(trove_testtools.TestCase):
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         super(MySqlAppMockTest, self).tearDown()
 
-    @patch.object(dbaas_base, 'clear_expired_password')
+    @patch.object(mysql_common_service, 'clear_expired_password')
     @patch.object(utils, 'generate_random_password',
                   return_value='some_password')
     def test_secure_keep_root(self, auth_pwd_mock, clear_pwd_mock):
@@ -1561,9 +1578,9 @@ class MySqlAppMockTest(trove_testtools.TestCase):
                 app._reset_configuration.assert_has_calls(reset_config_calls)
                 self.assertTrue(mock_execute.called)
 
-    @patch.object(dbaas_base, 'clear_expired_password')
-    @patch('trove.guestagent.datastore.mysql.service.MySqlApp'
-           '.get_auth_password', return_value='some_password')
+    @patch.object(mysql_common_service, 'clear_expired_password')
+    @patch.object(mysql_common_service.BaseMySqlApp,
+                  'get_auth_password', return_value='some_password')
     def test_secure_with_mycnf_error(self, auth_pwd_mock, clear_pwd_mock):
         with patch.object(self.mock_client,
                           'execute', return_value=None) as mock_execute:
@@ -1576,10 +1593,10 @@ class MySqlAppMockTest(trove_testtools.TestCase):
                     mock_status = MagicMock()
                     mock_status.wait_for_real_status_to_change_to = MagicMock(
                         return_value=True)
-                    dbaas_base.clear_expired_password = \
+                    mysql_common_service.clear_expired_password = \
                         MagicMock(return_value=None)
                     app = MySqlApp(mock_status)
-                    dbaas_base.clear_expired_password = \
+                    mysql_common_service.clear_expired_password = \
                         MagicMock(return_value=None)
                     self.assertRaises(RuntimeError, app.secure, None)
                     self.assertTrue(mock_execute.called)
@@ -1618,25 +1635,25 @@ class MySqlRootStatusTest(trove_testtools.TestCase):
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         super(MySqlRootStatusTest, self).tearDown()
 
-    @patch.object(dbaas.MySqlApp, 'get_auth_password',
-                  return_value='some_password')
+    @patch.object(mysql_common_service.BaseMySqlApp,
+                  'get_auth_password', return_value='some_password')
     def test_root_is_enabled(self, auth_pwd_mock):
         mock_rs = MagicMock()
         mock_rs.rowcount = 1
         with patch.object(self.mock_client, 'execute', return_value=mock_rs):
             self.assertTrue(MySqlRootAccess().is_root_enabled())
 
-    @patch.object(dbaas.MySqlApp, 'get_auth_password',
-                  return_value='some_password')
+    @patch.object(mysql_common_service.BaseMySqlApp,
+                  'get_auth_password', return_value='some_password')
     def test_root_is_not_enabled(self, auth_pwd_mock):
         mock_rs = MagicMock()
         mock_rs.rowcount = 0
         with patch.object(self.mock_client, 'execute', return_value=mock_rs):
             self.assertFalse(MySqlRootAccess().is_root_enabled())
 
-    @patch.object(dbaas_base, 'clear_expired_password')
-    @patch.object(dbaas.MySqlApp, 'get_auth_password',
-                  return_value='some_password')
+    @patch.object(mysql_common_service, 'clear_expired_password')
+    @patch.object(mysql_common_service.BaseMySqlApp,
+                  'get_auth_password', return_value='some_password')
     def test_enable_root(self, auth_pwd_mock, clear_pwd_mock):
         with patch.object(self.mock_client,
                           'execute', return_value=None) as mock_execute:
@@ -1846,12 +1863,12 @@ class KeepAliveConnectionTest(trove_testtools.TestCase):
     def setUp(self):
         super(KeepAliveConnectionTest, self).setUp()
         self.orig_utils_execute_with_timeout = \
-            dbaas_base.utils.execute_with_timeout
+            mysql_common_service.utils.execute_with_timeout
         self.orig_LOG_err = dbaas.LOG
 
     def tearDown(self):
         super(KeepAliveConnectionTest, self).tearDown()
-        dbaas_base.utils.execute_with_timeout = \
+        mysql_common_service.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
         dbaas.LOG = self.orig_LOG_err
 
@@ -2223,9 +2240,11 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
         super(MySqlAppStatusTest, self).setUp()
         util.init_db()
         self.orig_utils_execute_with_timeout = \
-            dbaas_base.utils.execute_with_timeout
-        self.orig_load_mysqld_options = dbaas_base.load_mysqld_options
-        self.orig_dbaas_base_os_path_exists = dbaas_base.os.path.exists
+            mysql_common_service.utils.execute_with_timeout
+        self.orig_load_mysqld_options = \
+            mysql_common_service.load_mysqld_options
+        self.orig_mysql_common_service_os_path_exists = \
+            mysql_common_service.os.path.exists
         self.orig_dbaas_time_sleep = time.sleep
         self.orig_time_time = time.time
         self.FAKE_ID = str(uuid4())
@@ -2234,10 +2253,12 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
         dbaas.CONF.guest_id = self.FAKE_ID
 
     def tearDown(self):
-        dbaas_base.utils.execute_with_timeout = \
+        mysql_common_service.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
-        dbaas_base.load_mysqld_options = self.orig_load_mysqld_options
-        dbaas_base.os.path.exists = self.orig_dbaas_base_os_path_exists
+        mysql_common_service.load_mysqld_options = \
+            self.orig_load_mysqld_options
+        mysql_common_service.os.path.exists = \
+            self.orig_mysql_common_service_os_path_exists
         time.sleep = self.orig_dbaas_time_sleep
         time.time = self.orig_time_time
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
@@ -2246,7 +2267,8 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
 
     def test_get_actual_db_status(self):
 
-        dbaas_base.utils.execute_with_timeout = Mock(return_value=(None, None))
+        mysql_common_service.utils.execute_with_timeout = \
+            Mock(return_value=(None, None))
 
         self.mySqlAppStatus = MySqlAppStatus.get()
         status = self.mySqlAppStatus._get_actual_db_status()
@@ -2260,7 +2282,7 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
     def test_get_actual_db_status_error_crashed(self, mock_logging,
                                                 mock_exists,
                                                 mock_execute):
-        dbaas_base.load_mysqld_options = Mock(return_value={})
+        mysql_common_service.load_mysqld_options = Mock(return_value={})
         self.mySqlAppStatus = MySqlAppStatus.get()
         status = self.mySqlAppStatus._get_actual_db_status()
         self.assertEqual(rd_instance.ServiceStatuses.CRASHED, status)
@@ -2269,9 +2291,9 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
     def test_get_actual_db_status_error_shutdown(self, *args):
 
         mocked = Mock(side_effect=ProcessExecutionError())
-        dbaas_base.utils.execute_with_timeout = mocked
-        dbaas_base.load_mysqld_options = Mock(return_value={})
-        dbaas_base.os.path.exists = Mock(return_value=False)
+        mysql_common_service.utils.execute_with_timeout = mocked
+        mysql_common_service.load_mysqld_options = Mock(return_value={})
+        mysql_common_service.os.path.exists = Mock(return_value=False)
 
         self.mySqlAppStatus = MySqlAppStatus.get()
         status = self.mySqlAppStatus._get_actual_db_status()
@@ -2281,10 +2303,10 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     def test_get_actual_db_status_error_blocked(self, *args):
 
-        dbaas_base.utils.execute_with_timeout = MagicMock(
+        mysql_common_service.utils.execute_with_timeout = MagicMock(
             side_effect=[ProcessExecutionError(), ("some output", None)])
-        dbaas_base.load_mysqld_options = Mock()
-        dbaas_base.os.path.exists = Mock(return_value=True)
+        mysql_common_service.load_mysqld_options = Mock()
+        mysql_common_service.os.path.exists = Mock(return_value=True)
 
         self.mySqlAppStatus = MySqlAppStatus.get()
         status = self.mySqlAppStatus._get_actual_db_status()
@@ -3427,52 +3449,56 @@ class PXCAppTest(trove_testtools.TestCase):
     def setUp(self):
         super(PXCAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = \
-            dbaas_base.utils.execute_with_timeout
+            mysql_common_service.utils.execute_with_timeout
         self.orig_time_sleep = time.sleep
         self.orig_time_time = time.time
         self.orig_unlink = os.unlink
-        self.orig_get_auth_password = pxc_service.PXCApp.get_auth_password
-        self.orig_pxc_system_service_discovery = pxc_system.service_discovery
+        self.orig_get_auth_password = \
+            mysql_common_service.BaseMySqlApp.get_auth_password
         self.FAKE_ID = str(uuid4())
         InstanceServiceStatus.create(instance_id=self.FAKE_ID,
                                      status=rd_instance.ServiceStatuses.NEW)
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
         self.PXCApp = pxc_service.PXCApp(self.appStatus)
-        mysql_service = {'cmd_start': Mock(),
-                         'cmd_stop': Mock(),
-                         'cmd_enable': Mock(),
-                         'cmd_disable': Mock(),
-                         'cmd_bootstrap_pxc_cluster': Mock(),
-                         'bin': Mock()}
-        pxc_system.service_discovery = Mock(
-            return_value=mysql_service)
+        mysql_service = patch.object(
+            pxc_service.PXCApp, 'mysql_service',
+            PropertyMock(return_value={
+                'cmd_start': Mock(),
+                'cmd_stop': Mock(),
+                'cmd_enable': Mock(),
+                'cmd_disable': Mock(),
+                'cmd_bootstrap_galera_cluster': Mock(),
+                'bin': Mock()
+            }))
+        mysql_service.start()
+        self.addCleanup(mysql_service.stop)
         time.sleep = Mock()
         time.time = Mock(side_effect=faketime)
         os.unlink = Mock()
-        pxc_service.PXCApp.get_auth_password = Mock()
+        mysql_common_service.BaseMySqlApp.get_auth_password = Mock()
         self.mock_client = Mock()
         self.mock_execute = Mock()
         self.mock_client.__enter__ = Mock()
         self.mock_client.__exit__ = Mock()
         self.mock_client.__enter__.return_value.execute = self.mock_execute
-        pxc_service.orig_configuration_manager = (
-            pxc_service.PXCApp.configuration_manager)
-        pxc_service.PXCApp.configuration_manager = Mock()
+        self.orig_configuration_manager = \
+            mysql_common_service.BaseMySqlApp.configuration_manager
+        mysql_common_service.BaseMySqlApp.configuration_manager = Mock()
         self.orig_create_engine = sqlalchemy.create_engine
 
     def tearDown(self):
         self.PXCApp = None
-        dbaas_base.utils.execute_with_timeout = \
+        mysql_common_service.utils.execute_with_timeout = \
             self.orig_utils_execute_with_timeout
         time.sleep = self.orig_time_sleep
         time.time = self.orig_time_time
         os.unlink = self.orig_unlink
-        pxc_system.service_discovery = self.orig_pxc_system_service_discovery
-        pxc_service.PXCApp.get_auth_password = self.orig_get_auth_password
+        mysql_common_service.BaseMySqlApp.get_auth_password = \
+            self.orig_get_auth_password
         InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
-        pxc_service.PXCApp.configuration_manager = \
-            pxc_service.orig_configuration_manager
+        mysql_common_service.BaseMySqlApp.configuration_manager = \
+            self.orig_configuration_manager
         sqlalchemy.create_engine = self.orig_create_engine
         super(PXCAppTest, self).tearDown()
 
@@ -3494,11 +3520,11 @@ class PXCAppTest(trove_testtools.TestCase):
 
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test__bootstrap_cluster(self, mock_execute):
-        pxc_service_cmds = pxc_system.service_discovery(['mysql'])
+        pxc_service_cmds = self.PXCApp.mysql_service
         self.PXCApp._bootstrap_cluster(timeout=20)
         self.assertEqual(1, mock_execute.call_count)
         mock_execute.assert_called_with(
-            pxc_service_cmds['cmd_bootstrap_pxc_cluster'],
+            pxc_service_cmds['cmd_bootstrap_galera_cluster'],
             shell=True,
             timeout=20)
 
@@ -3539,6 +3565,131 @@ class PXCAppTest(trove_testtools.TestCase):
         self.assertEqual(1, self.PXCApp.wipe_ib_logfiles.call_count)
         self.assertEqual(1, apply_mock.call_count)
         self.assertEqual(1, self.PXCApp._bootstrap_cluster.call_count)
+
+
+class MariaDBAppTest(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(MariaDBAppTest, self).setUp()
+        self.orig_utils_execute_with_timeout = \
+            mysql_common_service.utils.execute_with_timeout
+        self.orig_time_sleep = time.sleep
+        self.orig_time_time = time.time
+        self.orig_unlink = os.unlink
+        self.orig_get_auth_password = \
+            mysql_common_service.BaseMySqlApp.get_auth_password
+        self.FAKE_ID = str(uuid4())
+        InstanceServiceStatus.create(instance_id=self.FAKE_ID,
+                                     status=rd_instance.ServiceStatuses.NEW)
+        self.appStatus = FakeAppStatus(self.FAKE_ID,
+                                       rd_instance.ServiceStatuses.NEW)
+        self.MariaDBApp = mariadb_service.MariaDBApp(self.appStatus)
+        mysql_service = patch.object(
+            mariadb_service.MariaDBApp, 'mysql_service',
+            PropertyMock(return_value={
+                'cmd_start': Mock(),
+                'cmd_stop': Mock(),
+                'cmd_enable': Mock(),
+                'cmd_disable': Mock(),
+                'cmd_bootstrap_galera_cluster': Mock(),
+                'bin': Mock()
+            }))
+        mysql_service.start()
+        self.addCleanup(mysql_service.stop)
+        time.sleep = Mock()
+        time.time = Mock(side_effect=faketime)
+        os.unlink = Mock()
+        mysql_common_service.BaseMySqlApp.get_auth_password = Mock()
+        self.mock_client = Mock()
+        self.mock_execute = Mock()
+        self.mock_client.__enter__ = Mock()
+        self.mock_client.__exit__ = Mock()
+        self.mock_client.__enter__.return_value.execute = self.mock_execute
+        self.orig_configuration_manager = \
+            mysql_common_service.BaseMySqlApp.configuration_manager
+        mysql_common_service.BaseMySqlApp.configuration_manager = Mock()
+        self.orig_create_engine = sqlalchemy.create_engine
+
+    def tearDown(self):
+        self.MariaDBApp = None
+        mysql_common_service.utils.execute_with_timeout = \
+            self.orig_utils_execute_with_timeout
+        time.sleep = self.orig_time_sleep
+        time.time = self.orig_time_time
+        os.unlink = self.orig_unlink
+        mysql_common_service.BaseMySqlApp.get_auth_password = \
+            self.orig_get_auth_password
+        InstanceServiceStatus.find_by(instance_id=self.FAKE_ID).delete()
+        mysql_common_service.BaseMySqlApp.configuration_manager = \
+            self.orig_configuration_manager
+        sqlalchemy.create_engine = self.orig_create_engine
+        super(MariaDBAppTest, self).tearDown()
+
+    @patch.object(mariadb_service.MariaDBApp, 'get_engine',
+                  return_value=MagicMock(name='get_engine'))
+    def test__grant_cluster_replication_privilege(self, mock_engine):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        with patch.object(mariadb_service.MariaDBApp, 'local_sql_client',
+                          return_value=self.mock_client):
+            self.MariaDBApp._grant_cluster_replication_privilege(repl_user)
+        args, _ = self.mock_execute.call_args_list[0]
+        expected = ("GRANT LOCK TABLES, RELOAD, REPLICATION CLIENT ON *.* "
+                    "TO `test-user`@`%` IDENTIFIED BY 'test-user-password';")
+        self.assertEqual(expected, args[0].text,
+                         "Sql statements are not the same")
+
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
+    def test__bootstrap_cluster(self, mock_execute):
+        mariadb_service_cmds = self.MariaDBApp.mysql_service
+        self.MariaDBApp._bootstrap_cluster(timeout=20)
+        self.assertEqual(1, mock_execute.call_count)
+        mock_execute.assert_called_with(
+            mariadb_service_cmds['cmd_bootstrap_galera_cluster'],
+            shell=True,
+            timeout=20)
+
+    def test_install_cluster(self):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        apply_mock = Mock()
+        self.MariaDBApp.configuration_manager.apply_system_override = \
+            apply_mock
+        self.MariaDBApp.stop_db = Mock()
+        self.MariaDBApp._grant_cluster_replication_privilege = Mock()
+        self.MariaDBApp.wipe_ib_logfiles = Mock()
+        self.MariaDBApp.start_mysql = Mock()
+        self.MariaDBApp.install_cluster(repl_user, "something")
+        self.assertEqual(1, self.MariaDBApp.stop_db.call_count)
+        self.assertEqual(
+            1, self.MariaDBApp._grant_cluster_replication_privilege.call_count)
+        self.assertEqual(1, apply_mock.call_count)
+        self.assertEqual(1, self.MariaDBApp.wipe_ib_logfiles.call_count)
+        self.assertEqual(1, self.MariaDBApp.start_mysql.call_count)
+
+    def test_install_cluster_with_bootstrap(self):
+        repl_user = {
+            'name': 'test-user',
+            'password': 'test-user-password',
+        }
+        apply_mock = Mock()
+        self.MariaDBApp.configuration_manager.apply_system_override = \
+            apply_mock
+        self.MariaDBApp.stop_db = Mock()
+        self.MariaDBApp._grant_cluster_replication_privilege = Mock()
+        self.MariaDBApp.wipe_ib_logfiles = Mock()
+        self.MariaDBApp._bootstrap_cluster = Mock()
+        self.MariaDBApp.install_cluster(repl_user, "something", bootstrap=True)
+        self.assertEqual(1, self.MariaDBApp.stop_db.call_count)
+        self.assertEqual(
+            1, self.MariaDBApp._grant_cluster_replication_privilege.call_count)
+        self.assertEqual(1, self.MariaDBApp.wipe_ib_logfiles.call_count)
+        self.assertEqual(1, apply_mock.call_count)
+        self.assertEqual(1, self.MariaDBApp._bootstrap_cluster.call_count)
 
 
 class PostgresAppTest(BaseAppTest.AppTestCase):

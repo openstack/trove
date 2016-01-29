@@ -680,16 +680,16 @@ pxc_opts = [
                help='Minimum number of members in PXC cluster.'),
     cfg.StrOpt('api_strategy',
                default='trove.common.strategies.cluster.experimental.'
-               'pxc.api.PXCAPIStrategy',
+               'galera_common.api.GaleraCommonAPIStrategy',
                help='Class that implements datastore-specific API logic.'),
     cfg.StrOpt('taskmanager_strategy',
-               default='trove.common.strategies.cluster.experimental.pxc.'
-               'taskmanager.PXCTaskManagerStrategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'galera_common.taskmanager.GaleraCommonTaskManagerStrategy',
                help='Class that implements datastore-specific task manager '
                     'logic.'),
     cfg.StrOpt('guestagent_strategy',
                default='trove.common.strategies.cluster.experimental.'
-               'pxc.guestagent.PXCGuestAgentStrategy',
+               'galera_common.guestagent.GaleraCommonGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
     cfg.StrOpt('root_controller',
@@ -701,6 +701,7 @@ pxc_opts = [
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.'),
 ]
+
 
 # Redis
 redis_group = cfg.OptGroup(
@@ -1182,7 +1183,7 @@ mariadb_group = cfg.OptGroup(
     'mariadb', title='MariaDB options',
     help="Oslo option group designed for MariaDB datastore")
 mariadb_opts = [
-    cfg.ListOpt('tcp_ports', default=["3306"],
+    cfg.ListOpt('tcp_ports', default=["3306", "4444", "4567", "4568"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -1250,6 +1251,24 @@ mariadb_opts = [
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.'),
+    cfg.BoolOpt('cluster_support', default=True,
+                help='Enable clusters to be created and managed.'),
+    cfg.IntOpt('min_cluster_member_count', default=3,
+               help='Minimum number of members in MariaDB cluster.'),
+    cfg.StrOpt('api_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'galera_common.api.GaleraCommonAPIStrategy',
+               help='Class that implements datastore-specific API logic.'),
+    cfg.StrOpt('taskmanager_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'galera_common.taskmanager.GaleraCommonTaskManagerStrategy',
+               help='Class that implements datastore-specific task manager '
+                    'logic.'),
+    cfg.StrOpt('guestagent_strategy',
+               default='trove.common.strategies.cluster.experimental.'
+               'galera_common.guestagent.GaleraCommonGuestAgentStrategy',
+               help='Class that implements datastore-specific Guest Agent API '
+                    'logic.'),
 ]
 
 # RPC version groups

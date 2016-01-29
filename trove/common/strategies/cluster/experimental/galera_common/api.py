@@ -1,4 +1,5 @@
 # Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Copyright 2016 Tesora Inc.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,13 +16,13 @@ from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 
-from trove.cluster import models
+from trove.cluster import models as cluster_models
 from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
-from trove.common.strategies.cluster import base
+from trove.common.strategies.cluster import base as cluster_base
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
@@ -33,34 +34,34 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class PXCAPIStrategy(base.BaseAPIStrategy):
+class GaleraCommonAPIStrategy(cluster_base.BaseAPIStrategy):
 
     @property
     def cluster_class(self):
-        return PXCCluster
+        return GaleraCommonCluster
 
     @property
     def cluster_view_class(self):
-        return PXCClusterView
+        return GaleraCommonClusterView
 
     @property
     def mgmt_cluster_view_class(self):
-        return PXCMgmtClusterView
+        return GaleraCommonMgmtClusterView
 
 
-class PXCCluster(models.Cluster):
+class GaleraCommonCluster(cluster_models.Cluster):
 
     @staticmethod
     def _validate_cluster_instances(context, instances, datastore,
                                     datastore_version):
         """Validate the flavor and volume"""
-        pxc_conf = CONF.get(datastore_version.manager)
+        ds_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)
 
         # Check number of instances is at least min_cluster_member_count
-        if num_instances < pxc_conf.min_cluster_member_count:
+        if num_instances < ds_conf.min_cluster_member_count:
             raise exception.ClusterNumInstancesNotLargeEnough(
-                num_instances=pxc_conf.min_cluster_member_count)
+                num_instances=ds_conf.min_cluster_member_count)
 
         # Checking flavors and get delta for quota check
         flavor_ids = [instance['flavor_id'] for instance in instances]
@@ -78,18 +79,18 @@ class PXCCluster(models.Cluster):
         volume_sizes = [instance['volume_size'] for instance in instances
                         if instance.get('volume_size', None)]
         volume_size = None
-        if pxc_conf.volume_support:
+        if ds_conf.volume_support:
             if len(volume_sizes) != num_instances:
                 raise exception.ClusterVolumeSizeRequired()
             if len(set(volume_sizes)) != 1:
                 raise exception.ClusterVolumeSizesNotEqual()
             volume_size = volume_sizes[0]
-            models.validate_volume_size(volume_size)
+            cluster_models.validate_volume_size(volume_size)
             deltas['volumes'] = volume_size * num_instances
         else:
             if len(volume_sizes) > 0:
                 raise exception.VolumeNotSupported()
-            ephemeral_support = pxc_conf.device_path
+            ephemeral_support = ds_conf.device_path
             if ephemeral_support and flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=flavor_id)
 
@@ -140,11 +141,11 @@ class PXCCluster(models.Cluster):
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
                instances, extended_properties):
-        LOG.debug("Initiating PXC cluster creation.")
+        LOG.debug("Initiating Galera cluster creation.")
         cls._validate_cluster_instances(context, instances, datastore,
                                         datastore_version)
         # Updating Cluster Task
-        db_info = models.DBCluster.create(
+        db_info = cluster_models.DBCluster.create(
             name=name, tenant_id=context.tenant,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
@@ -156,7 +157,7 @@ class PXCCluster(models.Cluster):
         task_api.load(context, datastore_version.manager).create_cluster(
             db_info.id)
 
-        return PXCCluster(context, db_info, datastore, datastore_version)
+        return cls(context, db_info, datastore, datastore_version)
 
     def _get_cluster_network_interfaces(self):
         nova_client = remote.create_nova_client(self.context)
@@ -176,21 +177,23 @@ class PXCCluster(models.Cluster):
         datastore = self.ds
         datastore_version = self.ds_version
 
-        # Get the network of the existing cluster instances.
-        interface_ids = self._get_cluster_network_interfaces()
-        for instance in instances:
-            instance["nics"] = interface_ids
-
         db_info.update(task_status=ClusterTasks.GROWING_CLUSTER)
+        try:
+            # Get the network of the existing cluster instances.
+            interface_ids = self._get_cluster_network_interfaces()
+            for instance in instances:
+                instance["nics"] = interface_ids
 
-        new_instances = self._create_instances(context, db_info,
-                                               datastore, datastore_version,
-                                               instances)
+            new_instances = self._create_instances(
+                context, db_info, datastore, datastore_version, instances)
 
-        task_api.load(context, datastore_version.manager).grow_cluster(
-            db_info.id, [instance.id for instance in new_instances])
+            task_api.load(context, datastore_version.manager).grow_cluster(
+                db_info.id, [instance.id for instance in new_instances])
+        except Exception:
+            db_info.update(task_status=ClusterTasks.NONE)
 
-        return PXCCluster(context, db_info, datastore, datastore_version)
+        return self.__class__(context, db_info,
+                              datastore, datastore_version)
 
     def shrink(self, instances):
         """Removes instances from a cluster."""
@@ -204,19 +207,25 @@ class PXCCluster(models.Cluster):
             raise exception.ClusterShrinkMustNotLeaveClusterEmpty()
 
         self.db_info.update(task_status=ClusterTasks.SHRINKING_CLUSTER)
-        task_api.load(self.context, self.ds_version.manager).shrink_cluster(
-            self.db_info.id, [instance.id for instance in removal_instances])
+        try:
+            task_api.load(self.context, self.ds_version.manager
+                          ).shrink_cluster(self.db_info.id,
+                                           [instance.id
+                                            for instance in removal_instances])
+        except Exception:
+            self.db_info.update(task_status=ClusterTasks.NONE)
 
-        return PXCCluster(self.context, self.db_info, self.ds, self.ds_version)
+        return self.__class__(self.context, self.db_info,
+                              self.ds, self.ds_version)
 
 
-class PXCClusterView(ClusterView):
+class GaleraCommonClusterView(ClusterView):
 
     def build_instances(self):
         return self._build_instances(['member'], ['member'])
 
 
-class PXCMgmtClusterView(MgmtClusterView):
+class GaleraCommonMgmtClusterView(MgmtClusterView):
 
     def build_instances(self):
         return self._build_instances(['member'], ['member'])

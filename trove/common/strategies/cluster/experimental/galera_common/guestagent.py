@@ -1,4 +1,5 @@
 # Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Copyright 2016 Tesora Inc.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,7 +15,7 @@
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common.strategies.cluster import base
+from trove.common.strategies.cluster import base as cluster_base
 from trove.guestagent import api as guest_api
 
 
@@ -22,19 +23,19 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class PXCGuestAgentStrategy(base.BaseGuestAgentStrategy):
+class GaleraCommonGuestAgentStrategy(cluster_base.BaseGuestAgentStrategy):
 
     @property
     def guest_client_class(self):
-        return PXCGuestAgentAPI
+        return GaleraCommonGuestAgentAPI
 
 
-class PXCGuestAgentAPI(guest_api.API):
+class GaleraCommonGuestAgentAPI(guest_api.API):
 
     def install_cluster(self, replication_user, cluster_configuration,
                         bootstrap):
         """Install the cluster."""
-        LOG.debug("Installing PXC cluster.")
+        LOG.debug("Installing Galera cluster.")
         self._call("install_cluster", CONF.cluster_usage_timeout,
                    self.version_cap,
                    replication_user=replication_user,

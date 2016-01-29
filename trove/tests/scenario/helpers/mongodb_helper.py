@@ -18,6 +18,8 @@ from trove.tests.scenario.helpers.test_helper import TestHelper
 
 class MongodbHelper(TestHelper):
 
+    cluster_node_count = 2
+
     def __init__(self, expected_override_name):
         super(MongodbHelper, self).__init__(expected_override_name)
 

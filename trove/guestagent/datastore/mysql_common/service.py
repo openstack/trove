@@ -68,7 +68,6 @@ OS_NAME = operating_system.get_os()
 MYSQL_CONFIG = {operating_system.REDHAT: "/etc/my.cnf",
                 operating_system.DEBIAN: "/etc/mysql/my.cnf",
                 operating_system.SUSE: "/etc/my.cnf"}[OS_NAME]
-MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
 MYSQL_BIN_CANDIDATES = ["/usr/sbin/mysqld", "/usr/libexec/mysqld"]
 MYSQL_OWNER = 'mysql'
 CNF_EXT = 'cnf'
@@ -588,6 +587,11 @@ class BaseMySqlApp(object):
     def keep_alive_connection_cls(self):
         return self._keep_alive_connection_cls
 
+    @property
+    def mysql_service(self):
+        MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
+        return operating_system.service_discovery(MYSQL_SERVICE_CANDIDATES)
+
     configuration_manager = ConfigurationManager(
         MYSQL_CONFIG, MYSQL_OWNER, MYSQL_OWNER, CFG_CODEC, requires_root=True,
         override_strategy=ImportOverrideStrategy(CNF_INCLUDE_DIR, CNF_EXT))
@@ -737,18 +741,15 @@ class BaseMySqlApp(object):
     def _enable_mysql_on_boot(self):
         LOG.debug("Enabling MySQL on boot.")
         try:
-            mysql_service = operating_system.service_discovery(
-                MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mysql_service['cmd_enable'], shell=True)
+            utils.execute_with_timeout(self.mysql_service['cmd_enable'],
+                                       shell=True)
         except KeyError:
             LOG.exception(_("Error enabling MySQL start on boot."))
             raise RuntimeError("Service is not discovered.")
 
     def _disable_mysql_on_boot(self):
         try:
-            mysql_service = operating_system.service_discovery(
-                MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mysql_service['cmd_disable'],
+            utils.execute_with_timeout(self.mysql_service['cmd_disable'],
                                        shell=True)
         except KeyError:
             LOG.exception(_("Error disabling MySQL start on boot."))
@@ -759,9 +760,8 @@ class BaseMySqlApp(object):
         if do_not_start_on_reboot:
             self._disable_mysql_on_boot()
         try:
-            mysql_service = operating_system.service_discovery(
-                MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mysql_service['cmd_stop'], shell=True)
+            utils.execute_with_timeout(self.mysql_service['cmd_stop'],
+                                       shell=True)
         except KeyError:
             LOG.exception(_("Error stopping MySQL."))
             raise RuntimeError("Service is not discovered.")
@@ -951,10 +951,8 @@ class BaseMySqlApp(object):
             self._enable_mysql_on_boot()
 
         try:
-            mysql_service = operating_system.service_discovery(
-                MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(mysql_service['cmd_start'], shell=True,
-                                       timeout=timeout)
+            utils.execute_with_timeout(self.mysql_service['cmd_start'],
+                                       shell=True, timeout=timeout)
         except KeyError:
             raise RuntimeError("Service is not discovered.")
         except exception.ProcessExecutionError:

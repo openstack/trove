@@ -15,27 +15,37 @@
 #
 
 from oslo_log import log as logging
-from trove.guestagent.datastore.mysql_common import service
+
+from trove.guestagent.datastore.galera_common import service as galera_service
+from trove.guestagent.datastore.mysql_common import service as mysql_service
 
 LOG = logging.getLogger(__name__)
 
 
-class KeepAliveConnection(service.BaseKeepAliveConnection):
-    pass
+class MariaDBApp(galera_service.GaleraApp):
 
-
-class MySqlAppStatus(service.BaseMySqlAppStatus):
-    pass
-
-
-class LocalSqlClient(service.BaseLocalSqlClient):
-    pass
-
-
-class MySqlApp(service.BaseMySqlApp):
     def __init__(self, status):
-        super(MySqlApp, self).__init__(status, LocalSqlClient,
-                                       KeepAliveConnection)
+        super(MariaDBApp, self).__init__(
+            status, mysql_service.BaseLocalSqlClient,
+            mysql_service.BaseKeepAliveConnection)
+
+    @property
+    def mysql_service(self):
+        result = super(MariaDBApp, self).mysql_service
+        if result['type'] == 'sysvinit':
+            result['cmd_bootstrap_galera_cluster'] = (
+                "sudo service %s bootstrap"
+                % result['service'])
+        elif result['type'] == 'systemd':
+            # TODO(mwj 2016/01/28): determine RHEL start for MariaDB Cluster
+            result['cmd_bootstrap_galera_cluster'] = (
+                "sudo systemctl start %s@bootstrap.service"
+                % result['service'])
+        return result
+
+    @property
+    def cluster_configuration(self):
+        return self.configuration_manager.get_value('galera')
 
     def _get_slave_status(self):
         with self.local_sql_client(self.get_engine()) as client:
@@ -70,13 +80,15 @@ class MySqlApp(service.BaseMySqlApp):
             client.execute("SELECT MASTER_GTID_WAIT('%s')" % txn)
 
 
-class MySqlRootAccess(service.BaseMySqlRootAccess):
+class MariaDBRootAccess(mysql_service.BaseMySqlRootAccess):
     def __init__(self):
-        super(MySqlRootAccess, self).__init__(LocalSqlClient,
-                                              MySqlApp(MySqlAppStatus.get()))
+        super(MariaDBRootAccess, self).__init__(
+            mysql_service.BaseLocalSqlClient,
+            MariaDBApp(mysql_service.BaseMySqlAppStatus.get()))
 
 
-class MySqlAdmin(service.BaseMySqlAdmin):
+class MariaDBAdmin(mysql_service.BaseMySqlAdmin):
     def __init__(self):
-        super(MySqlAdmin, self).__init__(LocalSqlClient, MySqlRootAccess(),
-                                         MySqlApp)
+        super(MariaDBAdmin, self).__init__(
+            mysql_service.BaseLocalSqlClient, MariaDBRootAccess(),
+            MariaDBApp)
