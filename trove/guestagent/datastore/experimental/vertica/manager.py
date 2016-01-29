@@ -59,6 +59,7 @@ class Manager(manager.Manager):
         if cluster_config is None:
             self.app.install_vertica()
             self.app.create_db()
+            self.app.add_udls()
         elif cluster_config['instance_type'] not in ["member", "master"]:
             raise RuntimeError(_("Bad cluster configuration: instance type "
                                "given as %s.") %
@@ -102,6 +103,7 @@ class Manager(manager.Manager):
         try:
             LOG.debug("Installing cluster on members: %s." % members)
             self.app.install_cluster(members)
+            self.app.add_udls()
             LOG.debug("install_cluster call has finished.")
         except Exception:
             LOG.exception(_('Cluster installation failed.'))
