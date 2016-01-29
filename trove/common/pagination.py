@@ -40,7 +40,8 @@ def paginate_list(li, limit=None, marker=None, include_marker=False):
         pos = bisect.bisect(li, marker)
 
     if limit and pos + limit < len(li):
-        return li[pos:pos + limit], li[pos + limit]
+        page = li[pos:pos + limit]
+        return page, page[-1]
     else:
         return li[pos:], None
 

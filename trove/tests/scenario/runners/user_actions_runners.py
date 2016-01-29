@@ -70,10 +70,10 @@ class UserActionsRunner(TestRunner):
 
     def _assert_user_matches(self, user, expected_user_def):
         user_name = expected_user_def['name']
-        self.assert_equal(user.name, expected_user_def['name'],
+        self.assert_equal(expected_user_def['name'], user.name,
                           "Mismatch of names for user: %s" % user_name)
         self.assert_list_elements_equal(
-            user.databases, expected_user_def['databases'],
+            expected_user_def['databases'], user.databases,
             "Mismatch of databases for user: %s" % user_name)
 
     def run_users_list(self, expected_http_code=200):
@@ -116,8 +116,7 @@ class UserActionsRunner(TestRunner):
         self.assert_pagination_match(list_page, full_list, 0, limit)
         if marker:
             last_user = list_page[-1]
-            expected_marker = urllib_parse.quote(
-                '%s@%s' % (last_user.name, last_user.host))
+            expected_marker = self.as_pagination_marker(last_user)
             self.assert_equal(expected_marker, marker,
                               "Pagination marker should be the last element "
                               "in the page.")
@@ -125,6 +124,9 @@ class UserActionsRunner(TestRunner):
             self.assert_client_code(expected_http_code)
             self.assert_pagination_match(
                 list_page, full_list, limit, len(full_list))
+
+    def as_pagination_marker(self, user):
+        return urllib_parse.quote(user.name)
 
     def run_user_create_with_no_attributes(
             self, expected_exception=exceptions.BadRequest,
@@ -352,3 +354,21 @@ class UserActionsRunner(TestRunner):
 
     def get_system_users(self):
         return self.get_datastore_config_property('ignore_users')
+
+
+class MysqlUserActionsRunner(UserActionsRunner):
+
+    def as_pagination_marker(self, user):
+        return urllib_parse.quote('%s@%s' % (user.name, user.host))
+
+
+class MariadbUserActionsRunner(MysqlUserActionsRunner):
+
+    def __init__(self):
+        super(MariadbUserActionsRunner, self).__init__()
+
+
+class PerconaUserActionsRunner(MysqlUserActionsRunner):
+
+    def __init__(self):
+        super(PerconaUserActionsRunner, self).__init__()
