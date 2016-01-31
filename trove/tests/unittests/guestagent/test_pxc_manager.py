@@ -14,14 +14,14 @@
 
 from mock import MagicMock
 from mock import patch
-import testtools
 
 from trove.common.context import TroveContext
 from trove.guestagent.datastore.experimental.pxc.manager import Manager
 import trove.guestagent.datastore.experimental.pxc.service as dbaas
+from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentManagerTest(testtools.TestCase):
+class GuestAgentManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
@@ -31,33 +31,29 @@ class GuestAgentManagerTest(testtools.TestCase):
             'trove.guestagent.strategies.replication.get_instance')
         self.mock_rs_class = self.patcher_rs.start()
 
+        status_patcher = patch.object(dbaas.PXCAppStatus, 'get',
+                                      return_value=MagicMock())
+        self.addCleanup(status_patcher.stop)
+        self.status_get_mock = status_patcher.start()
+
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
         self.patcher_rs.stop()
 
-    def test_install_cluster(self):
-        mock_status = MagicMock()
-        dbaas.PXCAppStatus.get = MagicMock(return_value=mock_status)
-
-        dbaas.PXCApp.install_cluster = MagicMock(return_value=None)
-
+    @patch.object(dbaas.PXCApp, 'install_cluster')
+    def test_install_cluster(self, install_cluster_mock):
         replication_user = "repuser"
         configuration = "configuration"
         bootstrap = True
         self.manager.install_cluster(self.context, replication_user,
                                      configuration, bootstrap)
-        dbaas.PXCAppStatus.get.assert_any_call()
-        dbaas.PXCApp.install_cluster.assert_called_with(
+        self.status_get_mock.assert_any_call()
+        install_cluster_mock.assert_called_with(
             replication_user, configuration, bootstrap)
 
-    def test_reset_admin_password(self):
-        mock_status = MagicMock()
-        dbaas.PXCAppStatus.get = MagicMock(return_value=mock_status)
-
-        dbaas.PXCApp.reset_admin_password = MagicMock(return_value=None)
-
+    @patch.object(dbaas.PXCApp, 'reset_admin_password')
+    def test_reset_admin_password(self, reset_admin_pwd):
         admin_password = "password"
         self.manager.reset_admin_password(self.context, admin_password)
-        dbaas.PXCAppStatus.get.assert_any_call()
-        dbaas.PXCApp.reset_admin_password.assert_called_with(
-            admin_password)
+        self.status_get_mock.assert_any_call()
+        reset_admin_pwd.assert_called_with(admin_password)

@@ -14,10 +14,10 @@
 
 import os
 
+from mock import DEFAULT
 from mock import MagicMock
 from mock import patch
 from proboscis.asserts import assert_equal
-import testtools
 from testtools.matchers import Is, Equals, Not
 
 from trove.common.context import TroveContext
@@ -34,9 +34,10 @@ from trove.guestagent import dbaas as base_dbaas
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
+from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentManagerTest(testtools.TestCase):
+class GuestAgentManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentManagerTest, self).setUp()
@@ -48,7 +49,7 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.mock_rs = self.patch_rs.start()
         self.addCleanup(self.patch_rs.stop)
         self.manager = Manager()
-        self.origin_MySqlAppStatus = dbaas.MySqlAppStatus
+        self.origin_MySqlAppStatus = dbaas.MySqlAppStatus.get
         self.origin_os_path_exists = os.path.exists
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
@@ -58,6 +59,9 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.origin_stop_mysql = dbaas.MySqlApp.stop_db
         self.origin_start_mysql = dbaas.MySqlApp.start_mysql
         self.origin_update_overrides = dbaas.MySqlApp.update_overrides
+        self.origin_install_if_needed = dbaas.MySqlApp.install_if_needed
+        self.origin_secure = dbaas.MySqlApp.secure
+        self.origin_secure_root = dbaas.MySqlApp.secure_root
         self.origin_pkg_is_installed = pkg.Package.pkg_is_installed
         self.origin_os_path_exists = os.path.exists
         self.origin_chown = operating_system.chown
@@ -71,7 +75,7 @@ class GuestAgentManagerTest(testtools.TestCase):
 
     def tearDown(self):
         super(GuestAgentManagerTest, self).tearDown()
-        dbaas.MySqlAppStatus = self.origin_MySqlAppStatus
+        dbaas.MySqlAppStatus.get = self.origin_MySqlAppStatus
         os.path.exists = self.origin_os_path_exists
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
@@ -81,6 +85,9 @@ class GuestAgentManagerTest(testtools.TestCase):
         dbaas.MySqlApp.stop_db = self.origin_stop_mysql
         dbaas.MySqlApp.start_mysql = self.origin_start_mysql
         dbaas.MySqlApp.update_overrides = self.origin_update_overrides
+        dbaas.MySqlApp.install_if_needed = self.origin_install_if_needed
+        dbaas.MySqlApp.secure = self.origin_secure
+        dbaas.MySqlApp.secure_root = self.origin_secure_root
         operating_system.chown = self.origin_chown
         pkg.Package.pkg_is_installed = self.origin_pkg_is_installed
         os.path.exists = self.origin_os_path_exists
@@ -95,81 +102,83 @@ class GuestAgentManagerTest(testtools.TestCase):
         dbaas.MySqlAppStatus.get.assert_any_call()
         mock_status.update.assert_any_call()
 
-    def test_create_database(self):
-        dbaas.MySqlAdmin.create_database = MagicMock(return_value=None)
+    @patch.object(dbaas.MySqlAdmin, 'create_database')
+    def test_create_database(self, create_db_mock):
         self.manager.create_database(self.context, ['db1'])
-        dbaas.MySqlAdmin.create_database.assert_any_call(['db1'])
+        create_db_mock.assert_any_call(['db1'])
 
-    def test_create_user(self):
-        dbaas.MySqlAdmin.create_user = MagicMock(return_value=None)
+    @patch.object(dbaas.MySqlAdmin, 'create_user')
+    def test_create_user(self, create_user_mock):
         self.manager.create_user(self.context, ['user1'])
-        dbaas.MySqlAdmin.create_user.assert_any_call(['user1'])
+        create_user_mock.assert_any_call(['user1'])
 
-    def test_delete_database(self):
+    @patch.object(dbaas.MySqlAdmin, 'delete_database')
+    def test_delete_database(self, delete_database_mock):
         databases = ['db1']
-        dbaas.MySqlAdmin.delete_database = MagicMock(return_value=None)
         self.manager.delete_database(self.context, databases)
-        dbaas.MySqlAdmin.delete_database.assert_any_call(databases)
+        delete_database_mock.assert_any_call(databases)
 
-    def test_delete_user(self):
+    @patch.object(dbaas.MySqlAdmin, 'delete_user')
+    def test_delete_user(self, delete_user_mock):
         user = ['user1']
-        dbaas.MySqlAdmin.delete_user = MagicMock(return_value=None)
         self.manager.delete_user(self.context, user)
-        dbaas.MySqlAdmin.delete_user.assert_any_call(user)
+        delete_user_mock.assert_any_call(user)
 
-    def test_grant_access(self):
+    @patch.object(dbaas.MySqlAdmin, 'grant_access')
+    def test_grant_access(self, grant_access_mock):
         username = "test_user"
         hostname = "test_host"
         databases = ["test_database"]
-        dbaas.MySqlAdmin.grant_access = MagicMock(return_value=None)
         self.manager.grant_access(self.context,
                                   username,
                                   hostname,
                                   databases)
 
-        dbaas.MySqlAdmin.grant_access.assert_any_call(username,
-                                                      hostname,
-                                                      databases)
+        grant_access_mock.assert_any_call(username,
+                                          hostname,
+                                          databases)
 
-    def test_list_databases(self):
-        dbaas.MySqlAdmin.list_databases = MagicMock(return_value=['database1'])
+    @patch.object(dbaas.MySqlAdmin, 'list_databases',
+                  return_value=['database1'])
+    def test_list_databases(self, list_databases_mock):
         databases = self.manager.list_databases(self.context)
         self.assertThat(databases, Not(Is(None)))
-        self.assertThat(databases, Equals(['database1']))
-        dbaas.MySqlAdmin.list_databases.assert_any_call(None, None, False)
+        self.assertThat(databases, Equals(list_databases_mock.return_value))
+        list_databases_mock.assert_any_call(None, None, False)
 
-    def test_list_users(self):
-        dbaas.MySqlAdmin.list_users = MagicMock(return_value=['user1'])
+    @patch.object(dbaas.MySqlAdmin, 'list_users', return_value=['user1'])
+    def test_list_users(self, list_users_mock):
         users = self.manager.list_users(self.context)
-        self.assertThat(users, Equals(['user1']))
+        self.assertThat(users, Equals(list_users_mock.return_value))
         dbaas.MySqlAdmin.list_users.assert_any_call(None, None, False)
 
-    def test_get_users(self):
+    @patch.object(dbaas.MySqlAdmin, 'get_user', return_value=['user1'])
+    def test_get_users(self, get_user_mock):
         username = ['user1']
         hostname = ['host']
-        dbaas.MySqlAdmin.get_user = MagicMock(return_value=['user1'])
         users = self.manager.get_user(self.context, username, hostname)
-        self.assertThat(users, Equals(['user1']))
-        dbaas.MySqlAdmin.get_user.assert_any_call(username, hostname)
+        self.assertThat(users, Equals(get_user_mock.return_value))
+        get_user_mock.assert_any_call(username, hostname)
 
-    def test_enable_root(self):
-        dbaas.MySqlAdmin.enable_root = MagicMock(return_value='user_id_stuff')
+    @patch.object(dbaas.MySqlAdmin, 'enable_root',
+                  return_value='user_id_stuff')
+    def test_enable_root(self, enable_root_mock):
         user_id = self.manager.enable_root(self.context)
-        self.assertThat(user_id, Is('user_id_stuff'))
-        dbaas.MySqlAdmin.enable_root.assert_any_call()
+        self.assertThat(user_id, Is(enable_root_mock.return_value))
+        enable_root_mock.assert_any_call()
 
-    def test_is_root_enabled(self):
-        dbaas.MySqlAdmin.is_root_enabled = MagicMock(return_value=True)
+    @patch.object(dbaas.MySqlAdmin, 'is_root_enabled', return_value=True)
+    def test_is_root_enabled(self, is_root_enabled_mock):
         is_enabled = self.manager.is_root_enabled(self.context)
-        self.assertThat(is_enabled, Is(True))
-        dbaas.MySqlAdmin.is_root_enabled.assert_any_call()
+        self.assertThat(is_enabled, Is(is_root_enabled_mock.return_value))
+        is_root_enabled_mock.assert_any_call()
 
-    def test_create_backup(self):
-        backup.backup = MagicMock(return_value=None)
+    @patch.object(backup, 'backup')
+    def test_create_backup(self, backup_mock):
         # entry point
         Manager().create_backup(self.context, 'backup_id_123')
         # assertions
-        backup.backup.assert_any_call(self.context, 'backup_id_123')
+        backup_mock.assert_any_call(self.context, 'backup_id_123')
 
     def test_prepare_device_path_true(self):
         self._prepare_dynamic()
@@ -202,7 +211,15 @@ class GuestAgentManagerTest(testtools.TestCase):
                     'config': None}
         self._prepare_dynamic(snapshot=snapshot)
 
-    def _prepare_dynamic(self, device_path='/dev/vdb', is_mysql_installed=True,
+    @patch.multiple(dbaas.MySqlAdmin,
+                    create_user=DEFAULT,
+                    create_database=DEFAULT,
+                    enable_root=DEFAULT)
+    @patch.object(backup, 'restore')
+    def _prepare_dynamic(self, restore_mock, create_user, create_database,
+                         enable_root,
+                         device_path='/dev/vdb',
+                         is_mysql_installed=True,
                          backup_id=None, is_root_enabled=False,
                          root_password=None, overrides=None, is_mounted=False,
                          databases=None, users=None, snapshot=None):
@@ -237,34 +254,30 @@ class GuestAgentManagerTest(testtools.TestCase):
         dbaas.MySqlApp.start_mysql = MagicMock(return_value=None)
         dbaas.MySqlApp.update_overrides = MagicMock(return_value=None)
         dbaas.MySqlApp.install_if_needed = MagicMock(return_value=None)
-        backup.restore = MagicMock(return_value=None)
         dbaas.MySqlApp.secure = MagicMock(return_value=None)
         dbaas.MySqlApp.secure_root = MagicMock(return_value=None)
         pkg.Package.pkg_is_installed = MagicMock(
             return_value=is_mysql_installed)
-        dbaas.MySqlAdmin.is_root_enabled = MagicMock(
-            return_value=is_root_enabled)
-        dbaas.MySqlAdmin.create_user = MagicMock(return_value=None)
-        dbaas.MySqlAdmin.create_database = MagicMock(return_value=None)
-        dbaas.MySqlAdmin.enable_root = MagicMock(return_value=None)
         operating_system.chown = MagicMock(return_value=None)
         os.path.exists = MagicMock(return_value=True)
         mock_replication = MagicMock()
         mock_replication.enable_as_slave = MagicMock()
         self.mock_rs_class.return_value = mock_replication
-        # invocation
-        self.manager.prepare(context=self.context,
-                             packages=None,
-                             memory_mb='2048',
-                             databases=databases,
-                             users=users,
-                             device_path=device_path,
-                             mount_point='/var/lib/mysql',
-                             backup_info=backup_info,
-                             root_password=root_password,
-                             overrides=overrides,
-                             cluster_config=None,
-                             snapshot=snapshot)
+
+        with patch.object(dbaas.MySqlAdmin, 'is_root_enabled',
+                          return_value=is_root_enabled):
+            self.manager.prepare(context=self.context,
+                                 packages=None,
+                                 memory_mb='2048',
+                                 databases=databases,
+                                 users=users,
+                                 device_path=device_path,
+                                 mount_point='/var/lib/mysql',
+                                 backup_info=backup_info,
+                                 root_password=root_password,
+                                 overrides=overrides,
+                                 cluster_config=None,
+                                 snapshot=snapshot)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()
@@ -278,9 +291,9 @@ class GuestAgentManagerTest(testtools.TestCase):
         else:
             self.assertEqual(0, VolumeDevice.unmount.call_count)
         if backup_info:
-            backup.restore.assert_any_call(self.context,
-                                           backup_info,
-                                           '/var/lib/mysql/data')
+            restore_mock.assert_any_call(self.context,
+                                         backup_info,
+                                         '/var/lib/mysql/data')
         dbaas.MySqlApp.install_if_needed.assert_any_call(None)
         # We don't need to make sure the exact contents are there
         dbaas.MySqlApp.secure.assert_any_call(None)
@@ -458,62 +471,58 @@ class GuestAgentManagerTest(testtools.TestCase):
     def test_rpc_ping(self):
         self.assertTrue(self.manager.rpc_ping(self.context))
 
-    def test_change_passwords(self):
-        dbaas.MySqlAdmin.change_passwords = MagicMock(return_value=None)
+    @patch.object(dbaas.MySqlAdmin, 'change_passwords')
+    def test_change_passwords(self, change_passwords_mock):
         self.manager.change_passwords(
             self.context, [{'name': 'test_user', 'password': 'testpwd'}])
-        dbaas.MySqlAdmin.change_passwords.assert_any_call(
+        change_passwords_mock.assert_any_call(
             [{'name': 'test_user', 'password': 'testpwd'}])
 
-    def test_update_attributes(self):
-        dbaas.MySqlAdmin.update_attributes = MagicMock(return_value=None)
+    @patch.object(dbaas.MySqlAdmin, 'update_attributes')
+    def test_update_attributes(self, update_attr_mock):
         self.manager.update_attributes(self.context, 'test_user', '%',
                                        {'password': 'testpwd'})
-        dbaas.MySqlAdmin.update_attributes.assert_any_call('test_user', '%',
-                                                           {'password':
-                                                            'testpwd'})
+        update_attr_mock.assert_any_call('test_user', '%',
+                                         {'password':
+                                          'testpwd'})
 
-    def test_reset_configuration(self):
+    @patch.object(dbaas.MySqlApp, 'reset_configuration')
+    def test_reset_configuration(self, reset_config_mock):
         dbaas.MySqlAppStatus.get = MagicMock(return_value=MagicMock())
-        dbaas.MySqlApp.reset_configuration = MagicMock(return_value=None)
         configuration = {'config_contents': 'some junk'}
         self.manager.reset_configuration(self.context, configuration)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.reset_configuration.assert_any_call({'config_contents':
-                                                            'some junk'})
+        reset_config_mock.assert_any_call({'config_contents': 'some junk'})
 
-    def test_revoke_access(self):
-        dbaas.MySqlAdmin.revoke_access = MagicMock(return_value=None)
+    @patch.object(dbaas.MySqlAdmin, 'revoke_access')
+    def test_revoke_access(self, revoke_access_mock):
         self.manager.revoke_access(self.context, 'test_user', '%', 'test_db')
-        dbaas.MySqlAdmin.revoke_access.assert_any_call('test_user', '%',
-                                                       'test_db')
+        revoke_access_mock.assert_any_call('test_user', '%', 'test_db')
 
-    def test_list_access(self):
-        dbaas.MySqlAdmin.list_access = MagicMock(return_value=['database1'])
+    @patch.object(dbaas.MySqlAdmin, 'list_access', return_value=['database1'])
+    def test_list_access(self, list_access_mock):
         access = self.manager.list_access(self.context, 'test_user', '%')
-        self.assertEqual(['database1'], access)
-        dbaas.MySqlAdmin.list_access.assert_any_call('test_user', '%')
+        self.assertEqual(list_access_mock.return_value, access)
+        list_access_mock.assert_any_call('test_user', '%')
 
-    def test_restart(self):
+    @patch.object(dbaas.MySqlApp, 'restart')
+    def test_restart(self, restart_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.restart = MagicMock(return_value=None)
         self.manager.restart(self.context)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.restart.assert_any_call()
+        restart_mock.assert_any_call()
 
-    def test_start_db_with_conf_changes(self):
+    @patch.object(dbaas.MySqlApp, 'start_db_with_conf_changes')
+    def test_start_db_with_conf_changes(self, start_db_mock):
         mock_status = MagicMock()
         configuration = {'config_contents': 'some junk'}
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.start_db_with_conf_changes = MagicMock(
-            return_value=None)
         self.manager.start_db_with_conf_changes(self.context, configuration)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.start_db_with_conf_changes.assert_any_call(
-            {'config_contents': 'some junk'})
+        start_db_mock.assert_any_call({'config_contents': 'some junk'})
 
     def test_stop_db(self):
         mock_status = MagicMock()
@@ -550,79 +559,77 @@ class GuestAgentManagerTest(testtools.TestCase):
             test_resize_fs = volume.VolumeDevice.resize_fs.call_args_list[0]
             test_resize_fs.assert_called_with('/var/lib/mysql')
 
-    def test_update_overrides(self):
+    @patch.object(dbaas.MySqlApp, 'remove_overrides')
+    def test_update_overrides(self, remove_config_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.remove_overrides = MagicMock(return_value=None)
         dbaas.MySqlApp.update_overrides = MagicMock(return_value=None)
         self.manager.update_overrides(self.context, 'something_overrides')
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.remove_overrides.assert_not_called()
+        remove_config_mock.assert_not_called()
         dbaas.MySqlApp.update_overrides.assert_any_call('something_overrides')
 
-    def test_update_overrides_with_remove(self):
+    @patch.object(dbaas.MySqlApp, 'remove_overrides')
+    def test_update_overrides_with_remove(self, remove_overrides_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.remove_overrides = MagicMock(return_value=None)
         dbaas.MySqlApp.update_overrides = MagicMock(return_value=None)
         self.manager.update_overrides(self.context, 'something_overrides',
                                       True)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.remove_overrides.assert_any_call()
+        remove_overrides_mock.assert_any_call()
         dbaas.MySqlApp.update_overrides.assert_any_call('something_overrides')
 
-    def test_apply_overrides(self):
+    @patch.object(dbaas.MySqlApp, 'apply_overrides')
+    def test_apply_overrides(self, apply_overrides_mock):
         mock_status = MagicMock()
         override = {'some_key': 'some value'}
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.apply_overrides = MagicMock(return_value=None)
         self.manager.apply_overrides(self.context, override)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.apply_overrides.assert_any_call({'some_key':
-                                                        'some value'})
+        apply_overrides_mock.assert_any_call({'some_key': 'some value'})
 
-    def test_get_txn_count(self):
+    @patch.object(dbaas.MySqlApp, 'get_txn_count', return_value=(9879))
+    def test_get_txn_count(self, get_txn_count_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.get_txn_count = MagicMock(return_value=(9879))
         txn_count = self.manager.get_txn_count(self.context)
-        self.assertEqual(9879, txn_count)
+        self.assertEqual(get_txn_count_mock.return_value, txn_count)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.get_txn_count.assert_any_call()
+        get_txn_count_mock.assert_any_call()
 
-    def test_get_latest_txn_id(self):
+    @patch.object(dbaas.MySqlApp, 'get_latest_txn_id',
+                  return_value=('2a5b-2064-32fb:1'))
+    def test_get_latest_txn_id(self, get_latest_txn_id_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.get_latest_txn_id = MagicMock(
-            return_value=('2a5b-2064-32fb:1'))
         latest_txn_id = self.manager.get_latest_txn_id(self.context)
-        self.assertEqual('2a5b-2064-32fb:1', latest_txn_id)
+        self.assertEqual(get_latest_txn_id_mock.return_value, latest_txn_id)
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.get_latest_txn_id.assert_any_call()
+        get_latest_txn_id_mock.assert_any_call()
 
-    def test_wait_for_txn(self):
+    @patch.object(dbaas.MySqlApp, 'wait_for_txn')
+    def test_wait_for_txn(self, wait_for_txn_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.wait_for_txn = MagicMock(return_value=None)
         self.manager.wait_for_txn(self.context, '4b4-23:5,2a5b-2064-32fb:1')
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.wait_for_txn.assert_any_call('4b4-23:5,2a5b-2064-32fb:1'
-                                                    )
+        wait_for_txn_mock.assert_any_call('4b4-23:5,2a5b-2064-32fb:1')
 
-    def test_make_read_only(self):
+    @patch.object(dbaas.MySqlApp, 'make_read_only')
+    def test_make_read_only(self, make_read_only_mock):
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
-        dbaas.MySqlApp.make_read_only = MagicMock(return_value=None)
         self.manager.make_read_only(self.context, 'ON')
         dbaas.MySqlAppStatus.get.assert_any_call()
-        dbaas.MySqlApp.make_read_only.assert_any_call('ON')
+        make_read_only_mock.assert_any_call('ON')
 
     def test_cleanup_source_on_replica_detach(self):
         mock_replication = MagicMock()
@@ -683,9 +690,10 @@ class GuestAgentManagerTest(testtools.TestCase):
         self.manager.appStatus = mock_status
         dbaas.MySqlAppStatus.get = MagicMock(return_value=mock_status)
         app = dbaas.MySqlApp(dbaas.MySqlAppStatus.get())
-        backup.restore = MagicMock(side_effect=ProcessExecutionError)
-        self.assertRaises(ProcessExecutionError,
-                          self.manager._perform_restore, backup_info,
-                          self.context, '/var/lib/mysql', app)
-        app.status.set_status.assert_called_with(
-            rd_instance.ServiceStatuses.FAILED)
+        with patch.object(backup, 'restore',
+                          side_effect=ProcessExecutionError):
+            self.assertRaises(ProcessExecutionError,
+                              self.manager._perform_restore, backup_info,
+                              self.context, '/var/lib/mysql', app)
+            app.status.set_status.assert_called_with(
+                rd_instance.ServiceStatuses.FAILED)
