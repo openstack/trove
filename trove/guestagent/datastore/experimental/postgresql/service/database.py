@@ -103,9 +103,9 @@ class PgSqlDatabase(object):
         # Force __iter__ of generator until marker found.
         if marker is not None:
             try:
-                item = results.next()
+                item = next(results)
                 while item['_name'] != marker:
-                    item = results.next()
+                    item = next(results)
             except StopIteration:
                 pass
 
@@ -119,7 +119,7 @@ class PgSqlDatabase(object):
         next_marker = None
         if remainder is not None:
             try:
-                next_marker = remainder.next()
+                next_marker = next(remainder)
             except StopIteration:
                 pass
 
