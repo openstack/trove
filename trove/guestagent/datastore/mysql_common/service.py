@@ -802,7 +802,7 @@ class BaseMySqlApp(object):
         LOG.debug("Applying overrides to MySQL.")
         with self.local_sql_client(self.get_engine()) as client:
             LOG.debug("Updating override values in running MySQL.")
-            for k, v in overrides.iteritems():
+            for k, v in overrides.items():
                 byte_value = guestagent_utils.to_bytes(v)
                 q = sql_query.SetServerVariable(key=k, value=byte_value)
                 t = text(str(q))

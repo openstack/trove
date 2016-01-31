@@ -114,7 +114,7 @@ class ConfigurationsController(wsgi.Controller):
                     models.DatastoreConfigurationParameters.load_parameters(
                         datastore_version.id))
 
-                for k, v in values.iteritems():
+                for k, v in values.items():
                     configItems.append(DBConfigurationParameter(
                         configuration_key=k,
                         configuration_value=v))
@@ -219,7 +219,7 @@ class ConfigurationsController(wsgi.Controller):
                 ds_version,
                 models.DatastoreConfigurationParameters.load_parameters(
                     ds_version.id))
-            for k, v in configuration['values'].iteritems():
+            for k, v in configuration['values'].items():
                 items.append(DBConfigurationParameter(
                     configuration_id=group.id,
                     configuration_key=k,
@@ -244,7 +244,7 @@ class ConfigurationsController(wsgi.Controller):
                     "datastore: %(name)s %(version)s") % output
             raise exception.UnprocessableEntity(message=msg)
 
-        for k, v in values.iteritems():
+        for k, v in values.items():
             key = k.lower()
             # parameter name validation
             if key not in rules_lookup:

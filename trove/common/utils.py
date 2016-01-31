@@ -83,13 +83,13 @@ def create_method_args_string(*args, **kwargs):
 def stringify_keys(dictionary):
     if dictionary is None:
         return None
-    return {str(key): value for key, value in dictionary.iteritems()}
+    return {str(key): value for key, value in dictionary.items()}
 
 
 def exclude(key_values, *exclude_keys):
     if key_values is None:
         return None
-    return {key: value for key, value in key_values.iteritems()
+    return {key: value for key, value in key_values.items()
             if key not in exclude_keys}
 
 

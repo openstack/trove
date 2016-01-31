@@ -73,7 +73,7 @@ def delete_all(query_func, model, **conditions):
 
 
 def update(model, **values):
-    for k, v in values.iteritems():
+    for k, v in values.items():
         model[k] = v
 
 
