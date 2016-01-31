@@ -16,6 +16,7 @@
 import os
 
 from proboscis import SkipTest
+import six
 import time as timer
 
 from trove.common import cfg
@@ -314,13 +315,13 @@ class ClusterActionsRunner(TestRunner):
     def _assert_cluster_response(self, cluster_id, expected_state):
         cluster = self.auth_client.clusters.get(cluster_id)
         with TypeCheck('Cluster', cluster) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
             check.has_field("datastore", dict)
             check.has_field("instances", list)
             check.has_field("links", list)
-            check.has_field("created", unicode)
-            check.has_field("updated", unicode)
+            check.has_field("created", six.text_type)
+            check.has_field("updated", six.text_type)
             for instance in cluster.instances:
                 isinstance(instance, dict)
                 self.assert_is_not_none(instance['id'])

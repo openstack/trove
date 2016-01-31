@@ -69,7 +69,7 @@ class StringConverter(object):
         # Return known mappings and quoted strings right away.
         if value in self._object_mappings:
             return self._object_mappings[value]
-        elif (isinstance(value, basestring) and
+        elif (isinstance(value, six.string_types) and
               re.match("^'(.*)'|\"(.*)\"$", value)):
             return value
 

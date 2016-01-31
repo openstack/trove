@@ -15,6 +15,7 @@
 #
 
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 import stevedore
 
 from trove.common import base_exception as exception
@@ -71,7 +72,7 @@ class ModuleDriverManager(object):
                          driver.get_type)
         except AttributeError as ex:
             LOG.exception(_("Exception loading module driver: %s"),
-                          unicode(ex))
+                          encodeutils.exception_to_unicode(ex))
 
         return supported
 

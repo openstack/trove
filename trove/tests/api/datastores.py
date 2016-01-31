@@ -19,6 +19,7 @@ from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_true
 from proboscis import before_class
 from proboscis import test
+import six
 from troveclient.compat import exceptions
 
 from trove import tests
@@ -26,6 +27,7 @@ from trove.tests.util.check import TypeCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
+
 
 GROUP = "dbaas.api.datastores"
 NAME = "nonexistent"
@@ -49,8 +51,8 @@ class Datastores(object):
         datastores = self.rd_client.datastores.list()
         for datastore in datastores:
             with TypeCheck('Datastore', datastore) as check:
-                check.has_field("id", basestring)
-                check.has_field("name", basestring)
+                check.has_field("id", six.string_types)
+                check.has_field("name", six.string_types)
                 check.has_field("links", list)
                 check.has_field("versions", list)
 
@@ -60,8 +62,8 @@ class Datastores(object):
         datastore_by_name = self.rd_client.datastores.get(
             test_config.dbaas_datastore)
         with TypeCheck('Datastore', datastore_by_name) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
             check.has_field("links", list)
         assert_equal(datastore_by_name.name, test_config.dbaas_datastore)
 
@@ -69,8 +71,8 @@ class Datastores(object):
         datastore_by_id = self.rd_client.datastores.get(
             datastore_by_name.id)
         with TypeCheck('Datastore', datastore_by_id) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
             check.has_field("links", list)
             check.has_field("versions", list)
         assert_equal(datastore_by_id.id, datastore_by_name.id)
@@ -119,8 +121,8 @@ class DatastoreVersions(object):
             self.datastore_active.name)
         for version in versions:
             with TypeCheck('DatastoreVersion', version) as check:
-                check.has_field("id", basestring)
-                check.has_field("name", basestring)
+                check.has_field("id", six.string_types)
+                check.has_field("name", six.string_types)
                 check.has_field("links", list)
 
     @test
@@ -128,9 +130,9 @@ class DatastoreVersions(object):
         version = self.rd_client.datastore_versions.get(
             self.datastore_active.name, self.datastore_version_active.name)
         with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
+            check.has_field("datastore", six.string_types)
             check.has_field("links", list)
         assert_equal(version.name, self.datastore_version_active.name)
 
@@ -139,9 +141,9 @@ class DatastoreVersions(object):
         version = self.rd_client.datastore_versions.get_by_uuid(
             self.datastore_version_active.id)
         with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
+            check.has_field("datastore", six.string_types)
             check.has_field("links", list)
         assert_equal(version.name, self.datastore_version_active.name)
 
@@ -161,8 +163,8 @@ class DatastoreVersions(object):
             self.datastore_active.id)
         for version in versions:
             with TypeCheck('DatastoreVersion', version) as check:
-                check.has_field("id", basestring)
-                check.has_field("name", basestring)
+                check.has_field("id", six.string_types)
+                check.has_field("name", six.string_types)
                 check.has_field("links", list)
 
     @test
@@ -170,9 +172,9 @@ class DatastoreVersions(object):
         version = self.rd_client.datastore_versions.get(
             self.datastore_active.id, self.datastore_version_active.id)
         with TypeCheck('DatastoreVersion', version) as check:
-            check.has_field("id", basestring)
-            check.has_field("name", basestring)
-            check.has_field("datastore", basestring)
+            check.has_field("id", six.string_types)
+            check.has_field("name", six.string_types)
+            check.has_field("datastore", six.string_types)
             check.has_field("links", list)
         assert_equal(version.name, self.datastore_version_active.name)
 
