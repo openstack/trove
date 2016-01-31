@@ -13,7 +13,6 @@
 #    under the License.
 
 import abc
-import ConfigParser
 import os
 import subprocess
 import tempfile
@@ -28,6 +27,7 @@ from mock import Mock
 from mock import patch
 from mock import PropertyMock
 from oslo_utils import netutils
+from six.moves import configparser
 import sqlalchemy
 
 from trove.common import cfg
@@ -2747,7 +2747,7 @@ class VerticaAppTest(trove_testtools.TestCase):
 
         VolumeDevice.set_readahead_size = Mock()
         subprocess.Popen = Mock()
-        self.test_config = ConfigParser.ConfigParser()
+        self.test_config = configparser.ConfigParser()
         self.test_config.add_section('credentials')
         self.test_config.set('credentials',
                              'dbadmin_password', 'some_password')
@@ -2942,7 +2942,7 @@ class VerticaAppTest(trove_testtools.TestCase):
         arguments.assert_called_with(expected_command)
         self.assertEqual(1, mock_mkstemp.call_count)
 
-        configuration_data = ConfigParser.ConfigParser()
+        configuration_data = configparser.ConfigParser()
         configuration_data.read(temp_file_handle.name)
         self.assertEqual(
             self.test_config.get('credentials', 'dbadmin_password'),
@@ -3228,7 +3228,7 @@ class VerticaAppTest(trove_testtools.TestCase):
                                     self.app._disable_db_on_boot)
 
     def test_read_config(self):
-        with patch.object(ConfigParser, 'ConfigParser',
+        with patch.object(configparser, 'ConfigParser',
                           return_value=self.test_config):
             test_config = self.app.read_config()
             self.assertEqual('some_password',
@@ -3237,8 +3237,8 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_fail_read_config(self, *args):
-        with patch.object(ConfigParser.ConfigParser, 'read',
-                          side_effect=ConfigParser.Error()):
+        with patch.object(configparser.ConfigParser, 'read',
+                          side_effect=configparser.Error()):
             self.assertRaises(RuntimeError, self.app.read_config)
 
     @patch.object(ConfigurationManager, 'save_configuration')

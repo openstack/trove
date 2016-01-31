@@ -23,6 +23,7 @@ from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis.asserts import ASSERTION_ERROR
 from proboscis.asserts import Check
+import six
 
 
 def get_stack_trace_of_caller(level_up):
@@ -39,7 +40,7 @@ def get_stack_trace_of_caller(level_up):
 def raise_blame_caller(level_up, ex):
     """Raises an exception, changing the stack trace to point to the caller."""
     new_st = get_stack_trace_of_caller(level_up + 2)
-    raise type(ex), ex, new_st
+    six.reraise(type(ex), ex, new_st)
 
 
 class Checker(object):

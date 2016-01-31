@@ -16,10 +16,9 @@
 import mock
 import os
 import pkg_resources
+from six.moves import configparser as config_parser
+
 import trove
-
-import ConfigParser as config_parser
-
 from trove.common import extensions
 from trove.extensions.routes.account import Account
 from trove.extensions.routes.mgmt import Mgmt
