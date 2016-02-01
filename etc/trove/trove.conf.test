@@ -38,9 +38,6 @@ bind_port = 8779
 # be the number of CPUs available. (integer value)
 #trove_api_workers=None
 
-# AMQP Connection info
-rabbit_password=f7999d1955c5014aa32c
-
 #DB Api Implementation
 db_api_implementation = trove.db.sqlalchemy.api
 
@@ -117,6 +114,12 @@ notifier_queue_transport = memory
 control_exchange = trove
 
 paste_config_file=api-paste.ini.test
+
+[oslo_messaging_rabbit]
+# AMQP Connection info
+# Deprecated group/name - [DEFAULT]/rabbit_password
+rabbit_password=f7999d1955c5014aa32c
+
 
 [mysql]
 volume_support = True
