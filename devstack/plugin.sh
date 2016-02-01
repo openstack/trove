@@ -79,6 +79,20 @@ function cleanup_trove {
 }
 
 
+# iniset_conditional() - Sets the value in the inifile, but only if it's
+# actually got a value
+function iniset_conditional {
+    local FILE=$1
+    local SECTION=$2
+    local OPTION=$3
+    local VALUE=$4
+
+    if [[ -n "$VALUE" ]]; then
+        iniset ${FILE} ${SECTION} ${OPTION} ${VALUE}
+    fi
+}
+
+
 # configure_trove() - Set config files, create data dirs, etc
 function configure_trove {
     setup_develop $TROVE_DIR
@@ -94,23 +108,33 @@ function configure_trove {
     rm -f $TROVE_TASKMANAGER_CONF
     rm -f $TROVE_CONDUCTOR_CONF
 
-    iniset $TROVE_CONF DEFAULT rabbit_userid $RABBIT_USERID
-    iniset $TROVE_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
-    iniset $TROVE_CONF database connection `database_connection_url trove`
-    iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
-    setup_trove_logging $TROVE_CONF
-    iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
+    # (Re)create trove api conf file if needed
+    if is_service_enabled tr-api; then
+        # Set common configuration values (but only if they're defined)
+        iniset_conditional $TROVE_CONF DEFAULT max_accepted_volume_size $TROVE_MAX_ACCEPTED_VOLUME_SIZE
+        iniset_conditional $TROVE_CONF DEFAULT max_instances_per_tenant $TROVE_MAX_INSTANCES_PER_TENANT
+        iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
 
-    # Increase default quota.
-    iniset $TROVE_CONF DEFAULT max_accepted_volume_size 10
-    iniset $TROVE_CONF DEFAULT max_instances_per_user 10
-    iniset $TROVE_CONF DEFAULT max_volumes_per_user 10
+        iniset $TROVE_CONF DEFAULT rabbit_userid $RABBIT_USERID
+        iniset $TROVE_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_CONF database connection `database_connection_url trove`
+        iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
+        setup_trove_logging $TROVE_CONF
+        iniset $TROVE_CONF DEFAULT trove_api_workers "$API_WORKERS"
 
-    configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
+        configure_auth_token_middleware $TROVE_CONF trove $TROVE_AUTH_CACHE_DIR
+    fi
 
     # (Re)create trove taskmanager conf file if needed
     if is_service_enabled tr-tmgr; then
         TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_URI/v$IDENTITY_API_VERSION
+
+        # Use these values only if they're set
+        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_low_timeout $TROVE_AGENT_CALL_LOW_TIMEOUT
+        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout $TROVE_AGENT_CALL_HIGH_TIMEOUT
+        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT resize_time_out $TROVE_RESIZE_TIME_OUT
+        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
+        iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
         iniset $TROVE_TASKMANAGER_CONF DEFAULT rabbit_userid $RABBIT_USERID
         iniset $TROVE_TASKMANAGER_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
@@ -121,11 +145,6 @@ function configure_trove {
         iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
         iniset $TROVE_TASKMANAGER_CONF DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
         setup_trove_logging $TROVE_TASKMANAGER_CONF
-
-        # Increase default timeouts (required by the tests).
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT agent_call_low_timeout 15
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout 300
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout 1200
     fi
 
     # (Re)create trove conductor conf file if needed

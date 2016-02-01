@@ -461,7 +461,8 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.mock_quota_result.all = Mock(return_value=[])
         self.mock_usage_result.all = Mock(return_value=FAKE_QUOTAS)
 
-        delta = {'instances': 5, 'volumes': 3}
+        max_inst = CONF.max_instances_per_tenant
+        delta = {'instances': max_inst, 'volumes': 3}
         self.assertRaises(exception.QuotaExceeded,
                           self.driver.reserve,
                           FAKE_TENANT1,
@@ -484,7 +485,8 @@ class DbQuotaDriverTest(trove_testtools.TestCase):
         self.mock_quota_result.all = Mock(return_value=[])
         self.mock_usage_result.all = Mock(return_value=FAKE_QUOTAS)
 
-        delta = {'instances': 4, 'volumes': 2}
+        max_inst = CONF.max_instances_per_tenant
+        delta = {'instances': max_inst - 1, 'volumes': 2}
         self.assertRaises(exception.QuotaExceeded,
                           self.driver.reserve,
                           FAKE_TENANT1,
