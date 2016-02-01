@@ -58,22 +58,40 @@ class TestGroup(object):
         """Try to load a datastore specific class if it exists; use the
         default otherwise.
         """
-        try:
-            # This is for overridden Runner classes
-            impl = self._build_class_path(module_name, class_prefix, base_name)
-            return Strategy.get_strategy(impl, namespace)
-        except ImportError:
-            pass
-        try:
+        # This is for overridden Runner classes
+        impl = self._build_class_path(module_name,
+                                      class_prefix, base_name)
+        cls = self._load_class('runner', impl, namespace)
+
+        if not cls:
             # This is for overridden Helper classes
             module = module_name.replace('test', class_prefix.lower())
             impl = self._build_class_path(module, class_prefix, base_name,
                                           strip_test=True)
-            return Strategy.get_strategy(impl, namespace)
-        except ImportError:
+            cls = self._load_class('helper', impl, namespace)
+
+        if not cls:
             # Just import the base class
             impl = self._build_class_path(module_name, '', base_name)
-            return Strategy.get_strategy(impl, namespace)
+            cls = self._load_class(None, impl, namespace)
+
+        return cls
+
+    def _load_class(self, load_type, impl, namespace):
+        cls = None
+        if not load_type or load_type in impl.lower():
+            try:
+                cls = Strategy.get_strategy(impl, namespace)
+            except ImportError as ie:
+                # Only fail silently if it's something we expect,
+                # such as a missing override class.  Anything else
+                # shouldn't be suppressed.
+                l_msg = ie.message.lower()
+                if load_type not in l_msg or (
+                        'no module named' not in l_msg and
+                        'cannot be found' not in l_msg):
+                    raise
+        return cls
 
     def _build_class_path(self, module_name, class_prefix, class_base,
                           strip_test=False):
