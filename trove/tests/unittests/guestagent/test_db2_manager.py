@@ -14,7 +14,6 @@
 
 from mock import MagicMock
 from mock import patch
-import testtools
 from testtools.matchers import Is, Equals, Not
 
 from trove.common.context import TroveContext
@@ -25,9 +24,10 @@ from trove.guestagent.datastore.experimental.db2 import (
     service as db2_service)
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
+from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentDB2ManagerTest(testtools.TestCase):
+class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentDB2ManagerTest, self).setUp()
@@ -99,7 +99,6 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         self.manager.app = mock_app
 
         mock_status.begin_install = MagicMock(return_value=None)
-        pkg.Package.pkg_is_installed = MagicMock(return_value=is_db_installed)
         mock_app.change_ownership = MagicMock(return_value=None)
         mock_app.restart = MagicMock(return_value=None)
         mock_app.start_db = MagicMock(return_value=None)
@@ -110,15 +109,19 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         db2_service.DB2Admin.create_user = MagicMock(return_value=None)
         db2_service.DB2Admin.create_database = MagicMock(return_value=None)
 
-        self.manager.prepare(context=self.context, packages=packages,
-                             config_contents=config_content,
-                             databases=databases,
-                             memory_mb='2048', users=users,
-                             device_path=device_path,
-                             mount_point="/home/db2inst1/db2inst1",
-                             backup_info=None,
-                             overrides=None,
-                             cluster_config=None)
+        with patch.object(pkg.Package, 'pkg_is_installed',
+                          return_value=MagicMock(
+                              return_value=is_db_installed)):
+            self.manager.prepare(context=self.context, packages=packages,
+                                 config_contents=config_content,
+                                 databases=databases,
+                                 memory_mb='2048', users=users,
+                                 device_path=device_path,
+                                 mount_point="/home/db2inst1/db2inst1",
+                                 backup_info=None,
+                                 overrides=None,
+                                 cluster_config=None)
+
         mock_status.begin_install.assert_any_call()
         self.assertEqual(1, mock_app.change_ownership.call_count)
         if databases:
@@ -195,15 +198,16 @@ class GuestAgentDB2ManagerTest(testtools.TestCase):
         self.assertThat(users, Equals(['user1']))
         db2_service.DB2Admin.list_users.assert_any_call(None, None, False)
 
-    def test_get_users(self):
+    @patch.object(db2_service.DB2Admin, 'get_user',
+                  return_value=MagicMock(return_value=['user1']))
+    def test_get_users(self, get_user_mock):
         username = ['user1']
         hostname = ['host']
         mock_status = MagicMock()
         self.manager.appStatus = mock_status
-        db2_service.DB2Admin.get_user = MagicMock(return_value=['user1'])
         users = self.manager.get_user(self.context, username, hostname)
-        self.assertThat(users, Equals(['user1']))
-        db2_service.DB2Admin.get_user.assert_any_call(username, hostname)
+        self.assertThat(users, Equals(get_user_mock.return_value))
+        get_user_mock.assert_any_call(username, hostname)
 
     def test_reset_configuration(self):
         try:

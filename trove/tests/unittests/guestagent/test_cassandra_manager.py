@@ -15,8 +15,8 @@
 import os
 
 from mock import MagicMock
+from mock import patch
 from oslo_utils import netutils
-import testtools
 
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
@@ -26,9 +26,10 @@ from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
+from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentCassandraDBManagerTest(testtools.TestCase):
+class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentCassandraDBManagerTest, self).setUp()
@@ -113,7 +114,6 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
 
         mock_status.begin_install = MagicMock(return_value=None)
         mock_app.install_if_needed = MagicMock(return_value=None)
-        pkg.Package.pkg_is_installed = MagicMock(return_value=is_db_installed)
         mock_app.init_storage_structure = MagicMock(return_value=None)
         mock_app.write_config = MagicMock(return_value=None)
         mock_app.make_host_reachable = MagicMock(return_value=None)
@@ -126,16 +126,18 @@ class GuestAgentCassandraDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount = MagicMock(return_value=None)
         volume.VolumeDevice.mount_points = MagicMock(return_value=[])
 
-        # invocation
-        self.manager.prepare(context=self.context, packages=packages,
-                             config_contents=config_content,
-                             databases=None,
-                             memory_mb='2048', users=None,
-                             device_path=device_path,
-                             mount_point="/var/lib/cassandra",
-                             backup_info=backup_info,
-                             overrides=None,
-                             cluster_config=None)
+        with patch.object(pkg.Package, 'pkg_is_installed',
+                          return_value=is_db_installed):
+            # invocation
+            self.manager.prepare(context=self.context, packages=packages,
+                                 config_contents=config_content,
+                                 databases=None,
+                                 memory_mb='2048', users=None,
+                                 device_path=device_path,
+                                 mount_point="/var/lib/cassandra",
+                                 backup_info=backup_info,
+                                 overrides=None,
+                                 cluster_config=None)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()

@@ -17,7 +17,6 @@ import os
 from mock import MagicMock
 from mock import patch
 from oslo_utils import netutils
-import testtools
 
 from trove.common.context import TroveContext
 from trove.common.instance import ServiceStatuses
@@ -27,9 +26,10 @@ from trove.guestagent.datastore.experimental.couchdb import (
     service as couchdb_service)
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
+from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentCouchDBManagerTest(testtools.TestCase):
+class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentCouchDBManagerTest, self).setUp()
@@ -89,7 +89,6 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
 
         mock_status.begin_install = MagicMock(return_value=None)
         mock_app.install_if_needed = MagicMock(return_value=None)
-        pkg.Package.pkg_is_installed = MagicMock(return_value=is_db_installed)
         mock_app.make_host_reachable = MagicMock(return_value=None)
         mock_app.restart = MagicMock(return_value=None)
         mock_app.start_db = MagicMock(return_value=None)
@@ -100,16 +99,18 @@ class GuestAgentCouchDBManagerTest(testtools.TestCase):
         volume.VolumeDevice.mount = MagicMock(return_value=None)
         volume.VolumeDevice.mount_points = MagicMock(return_value=[])
 
-        # invocation
-        self.manager.prepare(context=self.context, packages=packages,
-                             config_contents=config_content,
-                             databases=None,
-                             memory_mb='2048', users=None,
-                             device_path=device_path,
-                             mount_point="/var/lib/couchdb",
-                             backup_info=None,
-                             overrides=None,
-                             cluster_config=None)
+        with patch.object(pkg.Package, 'pkg_is_installed',
+                          return_value=MagicMock(
+                              return_value=is_db_installed)):
+            self.manager.prepare(context=self.context, packages=packages,
+                                 config_contents=config_content,
+                                 databases=None,
+                                 memory_mb='2048', users=None,
+                                 device_path=device_path,
+                                 mount_point="/var/lib/couchdb",
+                                 backup_info=None,
+                                 overrides=None,
+                                 cluster_config=None)
 
         # verification/assertion
         mock_status.begin_install.assert_any_call()
