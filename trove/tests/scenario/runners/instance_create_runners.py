@@ -77,6 +77,12 @@ class InstanceCreateRunner(TestRunner):
             self, with_dbs=True, with_users=True, configuration_id=None,
             expected_states=['BUILD', 'ACTIVE'], expected_http_code=200,
             create_helper_user=True):
+        if self.is_using_existing_instance:
+            # The user requested to run the tests using an existing instance.
+            # We therefore skip any scenarios that involve creating new
+            # test instances.
+            raise SkipTest("Using an existing instance.")
+
         name = self.instance_info.name + '_init'
         flavor = self._get_instance_flavor()
         trove_volume_size = CONFIG.get('trove_volume_size', 1)
@@ -86,9 +92,6 @@ class InstanceCreateRunner(TestRunner):
                                 if with_users else [])
         if configuration_id:
             self.init_config_group_id = configuration_id
-
-        if self.is_using_existing_instance:
-            raise SkipTest("Using existing instance.")
 
         if (self.init_inst_dbs or self.init_inst_users or
                 self.init_config_group_id):
@@ -230,8 +233,6 @@ class InstanceCreateRunner(TestRunner):
         instances = [self.instance_info.id]
         if self.init_inst_id:
             instances.append(self.init_inst_id)
-        if self.is_using_existing_instance:
-            expected_states = ['ACTIVE']
         self.assert_all_instance_states(instances, expected_states)
 
     def run_add_initialized_instance_data(self):
