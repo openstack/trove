@@ -214,6 +214,8 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         snapshot = {'replication_strategy': self.replication_strategy,
                     'dataset': {'dataset_size': 1.0},
                     'config': None}
+        total_size = snapshot['dataset']['dataset_size'] + 1
+        self.mock_gfvs_class.return_value = {'total': total_size}
         self._prepare_dynamic(snapshot=snapshot)
 
     @patch.multiple(dbaas.MySqlAdmin,
