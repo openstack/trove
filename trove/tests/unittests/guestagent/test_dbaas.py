@@ -42,6 +42,7 @@ from trove.conductor import api as conductor_api
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
+from trove.guestagent.common import sql_query
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
 from trove.guestagent.datastore.experimental.cassandra import (
@@ -1636,10 +1637,14 @@ class MySqlRootStatusTest(trove_testtools.TestCase):
             mock_execute.assert_any_call(TextClauseMatcher(
                 'UPDATE mysql.user'))
 
-    def test_enable_root_failed(self):
-        with patch.object(models.MySQLUser, '_is_valid_user_name',
-                          return_value=False):
-            self.assertRaises(ValueError, MySqlAdmin().enable_root)
+    def test_root_disable(self):
+        with patch.object(self.mock_client,
+                          'execute', return_value=None) as mock_execute:
+            # invocation
+            MySqlRootAccess().disable_root()
+            # verification
+            mock_execute.assert_any_call(TextClauseMatcher(
+                sql_query.REMOVE_ROOT))
 
 
 class MockStats:

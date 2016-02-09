@@ -101,6 +101,14 @@ class TestRoot(object):
         self._verify_root_timestamp(instance_info.id)
 
     @test(depends_on=[test_root_initially_disabled_details])
+    def test_root_disable_when_root_not_enabled(self):
+        reh = self.dbaas_admin.management.root_enabled_history
+        self.root_enabled_timestamp = reh(instance_info.id).enabled
+        assert_raises(exceptions.NotFound, self.dbaas.root.delete,
+                      instance_info.id)
+        self._verify_root_timestamp(instance_info.id)
+
+    @test(depends_on=[test_root_disable_when_root_not_enabled])
     def test_enable_root(self):
         self._root()
 
@@ -170,3 +178,11 @@ class TestRoot(object):
         """Even if root was enabled, the user root cannot be deleted."""
         assert_raises(exceptions.BadRequest, self.dbaas.users.delete,
                       instance_info.id, "root")
+
+    @test(depends_on=[test_root_still_enabled_details])
+    def test_root_disable(self):
+        reh = self.dbaas_admin.management.root_enabled_history
+        self.root_enabled_timestamp = reh(instance_info.id).enabled
+        self.dbaas.root.delete(instance_info.id)
+        assert_equal(200, self.dbaas.last_http_code)
+        self._verify_root_timestamp(instance_info.id)

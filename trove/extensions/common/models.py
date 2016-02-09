@@ -76,6 +76,11 @@ class Root(object):
 
         return root_user
 
+    @classmethod
+    def delete(cls, context, instance_id):
+        load_and_verify(context, instance_id)
+        create_guest_client(context, instance_id).disable_root()
+
 
 class RootHistory(object):
 

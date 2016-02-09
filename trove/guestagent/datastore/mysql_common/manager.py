@@ -175,6 +175,9 @@ class MySqlManager(manager.Manager):
     def is_root_enabled(self, context):
         return self.mysql_admin().is_root_enabled()
 
+    def disable_root(self, context):
+        return self.mysql_admin().disable_root()
+
     def _perform_restore(self, backup_info, context, restore_location, app):
         LOG.info(_("Restoring database from backup %s.") % backup_info['id'])
         try:
