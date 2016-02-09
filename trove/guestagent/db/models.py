@@ -841,7 +841,6 @@ class MySQLUser(Base):
 
 class RootUser(MySQLUser):
     """Overrides _ignore_users from the MySQLUser class."""
-#    _ignore_users = []
     def __init__(self):
         self._ignore_users = []
 
