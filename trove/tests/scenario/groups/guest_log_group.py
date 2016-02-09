@@ -169,12 +169,14 @@ class GuestLogGroup(TestGroup):
         """Test log-generator on USER log row-by-row."""
         self.test_runner.run_test_log_generator_user_by_row()
 
-    @test(runs_after=[test_log_generator_user_by_row])
+    @test(depends_on=[test_log_publish_user],
+          runs_after=[test_log_generator_user_by_row])
     def test_log_save_user(self):
         """Test log-save on USER log."""
         self.test_runner.run_test_log_save_user()
 
-    @test(runs_after=[test_log_save_user])
+    @test(depends_on=[test_log_publish_user],
+          runs_after=[test_log_save_user])
     def test_log_save_publish_user(self):
         """Test log-save on USER log with publish."""
         self.test_runner.run_test_log_save_publish_user()
@@ -224,12 +226,12 @@ class GuestLogGroup(TestGroup):
         """Test log-generator with publish on SYS log."""
         self.test_runner.run_test_log_generator_publish_sys()
 
-    @test(depends_on=[test_log_generator_publish_sys])
+    @test(depends_on=[test_log_publish_sys])
     def test_log_generator_swift_client_sys(self):
         """Test log-generator on SYS log with passed-in Swift client."""
         self.test_runner.run_test_log_generator_swift_client_sys()
 
-    @test(depends_on=[test_log_generator_publish_sys],
+    @test(depends_on=[test_log_publish_sys],
           runs_after=[test_log_generator_swift_client_sys])
     def test_log_save_sys(self):
         """Test log-save on SYS log."""
