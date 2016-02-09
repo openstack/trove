@@ -22,8 +22,10 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster import base
+from trove.common import utils
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
-from trove.instance import models as inst_models
+from trove.instance.models import DBInstance
+from trove.instance.models import Instance
 from trove.quota.quota import check_quotas
 from trove.taskmanager import api as task_api
 
@@ -40,7 +42,29 @@ class PXCAPIStrategy(base.BaseAPIStrategy):
 
     @property
     def cluster_controller_actions(self):
-        return {}
+        return {
+            'grow': self._action_grow_cluster,
+            'shrink': self._action_shrink_cluster,
+        }
+
+    def _action_grow_cluster(self, cluster, body):
+        nodes = body['grow']
+        instances = []
+        for node in nodes:
+            instance = {
+                'flavor_id': utils.get_id_from_href(node['flavorRef'])
+            }
+            if 'name' in node:
+                instance['name'] = node['name']
+            if 'volume' in node:
+                instance['volume_size'] = int(node['volume']['size'])
+            instances.append(instance)
+        return cluster.grow(instances)
+
+    def _action_shrink_cluster(self, cluster, body):
+        instances = body['shrink']
+        instance_ids = [instance['id'] for instance in instances]
+        return cluster.shrink(instance_ids)
 
     @property
     def cluster_view_class(self):
@@ -53,10 +77,10 @@ class PXCAPIStrategy(base.BaseAPIStrategy):
 
 class PXCCluster(models.Cluster):
 
-    @classmethod
-    def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties):
-        LOG.debug("Initiating PXC cluster creation.")
+    @staticmethod
+    def _validate_cluster_instances(context, instances, datastore,
+                                    datastore_version):
+        """Validate the flavor and volume"""
         pxc_conf = CONF.get(datastore_version.manager)
         num_instances = len(instances)
 
@@ -65,7 +89,7 @@ class PXCCluster(models.Cluster):
             raise exception.ClusterNumInstancesNotLargeEnough(
                 num_instances=pxc_conf.min_cluster_member_count)
 
-        # Checking flavors
+        # Checking flavors and get delta for quota check
         flavor_ids = [instance['flavor_id'] for instance in instances]
         if len(set(flavor_ids)) != 1:
             raise exception.ClusterFlavorsNotEqual()
@@ -77,7 +101,7 @@ class PXCCluster(models.Cluster):
             raise exception.FlavorNotFound(uuid=flavor_id)
         deltas = {'instances': num_instances}
 
-        # Checking volumes
+        # Checking volumes and get delta for quota check
         volume_sizes = [instance['volume_size'] for instance in instances
                         if instance.get('volume_size', None)]
         volume_size = None
@@ -96,41 +120,121 @@ class PXCCluster(models.Cluster):
             if ephemeral_support and flavor.ephemeral == 0:
                 raise exception.LocalStorageNotSpecified(flavor=flavor_id)
 
+        # quota check
         check_quotas(context.tenant, deltas)
 
-        nics = [instance.get('nics', None) for instance in instances]
+        # Checking networks are same for the cluster
+        instance_nics = [instance.get('nics', None) for instance in instances]
+        if len(set(instance_nics)) != 1:
+            raise exception.ClusterNetworksNotEqual()
+        instance_nic = instance_nics[0]
+        if instance_nic is None:
+            return
+        try:
+            nova_client.networks.get(instance_nic)
+        except nova_exceptions.NotFound:
+            raise exception.NetworkNotFound(uuid=instance_nic)
 
-        azs = [instance.get('availability_zone', None)
-               for instance in instances]
+    @staticmethod
+    def _create_instances(context, db_info, datastore, datastore_version,
+                          instances):
+        member_config = {"id": db_info.id,
+                         "instance_type": "member"}
+        name_index = 1
+        for instance in instances:
+            if not instance.get("name"):
+                instance['name'] = "%s-member-%s" % (db_info.name,
+                                                     str(name_index))
+                name_index += 1
 
+        return map(lambda instance:
+                   Instance.create(context,
+                                   instance['name'],
+                                   instance['flavor_id'],
+                                   datastore_version.image_id,
+                                   [], [],
+                                   datastore, datastore_version,
+                                   instance.get('volume_size', None),
+                                   None,
+                                   availability_zone=instance.get(
+                                       'availability_zone', None),
+                                   nics=instance.get('nics', None),
+                                   configuration_id=None,
+                                   cluster_config=member_config
+                                   ),
+                   instances)
+
+    @classmethod
+    def create(cls, context, name, datastore, datastore_version,
+               instances, extended_properties):
+        LOG.debug("Initiating PXC cluster creation.")
+        cls._validate_cluster_instances(context, instances, datastore,
+                                        datastore_version)
         # Updating Cluster Task
         db_info = models.DBCluster.create(
             name=name, tenant_id=context.tenant,
             datastore_version_id=datastore_version.id,
             task_status=ClusterTasks.BUILDING_INITIAL)
 
-        member_config = {"id": db_info.id,
-                         "instance_type": "member"}
-
-        # Creating member instances
-        for i in range(0, num_instances):
-            instance_name = "%s-member-%s" % (name, str(i + 1))
-            inst_models.Instance.create(context, instance_name,
-                                        flavor_id,
-                                        datastore_version.image_id,
-                                        [], [], datastore,
-                                        datastore_version,
-                                        volume_size, None,
-                                        nics=nics[i],
-                                        availability_zone=azs[i],
-                                        configuration_id=None,
-                                        cluster_config=member_config)
+        cls._create_instances(context, db_info, datastore, datastore_version,
+                              instances)
 
         # Calling taskmanager to further proceed for cluster-configuration
         task_api.load(context, datastore_version.manager).create_cluster(
             db_info.id)
 
         return PXCCluster(context, db_info, datastore, datastore_version)
+
+    def _get_cluster_network_interfaces(self):
+        nova_client = remote.create_nova_client(self.context)
+        nova_instance_id = self.db_instances[0].compute_instance_id
+        interfaces = nova_client.virtual_interfaces.list(nova_instance_id)
+        ret = [{"net-id": getattr(interface, 'net_id')}
+               for interface in interfaces]
+        return ret
+
+    def grow(self, instances):
+        LOG.debug("Growing cluster %s." % self.id)
+
+        self.validate_cluster_available()
+
+        context = self.context
+        db_info = self.db_info
+        datastore = self.ds
+        datastore_version = self.ds_version
+
+        # Get the network of the existing cluster instances.
+        interface_ids = self._get_cluster_network_interfaces()
+        for instance in instances:
+            instance["nics"] = interface_ids
+
+        db_info.update(task_status=ClusterTasks.GROWING_CLUSTER)
+
+        new_instances = self._create_instances(context, db_info,
+                                               datastore, datastore_version,
+                                               instances)
+
+        task_api.load(context, datastore_version.manager).grow_cluster(
+            db_info.id, [instance.id for instance in new_instances])
+
+        return PXCCluster(context, db_info, datastore, datastore_version)
+
+    def shrink(self, instances):
+        """Removes instances from a cluster."""
+        LOG.debug("Shrinking cluster %s." % self.id)
+
+        self.validate_cluster_available()
+        removal_instances = [Instance.load(self.context, inst_id)
+                             for inst_id in instances]
+        db_instances = DBInstance.find_all(cluster_id=self.db_info.id).all()
+        if len(db_instances) - len(removal_instances) < 1:
+            raise exception.ClusterShrinkMustNotLeaveClusterEmpty()
+
+        self.db_info.update(task_status=ClusterTasks.SHRINKING_CLUSTER)
+        task_api.load(self.context, self.ds_version.manager).shrink_cluster(
+            self.db_info.id, [instance.id for instance in removal_instances])
+
+        return PXCCluster(self.context, self.db_info, self.ds, self.ds_version)
 
 
 class PXCClusterView(ClusterView):

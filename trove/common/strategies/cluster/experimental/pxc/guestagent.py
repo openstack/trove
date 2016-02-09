@@ -33,6 +33,7 @@ class PXCGuestAgentAPI(guest_api.API):
 
     def install_cluster(self, replication_user, cluster_configuration,
                         bootstrap):
+        """Install the cluster."""
         LOG.debug("Installing PXC cluster.")
         self._call("install_cluster", CONF.cluster_usage_timeout,
                    self.version_cap,
@@ -41,13 +42,27 @@ class PXCGuestAgentAPI(guest_api.API):
                    bootstrap=bootstrap)
 
     def reset_admin_password(self, admin_password):
-        """Store this password on the instance as the admin password"""
+        """Store this password on the instance as the admin password."""
         self._call("reset_admin_password", CONF.cluster_usage_timeout,
                    self.version_cap,
                    admin_password=admin_password)
 
     def cluster_complete(self):
-        """Set the status that the cluster is build is complete"""
+        """Set the status that the cluster is build is complete."""
         LOG.debug("Notifying cluster install completion.")
         return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
                           self.version_cap)
+
+    def get_cluster_context(self):
+        """Get the context of the cluster."""
+        LOG.debug("Getting the cluster context.")
+        return self._call("get_cluster_context", guest_api.AGENT_HIGH_TIMEOUT,
+                          self.version_cap)
+
+    def write_cluster_configuration_overrides(self, cluster_configuration):
+        """Write an updated the cluster configuration."""
+        LOG.debug("Writing an updated the cluster configuration.")
+        self._call("write_cluster_configuration_overrides",
+                   guest_api.AGENT_HIGH_TIMEOUT,
+                   self.version_cap,
+                   cluster_configuration=cluster_configuration)

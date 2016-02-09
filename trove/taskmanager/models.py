@@ -181,7 +181,8 @@ class ConfigurationMixin(object):
 
 class ClusterTasks(Cluster):
 
-    def update_statuses_on_failure(self, cluster_id, shard_id=None):
+    def update_statuses_on_failure(self, cluster_id, shard_id=None,
+                                   status=None):
 
         if CONF.update_status_on_fail:
             if shard_id:
@@ -193,7 +194,7 @@ class ClusterTasks(Cluster):
 
             for db_instance in db_instances:
                 db_instance.set_task_status(
-                    InstanceTasks.BUILDING_ERROR_SERVER)
+                    status or InstanceTasks.BUILDING_ERROR_SERVER)
                 db_instance.save()
 
     @classmethod

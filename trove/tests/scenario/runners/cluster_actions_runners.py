@@ -191,6 +191,8 @@ class ClusterActionsRunner(TestRunner):
         self._assert_cluster_action(cluster_id, expected_task_name,
                                     expected_http_code)
 
+        self._assert_cluster_states(cluster_id, ['NONE'])
+        cluster = self.auth_client.clusters.get(cluster_id)
         self.assert_equal(
             len(removed_instance_names),
             initial_instance_count - len(cluster.instances),
@@ -199,7 +201,6 @@ class ClusterActionsRunner(TestRunner):
         cluster_instances = self._get_cluster_instances(cluster_id)
         self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
 
-        self._assert_cluster_states(cluster_id, ['NONE'])
         self._assert_cluster_response(cluster_id, 'NONE')
 
     def _find_cluster_instances_by_name(self, cluster, instance_names):
@@ -322,9 +323,3 @@ class PxcClusterActionsRunner(ClusterActionsRunner):
             num_nodes=num_nodes, expected_task_name=expected_task_name,
             expected_instance_states=expected_instance_states,
             expected_http_code=expected_http_code)
-
-    def run_cluster_shrink(self):
-        raise SkipTest("Operation not supported by the datastore.")
-
-    def run_cluster_grow(self):
-        raise SkipTest("Operation not supported by the datastore.")

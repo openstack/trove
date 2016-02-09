@@ -15,6 +15,8 @@ from eventlet.timeout import Timeout
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common.exception import PollTimeOut
+from trove.common.exception import TroveError
 from trove.common.i18n import _
 from trove.common.remote import create_nova_client
 from trove.common.strategies.cluster import base
@@ -22,6 +24,7 @@ from trove.common.template import ClusterConfigTemplate
 from trove.common import utils
 from trove.instance.models import DBInstance
 from trove.instance.models import Instance
+from trove.instance import tasks as inst_tasks
 from trove.taskmanager import api as task_api
 import trove.taskmanager.models as task_models
 
@@ -74,7 +77,7 @@ class PXCClusterTasks(task_models.ClusterTasks):
             LOG.debug("Waiting for instances to get to cluster-ready status.")
             # Wait for cluster members to get to cluster-ready status.
             if not self._all_instances_ready(instance_ids, cluster_id):
-                return
+                raise TroveError("Instances in cluster did not report ACTIVE")
 
             LOG.debug("All members ready, proceeding for cluster setup.")
             instances = [Instance.load(context, instance_id) for instance_id
@@ -113,7 +116,8 @@ class PXCClusterTasks(task_models.ClusterTasks):
                     # render the conf.d/cluster.cnf configuration
                     cluster_configuration = self._render_cluster_config(
                         context,
-                        instance, ",".join(cluster_ips),
+                        instance,
+                        ",".join(cluster_ips),
                         cluster_name,
                         replication_user)
 
@@ -139,7 +143,169 @@ class PXCClusterTasks(task_models.ClusterTasks):
                 raise  # not my timeout
             LOG.exception(_("Timeout for building cluster."))
             self.update_statuses_on_failure(cluster_id)
+        except TroveError:
+            LOG.exception(_("Error creating cluster %s.") % cluster_id)
+            self.update_statuses_on_failure(cluster_id)
         finally:
             timeout.cancel()
 
         LOG.debug("End create_cluster for id: %s." % cluster_id)
+
+    def grow_cluster(self, context, cluster_id, new_instance_ids):
+        LOG.debug("Begin pxc grow_cluster for id: %s." % cluster_id)
+
+        def _grow_cluster():
+
+            db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+            existing_instances = [Instance.load(context, db_inst.id)
+                                  for db_inst in db_instances
+                                  if db_inst.id not in new_instance_ids]
+            if not existing_instances:
+                raise TroveError("Unable to determine existing cluster "
+                                 "member(s)")
+
+            # get list of ips of existing cluster members
+            existing_cluster_ips = [self.get_ip(instance) for instance in
+                                    existing_instances]
+            existing_instance_guests = [self.get_guest(instance)
+                                        for instance in existing_instances]
+
+            # get the cluster context to setup new members
+            cluster_context = existing_instance_guests[0].get_cluster_context()
+
+            # Wait for cluster members to get to cluster-ready status.
+            if not self._all_instances_ready(new_instance_ids, cluster_id):
+                raise TroveError("Instances in cluster did not report ACTIVE")
+
+            LOG.debug("All members ready, proceeding for cluster setup.")
+
+            # Get the new instances to join the cluster
+            new_instances = [Instance.load(context, instance_id)
+                             for instance_id in new_instance_ids]
+            new_cluster_ips = [self.get_ip(instance) for instance in
+                               new_instances]
+            for instance in new_instances:
+                guest = self.get_guest(instance)
+
+                guest.reset_admin_password(cluster_context['admin_password'])
+
+                # render the conf.d/cluster.cnf configuration
+                cluster_configuration = self._render_cluster_config(
+                    context,
+                    instance,
+                    ",".join(existing_cluster_ips),
+                    cluster_context['cluster_name'],
+                    cluster_context['replication_user'])
+
+                # push the cluster config and bootstrap the first instance
+                bootstrap = False
+                guest.install_cluster(cluster_context['replication_user'],
+                                      cluster_configuration,
+                                      bootstrap)
+
+            # apply the new config to all instances
+            for instance in existing_instances + new_instances:
+                guest = self.get_guest(instance)
+                # render the conf.d/cluster.cnf configuration
+                cluster_configuration = self._render_cluster_config(
+                    context,
+                    instance,
+                    ",".join(existing_cluster_ips + new_cluster_ips),
+                    cluster_context['cluster_name'],
+                    cluster_context['replication_user'])
+                guest.write_cluster_configuration_overrides(
+                    cluster_configuration)
+
+            for instance in new_instances:
+                guest = self.get_guest(instance)
+                guest.cluster_complete()
+
+        timeout = Timeout(CONF.cluster_usage_timeout)
+        try:
+            _grow_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise  # not my timeout
+            LOG.exception(_("Timeout for growing cluster."))
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
+        except Exception:
+            LOG.exception(_("Error growing cluster %s.") % cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.GROWING_ERROR)
+        finally:
+            timeout.cancel()
+
+        LOG.debug("End grow_cluster for id: %s." % cluster_id)
+
+    def shrink_cluster(self, context, cluster_id, removal_instance_ids):
+        LOG.debug("Begin pxc shrink_cluster for id: %s." % cluster_id)
+
+        def _shrink_cluster():
+            removal_instances = [Instance.load(context, instance_id)
+                                 for instance_id in removal_instance_ids]
+            for instance in removal_instances:
+                Instance.delete(instance)
+
+            # wait for instances to be deleted
+            def all_instances_marked_deleted():
+                non_deleted_instances = DBInstance.find_all(
+                    cluster_id=cluster_id, deleted=False).all()
+                non_deleted_ids = [db_instance.id for db_instance
+                                   in non_deleted_instances]
+                return not bool(
+                    set(removal_instance_ids).intersection(
+                        set(non_deleted_ids))
+                )
+            try:
+                LOG.info(_("Deleting instances (%s)") % removal_instance_ids)
+                utils.poll_until(all_instances_marked_deleted,
+                                 sleep_time=2,
+                                 time_out=CONF.cluster_delete_time_out)
+            except PollTimeOut:
+                LOG.error(_("timeout for instances to be marked as deleted."))
+                return
+
+            db_instances = DBInstance.find_all(cluster_id=cluster_id).all()
+            leftover_instances = [Instance.load(context, db_inst.id)
+                                  for db_inst in db_instances
+                                  if db_inst.id not in removal_instance_ids]
+            leftover_cluster_ips = [self.get_ip(instance) for instance in
+                                    leftover_instances]
+
+            # Get config changes for left over instances
+            rnd_cluster_guest = self.get_guest(leftover_instances[0])
+            cluster_context = rnd_cluster_guest.get_cluster_context()
+
+            # apply the new config to all leftover instances
+            for instance in leftover_instances:
+                guest = self.get_guest(instance)
+                # render the conf.d/cluster.cnf configuration
+                cluster_configuration = self._render_cluster_config(
+                    context,
+                    instance,
+                    ",".join(leftover_cluster_ips),
+                    cluster_context['cluster_name'],
+                    cluster_context['replication_user'])
+                guest.write_cluster_configuration_overrides(
+                    cluster_configuration)
+
+        timeout = Timeout(CONF.cluster_usage_timeout)
+        try:
+            _shrink_cluster()
+            self.reset_task()
+        except Timeout as t:
+            if t is not timeout:
+                raise  # not my timeout
+            LOG.exception(_("Timeout for shrinking cluster."))
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
+        except Exception:
+            LOG.exception(_("Error shrinking cluster %s.") % cluster_id)
+            self.update_statuses_on_failure(
+                cluster_id, status=inst_tasks.InstanceTasks.SHRINKING_ERROR)
+        finally:
+            timeout.cancel()
+
+        LOG.debug("End shrink_cluster for id: %s." % cluster_id)

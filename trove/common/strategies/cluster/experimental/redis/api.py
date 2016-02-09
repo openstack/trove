@@ -21,6 +21,7 @@ from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
 from trove.common.exception import TroveError
+from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.common import utils

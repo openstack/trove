@@ -57,3 +57,18 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self.manager.reset_admin_password(self.context, admin_password)
         self.status_get_mock.assert_any_call()
         reset_admin_pwd.assert_called_with(admin_password)
+
+    @patch.object(dbaas.PXCApp, 'get_cluster_context')
+    def test_get_cluster_context(self, get_cluster_ctxt):
+        get_cluster_ctxt.return_value = {'cluster': 'info'}
+        self.manager.get_cluster_context(self.context)
+        self.status_get_mock.assert_any_call()
+        get_cluster_ctxt.assert_any_call()
+
+    @patch.object(dbaas.PXCApp, 'write_cluster_configuration_overrides')
+    def test_write_cluster_configuration_overrides(self, conf_overries):
+        cluster_configuration = "cluster_configuration"
+        self.manager.write_cluster_configuration_overrides(
+            self.context, cluster_configuration)
+        self.status_get_mock.assert_any_call()
+        conf_overries.assert_called_with(cluster_configuration)
