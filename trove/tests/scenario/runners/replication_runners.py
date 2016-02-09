@@ -67,7 +67,7 @@ class ReplicationRunner(TestRunner):
         replica = self.auth_client.instances.create(
             self.instance_info.name + replica_name,
             self.instance_info.dbaas_flavor_href,
-            self.instance_info.volume, slave_of=master_id,
+            self.instance_info.volume, replica_of=master_id,
             nics=self.instance_info.nics,
             replica_count=replica_count)
         replica_id = replica.id
@@ -92,7 +92,7 @@ class ReplicationRunner(TestRunner):
     def _assert_is_replica(self, instance_id, master_id):
         instance = self.get_instance(instance_id)
         self.assert_client_code(200)
-        CheckInstance(instance._info).slave_of()
+        CheckInstance(instance._info).replica_of()
         self.assert_equal(master_id, instance._info['replica_of']['id'],
                           'Unexpected replication master ID')
 
