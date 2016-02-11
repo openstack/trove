@@ -43,7 +43,7 @@ class TemplateTest(trove_testtools.TestCase):
 
     def validate_template(self, contents, teststr, test_flavor, server_id):
         # expected query_cache_size = {{ 8 * flavor_multiplier }}M
-        flavor_multiplier = test_flavor['ram'] / 512
+        flavor_multiplier = test_flavor['ram'] // 512
         found_group = self._find_in_template(contents, teststr)
         if not found_group:
             raise "Could not find text in template"
@@ -51,7 +51,7 @@ class TemplateTest(trove_testtools.TestCase):
         memsize = found_group.split(" ")[2]
         self.assertEqual("%sM" % (8 * flavor_multiplier), memsize)
         self.assertIsNotNone(server_id)
-        self.assertTrue(server_id > 1)
+        self.assertTrue(len(server_id) > 1)
 
     def test_rendering(self):
         rendered = self.template.render(flavor=self.flavor_dict,
