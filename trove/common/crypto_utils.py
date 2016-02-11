@@ -19,6 +19,8 @@
 from Crypto.Cipher import AES
 from Crypto import Random
 import hashlib
+from oslo_utils import encodeutils
+import six
 
 from trove.common import stream_codecs
 
@@ -27,6 +29,8 @@ IV_BIT_COUNT = 16
 
 
 def encode_data(data):
+    if isinstance(data, six.text_type):
+        data = data.encode('utf-8')
     return stream_codecs.Base64Codec().serialize(data)
 
 
@@ -37,17 +41,20 @@ def decode_data(data):
 # Pad the data string to an multiple of pad_size
 def pad_for_encryption(data, pad_size=IV_BIT_COUNT):
     pad_count = pad_size - (len(data) % pad_size)
-    return data + chr(pad_count) * pad_count
+    return data + six.int2byte(pad_count) * pad_count
 
 
 # Unpad the data string by stripping off excess characters
 def unpad_after_decryption(data):
-    return data[:len(data) - ord(data[-1])]
+    return data[:len(data) - six.indexbytes(data, -1)]
 
 
 def encrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
+    data = encodeutils.to_utf8(data)
+    key = encodeutils.to_utf8(key)
     md5_key = hashlib.md5(key).hexdigest()
-    iv = Random.new().read(iv_bit_count)[:iv_bit_count]
+    iv = Random.new().read(iv_bit_count)
+    iv = iv[:iv_bit_count]
     aes = AES.new(md5_key, AES.MODE_CBC, iv)
     data = pad_for_encryption(data, iv_bit_count)
     encrypted = aes.encrypt(data)
@@ -55,6 +62,7 @@ def encrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
 
 
 def decrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
+    key = encodeutils.to_utf8(key)
     md5_key = hashlib.md5(key).hexdigest()
     iv = data[:iv_bit_count]
     aes = AES.new(md5_key, AES.MODE_CBC, bytes(iv))
