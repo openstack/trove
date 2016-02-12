@@ -188,7 +188,7 @@ class TestRunner(object):
         """Create a swift client from the admin user details."""
         requirements = Requirements(is_admin=True, services=["swift"])
         user = CONFIG.users.find_user(requirements)
-        os_options = {'region_name': os.getenv("OS_REGION_NAME")}
+        os_options = {'region_name': CONFIG.trove_client_region_name}
         return swiftclient.client.Connection(
             authurl=CONFIG.nova_client['auth_url'],
             user=user.auth_user,

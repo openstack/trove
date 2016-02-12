@@ -226,7 +226,8 @@ class GuestLogGroup(TestGroup):
         """Test log-generator with publish on SYS log."""
         self.test_runner.run_test_log_generator_publish_sys()
 
-    @test(depends_on=[test_log_publish_sys])
+    @test(depends_on=[test_log_publish_sys],
+          runs_after=[test_log_generator_publish_sys])
     def test_log_generator_swift_client_sys(self):
         """Test log-generator on SYS log with passed-in Swift client."""
         self.test_runner.run_test_log_generator_swift_client_sys()
