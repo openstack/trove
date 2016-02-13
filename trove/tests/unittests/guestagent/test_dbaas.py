@@ -45,8 +45,6 @@ from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.common import sql_query
 from trove.guestagent.datastore.experimental.cassandra import (
     service as cass_service)
-from trove.guestagent.datastore.experimental.cassandra import (
-    system as cass_system)
 from trove.guestagent.datastore.experimental.couchbase import (
     service as couchservice)
 from trove.guestagent.datastore.experimental.couchdb import (
@@ -2354,17 +2352,14 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
     def setUp(self):
         super(CassandraDBAppTest, self).setUp(str(uuid4()))
-        self.exec_patch = patch.object(utils, 'execute_with_timeout')
-        self.addCleanup(self.exec_patch.stop)
-        self.exec_mock = self.exec_patch.start()
         self.sleep = time.sleep
         self.orig_time_time = time.time
         self.pkg_version = cass_service.packager.pkg_version
         self.pkg = cass_service.packager
         util.init_db()
-        status = FakeAppStatus(self.FAKE_ID,
-                               rd_instance.ServiceStatuses.NEW)
-        self.cassandra = cass_service.CassandraApp(status)
+        self.cassandra = cass_service.CassandraApp()
+        self.cassandra.status = FakeAppStatus(self.FAKE_ID,
+                                              rd_instance.ServiceStatuses.NEW)
         self.orig_unlink = os.unlink
 
     @property
@@ -2381,14 +2376,14 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
     @property
     def expected_service_candidates(self):
-        return cass_system.SERVICE_CANDIDATES
+        return self.cassandra.service_candidates
 
     def tearDown(self):
-        super(CassandraDBAppTest, self).tearDown()
         time.sleep = self.sleep
         time.time = self.orig_time_time
         cass_service.packager.pkg_version = self.pkg_version
         cass_service.packager = self.pkg
+        super(CassandraDBAppTest, self).tearDown()
 
     def assert_reported_status(self, expected_status):
         service_status = InstanceServiceStatus.find_by(
@@ -2397,10 +2392,9 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
     @patch.object(utils, 'execute_with_timeout')
     def test_service_cleanup(self, exec_mock):
-        cass_service.CassandraAppStatus().cleanup_stalled_db_services()
-        exec_mock.assert_called_once_with(
-            cass_system.CASSANDRA_KILL,
-            shell=True)
+        cass_service.CassandraAppStatus(Mock()).cleanup_stalled_db_services()
+        exec_mock.assert_called_once_with(self.cassandra.CASSANDRA_KILL_CMD,
+                                          shell=True)
 
     def test_install(self):
 
@@ -2424,72 +2418,24 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
-    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
-    def test_cassandra_error_in_write_config_verify_unlink(self, *args):
-        # this test verifies not only that the write_config
-        # method properly invoked execute, but also that it properly
-        # attempted to unlink the file (as a result of the exception)
-
-        mock_unlink = Mock(return_value=0)
-
-        # We call tempfile.mkstemp() here and Mock() the mkstemp()
-        # parameter to write_config for testability.
-        (temp_handle, temp_config_name) = tempfile.mkstemp()
-        mock_mkstemp = MagicMock(return_value=(temp_handle, temp_config_name))
-
-        configuration = 'this is my configuration'
-
-        with patch('trove.guestagent.common.operating_system.move',
-                   side_effect=ProcessExecutionError('some exception')):
-            self.assertRaises(ProcessExecutionError,
-                              self.cassandra.write_config,
-                              config_contents=configuration,
-                              execute_function=Mock(),
-                              mkstemp_function=mock_mkstemp,
-                              unlink_function=mock_unlink)
-
-            self.assertEqual(1, mock_unlink.call_count)
-
-        # really delete the temporary_config_file
-        os.unlink(temp_config_name)
-
     @patch.multiple('trove.guestagent.common.operating_system',
-                    chown=DEFAULT, chmod=DEFAULT, move=DEFAULT)
-    def test_cassandra_write_config(self, chown, chmod, move):
-        # ensure that write_config creates a temporary file, and then
-        # moves the file to the final place. Also validate the
-        # contents of the file written.
-
-        # We call tempfile.mkstemp() here and Mock() the mkstemp()
-        # parameter to write_config for testability.
-        (temp_handle, temp_config_name) = tempfile.mkstemp()
-        mock_mkstemp = MagicMock(return_value=(temp_handle, temp_config_name))
-
+                    chown=DEFAULT, chmod=DEFAULT, write_file=DEFAULT)
+    def test_cassandra_write_config(self, chown, chmod, write_file):
         configuration = 'some arbitrary configuration text'
+        self.cassandra.write_config(configuration)
 
-        mock_execute = MagicMock(return_value=('', ''))
-
-        self.cassandra.write_config(configuration,
-                                    execute_function=mock_execute,
-                                    mkstemp_function=mock_mkstemp)
-
-        move.assert_called_with(temp_config_name, cass_system.CASSANDRA_CONF,
-                                as_root=True)
-        chown.assert_called_with(cass_system.CASSANDRA_CONF,
+        write_file.assert_called_with(
+            self.cassandra.cassandra_conf,
+            configuration,
+            codec=ANY,
+            as_root=True)
+        chown.assert_called_with(self.cassandra.cassandra_conf,
                                  "cassandra", "cassandra", recursive=False,
                                  as_root=True)
         chmod.assert_called_with(
-            cass_system.CASSANDRA_CONF, FileMode.ADD_READ_ALL, as_root=True)
-
-        self.assertEqual(1, mock_mkstemp.call_count)
-
-        with open(temp_config_name, 'r') as config_file:
-            configuration_data = config_file.read()
-
-        self.assertEqual(configuration, configuration_data)
-
-        # really delete the temporary_config_file
-        os.unlink(temp_config_name)
+            self.cassandra.cassandra_conf,
+            FileMode.ADD_READ_ALL,
+            as_root=True)
 
 
 class CouchbaseAppTest(BaseAppTest.AppTestCase):

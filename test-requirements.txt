@@ -22,3 +22,4 @@ testrepository>=0.0.18 # Apache-2.0/BSD
 pymongo>=3.0.2 # Apache-2.0
 redis>=2.10.0 # MIT
 psycopg2>=2.5 # LGPL/ZPL
+cassandra-driver>=2.1.4 # Apache-2.0

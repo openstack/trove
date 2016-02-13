@@ -158,6 +158,36 @@ class MongoDBSchema(DatastoreSchema):
         return ['_name']
 
 
+class CassandraSchema(DatastoreSchema):
+    """Represents a Cassandra schema and its associated properties.
+
+    Keyspace names are 32 or fewer alpha-numeric characters and underscores,
+    the first of which is an alpha character.
+    """
+
+    def __init__(self, name=None, deserializing=False):
+        super(CassandraSchema, self).__init__()
+
+        if not (bool(deserializing) != bool(name)):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+
+    @property
+    def _max_schema_name_length(self):
+        return 32
+
+    def _is_valid_schema_name(self, value):
+        return True
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
+
+
 class MySQLDatabase(Base):
     """Represents a Database and its properties."""
 
@@ -739,6 +769,45 @@ class MongoDBUser(DatastoreUser):
             return False
         if not {'db', 'role'} == set(value):
             return False
+        return True
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
+
+
+class CassandraUser(DatastoreUser):
+    """Represents a Cassandra user and its associated properties."""
+
+    def __init__(self, name=None, password=None, deserializing=False):
+        super(CassandraUser, self).__init__()
+
+        if ((not (bool(deserializing) != bool(name))) or
+                (bool(deserializing) and bool(password))):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "password %(pass)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'pass': bool(password),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+            self.password = password
+
+    def _build_database_schema(self, name):
+        return CassandraSchema(name)
+
+    @property
+    def _max_username_length(self):
+        return 65535
+
+    def _is_valid_name(self, value):
+        return True
+
+    def _is_valid_host_name(self, value):
+        return True
+
+    def _is_valid_password(self, value):
         return True
 
     @classmethod

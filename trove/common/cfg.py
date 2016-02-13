@@ -814,6 +814,11 @@ cassandra_opts = [
     cfg.StrOpt('root_controller',
                default='trove.extensions.common.service.DefaultRootController',
                help='Root controller implementation for cassandra.'),
+    cfg.ListOpt('ignore_users', default=['os_admin'],
+                help='Users to exclude when listing users.'),
+    cfg.ListOpt('ignore_dbs', default=['system', 'system_auth',
+                                       'system_traces'],
+                help='Databases to exclude when listing databases.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
 ]
