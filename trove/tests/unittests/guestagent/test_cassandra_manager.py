@@ -19,6 +19,7 @@ import string
 from mock import ANY
 from mock import call
 from mock import MagicMock
+from mock import Mock
 from mock import NonCallableMagicMock
 from mock import patch
 from oslo_utils import netutils
@@ -27,6 +28,7 @@ from testtools import ExpectedException
 from trove.common.context import TroveContext
 from trove.common import exception
 from trove.common.instance import ServiceStatuses
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.datastore.experimental.cassandra import (
     manager as cass_manager)
 from trove.guestagent.datastore.experimental.cassandra import (
@@ -65,7 +67,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     __LIST_DB_FORMAT = "SELECT * FROM system.schema_keyspaces;"
     __LIST_USR_FORMAT = "LIST USERS;"
 
-    def setUp(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    def setUp(self, *args, **kwargs):
         super(GuestAgentCassandraDBManagerTest, self).setUp()
         self.real_status = cass_service.CassandraAppStatus.set_status
 
@@ -83,7 +86,6 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             models.CassandraUser('Test'))
         self.admin = self.manager._Manager__admin
         self.pkg = cass_service.packager
-        self.real_db_app_status = cass_service.CassandraAppStatus
         self.origin_os_path_exists = os.path.exists
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data
@@ -94,12 +96,11 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         self.origin_install_db = cass_service.CassandraApp._install_db
         self.original_get_ip = netutils.get_my_ipv4
         self.orig_make_host_reachable = (
-            cass_service.CassandraApp.make_host_reachable)
+            cass_service.CassandraApp.apply_initial_guestagent_configuration)
 
     def tearDown(self):
         super(GuestAgentCassandraDBManagerTest, self).tearDown()
         cass_service.packager = self.pkg
-        cass_service.CassandraAppStatus.set_status = self.real_db_app_status
         os.path.exists = self.origin_os_path_exists
         volume.VolumeDevice.format = self.origin_format
         volume.VolumeDevice.migrate_data = self.origin_migrate_data
@@ -109,7 +110,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         cass_service.CassandraApp.start_db = self.origin_start_db
         cass_service.CassandraApp._install_db = self.origin_install_db
         netutils.get_my_ipv4 = self.original_get_ip
-        cass_service.CassandraApp.make_host_reachable = (
+        cass_service.CassandraApp.apply_initial_guestagent_configuration = (
             self.orig_make_host_reachable)
         cass_service.CassandraAppStatus.set_status = self.real_status
 
@@ -154,7 +155,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         mock_app.install_if_needed = MagicMock(return_value=None)
         mock_app.init_storage_structure = MagicMock(return_value=None)
         mock_app.write_config = MagicMock(return_value=None)
-        mock_app.make_host_reachable = MagicMock(return_value=None)
+        mock_app.apply_initial_guestagent_configuration = MagicMock(
+            return_value=None)
         mock_app.restart = MagicMock(return_value=None)
         mock_app.start_db = MagicMock(return_value=None)
         mock_app.stop_db = MagicMock(return_value=None)
@@ -181,7 +183,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         mock_status.begin_install.assert_any_call()
         mock_app.install_if_needed.assert_any_call(packages)
         mock_app.init_storage_structure.assert_any_call('/var/lib/cassandra')
-        mock_app.make_host_reachable.assert_any_call()
+        mock_app.apply_initial_guestagent_configuration.assert_any_call()
         mock_app.start_db.assert_any_call(update_db=False)
         mock_app.stop_db.assert_any_call()
 
@@ -598,3 +600,22 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
                                                    None, usr_attrs)
                     alter.assert_called_once_with(ANY, usr)
                     self.assertEqual(0, rename.call_count)
+
+    def test_update_overrides(self):
+        cfg_mgr_mock = MagicMock()
+        self.manager._app.configuration_manager = cfg_mgr_mock
+        overrides = NonCallableMagicMock()
+        self.manager.update_overrides(Mock(), overrides)
+        cfg_mgr_mock.apply_user_override.assert_called_once_with(overrides)
+        cfg_mgr_mock.remove_user_override.assert_not_called()
+
+    def test_remove_overrides(self):
+        cfg_mgr_mock = MagicMock()
+        self.manager._app.configuration_manager = cfg_mgr_mock
+        self.manager.update_overrides(Mock(), {}, remove=True)
+        cfg_mgr_mock.remove_user_override.assert_called_once_with()
+        cfg_mgr_mock.apply_user_override.assert_not_called()
+
+    def test_apply_overrides(self):
+        self.assertIsNone(
+            self.manager.apply_overrides(Mock(), NonCallableMagicMock()))

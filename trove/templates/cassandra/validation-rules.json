@@ -1,0 +1,554 @@
+{
+    "configuration-parameters": [
+        {
+            "name": "cluster_name",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "listen_address",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "commit_failure_policy",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "disk_failure_policy",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "endpoint_snitch",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "seed_provider",
+            "restart_required": true,
+            "type": "list"
+        },
+        {
+            "name": "compaction_throughput_mb_per_sec",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "compaction_large_partition_warning_threshold_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_total_space_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "concurrent_reads",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "concurrent_writes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "phi_convict_threshold",
+            "restart_required": true,
+            "type": "integer"
+        },
+        {
+            "name": "commitlog_sync",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "commitlog_segment_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "commitlog_total_space_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "compaction_preheat_key_cache",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "concurrent_compactors",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "in_memory_compaction_limit_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "preheat_kernel_page_cache",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "sstable_preemptive_open_interval_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_allocation_type",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "memtable_cleanup_threshold",
+            "restart_required": true,
+            "min": 0,
+            "type": "float"
+        },
+        {
+            "name": "file_cache_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_flush_queue_size",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_flush_writers",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_heap_space_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memtable_offheap_space_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "column_index_size_in_kb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "index_summary_capacity_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "index_summary_resize_interval_in_minutes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "reduce_cache_capacity_to",
+            "restart_required": true,
+            "min": 0,
+            "max": 1.0,
+            "type": "float"
+        },
+        {
+            "name": "reduce_cache_sizes_at",
+            "restart_required": true,
+            "min": 0,
+            "max": 1.0,
+            "type": "float"
+        },
+        {
+            "name": "stream_throughput_outbound_megabits_per_sec",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "inter_dc_stream_throughput_outbound_megabits_per_sec",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "trickle_fsync",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "trickle_fsync_interval_in_kb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "auto_bootstrap",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "batch_size_warn_threshold_in_kb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "broadcast_address",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "initial_token",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "initial_token",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "num_tokens",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "partitioner",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "key_cache_keys_to_save",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "key_cache_save_period",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "key_cache_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "row_cache_keys_to_save",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "row_cache_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "row_cache_save_period",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "memory_allocator",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "counter_cache_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "counter_cache_save_period",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "counter_cache_keys_to_save",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "counter_cache_keys_to_save",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "tombstone_warn_threshold",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "tombstone_failure_threshold",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "range_request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "read_request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "counter_write_request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cas_contention_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "truncate_request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "write_request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "request_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "cross_node_timeout",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "internode_send_buff_size_in_bytes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "internode_recv_buff_size_in_bytes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "internode_compression",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "inter_dc_tcp_nodelay",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "streaming_socket_timeout_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "native_transport_max_threads",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "native_transport_max_frame_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "native_transport_max_concurrent_connections",
+            "restart_required": true,
+            "min": -1,
+            "type": "integer"
+        },
+        {
+            "name": "native_transport_max_concurrent_connections_per_ip",
+            "restart_required": true,
+            "min": -1,
+            "type": "integer"
+        },
+        {
+            "name": "broadcast_rpc_address",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "rpc_keepalive",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "rpc_max_threads",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "rpc_min_threads",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "rpc_recv_buff_size_in_bytes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "rpc_send_buff_size_in_bytes",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "rpc_server_type",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "dynamic_snitch_badness_threshold",
+            "restart_required": true,
+            "min": 0,
+            "type": "float"
+        },
+        {
+            "name": "dynamic_snitch_reset_interval_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "dynamic_snitch_update_interval_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "hinted_handoff_enabled",
+            "restart_required": true,
+            "type": "boolean"
+        },
+        {
+            "name": "hinted_handoff_throttle_in_kb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "max_hint_window_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "max_hints_delivery_threads",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "batchlog_replay_throttle_in_kb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "request_scheduler",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "request_scheduler_id",
+            "restart_required": true,
+            "type": "string"
+        },
+        {
+            "name": "request_scheduler_options",
+            "restart_required": true,
+            "type": "list"
+        },
+        {
+            "name": "thrift_framed_transport_size_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "thrift_max_message_length_in_mb",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "permissions_validity_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "permissions_update_interval_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        },
+        {
+            "name": "gc_warn_threshold_in_ms",
+            "restart_required": true,
+            "min": 0,
+            "type": "integer"
+        }
+    ]
+}
