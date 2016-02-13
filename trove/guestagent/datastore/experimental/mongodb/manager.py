@@ -93,10 +93,6 @@ class Manager(manager.Manager):
             if service.MongoDBAdmin().is_root_enabled():
                 self.app.status.report_root(context, 'root')
 
-        if not cluster_config and root_password:
-            LOG.debug('Root password provided. Enabling root.')
-            service.MongoDBAdmin().enable_root(root_password)
-
     def restart(self, context):
         LOG.debug("Restarting MongoDB.")
         self.app.restart()
@@ -169,6 +165,9 @@ class Manager(manager.Manager):
     def enable_root(self, context):
         LOG.debug("Enabling root.")
         return service.MongoDBAdmin().enable_root()
+
+    def enable_root_with_password(self, context, root_password=None):
+        return service.MongoDBAdmin().enable_root(root_password)
 
     def is_root_enabled(self, context):
         LOG.debug("Checking if root is enabled.")

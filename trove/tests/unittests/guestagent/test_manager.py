@@ -320,41 +320,30 @@ class ManagerTest(trove_testtools.TestCase):
                             "%s not called" % key)
 
     def test_prepare_single(self):
-        packages = Mock()
-        databases = Mock()
-        memory_mb = Mock()
-        users = Mock()
-        device_path = Mock()
-        mount_point = Mock()
-        backup_info = Mock()
-        config_contents = Mock()
-        root_password = Mock()
-        overrides = Mock()
-        snapshot = Mock()
+        self.run_prepare_test(cluster_config=None)
 
-        self._assert_prepare(
-            self.context, packages, databases, memory_mb, users, device_path,
-            mount_point, backup_info, config_contents, root_password,
-            overrides, None, snapshot)
+    def test_prepare_single_no_users(self):
+        self.run_prepare_test(cluster_config=None, users=None)
+
+    def test_prepare_single_no_databases(self):
+        self.run_prepare_test(cluster_config=None, databases=None)
+
+    def test_prepare_single_no_root_password(self):
+        self.run_prepare_test(cluster_config=None, root_password=None)
 
     def test_prepare_cluster(self):
-        packages = Mock()
-        databases = Mock()
-        memory_mb = Mock()
-        users = Mock()
-        device_path = Mock()
-        mount_point = Mock()
-        backup_info = Mock()
-        config_contents = Mock()
-        root_password = Mock()
-        overrides = Mock()
-        cluster_config = Mock()
-        snapshot = Mock()
+        self.run_prepare_test()
 
-        self._assert_prepare(
-            self.context, packages, databases, memory_mb, users, device_path,
-            mount_point, backup_info, config_contents, root_password,
-            overrides, cluster_config, snapshot)
+    def run_prepare_test(self, packages=Mock(), databases=Mock(),
+                         memory_mb=Mock(), users=Mock(),
+                         device_path=Mock(), mount_point=Mock(),
+                         backup_info=Mock(), config_contents=Mock(),
+                         root_password=Mock(), overrides=Mock(),
+                         cluster_config=Mock(), snapshot=Mock()):
+        self._assert_prepare(self.context, packages, databases, memory_mb,
+                             users, device_path, mount_point, backup_info,
+                             config_contents, root_password, overrides,
+                             cluster_config, snapshot)
 
     def _assert_prepare(self, context, packages, databases, memory_mb, users,
                         device_path, mount_point, backup_info, config_contents,
@@ -366,6 +355,7 @@ class ManagerTest(trove_testtools.TestCase):
         with patch.multiple(self.manager,
                             do_prepare=DEFAULT, post_prepare=DEFAULT,
                             apply_overrides_on_prepare=DEFAULT,
+                            enable_root_on_prepare=DEFAULT,
                             create_database=DEFAULT, create_user=DEFAULT):
             self.manager.prepare(
                 context, packages, databases, memory_mb, users,
@@ -409,15 +399,30 @@ class ManagerTest(trove_testtools.TestCase):
                 snapshot)
 
             if not is_post_process_expected:
-                self.manager.create_database.assert_called_once_with(
-                    context,
-                    databases)
-                self.manager.create_user.assert_called_once_with(
-                    context,
-                    users)
+                if databases:
+                    self.manager.create_database.assert_called_once_with(
+                        context,
+                        databases)
+                else:
+                    self.assertEqual(
+                        0, self.manager.create_database.call_count)
+                if users:
+                    self.manager.create_user.assert_called_once_with(
+                        context,
+                        users)
+                else:
+                    self.assertEqual(0, self.manager.create_user.call_count)
+                if not backup_info and root_password:
+                    (self.manager.enable_root_on_prepare.
+                     assert_called_once_with(context, root_password))
+                else:
+                    self.assertEqual(
+                        0, self.manager.enable_root_on_prepare.call_count)
             else:
                 self.assertEqual(0, self.manager.create_database.call_count)
                 self.assertEqual(0, self.manager.create_user.call_count)
+                self.assertEqual(
+                    0, self.manager.enable_root_on_prepare.call_count)
 
     def test_apply_overrides_on_prepare(self):
         overrides = Mock()
@@ -451,7 +456,7 @@ class ManagerTest(trove_testtools.TestCase):
                     side_effect=expected_failure
                 )):
             self.assertRaisesRegexp(
-                Exception, "Error in 'apply_overrides_on_prepare'.",
+                Exception, expected_failure.message,
                 self.manager.prepare,
                 self.context, packages, databases, memory_mb, users,
                 device_path, mount_point, backup_info, config_contents,

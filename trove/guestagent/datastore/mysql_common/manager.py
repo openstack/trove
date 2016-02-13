@@ -169,8 +169,7 @@ class MySqlManager(manager.Manager):
         return self.mysql_admin().enable_root()
 
     def enable_root_with_password(self, context, root_password=None):
-        raise exception.DatastoreOperationNotSupported(
-            operation='enable_root_with_password', datastore=self.manager)
+        return self.mysql_admin().enable_root(root_password)
 
     def is_root_enabled(self, context):
         return self.mysql_admin().is_root_enabled()
@@ -228,10 +227,7 @@ class MySqlManager(manager.Manager):
         app.secure(config_contents)
         enable_root_on_restore = (backup_info and
                                   self.mysql_admin().is_root_enabled())
-        if root_password and not backup_info:
-            app.secure_root(secure_remote_root=True)
-            self.mysql_admin().enable_root(root_password)
-        elif enable_root_on_restore:
+        if enable_root_on_restore:
             app.secure_root(secure_remote_root=False)
             self.mysql_app_status.get().report_root(context, 'root')
         else:
