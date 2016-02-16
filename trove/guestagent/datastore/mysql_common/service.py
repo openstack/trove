@@ -133,6 +133,7 @@ def load_mysqld_options():
 
 
 class BaseMySqlAppStatus(service.BaseDbStatus):
+
     @classmethod
     def get(cls):
         if not cls._instance:
@@ -488,6 +489,9 @@ class BaseMySqlAdmin(object):
         LIMIT :limit;
         '''
         LOG.debug("---Listing Users---")
+        ignored_user_names = "'%s'" % "', '".join(cfg.get_ignored_users())
+        LOG.debug("The following user names are on ignore list and will "
+                  "be omitted from the listing: %s" % ignored_user_names)
         users = []
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             mysql_user = models.MySQLUser()
@@ -500,7 +504,9 @@ class BaseMySqlAdmin(object):
             oq = sql_query.Query()  # Outer query.
             oq.columns = ['User', 'Host', 'Marker']
             oq.tables = ['(%s) as innerquery' % innerquery]
-            oq.where = ["Host != 'localhost'"]
+            oq.where = [
+                "Host != 'localhost'",
+                "User NOT IN (" + ignored_user_names + ")"]
             oq.order = ['Marker']
             if marker:
                 oq.where.append("Marker %s '%s'" %

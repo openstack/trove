@@ -647,7 +647,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
         expected = ("SELECT User, Host, Marker FROM"
                     " (SELECT User, Host, CONCAT(User, '@', Host) as Marker"
                     " FROM mysql.user ORDER BY User, Host) as innerquery WHERE"
-                    " Host != 'localhost' ORDER BY Marker;"
+                    " Host != 'localhost' AND User NOT IN ('os_admin', 'root')"
+                    " ORDER BY Marker;"
                     )
 
         with patch.object(self.mock_client, 'execute') as mock_execute:
@@ -659,7 +660,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
         expected = ("SELECT User, Host, Marker FROM"
                     " (SELECT User, Host, CONCAT(User, '@', Host) as Marker"
                     " FROM mysql.user ORDER BY User, Host) as innerquery WHERE"
-                    " Host != 'localhost' ORDER BY Marker"
+                    " Host != 'localhost' AND User NOT IN ('os_admin', 'root')"
+                    " ORDER BY Marker"
                     " LIMIT " + str(limit + 1) + ";"
                     )
 
@@ -672,7 +674,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
         expected = ("SELECT User, Host, Marker FROM"
                     " (SELECT User, Host, CONCAT(User, '@', Host) as Marker"
                     " FROM mysql.user ORDER BY User, Host) as innerquery WHERE"
-                    " Host != 'localhost' AND Marker > '" + marker + "'"
+                    " Host != 'localhost' AND User NOT IN ('os_admin', 'root')"
+                    " AND Marker > '" + marker + "'"
                     " ORDER BY Marker;"
                     )
 
@@ -685,7 +688,8 @@ class MySqlAdminTest(trove_testtools.TestCase):
         expected = ("SELECT User, Host, Marker FROM"
                     " (SELECT User, Host, CONCAT(User, '@', Host) as Marker"
                     " FROM mysql.user ORDER BY User, Host) as innerquery WHERE"
-                    " Host != 'localhost' AND Marker >= '" + marker + "'"
+                    " Host != 'localhost' AND User NOT IN ('os_admin', 'root')"
+                    " AND Marker >= '" + marker + "'"
                     " ORDER BY Marker;"
                     )
 
