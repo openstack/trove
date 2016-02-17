@@ -39,6 +39,7 @@ from trove.common.exception import ProcessExecutionError
 from trove.common import instance as rd_instance
 from trove.common import utils
 from trove.conductor import api as conductor_api
+from trove.guestagent.common.configuration import ConfigurationManager
 from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.common import sql_query
@@ -2728,7 +2729,10 @@ class VerticaAppStatusTest(trove_testtools.TestCase):
 
 class VerticaAppTest(trove_testtools.TestCase):
 
-    def setUp(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    def setUp(self, *args, **kwargs):
         super(VerticaAppTest, self).setUp()
         self.FAKE_ID = 1000
         self.appStatus = FakeAppStatus(self.FAKE_ID,
@@ -2758,14 +2762,14 @@ class VerticaAppTest(trove_testtools.TestCase):
         super(VerticaAppTest, self).tearDown()
 
     def test_enable_root_is_root_not_enabled(self):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
-            with patch.object(app, 'is_root_enabled', return_value=False):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            with patch.object(self.app, 'is_root_enabled', return_value=False):
                 with patch.object(vertica_system, 'exec_vsql_command',
                                   MagicMock(side_effect=[['', ''],
                                                          ['', ''],
                                                          ['', '']])):
-                    app.enable_root('root_password')
+                    self.app.enable_root('root_password')
                     create_user_arguments = (
                         vertica_system.exec_vsql_command.call_args_list[0])
                     expected_create_user_cmd = (
@@ -2793,22 +2797,25 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_enable_root_is_root_not_enabled_failed(self, *args):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
-            with patch.object(app, 'is_root_enabled', return_value=False):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            with patch.object(self.app, 'is_root_enabled', return_value=False):
                 with patch.object(vertica_system, 'exec_vsql_command',
-                                  MagicMock(side_effect=[['', 'err']])):
-                    self.assertRaises(RuntimeError, app.enable_root,
+                                  MagicMock(side_effect=[
+                                      ['', vertica_system.VSqlError(
+                                          'ERROR 123: Test'
+                                      )]])):
+                    self.assertRaises(RuntimeError, self.app.enable_root,
                                       'root_password')
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_enable_root_is_root_enabled(self, *args):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
-            with patch.object(app, 'is_root_enabled', return_value=True):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            with patch.object(self.app, 'is_root_enabled', return_value=True):
                 with patch.object(vertica_system, 'exec_vsql_command',
                                   MagicMock(side_effect=[['', '']])):
-                    app.enable_root('root_password')
+                    self.app.enable_root('root_password')
                     alter_user_password_arguments = (
                         vertica_system.exec_vsql_command.call_args_list[0])
                     expected_alter_user_cmd = (
@@ -2820,21 +2827,23 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_enable_root_is_root_enabled_failed(self, *arg):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
-            with patch.object(app, 'is_root_enabled', return_value=True):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
+            with patch.object(self.app, 'is_root_enabled', return_value=True):
                 with patch.object(vertica_system, 'exec_vsql_command',
                                   MagicMock(side_effect=[
-                                      ['', ProcessExecutionError]])):
-                    self.assertRaises(RuntimeError, app.enable_root,
+                                      ['', vertica_system.VSqlError(
+                                          'ERROR 123: Test'
+                                      )]])):
+                    self.assertRaises(RuntimeError, self.app.enable_root,
                                       'root_password')
 
     def test_is_root_enable(self):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
             with patch.object(vertica_system, 'shell_execute',
                               MagicMock(side_effect=[['', '']])):
-                app.is_root_enabled()
+                self.app.is_root_enabled()
                 user_exists_args = (
                     vertica_system.shell_execute.call_args_list[0])
                 expected_user_exists_cmd = vertica_system.USER_EXISTS % (
@@ -2844,12 +2853,12 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_is_root_enable_failed(self, *args):
-        app = VerticaApp(MagicMock())
-        with patch.object(app, 'read_config', return_value=self.test_config):
+        with patch.object(self.app, 'read_config',
+                          return_value=self.test_config):
             with patch.object(vertica_system, 'shell_execute',
                               MagicMock(side_effect=[
                                   ['', ProcessExecutionError]])):
-                self.assertRaises(RuntimeError, app.is_root_enabled)
+                self.assertRaises(RuntimeError, self.app.is_root_enabled)
 
     def test_install_if_needed_installed(self):
         with patch.object(pkg.Package, 'pkg_is_installed', return_value=True):
@@ -2963,7 +2972,10 @@ class VerticaAppTest(trove_testtools.TestCase):
         # delete the temporary_config_file
         os.unlink(temp_file_handle.name)
 
-    def test_restart(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    def test_restart(self, *args, **kwargs):
         mock_status = MagicMock()
         app = VerticaApp(mock_status)
         mock_status.begin_restart = MagicMock(return_value=None)
@@ -2978,7 +2990,10 @@ class VerticaAppTest(trove_testtools.TestCase):
                     VerticaApp.stop_db.assert_any_call()
                     VerticaApp.start_db.assert_any_call()
 
-    def test_start_db(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    def test_start_db(self, *args, **kwargs):
         mock_status = MagicMock()
         type(mock_status)._is_restarting = PropertyMock(return_value=False)
         app = VerticaApp(mock_status)
@@ -3000,30 +3015,26 @@ class VerticaAppTest(trove_testtools.TestCase):
                 db_start.assert_called_with(db_expected_cmd)
 
     def test_start_db_failure(self):
-        mock_status = MagicMock()
-        app = VerticaApp(mock_status)
-        with patch.object(app, '_enable_db_on_boot',
+        with patch.object(self.app, '_enable_db_on_boot',
                           side_effect=RuntimeError()):
-            with patch.object(app, 'read_config',
+            with patch.object(self.app, 'read_config',
                               return_value=self.test_config):
-                self.assertRaises(RuntimeError, app.start_db)
+                self.assertRaises(RuntimeError, self.app.start_db)
 
     def test_stop_db(self):
-        mock_status = MagicMock()
-        type(mock_status)._is_restarting = PropertyMock(return_value=False)
-        app = VerticaApp(mock_status)
-        with patch.object(app, '_disable_db_on_boot', return_value=None):
-            with patch.object(app, 'read_config',
+        type(self.appStatus)._is_restarting = PropertyMock(return_value=False)
+        with patch.object(self.app, '_disable_db_on_boot', return_value=None):
+            with patch.object(self.app, 'read_config',
                               return_value=self.test_config):
                 with patch.object(vertica_system, 'shell_execute',
                                   MagicMock(side_effect=[['', ''],
                                                          ['db_srvr', None],
                                                          ['', '']])):
-                    mock_status.wait_for_real_status_to_change_to = MagicMock(
-                        return_value=True)
-                    mock_status.end_restart = MagicMock(
+                    self.appStatus.wait_for_real_status_to_change_to = \
+                        MagicMock(return_value=True)
+                    self.appStatus.end_restart = MagicMock(
                         return_value=None)
-                    app.stop_db()
+                    self.app.stop_db()
 
                     self.assertEqual(
                         3, vertica_system.shell_execute.call_count)
@@ -3035,34 +3046,30 @@ class VerticaAppTest(trove_testtools.TestCase):
                     arguments = vertica_system.shell_execute.call_args_list[2]
                     expected_cmd = (vertica_system.STOP_DB % ('db_srvr',
                                                               'some_password'))
-                    self.assertTrue(
-                        mock_status.wait_for_real_status_to_change_to.called)
+                    self.assertTrue(self.appStatus.
+                                    wait_for_real_status_to_change_to.called)
                     arguments.assert_called_with(expected_cmd, 'dbadmin')
 
     def test_stop_db_do_not_start_on_reboot(self):
-        mock_status = MagicMock()
-        type(mock_status)._is_restarting = PropertyMock(return_value=True)
-        app = VerticaApp(mock_status)
-        with patch.object(app, '_disable_db_on_boot', return_value=None):
-            with patch.object(app, 'read_config',
+        type(self.appStatus)._is_restarting = PropertyMock(return_value=True)
+        with patch.object(self.app, '_disable_db_on_boot', return_value=None):
+            with patch.object(self.app, 'read_config',
                               return_value=self.test_config):
                 with patch.object(vertica_system, 'shell_execute',
                                   MagicMock(side_effect=[['', ''],
                                                          ['db_srvr', None],
                                                          ['', '']])):
-                    app.stop_db(do_not_start_on_reboot=True)
+                    self.app.stop_db(do_not_start_on_reboot=True)
 
                     self.assertEqual(
                         3, vertica_system.shell_execute.call_count)
-                    app._disable_db_on_boot.assert_any_call()
+                    self.app._disable_db_on_boot.assert_any_call()
 
     def test_stop_db_database_not_running(self):
-        mock_status = MagicMock()
-        app = VerticaApp(mock_status)
-        with patch.object(app, '_disable_db_on_boot', return_value=None):
-            with patch.object(app, 'read_config',
+        with patch.object(self.app, '_disable_db_on_boot', return_value=None):
+            with patch.object(self.app, 'read_config',
                               return_value=self.test_config):
-                app.stop_db()
+                self.app.stop_db()
                 # Since database stop command does not gets executed,
                 # so only 2 shell calls were there.
                 self.assertEqual(
@@ -3070,21 +3077,19 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_stop_db_failure(self, *args):
-        mock_status = MagicMock()
-        type(mock_status)._is_restarting = PropertyMock(return_value=False)
-        app = VerticaApp(mock_status)
-        with patch.object(app, '_disable_db_on_boot', return_value=None):
-            with patch.object(app, 'read_config',
+        type(self.appStatus)._is_restarting = PropertyMock(return_value=False)
+        with patch.object(self.app, '_disable_db_on_boot', return_value=None):
+            with patch.object(self.app, 'read_config',
                               return_value=self.test_config):
                 with patch.object(vertica_system, 'shell_execute',
                                   MagicMock(side_effect=[['', ''],
                                                          ['db_srvr', None],
                                                          ['', '']])):
-                    mock_status.wait_for_real_status_to_change_to = MagicMock(
+                    self.appStatus.wait_for_real_status_to_change_to = \
+                        MagicMock(return_value=None)
+                    self.appStatus.end_restart = MagicMock(
                         return_value=None)
-                    mock_status.end_restart = MagicMock(
-                        return_value=None)
-                    self.assertRaises(RuntimeError, app.stop_db)
+                    self.assertRaises(RuntimeError, self.app.stop_db)
 
     def test_export_conf_to_members(self):
         self.app._export_conf_to_members(members=['member1', 'member2'])
@@ -3092,11 +3097,11 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     @patch('trove.guestagent.datastore.experimental.vertica.service.LOG')
     def test_fail__export_conf_to_members(self, *args):
-        app = VerticaApp(MagicMock())
+        # app = VerticaApp(MagicMock())
         with patch.object(vertica_system, 'shell_execute',
                           side_effect=ProcessExecutionError('Error')):
             self.assertRaises(ProcessExecutionError,
-                              app._export_conf_to_members,
+                              self.app._export_conf_to_members,
                               ['member1', 'member2'])
 
     def test_authorize_public_keys(self):
@@ -3182,8 +3187,7 @@ class VerticaAppTest(trove_testtools.TestCase):
         self.assertEqual(5, vertica_system.shell_execute.call_count)
 
     def test__enable_db_on_boot(self):
-        app = VerticaApp(MagicMock())
-        app._enable_db_on_boot()
+        self.app._enable_db_on_boot()
 
         restart_policy, agent_enable = subprocess.Popen.call_args_list
         expected_restart_policy = [
@@ -3205,8 +3209,7 @@ class VerticaAppTest(trove_testtools.TestCase):
                                     self.app._enable_db_on_boot)
 
     def test__disable_db_on_boot(self):
-        app = VerticaApp(MagicMock())
-        app._disable_db_on_boot()
+        self.app._disable_db_on_boot()
 
         restart_policy, agent_disable = (
             vertica_system.shell_execute.call_args_list)
@@ -3228,10 +3231,9 @@ class VerticaAppTest(trove_testtools.TestCase):
                                     self.app._disable_db_on_boot)
 
     def test_read_config(self):
-        app = VerticaApp(MagicMock())
         with patch.object(ConfigParser, 'ConfigParser',
                           return_value=self.test_config):
-            test_config = app.read_config()
+            test_config = self.app.read_config()
             self.assertEqual('some_password',
                              test_config.get('credentials', 'dbadmin_password')
                              )
@@ -3242,14 +3244,17 @@ class VerticaAppTest(trove_testtools.TestCase):
                           side_effect=ConfigParser.Error()):
             self.assertRaises(RuntimeError, self.app.read_config)
 
-    def test_start_db_with_conf_changes(self):
-        mock_status = MagicMock()
-        type(mock_status)._is_restarting = PropertyMock(return_value=False)
-        app = VerticaApp(mock_status)
-        with patch.object(app, 'read_config',
+    @patch.object(ConfigurationManager, 'save_configuration')
+    def test_start_db_with_conf_changes(self, save_cfg):
+        type(self.appStatus)._is_restarting = PropertyMock(return_value=False)
+        type(self.appStatus).is_running = PropertyMock(return_value=False)
+        with patch.object(self.app, 'read_config',
                           return_value=self.test_config):
-            app.start_db_with_conf_changes('test_config_contents')
-            app.status.end_restart.assert_any_call()
+            with patch.object(self.appStatus, 'end_restart') as end_restart:
+                config = 'tst_cfg_contents'
+                self.app.start_db_with_conf_changes(config)
+                save_cfg.assert_called_once_with(config)
+                end_restart.assert_any_call()
 
 
 class DB2AppTest(trove_testtools.TestCase):

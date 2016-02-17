@@ -38,6 +38,10 @@ class Manager(manager.Manager):
     def status(self):
         return self.appStatus
 
+    @property
+    def configuration_manager(self):
+        return self.app.configuration_manager
+
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
                    config_contents, root_password, overrides,
@@ -60,6 +64,11 @@ class Manager(manager.Manager):
             self.app.install_vertica()
             self.app.create_db()
             self.app.add_udls()
+
+            if config_contents:
+                self.app.configuration_manager.save_configuration(
+                    config_contents)
+
         elif cluster_config['instance_type'] not in ["member", "master"]:
             raise RuntimeError(_("Bad cluster configuration: instance type "
                                "given as %s.") %
@@ -109,6 +118,18 @@ class Manager(manager.Manager):
             LOG.exception(_('Cluster installation failed.'))
             self.appStatus.set_status(rd_ins.ServiceStatuses.FAILED)
             raise
+
+    def update_overrides(self, context, overrides, remove=False):
+        LOG.debug("Updating overrides.")
+        if remove:
+            self.app.remove_overrides()
+        else:
+            self.app.update_overrides(context, overrides, remove)
+
+    def apply_overrides(self, context, overrides):
+        if overrides:
+            LOG.debug("Applying overrides: " + str(overrides))
+            self.app.apply_overrides(overrides)
 
     def grow_cluster(self, context, members):
         try:

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mock import DEFAULT
 from mock import MagicMock
 from mock import patch
 from os import path
@@ -18,6 +19,8 @@ from testtools.matchers import Is
 
 from trove.common.exception import DatastoreOperationNotSupported
 from trove.common import instance as rd_instance
+from trove.guestagent.common import configuration
+from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.vertica.manager import Manager
 from trove.guestagent.datastore.experimental.vertica.service import (
@@ -31,7 +34,11 @@ from trove.tests.unittests import trove_testtools
 
 
 class GuestAgentManagerTest(trove_testtools.TestCase):
-    def setUp(self):
+
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    def setUp(self, *args, **kwargs):
         super(GuestAgentManagerTest, self).setUp()
         self.context = trove_testtools.TroveTestContext(self)
         self.manager = Manager()
@@ -80,6 +87,7 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         mock_status.update.assert_any_call()
 
     @patch.object(path, 'exists', MagicMock())
+    @patch.object(configuration.ConfigurationManager, 'save_configuration')
     def _prepare_dynamic(self, packages,
                          config_content='MockContent', device_path='/dev/vdb',
                          backup_id=None,
@@ -232,13 +240,6 @@ class GuestAgentManagerTest(trove_testtools.TestCase):
         self._prepare_method("test-instance-3", "member")
         mock_set_status.assert_called_with(
             rd_instance.ServiceStatuses.INSTANCE_READY, force=True)
-
-    def test_reset_configuration(self):
-        try:
-            configuration = {'config_contents': 'some junk'}
-            self.manager.reset_configuration(self.context, configuration)
-        except Exception:
-            self.fail("reset_configuration raised exception unexpectedly.")
 
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)

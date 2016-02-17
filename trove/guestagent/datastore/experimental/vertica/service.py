@@ -24,7 +24,13 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common.i18n import _LI
 from trove.common import instance as rd_instance
+from trove.common.stream_codecs import PropertiesCodec
 from trove.common import utils as utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import ImportOverrideStrategy
+from trove.guestagent.common import guestagent_utils
+from trove.guestagent.common import operating_system
+from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent.datastore.experimental.vertica import system
 from trove.guestagent.datastore import service
 from trove.guestagent.db import models
@@ -36,6 +42,9 @@ CONF = cfg.CONF
 packager = pkg.Package()
 DB_NAME = 'db_srvr'
 MOUNT_POINT = CONF.vertica.mount_point
+# We will use a fake configuration file for the options managed through
+# configuration groups that we apply directly with ALTER DB ... SET ...
+FAKE_CFG = os.path.join(MOUNT_POINT, "vertica.cfg.fake")
 
 
 class VerticaAppStatus(service.BaseDbStatus):
@@ -44,7 +53,7 @@ class VerticaAppStatus(service.BaseDbStatus):
         """Get the status of dbaas and report it back."""
         try:
             out, err = system.shell_execute(system.STATUS_ACTIVE_DB,
-                                            "dbadmin")
+                                            system.VERTICA_ADMIN)
             if out.strip() == DB_NAME:
                 # UP status is confirmed
                 LOG.info(_("Service Status is RUNNING."))
@@ -63,10 +72,78 @@ class VerticaApp(object):
     def __init__(self, status):
         self.state_change_wait_time = CONF.state_change_wait_time
         self.status = status
+        revision_dir = \
+            guestagent_utils.build_file_path(
+                os.path.join(MOUNT_POINT,
+                             os.path.dirname(system.VERTICA_ADMIN)),
+                ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
+
+        if not operating_system.exists(FAKE_CFG):
+            operating_system.write_file(FAKE_CFG, '', as_root=True)
+            operating_system.chown(FAKE_CFG, system.VERTICA_ADMIN,
+                                   system.VERTICA_ADMIN_GRP, as_root=True)
+            operating_system.chmod(FAKE_CFG, FileMode.ADD_GRP_RX_OTH_RX(),
+                                   as_root=True)
+        self.configuration_manager = \
+            ConfigurationManager(FAKE_CFG, system.VERTICA_ADMIN,
+                                 system.VERTICA_ADMIN_GRP,
+                                 PropertiesCodec(delimiter='='),
+                                 requires_root=True,
+                                 override_strategy=ImportOverrideStrategy(
+                                     revision_dir, "cnf"))
+
+    def update_overrides(self, context, overrides, remove=False):
+        if overrides:
+            self.apply_overrides(overrides)
+
+    def remove_overrides(self):
+        config = self.configuration_manager.get_user_override()
+        self._reset_config(config)
+        self.configuration_manager.remove_user_override()
+
+    def apply_overrides(self, overrides):
+        self.configuration_manager.apply_user_override(overrides)
+        self._apply_config(overrides)
+
+    def _reset_config(self, config):
+        try:
+            db_password = self._get_database_password()
+            for k, v in config.iteritems():
+                alter_db_cmd = system.ALTER_DB_RESET_CFG % (DB_NAME, str(k))
+                out, err = system.exec_vsql_command(db_password, alter_db_cmd)
+                if err:
+                    if err.is_warning():
+                        LOG.warning(err)
+                    else:
+                        LOG.error(err)
+                        raise RuntimeError(_("Failed to remove config %s") % k)
+
+        except Exception:
+            LOG.exception(_("Vertica configuration remove failed."))
+            raise RuntimeError(_("Vertica configuration remove failed."))
+        LOG.info(_("Vertica configuration reset completed."))
+
+    def _apply_config(self, config):
+        try:
+            db_password = self._get_database_password()
+            for k, v in config.iteritems():
+                alter_db_cmd = system.ALTER_DB_CFG % (DB_NAME, str(k), str(v))
+                out, err = system.exec_vsql_command(db_password, alter_db_cmd)
+                if err:
+                    if err.is_warning():
+                        LOG.warning(err)
+                    else:
+                        LOG.error(err)
+                        raise RuntimeError(_("Failed to apply config %s") % k)
+
+        except Exception:
+            LOG.exception(_("Vertica configuration apply failed"))
+            raise RuntimeError(_("Vertica configuration apply failed"))
+        LOG.info(_("Vertica config apply completed."))
 
     def _enable_db_on_boot(self):
         try:
-            command = ["sudo", "su", "-", "dbadmin", "-c",
+            command = ["sudo", "su", "-", system.VERTICA_ADMIN, "-c",
                        (system.SET_RESTART_POLICY % (DB_NAME, "always"))]
             subprocess.Popen(command)
             command = ["sudo", "su", "-", "root", "-c",
@@ -79,7 +156,7 @@ class VerticaApp(object):
     def _disable_db_on_boot(self):
         try:
             command = (system.SET_RESTART_POLICY % (DB_NAME, "never"))
-            system.shell_execute(command, "dbadmin")
+            system.shell_execute(command, system.VERTICA_ADMIN)
             command = (system.VERTICA_AGENT_SERVICE_COMMAND % "disable")
             system.shell_execute(command)
         except exception.ProcessExecutionError:
@@ -99,9 +176,10 @@ class VerticaApp(object):
             # Using Vertica adminTools to stop db.
             db_password = self._get_database_password()
             stop_db_command = (system.STOP_DB % (DB_NAME, db_password))
-            out, err = system.shell_execute(system.STATUS_ACTIVE_DB, "dbadmin")
+            out, err = system.shell_execute(system.STATUS_ACTIVE_DB,
+                                            system.VERTICA_ADMIN)
             if out.strip() == DB_NAME:
-                system.shell_execute(stop_db_command, "dbadmin")
+                system.shell_execute(stop_db_command, system.VERTICA_ADMIN)
                 if not self.status._is_restarting:
                     if not self.status.wait_for_real_status_to_change_to(
                             rd_instance.ServiceStatuses.SHUTDOWN,
@@ -127,14 +205,14 @@ class VerticaApp(object):
             subprocess.Popen(command)
             # Using Vertica adminTools to start db.
             db_password = self._get_database_password()
-            start_db_command = ["sudo", "su", "-", "dbadmin", "-c",
+            start_db_command = ["sudo", "su", "-", system.VERTICA_ADMIN, "-c",
                                 (system.START_DB % (DB_NAME, db_password))]
             subprocess.Popen(start_db_command)
             if not self.status._is_restarting:
                 self.status.end_restart()
             LOG.debug("Database started.")
-        except Exception:
-            raise RuntimeError("Could not start Vertica!")
+        except Exception as e:
+            raise RuntimeError(_("Could not start Vertica due to %s") % e)
 
     def start_db_with_conf_changes(self, config_contents):
         """
@@ -142,6 +220,12 @@ class VerticaApp(object):
          needs to be implemented to enable volume resize on guestagent side.
         """
         LOG.info(_("Starting Vertica with configuration changes."))
+        if self.status.is_running:
+            format = 'Cannot start_db_with_conf_changes because status is %s.'
+            LOG.debug(format, self.status)
+            raise RuntimeError(format % self.status)
+        LOG.info(_("Initiating config."))
+        self.configuration_manager.save_configuration(config_contents)
         self.start_db(True)
 
     def restart(self):
@@ -199,7 +283,7 @@ class VerticaApp(object):
             create_db_command = (system.CREATE_DB % (members, DB_NAME,
                                                      MOUNT_POINT, MOUNT_POINT,
                                                      db_password))
-            system.shell_execute(create_db_command, "dbadmin")
+            system.shell_execute(create_db_command, system.VERTICA_ADMIN)
         except Exception:
             LOG.exception(_("Vertica database create failed."))
             raise RuntimeError(_("Vertica database create failed."))
@@ -250,18 +334,24 @@ class VerticaApp(object):
                     system.CREATE_LIBRARY % (lib_name, path)
                 )
                 if err:
-                    LOG.error(err)
-                    raise RuntimeError(_("Failed to create library %s.")
-                                       % lib_name)
+                    if err.is_warning():
+                        LOG.warning(err)
+                    else:
+                        LOG.error(err)
+                        raise RuntimeError(_("Failed to create library %s.")
+                                           % lib_name)
                 out, err = system.exec_vsql_command(
                     password,
                     system.CREATE_SOURCE % (func_name, language,
                                             factory, lib_name)
                 )
                 if err:
-                    LOG.error(err)
-                    raise RuntimeError(_("Failed to create source %s.")
-                                       % func_name)
+                    if err.is_warning():
+                        LOG.warning(err)
+                    else:
+                        LOG.error(err)
+                        raise RuntimeError(_("Failed to create source %s.")
+                                           % func_name)
                 loaded_udls.append(func_name)
             else:
                 LOG.warning("Skipping %s as path %s not found." %
@@ -326,9 +416,10 @@ class VerticaApp(object):
         """This method executes preparatory methods before
         executing install_vertica.
         """
-        command = ("VERT_DBA_USR=dbadmin VERT_DBA_HOME=/home/dbadmin "
-                   "VERT_DBA_GRP=verticadba /opt/vertica/oss/python/bin/python"
-                   " -m vertica.local_coerce")
+        command = ("VERT_DBA_USR=%s VERT_DBA_HOME=/home/dbadmin "
+                   "VERT_DBA_GRP=%s /opt/vertica/oss/python/bin/python"
+                   " -m vertica.local_coerce" %
+                   (system.VERTICA_ADMIN, system.VERTICA_ADMIN_GRP))
         try:
             self._set_readahead_for_disks()
             system.shell_execute(command)
@@ -347,29 +438,39 @@ class VerticaApp(object):
             LOG.error(err)
             raise RuntimeError(_("Failed to set k-safety level %s.") % k)
 
-    def _create_user(self, username, password, role):
+    def _create_user(self, username, password, role=None):
         """Creates a user, granting and enabling the given role for it."""
         LOG.info(_("Creating user in Vertica database."))
         out, err = system.exec_vsql_command(self._get_database_password(),
                                             system.CREATE_USER %
                                             (username, password))
-        if not err:
-            self._grant_role(username, role)
         if err:
-            LOG.error(err)
-            raise RuntimeError(_("Failed to create user %s.") % username)
+            if err.is_warning():
+                LOG.warning(err)
+            else:
+                LOG.error(err)
+                raise RuntimeError(_("Failed to create user %s.") % username)
+        if role:
+            self._grant_role(username, role)
 
     def _grant_role(self, username, role):
         """Grants a role to the user on the schema."""
         out, err = system.exec_vsql_command(self._get_database_password(),
                                             system.GRANT_TO_USER
                                             % (role, username))
-        if not err:
-            out, err = system.exec_vsql_command(self._get_database_password(),
-                                                system.ENABLE_FOR_USER
-                                                % (username, role))
-            if err:
+        if err:
+            if err.is_warning():
+                LOG.warning(err)
+            else:
                 LOG.error(err)
+                raise RuntimeError(_("Failed to grant role %(r)s to user "
+                                     "%(u)s.")
+                                   % {'r': role, 'u': username})
+        out, err = system.exec_vsql_command(self._get_database_password(),
+                                            system.ENABLE_FOR_USER
+                                            % (username, role))
+        if err:
+            LOG.warning(err)
 
     def enable_root(self, root_password=None):
         """Resets the root password."""
@@ -387,9 +488,12 @@ class VerticaApp(object):
                     self._get_database_password(),
                     system.ALTER_USER_PASSWORD % (user.name, user.password))
                 if err:
-                    LOG.error(err)
-                    raise RuntimeError(_("Failed to update %s password.")
-                                       % user.name)
+                    if err.is_warning():
+                        LOG.warning(err)
+                    else:
+                        LOG.error(err)
+                        raise RuntimeError(_("Failed to update %s "
+                                             "password.") % user.name)
             except exception.ProcessExecutionError:
                 LOG.error(_("Failed to update %s password.") % user.name)
                 raise RuntimeError(_("Failed to update %s password.")
@@ -402,7 +506,7 @@ class VerticaApp(object):
         try:
             out, err = system.shell_execute(system.USER_EXISTS %
                                             (self._get_database_password(),
-                                             'root'), 'dbadmin')
+                                             'root'), system.VERTICA_ADMIN)
             if err:
                 LOG.error(err)
                 raise RuntimeError(_("Failed to query for root user."))
