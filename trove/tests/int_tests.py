@@ -203,6 +203,6 @@ register(["mongodb_supported"], common_groups,
 register(["pxc_supported"], common_groups,
          cluster_actions_groups, root_actions_groups)
 register(["redis_supported"], common_groups,
-         backup_groups, replication_groups)
+         backup_groups, replication_groups, cluster_actions_groups)
 register(["vertica_supported"], common_groups,
          cluster_actions_groups, root_actions_groups)
