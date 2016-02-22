@@ -1,0 +1,5 @@
+---
+fixes:
+  - Mongo cluster grow operations were not creating instances with the
+    provided az and nic values. These should be used if the caller provided
+    them.

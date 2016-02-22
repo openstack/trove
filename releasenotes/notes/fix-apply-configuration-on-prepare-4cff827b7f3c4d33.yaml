@@ -1,0 +1,10 @@
+---
+fixes:
+  - If given, apply the configuration overrides in prepare,
+    just before creating initial users and/or databases.
+    Failure to apply the given configuration should flip the
+    instance into a failed state.
+    Default implementation saves the overrides and
+    restarts the database service to apply the changes.
+    Datastores that do not require restart may potentially override
+    the base implementation in 'apply_overrides_on_prepare()'.

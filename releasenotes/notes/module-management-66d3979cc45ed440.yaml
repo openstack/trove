@@ -1,0 +1,8 @@
+---
+features:
+  - A new feature called 'module management' has been added to Trove.
+    Users can now create, update, list and delete modules. A module is
+    a file that is provided to Trove, and when a database instance is
+    launched, that file is deposited on the guest instance. This feature
+    can be used for depositing files like, for example, license files
+    onto guest database instances.

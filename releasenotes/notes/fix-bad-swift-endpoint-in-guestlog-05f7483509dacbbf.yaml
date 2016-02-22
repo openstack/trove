@@ -1,0 +1,6 @@
+---
+fixes:
+  - The guest log code raises a non-serializable exception if the given
+    Swift endpoint is invalid. This causes an ambiguous "Circular
+    reference detected" error on the guest, and a timeout on the caller.
+    This case is now caught and the correct exception raised.

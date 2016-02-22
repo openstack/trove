@@ -1,0 +1,89 @@
+---
+features:
+  - This patch set implements the following functionality for Cassandra
+    datastore.
+
+    create/delete/get user
+    list users
+    change password
+    grant/revoke/list access
+    update attributes
+
+    create/delete database
+    list databases
+
+    Notes on Cassandra users
+
+    In Cassandra only SUPERUSERS can create other users and
+    grant permissions to database resources.
+    Trove uses the 'os_admin' superuser to perform its administrative
+    tasks. It proactively removes the built-in 'cassandra' superuser
+    on prepare.
+    The users it creates are all 'normal' (NOSUPERUSER) accounts.
+    The permissions it can grant are also limited to non-superuser
+    operations. This is to prevent anybody from creating a new superuser via
+    the Trove API.
+    Updatable attributes include username and password.
+
+    The configuration template had to be updated to enable authentication
+    and authorization support (original configuration allowed anonymous
+    connections). Default implementations used are
+    authenticator org.apache.cassandra.auth.PasswordAuthenticator
+    authorizer org.apache.cassandra.auth.CassandraAuthorizer
+
+    The superuser password is set to a random Trove password which is then
+    stored in a Trove-read-only file in '~/.cassandra/cqlshrc' which is
+    also the default location for client settings.
+
+    Notes on Cassandra keyspaces
+
+    Cassandra stores replicas on multiple nodes to ensure reliability and
+    fault tolerance. All replicas are equally important;
+    there is no primary or master.
+    A replication strategy determines the nodes where
+    replicas are placed.
+    The total number of replicas across the cluster is referred to as the
+    replication factor.
+    The above 'create database' implementation uses 'SimpleStrategy'
+    with just a single replica on the guest machine.
+    This is a very simplistic configuration only good for the most basic
+    applications and demonstration purposes. SimpleStrategy is for a single
+    data center only.
+    The following system keyspaces have been included in the default
+    'ignore_dbs' configuration list and therefore excluded from all database
+    operations 'system', 'system_auth', 'system_traces'
+
+    Notes on user rename
+
+    Cassandra does not have a native way for renaming users.
+    The reason why Cassandra itself does not implement rename is apparently just
+    lack of demand for that feature.
+    We implement it by creating a new user, transferring permissions and
+    dropping the old one (which also removes its existing permissions).
+    I asked about the sanity of this rename approach on the Cassandra mailing
+    list and IRC channel and there should not be anything inherently wrong
+    with the proposed procedure.
+    This method, however, requires the user to always provide a password.
+
+    Additional notes
+
+    Trove uses the official open-source Python driver for Cassandra
+    to connect to the database and execute queries.
+    The connection is implemented in CassandraConnection. It is now also
+    used to obtain the current database status as opposed to the original
+    method of parsing output of the client tool.
+
+    The 'common/operating_system' module was extended with two new functions
+    for reading/writing ini-style and YAML configuration files to/from Python
+    dicts. Unit tests were added to 'guestagent/test_operating_system'.
+
+    The existing Manager unit tests were extended to include the added
+    functionality.
+
+    Also includes some minor improvements to comments and log messages.
+    Used the existing operating_system interface to update file
+    ownership.
+
+    The system module was removed and its contents moved to the Application
+    class. This is to reduce the number of files and help facilitate
+    overriding.

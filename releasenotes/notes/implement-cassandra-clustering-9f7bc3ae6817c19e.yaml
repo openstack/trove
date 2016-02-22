@@ -1,0 +1,5 @@
+---
+features:
+  - OpenStack Trove now supports clustering for Cassandra
+    datastores. You can access clustering capabilities through
+    the Trove cluster API.

@@ -1,0 +1,8 @@
+---
+features:
+  - Support has been added for Percona XtraBackup version 2.3.
+fixes:
+  - Fixes bug 1558794. The 2.3 version of Percona XtraBackup performs
+    some additional validations of the command line options passed to
+    innobackupex. The Trove code now complies with the new validations
+    being performed.

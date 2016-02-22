@@ -1,0 +1,3 @@
+---
+features:
+  - Implemented configuration groups capability for Vertica datastores.

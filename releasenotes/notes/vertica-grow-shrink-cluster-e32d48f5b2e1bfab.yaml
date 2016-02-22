@@ -1,0 +1,3 @@
+--- 
+features:
+  - Implemented grow and shrink for clusters of Vertica datastore. The number of nodes in the cluster must be greater than the number required to satisfy the min_ksafety configuration setting.

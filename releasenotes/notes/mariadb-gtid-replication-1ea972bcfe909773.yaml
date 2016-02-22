@@ -1,0 +1,8 @@
+---
+features:
+  - Implements replication based on GTIDs for MariaDB.
+    Adds GTID replication strategy for MariaDB.
+    Implements MariaDB specific GTID handling in guestagent.
+    Configures MariaDB config template to support bin logging.
+    Adds MariaDB helper overrides to eliminate configuration
+    group tests from scenario tests.
