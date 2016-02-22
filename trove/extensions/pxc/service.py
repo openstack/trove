@@ -1,4 +1,4 @@
-# Copyright [2015] Hewlett-Packard Development Company, L.P.
+# Copyright [2016] Hewlett-Packard Development Company, L.P.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -18,23 +18,14 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.extensions.common.service import ClusterRootController
-from trove.instance.models import DBInstance
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'vertica'
+MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'pxc'
 
 
-class VerticaRootController(ClusterRootController):
+class PxcRootController(ClusterRootController):
 
-    def delete(self, req, tenant_id, instance_id):
+    def root_delete(self, req, tenant_id, instance_id, is_cluster):
         raise exception.DatastoreOperationNotSupported(
             operation='disable_root', datastore=MANAGER)
-
-    def _get_cluster_instance_id(self, tenant_id, cluster_id):
-        instance_ids = self._find_cluster_node_ids(tenant_id, cluster_id)
-        args = {'tenant_id': tenant_id, 'cluster_id': cluster_id, 'type':
-                'master'}
-        master_instance = DBInstance.find_by(**args)
-        master_instance_id = master_instance.id
-        return master_instance_id, instance_ids

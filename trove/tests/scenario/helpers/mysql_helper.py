@@ -24,6 +24,9 @@ class MysqlHelper(SqlHelper):
     def get_helper_credentials(self):
         return {'name': 'lite', 'password': 'litepass', 'database': 'firstdb'}
 
+    def get_helper_credentials_root(self):
+        return {'name': 'root', 'password': 'rootpass'}
+
     def get_valid_database_definitions(self):
         return [{'name': 'db1', 'character_set': 'latin2',
                  'collate': 'latin2_general_ci'},

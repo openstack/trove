@@ -80,3 +80,6 @@ class Manager(manager.MySqlManager):
         LOG.debug("Apply the updated cluster configuration.")
         app = self.mysql_app(self.mysql_app_status.get())
         app.write_cluster_configuration_overrides(cluster_configuration)
+
+    def enable_root_with_password(self, context, root_password=None):
+        return self.mysql_admin().enable_root(root_password)

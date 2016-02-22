@@ -140,7 +140,7 @@ class InstanceCreateRunner(TestRunner):
 
         # Here we add helper user/database if any.
         if create_helper_user:
-            helper_db_def, helper_user_def = self.build_helper_defs()
+            helper_db_def, helper_user_def, root_def = self.build_helper_defs()
             if helper_db_def:
                 self.report.log(
                     "Appending a helper database '%s' to the instance "
