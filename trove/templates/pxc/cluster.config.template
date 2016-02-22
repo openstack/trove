@@ -9,7 +9,7 @@ wsrep_slave_threads=8
 wsrep_provider=/usr/lib/libgalera_smm.so
 wsrep_provider_options="gcache.size={{ (128 * flavor['ram']/512)|int }}M; gcache.page_size=1G"
 
-wsrep_sst_method=xtrabackup
+wsrep_sst_method=xtrabackup-v2
 wsrep_sst_auth="{{ replication_user_pass }}"
 
 wsrep_cluster_address="gcomm://{{ cluster_ips }}"
