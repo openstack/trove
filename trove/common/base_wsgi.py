@@ -29,7 +29,6 @@ import time
 import eventlet.wsgi
 from oslo_config import cfg
 from oslo_log import log as logging
-from oslo_log import loggers
 from oslo_serialization import jsonutils
 from oslo_service import service
 from oslo_service import sslutils
@@ -159,7 +158,7 @@ class Service(service.Service):
         eventlet.wsgi.server(socket,
                              application,
                              custom_pool=self.tg.pool,
-                             log=loggers.WritableLogger(logger))
+                             log=logger)
 
 
 class Middleware(object):
