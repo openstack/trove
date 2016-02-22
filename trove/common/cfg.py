@@ -131,6 +131,8 @@ common_opts = [
                help='Page size for listing backups.'),
     cfg.IntOpt('configurations_page_size', default=20,
                help='Page size for listing configurations.'),
+    cfg.IntOpt('modules_page_size', default=20,
+               help='Page size for listing modules.'),
     cfg.IntOpt('agent_call_low_timeout', default=5,
                help="Maximum time (in seconds) to wait for Guest Agent 'quick'"
                     "requests (such as retrieving a list of users or "
@@ -397,6 +399,10 @@ common_opts = [
     cfg.IntOpt('timeout_wait_for_service', default=120,
                help='Maximum time (in seconds) to wait for a service to '
                     'become alive.'),
+    cfg.StrOpt('module_aes_cbc_key', default='module_aes_cbc_key',
+               help='OpenSSL aes_cbc key for module encryption.'),
+    cfg.StrOpt('module_types', default='test, hidden_test',
+               help='A list of module types supported.'),
     cfg.StrOpt('guest_log_container_name',
                default='database_logs',
                help='Name of container that stores guest log components.'),

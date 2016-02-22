@@ -528,6 +528,75 @@ guest_log = {
     }
 }
 
+module_non_empty_string = {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 65535,
+    "pattern": "^.*.+.*$"
+}
+
+module = {
+    "create": {
+        "name": "module:create",
+        "type": "object",
+        "required": ["module"],
+        "properties": {
+            "module": {
+                "type": "object",
+                "required": ["name", "module_type", "contents"],
+                "additionalProperties": True,
+                "properties": {
+                    "name": non_empty_string,
+                    "module_type": non_empty_string,
+                    "contents": module_non_empty_string,
+                    "description": non_empty_string,
+                    "datastore": {
+                        "type": "object",
+                        "properties": {
+                            "type": non_empty_string,
+                            "version": non_empty_string
+                        }
+                    },
+                    "auto_apply": boolean_string,
+                    "all_tenants": boolean_string,
+                    "visible": boolean_string,
+                    "live_update": boolean_string,
+                }
+            }
+        }
+    },
+    "update": {
+        "name": "module:update",
+        "type": "object",
+        "required": ["module"],
+        "properties": {
+            "module": {
+                "type": "object",
+                "required": [],
+                "additionalProperties": True,
+                "properties": {
+                    "name": non_empty_string,
+                    "type": non_empty_string,
+                    "contents": module_non_empty_string,
+                    "description": non_empty_string,
+                    "datastore": {
+                        "type": "object",
+                        "additionalProperties": True,
+                        "properties": {
+                            "type": non_empty_string,
+                            "version": non_empty_string
+                        }
+                    },
+                    "auto_apply": boolean_string,
+                    "all_tenants": boolean_string,
+                    "visible": boolean_string,
+                    "live_update": boolean_string,
+                }
+            }
+        }
+    },
+}
+
 configuration = {
     "create": {
         "name": "configuration:create",

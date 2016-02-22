@@ -23,6 +23,7 @@ from trove.datastore.service import DatastoreController
 from trove.flavor.service import FlavorController
 from trove.instance.service import InstanceController
 from trove.limits.service import LimitsController
+from trove.module.service import ModuleController
 from trove.versions import VersionsController
 
 
@@ -39,6 +40,7 @@ class API(wsgi.Router):
         self._limits_router(mapper)
         self._backups_router(mapper)
         self._configurations_router(mapper)
+        self._modules_router(mapper)
 
     def _versions_router(self, mapper):
         versions_resource = VersionsController().create_resource()
@@ -181,6 +183,32 @@ class API(wsgi.Router):
                        conditions={'method': ['POST']})
         mapper.connect("/{tenant_id}/backups/{id}",
                        controller=backups_resource,
+                       action="delete",
+                       conditions={'method': ['DELETE']})
+
+    def _modules_router(self, mapper):
+
+        modules_resource = ModuleController().create_resource()
+        mapper.resource("modules", "/{tenant_id}/modules",
+                        controller=modules_resource)
+        mapper.connect("/{tenant_id}/modules",
+                       controller=modules_resource,
+                       action="index",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/modules",
+                       controller=modules_resource,
+                       action="create",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/modules/{id}",
+                       controller=modules_resource,
+                       action="show",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/modules/{id}",
+                       controller=modules_resource,
+                       action="update",
+                       conditions={'method': ['PUT']})
+        mapper.connect("/{tenant_id}/modules/{id}",
+                       controller=modules_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
 

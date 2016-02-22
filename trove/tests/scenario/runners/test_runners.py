@@ -197,6 +197,13 @@ class TestRunner(object):
             auth_version='2.0',
             os_options=os_options)
 
+    def get_client_tenant(self, client):
+        tenant_name = client.real_client.client.tenant
+        service_url = client.real_client.client.service_url
+        su_parts = service_url.split('/')
+        tenant_id = su_parts[-1]
+        return tenant_name, tenant_id
+
     def assert_raises(self, expected_exception, expected_http_code,
                       client_cmd, *cmd_args, **cmd_kwargs):
         asserts.assert_raises(expected_exception, client_cmd,

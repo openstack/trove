@@ -496,6 +496,32 @@ class ReplicaSourceDeleteForbidden(Forbidden):
                 "replicas.")
 
 
+class ModuleTypeNotFound(NotFound):
+    message = _("Module type '%(module_type)s' was not found.")
+
+
+class ModuleAppliedToInstance(BadRequest):
+
+    message = _("A module cannot be deleted or its contents modified if it "
+                "has been applied to a non-terminated instance, unless the "
+                "module has been marked as 'live_update.' "
+                "Please remove the module from all non-terminated "
+                "instances and try again.")
+
+
+class ModuleAlreadyExists(BadRequest):
+
+    message = _("A module with the name '%(name)s' already exists for "
+                "datastore '%(datastore)s' and datastore version "
+                "'%(ds_version)s'")
+
+
+class ModuleAccessForbidden(Forbidden):
+
+    message = _("You must be admin to %(action)s a module with these "
+                "options. %(options)s")
+
+
 class ClusterNotFound(NotFound):
     message = _("Cluster '%(cluster)s' cannot be found.")
 

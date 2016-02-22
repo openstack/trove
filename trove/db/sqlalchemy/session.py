@@ -48,6 +48,7 @@ def configure_db(options, models_mapper=None):
         from trove.extensions.security_group import models as secgrp_models
         from trove.guestagent import models as agent_models
         from trove.instance import models as base_models
+        from trove.module import models as module_models
         from trove.quota import models as quota_models
 
         model_modules = [
@@ -62,6 +63,7 @@ def configure_db(options, models_mapper=None):
             configurations_models,
             conductor_models,
             cluster_models,
+            module_models
         ]
 
         models = {}

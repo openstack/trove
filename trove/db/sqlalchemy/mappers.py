@@ -70,6 +70,10 @@ def map(engine, models):
     orm.mapper(models['datastore_configuration_parameters'],
                Table('datastore_configuration_parameters', meta,
                      autoload=True))
+    orm.mapper(models['modules'],
+               Table('modules', meta, autoload=True))
+    orm.mapper(models['instance_modules'],
+               Table('instance_modules', meta, autoload=True))
 
 
 def mapping_exists(model):

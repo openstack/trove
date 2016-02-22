@@ -14,8 +14,12 @@
 #    under the License.
 """I totally stole most of this from melange, thx guys!!!"""
 
+import base64
 import collections
+from Crypto.Cipher import AES
+from Crypto import Random
 import datetime
+import hashlib
 import inspect
 import os
 import shutil
@@ -327,3 +331,44 @@ def is_collection(item):
     """
     return (isinstance(item, collections.Iterable) and
             not isinstance(item, types.StringTypes))
+
+
+# Encryption/decryption handling methods
+IV_BIT_COUNT = 16
+
+
+def encode_string(data_str):
+    byte_array = bytearray(data_str)
+    return base64.b64encode(byte_array)
+
+
+def decode_string(data_str):
+    return base64.b64decode(data_str)
+
+
+# Pad the data string to an multiple of pad_size
+def pad_for_encryption(data_str, pad_size=IV_BIT_COUNT):
+    pad_count = pad_size - (len(data_str) % pad_size)
+    return data_str + chr(pad_count) * pad_count
+
+
+# Unpad the data string by stripping off excess characters
+def unpad_after_decryption(data_str):
+    return data_str[:len(data_str) - ord(data_str[-1])]
+
+
+def encrypt_string(data_str, key, iv_bit_count=IV_BIT_COUNT):
+    md5_key = hashlib.md5(key).hexdigest()
+    iv = encode_string(Random.new().read(iv_bit_count))[:iv_bit_count]
+    aes = AES.new(md5_key, AES.MODE_CBC, iv)
+    data_str = pad_for_encryption(data_str, iv_bit_count)
+    encrypted_str = aes.encrypt(data_str)
+    return iv + encrypted_str
+
+
+def decrypt_string(data_str, key, iv_bit_count=IV_BIT_COUNT):
+    md5_key = hashlib.md5(key).hexdigest()
+    iv = data_str[:iv_bit_count]
+    aes = AES.new(md5_key, AES.MODE_CBC, iv)
+    decrypted_str = aes.decrypt(data_str[iv_bit_count:])
+    return unpad_after_decryption(decrypted_str)
