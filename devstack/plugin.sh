@@ -123,6 +123,7 @@ function configure_trove {
         setup_trove_logging $TROVE_TASKMANAGER_CONF
 
         # Increase default timeouts (required by the tests).
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT agent_call_low_timeout 15
         iniset $TROVE_TASKMANAGER_CONF DEFAULT agent_call_high_timeout 300
         iniset $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout 1200
     fi

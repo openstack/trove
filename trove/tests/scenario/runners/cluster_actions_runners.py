@@ -133,11 +133,13 @@ class ClusterActionsRunner(TestRunner):
             root_enabled_test = self.auth_client.root.is_instance_root_enabled(
                 instance['id'])
             self.assert_true(root_enabled_test.rootEnabled)
-        self.test_helper.ping(
+
+        ping_response = self.test_helper.ping(
             cluster.ip[0],
             username=self.current_root_creds[0],
             password=self.current_root_creds[1]
         )
+        self.assert_true(ping_response)
 
     def run_add_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_add_cluster_data(data_type, self.cluster_id)

@@ -31,6 +31,9 @@ class PostgresqlHelper(SqlHelper):
         # for the user to be able to login.
         return {'name': 'lite', 'password': 'litepass', 'database': 'lite'}
 
+    def get_helper_credentials_root(self):
+        return {'name': 'postgres', 'password': 'rootpass'}
+
     def get_valid_database_definitions(self):
         return [{'name': 'db1'}, {'name': 'db2'}, {'name': 'db3'}]
 

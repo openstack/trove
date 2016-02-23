@@ -158,6 +158,17 @@ class TestHelper(object):
         """
         return {'name': None, 'password': None, 'database': None}
 
+    def ping(self, host, *args, **kwargs):
+        """Try to connect to a given host and perform a simple read-only
+        action.
+
+        Return True on success or False otherwise.
+        """
+        pass
+
+    ##############
+    # Root related
+    ##############
     def get_helper_credentials_root(self):
         """Return the credentials that the client will be using to
         access the database as root.
@@ -432,14 +443,6 @@ class TestHelper(object):
         restart of the datastore.
         """
         return False
-
-    ##############
-    # Root related
-    ##############
-    def get_valid_root_password(self):
-        """Return a valid password that can be used by a 'root' user.
-        """
-        return "RootTestPass"
 
     ##############
     # Module related
