@@ -1,0 +1,7 @@
+---
+fixes:
+  - MariaDB historically leveraged the mysql manager for guest
+    support including the configuration groups implementation.
+    With MariaDB now having its own manager class that inherits
+    from Mysql, it needs to have validation_rules and a
+    ConfigParser setup. Bug 1532256
