@@ -338,6 +338,8 @@ class RestoreUsingBackup(object):
             instance_info.name + "_restore",
             instance_info.dbaas_flavor_href,
             instance_info.volume,
+            datastore=instance_info.dbaas_datastore,
+            datastore_version=instance_info.dbaas_datastore_version,
             restorePoint=restorePoint)
         assert_equal(200, instance_info.dbaas.last_http_code)
         assert_equal("BUILD", result.status)
