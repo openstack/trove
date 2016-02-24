@@ -2367,7 +2367,8 @@ class TestRedisApp(BaseAppTest.AppTestCase):
 class CassandraDBAppTest(BaseAppTest.AppTestCase):
 
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
-    def setUp(self, _):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def setUp(self, mock_logging, _):
         super(CassandraDBAppTest, self).setUp(str(uuid4()))
         self.sleep = time.sleep
         self.orig_time_time = time.time
@@ -2413,7 +2414,8 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
         exec_mock.assert_called_once_with(self.cassandra.CASSANDRA_KILL_CMD,
                                           shell=True)
 
-    def test_install(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_install(self, _):
 
         self.cassandra._install_db = Mock()
         self.pkg.pkg_is_installed = Mock(return_value=False)
@@ -2421,7 +2423,8 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
         self.assertTrue(self.cassandra._install_db.called)
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
-    def test_install_install_error(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_install_install_error(self, _):
 
         self.cassandra.start_db = Mock()
         self.cassandra.stop_db = Mock()

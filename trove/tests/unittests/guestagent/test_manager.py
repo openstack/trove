@@ -434,7 +434,8 @@ class ManagerTest(trove_testtools.TestCase):
                 self.context, overrides)
             self.manager.restart.assert_called_once_with(self.context)
 
-    def test_apply_overrides_on_prepare_failure(self):
+    @patch('trove.guestagent.datastore.manager.LOG')
+    def test_apply_overrides_on_prepare_failure(self, mock_logging):
         packages = Mock()
         databases = Mock()
         memory_mb = Mock()

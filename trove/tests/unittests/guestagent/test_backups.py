@@ -451,7 +451,8 @@ class CassandraBackupTest(trove_testtools.TestCase):
     def tearDown(self):
         super(CassandraBackupTest, self).tearDown()
 
-    def test_backup_encrypted_zipped_nodetoolsnapshot_command(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_backup_encrypted_zipped_nodetoolsnapshot_command(self, _):
         bkp = self._build_backup_runner(True, True)
         bkp._run_pre_backup()
         self.assertIsNotNone(bkp)
@@ -462,7 +463,8 @@ class CassandraBackupTest(trove_testtools.TestCase):
         ) + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
         self.assertIn(".gz.enc", bkp.manifest)
 
-    def test_backup_not_encrypted_not_zipped_nodetoolsnapshot_command(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_backup_not_encrypted_not_zipped_nodetoolsnapshot_command(self, _):
         bkp = self._build_backup_runner(False, False)
         bkp._run_pre_backup()
         self.assertIsNotNone(bkp)
@@ -473,7 +475,8 @@ class CassandraBackupTest(trove_testtools.TestCase):
         ), bkp.command)
         self.assertNotIn(".gz.enc", bkp.manifest)
 
-    def test_backup_not_encrypted_but_zipped_nodetoolsnapshot_command(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_backup_not_encrypted_but_zipped_nodetoolsnapshot_command(self, _):
         bkp = self._build_backup_runner(False, True)
         bkp._run_pre_backup()
         self.assertIsNotNone(bkp)
@@ -485,7 +488,8 @@ class CassandraBackupTest(trove_testtools.TestCase):
         self.assertIn(".gz", bkp.manifest)
         self.assertNotIn(".enc", bkp.manifest)
 
-    def test_backup_encrypted_but_not_zipped_nodetoolsnapshot_command(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_backup_encrypted_but_not_zipped_nodetoolsnapshot_command(self, _):
         bkp = self._build_backup_runner(True, False)
         bkp._run_pre_backup()
         self.assertIsNotNone(bkp)
@@ -498,8 +502,9 @@ class CassandraBackupTest(trove_testtools.TestCase):
         self.assertNotIn(".gz", bkp.manifest)
 
     @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def test_restore_encrypted_but_not_zipped_nodetoolsnapshot_command(
-            self, _):
+            self, mock_logging, _):
         restoreBase.RestoreRunner.is_zipped = False
         restoreBase.RestoreRunner.is_encrypted = True
         restoreBase.RestoreRunner.decrypt_key = CRYPTO_KEY

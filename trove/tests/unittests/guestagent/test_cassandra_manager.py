@@ -73,6 +73,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     __LIST_USR_FORMAT = "LIST USERS;"
 
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def setUp(self, *args, **kwargs):
         super(GuestAgentCassandraDBManagerTest, self).setUp()
         self.real_status = cass_service.CassandraAppStatus.set_status
@@ -153,8 +154,9 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
 
     @patch.multiple(operating_system, enable_service_on_boot=DEFAULT,
                     disable_service_on_boot=DEFAULT)
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def test_superuser_password_reset(
-            self, enable_service_on_boot, disable_service_on_boot):
+            self, _, enable_service_on_boot, disable_service_on_boot):
         fake_status = MagicMock()
         fake_status.is_running = False
 
@@ -202,7 +204,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             enable_service_on_boot.assert_called_once_with(
                 test_app.service_candidates)
 
-    def test_change_cluster_name(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_change_cluster_name(self, _):
         fake_status = MagicMock()
         fake_status.is_running = True
 
@@ -225,7 +228,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             calls['restart'].assert_called_once_with()
 
     @patch.object(cass_service, 'CONF', DEFAULT)
-    def test_apply_post_restore_updates(self, conf_mock):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_apply_post_restore_updates(self, _, conf_mock):
         fake_status = MagicMock()
         fake_status.is_running = False
 
