@@ -278,3 +278,23 @@ class ReplicationRunner(TestRunner):
     def run_test_backup_deleted(self):
         backup = self.auth_client.instances.backups(self.master_id)
         self.assert_equal(self.master_backup_count, len(backup))
+
+    def run_cleanup_master_instance(self):
+        pass
+
+
+class MysqlReplicationRunner(ReplicationRunner):
+
+    def run_cleanup_master_instance(self):
+        for user in self.auth_client.users.list(self.master_id):
+            if user.name.startswith("slave_"):
+                self.auth_client.users.delete(self.master_id, user.name,
+                                              user.host)
+
+
+class MariadbReplicationRunner(MysqlReplicationRunner):
+    pass
+
+
+class PerconaReplicationRunner(MysqlReplicationRunner):
+    pass

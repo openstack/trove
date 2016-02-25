@@ -167,3 +167,8 @@ class ReplicationGroup(TestGroup):
     def test_backup_deleted(self):
         """Test that the created backup is now gone."""
         self.test_runner.run_test_backup_deleted()
+
+    @test(runs_after=[test_backup_deleted])
+    def cleanup_master_instance(self):
+        """Remove slave users from master instance."""
+        self.test_runner.run_cleanup_master_instance()
