@@ -128,6 +128,74 @@ class UserActionsRunner(TestRunner):
     def as_pagination_marker(self, user):
         return urllib_parse.quote(user.name)
 
+    def run_user_access_show(self, expected_http_code=200):
+        for user_def in self.user_defs:
+            self.assert_user_access_show(
+                self.instance_info.id, user_def, expected_http_code)
+
+    def assert_user_access_show(self, instance_id, user_def,
+                                expected_http_code):
+        user_name, user_host = self._get_user_name_host_pair(user_def)
+        user_dbs = self.auth_client.users.list_access(instance_id, user_name,
+                                                      hostname=user_host)
+        self.assert_client_code(expected_http_code)
+
+        expected_dbs = {db_def['name'] for db_def in user_def['databases']}
+        listed_dbs = [db.name for db in user_dbs]
+
+        self.assert_equal(len(expected_dbs), len(listed_dbs),
+                          "Unexpected number of databases on the user access "
+                          "list.")
+
+        for database in expected_dbs:
+            self.assert_true(
+                database in listed_dbs,
+                "Database not found in the user access list: %s" % database)
+
+    def run_user_access_revoke(self, expected_http_code=202):
+        self._apply_on_all_databases(
+            self.instance_info.id, self.assert_user_access_revoke,
+            expected_http_code)
+
+    def _apply_on_all_databases(self, instance_id, action, expected_http_code):
+        if any(user_def['databases'] for user_def in self.user_defs):
+            for user_def in self.user_defs:
+                user_name, user_host = self._get_user_name_host_pair(user_def)
+                db_defs = user_def['databases']
+                for db_def in db_defs:
+                    db_name = db_def['name']
+                    action(instance_id, user_name, user_host,
+                           db_name, expected_http_code)
+        else:
+            raise SkipTest("No user databases defined.")
+
+    def assert_user_access_revoke(self, instance_id, user_name, user_host,
+                                  database, expected_http_code):
+        self.auth_client.users.revoke(
+            instance_id, user_name, database, hostname=user_host)
+        self.assert_client_code(expected_http_code)
+        user_dbs = self.auth_client.users.list_access(
+            instance_id, user_name, hostname=user_host)
+        self.assert_false(any(db.name == database for db in user_dbs),
+                          "Database should no longer be included in the user "
+                          "access list after revoke: %s" % database)
+
+    def run_user_access_grant(self, expected_http_code=202):
+        self._apply_on_all_databases(
+            self.instance_info.id, self.assert_user_access_grant,
+            expected_http_code)
+
+    def assert_user_access_grant(self, instance_id, user_name, user_host,
+                                 database, expected_http_code):
+        self.auth_client.users.grant(
+            instance_id, user_name, [database], hostname=user_host)
+        self.assert_client_code(expected_http_code)
+        user_dbs = self.auth_client.users.list_access(
+            instance_id, user_name, hostname=user_host)
+        self.assert_true(any(db.name == database for db in user_dbs),
+                         "Database should be included in the user "
+                         "access list after granting access: %s" % database)
+
     def run_user_create_with_no_attributes(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
