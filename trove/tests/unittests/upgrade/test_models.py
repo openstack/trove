@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from mock import Mock, patch
+from mock import patch
 from trove.extensions.mgmt.upgrade.models import UpgradeMessageSender
 from trove import rpc
 from trove.tests.unittests import trove_testtools
@@ -70,7 +70,7 @@ class TestUpgradeModel(trove_testtools.TestCase):
                                      metadata=None):
         """Exercise UpgradeMessageSender.create() call.
         """
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         instance_id = "27e25b73-88a1-4526-b2b9-919a28b8b33f"
         instance_version = "v1.0.1"

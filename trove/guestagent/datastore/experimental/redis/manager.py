@@ -18,6 +18,7 @@ from oslo_log import log as logging
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common.notification import EndNotification
 from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
@@ -120,7 +121,8 @@ class Manager(manager.Manager):
     def create_backup(self, context, backup_info):
         """Create a backup of the database."""
         LOG.debug("Creating backup.")
-        backup.backup(context, backup_info)
+        with EndNotification(context):
+            backup.backup(context, backup_info)
 
     def update_overrides(self, context, overrides, remove=False):
         LOG.debug("Updating overrides.")

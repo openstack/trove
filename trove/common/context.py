@@ -21,8 +21,12 @@ context or provide additional information in their specific WSGI pipeline.
 """
 
 from oslo_context import context
+from oslo_log import log as logging
 
 from trove.common import local
+from trove.common.serializable_notification import SerializableNotification
+
+LOG = logging.getLogger(__name__)
 
 
 class TroveContext(context.RequestContext):
@@ -49,6 +53,10 @@ class TroveContext(context.RequestContext):
                             'marker': self.marker,
                             'service_catalog': self.service_catalog
                             })
+        if hasattr(self, 'notification'):
+            serialized = SerializableNotification.serialize(self,
+                                                            self.notification)
+            parent_dict['trove_notification'] = serialized
         return parent_dict
 
     def update_store(self):
@@ -56,4 +64,9 @@ class TroveContext(context.RequestContext):
 
     @classmethod
     def from_dict(cls, values):
-        return cls(**values)
+        n_values = values.pop('trove_notification', None)
+        context = cls(**values)
+        if n_values:
+            context.notification = SerializableNotification.deserialize(
+                context, n_values)
+        return context

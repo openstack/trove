@@ -23,6 +23,8 @@ import trove.common.apischema as apischema
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import notification
+from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common.utils import correct_id_with_req
 from trove.common import wsgi
@@ -73,12 +75,17 @@ class UserController(wsgi.Controller):
                   "req": strutils.mask_password(req),
                   "body": strutils.mask_password(body)})
         context = req.environ[wsgi.CONTEXT_KEY]
+        context.notification = notification.DBaaSUserCreate(context,
+                                                            request=req)
         users = body['users']
-        try:
-            model_users = populate_users(users)
-            models.User.create(context, instance_id, model_users)
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
+        with StartNotification(context, instance_id=instance_id,
+                               username=",".join([user['name']
+                                                  for user in users])):
+            try:
+                model_users = populate_users(users)
+                models.User.create(context, instance_id, model_users)
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
@@ -88,20 +95,24 @@ class UserController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         id = correct_id_with_req(id, req)
         username, host = unquote_user_host(id)
-        user = None
-        try:
-            user = guest_models.MySQLUser()
-            user.name = username
-            user.host = host
-            found_user = models.User.load(context, instance_id, username,
-                                          host)
-            if not found_user:
-                user = None
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
-        if not user:
-            raise exception.UserNotFound(uuid=id)
-        models.User.delete(context, instance_id, user.serialize())
+        context.notification = notification.DBaaSUserDelete(context,
+                                                            request=req)
+        with StartNotification(context, instance_id=instance_id,
+                               username=username):
+            user = None
+            try:
+                user = guest_models.MySQLUser()
+                user.name = username
+                user.host = host
+                found_user = models.User.load(context, instance_id, username,
+                                              host)
+                if not found_user:
+                    user = None
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=str(e))
+            if not user:
+                raise exception.UserNotFound(uuid=id)
+            models.User.delete(context, instance_id, user.serialize())
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):
@@ -132,17 +143,22 @@ class UserController(wsgi.Controller):
         username, hostname = unquote_user_host(id)
         user = None
         user_attrs = body['user']
-        try:
-            user = models.User.load(context, instance_id, username, hostname)
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
-        if not user:
-            raise exception.UserNotFound(uuid=id)
-        try:
-            models.User.update_attributes(context, instance_id, username,
-                                          hostname, user_attrs)
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
+        context.notification = notification.DBaaSUserUpdateAttributes(
+            context, request=req)
+        with StartNotification(context, instance_id=instance_id,
+                               username=username):
+            try:
+                user = models.User.load(context, instance_id, username,
+                                        hostname)
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=str(e))
+            if not user:
+                raise exception.UserNotFound(uuid=id)
+            try:
+                models.User.update_attributes(context, instance_id, username,
+                                              hostname, user_attrs)
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def update_all(self, req, body, tenant_id, instance_id):
@@ -151,25 +167,30 @@ class UserController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": strutils.mask_password(req)})
         context = req.environ[wsgi.CONTEXT_KEY]
+        context.notification = notification.DBaaSUserChangePassword(
+            context, request=req)
         users = body['users']
-        model_users = []
-        for user in users:
-            try:
-                mu = guest_models.MySQLUser()
-                mu.name = user['name']
-                mu.host = user.get('host')
-                mu.password = user['password']
-                found_user = models.User.load(context, instance_id,
-                                              mu.name, mu.host)
-                if not found_user:
-                    user_and_host = mu.name
-                    if mu.host:
-                        user_and_host += '@' + mu.host
-                    raise exception.UserNotFound(uuid=user_and_host)
-                model_users.append(mu)
-            except (ValueError, AttributeError) as e:
-                raise exception.BadRequest(msg=str(e))
-        models.User.change_password(context, instance_id, model_users)
+        with StartNotification(context, instance_id=instance_id,
+                               username=",".join([user['name']
+                                                  for user in users])):
+            model_users = []
+            for user in users:
+                try:
+                    mu = guest_models.MySQLUser()
+                    mu.name = user['name']
+                    mu.host = user.get('host')
+                    mu.password = user['password']
+                    found_user = models.User.load(context, instance_id,
+                                                  mu.name, mu.host)
+                    if not found_user:
+                        user_and_host = mu.name
+                        if mu.host:
+                            user_and_host += '@' + mu.host
+                        raise exception.UserNotFound(uuid=user_and_host)
+                    model_users.append(mu)
+                except (ValueError, AttributeError) as e:
+                    raise exception.BadRequest(msg=str(e))
+            models.User.change_password(context, instance_id, model_users)
         return wsgi.Result(None, 202)
 
 
@@ -218,6 +239,8 @@ class UserAccessController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        context.notification = notification.DBaaSUserGrant(
+            context, request=req)
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
@@ -225,7 +248,10 @@ class UserAccessController(wsgi.Controller):
             raise exception.UserNotFound(uuid=user)
         username, hostname = unquote_user_host(user_id)
         databases = [db['name'] for db in body['databases']]
-        models.User.grant(context, instance_id, username, hostname, databases)
+        with StartNotification(context, instance_id=instance_id,
+                               username=username, database=databases):
+            models.User.grant(context, instance_id, username, hostname,
+                              databases)
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, user_id, id):
@@ -234,6 +260,8 @@ class UserAccessController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
+        context.notification = notification.DBaaSUserRevoke(
+            context, request=req)
         user_id = correct_id_with_req(user_id, req)
         user = self._get_user(context, instance_id, user_id)
         if not user:
@@ -242,9 +270,11 @@ class UserAccessController(wsgi.Controller):
         username, hostname = unquote_user_host(user_id)
         access = models.User.access(context, instance_id, username, hostname)
         databases = [db.name for db in access.databases]
-        if id not in databases:
-            raise exception.DatabaseNotFound(uuid=id)
-        models.User.revoke(context, instance_id, username, hostname, id)
+        with StartNotification(context, instance_id=instance_id,
+                               username=username, database=databases):
+            if id not in databases:
+                raise exception.DatabaseNotFound(uuid=id)
+            models.User.revoke(context, instance_id, username, hostname, id)
         return wsgi.Result(None, 202)
 
 
@@ -276,8 +306,13 @@ class SchemaController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         schemas = body['databases']
-        model_schemas = populate_validated_databases(schemas)
-        models.Schema.create(context, instance_id, model_schemas)
+        context.notification = notification.DBaaSDatabaseCreate(context,
+                                                                request=req)
+        with StartNotification(context, instance_id=instance_id,
+                               dbname=".".join([db['name']
+                                                for db in schemas])):
+            model_schemas = populate_validated_databases(schemas)
+            models.Schema.create(context, instance_id, model_schemas)
         return wsgi.Result(None, 202)
 
     def delete(self, req, tenant_id, instance_id, id):
@@ -285,12 +320,15 @@ class SchemaController(wsgi.Controller):
                    "req : '%(req)s'\n\n") %
                  {"id": instance_id, "req": req})
         context = req.environ[wsgi.CONTEXT_KEY]
-        try:
-            schema = guest_models.ValidatedMySQLDatabase()
-            schema.name = id
-            models.Schema.delete(context, instance_id, schema.serialize())
-        except (ValueError, AttributeError) as e:
-            raise exception.BadRequest(msg=str(e))
+        context.notification = notification.DBaaSDatabaseDelete(
+            context, request=req)
+        with StartNotification(context, instance_id=instance_id, dbname=id):
+            try:
+                schema = guest_models.ValidatedMySQLDatabase()
+                schema.name = id
+                models.Schema.delete(context, instance_id, schema.serialize())
+            except (ValueError, AttributeError) as e:
+                raise exception.BadRequest(msg=str(e))
         return wsgi.Result(None, 202)
 
     def show(self, req, tenant_id, instance_id, id):

@@ -38,10 +38,6 @@ class VerticaAPIStrategy(base.BaseAPIStrategy):
         return VerticaCluster
 
     @property
-    def cluster_controller_actions(self):
-        return {}
-
-    @property
     def cluster_view_class(self):
         return VerticaClusterView
 

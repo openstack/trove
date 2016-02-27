@@ -23,6 +23,7 @@ import oslo_messaging as messaging
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.notification import NotificationCastWrapper
 import trove.common.rpc.version as rpc_version
 from trove.common.strategies.cluster import strategy
 from trove.guestagent import models as agent_models
@@ -45,6 +46,12 @@ class API(object):
         self.version_cap = rpc_version.VERSION_ALIASES.get(
             CONF.upgrade_levels.taskmanager)
         self.client = self.get_client(target, self.version_cap)
+
+    def _cast(self, method_name, version, **kwargs):
+        LOG.debug("Casting %s" % method_name)
+        with NotificationCastWrapper(self.context, 'taskmanager'):
+            cctxt = self.client.prepare(version=version)
+            cctxt.cast(self.context, method_name, **kwargs)
 
     def get_client(self, target, version_cap, serializer=None):
         return rpc.get_client(target,
@@ -73,8 +80,7 @@ class API(object):
         LOG.debug("Making async call to resize volume for instance: %s"
                   % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "resize_volume",
+        self._cast("resize_volume", self.version_cap,
                    new_size=new_size,
                    instance_id=instance_id)
 
@@ -82,8 +88,7 @@ class API(object):
         LOG.debug("Making async call to resize flavor for instance: %s" %
                   instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "resize_flavor",
+        self._cast("resize_flavor", self.version_cap,
                    instance_id=instance_id,
                    old_flavor=self._transform_obj(old_flavor),
                    new_flavor=self._transform_obj(new_flavor))
@@ -91,61 +96,55 @@ class API(object):
     def reboot(self, instance_id):
         LOG.debug("Making async call to reboot instance: %s" % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "reboot", instance_id=instance_id)
+        self._cast("reboot", self.version_cap, instance_id=instance_id)
 
     def restart(self, instance_id):
         LOG.debug("Making async call to restart instance: %s" % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "restart", instance_id=instance_id)
+        self._cast("restart", self.version_cap, instance_id=instance_id)
 
     def detach_replica(self, instance_id):
         LOG.debug("Making async call to detach replica: %s" % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "detach_replica", instance_id=instance_id)
+        self._cast("detach_replica", self.version_cap,
+                   instance_id=instance_id)
 
     def promote_to_replica_source(self, instance_id):
         LOG.debug("Making async call to promote replica to source: %s" %
                   instance_id)
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "promote_to_replica_source",
+        self._cast("promote_to_replica_source", self.version_cap,
                    instance_id=instance_id)
 
     def eject_replica_source(self, instance_id):
         LOG.debug("Making async call to eject replica source: %s" %
                   instance_id)
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "eject_replica_source",
+        self._cast("eject_replica_source", self.version_cap,
                    instance_id=instance_id)
 
     def migrate(self, instance_id, host):
         LOG.debug("Making async call to migrate instance: %s" % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "migrate", instance_id=instance_id, host=host)
+        self._cast("migrate", self.version_cap,
+                   instance_id=instance_id, host=host)
 
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "delete_instance", instance_id=instance_id)
+        self._cast("delete_instance", self.version_cap,
+                   instance_id=instance_id)
 
     def create_backup(self, backup_info, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s" %
                   instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "create_backup",
+        self._cast("create_backup", self.version_cap,
                    backup_info=backup_info,
                    instance_id=instance_id)
 
     def delete_backup(self, backup_id):
         LOG.debug("Making async call to delete backup: %s" % backup_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "delete_backup", backup_id=backup_id)
+        self._cast("delete_backup", self.version_cap, backup_id=backup_id)
 
     def create_instance(self, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
@@ -156,8 +155,7 @@ class API(object):
 
         LOG.debug("Making async call to create instance %s " % instance_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "create_instance",
+        self._cast("create_instance", self.version_cap,
                    instance_id=instance_id, name=name,
                    flavor=self._transform_obj(flavor),
                    image_id=image_id,
@@ -178,9 +176,7 @@ class API(object):
     def create_cluster(self, cluster_id):
         LOG.debug("Making async call to create cluster %s " % cluster_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "create_cluster",
-                   cluster_id=cluster_id)
+        self._cast("create_cluster", self.version_cap, cluster_id=cluster_id)
 
     def grow_cluster(self, cluster_id, new_instance_ids):
         LOG.debug("Making async call to grow cluster %s " % cluster_id)
@@ -199,9 +195,7 @@ class API(object):
     def delete_cluster(self, cluster_id):
         LOG.debug("Making async call to delete cluster %s " % cluster_id)
 
-        cctxt = self.client.prepare(version=self.version_cap)
-        cctxt.cast(self.context, "delete_cluster",
-                   cluster_id=cluster_id)
+        self._cast("delete_cluster", self.version_cap, cluster_id=cluster_id)
 
 
 def load(context, manager=None):

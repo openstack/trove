@@ -19,6 +19,7 @@ from oslo_log import log as logging
 
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
+from trove.common.notification import EndNotification
 from trove.guestagent import backup
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.mongodb import service
@@ -113,27 +114,34 @@ class Manager(manager.Manager):
 
     def change_passwords(self, context, users):
         LOG.debug("Changing password.")
-        return service.MongoDBAdmin().change_passwords(users)
+        with EndNotification(context):
+            return service.MongoDBAdmin().change_passwords(users)
 
     def update_attributes(self, context, username, hostname, user_attrs):
         LOG.debug("Updating database attributes.")
-        return service.MongoDBAdmin().update_attributes(username, user_attrs)
+        with EndNotification(context):
+            return service.MongoDBAdmin().update_attributes(username,
+                                                            user_attrs)
 
     def create_database(self, context, databases):
         LOG.debug("Creating database(s).")
-        return service.MongoDBAdmin().create_database(databases)
+        with EndNotification(context):
+            return service.MongoDBAdmin().create_database(databases)
 
     def create_user(self, context, users):
         LOG.debug("Creating user(s).")
-        return service.MongoDBAdmin().create_users(users)
+        with EndNotification(context):
+            return service.MongoDBAdmin().create_users(users)
 
     def delete_database(self, context, database):
         LOG.debug("Deleting database.")
-        return service.MongoDBAdmin().delete_database(database)
+        with EndNotification(context):
+            return service.MongoDBAdmin().delete_database(database)
 
     def delete_user(self, context, user):
         LOG.debug("Deleting user.")
-        return service.MongoDBAdmin().delete_user(user)
+        with EndNotification(context):
+            return service.MongoDBAdmin().delete_user(user)
 
     def get_user(self, context, username, hostname):
         LOG.debug("Getting user.")
@@ -186,7 +194,8 @@ class Manager(manager.Manager):
 
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup.")
-        backup.backup(context, backup_info)
+        with EndNotification(context):
+            backup.backup(context, backup_info)
 
     def update_overrides(self, context, overrides, remove=False):
         LOG.debug("Updating overrides.")

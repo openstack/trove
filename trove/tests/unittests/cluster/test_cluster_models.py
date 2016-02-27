@@ -28,7 +28,7 @@ class TestClusterModel(trove_testtools.TestCase):
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     @patch.object(models.DBCluster, 'find_by')
     def test_load(self, mock_find_by, mock_load_dsv_by_uuid, mock_ds_load):
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         id = Mock()
 
         dsv = Mock()

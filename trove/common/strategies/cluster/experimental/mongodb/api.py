@@ -22,6 +22,8 @@ from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.notification import DBaaSClusterGrow
+from trove.common.notification import StartNotification
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.common import utils
@@ -41,74 +43,6 @@ class MongoDbAPIStrategy(base.BaseAPIStrategy):
     @property
     def cluster_class(self):
         return MongoDbCluster
-
-    @property
-    def cluster_controller_actions(self):
-        return {'add_shard': self._action_add_shard,
-                'grow': self._action_grow,
-                'shrink': self._action_shrink}
-
-    def _action_add_shard(self, cluster, body):
-        cluster.add_shard()
-
-    def _action_grow(self, cluster, body):
-        cluster.grow(self._parse_grow_schema(body))
-
-    def _action_shrink(self, cluster, body):
-        instance_ids = [instance['id'] for instance in body['shrink']]
-        cluster.shrink(instance_ids)
-
-    def _parse_grow_schema(self, body):
-        items = body['grow']
-        instances = []
-        for item in items:
-            instances.append(self._parse_grow_item(item))
-        return instances
-
-    def _parse_grow_item(self, item):
-        used_keys = []
-
-        def _check_option(key, required=False, valid_values=None):
-            if required and key not in item:
-                raise exception.TroveError(
-                    _('An instance with the options %(given)s is missing '
-                      'the MongoDB required option %(expected)s.')
-                    % {'given': item.keys(), 'expected': key}
-                )
-            value = item.get(key, None)
-            if valid_values and value not in valid_values:
-                raise exception.TroveError(
-                    _('The value %(value)s for key %(key)s is invalid. '
-                      'Allowed values are %(valid)s.')
-                    % {'value': value, 'key': key, 'valid': valid_values}
-                )
-            used_keys.append(key)
-            return value
-
-        flavor_id = utils.get_id_from_href(_check_option('flavorRef',
-                                                         required=True))
-        volume_size = int(_check_option('volume', required=True)['size'])
-        instance_type = _check_option('type', required=True,
-                                      valid_values=['replica',
-                                                    'query_router'])
-        name = _check_option('name')
-        related_to = _check_option('related_to')
-
-        unused_keys = list(set(item.keys()).difference(set(used_keys)))
-        if unused_keys:
-            raise exception.TroveError(
-                _('The arguments %s are not supported by MongoDB.')
-                % unused_keys
-            )
-
-        instance = {'flavor_id': flavor_id,
-                    'volume_size': volume_size,
-                    'instance_type': instance_type}
-        if name:
-            instance['name'] = name
-        if related_to:
-            instance['related_to'] = related_to
-        return instance
 
     @property
     def cluster_view_class(self):
@@ -237,6 +171,64 @@ class MongoDbCluster(models.Cluster):
             db_info.id)
 
         return MongoDbCluster(context, db_info, datastore, datastore_version)
+
+    def _parse_grow_item(self, item):
+        used_keys = []
+
+        def _check_option(key, required=False, valid_values=None):
+            if required and key not in item:
+                raise exception.TroveError(
+                    _('An instance with the options %(given)s is missing '
+                      'the MongoDB required option %(expected)s.')
+                    % {'given': item.keys(), 'expected': key}
+                )
+            value = item.get(key, None)
+            if valid_values and value not in valid_values:
+                raise exception.TroveError(
+                    _('The value %(value)s for key %(key)s is invalid. '
+                      'Allowed values are %(valid)s.')
+                    % {'value': value, 'key': key, 'valid': valid_values}
+                )
+            used_keys.append(key)
+            return value
+
+        flavor_id = utils.get_id_from_href(_check_option('flavorRef',
+                                                         required=True))
+        volume_size = int(_check_option('volume', required=True)['size'])
+        instance_type = _check_option('type', required=True,
+                                      valid_values=['replica',
+                                                    'query_router'])
+        name = _check_option('name')
+        related_to = _check_option('related_to')
+
+        unused_keys = list(set(item.keys()).difference(set(used_keys)))
+        if unused_keys:
+            raise exception.TroveError(
+                _('The arguments %s are not supported by MongoDB.')
+                % unused_keys
+            )
+
+        instance = {'flavor_id': flavor_id,
+                    'volume_size': volume_size,
+                    'instance_type': instance_type}
+        if name:
+            instance['name'] = name
+        if related_to:
+            instance['related_to'] = related_to
+        return instance
+
+    def action(self, context, req, action, param):
+        if action == 'grow':
+            context.notification = DBaaSClusterGrow(context, request=req)
+            with StartNotification(context, cluster_id=self.id):
+                return self.grow([self._parse_grow_item(item)
+                                  for item in param])
+        elif action == 'add_shard':
+            context.notification = DBaaSClusterGrow(context, request=req)
+            with StartNotification(context, cluster_id=self.id):
+                return self.add_shard()
+        else:
+            super(MongoDbCluster, self).action(context, req, action, param)
 
     def add_shard(self):
 

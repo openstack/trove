@@ -23,7 +23,6 @@ from mock import Mock
 from mock import patch
 from oslo_utils import netutils
 
-from trove.common.context import TroveContext
 from trove.common import utils
 from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchbase import (
@@ -38,7 +37,7 @@ class GuestAgentCouchbaseManagerTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(GuestAgentCouchbaseManagerTest, self).setUp()
-        self.context = TroveContext()
+        self.context = trove_testtools.TroveTestContext(self)
         self.manager = couch_manager.Manager()
         self.packages = 'couchbase-server'
         app_patcher = patch.multiple(

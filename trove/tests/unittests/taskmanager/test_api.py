@@ -44,7 +44,7 @@ class ApiTest(trove_testtools.TestCase):
                                                        **kwargs)
 
     def _mock_rpc_client(self):
-        self.call_context = Mock()
+        self.call_context = trove_testtools.TroveTestContext(self)
         self.api.client.prepare = Mock(return_value=self.call_context)
         self.call_context.cast = Mock()
 
@@ -108,7 +108,7 @@ class TestAPI(trove_testtools.TestCase):
 
     @patch.object(task_api.API, 'get_client')
     def test_load_api(self, get_client_mock):
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         manager = 'mongodb'
 
         self.assertIsInstance(task_api.load(context), task_api.API)

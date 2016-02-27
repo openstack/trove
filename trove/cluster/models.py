@@ -20,6 +20,8 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common.notification import DBaaSClusterGrow, DBaaSClusterShrink
+from trove.common.notification import StartNotification
 from trove.common import remote
 from trove.common.strategies.cluster import strategy
 from trove.common import utils
@@ -226,6 +228,35 @@ class Cluster(object):
             instance.delete()
 
         task_api.API(self.context).delete_cluster(self.id)
+
+    def action(self, context, req, action, param):
+        if action == 'grow':
+            context.notification = DBaaSClusterGrow(context, request=req)
+            with StartNotification(context, cluster_id=self.id):
+                instances = []
+                for node in param:
+                    instance = {
+                        'flavor_id': utils.get_id_from_href(node['flavorRef'])
+                    }
+                    if 'name' in node:
+                        instance['name'] = node['name']
+                    if 'volume' in node:
+                        instance['volume_size'] = int(node['volume']['size'])
+                    instances.append(instance)
+                return self.grow(instances)
+        elif action == 'shrink':
+            context.notification = DBaaSClusterShrink(context, request=req)
+            with StartNotification(context, cluster_id=self.id):
+                instance_ids = [instance['id'] for instance in param]
+                return self.shrink(instance_ids)
+        else:
+            raise exception.BadRequest(_("Action %s not supported") % action)
+
+    def grow(self, instances):
+            raise exception.BadRequest(_("Action 'grow' not supported"))
+
+    def shrink(self, instance_ids):
+            raise exception.BadRequest(_("Action 'shrink' not supported"))
 
     @staticmethod
     def load_instance(context, cluster_id, instance_id):

@@ -21,14 +21,16 @@ from mock import patch
 from testtools import TestCase
 from testtools.matchers import Is, Equals
 from trove.cluster import models
-from trove.cluster.models import Cluster
+from trove.cluster.models import Cluster, DBCluster
 from trove.cluster.service import ClusterController
+from trove.cluster.tasks import ClusterTasks
 from trove.cluster import views
 import trove.common.cfg as cfg
 from trove.common import exception
 from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.datastore import models as datastore_models
+from trove.tests.unittests import trove_testtools
 
 
 class TestClusterController(TestCase):
@@ -117,7 +119,7 @@ class TestClusterController(TestCase):
                                       mock_cluster_create):
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -142,7 +144,7 @@ class TestClusterController(TestCase):
                              mock_cluster_create):
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = Mock()
@@ -181,7 +183,7 @@ class TestClusterController(TestCase):
                           mock_cluster_load):
         tenant_id = Mock()
         id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         req = Mock()
         req.environ = Mock()
         req.environ.__getitem__ = Mock(return_value=context)
@@ -203,7 +205,7 @@ class TestClusterController(TestCase):
         tenant_id = Mock()
         cluster_id = Mock()
         instance_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
         req = Mock()
         req.environ = Mock()
         req.environ.__getitem__ = Mock(return_value=context)
@@ -220,6 +222,7 @@ class TestClusterController(TestCase):
         cluster_id = Mock()
         req = MagicMock()
         cluster = Mock()
+        trove_testtools.patch_notifier(self)
         mock_cluster_load.return_value = cluster
         self.controller.delete(req, tenant_id, cluster_id)
         cluster.delete.assert_called_with()
@@ -287,7 +290,7 @@ class TestClusterControllerWithStrategy(TestCase):
 
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -313,7 +316,7 @@ class TestClusterControllerWithStrategy(TestCase):
 
         body = self.cluster
         tenant_id = Mock()
-        context = Mock()
+        context = trove_testtools.TroveTestContext(self)
 
         req = Mock()
         req.environ = MagicMock()
@@ -329,24 +332,51 @@ class TestClusterControllerWithStrategy(TestCase):
         self.controller.create(req, body, tenant_id)
 
     @patch.object(models.Cluster, 'load')
-    def test_controller_action_no_strategy(self,
-                                           mock_cluster_load):
+    def test_controller_action_multi_action(self,
+                                            mock_cluster_load):
 
-        body = {'do_stuff2': {}}
+        body = {'do_stuff': {}, 'do_stuff2': {}}
         tenant_id = Mock()
-        context = Mock()
-        id = Mock()
+        context = trove_testtools.TroveTestContext(self)
+        cluster_id = Mock()
 
         req = Mock()
         req.environ = MagicMock()
         req.environ.get = Mock(return_value=context)
 
         cluster = Mock()
-        cluster.datastore_version.manager = 'mongodb'
+        cluster.instances_without_server = [Mock()]
+        cluster.datastore_version.manager = 'test_dsv'
         mock_cluster_load.return_value = cluster
 
-        self.assertRaises(exception.TroveError, self.controller.action, req,
-                          body, tenant_id, id)
+        self.assertRaisesRegexp(exception.TroveError,
+                                'should have exactly one action specified',
+                                self.controller.action, req,
+                                body, tenant_id, cluster_id)
+
+    @patch.object(models.Cluster, 'load')
+    def test_controller_action_no_strategy(self,
+                                           mock_cluster_load):
+
+        body = {'do_stuff2': {}}
+        tenant_id = Mock()
+        context = trove_testtools.TroveTestContext(self)
+        cluster_id = Mock()
+
+        req = Mock()
+        req.environ = MagicMock()
+        req.environ.get = Mock(return_value=context)
+
+        db_info = DBCluster(ClusterTasks.NONE, id=cluster_id,
+                            tenant_id=tenant_id)
+        cluster = Cluster(context, db_info, datastore='test_ds',
+                          datastore_version='test_dsv')
+        mock_cluster_load.return_value = cluster
+
+        self.assertRaisesRegexp(exception.TroveError,
+                                'Action do_stuff2 not supported',
+                                self.controller.action, req,
+                                body, tenant_id, cluster_id)
 
     @patch.object(strategy, 'load_api_strategy')
     @patch.object(models.Cluster, 'load')
@@ -354,24 +384,19 @@ class TestClusterControllerWithStrategy(TestCase):
                                      mock_cluster_load,
                                      mock_cluster_api_strategy):
 
-        body = {'do_stuff': {}}
+        body = {'grow': {}}
         tenant_id = Mock()
-        context = Mock()
-        id = Mock()
+        context = trove_testtools.TroveTestContext(self)
+        cluster_id = 'test_uuid'
 
         req = Mock()
         req.environ = MagicMock()
         req.environ.get = Mock(return_value=context)
 
         cluster = Mock()
-        cluster.datastore_version.manager = 'mongodb'
+        cluster.instances_without_server = [Mock()]
+        cluster.datastore_version.manager = 'test_dsv'
         mock_cluster_load.return_value = cluster
 
-        strat = Mock()
-        do_stuff_func = Mock()
-        strat.cluster_controller_actions = \
-            {'do_stuff': do_stuff_func}
-        mock_cluster_api_strategy.return_value = strat
-
-        self.controller.action(req, body, tenant_id, id)
-        self.assertEqual(1, do_stuff_func.call_count)
+        self.controller.action(req, body, tenant_id, cluster_id)
+        self.assertEqual(1, cluster.action.call_count)

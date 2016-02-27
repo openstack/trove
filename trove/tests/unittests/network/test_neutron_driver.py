@@ -31,7 +31,7 @@ from trove.tests.unittests import trove_testtools
 class NeutronDriverTest(trove_testtools.TestCase):
     def setUp(self):
         super(NeutronDriverTest, self).setUp()
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.orig_neutron_driver = NetworkRemoteModelBase.get_driver
         self.orig_create_sg = driver.create_security_group
         self.orig_add_sg_rule = driver.add_security_group_rule
@@ -76,7 +76,7 @@ class NeutronDriverTest(trove_testtools.TestCase):
 class NeutronDriverExceptionTest(trove_testtools.TestCase):
     def setUp(self):
         super(NeutronDriverExceptionTest, self).setUp()
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.orig_neutron_driver = NetworkRemoteModelBase.get_driver
         self.orig_NeutronClient = NeutronClient.Client
         self.orig_get_endpoint = remote.get_endpoint

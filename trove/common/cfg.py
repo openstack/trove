@@ -315,6 +315,8 @@ common_opts = [
                help='Transformer for exists notifications.'),
     cfg.IntOpt('exists_notification_interval', default=3600,
                help='Seconds to wait between pushing events.'),
+    cfg.IntOpt('quota_notification_interval', default=3600,
+               help='Seconds to wait between pushing events.'),
     cfg.DictOpt('notification_service_id',
                 default={'mysql': '2f3ff068-2bfb-4f70-9a9d-a6bb65bc084b',
                          'percona': 'fd1723f5-68d2-409c-994f-a4a197892a17',

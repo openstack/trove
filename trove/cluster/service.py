@@ -22,8 +22,9 @@ from trove.common import apischema
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import notification
+from trove.common.notification import StartNotification
 from trove.common import pagination
-from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
@@ -57,27 +58,15 @@ class ClusterController(wsgi.Controller):
                   {"req": req, "id": id, "tenant_id": tenant_id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
+        if len(body) != 1:
+            raise exception.BadRequest(_("Action request should have exactly"
+                                         " one action specified in body"))
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
-        manager = cluster.datastore_version.manager
-        api_strategy = strategy.load_api_strategy(manager)
-        _actions = api_strategy.cluster_controller_actions
-        selected_action = None
-        for key in body:
-            if key in _actions:
-                selected_action = _actions[key]
-                break
-        else:
-            message = _("No action '%(action)s' supplied "
-                        "by strategy for manager '%(manager)s'") % (
-                            {'action': key, 'manager': manager})
-            raise exception.TroveError(message)
-        cluster = selected_action(cluster, body)
-        if cluster:
-            view = views.load_view(cluster, req=req, load_servers=False)
-            wsgi_result = wsgi.Result(view.data(), 202)
-        else:
-            wsgi_result = wsgi.Result(None, 202)
+        cluster.action(context, req, *body.items()[0])
+
+        view = views.load_view(cluster, req=req, load_servers=False)
+        wsgi_result = wsgi.Result(view.data(), 202)
         return wsgi_result
 
     def show(self, req, tenant_id, id):
@@ -116,7 +105,10 @@ class ClusterController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
-        cluster.delete()
+        context.notification = notification.DBaaSClusterDelete(context,
+                                                               request=req)
+        with StartNotification(context, cluster_id=id):
+            cluster.delete()
         return wsgi.Result(None, 202)
 
     def index(self, req, tenant_id):
@@ -180,8 +172,12 @@ class ClusterController(wsgi.Controller):
                               "nics": nics,
                               "availability_zone": availability_zone})
 
-        cluster = models.Cluster.create(context, name, datastore,
-                                        datastore_version, instances,
-                                        extended_properties)
+        context.notification = notification.DBaaSClusterCreate(context,
+                                                               request=req)
+        with StartNotification(context, name=name, datastore=datastore.name,
+                               datastore_version=datastore_version.name):
+            cluster = models.Cluster.create(context, name, datastore,
+                                            datastore_version, instances,
+                                            extended_properties)
         view = views.load_view(cluster, req=req, load_servers=False)
         return wsgi.Result(view.data(), 200)

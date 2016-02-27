@@ -183,7 +183,7 @@ class VerticaTaskManagerAPITest(trove_testtools.TestCase):
         super(VerticaTaskManagerAPITest, self).setUp()
         self.context = context.TroveContext()
         self.api = task_api(self.context)
-        self.call_context = Mock()
+        self.call_context = trove_testtools.TroveTestContext(self)
         self.api.client.prepare = Mock(return_value=self.call_context)
         self.call_context.cast = Mock()
         self.rpc_api_version = '1.0'

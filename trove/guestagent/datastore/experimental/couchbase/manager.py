@@ -19,6 +19,7 @@ from oslo_log import log as logging
 
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common.notification import EndNotification
 from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchbase import service
 from trove.guestagent.datastore.experimental.couchbase import system
@@ -119,4 +120,5 @@ class Manager(manager.Manager):
         """
         Backup all couchbase buckets and their documents.
         """
-        backup.backup(context, backup_info)
+        with EndNotification(context):
+            backup.backup(context, backup_info)

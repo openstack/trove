@@ -30,6 +30,7 @@ from trove.common import exception
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent import guest_log
+from trove import rpc
 from trove.tests.unittests import trove_testtools
 
 
@@ -52,6 +53,11 @@ class MockManager(manager.Manager):
     @property
     def configuration_manager(self):
         return self._configuration_manager
+
+    def prepare(self, *args):
+        args[0].notification = MagicMock()
+        with patch.object(rpc, 'get_client'):
+            return super(MockManager, self).prepare(*args)
 
 
 class ManagerTest(trove_testtools.TestCase):

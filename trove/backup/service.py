@@ -20,6 +20,8 @@ from trove.backup import views
 from trove.common import apischema
 from trove.common import cfg
 from trove.common.i18n import _
+from trove.common import notification
+from trove.common.notification import StartNotification
 from trove.common import pagination
 from trove.common import wsgi
 
@@ -62,7 +64,12 @@ class BackupController(wsgi.Controller):
         name = data['name']
         desc = data.get('description')
         parent = data.get('parent_id')
-        backup = Backup.create(context, instance, name, desc, parent_id=parent)
+        context.notification = notification.DBaaSBackupCreate(context,
+                                                              request=req)
+        with StartNotification(context, name=name, instance_id=instance,
+                               description=desc, parent_id=parent):
+            backup = Backup.create(context, instance, name, desc,
+                                   parent_id=parent)
         return wsgi.Result(views.BackupView(backup).data(), 202)
 
     def delete(self, req, tenant_id, id):
@@ -70,5 +77,8 @@ class BackupController(wsgi.Controller):
                    'ID: %(backup_id)s') %
                  {'tenant_id': tenant_id, 'backup_id': id})
         context = req.environ[wsgi.CONTEXT_KEY]
-        Backup.delete(context, id)
+        context.notification = notification.DBaaSBackupDelete(context,
+                                                              request=req)
+        with StartNotification(context, backup_id=id):
+            Backup.delete(context, id)
         return wsgi.Result(None, 202)

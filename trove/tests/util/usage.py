@@ -73,11 +73,12 @@ class FakeVerifier(object):
 
 def notify(event_type, payload):
     """Simple test notify function which saves the messages to global list."""
-    LOG.debug('Received Usage Notification: %s' % event_type)
     payload['event_type'] = event_type
-    resource_id = payload['instance_id']
-    global MESSAGE_QUEUE
-    MESSAGE_QUEUE[resource_id].append(payload)
-    LOG.debug('Message Queue for %(id)s now has %(msg_count)d messages' %
-              {'id': resource_id,
-               'msg_count': len(MESSAGE_QUEUE[resource_id])})
+    if 'instance_id' in payload and 'server_type' not in payload:
+        LOG.debug('Received Usage Notification: %s' % event_type)
+        resource_id = payload['instance_id']
+        global MESSAGE_QUEUE
+        MESSAGE_QUEUE[resource_id].append(payload)
+        LOG.debug('Message Queue for %(id)s now has %(msg_count)d messages' %
+                  {'id': resource_id,
+                   'msg_count': len(MESSAGE_QUEUE[resource_id])})

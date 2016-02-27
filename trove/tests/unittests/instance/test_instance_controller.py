@@ -49,6 +49,8 @@ class TestInstanceController(trove_testtools.TestCase):
                 ]
             }
         }
+        self.context = trove_testtools.TroveTestContext(self)
+        self.req = Mock(remote_addr='ip:port', host='myhost')
 
     def verify_errors(self, errors, msg=None, properties=None, path=None):
         msg = msg or []
@@ -248,7 +250,8 @@ class TestInstanceController(trove_testtools.TestCase):
         instance = self._setup_modify_instance_mocks()
         args = {}
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(0, instance.detach_replica.call_count)
         self.assertEqual(0, instance.unassign_configuration.call_count)
@@ -260,7 +263,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args = {}
         args['any'] = 'anything'
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         instance.update_db.assert_called_once_with(**args)
 
@@ -269,7 +273,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args = {}
         args['detach_replica'] = False
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(0, instance.detach_replica.call_count)
 
@@ -278,7 +283,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args = {}
         args['detach_replica'] = True
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(1, instance.detach_replica.call_count)
 
@@ -287,7 +293,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args = {}
         args['configuration_id'] = 'some_id'
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(1, instance.assign_configuration.call_count)
 
@@ -296,7 +303,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args = {}
         args['configuration_id'] = None
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(1, instance.unassign_configuration.call_count)
 
@@ -306,7 +314,8 @@ class TestInstanceController(trove_testtools.TestCase):
         args['detach_replica'] = True
         args['configuration_id'] = 'some_id'
 
-        self.controller._modify_instance(instance, **args)
+        self.controller._modify_instance(self.context, self.req,
+                                         instance, **args)
 
         self.assertEqual(1, instance.detach_replica.call_count)
         self.assertEqual(1, instance.assign_configuration.call_count)

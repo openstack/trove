@@ -64,7 +64,7 @@ class ClusterTest(trove_testtools.TestCase):
         self.dbcreate_mock = self.dbcreate_patch.start()
         self.addCleanup(self.dbcreate_patch.stop)
 
-        self.context = Mock()
+        self.context = trove_testtools.TroveTestContext(self)
         self.datastore = Mock()
         self.dv = Mock()
         self.dv.manager = "redis"

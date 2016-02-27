@@ -43,6 +43,11 @@ from trove.common.exception import VolumeCreationFailure
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.common.instance import ServiceStatuses
+from trove.common.notification import (
+    TroveInstanceCreate,
+    TroveInstanceModifyVolume,
+    TroveInstanceModifyFlavor,
+    TroveInstanceDelete)
 import trove.common.remote as remote
 from trove.common.remote import create_cinder_client
 from trove.common.remote import create_dns_client
@@ -321,7 +326,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                              sleep_time=USAGE_SLEEP_TIME,
                              time_out=timeout)
             LOG.info(_("Created instance %s successfully.") % self.id)
-            self.send_usage_event('create', instance_size=flavor['ram'])
+            TroveInstanceCreate(instance=self,
+                                instance_size=flavor['ram']).notify()
         except PollTimeOut:
             LOG.error(_("Failed to create instance %s. "
                         "Timeout waiting for instance to become active. "
@@ -1074,9 +1080,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
             LOG.exception(_("Error deleting volume of instance %(id)s.") %
                           {'id': self.db_info.id})
 
-        self.send_usage_event('delete',
-                              deleted_at=timeutils.isotime(deleted_at),
-                              server=old_server)
+        TroveInstanceDelete(instance=self,
+                            deleted_at=timeutils.isotime(deleted_at),
+                            server=old_server).notify()
         LOG.debug("End _delete_resources for instance %s" % self.id)
 
     def server_status_matches(self, expected_status, server=None):
@@ -1604,11 +1610,12 @@ class ResizeVolumeAction(object):
                 self.instance.volume_id)
             launched_time = timeutils.isotime(self.instance.updated)
             modified_time = timeutils.isotime(self.instance.updated)
-            self.instance.send_usage_event('modify_volume',
-                                           old_volume_size=self.old_size,
-                                           launched_at=launched_time,
-                                           modify_at=modified_time,
-                                           volume_size=volume.size)
+            TroveInstanceModifyVolume(instance=self.instance,
+                                      old_volume_size=self.old_size,
+                                      launched_at=launched_time,
+                                      modify_at=modified_time,
+                                      volume_size=volume.size,
+                                      ).notify()
         else:
             self.instance.reset_task_status()
             msg = _("Failed to resize instance %(id)s volume for server "
@@ -1819,13 +1826,13 @@ class ResizeAction(ResizeActionBase):
                   % {'id': self.instance.id, 'flavor_id': self.new_flavor_id})
         self.instance.update_db(flavor_id=self.new_flavor_id,
                                 task_status=inst_models.InstanceTasks.NONE)
-        self.instance.send_usage_event(
-            'modify_flavor',
-            old_instance_size=self.old_flavor['ram'],
-            instance_size=self.new_flavor['ram'],
-            launched_at=timeutils.isotime(self.instance.updated),
-            modify_at=timeutils.isotime(self.instance.updated),
-            server=self.instance.server)
+        update_time = timeutils.isotime(self.instance.updated)
+        TroveInstanceModifyFlavor(instance=self.instance,
+                                  old_instance_size=self.old_flavor['ram'],
+                                  instance_size=self.new_flavor['ram'],
+                                  launched_at=update_time,
+                                  modify_at=update_time,
+                                  server=self.instance.server).notify()
 
     def _start_datastore(self):
         config = self.instance._render_config(self.new_flavor)

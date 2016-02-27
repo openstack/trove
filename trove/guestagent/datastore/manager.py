@@ -24,6 +24,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance
+from trove.common.notification import EndNotification
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
@@ -252,6 +253,16 @@ class Manager(periodic_task.PeriodicTasks):
                 config_contents=None, root_password=None, overrides=None,
                 cluster_config=None, snapshot=None):
         """Set up datastore on a Guest Instance."""
+        with EndNotification(context, instance_id=CONF.guest_id):
+            self._prepare(context, packages, databases, memory_mb, users,
+                          device_path, mount_point, backup_info,
+                          config_contents, root_password, overrides,
+                          cluster_config, snapshot)
+
+    def _prepare(self, context, packages, databases, memory_mb, users,
+                 device_path=None, mount_point=None, backup_info=None,
+                 config_contents=None, root_password=None, overrides=None,
+                 cluster_config=None, snapshot=None):
         LOG.info(_("Starting datastore prepare for '%s'.") % self.manager)
         self.status.begin_install()
         post_processing = True if cluster_config else False
@@ -589,8 +600,9 @@ class Manager(periodic_task.PeriodicTasks):
     ###############
     def change_passwords(self, context, users):
         LOG.debug("Changing passwords.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='change_passwords', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='change_passwords', datastore=self.manager)
 
     def enable_root(self, context):
         LOG.debug("Enabling root.")
@@ -624,8 +636,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def create_database(self, context, databases):
         LOG.debug("Creating databases.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_database', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='create_database', datastore=self.manager)
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
@@ -635,13 +648,15 @@ class Manager(periodic_task.PeriodicTasks):
 
     def delete_database(self, context, database):
         LOG.debug("Deleting database.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='delete_database', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='delete_database', datastore=self.manager)
 
     def create_user(self, context, users):
         LOG.debug("Creating users.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='create_user', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='create_user', datastore=self.manager)
 
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
@@ -651,8 +666,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def delete_user(self, context, user):
         LOG.debug("Deleting user.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='delete_user', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='delete_user', datastore=self.manager)
 
     def get_user(self, context, username, hostname):
         LOG.debug("Getting user.")
@@ -661,8 +677,9 @@ class Manager(periodic_task.PeriodicTasks):
 
     def update_attributes(self, context, username, hostname, user_attrs):
         LOG.debug("Updating user attributes.")
-        raise exception.DatastoreOperationNotSupported(
-            operation='update_attributes', datastore=self.manager)
+        with EndNotification(context):
+            raise exception.DatastoreOperationNotSupported(
+                operation='update_attributes', datastore=self.manager)
 
     def grant_access(self, context, username, hostname, databases):
         LOG.debug("Granting user access.")
