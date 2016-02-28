@@ -157,3 +157,6 @@ class CassandraHelper(TestHelper):
     def get_invalid_groups(self):
         return [{'sstable_preemptive_open_interval_in_mb': -1},
                 {'sstable_preemptive_open_interval_in_mb': 'string_value'}]
+
+    def get_exposed_user_log_names(self):
+        return ['system']

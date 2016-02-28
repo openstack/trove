@@ -1,0 +1,3 @@
+---
+features:
+  - Enable database log retrieval on Cassandra instances.

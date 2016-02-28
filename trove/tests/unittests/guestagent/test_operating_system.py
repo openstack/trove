@@ -26,7 +26,7 @@ from testtools import ExpectedException
 from trove.common import exception
 from trove.common.stream_codecs import (
     Base64Codec, IdentityCodec, IniCodec, JsonCodec,
-    KeyValueCodec, PropertiesCodec, YamlCodec)
+    KeyValueCodec, PropertiesCodec, XmlCodec, YamlCodec)
 from trove.common import utils
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -131,6 +131,18 @@ class TestOperatingSystem(trove_testtools.TestCase):
                 }
 
         self._test_file_codec(data, JsonCodec())
+
+    def test_xml_file_codec(self):
+        data = {'document': {'@name': 'mydocument', '@ttl': '10',
+                             'author': {'@name': 'Jycll ;-)'},
+                             'page': [{'@number': '1', 'paragraph':
+                                       ['lorem ipsum', 'more lorem ipsum']},
+                                      {'@number': '1', 'paragraph':
+                                       ['lorem ipsum', 'more lorem ipsum']}]
+                             }
+                }
+
+        self._test_file_codec(data, XmlCodec())
 
     def _test_file_codec(self, data, read_codec, write_codec=None,
                          expected_data=None,

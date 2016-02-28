@@ -21,6 +21,7 @@ import json
 import re
 import six
 from six.moves.configparser import SafeConfigParser
+import xmltodict
 import yaml
 
 
@@ -427,3 +428,16 @@ class Base64Codec(StreamCodec):
 
         # py27 & py34 seem to understand bytearray the same
         return bytearray([item for item in base64.b64decode(stream)])
+
+
+class XmlCodec(StreamCodec):
+
+    def __init__(self, encoding='utf-8'):
+        self._encoding = encoding
+
+    def serialize(self, dict_data):
+        return xmltodict.unparse(
+            dict_data, output=None, encoding=self._encoding, pretty=True)
+
+    def deserialize(self, stream):
+        return xmltodict.parse(stream, encoding=self._encoding)

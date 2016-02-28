@@ -674,3 +674,12 @@ class GuestLogRunner(TestRunner):
             expected_type=guest_log.LogType.SYS.name,
             expected_status=guest_log.LogStatus.Ready.name,
             expected_published=0, expected_pending=1)
+
+
+class CassandraGuestLogRunner(GuestLogRunner):
+
+    def run_test_log_show(self):
+        self.assert_log_show(self.auth_client,
+                             self._get_exposed_user_log_name(),
+                             expected_published=0,
+                             expected_pending=None)
