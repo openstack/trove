@@ -96,7 +96,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
                           MagicMock(return_value=self.records)):
             dns_driver = driver.DesignateDriver()
             entries = dns_driver.get_entries_by_name('record2', zone)
-            self.assertTrue(len(entries) == 1, 'More than one record found')
+            self.assertEqual(1, len(entries), 'More than one record found')
             entry = entries[0]
             self.assertEqual('record2', entry.name)
             self.assertEqual('CNAME', entry.type)
@@ -113,7 +113,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
                           MagicMock(return_value=self.records)):
             dns_driver = driver.DesignateDriver()
             entries = dns_driver.get_entries_by_name('record_not_found', zone)
-            self.assertTrue(len(entries) == 0, 'Some records were returned')
+            self.assertEqual(0, len(entries), 'Some records were returned')
 
     def test_get_entries_by_content(self):
         zone = driver.DesignateDnsZone('123', 'www.example.com')
@@ -121,7 +121,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
                           MagicMock(return_value=self.records)):
             dns_driver = driver.DesignateDriver()
             entries = dns_driver.get_entries_by_content('10.0.0.1', zone)
-            self.assertTrue(len(entries) == 1, 'More than one record found')
+            self.assertEqual(1, len(entries), 'More than one record found')
             entry = entries[0]
             self.assertEqual('record1', entry.name)
             self.assertEqual('A', entry.type)
@@ -138,7 +138,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
                           MagicMock(return_value=self.records)):
             dns_driver = driver.DesignateDriver()
             entries = dns_driver.get_entries_by_content('127.0.0.1', zone)
-            self.assertTrue(len(entries) == 0, 'Some records were returned')
+            self.assertEqual(0, len(entries), 'Some records were returned')
 
     def test_get_dnz_zones(self):
         client = MagicMock()
@@ -146,7 +146,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones()
-        self.assertTrue(len(zones) == 3)
+        self.assertEqual(3, len(zones))
         for x in range(0, 3):
             self.assertDomainsAreEqual(self.domains[x], zones[x])
 
@@ -156,7 +156,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones('www.trove.com')
-        self.assertTrue(len(zones) == 1)
+        self.assertEqual(1, len(zones))
         self.assertDomainsAreEqual(self.domains[1], zones[0])
 
     def test_get_dnz_zones_not_found(self):
@@ -165,7 +165,7 @@ class DesignateDriverTest(trove_testtools.TestCase):
         client.domains.list = MagicMock(return_value=self.domains)
         dns_driver = driver.DesignateDriver()
         zones = dns_driver.get_dns_zones('www.notfound.com')
-        self.assertTrue(len(zones) == 0)
+        self.assertEqual(0, len(zones))
 
     def assertDomainsAreEqual(self, expected, actual):
         self.assertEqual(expected.name, actual.name)

@@ -210,7 +210,7 @@ class VersionsDataViewTestCase(trove_testtools.TestCase):
                              "Dict json_data has no key 'versions'")
         versions = json_data['versions']
         self.assertIsNotNone(versions, "Versions was None")
-        self.assertTrue(len(versions) == 1, "Versions length != 1")
+        self.assertEqual(1, len(versions), "Versions length != 1")
 
         # explode the version object
         versions_data = [v.data() for v in self.versions]
