@@ -301,8 +301,8 @@ class ClusterTest(trove_testtools.TestCase):
         mock_task_api.return_value.grow_cluster.assert_called_with(
             self.db_info.id,
             [mock_inst_create.return_value.id] * 3)
-        self.assertEqual(mock_inst_create.call_count, 3)
-        self.assertEqual(mock_interfaces.call_count, 1)
+        self.assertEqual(3, mock_inst_create.call_count)
+        self.assertEqual(1, mock_interfaces.call_count)
 
     @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(inst_models.Instance, 'load')
