@@ -137,6 +137,9 @@ class Manager(manager.Manager):
 
             self.__admin = CassandraAdmin(self.app.get_current_superuser())
 
+        if self.is_root_enabled(context):
+            self.status.report_root(context, self.app.default_superuser_name)
+
     def change_passwords(self, context, users):
         with EndNotification(context):
             self.admin.change_passwords(context, users)
@@ -182,6 +185,18 @@ class Manager(manager.Manager):
     def list_users(self, context, limit=None, marker=None,
                    include_marker=False):
         return self.admin.list_users(context, limit, marker, include_marker)
+
+    def enable_root(self, context):
+        return self.app.enable_root()
+
+    def enable_root_with_password(self, context, root_password=None):
+        return self.app.enable_root(root_password=root_password)
+
+    def disable_root(self, context):
+        self.app.enable_root(root_password=None)
+
+    def is_root_enabled(self, context):
+        return self.app.is_root_enabled()
 
     def _perform_restore(self, backup_info, context, restore_location):
         LOG.info(_("Restoring database from backup %s.") % backup_info['id'])

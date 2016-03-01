@@ -735,3 +735,41 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     def test_apply_overrides(self):
         self.assertIsNone(
             self.manager.apply_overrides(Mock(), NonCallableMagicMock()))
+
+    def test_enable_root(self):
+        with patch.object(self.manager._app, 'is_root_enabled',
+                          return_value=False):
+            with patch.object(cass_service.CassandraAdmin,
+                              '_create_superuser') as create_mock:
+                self.manager.enable_root(self.context)
+                create_mock.assert_called_once_with(ANY)
+
+        with patch.object(self.manager._app, 'is_root_enabled',
+                          return_value=True):
+            with patch.object(cass_service.CassandraAdmin,
+                              'alter_user_password') as alter_mock:
+                self.manager.enable_root(self.context)
+                alter_mock.assert_called_once_with(ANY)
+
+    def test_is_root_enabled(self):
+        trove_admin = Mock()
+        trove_admin.configure_mock(name=self.manager._app._ADMIN_USER)
+        other_admin = Mock()
+        other_admin.configure_mock(name='someuser')
+
+        with patch.object(cass_service.CassandraAdmin,
+                          'list_superusers', return_value=[]):
+            self.assertFalse(self.manager.is_root_enabled(self.context))
+
+        with patch.object(cass_service.CassandraAdmin,
+                          'list_superusers', return_value=[trove_admin]):
+            self.assertFalse(self.manager.is_root_enabled(self.context))
+
+        with patch.object(cass_service.CassandraAdmin,
+                          'list_superusers', return_value=[other_admin]):
+            self.assertTrue(self.manager.is_root_enabled(self.context))
+
+        with patch.object(cass_service.CassandraAdmin,
+                          'list_superusers',
+                          return_value=[trove_admin, other_admin]):
+            self.assertTrue(self.manager.is_root_enabled(self.context))
