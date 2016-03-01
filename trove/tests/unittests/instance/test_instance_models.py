@@ -68,7 +68,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         ip = self.instance.get_visible_ip_addresses()
         ip = filter_ips(
             ip, CONF.ip_regex, CONF.black_list_regex)
-        self.assertTrue(len(ip) == 2)
+        self.assertEqual(2, len(ip))
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
 
@@ -79,7 +79,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         ip = self.instance.get_visible_ip_addresses()
         ip = filter_ips(
             ip, CONF.ip_regex, CONF.black_list_regex)
-        self.assertTrue(len(ip) == 2)
+        self.assertEqual(2, len(ip))
         self.assertTrue('10.123.123.123' not in ip)
 
     def test_one_network_label(self):
@@ -90,14 +90,14 @@ class SimpleInstanceTest(trove_testtools.TestCase):
     def test_two_network_labels(self):
         CONF.network_label_regex = '^(private|public)$'
         ip = self.instance.get_visible_ip_addresses()
-        self.assertTrue(len(ip) == 2)
+        self.assertEqual(2, len(ip))
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
 
     def test_all_network_labels(self):
         CONF.network_label_regex = '.*'
         ip = self.instance.get_visible_ip_addresses()
-        self.assertTrue(len(ip) == 3)
+        self.assertEqual(3, len(ip))
         self.assertTrue('10.123.123.123' in ip)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
