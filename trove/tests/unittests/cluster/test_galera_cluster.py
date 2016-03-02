@@ -15,15 +15,17 @@ import uuid
 
 from mock import Mock
 from mock import patch
+
 from novaclient import exceptions as nova_exceptions
+
 from trove.cluster.models import Cluster
 from trove.cluster.models import ClusterTasks
 from trove.cluster.models import DBCluster
 from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
-from trove.common.strategies.cluster.experimental.pxc import (
-    api as pxc_api)
+from trove.common.strategies.cluster.experimental.galera_common import (
+    api as galera_api)
 from trove.instance import models as inst_models
 from trove.quota.quota import QUOTAS
 from trove.taskmanager import api as task_api
@@ -61,9 +63,8 @@ class ClusterTest(trove_testtools.TestCase):
         self.dv = Mock()
         self.dv.manager = "pxc"
         self.datastore_version = self.dv
-        self.cluster = pxc_api.PXCCluster(self.context, self.db_info,
-                                          self.datastore,
-                                          self.datastore_version)
+        self.cluster = galera_api.GaleraCommonCluster(
+            self.context, self.db_info, self.datastore, self.datastore_version)
         self.instances = [{'volume_size': 1, 'flavor_id': '1234'},
                           {'volume_size': 1, 'flavor_id': '1234'},
                           {'volume_size': 1, 'flavor_id': '1234'}]
@@ -130,7 +131,7 @@ class ClusterTest(trove_testtools.TestCase):
                           )
 
     @patch.object(remote, 'create_nova_client')
-    @patch.object(pxc_api, 'CONF')
+    @patch.object(galera_api, 'CONF')
     def test_create_storage_specified_with_no_volume_support(self,
                                                              mock_conf,
                                                              mock_client):
@@ -150,7 +151,7 @@ class ClusterTest(trove_testtools.TestCase):
                           )
 
     @patch.object(remote, 'create_nova_client')
-    @patch.object(pxc_api, 'CONF')
+    @patch.object(galera_api, 'CONF')
     def test_create_storage_not_specified_and_no_ephemeral_flavor(self,
                                                                   mock_conf,
                                                                   mock_client):
@@ -218,8 +219,30 @@ class ClusterTest(trove_testtools.TestCase):
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
 
+    @patch.object(inst_models.Instance, 'create')
+    @patch.object(DBCluster, 'create')
+    @patch.object(task_api, 'load')
+    @patch.object(QUOTAS, 'check_quotas')
+    @patch.object(remote, 'create_nova_client')
+    def test_create_over_limit(self, mock_client, mock_check_quotas,
+                               mock_task_api, mock_db_create, mock_ins_create):
+        instances = [{'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'},
+                     {'volume_size': 1, 'flavor_id': '1234'}]
+        flavors = Mock()
+        mock_client.return_value.flavors = flavors
+        self.cluster.create(Mock(),
+                            self.cluster_name,
+                            self.datastore,
+                            self.datastore_version,
+                            instances, {})
+        mock_task_api.return_value.create_cluster.assert_called_with(
+            mock_db_create.return_value.id)
+        self.assertEqual(4, mock_ins_create.call_count)
+
     @patch.object(inst_models.DBInstance, 'find_all')
-    @patch.object(pxc_api, 'CONF')
+    @patch.object(galera_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')
     @patch.object(DBCluster, 'create')
     @patch.object(task_api, 'load')
@@ -284,9 +307,10 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster.delete()
         mock_update_db.assert_called_with(task_status=ClusterTasks.DELETING)
 
-    @patch.object(pxc_api.PXCCluster, '_get_cluster_network_interfaces')
+    @patch.object(galera_api.GaleraCommonCluster,
+                  '_get_cluster_network_interfaces')
     @patch.object(DBCluster, 'update')
-    @patch.object(pxc_api, 'CONF')
+    @patch.object(galera_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
@@ -313,7 +337,7 @@ class ClusterTest(trove_testtools.TestCase):
             exception.ClusterShrinkMustNotLeaveClusterEmpty,
             self.cluster.shrink, [instance])
 
-    @patch.object(pxc_api.PXCCluster, '__init__')
+    @patch.object(galera_api.GaleraCommonCluster, '__init__')
     @patch.object(task_api, 'load')
     @patch.object(DBCluster, 'update')
     @patch.object(inst_models.DBInstance, 'find_all')

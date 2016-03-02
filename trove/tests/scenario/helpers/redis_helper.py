@@ -22,6 +22,8 @@ from trove.tests.scenario.runners.test_runners import TestRunner
 
 class RedisHelper(TestHelper):
 
+    cluster_node_count = 2
+
     def __init__(self, expected_override_name):
         super(RedisHelper, self).__init__(expected_override_name)
 

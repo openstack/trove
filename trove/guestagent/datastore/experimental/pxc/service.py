@@ -18,66 +18,58 @@ from oslo_log import log as logging
 import sqlalchemy
 from sqlalchemy.sql.expression import text
 
+from trove.common import cfg
 from trove.common.i18n import _
-from trove.common import utils
-from trove.guestagent.common import sql_query
-from trove.guestagent.datastore.experimental.pxc import system
-from trove.guestagent.datastore.mysql_common import service
-
+from trove.common import utils as utils
+from trove.guestagent.datastore.galera_common import service as galera_service
+from trove.guestagent.datastore.mysql_common import service as mysql_service
 
 LOG = logging.getLogger(__name__)
-CONF = service.CONF
 
-CNF_CLUSTER = "cluster"
-
-
-class KeepAliveConnection(service.BaseKeepAliveConnection):
-    pass
+CONF = cfg.CONF
 
 
-class PXCAppStatus(service.BaseMySqlAppStatus):
-    pass
+class PXCApp(galera_service.GaleraApp):
 
-
-class LocalSqlClient(service.BaseLocalSqlClient):
-    pass
-
-
-class PXCApp(service.BaseMySqlApp):
     def __init__(self, status):
-        super(PXCApp, self).__init__(status, LocalSqlClient,
-                                     KeepAliveConnection)
+        super(PXCApp, self).__init__(
+            status, mysql_service.BaseLocalSqlClient,
+            mysql_service.BaseKeepAliveConnection)
 
-    def _test_mysql(self):
-        engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
-                                          echo=True)
-        try:
-            with LocalSqlClient(engine) as client:
-                out = client.execute(text("select 1;"))
-                for line in out:
-                    LOG.debug("line: %s" % line)
-                return True
-        except Exception:
-            return False
+    @property
+    def mysql_service(self):
+        result = super(PXCApp, self).mysql_service
+        if result['type'] == 'sysvinit':
+            result['cmd_bootstrap_galera_cluster'] = (
+                "sudo service %s bootstrap-pxc" % result['service'])
+        elif result['type'] == 'systemd':
+            result['cmd_bootstrap_galera_cluster'] = (
+                "sudo systemctl start %s@bootstrap.service"
+                % result['service'])
+        return result
 
-    def _wait_for_mysql_to_be_really_alive(self, max_time):
-        utils.poll_until(self._test_mysql, sleep_time=3, time_out=max_time)
+    @property
+    def cluster_configuration(self):
+        return self.configuration_manager.get_value('mysqld')
 
     def secure(self, config_contents):
         LOG.info(_("Generating admin password."))
         admin_password = utils.generate_random_password()
-        service.clear_expired_password()
+        mysql_service.clear_expired_password()
         engine = sqlalchemy.create_engine("mysql://root:@localhost:3306",
                                           echo=True)
-        with LocalSqlClient(engine) as client:
+        with self.local_sql_client(engine) as client:
             self._remove_anonymous_user(client)
             self._create_admin_user(client, admin_password)
+
         self.stop_db()
+
         self._reset_configuration(config_contents, admin_password)
         self.start_mysql()
+
         # TODO(cp16net) figure out reason for PXC not updating the password
         try:
-            with LocalSqlClient(engine) as client:
+            with self.local_sql_client(engine) as client:
                 query = text("select Host, User from mysql.user;")
                 client.execute(query)
         except Exception:
@@ -87,7 +79,7 @@ class PXCApp(service.BaseMySqlApp):
         # removing the annon users.
         self._wait_for_mysql_to_be_really_alive(
             CONF.timeout_wait_for_service)
-        with LocalSqlClient(engine) as client:
+        with self.local_sql_client(engine) as client:
             self._create_admin_user(client, admin_password)
         self.stop_db()
 
@@ -97,68 +89,16 @@ class PXCApp(service.BaseMySqlApp):
             CONF.timeout_wait_for_service)
         LOG.debug("MySQL secure complete.")
 
-    def _grant_cluster_replication_privilege(self, replication_user):
-        LOG.info(_("Granting Replication Slave privilege."))
-        with self.local_sql_client(self.get_engine()) as client:
-            perms = ['REPLICATION CLIENT', 'RELOAD', 'LOCK TABLES']
-            g = sql_query.Grant(permissions=perms,
-                                user=replication_user['name'],
-                                clear=replication_user['password'])
-            t = text(str(g))
-            client.execute(t)
 
-    def _bootstrap_cluster(self, timeout=120):
-        LOG.info(_("Bootstraping cluster."))
-        try:
-            mysql_service = system.service_discovery(
-                service.MYSQL_SERVICE_CANDIDATES)
-            utils.execute_with_timeout(
-                mysql_service['cmd_bootstrap_pxc_cluster'],
-                shell=True, timeout=timeout)
-        except KeyError:
-            LOG.exception(_("Error bootstrapping cluster."))
-            raise RuntimeError(_("Service is not discovered."))
+class PXCRootAccess(mysql_service.BaseMySqlRootAccess):
 
-    def write_cluster_configuration_overrides(self, cluster_configuration):
-        self.configuration_manager.apply_system_override(
-            cluster_configuration, CNF_CLUSTER)
-
-    def install_cluster(self, replication_user, cluster_configuration,
-                        bootstrap=False):
-        LOG.info(_("Installing cluster configuration."))
-        self._grant_cluster_replication_privilege(replication_user)
-        self.stop_db()
-        self.write_cluster_configuration_overrides(cluster_configuration)
-        self.wipe_ib_logfiles()
-        LOG.debug("bootstrap the instance? : %s" % bootstrap)
-        # Have to wait to sync up the joiner instances with the donor instance.
-        if bootstrap:
-            self._bootstrap_cluster(timeout=CONF.restore_usage_timeout)
-        else:
-            self.start_mysql(timeout=CONF.restore_usage_timeout)
-
-    def get_cluster_context(self):
-        auth = self.configuration_manager.get_value('mysqld').get(
-            "wsrep_sst_auth").replace('"', '')
-        cluster_name = self.configuration_manager.get_value(
-            'mysqld').get("wsrep_cluster_name")
-        return {
-            'replication_user': {
-                'name': auth.split(":")[0],
-                'password': auth.split(":")[1],
-            },
-            'cluster_name': cluster_name,
-            'admin_password': self.get_auth_password()
-        }
-
-
-class PXCRootAccess(service.BaseMySqlRootAccess):
     def __init__(self):
-        super(PXCRootAccess, self).__init__(LocalSqlClient,
-                                            PXCApp(PXCAppStatus.get()))
+        super(PXCRootAccess, self).__init__(
+            mysql_service.BaseLocalSqlClient,
+            PXCApp(mysql_service.BaseMySqlAppStatus.get()))
 
 
-class PXCAdmin(service.BaseMySqlAdmin):
+class PXCAdmin(mysql_service.BaseMySqlAdmin):
     def __init__(self):
-        super(PXCAdmin, self).__init__(LocalSqlClient, PXCRootAccess(),
-                                       PXCApp)
+        super(PXCAdmin, self).__init__(
+            mysql_service.BaseLocalSqlClient, PXCRootAccess(), PXCApp)

@@ -18,5 +18,7 @@ from trove.tests.scenario.helpers.mysql_helper import MysqlHelper
 
 class PxcHelper(MysqlHelper):
 
+    cluster_node_count = 3
+
     def __init__(self, expected_override_name):
         super(PxcHelper, self).__init__(expected_override_name)

@@ -18,8 +18,8 @@ import mock
 import trove.common.context as context
 from trove.common import exception
 from trove.common.rpc.version import RPC_API_VERSION
-from trove.common.strategies.cluster.experimental.pxc.guestagent import (
-    PXCGuestAgentAPI)
+from trove.common.strategies.cluster.experimental.galera_common.guestagent \
+    import GaleraCommonGuestAgentStrategy
 from trove import rpc
 from trove.tests.unittests import trove_testtools
 
@@ -39,10 +39,12 @@ class ApiTest(trove_testtools.TestCase):
     @mock.patch.object(rpc, 'get_client')
     def setUp(self, *args):
         super(ApiTest, self).setUp()
+        cluster_guest_api = (GaleraCommonGuestAgentStrategy()
+                             .guest_client_class)
         self.context = context.TroveContext()
-        self.guest = PXCGuestAgentAPI(self.context, 0)
+        self.guest = cluster_guest_api(self.context, 0)
         self.guest._call = _mock_call
-        self.api = PXCGuestAgentAPI(self.context, "instance-id-x23d2d")
+        self.api = cluster_guest_api(self.context, "instance-id-x23d2d")
         self._mock_rpc_client()
 
     def test_get_routing_key(self):
