@@ -17,7 +17,7 @@ proboscis==1.2.5.3
 python-troveclient<1.1.0,>=1.0.7
 mock<1.1.0,>=1.0
 mox3<0.8.0,>=0.7.0
-testtools!=1.2.0,>=0.9.36
+testtools!=1.2.0,<2.0.0,>=0.9.36
 discover
 testrepository>=0.0.18
 
