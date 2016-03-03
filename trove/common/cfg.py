@@ -950,6 +950,9 @@ mongodb_opts = [
                     'per cluster.'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
+    cfg.BoolOpt('cluster_secure', default=True,
+                help='Create secure clusters. If False then the '
+                     'Role-Based Access Control will be disabled.'),
     cfg.StrOpt('api_strategy',
                default='trove.common.strategies.cluster.experimental.'
                'mongodb.api.MongoDbAPIStrategy',
