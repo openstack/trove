@@ -20,6 +20,7 @@ from trove.tests.scenario.groups import configuration_group
 from trove.tests.scenario.groups import database_actions_group
 from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario.groups import module_group
 from trove.tests.scenario.groups import replication_group
 from trove.tests.scenario.groups import root_actions_group
 from trove.tests.scenario.groups.test_group import TestGroup
@@ -35,6 +36,7 @@ GROUP = "scenario.instance_delete_group"
                          configuration_group.GROUP,
                          database_actions_group.GROUP,
                          instance_actions_group.GROUP,
+                         module_group.GROUP,
                          replication_group.GROUP,
                          root_actions_group.GROUP,
                          user_actions_group.GROUP])

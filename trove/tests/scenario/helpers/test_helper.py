@@ -433,3 +433,10 @@ class TestHelper(object):
         """Return a valid password that can be used by a 'root' user.
         """
         return "RootTestPass"
+
+    ##############
+    # Module related
+    ##############
+    def get_valid_module_type(self):
+        """Return a valid module type."""
+        return "test"
