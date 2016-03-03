@@ -55,7 +55,7 @@ class ClusterActionsRunner(TestRunner):
                            expected_instance_states=['BUILD', 'ACTIVE'],
                            expected_http_code=200):
         if not num_nodes:
-            num_nodes = self.test_helper.cluster_node_count
+            num_nodes = self.min_cluster_node_count
 
         instances_def = [
             self.build_flavor(
@@ -65,6 +65,10 @@ class ClusterActionsRunner(TestRunner):
         self.cluster_id = self.assert_cluster_create(
             'test_cluster', instances_def, expected_task_name,
             expected_instance_states, expected_http_code)
+
+    @property
+    def min_cluster_node_count(self):
+        return 2
 
     def assert_cluster_create(
             self, cluster_name, instances_def, expected_task_name,
@@ -337,10 +341,34 @@ class ClusterActionsRunner(TestRunner):
             self.assert_client_code(404)
 
 
-class MariadbClusterActionsRunner(ClusterActionsRunner):
+class CassandraClusterActionsRunner(ClusterActionsRunner):
 
     def run_cluster_root_enable(self):
         raise SkipTest("Operation is currently not supported.")
+
+
+class MariadbClusterActionsRunner(ClusterActionsRunner):
+
+    @property
+    def min_cluster_node_count(self):
+        return self.get_datastore_config_property('min_cluster_member_count')
+
+    def run_cluster_root_enable(self):
+        raise SkipTest("Operation is currently not supported.")
+
+
+class PxcClusterActionsRunner(ClusterActionsRunner):
+
+    @property
+    def min_cluster_node_count(self):
+        return self.get_datastore_config_property('min_cluster_member_count')
+
+
+class VerticaClusterActionsRunner(ClusterActionsRunner):
+
+    @property
+    def min_cluster_node_count(self):
+        return self.get_datastore_config_property('cluster_member_count')
 
 
 class RedisClusterActionsRunner(ClusterActionsRunner):

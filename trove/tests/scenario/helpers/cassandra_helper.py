@@ -57,7 +57,6 @@ class CassandraClient(object):
 class CassandraHelper(TestHelper):
 
     DATA_COLUMN_NAME = 'value'
-    cluster_node_count = 2
 
     def __init__(self, expected_override_name):
         super(CassandraHelper, self).__init__(expected_override_name)

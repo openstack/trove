@@ -208,58 +208,84 @@ class ClusterTasks(Cluster):
 
     def _all_instances_ready(self, instance_ids, cluster_id,
                              shard_id=None):
+        """Wait for all instances to get READY."""
+        return self._all_instances_acquire_status(
+            instance_ids, cluster_id, shard_id, ServiceStatuses.INSTANCE_READY,
+            fast_fail_statuses=[ServiceStatuses.FAILED,
+                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
 
-        def _all_status_ready(ids):
-            LOG.debug("Checking service status of instance ids: %s" % ids)
+    def _all_instances_shutdown(self, instance_ids, cluster_id,
+                                shard_id=None):
+        """Wait for all instances to go SHUTDOWN."""
+        return self._all_instances_acquire_status(
+            instance_ids, cluster_id, shard_id, ServiceStatuses.SHUTDOWN,
+            fast_fail_statuses=[ServiceStatuses.FAILED,
+                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
+
+    def _all_instances_running(self, instance_ids, cluster_id, shard_id=None):
+        """Wait for all instances to become ACTIVE."""
+        return self._all_instances_acquire_status(
+            instance_ids, cluster_id, shard_id, ServiceStatuses.RUNNING,
+            fast_fail_statuses=[ServiceStatuses.FAILED,
+                                ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT])
+
+    def _all_instances_acquire_status(
+            self, instance_ids, cluster_id, shard_id, expected_status,
+            fast_fail_statuses=None):
+
+        def _is_fast_fail_status(status):
+            return ((fast_fail_statuses is not None) and
+                    ((status == fast_fail_statuses) or
+                     (status in fast_fail_statuses)))
+
+        def _all_have_status(ids):
             for instance_id in ids:
                 status = InstanceServiceStatus.find_by(
                     instance_id=instance_id).get_status()
-                if (status == ServiceStatuses.FAILED or
-                   status == ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT):
-                        # if one has failed, no need to continue polling
-                        LOG.debug("Instance %s in %s, exiting polling." % (
-                            instance_id, status))
-                        return True
-                if status != ServiceStatuses.INSTANCE_READY:
-                        # if one is not in a cluster-ready state,
-                        # continue polling
-                        LOG.debug("Instance %s in %s, continue polling." % (
-                            instance_id, status))
-                        return False
-            LOG.debug("Instances are ready, exiting polling for: %s" % ids)
+                if _is_fast_fail_status(status):
+                    # if one has failed, no need to continue polling
+                    LOG.debug("Instance %s has acquired a fast-fail status %s."
+                              % (instance_id, status))
+                    return True
+                if status != expected_status:
+                    # if one is not in the expected state, continue polling
+                    LOG.debug("Instance %s was %s." % (instance_id, status))
+                    return False
+
             return True
 
         def _instance_ids_with_failures(ids):
-            LOG.debug("Checking for service status failures for "
-                      "instance ids: %s" % ids)
+            LOG.debug("Checking for service failures on instances: %s"
+                      % ids)
             failed_instance_ids = []
             for instance_id in ids:
                 status = InstanceServiceStatus.find_by(
                     instance_id=instance_id).get_status()
-                if (status == ServiceStatuses.FAILED or
-                   status == ServiceStatuses.FAILED_TIMEOUT_GUESTAGENT):
-                        failed_instance_ids.append(instance_id)
+                if _is_fast_fail_status(status):
+                    failed_instance_ids.append(instance_id)
             return failed_instance_ids
 
-        LOG.debug("Polling until service status is ready for "
-                  "instance ids: %s" % instance_ids)
+        LOG.debug("Polling until all instances acquire %s status: %s"
+                  % (expected_status, instance_ids))
         try:
             utils.poll_until(lambda: instance_ids,
-                             lambda ids: _all_status_ready(ids),
+                             lambda ids: _all_have_status(ids),
                              sleep_time=USAGE_SLEEP_TIME,
                              time_out=CONF.usage_timeout)
         except PollTimeOut:
-            LOG.exception(_("Timeout for all instance service statuses "
-                            "to become ready."))
+            LOG.exception(_("Timed out while waiting for all instances "
+                            "to become %s.") % expected_status)
             self.update_statuses_on_failure(cluster_id, shard_id)
             return False
 
         failed_ids = _instance_ids_with_failures(instance_ids)
         if failed_ids:
-            LOG.error(_("Some instances failed to become ready: %s") %
-                      failed_ids)
+            LOG.error(_("Some instances failed: %s") % failed_ids)
             self.update_statuses_on_failure(cluster_id, shard_id)
             return False
+
+        LOG.debug("All instances have acquired the expected status %s."
+                  % expected_status)
 
         return True
 
