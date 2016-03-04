@@ -20,6 +20,7 @@ import os.path
 from oslo_config import cfg
 from oslo_config.cfg import NoSuchOptError
 from oslo_log import log as logging
+from oslo_middleware import cors
 from osprofiler import opts as profiler
 
 from trove.version import version_info as version
@@ -1396,3 +1397,28 @@ def get_configuration_property(property_name, manager=None):
         return CONF.get(datastore_manager).get(property_name)
     except NoSuchOptError:
         return CONF.get(property_name)
+
+
+def set_api_config_defaults():
+    """This method updates all configuration default values."""
+
+    # CORS Middleware Defaults
+    # TODO(krotscheck): Update with https://review.openstack.org/#/c/285368/
+    cfg.set_defaults(cors.CORS_OPTS,
+                     allow_headers=['X-Auth-Token',
+                                    'X-Identity-Status',
+                                    'X-Roles',
+                                    'X-Service-Catalog',
+                                    'X-User-Id',
+                                    'X-Tenant-Id',
+                                    'X-OpenStack-Request-ID'],
+                     expose_headers=['X-Auth-Token',
+                                     'X-Subject-Token',
+                                     'X-Service-Token',
+                                     'X-OpenStack-Request-ID'],
+                     allow_methods=['GET',
+                                    'PUT',
+                                    'POST',
+                                    'DELETE',
+                                    'PATCH']
+                     )
