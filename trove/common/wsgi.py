@@ -320,6 +320,7 @@ class Controller(object):
             exception.ReplicaSourceDeleteForbidden,
             exception.BackupTooLarge,
             exception.ModuleAccessForbidden,
+            exception.ModuleAppliedToInstance,
         ],
         webob.exc.HTTPBadRequest: [
             exception.InvalidModelError,
@@ -330,7 +331,6 @@ class Controller(object):
             exception.UserAlreadyExists,
             exception.LocalStorageNotSpecified,
             exception.ModuleAlreadyExists,
-            exception.ModuleAppliedToInstance,
         ],
         webob.exc.HTTPNotFound: [
             exception.NotFound,

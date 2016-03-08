@@ -416,7 +416,7 @@ class ApiTest(trove_testtools.TestCase):
             mount_point='/mnt/opt', backup_info=None,
             config_contents='cont', root_password='1-2-3-4',
             overrides='override', cluster_config={'id': '2-3-4-5'},
-            snapshot=None)
+            snapshot=None, modules=None)
 
     @mock.patch.object(messaging, 'Target')
     @mock.patch.object(rpc, 'get_server')
@@ -424,7 +424,7 @@ class ApiTest(trove_testtools.TestCase):
         backup = {'id': 'backup_id_123'}
         self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
                          '/mnt/opt', backup, 'cont', '1-2-3-4',
-                         'overrides', {"id": "2-3-4-5"})
+                         'overrides', {"id": "2-3-4-5"}, modules=None)
 
         self._verify_rpc_prepare_before_cast()
         self._verify_cast(
@@ -433,7 +433,24 @@ class ApiTest(trove_testtools.TestCase):
             mount_point='/mnt/opt', backup_info=backup,
             config_contents='cont', root_password='1-2-3-4',
             overrides='overrides', cluster_config={'id': '2-3-4-5'},
-            snapshot=None)
+            snapshot=None, modules=None)
+
+    @mock.patch.object(messaging, 'Target')
+    @mock.patch.object(rpc, 'get_server')
+    def test_prepare_with_modules(self, *args):
+        modules = [{'id': 'mod_id'}]
+        self.api.prepare('2048', 'package1', 'db1', 'user1', '/dev/vdt',
+                         '/mnt/opt', None, 'cont', '1-2-3-4',
+                         'overrides', {"id": "2-3-4-5"}, modules=modules)
+
+        self._verify_rpc_prepare_before_cast()
+        self._verify_cast(
+            'prepare', packages=['package1'], databases='db1',
+            memory_mb='2048', users='user1', device_path='/dev/vdt',
+            mount_point='/mnt/opt', backup_info=None,
+            config_contents='cont', root_password='1-2-3-4',
+            overrides='overrides', cluster_config={'id': '2-3-4-5'},
+            snapshot=None, modules=modules)
 
     def test_upgrade(self):
         instance_version = "v1.0.1"

@@ -25,7 +25,8 @@ from testtools import ExpectedException
 
 from trove.common import exception
 from trove.common.stream_codecs import (
-    IdentityCodec, IniCodec, JsonCodec, PropertiesCodec, YamlCodec)
+    Base64Codec, IdentityCodec, IniCodec, JsonCodec,
+    KeyValueCodec, PropertiesCodec, YamlCodec)
 from trove.common import utils
 from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
@@ -34,6 +35,16 @@ from trove.tests.unittests import trove_testtools
 
 
 class TestOperatingSystem(trove_testtools.TestCase):
+
+    def test_base64_codec(self):
+        data = "Line 1\nLine 2\n"
+        self._test_file_codec(data, Base64Codec())
+
+        data = "TGluZSAxCkxpbmUgMgo="
+        self._test_file_codec(data, Base64Codec(), reverse_encoding=True)
+
+        data = "5Am9+y0wTwqUx39sMMBg3611FWg="
+        self._test_file_codec(data, Base64Codec(), reverse_encoding=True)
 
     def test_identity_file_codec(self):
         data = ("Lorem Ipsum, Lorem Ipsum\n"
@@ -105,6 +116,13 @@ class TestOperatingSystem(trove_testtools.TestCase):
         self._test_file_codec(data, PropertiesCodec(
             string_mappings={'yes': True, 'no': False, "''": None}))
 
+    def test_key_value_file_codec(self):
+        data = {'key1': 'value1',
+                'key2': 'value2',
+                'key3': 'value3'}
+
+        self._test_file_codec(data, KeyValueCodec())
+
     def test_json_file_codec(self):
         data = {"Section1": 's1v1',
                 "Section2": {"s2k1": '1',
@@ -117,21 +135,31 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
     def _test_file_codec(self, data, read_codec, write_codec=None,
                          expected_data=None,
-                         expected_exception=None):
+                         expected_exception=None,
+                         reverse_encoding=False):
         write_codec = write_codec or read_codec
 
         with tempfile.NamedTemporaryFile() as test_file:
+            encode = True
+            decode = True
+            if reverse_encoding:
+                encode = False
+                decode = False
             if expected_exception:
                 with expected_exception:
                     operating_system.write_file(test_file.name, data,
-                                                codec=write_codec)
+                                                codec=write_codec,
+                                                encode=encode)
                     operating_system.read_file(test_file.name,
-                                               codec=read_codec)
+                                               codec=read_codec,
+                                               decode=decode)
             else:
                 operating_system.write_file(test_file.name, data,
-                                            codec=write_codec)
+                                            codec=write_codec,
+                                            encode=encode)
                 read = operating_system.read_file(test_file.name,
-                                                  codec=read_codec)
+                                                  codec=read_codec,
+                                                  decode=decode)
                 if expected_data is not None:
                     self.assertEqual(expected_data, read)
                 else:

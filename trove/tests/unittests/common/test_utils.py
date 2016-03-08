@@ -14,7 +14,6 @@
 #    under the License.
 #
 
-from Crypto import Random
 from mock import Mock
 
 from testtools import ExpectedException
@@ -82,39 +81,3 @@ class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
     def test_pagination_limit(self):
         self.assertEqual(5, utils.pagination_limit(5, 9))
         self.assertEqual(5, utils.pagination_limit(9, 5))
-
-    def test_encode_decode_string(self):
-        random_data = bytearray(Random.new().read(12))
-        data = ['abc', 'numbers01234', '\x00\xFF\x00\xFF\xFF\x00', random_data]
-
-        for datum in data:
-            encoded_data = utils.encode_string(datum)
-            decoded_data = utils.decode_string(encoded_data)
-            self. assertEqual(datum, decoded_data,
-                              "Encode/decode failed")
-
-    def test_pad_unpad(self):
-        for size in range(1, 100):
-            data_str = 'a' * size
-            padded_str = utils.pad_for_encryption(data_str, utils.IV_BIT_COUNT)
-            self.assertEqual(0, len(padded_str) % utils.IV_BIT_COUNT,
-                             "Padding not successful")
-            unpadded_str = utils.unpad_after_decryption(padded_str)
-            self.assertEqual(data_str, unpadded_str,
-                             "String mangled after pad/unpad")
-
-    def test_encryp_decrypt(self):
-        key = 'my_secure_key'
-        for size in range(1, 100):
-            orig_str = ''
-            for index in range(1, size):
-                orig_str += Random.new().read(1)
-            orig_encoded = utils.encode_string(orig_str)
-            encrypted = utils.encrypt_string(orig_encoded, key)
-            encoded = utils.encode_string(encrypted)
-            decoded = utils.decode_string(encoded)
-            decrypted = utils.decrypt_string(decoded, key)
-            final_decoded = utils.decode_string(decrypted)
-
-            self.assertEqual(orig_str, final_decoded,
-                             "String did not match original")

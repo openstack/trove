@@ -403,8 +403,9 @@ common_opts = [
                     'become alive.'),
     cfg.StrOpt('module_aes_cbc_key', default='module_aes_cbc_key',
                help='OpenSSL aes_cbc key for module encryption.'),
-    cfg.StrOpt('module_types', default='test, hidden_test',
-               help='A list of module types supported.'),
+    cfg.ListOpt('module_types', default=['ping'],
+                help='A list of module types supported. A module type '
+                     'corresponds to the name of a ModuleDriver.'),
     cfg.StrOpt('guest_log_container_name',
                default='database_logs',
                help='Name of container that stores guest log components.'),

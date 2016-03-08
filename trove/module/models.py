@@ -18,14 +18,15 @@
 
 from datetime import datetime
 import hashlib
+from sqlalchemy.sql.expression import or_
 
 from trove.common import cfg
+from trove.common import crypto_utils
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
 from trove.datastore import models as datastore_models
 from trove.db import models
-from trove.instance import models as instances_models
 
 from oslo_log import log as logging
 
@@ -38,32 +39,92 @@ class Modules(object):
 
     DEFAULT_LIMIT = CONF.modules_page_size
     ENCRYPT_KEY = CONF.module_aes_cbc_key
-    VALID_MODULE_TYPES = CONF.module_types
+    VALID_MODULE_TYPES = [mt.lower() for mt in CONF.module_types]
     MATCH_ALL_NAME = 'all'
 
     @staticmethod
-    def load(context):
+    def load(context, datastore=None):
         if context is None:
             raise TypeError("Argument context not defined.")
         elif id is None:
             raise TypeError("Argument is not defined.")
 
+        query_opts = {'deleted': False}
+        if datastore:
+            if datastore.lower() == Modules.MATCH_ALL_NAME:
+                datastore = None
+            query_opts['datastore_id'] = datastore
         if context.is_admin:
-            db_info = DBModule.find_all(deleted=False)
+            db_info = DBModule.find_all(**query_opts)
             if db_info.count() == 0:
                 LOG.debug("No modules found for admin user")
         else:
-            db_info = DBModule.find_all(
-                tenant_id=context.tenant, visible=True, deleted=False)
+            # build a query manually, since we need current tenant
+            # plus the 'all' tenant ones
+            query_opts['visible'] = True
+            db_info = DBModule.query().filter_by(**query_opts)
+            db_info = db_info.filter(or_(DBModule.tenant_id == context.tenant,
+                                         DBModule.tenant_id.is_(None)))
             if db_info.count() == 0:
                 LOG.debug("No modules found for tenant %s" % context.tenant)
+        modules = db_info.all()
+        return modules
 
-        limit = utils.pagination_limit(
-            context.limit, Modules.DEFAULT_LIMIT)
-        data_view = DBModule.find_by_pagination(
-            'modules', db_info, 'foo', limit=limit, marker=context.marker)
-        next_marker = data_view.next_page_marker
-        return data_view.collection, next_marker
+    @staticmethod
+    def load_auto_apply(context, datastore_id, datastore_version_id):
+        """Return all the auto-apply modules for the given criteria."""
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        elif id is None:
+            raise TypeError("Argument is not defined.")
+
+        query_opts = {'deleted': False,
+                      'auto_apply': True}
+        db_info = DBModule.query().filter_by(**query_opts)
+        db_info = Modules.add_tenant_filter(db_info, context.tenant)
+        db_info = Modules.add_datastore_filter(db_info, datastore_id)
+        db_info = Modules.add_ds_version_filter(db_info, datastore_version_id)
+        if db_info.count() == 0:
+            LOG.debug("No auto-apply modules found for tenant %s" %
+                      context.tenant)
+        modules = db_info.all()
+        return modules
+
+    @staticmethod
+    def add_tenant_filter(query, tenant_id):
+        return query.filter(or_(DBModule.tenant_id == tenant_id,
+                                DBModule.tenant_id.is_(None)))
+
+    @staticmethod
+    def add_datastore_filter(query, datastore_id):
+        return query.filter(or_(DBModule.datastore_id == datastore_id,
+                                DBModule.datastore_id.is_(None)))
+
+    @staticmethod
+    def add_ds_version_filter(query, datastore_version_id):
+        return query.filter(or_(
+            DBModule.datastore_version_id == datastore_version_id,
+            DBModule.datastore_version_id.is_(None)))
+
+    @staticmethod
+    def load_by_ids(context, module_ids):
+        """Return all the modules for the given ids. Screens out the ones
+        for other tenants, unless the user is admin.
+        """
+        if context is None:
+            raise TypeError("Argument context not defined.")
+        elif id is None:
+            raise TypeError("Argument is not defined.")
+
+        modules = []
+        if module_ids:
+            query_opts = {'deleted': False}
+            db_info = DBModule.query().filter_by(**query_opts)
+            if not context.is_admin:
+                db_info = Modules.add_tenant_filter(db_info, context.tenant)
+            db_info = db_info.filter(DBModule.id.in_(module_ids))
+            modules = db_info.all()
+        return modules
 
 
 class Module(object):
@@ -76,7 +137,8 @@ class Module(object):
     def create(context, name, module_type, contents,
                description, tenant_id, datastore,
                datastore_version, auto_apply, visible, live_update):
-        if module_type not in Modules.VALID_MODULE_TYPES:
+        if module_type.lower() not in Modules.VALID_MODULE_TYPES:
+            LOG.error("Valid module types: %s" % Modules.VALID_MODULE_TYPES)
             raise exception.ModuleTypeNotFound(module_type=module_type)
         Module.validate_action(
             context, 'create', tenant_id, auto_apply, visible)
@@ -92,7 +154,7 @@ class Module(object):
         md5, processed_contents = Module.process_contents(contents)
         module = DBModule.create(
             name=name,
-            type=module_type,
+            type=module_type.lower(),
             contents=processed_contents,
             description=description,
             tenant_id=tenant_id,
@@ -156,9 +218,16 @@ class Module(object):
     @staticmethod
     def process_contents(contents):
         md5 = hashlib.md5(contents).hexdigest()
-        encrypted_contents = utils.encrypt_string(
+        encrypted_contents = crypto_utils.encrypt_data(
             contents, Modules.ENCRYPT_KEY)
-        return md5, utils.encode_string(encrypted_contents)
+        return md5, crypto_utils.encode_data(encrypted_contents)
+
+    # Do the reverse to 'deprocess' the contents
+    @staticmethod
+    def deprocess_contents(processed_contents):
+        encrypted_contents = crypto_utils.decode_data(processed_contents)
+        return crypto_utils.decrypt_data(
+            encrypted_contents, Modules.ENCRYPT_KEY)
 
     @staticmethod
     def delete(context, module):
@@ -173,46 +242,46 @@ class Module(object):
     @staticmethod
     def enforce_live_update(module_id, live_update, md5):
         if not live_update:
-            instances = DBInstanceModules.find_all(
-                id=module_id, md5=md5, deleted=False).all()
+            instances = DBInstanceModule.find_all(
+                module_id=module_id, md5=md5, deleted=False).all()
             if instances:
                 raise exception.ModuleAppliedToInstance()
 
     @staticmethod
     def load(context, module_id):
+        module = None
         try:
             if context.is_admin:
-                return DBModule.find_by(id=module_id, deleted=False)
+                module = DBModule.find_by(id=module_id, deleted=False)
             else:
-                return DBModule.find_by(
+                module = DBModule.find_by(
                     id=module_id, tenant_id=context.tenant, visible=True,
                     deleted=False)
         except exception.ModelNotFoundError:
             # See if we have the module in the 'all' tenant section
             if not context.is_admin:
                 try:
-                    return DBModule.find_by(
+                    module = DBModule.find_by(
                         id=module_id, tenant_id=None, visible=True,
                         deleted=False)
                 except exception.ModelNotFoundError:
                     pass  # fall through to the raise below
+
+        if not module:
             msg = _("Module with ID %s could not be found.") % module_id
             raise exception.ModelNotFoundError(msg)
+
+        # Save the encrypted contents in case we need to put it back
+        # when updating the record
+        module.encrypted_contents = module.contents
+        module.contents = Module.deprocess_contents(module.contents)
+        return module
 
     @staticmethod
     def update(context, module, original_module):
         Module.enforce_live_update(
             original_module.id, original_module.live_update,
             original_module.md5)
-        do_update = False
-        if module.contents != original_module.contents:
-            md5, processed_contents = Module.process_contents(module.contents)
-            do_update = (original_module.live_update and
-                         md5 != original_module.md5)
-            module.md5 = md5
-            module.contents = processed_contents
-        else:
-            module.contents = original_module.contents
         # we don't allow any changes to 'admin'-type modules, even if
         # the values changed aren't the admin ones.
         access_tenant_id = (None if (original_module.tenant_id is None or
@@ -225,6 +294,14 @@ class Module(object):
             access_tenant_id, access_auto_apply, access_visible)
         ds_id, ds_ver_id = Module.validate_datastore(
             module.datastore_id, module.datastore_version_id)
+        if module.contents != original_module.contents:
+            md5, processed_contents = Module.process_contents(module.contents)
+            module.md5 = md5
+            module.contents = processed_contents
+        else:
+            # on load the contents were decrypted, so
+            # we need to put the encrypted contents back before we update
+            module.contents = original_module.encrypted_contents
         if module.datastore_id:
             module.datastore_id = ds_id
         if module.datastore_version_id:
@@ -232,27 +309,73 @@ class Module(object):
 
         module.updated = datetime.utcnow()
         DBModule.save(module)
-        if do_update:
-            Module.reapply_on_all_instances(context, module)
+
+
+class InstanceModules(object):
 
     @staticmethod
-    def reapply_on_all_instances(context, module):
-        """Reapply a module on all its instances, if required."""
-        if module.live_update:
-            instance_modules = DBInstanceModules.find_all(
-                id=module.id, deleted=False).all()
+    def load(context, instance_id=None, module_id=None, md5=None):
+        selection = {'deleted': False}
+        if instance_id:
+            selection['instance_id'] = instance_id
+        if module_id:
+            selection['module_id'] = module_id
+        if md5:
+            selection['md5'] = md5
+        db_info = DBInstanceModule.find_all(**selection)
+        if db_info.count() == 0:
+            LOG.debug("No instance module records found")
 
-            LOG.debug(
-                "All instances with module '%s' applied: %s"
-                % (module.id, instance_modules))
+        limit = utils.pagination_limit(
+            context.limit, Modules.DEFAULT_LIMIT)
+        data_view = DBInstanceModule.find_by_pagination(
+            'modules', db_info, 'foo', limit=limit, marker=context.marker)
+        next_marker = data_view.next_page_marker
+        return data_view.collection, next_marker
 
-            for instance_module in instance_modules:
-                if instance_module.md5 != module.md5:
-                    LOG.debug("Applying module '%s' to instance: %s"
-                              % (module.id, instance_module.instance_id))
-                instance = instances_models.Instance.load(
-                    context, instance_module.instance_id)
-                instance.apply_module(module)
+
+class InstanceModule(object):
+
+    def __init__(self, context, instance_id, module_id):
+        self.context = context
+        self.instance_id = instance_id
+        self.module_id = module_id
+
+    @staticmethod
+    def create(context, instance_id, module_id, md5):
+        instance_module = DBInstanceModule.create(
+            instance_id=instance_id,
+            module_id=module_id,
+            md5=md5)
+        return instance_module
+
+    @staticmethod
+    def delete(context, instance_module):
+        instance_module.deleted = True
+        instance_module.deleted_at = datetime.utcnow()
+        instance_module.save()
+
+    @staticmethod
+    def load(context, instance_id, module_id, deleted=False):
+        instance_module = None
+        try:
+            instance_module = DBInstanceModule.find_by(
+                instance_id=instance_id, module_id=module_id, deleted=deleted)
+        except exception.ModelNotFoundError:
+            pass
+
+        return instance_module
+
+    @staticmethod
+    def update(context, instance_module):
+        instance_module.updated = datetime.utcnow()
+        DBInstanceModule.save(instance_module)
+
+
+class DBInstanceModule(models.DatabaseModelBase):
+    _data_fields = [
+        'id', 'instance_id', 'module_id', 'md5', 'created',
+        'updated', 'deleted', 'deleted_at']
 
 
 class DBModule(models.DatabaseModelBase):
@@ -263,11 +386,5 @@ class DBModule(models.DatabaseModelBase):
         'md5', 'created', 'updated', 'deleted', 'deleted_at']
 
 
-class DBInstanceModules(models.DatabaseModelBase):
-    _data_fields = [
-        'id', 'instance_id', 'module_id', 'md5', 'created',
-        'updated', 'deleted', 'deleted_at']
-
-
 def persisted_models():
-    return {'modules': DBModule, 'instance_modules': DBInstanceModules}
+    return {'modules': DBModule, 'instance_modules': DBInstanceModule}

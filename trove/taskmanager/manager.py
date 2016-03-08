@@ -277,7 +277,7 @@ class Manager(periodic_task.PeriodicTasks):
                                   datastore_manager, packages, volume_size,
                                   availability_zone, root_password, nics,
                                   overrides, slave_of_id, backup_id,
-                                  volume_type):
+                                  volume_type, modules):
 
         if type(instance_id) in [list]:
             ids = instance_id
@@ -307,7 +307,8 @@ class Manager(periodic_task.PeriodicTasks):
                         flavor, image_id, databases, users, datastore_manager,
                         packages, volume_size, replica_backup_id,
                         availability_zone, root_passwords[replica_index],
-                        nics, overrides, None, snapshot, volume_type)
+                        nics, overrides, None, snapshot, volume_type,
+                        modules)
                     replicas.append(instance_tasks)
                 except Exception:
                     # if it's the first replica, then we shouldn't continue
@@ -328,7 +329,7 @@ class Manager(periodic_task.PeriodicTasks):
                          image_id, databases, users, datastore_manager,
                          packages, volume_size, backup_id, availability_zone,
                          root_password, nics, overrides, slave_of_id,
-                         cluster_config, volume_type):
+                         cluster_config, volume_type, modules):
         if slave_of_id:
             self._create_replication_slave(context, instance_id, name,
                                            flavor, image_id, databases, users,
@@ -336,7 +337,7 @@ class Manager(periodic_task.PeriodicTasks):
                                            volume_size,
                                            availability_zone, root_password,
                                            nics, overrides, slave_of_id,
-                                           backup_id, volume_type)
+                                           backup_id, volume_type, modules)
         else:
             if type(instance_id) in [list]:
                 raise AttributeError(_(
@@ -347,7 +348,7 @@ class Manager(periodic_task.PeriodicTasks):
                                            volume_size, backup_id,
                                            availability_zone, root_password,
                                            nics, overrides, cluster_config,
-                                           None, volume_type)
+                                           None, volume_type, modules)
             timeout = (CONF.restore_usage_timeout if backup_id
                        else CONF.usage_timeout)
             instance_tasks.wait_for_instance(timeout, flavor)
@@ -356,7 +357,7 @@ class Manager(periodic_task.PeriodicTasks):
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id, availability_zone,
                         root_password, nics, overrides, slave_of_id,
-                        cluster_config, volume_type):
+                        cluster_config, volume_type, modules):
         with EndNotification(context,
                              instance_id=(instance_id[0]
                                           if type(instance_id) is list
@@ -366,7 +367,7 @@ class Manager(periodic_task.PeriodicTasks):
                                   datastore_manager, packages, volume_size,
                                   backup_id, availability_zone,
                                   root_password, nics, overrides, slave_of_id,
-                                  cluster_config, volume_type)
+                                  cluster_config, volume_type, modules)
 
     def update_overrides(self, context, instance_id, overrides):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

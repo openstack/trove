@@ -15,6 +15,7 @@
 
 import abc
 import ast
+import base64
 import csv
 import json
 import re
@@ -259,7 +260,7 @@ class PropertiesCodec(StreamCodec):
     SKIP_INIT_SPACE = True
 
     def __init__(self, delimiter=' ', comment_markers=('#'),
-                 unpack_singletons=True, string_mappings={}):
+                 unpack_singletons=True, string_mappings=None):
         """
         :param delimiter:         A one-character used to separate fields.
         :type delimiter:          string
@@ -280,7 +281,7 @@ class PropertiesCodec(StreamCodec):
         """
         self._delimiter = delimiter
         self._comment_markers = comment_markers
-        self._string_converter = StringConverter(string_mappings)
+        self._string_converter = StringConverter(string_mappings or {})
         self._unpack_singletons = unpack_singletons
 
     def serialize(self, dict_data):
@@ -366,6 +367,30 @@ class PropertiesCodec(StreamCodec):
         return container
 
 
+class KeyValueCodec(PropertiesCodec):
+    """
+    Read/write data from/into a simple key=value file.
+
+    key1=value1
+    key2=value2
+    key3=value3
+    ...
+
+    The above file content would be represented as:
+    {'key1': 'value1',
+     'key2': 'value2',
+     'key3': 'value3',
+     ...
+    }
+    """
+    def __init__(self, delimiter='=', comment_markers=('#'),
+                 unpack_singletons=True, string_mappings=None):
+        super(KeyValueCodec, self).__init__(
+            delimiter=delimiter, comment_markers=comment_markers,
+            unpack_singletons=unpack_singletons,
+            string_mappings=string_mappings)
+
+
 class JsonCodec(StreamCodec):
 
     def serialize(self, dict_data):
@@ -373,3 +398,28 @@ class JsonCodec(StreamCodec):
 
     def deserialize(self, stream):
         return json.load(six.StringIO(stream))
+
+
+class Base64Codec(StreamCodec):
+    """Serialize (encode) and deserialize (decode) using the base64 codec.
+    To read binary data from a file and b64encode it, used the decode=False
+    flag on operating_system's read calls.  Use encode=False to decode
+    binary data before writing to a file as well.
+    """
+
+    def serialize(self, data):
+
+        try:
+            # py27str - if we've got text data, this should encode it
+            # py27aa/py34aa - if we've got a bytearray, this should work too
+            encoded = str(base64.b64encode(data).decode('utf-8'))
+        except TypeError:
+            # py34str - convert to bytes first, then we can encode
+            data_bytes = bytes([ord(item) for item in data])
+            encoded = base64.b64encode(data_bytes).decode('utf-8')
+        return encoded
+
+    def deserialize(self, stream):
+
+        # py27 & py34 seem to understand bytearray the same
+        return bytearray([item for item in base64.b64decode(stream)])

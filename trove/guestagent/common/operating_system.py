@@ -33,31 +33,36 @@ DEBIAN = 'debian'
 SUSE = 'suse'
 
 
-def read_file(path, codec=IdentityCodec(), as_root=False):
+def read_file(path, codec=IdentityCodec(), as_root=False, decode=True):
     """
     Read a file into a Python data structure
     digestible by 'write_file'.
 
-    :param path             Path to the read config file.
-    :type path              string
+    :param path:            Path to the read config file.
+    :type path:             string
 
-    :param codec:           A codec used to deserialize the data.
+    :param codec:           A codec used to transform the data.
     :type codec:            StreamCodec
-
-    :returns:               A dictionary of key-value pairs.
 
     :param as_root:         Execute as root.
     :type as_root:          boolean
+
+    :param decode:          Should the codec decode the data.
+    :type decode:           boolean
+
+    :returns:               A dictionary of key-value pairs.
 
     :raises:                :class:`UnprocessableEntity` if file doesn't exist.
     :raises:                :class:`UnprocessableEntity` if codec not given.
     """
     if path and exists(path, is_directory=False, as_root=as_root):
         if as_root:
-            return _read_file_as_root(path, codec)
+            return _read_file_as_root(path, codec, decode=decode)
 
-        with open(path, 'r') as fp:
-            return codec.deserialize(fp.read())
+        with open(path, 'rb') as fp:
+            if decode:
+                return codec.deserialize(fp.read())
+            return codec.serialize(fp.read())
 
     raise exception.UnprocessableEntity(_("File does not exist: %s") % path)
 
@@ -92,22 +97,27 @@ def exists(path, is_directory=False, as_root=False):
     return found
 
 
-def _read_file_as_root(path, codec):
+def _read_file_as_root(path, codec, decode=True):
     """Read a file as root.
 
     :param path                Path to the written file.
     :type path                 string
 
-    :param codec:              A codec used to serialize the data.
+    :param codec:              A codec used to transform the data.
     :type codec:               StreamCodec
+
+    :param decode:             Should the codec decode the data.
+    :type decode:              boolean
     """
     with tempfile.NamedTemporaryFile() as fp:
         copy(path, fp.name, force=True, as_root=True)
         chmod(fp.name, FileMode.ADD_READ_ALL(), as_root=True)
-        return codec.deserialize(fp.read())
+        if decode:
+            return codec.deserialize(fp.read())
+        return codec.serialize(fp.read())
 
 
-def write_file(path, data, codec=IdentityCodec(), as_root=False):
+def write_file(path, data, codec=IdentityCodec(), as_root=False, encode=True):
     """Write data into file using a given codec.
     Overwrite any existing contents.
     The written file can be read back into its original
@@ -119,25 +129,31 @@ def write_file(path, data, codec=IdentityCodec(), as_root=False):
     :param data:               An object representing the file contents.
     :type data:                object
 
-    :param codec:              A codec used to serialize the data.
+    :param codec:              A codec used to transform the data.
     :type codec:               StreamCodec
 
     :param as_root:            Execute as root.
     :type as_root:             boolean
 
+    :param encode:             Should the codec encode the data.
+    :type encode:              boolean
+
     :raises:                   :class:`UnprocessableEntity` if path not given.
     """
     if path:
         if as_root:
-            _write_file_as_root(path, data, codec)
+            _write_file_as_root(path, data, codec, encode=encode)
         else:
-            with open(path, 'w', 0) as fp:
-                fp.write(codec.serialize(data))
+            with open(path, 'wb', 0) as fp:
+                if encode:
+                    fp.write(codec.serialize(data))
+                else:
+                    fp.write(codec.deserialize(data))
     else:
         raise exception.UnprocessableEntity(_("Invalid path: %s") % path)
 
 
-def _write_file_as_root(path, data, codec):
+def _write_file_as_root(path, data, codec, encode=True):
     """Write a file as root. Overwrite any existing contents.
 
     :param path                Path to the written file.
@@ -146,13 +162,19 @@ def _write_file_as_root(path, data, codec):
     :param data:               An object representing the file contents.
     :type data:                StreamCodec
 
-    :param codec:              A codec used to serialize the data.
+    :param codec:              A codec used to transform the data.
     :type codec:               StreamCodec
+
+    :param encode:             Should the codec encode the data.
+    :type encode:              boolean
     """
     # The files gets removed automatically once the managing object goes
     # out of scope.
-    with tempfile.NamedTemporaryFile('w', 0, delete=False) as fp:
-        fp.write(codec.serialize(data))
+    with tempfile.NamedTemporaryFile('wb', 0, delete=False) as fp:
+        if encode:
+            fp.write(codec.serialize(data))
+        else:
+            fp.write(codec.deserialize(data))
         fp.close()  # Release the resource before proceeding.
         copy(fp.name, path, force=True, as_root=True)
 

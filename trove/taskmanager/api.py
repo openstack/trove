@@ -151,10 +151,10 @@ class API(object):
                         packages, volume_size, backup_id=None,
                         availability_zone=None, root_password=None,
                         nics=None, overrides=None, slave_of_id=None,
-                        cluster_config=None, volume_type=None):
+                        cluster_config=None, volume_type=None,
+                        modules=None):
 
         LOG.debug("Making async call to create instance %s " % instance_id)
-
         self._cast("create_instance", self.version_cap,
                    instance_id=instance_id, name=name,
                    flavor=self._transform_obj(flavor),
@@ -171,7 +171,8 @@ class API(object):
                    overrides=overrides,
                    slave_of_id=slave_of_id,
                    cluster_config=cluster_config,
-                   volume_type=volume_type)
+                   volume_type=volume_type,
+                   modules=modules)
 
     def create_cluster(self, cluster_id):
         LOG.debug("Making async call to create cluster %s " % cluster_id)

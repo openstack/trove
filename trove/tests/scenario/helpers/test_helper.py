@@ -439,4 +439,4 @@ class TestHelper(object):
     ##############
     def get_valid_module_type(self):
         """Return a valid module type."""
-        return "test"
+        return "Ping"
