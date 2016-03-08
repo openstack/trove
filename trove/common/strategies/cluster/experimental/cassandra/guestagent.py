@@ -62,7 +62,7 @@ class CassandraGuestAgentAPI(guest_api.API):
     def cluster_complete(self):
         LOG.debug("Sending a setup completion notification for node: %s"
                   % self.id)
-        return self._call("cluster_complete", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
                           self.version_cap)
 
     def node_cleanup_begin(self):
