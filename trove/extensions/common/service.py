@@ -129,10 +129,20 @@ class ClusterRootController(DefaultRootController):
             tenant_id, cluster_id)
         return self.instance_root_index(req, tenant_id, single_instance_id)
 
+    def _block_cluster_instance_actions(self):
+        return False
+
+    def check_cluster_instance_actions(self, instance_id):
+        # Check if instance is in a cluster and if actions are allowed
+        instance = DBInstance.find_by(id=instance_id)
+        if instance.cluster_id and self._block_cluster_instance_actions():
+            raise exception.ClusterInstanceOperationNotSupported()
+
     def root_create(self, req, body, tenant_id, instance_id, is_cluster):
         if is_cluster:
             return self.cluster_root_create(req, body, tenant_id, instance_id)
         else:
+            self.check_cluster_instance_actions(instance_id)
             return self.instance_root_create(req, body, instance_id)
 
     def instance_root_create(self, req, body, instance_id,
