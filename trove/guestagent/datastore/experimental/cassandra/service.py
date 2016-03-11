@@ -419,9 +419,10 @@ class CassandraApp(object):
         if self.has_user_config():
             return self._load_current_superuser()
 
-        LOG.warn(_("Trove administrative user has not been configured yet. "
-                   "Using the built-in default: %s")
-                 % self.default_superuser_name)
+        LOG.warning(
+            _("Trove administrative user has not been configured yet. "
+              "Using the built-in default: %s")
+            % self.default_superuser_name)
         return models.CassandraUser(self.default_superuser_name,
                                     self.default_superuser_password)
 
