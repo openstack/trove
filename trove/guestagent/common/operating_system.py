@@ -332,23 +332,23 @@ def file_discovery(file_candidates):
     return ''
 
 
-def start_service(service_candidates):
-    _execute_service_command(service_candidates, 'cmd_start')
+def start_service(service_candidates, **kwargs):
+    _execute_service_command(service_candidates, 'cmd_start', **kwargs)
 
 
-def stop_service(service_candidates):
-    _execute_service_command(service_candidates, 'cmd_stop')
+def stop_service(service_candidates, **kwargs):
+    _execute_service_command(service_candidates, 'cmd_stop', **kwargs)
 
 
-def enable_service_on_boot(service_candidates):
-    _execute_service_command(service_candidates, 'cmd_enable')
+def enable_service_on_boot(service_candidates, **kwargs):
+    _execute_service_command(service_candidates, 'cmd_enable', **kwargs)
 
 
-def disable_service_on_boot(service_candidates):
-    _execute_service_command(service_candidates, 'cmd_disable')
+def disable_service_on_boot(service_candidates, **kwargs):
+    _execute_service_command(service_candidates, 'cmd_disable', **kwargs)
 
 
-def _execute_service_command(service_candidates, command_key):
+def _execute_service_command(service_candidates, command_key, **kwargs):
     """
     :param service_candidates        List of possible system service names.
     :type service_candidates         list
@@ -357,13 +357,28 @@ def _execute_service_command(service_candidates, command_key):
                                      'service_discovery'.
     :type command_key                string
 
+    :param timeout:                  Number of seconds if specified,
+                                     default if not.
+                                     There is no timeout if set to None.
+    :type timeout:                   integer
+
+    :raises:          :class:`UnknownArgumentError` if passed unknown args.
     :raises:          :class:`UnprocessableEntity` if no candidate names given.
     :raises:          :class:`RuntimeError` if command not found.
     """
+
+    exec_args = {}
+    if 'timeout' in kwargs:
+        exec_args['timeout'] = kwargs.pop('timeout')
+
+    if kwargs:
+        raise UnknownArgumentError(_("Got unknown keyword args: %r") % kwargs)
+
     if service_candidates:
         service = service_discovery(service_candidates)
         if command_key in service:
-            utils.execute_with_timeout(service[command_key], shell=True)
+            utils.execute_with_timeout(service[command_key], shell=True,
+                                       **exec_args)
         else:
             raise RuntimeError(_("Service control command not available: %s")
                                % command_key)
