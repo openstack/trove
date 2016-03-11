@@ -55,6 +55,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
         self.orig_create_users = db2_service.DB2Admin.create_user
         self.orig_list_users = db2_service.DB2Admin.list_users
         self.orig_delete_user = db2_service.DB2Admin.delete_user
+        self.orig_update_hostname = db2_service.DB2App.update_hostname
 
     def tearDown(self):
         super(GuestAgentDB2ManagerTest, self).tearDown()
@@ -73,6 +74,7 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
         db2_service.DB2Admin.create_user = self.orig_create_users
         db2_service.DB2Admin.list_users = self.orig_list_users
         db2_service.DB2Admin.delete_user = self.orig_delete_user
+        db2_service.DB2App.update_hostname = self.orig_update_hostname
 
     def test_update_status(self):
         mock_status = MagicMock()

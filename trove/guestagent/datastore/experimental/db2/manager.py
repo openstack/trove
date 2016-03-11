@@ -50,6 +50,7 @@ class Manager(manager.Manager):
             device.format()
             device.mount(mount_point)
             LOG.debug('Mounted the volume.')
+        self.app.update_hostname()
         self.app.change_ownership(mount_point)
         self.app.start_db()
 

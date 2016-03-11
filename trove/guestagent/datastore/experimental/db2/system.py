@@ -15,6 +15,9 @@
 
 TIMEOUT = 1200
 DB2_INSTANCE_OWNER = "db2inst1"
+UPDATE_HOSTNAME = (
+    'source /home/db2inst1/sqllib/db2profile;'
+    'db2set -g DB2SYSTEM="$(hostname)"')
 ENABLE_AUTOSTART = (
     "/opt/ibm/db2/V10.5/instance/db2iauto -on " + DB2_INSTANCE_OWNER)
 DISABLE_AUTOSTART = (

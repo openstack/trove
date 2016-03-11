@@ -43,6 +43,19 @@ class DB2App(object):
         LOG.debug("state_change_wait_time = %s." % self.state_change_wait_time)
         self.status = status
 
+    def update_hostname(self):
+        """
+        When DB2 server is installed, it uses the hostname of the
+        instance were the image was built. This needs to be updated
+        to reflect the guest instance.
+        """
+        LOG.debug("Update the hostname of the DB2 instance.")
+        try:
+            run_command(system.UPDATE_HOSTNAME,
+                        superuser='root')
+        except exception.ProcessExecutionError:
+            raise RuntimeError(_("Command to update the hostname failed."))
+
     def change_ownership(self, mount_point):
         """
         When DB2 server instance is installed, it does not have the
