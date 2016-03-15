@@ -36,7 +36,7 @@ modules = Table(
     Column('id', String(length=64), primary_key=True, nullable=False),
     Column('name', String(length=255), nullable=False),
     Column('type', String(length=255), nullable=False),
-    Column('contents', Text(), nullable=False),
+    Column('contents', Text(length=16777215), nullable=False),
     Column('description', String(length=255)),
     Column('tenant_id', String(length=64), nullable=True),
     Column('datastore_id', String(length=64), nullable=True),

@@ -116,6 +116,18 @@ class API(wsgi.Router):
                        controller=instance_resource,
                        action="guest_log_action",
                        conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/instances/{id}/modules",
+                       controller=instance_resource,
+                       action="module_list",
+                       conditions={'method': ['GET']})
+        mapper.connect("/{tenant_id}/instances/{id}/modules",
+                       controller=instance_resource,
+                       action="module_apply",
+                       conditions={'method': ['POST']})
+        mapper.connect("/{tenant_id}/instances/{id}/modules/{module_id}",
+                       controller=instance_resource,
+                       action="module_remove",
+                       conditions={'method': ['DELETE']})
 
     def _cluster_router(self, mapper):
         cluster_resource = ClusterController().create_resource()
@@ -211,6 +223,10 @@ class API(wsgi.Router):
                        controller=modules_resource,
                        action="delete",
                        conditions={'method': ['DELETE']})
+        mapper.connect("/{tenant_id}/modules/{id}/instances",
+                       controller=modules_resource,
+                       action="instances",
+                       conditions={'method': ['GET']})
 
     def _configurations_router(self, mapper):
         parameters_resource = ParametersController().create_resource()

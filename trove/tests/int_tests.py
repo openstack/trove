@@ -163,7 +163,7 @@ module_groups = list(instance_create_groups)
 module_groups.extend([module_group.GROUP])
 
 module_create_groups = list(base_groups)
-module_create_groups.extend([module_group.GROUP_MODULE,
+module_create_groups.extend([module_group.GROUP_MODULE_CREATE,
                              module_group.GROUP_MODULE_DELETE])
 
 replication_groups = list(instance_create_groups)

@@ -32,7 +32,7 @@ class CreateModuleTest(trove_testtools.TestCase):
         util.init_db()
         self.context = Mock()
         self.name = "name"
-        self.module_type = 'test'
+        self.module_type = 'ping'
         self.contents = 'my_contents\n'
 
         super(CreateModuleTest, self).setUp()

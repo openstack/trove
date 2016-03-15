@@ -96,5 +96,5 @@ class InstanceActionsRunner(TestRunner):
                                     expected_http_code)
 
         instance = self.get_instance(instance_id)
-        self.assert_equal(int(instance.flavor['id']), resize_flavor.id,
+        self.assert_equal(instance.flavor['id'], resize_flavor.id,
                           'Unexpected resize flavor_id')

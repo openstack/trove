@@ -34,6 +34,8 @@ from trove.datastore import models as datastore_models
 from trove.extensions.mysql.common import populate_users
 from trove.extensions.mysql.common import populate_validated_databases
 from trove.instance import models, views
+from trove.module import models as module_models
+from trove.module import views as module_views
 
 
 CONF = cfg.CONF
@@ -205,14 +207,22 @@ class InstanceController(wsgi.Controller):
                      "'%(tenant_id)s'"),
                  {'instance_id': id, 'tenant_id': tenant_id})
         LOG.debug("req : '%s'\n\n", req)
-        # TODO(hub-cap): turn this into middleware
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.load_any_instance(context, id)
-        context.notification = notification.DBaaSInstanceDelete(context,
-                                                                request=req)
+        context.notification = notification.DBaaSInstanceDelete(
+            context, request=req)
         with StartNotification(context, instance_id=instance.id):
+            marker = 'foo'
+            while marker:
+                instance_modules, marker = module_models.InstanceModules.load(
+                    context, instance_id=id)
+                for instance_module in instance_modules:
+                    instance_module = module_models.InstanceModule.load(
+                        context, instance_module['instance_id'],
+                        instance_module['module_id'])
+                    module_models.InstanceModule.delete(
+                        context, instance_module)
             instance.delete()
-        # TODO(cp16net): need to set the return code correctly
         return wsgi.Result(None, 202)
 
     def create(self, req, body, tenant_id):
@@ -264,6 +274,7 @@ class InstanceController(wsgi.Controller):
                                            # also check for older name
                                            body['instance'].get('slave_of'))
         replica_count = body['instance'].get('replica_count')
+        modules = body['instance'].get('modules')
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
                                           datastore, datastore_version,
@@ -271,7 +282,8 @@ class InstanceController(wsgi.Controller):
                                           availability_zone, nics,
                                           configuration, slave_of_id,
                                           replica_count=replica_count,
-                                          volume_type=volume_type)
+                                          volume_type=volume_type,
+                                          modules=modules)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)
@@ -399,3 +411,66 @@ class InstanceController(wsgi.Controller):
         guest_log = client.guest_log_action(log_name, enable, disable,
                                             publish, discard)
         return wsgi.Result({'log': guest_log}, 200)
+
+    def module_list(self, req, tenant_id, id):
+        """Return information about modules on an instance."""
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        from_guest = bool(req.GET.get('from_guest', '').lower())
+        include_contents = bool(req.GET.get('include_contents', '').lower())
+        if from_guest:
+            return self._module_list_guest(
+                context, id, include_contents=include_contents)
+        else:
+            return self._module_list(
+                context, id, include_contents=include_contents)
+
+    def _module_list_guest(self, context, id, include_contents):
+        """Return information about modules on an instance."""
+        client = create_guest_client(context, id)
+        result_list = client.module_list(include_contents)
+        return wsgi.Result({'modules': result_list}, 200)
+
+    def _module_list(self, context, id, include_contents):
+        """Return information about instnace modules."""
+        client = create_guest_client(context, id)
+        result_list = client.module_list(include_contents)
+        return wsgi.Result({'modules': result_list}, 200)
+
+    def module_apply(self, req, body, tenant_id, id):
+        """Apply modules to an instance."""
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        module_ids = [mod['id'] for mod in body.get('modules', [])]
+        modules = module_models.Modules.load_by_ids(context, module_ids)
+        module_list = []
+        for module in modules:
+            module.contents = module_models.Module.deprocess_contents(
+                module.contents)
+            module_info = module_views.DetailedModuleView(module).data(
+                include_contents=True)
+            module_list.append(module_info)
+        client = create_guest_client(context, id)
+        result_list = client.module_apply(module_list)
+        models.Instance.add_instance_modules(context, id, modules)
+        return wsgi.Result({'modules': result_list}, 200)
+
+    def module_remove(self, req, tenant_id, id, module_id):
+        """Remove module from an instance."""
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance = models.Instance.load(context, id)
+        if not instance:
+            raise exception.NotFound(uuid=id)
+        module = module_models.Module.load(context, module_id)
+        module_info = module_views.DetailedModuleView(module).data()
+        client = create_guest_client(context, id)
+        client.module_remove(module_info)
+        instance_module = module_models.InstanceModule.load(
+            context, instance_id=id, module_id=module_id)
+        if instance_module:
+            module_models.InstanceModule.delete(context, instance_module)
+        return wsgi.Result(None, 200)

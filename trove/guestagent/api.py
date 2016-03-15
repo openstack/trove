@@ -227,7 +227,8 @@ class API(object):
     def prepare(self, memory_mb, packages, databases, users,
                 device_path='/dev/vdb', mount_point='/mnt/volume',
                 backup_info=None, config_contents=None, root_password=None,
-                overrides=None, cluster_config=None, snapshot=None):
+                overrides=None, cluster_config=None, snapshot=None,
+                modules=None):
         """Make an asynchronous call to prepare the guest
            as a database container optionally includes a backup id for restores
         """
@@ -246,7 +247,7 @@ class API(object):
             device_path=device_path, mount_point=mount_point,
             backup_info=backup_info, config_contents=config_contents,
             root_password=root_password, overrides=overrides,
-            cluster_config=cluster_config, snapshot=snapshot)
+            cluster_config=cluster_config, snapshot=snapshot, modules=modules)
 
     def _create_guest_queue(self):
         """Call to construct, start and immediately stop rpc server in order
@@ -434,7 +435,7 @@ class API(object):
         LOG.debug("Retrieving guest log list for %s.", self.id)
         result = self._call("guest_log_list", AGENT_HIGH_TIMEOUT,
                             self.version_cap)
-        LOG.debug("guest_log_list 1 returns %s", result)
+        LOG.debug("guest_log_list returns %s", result)
         return result
 
     def guest_log_action(self, log_name, enable, disable, publish, discard):
@@ -443,3 +444,21 @@ class API(object):
                           self.version_cap, log_name=log_name,
                           enable=enable, disable=disable,
                           publish=publish, discard=discard)
+
+    def module_list(self, include_contents):
+        LOG.debug("Querying modules on %s (contents: %s).",
+                  self.id, include_contents)
+        result = self._call("module_list", AGENT_HIGH_TIMEOUT,
+                            self.version_cap,
+                            include_contents=include_contents)
+        return result
+
+    def module_apply(self, modules):
+        LOG.debug("Applying modules to %s.", self.id)
+        return self._call("module_apply", AGENT_HIGH_TIMEOUT,
+                          self.version_cap, modules=modules)
+
+    def module_remove(self, module):
+        LOG.debug("Removing modules from %s.", self.id)
+        return self._call("module_remove", AGENT_HIGH_TIMEOUT,
+                          self.version_cap, module=module)

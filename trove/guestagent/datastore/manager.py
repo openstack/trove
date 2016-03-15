@@ -30,6 +30,8 @@ from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 from trove.guestagent import dbaas
 from trove.guestagent import guest_log
+from trove.guestagent.module import driver_manager
+from trove.guestagent.module import module_manager
 from trove.guestagent.strategies import replication as repl_strategy
 from trove.guestagent import volume
 
@@ -72,6 +74,9 @@ class Manager(periodic_task.PeriodicTasks):
         self._guest_log_loaded_context = None
         self._guest_log_cache = None
         self._guest_log_defs = None
+
+        # Module
+        self.module_driver_manager = driver_manager.ModuleDriverManager()
 
     @property
     def manager_name(self):
@@ -251,22 +256,24 @@ class Manager(periodic_task.PeriodicTasks):
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
                 config_contents=None, root_password=None, overrides=None,
-                cluster_config=None, snapshot=None):
+                cluster_config=None, snapshot=None, modules=None):
         """Set up datastore on a Guest Instance."""
         with EndNotification(context, instance_id=CONF.guest_id):
             self._prepare(context, packages, databases, memory_mb, users,
                           device_path, mount_point, backup_info,
                           config_contents, root_password, overrides,
-                          cluster_config, snapshot)
+                          cluster_config, snapshot, modules)
 
     def _prepare(self, context, packages, databases, memory_mb, users,
-                 device_path=None, mount_point=None, backup_info=None,
-                 config_contents=None, root_password=None, overrides=None,
-                 cluster_config=None, snapshot=None):
+                 device_path, mount_point, backup_info,
+                 config_contents, root_password, overrides,
+                 cluster_config, snapshot, modules):
         LOG.info(_("Starting datastore prepare for '%s'.") % self.manager)
         self.status.begin_install()
         post_processing = True if cluster_config else False
         try:
+            # Since all module handling is common, don't pass it down to the
+            # individual 'do_prepare' methods.
             self.do_prepare(context, packages, databases, memory_mb,
                             users, device_path, mount_point, backup_info,
                             config_contents, root_password, overrides,
@@ -291,6 +298,17 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_("Completed setup of '%s' datastore successfully.") %
                  self.manager)
 
+        # The following block performs additional instance initialization.
+        # Failures will be recorded, but won't stop the provisioning
+        # or change the instance state.
+        try:
+            if modules:
+                LOG.info(_("Applying modules (called from 'prepare')."))
+                self.module_apply(context, modules)
+                LOG.info(_('Module apply completed.'))
+        except Exception as ex:
+            LOG.exception(_("An error occurred applying modules: "
+                            "%s") % ex.message)
         # The following block performs single-instance initialization.
         # Failures will be recorded, but won't stop the provisioning
         # or change the instance state.
@@ -594,6 +612,66 @@ class Manager(periodic_task.PeriodicTasks):
                                as_root=True)
         LOG.debug("Set log file '%s' as readable" % log_file)
         return log_file
+
+    ################
+    # Module related
+    ################
+    def module_list(self, context, include_contents=False):
+        LOG.info(_("Getting list of modules."))
+        results = module_manager.ModuleManager.read_module_results(
+            is_admin=context.is_admin, include_contents=include_contents)
+        LOG.info(_("Returning list of modules: %s") % results)
+        return results
+
+    def module_apply(self, context, modules=None):
+        LOG.info(_("Applying modules."))
+        results = []
+        for module_data in modules:
+            module = module_data['module']
+            id = module.get('id', None)
+            module_type = module.get('type', None)
+            name = module.get('name', None)
+            tenant = module.get('tenant', None)
+            datastore = module.get('datastore', None)
+            ds_version = module.get('datastore_version', None)
+            contents = module.get('contents', None)
+            md5 = module.get('md5', None)
+            auto_apply = module.get('auto_apply', True)
+            visible = module.get('visible', True)
+            if not name:
+                raise AttributeError(_("Module name not specified"))
+            if not contents:
+                raise AttributeError(_("Module contents not specified"))
+            driver = self.module_driver_manager.get_driver(module_type)
+            if not driver:
+                raise exception.ModuleTypeNotFound(
+                    _("No driver implemented for module type '%s'") %
+                    module_type)
+            result = module_manager.ModuleManager.apply_module(
+                driver, module_type, name, tenant, datastore, ds_version,
+                contents, id, md5, auto_apply, visible)
+            results.append(result)
+        LOG.info(_("Returning list of modules: %s") % results)
+        return results
+
+    def module_remove(self, context, module=None):
+        LOG.info(_("Removing module."))
+        module = module['module']
+        id = module.get('id', None)
+        module_type = module.get('type', None)
+        name = module.get('name', None)
+        datastore = module.get('datastore', None)
+        ds_version = module.get('datastore_version', None)
+        if not name:
+            raise AttributeError(_("Module name not specified"))
+        driver = self.module_driver_manager.get_driver(module_type)
+        if not driver:
+            raise exception.ModuleTypeNotFound(
+                _("No driver implemented for module type '%s'") %
+                module_type)
+        module_manager.ModuleManager.remove_module(
+            driver, module_type, id, name, datastore, ds_version)
+        LOG.info(_("Deleted module: %s") % name)
 
     ###############
     # Not Supported

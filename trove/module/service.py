@@ -23,6 +23,9 @@ from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import pagination
 from trove.common import wsgi
+from trove.datastore import models as datastore_models
+from trove.instance import models as instance_models
+from trove.instance import views as instance_views
 from trove.module import models
 from trove.module import views
 
@@ -37,20 +40,22 @@ class ModuleController(wsgi.Controller):
 
     def index(self, req, tenant_id):
         context = req.environ[wsgi.CONTEXT_KEY]
-        modules, marker = models.Modules.load(context)
+        datastore = req.GET.get('datastore', '')
+        if datastore and datastore.lower() != models.Modules.MATCH_ALL_NAME:
+            ds, ds_ver = datastore_models.get_datastore_version(
+                type=datastore)
+            datastore = ds.id
+        modules = models.Modules.load(context, datastore=datastore)
         view = views.ModulesView(modules)
-        paged = pagination.SimplePaginatedDataView(req.url, 'modules',
-                                                   view, marker)
-        return wsgi.Result(paged.data(), 200)
+        return wsgi.Result(view.data(), 200)
 
     def show(self, req, tenant_id, id):
         LOG.info(_("Showing module %s") % id)
 
         context = req.environ[wsgi.CONTEXT_KEY]
         module = models.Module.load(context, id)
-        module.instance_count = models.DBInstanceModules.find_all(
-            id=module.id, md5=module.md5,
-            deleted=False).count()
+        module.instance_count = len(models.InstanceModules.load(
+            context, module_id=module.id, md5=module.md5))
 
         return wsgi.Result(
             views.DetailedModuleView(module).data(), 200)
@@ -121,3 +126,24 @@ class ModuleController(wsgi.Controller):
         models.Module.update(context, module, original_module)
         view_data = views.DetailedModuleView(module)
         return wsgi.Result(view_data.data(), 200)
+
+    def instances(self, req, tenant_id, id):
+        LOG.info(_("Getting instances for module %s") % id)
+
+        context = req.environ[wsgi.CONTEXT_KEY]
+        instance_modules, marker = models.InstanceModules.load(
+            context, module_id=id)
+        if instance_modules:
+            instance_ids = [inst_mod.instance_id
+                            for inst_mod in instance_modules]
+            include_clustered = (
+                req.GET.get('include_clustered', '').lower() == 'true')
+            instances, marker = instance_models.Instances.load(
+                context, include_clustered, instance_ids=instance_ids)
+        else:
+            instances = []
+            marker = None
+        view = instance_views.InstancesView(instances, req=req)
+        paged = pagination.SimplePaginatedDataView(req.url, 'instances',
+                                                   view, marker)
+        return wsgi.Result(paged.data(), 200)

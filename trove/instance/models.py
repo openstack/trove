@@ -43,6 +43,8 @@ from trove.db import models as dbmodels
 from trove.extensions.security_group.models import SecurityGroup
 from trove.instance.tasks import InstanceTask
 from trove.instance.tasks import InstanceTasks
+from trove.module import models as module_models
+from trove.module import views as module_views
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api as task_api
 
@@ -672,7 +674,7 @@ class Instance(BuiltInstance):
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None,
                configuration_id=None, slave_of_id=None, cluster_config=None,
-               replica_count=None, volume_type=None):
+               replica_count=None, volume_type=None, modules=None):
 
         call_args = {
             'name': name,
@@ -798,6 +800,23 @@ class Instance(BuiltInstance):
         if cluster_config:
             call_args['cluster_id'] = cluster_config.get("id", None)
 
+        if not modules:
+            modules = []
+        module_ids = [mod['id'] for mod in modules]
+        modules = module_models.Modules.load_by_ids(context, module_ids)
+        auto_apply_modules = module_models.Modules.load_auto_apply(
+            context, datastore.id, datastore_version.id)
+        for aa_module in auto_apply_modules:
+            if aa_module.id not in module_ids:
+                modules.append(aa_module)
+        module_list = []
+        for module in modules:
+            module.contents = module_models.Module.deprocess_contents(
+                module.contents)
+            module_info = module_views.DetailedModuleView(module).data(
+                include_contents=True)
+            module_list.append(module_info)
+
         def _create_resources():
 
             if cluster_config:
@@ -825,6 +844,7 @@ class Instance(BuiltInstance):
                           {'tenant': context.tenant, 'db': db_info.id})
 
                 instance_id = db_info.id
+                cls.add_instance_modules(context, instance_id, modules)
                 instance_name = name
                 ids.append(instance_id)
                 names.append(instance_name)
@@ -866,13 +886,19 @@ class Instance(BuiltInstance):
                 datastore_version.manager, datastore_version.packages,
                 volume_size, backup_id, availability_zone, root_password,
                 nics, overrides, slave_of_id, cluster_config,
-                volume_type=volume_type)
+                volume_type=volume_type, modules=module_list)
 
             return SimpleInstance(context, db_info, service_status,
                                   root_password)
 
         with StartNotification(context, **call_args):
             return run_with_quotas(context.tenant, deltas, _create_resources)
+
+    @classmethod
+    def add_instance_modules(cls, context, instance_id, modules):
+        for module in modules:
+            module_models.InstanceModule.create(
+                context, instance_id, module.id, module.md5)
 
     def get_flavor(self):
         client = create_nova_client(self.context)
@@ -1177,7 +1203,7 @@ class Instances(object):
     DEFAULT_LIMIT = CONF.instances_page_size
 
     @staticmethod
-    def load(context, include_clustered):
+    def load(context, include_clustered, instance_ids=None):
 
         def load_simple_instance(context, db, status, **kwargs):
             return SimpleInstance(context, db, status)
@@ -1186,14 +1212,18 @@ class Instances(object):
             raise TypeError("Argument context not defined.")
         client = create_nova_client(context)
         servers = client.servers.list()
-
-        if include_clustered:
-            db_infos = DBInstance.find_all(tenant_id=context.tenant,
-                                           deleted=False)
+        query_opts = {'tenant_id': context.tenant,
+                      'deleted': False}
+        if not include_clustered:
+            query_opts['cluster_id'] = None
+        if instance_ids and len(instance_ids) > 1:
+            raise exception.DatastoreOperationNotSupported(
+                operation='module-instances', datastore='current')
+            db_infos = DBInstance.query().filter_by(**query_opts)
         else:
-            db_infos = DBInstance.find_all(tenant_id=context.tenant,
-                                           cluster_id=None,
-                                           deleted=False)
+            if instance_ids:
+                query_opts['id'] = instance_ids[0]
+            db_infos = DBInstance.find_all(**query_opts)
         limit = utils.pagination_limit(context.limit, Instances.DEFAULT_LIMIT)
         data_view = DBInstance.find_by_pagination('instances', db_infos, "foo",
                                                   limit=limit,
