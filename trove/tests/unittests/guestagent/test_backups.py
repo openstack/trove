@@ -56,6 +56,11 @@ BACKUP_NODETOOLSNAPSHOT_CLS = ("trove.guestagent.strategies.backup."
                                "experimental.cassandra_impl.NodetoolSnapshot")
 RESTORE_NODETOOLSNAPSHOT_CLS = ("trove.guestagent.strategies.restore."
                                 "experimental.cassandra_impl.NodetoolSnapshot")
+BACKUP_DB2_CLS = ("trove.guestagent.strategies.backup."
+                  "experimental.db2_impl.DB2Backup")
+RESTORE_DB2_CLS = ("trove.guestagent.strategies.restore."
+                   "experimental.db2_impl.DB2Backup")
+
 
 PIPE = " | "
 ZIP = "gzip"
@@ -97,6 +102,9 @@ MONGODUMP_RESTORE = "sudo tar xPf -"
 
 REDISBACKUP_CMD = "sudo cat /var/lib/redis/dump.rdb"
 REDISBACKUP_RESTORE = "tee /var/lib/redis/dump.rdb"
+
+DB2BACKUP_CMD = "sudo tar cPf - /home/db2inst1/db2inst1/backup"
+DB2BACKUP_RESTORE = "sudo tar xPf -"
 
 
 class GuestAgentBackupTest(trove_testtools.TestCase):
@@ -417,6 +425,45 @@ class GuestAgentBackupTest(trove_testtools.TestCase):
                             location="filename", checksum="md5")
         self.assertEqual(restr.restore_cmd,
                          DECRYPT + PIPE + UNZIP + PIPE + REDISBACKUP_RESTORE)
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test_backup_encrypted_db2backup_command(self, *mock):
+        backupBase.BackupRunner.is_encrypted = True
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_DB2_CLS)
+        bkp = RunnerClass(12345)        # this is not db2 backup filename
+        self.assertIsNotNone(12345)     # look into this
+        self.assertEqual(
+            DB2BACKUP_CMD + PIPE + ZIP + PIPE + ENCRYPT, bkp.command)
+        self.assertIn("gz.enc", bkp.manifest)
+
+    @patch.object(utils, 'execute_with_timeout')
+    def test_backup_not_encrypted_db2backup_command(self, *mock):
+        backupBase.BackupRunner.is_encrypted = False
+        backupBase.BackupRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(BACKUP_DB2_CLS)
+        bkp = RunnerClass(12345)
+        self.assertIsNotNone(bkp)
+        self.assertEqual(DB2BACKUP_CMD + PIPE + ZIP, bkp.command)
+        self.assertIn("gz", bkp.manifest)
+
+    def test_restore_decrypted_db2backup_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = False
+        RunnerClass = utils.import_class(RESTORE_DB2_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd, UNZIP + PIPE + DB2BACKUP_RESTORE)
+
+    def test_restore_encrypted_db2backup_command(self):
+        restoreBase.RestoreRunner.is_zipped = True
+        restoreBase.RestoreRunner.is_encrypted = True
+        restoreBase.RestoreRunner.encrypt_key = CRYPTO_KEY
+        RunnerClass = utils.import_class(RESTORE_DB2_CLS)
+        restr = RunnerClass(None, restore_location="/tmp",
+                            location="filename", checksum="md5")
+        self.assertEqual(restr.restore_cmd,
+                         DECRYPT + PIPE + UNZIP + PIPE + DB2BACKUP_RESTORE)
 
 
 class CassandraBackupTest(trove_testtools.TestCase):
@@ -794,5 +841,72 @@ class RedisRestoreTests(trove_testtools.TestCase):
     def test_restore_failed_due_to_run_restore(self):
         self.restore_runner._run_restore.side_effect = (
             exception.ProcessExecutionError('Error'))
+        self.assertRaises(exception.ProcessExecutionError,
+                          self.restore_runner.restore)
+
+
+class DB2BackupTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(DB2BackupTests, self).setUp()
+        self.exec_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.exec_timeout_patch.start()
+        self.backup_runner = utils.import_class(BACKUP_DB2_CLS)
+        self.backup_runner_patch = patch.multiple(
+            self.backup_runner, _run=DEFAULT,
+            _run_pre_backup=DEFAULT, _run_post_backup=DEFAULT)
+
+    def tearDown(self):
+        super(DB2BackupTests, self).tearDown()
+        self.backup_runner_patch.stop()
+        self.exec_timeout_patch.stop()
+
+    def test_backup_success(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        with self.backup_runner(12345):
+            pass
+
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        backup_runner_mocks['_run_post_backup'].assert_called_once_with()
+
+    def test_backup_failed_due_to_run_backup(self):
+        backup_runner_mocks = self.backup_runner_patch.start()
+        backup_runner_mocks['_run'].configure_mock(
+            side_effect=exception.TroveError('test'))
+        with ExpectedException(exception.TroveError, 'test'):
+            with self.backup_runner(12345):
+                pass
+        backup_runner_mocks['_run_pre_backup'].assert_called_once_with()
+        backup_runner_mocks['_run'].assert_called_once_with()
+        self.assertEqual(0, backup_runner_mocks['_run_post_backup'].call_count)
+
+
+class DB2RestoreTests(trove_testtools.TestCase):
+
+    def setUp(self):
+        super(DB2RestoreTests, self).setUp()
+
+        self.restore_runner = utils.import_class(
+            RESTORE_DB2_CLS)('swift', location='http://some.where',
+                             checksum='True_checksum',
+                             restore_location='/var/lib/somewhere')
+
+    def tearDown(self):
+        super(DB2RestoreTests, self).tearDown()
+
+    def test_restore_success(self):
+        expected_content_length = 123
+        self.restore_runner._run_restore = mock.Mock(
+            return_value=expected_content_length)
+        self.restore_runner.post_restore = mock.Mock()
+        actual_content_length = self.restore_runner.restore()
+        self.assertEqual(
+            expected_content_length, actual_content_length)
+
+    def test_restore_failed_due_to_run_restore(self):
+        self.restore_runner._run_restore = mock.Mock(
+            side_effect=exception.ProcessExecutionError('Error'))
+        self.restore_runner.post_restore = mock.Mock()
         self.assertRaises(exception.ProcessExecutionError,
                           self.restore_runner.restore)

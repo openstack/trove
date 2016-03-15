@@ -1177,7 +1177,7 @@ db2_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.StrOpt('backup_strategy', default='DB2Backup',
                help='Default strategy to perform backups.'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
@@ -1186,10 +1186,18 @@ db2_opts = [
                 'service during instance-create. The generated password for '
                 'the root user is immediately returned in the response of '
                 "instance-create as the 'password' field."),
-    cfg.StrOpt('backup_namespace', default=None,
-               help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace', default=None,
-               help='Namespace to load restore strategies from.'),
+    cfg.StrOpt('backup_namespace',
+               default='trove.guestagent.strategies.backup.experimental.'
+                       'db2_impl',
+               help='Namespace to load backup strategies from.',
+               deprecated_name='backup_namespace',
+               deprecated_group='DEFAULT'),
+    cfg.StrOpt('restore_namespace',
+               default='trove.guestagent.strategies.restore.experimental.'
+                       'db2_impl',
+               help='Namespace to load restore strategies from.',
+               deprecated_name='restore_namespace',
+               deprecated_group='DEFAULT'),
     cfg.DictOpt('backup_incremental_strategy', default={},
                 help='Incremental Backup Runner based on the default '
                 'strategy. For strategies that do not implement an '

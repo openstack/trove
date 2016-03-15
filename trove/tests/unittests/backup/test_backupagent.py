@@ -31,6 +31,7 @@ from trove.guestagent.common.configuration import ImportOverrideStrategy
 from trove.guestagent.strategies.backup.base import BackupRunner
 from trove.guestagent.strategies.backup.base import UnknownBackupType
 from trove.guestagent.strategies.backup.experimental import couchbase_impl
+from trove.guestagent.strategies.backup.experimental import db2_impl
 from trove.guestagent.strategies.backup.experimental import mongo_impl
 from trove.guestagent.strategies.backup.experimental import redis_impl
 from trove.guestagent.strategies.backup import mysql_impl
@@ -250,6 +251,17 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertEqual(str_cbbackup_cmd, cbbackup.cmd)
         self.assertIsNotNone(cbbackup.manifest)
         self.assertIn('gz.enc', cbbackup.manifest)
+
+    def test_backup_impl_DB2Backup(self):
+        netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
+        db2_backup = db2_impl.DB2Backup('db2backup', extra_opts='')
+        self.assertIsNotNone(db2_backup)
+        str_db2_backup_cmd = ("sudo tar cPf - /home/db2inst1/db2inst1/backup "
+                              "| gzip | openssl enc -aes-256-cbc -salt -pass "
+                              "pass:default_aes_cbc_key")
+        self.assertEqual(str_db2_backup_cmd, db2_backup.cmd)
+        self.assertIsNotNone(db2_backup.manifest)
+        self.assertIn('gz.enc', db2_backup.manifest)
 
     @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def test_backup_impl_MongoDump(self, _):
