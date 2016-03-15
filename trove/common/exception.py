@@ -557,6 +557,12 @@ class ClusterNumInstancesNotLargeEnough(TroveError):
                 "be at least %(num_instances)s.")
 
 
+class ClusterNumInstancesBelowSafetyThreshold(TroveError):
+    message = _("The number of instances in your cluster cannot "
+                "safely be lowered below the current level based"
+                "on your current fault-tolerance settings.")
+
+
 class ClusterShrinkMustNotLeaveClusterEmpty(TroveError):
     message = _("Must leave at least one instance in the cluster when "
                 "shrinking.")

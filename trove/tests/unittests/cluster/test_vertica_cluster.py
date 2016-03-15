@@ -70,11 +70,13 @@ class ClusterTest(trove_testtools.TestCase):
                            'instance_type': 'member'},
                           {'volume_size': 1, 'flavor_id': '1234',
                            'instance_type': 'member'}]
+        self.db_instances = [1, 2, 3]
 
     def tearDown(self):
         super(ClusterTest, self).tearDown()
 
-    def test_create_empty_instances(self):
+    @patch.object(inst_models.DBInstance, 'find_all')
+    def test_create_empty_instances(self, *args):
         self.assertRaises(exception.ClusterNumInstancesNotSupported,
                           Cluster.create,
                           Mock(),
@@ -83,7 +85,9 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore_version,
                           [], None)
 
-    def test_create_flavor_not_specified(self):
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
+    def test_create_flavor_not_specified(self, *args):
         instances = self.instances
         instances[0]['flavor_id'] = None
         self.assertRaises(exception.ClusterFlavorsNotEqual,
@@ -96,9 +100,11 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(remote, 'create_nova_client')
-    def test_create_invalid_flavor_specified(self,
-                                             mock_client):
+    def test_create_invalid_flavor_specified(self, mock_client,
+                                             mock_find_all, mock_create):
         instances = [{'flavor_id': '1234'},
                      {'flavor_id': '1234'},
                      {'flavor_id': '1234'}]
@@ -117,9 +123,11 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(remote, 'create_nova_client')
-    def test_create_volume_no_specified(self,
-                                        mock_client):
+    def test_create_volume_no_specified(self, mock_client, mock_find_all,
+                                        mock_create):
         instances = self.instances
         instances[0]['volume_size'] = None
         flavors = Mock()
@@ -134,11 +142,15 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(remote, 'create_nova_client')
     @patch.object(vertica_api, 'CONF')
     def test_create_storage_specified_with_no_volume_support(self,
                                                              mock_conf,
-                                                             mock_client):
+                                                             mock_client,
+                                                             mock_find_all,
+                                                             mock_create):
         mock_conf.get = Mock(
             return_value=FakeOptGroup(volume_support=False))
         instances = self.instances
@@ -155,11 +167,15 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(remote, 'create_nova_client')
     @patch.object(vertica_api, 'CONF')
     def test_create_storage_not_specified_and_no_ephemeral_flavor(self,
                                                                   mock_conf,
-                                                                  mock_client):
+                                                                  mock_client,
+                                                                  m_find_all,
+                                                                  mock_create):
         class FakeFlavor:
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
@@ -188,8 +204,11 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(DBCluster, 'create')
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(remote, 'create_nova_client')
-    def test_create_volume_not_equal(self, mock_client):
+    def test_create_volume_not_equal(self, mock_client, mock_find_all,
+                                     mock_create):
         instances = self.instances
         instances[0]['volume_size'] = 2
         flavors = Mock()
@@ -204,13 +223,14 @@ class ClusterTest(trove_testtools.TestCase):
                           None
                           )
 
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(inst_models.Instance, 'create')
     @patch.object(DBCluster, 'create')
     @patch.object(task_api, 'load')
     @patch.object(QUOTAS, 'check_quotas')
     @patch.object(remote, 'create_nova_client')
     def test_create(self, mock_client, mock_check_quotas, mock_task_api,
-                    mock_db_create, mock_ins_create):
+                    mock_db_create, mock_ins_create, mock_find_all):
         instances = self.instances
         flavors = Mock()
         mock_client.return_value.flavors = flavors
@@ -224,6 +244,7 @@ class ClusterTest(trove_testtools.TestCase):
             mock_db_create.return_value.id)
         self.assertEqual(3, mock_ins_create.call_count)
 
+    @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(vertica_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')
     @patch.object(DBCluster, 'create')
@@ -232,7 +253,8 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(remote, 'create_nova_client')
     def test_create_with_ephemeral_flavor(self, mock_client, mock_check_quotas,
                                           mock_task_api, mock_db_create,
-                                          mock_ins_create, mock_conf):
+                                          mock_ins_create, mock_conf,
+                                          mock_find_all):
         class FakeFlavor:
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id

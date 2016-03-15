@@ -1155,6 +1155,8 @@ vertica_opts = [
                help='Root controller implementation for Vertica.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('min_ksafety', default=0,
+               help='Minimum k-safety setting permitted for vertica clusters'),
 ]
 
 # DB2

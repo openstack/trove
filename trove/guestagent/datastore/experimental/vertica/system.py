@@ -14,6 +14,10 @@
 from trove.common import utils
 
 ALTER_USER_PASSWORD = "ALTER USER %s IDENTIFIED BY '%s'"
+ADD_DB_TO_NODE = ("/opt/vertica/bin/adminTools -t db_add_node -a"
+                  " %s -d %s -p '%s'")
+REMOVE_DB_FROM_NODE = ("/opt/vertica/bin/adminTools -t db_remove_node -s"
+                       " %s -d %s -i -p '%s'")
 CREATE_DB = ("/opt/vertica/bin/adminTools -t create_db -s"
              " %s -d %s -c %s -D %s -p '%s'")
 CREATE_USER = "CREATE USER %s IDENTIFIED BY '%s'"
@@ -21,7 +25,10 @@ ENABLE_FOR_USER = "ALTER USER %s DEFAULT ROLE %s"
 GRANT_TO_USER = "GRANT %s to %s"
 INSTALL_VERTICA = ("/opt/vertica/sbin/install_vertica -s %s"
                    " -d %s -X -N -S default -r"
-                   " /vertica.deb -L CE -Y --no-system-checks")
+                   " /vertica.deb -L CE -Y --no-system-checks"
+                   " --ignore-aws-instance-type")
+MARK_DESIGN_KSAFE = "SELECT MARK_DESIGN_KSAFE(%s)"
+NODE_STATUS = "SELECT node_state FROM nodes where node_state <> '%s'"
 STOP_DB = "/opt/vertica/bin/adminTools -t stop_db -F -d %s -p '%s'"
 START_DB = "/opt/vertica/bin/adminTools -t start_db -d %s -p '%s'"
 STATUS_ACTIVE_DB = "/opt/vertica/bin/adminTools -t show_active_db"
@@ -33,6 +40,18 @@ SEND_CONF_TO_SERVER = ("rsync -v -e 'ssh -o "
                        "StrictHostKeyChecking=no' --perms --owner --group "
                        "%s %s:%s")
 SSH_KEY_GEN = "ssh-keygen -f %s/.ssh/id_rsa -t rsa -N ''"
+UPDATE_VERTICA = ("/opt/vertica/sbin/update_vertica %s %s "
+                  " -d %s -X -N -S default -r"
+                  " /vertica.deb -L CE -Y --no-system-checks"
+                  " --ignore-aws-instance-type")
+UPDATE_REMOVE = ("/opt/vertica/sbin/update_vertica --remove-hosts %s "
+                 " -d %s -X -N -S default -r"
+                 " /vertica.deb -L CE -Y --no-system-checks"
+                 " --ignore-aws-instance-type")
+UPDATE_ADD = ("/opt/vertica/sbin/update_vertica --add-hosts %s "
+              " -d %s -X -N -S default -r"
+              " /vertica.deb -L CE -Y --no-system-checks"
+              " --ignore-aws-instance-type")
 USER_EXISTS = ("/opt/vertica/bin/vsql -w '%s' -c "
                "\"select 1 from users where user_name = '%s'\" "
                "| grep row | awk '{print $1}' | cut -c2-")
