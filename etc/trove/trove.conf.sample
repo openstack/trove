@@ -262,35 +262,54 @@ api_strategy = trove.common.strategies.cluster.experimental.vertica.api.VerticaA
 [cors]
 
 #
-# Options defined in oslo_middleware.cors.CORS.
-# This entire section is optional.
+# From oslo.middleware.cors
 #
 
-# The default protocol, domain, and port from which HTTP requests are
-# permitted.
-# allowed_origin=https://localhost:443
+# Indicate whether this resource may be shared with the domain received in the
+# requests "origin" header. (list value)
+#allowed_origin = <None>
 
-# Whether to permit credential headers on CORS requests.
-# allow_credentials = True
+# Indicate that the actual request can include user credentials (boolean value)
+#allow_credentials = true
 
-# CORS preflight responses may be cached. This setting allows you to tell the
-# client how many seconds that cache should persist.
-# max_age=3600
+# Indicate which headers are safe to expose to the API. Defaults to HTTP Simple
+# Headers. (list value)
+#expose_headers = X-Auth-Token, X-Subject-Token, X-Service-Token, X-OpenStack-Request-ID
 
-# The list of HTTP methods which clients may access. These may be overridden by
-# the software itself.
-# allow_methods=GET,POST,PUT,DELETE,PATCH
+# Maximum cache age of CORS preflight requests. (integer value)
+#max_age = 3600
 
-# The default list of headers each CORS client may access.
-# allow_headers=X-Custom-Header
+# Indicate which methods can be used during the actual request. (list value)
+#allow_methods = GET,PUT,POST,DELETE,PATCH
 
-# The default list of headers exposed on each CORS request. To allow proper
-# microversion detection, please ensure that the 'X-OpenStack-Ironic-API-Version
-# header is included in this list.
-# expose_headers=X-Custom-Header
+# Indicate which header field names may be used during the actual request.
+# (list value)
+#allow_headers = X-Auth-Token, X-Identity-Status, X-Roles, X-Service-Catalog, X-User-Id, X-Tenant-Id, X-OpenStack-Request-ID
 
-[cors.optional]
 
-# An additional domain from which CORS requests are permitted, which defaults
-# to settings set above.
-# allowed_origin=https://otherhost:443
+[cors.subdomain]
+
+#
+# From oslo.middleware.cors
+#
+
+# Indicate whether this resource may be shared with the domain received in the
+# requests "origin" header. (list value)
+#allowed_origin = <None>
+
+# Indicate that the actual request can include user credentials (boolean value)
+#allow_credentials = true
+
+# Indicate which headers are safe to expose to the API. Defaults to HTTP Simple
+# Headers. (list value)
+#expose_headers = X-Auth-Token, X-Subject-Token, X-Service-Token, X-OpenStack-Request-ID
+
+# Maximum cache age of CORS preflight requests. (integer value)
+#max_age = 3600
+
+# Indicate which methods can be used during the actual request. (list value)
+#allow_methods = GET,PUT,POST,DELETE,PATCH
+
+# Indicate which header field names may be used during the actual request.
+# (list value)
+#allow_headers = X-Auth-Token, X-Identity-Status, X-Roles, X-Service-Catalog, X-User-Id, X-Tenant-Id, X-OpenStack-Request-ID

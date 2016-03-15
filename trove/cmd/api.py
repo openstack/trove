@@ -19,7 +19,10 @@ from trove.common import profile
 
 @with_initialize
 def main(CONF):
+    from trove.common import cfg
     from trove.common import wsgi
+
+    cfg.set_api_config_defaults()
     profile.setup_profiler('api', CONF.host)
     conf_file = CONF.find_file(CONF.api_paste_config)
     workers = CONF.trove_api_workers or processutils.get_worker_count()
