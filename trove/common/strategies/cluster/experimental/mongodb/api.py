@@ -339,23 +339,23 @@ class MongoDbCluster(models.Cluster):
         target_ids = set(instance_ids)
         target_member_ids = target_ids.intersection(all_member_ids)
         target_query_router_ids = target_ids.intersection(all_query_router_ids)
-        other_ids = target_ids.difference(
+        target_configsvr_ids = target_ids.difference(
             target_member_ids.union(target_query_router_ids)
         )
-        if other_ids:
-            raise exception.TroveError(
-                _('Instances %s cannot be deleted. MongoDB cluster shink only '
-                  'supports removing replicas and query routers.')
-                % list(other_ids)
+        if target_configsvr_ids:
+            raise exception.ClusterShrinkInstanceInUse(
+                id=list(target_configsvr_ids),
+                reason="Cannot remove config servers."
             )
 
         remaining_query_router_ids = all_query_router_ids.difference(
             target_query_router_ids
         )
         if len(remaining_query_router_ids) < 1:
-            raise exception.TroveError(
-                _('Cannot delete all remaining query routers. At least one '
-                  'query router must be available in the cluster.')
+            raise exception.ClusterShrinkInstanceInUse(
+                id=list(target_query_router_ids),
+                reason="Cannot remove all remaining query routers. At least "
+                       "one query router must be available in the cluster."
             )
 
         if target_member_ids:

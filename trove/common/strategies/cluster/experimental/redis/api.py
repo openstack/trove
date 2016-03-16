@@ -20,8 +20,6 @@ from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
-from trove.common.exception import TroveError
-from trove.common.i18n import _
 from trove.common import remote
 from trove.common.strategies.cluster import base
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
@@ -162,11 +160,19 @@ class RedisCluster(models.Cluster):
         try:
             removal_insts = [inst_models.Instance.load(self.context, inst_id)
                              for inst_id in removal_ids]
-            node_ids = [Cluster.get_guest(instance).get_node_id_for_removal()
-                        for instance in removal_insts]
-            if None in node_ids:
-                raise TroveError(_("Some nodes cannot be removed (check slots)"
-                                   ))
+            node_ids = []
+            error_ids = []
+            for instance in removal_insts:
+                node_id = Cluster.get_guest(instance).get_node_id_for_removal()
+                if node_id:
+                    node_ids.append(node_id)
+                else:
+                    error_ids.append(instance.id)
+            if error_ids:
+                raise exception.ClusterShrinkInstanceInUse(
+                    id=error_ids,
+                    reason="Nodes cannot be removed. Check slots."
+                )
 
             all_instances = (
                 inst_models.DBInstance.find_all(cluster_id=self.id,
