@@ -11,8 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import re
+
 from trove.common import utils
 
+ALTER_DB_CFG = "ALTER DATABASE %s SET %s = %s"
+ALTER_DB_RESET_CFG = "ALTER DATABASE %s CLEAR %s"
 ALTER_USER_PASSWORD = "ALTER USER %s IDENTIFIED BY '%s'"
 ADD_DB_TO_NODE = ("/opt/vertica/bin/adminTools -t db_add_node -a"
                   " %s -d %s -p '%s'")
@@ -55,6 +59,8 @@ UPDATE_ADD = ("/opt/vertica/sbin/update_vertica --add-hosts %s "
 USER_EXISTS = ("/opt/vertica/bin/vsql -w '%s' -c "
                "\"select 1 from users where user_name = '%s'\" "
                "| grep row | awk '{print $1}' | cut -c2-")
+VERTICA_ADMIN = "dbadmin"
+VERTICA_ADMIN_GRP = "verticadba"
 VERTICA_AGENT_SERVICE_COMMAND = "service vertica_agent %s"
 VERTICA_CONF = "/etc/vertica.cnf"
 INSTALL_TIMEOUT = 1000
@@ -83,7 +89,32 @@ def shell_execute(command, command_executor="root"):
                          % command)
 
 
+class VSqlError(object):
+    def __init__(self, stderr):
+        """Parse the stderr part of the VSql output.
+        stderr looks like: "ERROR 3117: Division by zero"
+        :param stderr:  string from executing statement via vsql
+        """
+        parse = re.match("^(ERROR|WARNING) (\d+): (.+)$", stderr)
+        if not parse:
+            raise ValueError("VSql stderr %(msg)s not recognized."
+                             % {'msg': stderr})
+        self.type = parse.group(1)
+        self.code = int(parse.group(2))
+        self.msg = parse.group(3)
+
+    def is_warning(self):
+        return bool(self.type == "WARNING")
+
+    def __str__(self):
+        return "Vertica %s (%s): %s" % (self.type, self.code, self.msg)
+
+
 def exec_vsql_command(dbadmin_password, command):
     """Executes a VSQL command with the given dbadmin password."""
-    return shell_execute("/opt/vertica/bin/vsql -w \'%s\' -c \"%s\""
-                         % (dbadmin_password, command), "dbadmin")
+    out, err = shell_execute("/opt/vertica/bin/vsql -w \'%s\' -c \"%s\""
+                             % (dbadmin_password, command),
+                             VERTICA_ADMIN)
+    if err:
+        err = VSqlError(err)
+    return out, err

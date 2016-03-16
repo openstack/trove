@@ -73,3 +73,14 @@ class CassandraConfParser(object):
 
     def parse(self):
         return self.CODEC.deserialize(self.config).items()
+
+
+class VerticaConfParser(object):
+
+    CODEC = stream_codecs.PropertiesCodec(delimiter='=')
+
+    def __init__(self, config):
+        self.config = config
+
+    def parse(self):
+        return self.CODEC.deserialize(self.config).items()

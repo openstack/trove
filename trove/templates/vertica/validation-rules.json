@@ -1,0 +1,1390 @@
+{
+    "configuration-parameters": [
+        {
+            "description": "No of active partitions",
+            "type": "integer",
+            "name": "ActivePartitionCount",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between collection of nodes' addresses (seconds)",
+            "type": "integer",
+            "name": "AddressCollectorInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between advancing the AHM (seconds)",
+            "type": "integer",
+            "name": "AdvanceAHMInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Consider backup epochs when setting new AHM",
+            "type": "integer",
+            "name": "AHMBackupManagement",
+            "restart_required": false
+        },
+        {
+            "description": "Allow names containing non-ASCII UTF-8 characters",
+            "type": "integer",
+            "name": "AllowNonAsciiNames",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between Tuple Mover row count statistics updates (seconds)",
+            "type": "integer",
+            "name": "AnalyzeRowCountInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum number of columns to analyze with each analyze stats plan",
+            "type": "integer",
+            "name": "AnalyzeStatsPlanMaxColumns",
+            "restart_required": false
+        },
+        {
+            "description": "Number of sampling bands to use when not using entire data set.",
+            "type": "integer",
+            "name": "AnalyzeStatsSampleBands",
+            "restart_required": false
+        },
+        {
+            "description": "ARC will commit only if the change is more than the percentage specified",
+            "type": "integer",
+            "name": "ARCCommitPercentage",
+            "restart_required": false
+        },
+        {
+            "description": "The confidence level at which to run audits of license size utilization. Represent 99.5% as 99.5.",
+            "type": "integer",
+            "name": "AuditConfidenceLevel",
+            "restart_required": false
+        },
+        {
+            "description": "The error tolerance for audits of license size utilization. Represent 4.5% as 4.5.",
+            "type": "integer",
+            "name": "AuditErrorTolerance",
+            "restart_required": false
+        },
+        {
+            "description": "Use as recommended by Technical Support",
+            "type": "integer",
+            "name": "BasicVerticaOptions",
+            "restart_required": false
+        },
+        {
+            "description": "size of memory managed by memory manager (in MB)",
+            "type": "integer",
+            "name": "BlockCacheSize",
+            "restart_required": true
+        },
+        {
+            "description": "Buffer query output to allow possible retry of the query. Values allowed: 0(never buffer), 1(always buffer), 2(default: vertica decides before query begins executing to buffer based on certain criteria)",
+            "type": "integer",
+            "name": "BufferQueryOutputForPossibleRetry",
+            "restart_required": false
+        },
+        {
+            "description": "If set to 1, position index will be cached",
+            "type": "integer",
+            "name": "CachePositionIndex",
+            "restart_required": true
+        },
+        {
+            "description": "If true, cascade to a target resource pool will always lead to replanning the query on the target pool",
+            "type": "integer",
+            "name": "CascadeResourcePoolAlwaysReplan",
+            "restart_required": false
+        },
+        {
+            "description": "Split catalog checkpoint into chunks of approximately this size",
+            "type": "integer",
+            "name": "CatalogCheckpointChunkSizeKB",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum transaction log size before a new catalog checkpoint is created",
+            "type": "integer",
+            "name": "CatalogCheckpointMinLogSizeKB",
+            "restart_required": false
+        },
+        {
+            "description": "Transaction log size must be at least this fraction of the checkpoint size before a new catalog checkpoint is created",
+            "type": "integer",
+            "name": "CatalogCheckpointPercent",
+            "restart_required": false
+        },
+        {
+            "description": "Rename storage files during final cleanup upon removal from the catalog",
+            "type": "integer",
+            "name": "CatalogDeindexRename",
+            "restart_required": false
+        },
+        {
+            "description": "Check data integrity using CRCs (should be enabled unless performance is adversely impacted",
+            "type": "integer",
+            "name": "CheckCRCs",
+            "restart_required": false
+        },
+        {
+            "description": "Check data sortedness before writing to ROS",
+            "type": "integer",
+            "name": "CheckDataTargetSortOrder",
+            "restart_required": false
+        },
+        {
+            "description": "Seconds to wait for 'late' nodes to finish recovery actions and proceed with the cluster",
+            "type": "integer",
+            "name": "ClusterRecoveryWait",
+            "restart_required": false
+        },
+        {
+            "description": "The collation function column width is 4 plus its data column width times CollationExpansion octets",
+            "type": "integer",
+            "name": "CollationExpansion",
+            "restart_required": false
+        },
+        {
+            "description": "Catalog compression (0: off, 1: chkpt+systxnlogs, 2: chkpt+txnlogs)",
+            "type": "integer",
+            "name": "CompressCatalogOnDisk",
+            "restart_required": true
+        },
+        {
+            "description": "When enabled, control traffic will be compressed",
+            "type": "integer",
+            "name": "CompressDistCalls",
+            "restart_required": false
+        },
+        {
+            "description": "When enabled, data traffic will be compressed; this reduces data bandwidth at a cost of CPU time",
+            "type": "integer",
+            "name": "CompressNetworkData",
+            "restart_required": false
+        },
+        {
+            "description": "Compute APPROXCOUNTDISTINCTs when analyzing statistics. Default is false",
+            "type": "integer",
+            "name": "ComputeApproxNDVsDuringAnalyzeStats",
+            "restart_required": false
+        },
+        {
+            "description": "Number of ROS containers that are allowed before new ROSs are prevented (ROS pushback)",
+            "type": "integer",
+            "name": "ContainersPerProjectionLimit",
+            "restart_required": false
+        },
+        {
+            "description": "When doing a COPY FROM VERTICA without an explicit columns list, include IDENTITY columns in the implicit list",
+            "type": "integer",
+            "name": "CopyFromVerticaWithIdentity",
+            "restart_required": false
+        },
+        {
+            "description": "Time interval in seconds after which a node sends a heartbeat (Set to 0 to disable.)",
+            "type": "integer",
+            "name": "DatabaseHeartbeatInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Number of rows to be sampled for correlation analysis during DBD design. Default: 4500",
+            "type": "integer",
+            "name": "DBDCorrelationSampleRowCount",
+            "restart_required": false
+        },
+        {
+            "description": "Percentage of rows to be sampled for correlation analysis during DBD design. Default: 0 Use DBDCorrelationSampleRowCount",
+            "type": "integer",
+            "name": "DBDCorrelationSampleRowPct",
+            "restart_required": false
+        },
+        {
+            "description": "Number of rows to be sampled for count distinct analysis during DBD design. Default: 0 Use DBDCountDistinctSampleRowPct",
+            "type": "integer",
+            "name": "DBDCountDistinctSampleRowCount",
+            "restart_required": false
+        },
+        {
+            "description": "Percentage of rows to be sampled for count distinct analysis during DBD design. Default: 100",
+            "type": "integer",
+            "name": "DBDCountDistinctSampleRowPct",
+            "restart_required": false
+        },
+        {
+            "description": "Concurrency setting for the deployment/rebalance process in the DBD. Default: 0",
+            "type": "integer",
+            "name": "DBDDeploymentParallelism",
+            "restart_required": false
+        },
+        {
+            "description": "Dynamic sampling scheme to be used for encoding analysis during DBD design. Default: true",
+            "type": "integer",
+            "name": "DBDDynamicSampling",
+            "restart_required": false
+        },
+        {
+            "description": "Number of rows to be sampled for encoding analysis during DBD design. Default: 1000000",
+            "type": "integer",
+            "name": "DBDEncodingSampleRowCount",
+            "restart_required": false
+        },
+        {
+            "description": "Percentage of rows to be sampled for encoding analysis during DBD design. Default: 0 Use DBDEncodingSampleRowCount",
+            "type": "integer",
+            "name": "DBDEncodingSampleRowPct",
+            "restart_required": false
+        },
+        {
+            "description": "Number of minimum rows expected in Fact Table, default 1M rows",
+            "type": "integer",
+            "name": "DBDLargestTableRowCountBoundary",
+            "restart_required": false
+        },
+        {
+            "description": "Log internal DBD design process in DC tables. Default: false DC logging of design process is turned OFF by default",
+            "type": "integer",
+            "name": "DBDLogInternalDesignProcess",
+            "restart_required": false
+        },
+        {
+            "description": "Concurrency setting for the parallelism in the Storage Optimization phase of Database Designer. Default: 0",
+            "type": "integer",
+            "name": "DBDMaxConcurrencyForEncodingExperiment",
+            "restart_required": false
+        },
+        {
+            "description": "If the largest fact table has more than <DBDLargestTableRowCountBoundary> rows, then use this percentage off the largest fact table to define the number of rows below which a table should be replicated Default: 1%",
+            "type": "integer",
+            "name": "DBDRepLargeRowCountPct",
+            "restart_required": false
+        },
+        {
+            "description": "If the largest fact table has less than <DBDLargestTableRowCountBoundary> rows, then use this percentage off the largest fact table to define the number of rows below which a table should be replicated Default: 10%",
+            "type": "integer",
+            "name": "DBDRepSmallRowCountPct",
+            "restart_required": false
+        },
+        {
+            "description": "Number of bands sampled using Dynamic Sampling Algorithm. Default: 100",
+            "type": "integer",
+            "name": "DBDSampleStorageBandCount",
+            "restart_required": false
+        },
+        {
+            "description": "Number of rows to be sampled for segmentation skew analysis during DBD design. Default: 8000",
+            "type": "integer",
+            "name": "DBDSkewDetectionSampleRowCount",
+            "restart_required": false
+        },
+        {
+            "description": "Percentage of rows to be sampled for segmentation skew analysis during DBD design. Default: 0 Use DBDSkewDetectionSampleRowCount",
+            "type": "integer",
+            "name": "DBDSkewDetectionSampleRowPct",
+            "restart_required": false
+        },
+        {
+            "description": "Determines source for resource allocation during a designer invocation. Default: false Uses user's resource pool",
+            "type": "integer",
+            "name": "DBDUseOnlyDesignerResourcePool",
+            "restart_required": false
+        },
+        {
+            "description": "Default setting for intervalstyle; 1 is UNITS; 0 is PLAIN and conforms to standard SQL",
+            "type": "integer",
+            "name": "DefaultIntervalStyle",
+            "restart_required": false
+        },
+        {
+            "description": "Defines the default session startup Locale for the database",
+            "type": "string",
+            "name": "DefaultSessionLocale",
+            "restart_required": false
+        },
+        {
+            "description": "Disable schema-level privileges on tables.",
+            "type": "integer",
+            "name": "DisableInheritedPrivileges",
+            "restart_required": false
+        },
+        {
+            "description": "Set to disable local resegmentation",
+            "type": "integer",
+            "name": "DisableLocalResegmentation",
+            "restart_required": false
+        },
+        {
+            "description": "If \u2018false\u2019, the optimizer randomly chooses nodes to do the work of any down nodes",
+            "type": "integer",
+            "name": "DisableNodeDownOptimization",
+            "restart_required": false
+        },
+        {
+            "description": "Do not allow creating prejoin projections",
+            "type": "integer",
+            "name": "DisablePrejoinProjections",
+            "restart_required": false
+        },
+        {
+            "description": "Disallow the MultipleActiveResultSets (MARS) feature to be enabled",
+            "type": "integer",
+            "name": "DisallowMars",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between disk space polls (for disk resource management) (seconds)",
+            "type": "integer",
+            "name": "DiskSpacePollingInterval",
+            "restart_required": true
+        },
+        {
+            "description": "Enable DMLs to cancel conflicting TM tasks to acquire lock",
+            "type": "integer",
+            "name": "DMLCancelTM",
+            "restart_required": false
+        },
+        {
+            "description": "Use as recommended by Technical Support",
+            "type": "integer",
+            "name": "EEVerticaOptions",
+            "restart_required": false
+        },
+        {
+            "description": "Enables Access Policy feature",
+            "type": "integer",
+            "name": "EnableAccessPolicy",
+            "restart_required": false
+        },
+        {
+            "description": "Enable all granted roles on login",
+            "type": "integer",
+            "name": "EnableAllRolesOnLogin",
+            "restart_required": false
+        },
+        {
+            "description": "If true and apportionable source/parser are defined for the load, input may get split into multiple parts (portions) and loaded by multiple threads/servers in parallel",
+            "type": "integer",
+            "name": "EnableApportionLoad",
+            "restart_required": false
+        },
+        {
+            "description": "Turn on/off the automatic update row count, min and max when DML queries are run",
+            "type": "integer",
+            "name": "EnableAutoDMLStats",
+            "restart_required": false
+        },
+        {
+            "description": "A value of 1 enables block memory manager or 0 disables memory manager",
+            "type": "integer",
+            "name": "EnableBlockMemoryManager",
+            "restart_required": true
+        },
+        {
+            "description": "If true and a chunker is defined for the corresponding parser multiple parse threads can cooperate to parse the output of a single source",
+            "type": "integer",
+            "name": "EnableCooperativeParse",
+            "restart_required": false
+        },
+        {
+            "description": "Enable the usage data collector",
+            "type": "integer",
+            "name": "EnableDataCollector",
+            "restart_required": false
+        },
+        {
+            "description": "Enabled cipher suites for TLS",
+            "type": "string",
+            "name": "EnabledCipherSuites",
+            "restart_required": true
+        },
+        {
+            "description": "Enable EE Thread Pool to reduce threads used",
+            "type": "integer",
+            "name": "EnableEEThreadPool",
+            "restart_required": false
+        },
+        {
+            "description": "Enable SIPS for early materialized merge join, on multi-block inners",
+            "type": "integer",
+            "name": "EnableEMMJMultiblockSIPS",
+            "restart_required": false
+        },
+        {
+            "description": "Allow expression results to be materialized as projection columns",
+            "type": "integer",
+            "name": "EnableExprsInProjections",
+            "restart_required": false
+        },
+        {
+            "description": "allow user-specified force outer rule",
+            "type": "integer",
+            "name": "EnableForceOuter",
+            "restart_required": false
+        },
+        {
+            "description": "Allow aggregate projections using GROUP BY",
+            "type": "integer",
+            "name": "EnableGroupByProjections",
+            "restart_required": false
+        },
+        {
+            "description": "Enable JIT compilation optimizations",
+            "type": "integer",
+            "name": "EnableJIT",
+            "restart_required": false
+        },
+        {
+            "description": "Determines whether new primary key constraints will be enabled by default",
+            "type": "integer",
+            "name": "EnableNewPrimaryKeysByDefault",
+            "restart_required": false
+        },
+        {
+            "description": "Determines whether new unique key constraints will be enabled by default",
+            "type": "integer",
+            "name": "EnableNewUniqueKeysByDefault",
+            "restart_required": false
+        },
+        {
+            "description": "Enable Parallel Hash build to improve join performance",
+            "type": "integer",
+            "name": "EnableParallelHashBuild",
+            "restart_required": false
+        },
+        {
+            "description": "Enable Parallel Sort to improve sort performance",
+            "type": "integer",
+            "name": "EnableParallelSort",
+            "restart_required": false
+        },
+        {
+            "description": "0 if the special ANY_ROW event for pattern matching is not enabled. Otherwise it is enabled.",
+            "type": "integer",
+            "name": "EnablePatternMatchingAnyRow",
+            "restart_required": false
+        },
+        {
+            "description": "Enable Plan Stability Feature",
+            "type": "integer",
+            "name": "EnablePlanStability",
+            "restart_required": false
+        },
+        {
+            "description": "Execute active directed queries in Plan Stability Store",
+            "type": "integer",
+            "name": "EnablePlanStabilityLookup",
+            "restart_required": false
+        },
+        {
+            "description": "Query threads can be restricted to executing on specific CPUs via session resource pool attributes",
+            "type": "integer",
+            "name": "EnableResourcePoolCPUAffinity",
+            "restart_required": false
+        },
+        {
+            "description": "Enable runtime task priority scheduler to allow high priority queries to use more CPU time and IO bandwidth",
+            "type": "integer",
+            "name": "EnableRuntimePriorityScheduler",
+            "restart_required": false
+        },
+        {
+            "description": "Enable SSL for the server",
+            "type": "integer",
+            "name": "EnableSSL",
+            "restart_required": true
+        },
+        {
+            "description": "Enable bundling data files along with their index files. Also MaxBundleableROSSizeKB is effective when this is enabled.",
+            "type": "integer",
+            "name": "EnableStorageBundling",
+            "restart_required": false
+        },
+        {
+            "description": "Force casts from varchar to Time,TimeTz,Timestamp,TimestampTz,Interval to error instead of returning null",
+            "type": "integer",
+            "name": "EnableStrictTimeCasts",
+            "restart_required": false
+        },
+        {
+            "description": "Allow aggregate projections using Top K / LIMIT",
+            "type": "integer",
+            "name": "EnableTopKProjections",
+            "restart_required": false
+        },
+        {
+            "description": "Allow aggregate projections using UDTransforms",
+            "type": "integer",
+            "name": "EnableUDTProjections",
+            "restart_required": false
+        },
+        {
+            "description": "Enable optimizations based on guarantee of uniqueness",
+            "type": "integer",
+            "name": "EnableUniquenessOptimization",
+            "restart_required": false
+        },
+        {
+            "description": "If set to 1 total threads will be equal to number of virtual processors else thread will be set to total real core",
+            "type": "integer",
+            "name": "EnableVirtualCoreCount",
+            "restart_required": false
+        },
+        {
+            "description": "Granularity of time to epoch mapping (seconds)",
+            "type": "integer",
+            "name": "EpochMapInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Warn of strings which use backslash quoting; using an E'...' escape string will avoid this warning",
+            "type": "integer",
+            "name": "EscapeStringWarning",
+            "restart_required": false
+        },
+        {
+            "description": "The number of bands or clusters to form when taking samples while executing evaluating_delete_performance().",
+            "type": "integer",
+            "name": "EvaluateDeletePerformanceSampleStorageBandCount",
+            "restart_required": false
+        },
+        {
+            "description": "The number of samples to take while executing evaluating_delete_performance().",
+            "type": "integer",
+            "name": "EvaluateDeletePerformanceSampleStorageCount",
+            "restart_required": false
+        },
+        {
+            "description": "Exclude ephemeral nodes in SELECT queries. Default is false",
+            "type": "integer",
+            "name": "ExcludeEphemeralNodesInQueries",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum number of rejected/exceptions records that will be written while querying an external table. Default: 100, Unlimited: -1",
+            "type": "integer",
+            "name": "ExternalTablesExceptionsLimit",
+            "restart_required": false
+        },
+        {
+            "description": "Time interval to wait before replacing a DOWN node with a STANDBY node",
+            "type": "integer",
+            "name": "FailoverToStandbyAfter",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum memory (in MB) for each UDx side process",
+            "type": "string",
+            "name": "FencedUDxMemoryLimitMB",
+            "restart_required": false
+        },
+        {
+            "description": "Number of files (per projection) that are allowed before new ROSs are prevented (ROS pushback)",
+            "type": "integer",
+            "name": "FilesPerProjectionLimit",
+            "restart_required": false
+        },
+        {
+            "description": "Multiplier to pad the observed length of fields in flex tables when casting them to regular vs long types",
+            "type": "integer",
+            "name": "FlexTableDataTypeGuessMultiplier",
+            "restart_required": false
+        },
+        {
+            "description": "Default size of __raw__ column in flex tables",
+            "type": "integer",
+            "name": "FlexTableRawSize",
+            "restart_required": false
+        },
+        {
+            "description": "Force all UDx's to run in fenced mode",
+            "type": "integer",
+            "name": "ForceUDxFencedMode",
+            "restart_required": false
+        },
+        {
+            "description": "Ensure catalog durable on disk after each commit",
+            "type": "integer",
+            "name": "FsyncCatalogForLuck",
+            "restart_required": false
+        },
+        {
+            "description": "Call fsync after each data file is written",
+            "type": "integer",
+            "name": "FsyncDataForLuck",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum amount of memory (in megabytes) that can be used by a single GROUP BY",
+            "type": "string",
+            "name": "GBHashMemCapMB",
+            "restart_required": false
+        },
+        {
+            "description": "Enables profiling for all statements at the EE operator level",
+            "type": "integer",
+            "name": "GlobalEEProfiling",
+            "restart_required": false
+        },
+        {
+            "description": "A user who'll inherit objects of dropped users. Should be unset (blank) by default (opt-in)",
+            "type": "string",
+            "name": "GlobalHeirUsername",
+            "restart_required": false
+        },
+        {
+            "description": "Enables profiling for all statements",
+            "type": "integer",
+            "name": "GlobalQueryProfiling",
+            "restart_required": false
+        },
+        {
+            "description": "Enables profiling for all sessions",
+            "type": "integer",
+            "name": "GlobalSessionProfiling",
+            "restart_required": false
+        },
+        {
+            "description": "When enabled, the hash prepass mode of the EE GroupGenerator operator will be used",
+            "type": "integer",
+            "name": "GroupGeneratorHashingEnabled",
+            "restart_required": false
+        },
+        {
+            "description": "Amount of time in seconds waiting for connection to WebHCat before abort",
+            "type": "integer",
+            "name": "HCatConnectionTimeout",
+            "restart_required": false
+        },
+        {
+            "description": "Name of the HCatalog User Defined Parser",
+            "type": "string",
+            "name": "HCatParserName",
+            "restart_required": false
+        },
+        {
+            "description": "Slow transfer in bytes/sec limit lower than which transfer will abort after 'HCatSlowTransferTime' amount of time",
+            "type": "integer",
+            "name": "HCatSlowTransferLimit",
+            "restart_required": false
+        },
+        {
+            "description": "Amount of time allowed for transfer below slow transfer limit before abort",
+            "type": "integer",
+            "name": "HCatSlowTransferTime",
+            "restart_required": false
+        },
+        {
+            "description": "Name of the HCatalog User Defined Source",
+            "type": "string",
+            "name": "HCatSourceName",
+            "restart_required": false
+        },
+        {
+            "description": "Name of the HCatalog webservice, used in constructing a url to query this service",
+            "type": "string",
+            "name": "HCatWebserviceName",
+            "restart_required": false
+        },
+        {
+            "description": "Version of the HCatalog webservice, used in constructing a url to query this service",
+            "type": "string",
+            "name": "HCatWebserviceVersion",
+            "restart_required": false
+        },
+        {
+            "description": "Upper bound on the number of epochs kept in the epoch map",
+            "type": "integer",
+            "name": "HistoryRetentionEpochs",
+            "restart_required": false
+        },
+        {
+            "description": "Number of seconds of epochs kept in the epoch map (seconds)",
+            "type": "integer",
+            "name": "HistoryRetentionTime",
+            "restart_required": false
+        },
+        {
+            "description": "Path to the java binary for executing UDx written in Java",
+            "type": "string",
+            "name": "JavaBinaryForUDx",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum heap size (in MB) for Java UDx side process",
+            "type": "integer",
+            "name": "JavaSideProcessMinHeapSizeMB",
+            "restart_required": false
+        },
+        {
+            "description": "Keep ROS Min/Max values on all columns. Enables some optimizations, at a cost of catalog space.",
+            "type": "integer",
+            "name": "KeepMinMaxOnAllColumns",
+            "restart_required": false
+        },
+        {
+            "description": "SNMP event when the LGE for the node lags more than LGELagThreshold seconds behind the last epoch close time",
+            "type": "integer",
+            "name": "LGELagThreshold",
+            "restart_required": false
+        },
+        {
+            "description": "Controls the maximum ROS output in data load; Negative and zero will be considerred as 1.",
+            "type": "integer",
+            "name": "LoadMaxFinalROSCount",
+            "restart_required": false
+        },
+        {
+            "description": "Time to wait for a table lock before giving up (seconds)",
+            "type": "integer",
+            "name": "LockTimeout",
+            "restart_required": false
+        },
+        {
+            "description": "Interval (in seconds) at which heartbeat messsages are sent to vertica.log. (Set to 0 to disable.)",
+            "type": "integer",
+            "name": "LogHeartbeatInterval",
+            "restart_required": false
+        },
+        {
+            "description": "SNMP event LowDiskSpace is raised when disk utilization exceeds this percentage",
+            "type": "integer",
+            "name": "LowDiskSpaceWarningPct",
+            "restart_required": false
+        },
+        {
+            "description": "Max number of columns used in auto projection segmentation expression (0 is to use all columns)",
+            "type": "integer",
+            "name": "MaxAutoSegColumns",
+            "restart_required": false
+        },
+        {
+            "description": "ROS files which are smaller than this size (KB) are selected for bundling. '0' means bundling of separate ROS's is disabled, though pidx and fdb files of an individual ROS will be bundled if EnableStorageBundling is set. Maximum allowed size is 1024 (1048576 bytes)",
+            "type": "integer",
+            "name": "MaxBundleableROSSizeKB",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum number of client sessions; in addition five dbadmin sessions are allowed",
+            "type": "integer",
+            "name": "MaxClientSessions",
+            "restart_required": false
+        },
+        {
+            "description": "Defines the no. of constraint violation checks per internal query in analyze_constraints(). Default is -1",
+            "type": "integer",
+            "name": "MaxConstraintChecksPerQuery",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum file size for Data Collector logs in KB",
+            "type": "integer",
+            "name": "MaxDataCollectorFileSize",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum desired size of an EE block (used to move tuples between operators), actual block size be larger (must have capacity for at least 2 rows)",
+            "type": "integer",
+            "name": "MaxDesiredEEBlockSize",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum number of DVROSes attached to a single ROS container once reached dv merge out happens",
+            "type": "integer",
+            "name": "MaxDVROSPerContainer",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum length of individual lines (entries) in the vertica.log log file. Longer lines are truncated. '0' means no limit.",
+            "type": "integer",
+            "name": "MaxLogLineLength",
+            "restart_required": false
+        },
+        {
+            "description": "The max ROS size in MB a merge out job can produce",
+            "type": "integer",
+            "name": "MaxMrgOutROSSizeMB",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum amount of memory used by the Optimizer; Increasing this value may help with 'Optimizer memory use exceeds allowed limit' errors (MB)",
+            "type": "integer",
+            "name": "MaxOptMemMB",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum amount of memory used by the Optimizer in the context of DBD; Increasing this value may help with 'Run Database Designer with more memory or increase Database Designer memory usage limit' errors (MB)",
+            "type": "integer",
+            "name": "MaxOptMemMBInDBD",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum amount of memory allowed for parsing a single request; Increasing this value may help with 'Request size too big' errors (MB)",
+            "type": "integer",
+            "name": "MaxParsedQuerySizeMB",
+            "restart_required": false
+        },
+        {
+            "description": "Max no of partitions per projection",
+            "type": "integer",
+            "name": "MaxPartitionCount",
+            "restart_required": false
+        },
+        {
+            "description": "The number of times the system might try to re-run a query if the first run does not succeed.",
+            "type": "integer",
+            "name": "MaxQueryRetries",
+            "restart_required": false
+        },
+        {
+            "description": "# of failed attempts before recovery gives up",
+            "type": "integer",
+            "name": "MaxRecoverErrors",
+            "restart_required": true
+        },
+        {
+            "description": "Maximum number of historic passes made by Recovery before moving to the current pass where locks are taken",
+            "type": "integer",
+            "name": "MaxRecoverHistoricPasses",
+            "restart_required": true
+        },
+        {
+            "description": "# of failed attempts before refresh gives up",
+            "type": "integer",
+            "name": "MaxRefreshErrors",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum number of historic passes made by Refresh before moving to the current pass where locks are taken",
+            "type": "integer",
+            "name": "MaxRefreshHistoricPasses",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum of number of ROSes in a stratum once reached merge out happens",
+            "type": "integer",
+            "name": "MaxROSPerStratum",
+            "restart_required": false
+        },
+        {
+            "description": "Memory to allocate to per-node Merge Join",
+            "type": "integer",
+            "name": "MergeJoinInnerInitialMB",
+            "restart_required": false
+        },
+        {
+            "description": "If set to true cache will be used pick the projection for mergeout",
+            "type": "integer",
+            "name": "MergeOutCache",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between Tuple Mover checks for mergeouts to perform (seconds)",
+            "type": "integer",
+            "name": "MergeOutInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum free before catalog writes are refused (MB) (Default(-1) is 1GB or 2% free)",
+            "type": "integer",
+            "name": "MinimumCatalogDiskMegabytes",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum free before column data writes are refused (MB) (Default(-1) is 4GB or 5% free)",
+            "type": "integer",
+            "name": "MinimumDataDiskMegabytes",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum free before temp data writes are refused (MB) (Default(-1) is 8GB or 10% free)",
+            "type": "integer",
+            "name": "MinimumDataDiskTempMegabytes",
+            "restart_required": false
+        },
+        {
+            "description": "Minimum size of the inner input to a join that will trigger the Optimizer to attempt a sort merge join (MB)",
+            "type": "integer",
+            "name": "MinSortMergeJoinMB",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between Tuple Mover checks for moveouts to perform (seconds)",
+            "type": "integer",
+            "name": "MoveOutInterval",
+            "restart_required": false
+        },
+        {
+            "description": "The number of epochs data resides in WOS before the Tuple Mover triggers a moveout based on age",
+            "type": "integer",
+            "name": "MoveOutMaxAgeEpochs",
+            "restart_required": false
+        },
+        {
+            "description": "The amount of time data resides in WOS before the Tuple Mover triggers a moveout based on age (seconds)",
+            "type": "integer",
+            "name": "MoveOutMaxAgeTime",
+            "restart_required": false
+        },
+        {
+            "description": "The amount of WOS used before the Tuple Mover triggers a moveout based on utilization (percent)",
+            "type": "integer",
+            "name": "MoveOutSizePct",
+            "restart_required": false
+        },
+        {
+            "description": "Memory to allocate to per-node Prepass GroupBy Operator",
+            "type": "integer",
+            "name": "NewEEGroupBySmallMemMB",
+            "restart_required": false
+        },
+        {
+            "description": "Number of rows the EE will assign per thread when multiple threads are processing the same large ROS",
+            "type": "integer",
+            "name": "NewEEROSSubdivisionRows",
+            "restart_required": false
+        },
+        {
+            "description": "Number of threads the EE will attempt to use for processing (per plan)",
+            "type": "integer",
+            "name": "NewEEThreads",
+            "restart_required": false
+        },
+        {
+            "description": "Time to wait during shutdown, when auto recovery is not possible",
+            "type": "integer",
+            "name": "NoRecoverShutdownWait",
+            "restart_required": true
+        },
+        {
+            "description": "Use as recommended by Technical Support",
+            "type": "string",
+            "name": "OptVerticaOptions",
+            "restart_required": false
+        },
+        {
+            "description": "If true use a DT per local segment, even when sorting",
+            "type": "integer",
+            "name": "ParallelizeLocalSegmentLoad",
+            "restart_required": false
+        },
+        {
+            "description": "Override the heap memory allocator for PCRE pattern matching library",
+            "type": "integer",
+            "name": "PatternMatchAllocator",
+            "restart_required": true
+        },
+        {
+            "description": "Sets the recursion limit for PCRE used by pattern matching.",
+            "type": "integer",
+            "name": "PatternMatchingMatchLimitRecursion",
+            "restart_required": false
+        },
+        {
+            "description": "The max number of rows per partition for pattern matching",
+            "type": "integer",
+            "name": "PatternMatchingMaxPartition",
+            "restart_required": false
+        },
+        {
+            "description": "The max number of matches per partition for pattern matching",
+            "type": "integer",
+            "name": "PatternMatchingMaxPartitionMatches",
+            "restart_required": false
+        },
+        {
+            "description": "The size of ovector for pcre_exec. Increase if using ANY_ROW and there are many subpattern groupings",
+            "type": "integer",
+            "name": "PatternMatchingPerMatchWorkspaceSize",
+            "restart_required": false
+        },
+        {
+            "description": "Use JIT for PCRE regex matching in queries",
+            "type": "integer",
+            "name": "PatternMatchingUseJit",
+            "restart_required": false
+        },
+        {
+            "description": "Override the stack memory allocator for PCRE pattern matching library",
+            "type": "integer",
+            "name": "PatternMatchStackAllocator",
+            "restart_required": true
+        },
+        {
+            "description": "Pin Vertica to given number of CPUs (-1 = no pin)",
+            "type": "integer",
+            "name": "PinProcessors",
+            "restart_required": true
+        },
+        {
+            "description": "Processor index to start with when pinning processors",
+            "type": "integer",
+            "name": "PinProcessorsOffset",
+            "restart_required": true
+        },
+        {
+            "description": "If set to true, allows creating unsegmented projection using pre-excavator style",
+            "type": "integer",
+            "name": "PreExcavatorReplicatedProjection",
+            "restart_required": false
+        },
+        {
+            "description": "Only load DataCollector records which satisfy time based predicates",
+            "type": "integer",
+            "name": "PruneDataCollectorByTime",
+            "restart_required": false
+        },
+        {
+            "description": "Only load system table columns which participate in the query into SysWOS",
+            "type": "integer",
+            "name": "PruneSystemTableColumns",
+            "restart_required": false
+        },
+        {
+            "description": "Maximum % of rows that may be deleted before Tuple Mover purges the ROS through mergeout",
+            "type": "integer",
+            "name": "PurgeMergeoutPercent",
+            "restart_required": false
+        },
+        {
+            "description": "The max amount of memory MIN/MAX for RANGE moving window can use in MB",
+            "type": "integer",
+            "name": "RangeWindowMaxMem",
+            "restart_required": false
+        },
+        {
+            "description": "Before starting recovery, perform cleanup of deleted files",
+            "type": "integer",
+            "name": "ReapBeforeRecover",
+            "restart_required": true
+        },
+        {
+            "description": "When recovering a projection with an identical buddy from scratch recovery may be able to directly copy storage containers if this feature is enabled",
+            "type": "integer",
+            "name": "RecoverByContainer",
+            "restart_required": false
+        },
+        {
+            "description": "Seconds to wait for dirty transactions before cancelling the session",
+            "type": "integer",
+            "name": "RecoveryDirtyTxnWait",
+            "restart_required": false
+        },
+        {
+            "description": "Trigger moveout automatically on commit of data to WOS",
+            "type": "integer",
+            "name": "ReflexiveMoveout",
+            "restart_required": false
+        },
+        {
+            "description": "When refreshing a projection from an identical buddy refresh may be able to directly copy storage containers if this feature is enabled",
+            "type": "integer",
+            "name": "RefreshByContainer",
+            "restart_required": false
+        },
+        {
+            "description": "Configure the buffer size (in Byte) for remote initiator to cache query result. Value zero will turn off the feature of routing one-executor query plan to remote initator",
+            "type": "integer",
+            "name": "RemoteInitiatorBufSize",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between checking and removing unused database snapshots (seconds)",
+            "type": "integer",
+            "name": "RemoveSnapshotInterval",
+            "restart_required": false
+        },
+        {
+            "description": "Switch Replay Delete to use the new algorithm once runtime scan statistics exceeds the threshold",
+            "type": "integer",
+            "name": "ReplayDeleteAlgorithmSwitchThreshold",
+            "restart_required": false
+        },
+        {
+            "description": "Fraction of total resources that can be assigned to locally initiated requests; the remainder is only used by remote requests",
+            "type": "integer",
+            "name": "ResLowLimPctOfHighLim",
+            "restart_required": true
+        },
+        {
+            "description": "Restrict non-dbadmin users from viewing system-tables",
+            "type": "integer",
+            "name": "RestrictSystemTables",
+            "restart_required": true
+        },
+        {
+            "description": "Number of 64K ROS blocks that may be kept in the decompression cache (default is 4096 blocks; 256MB)",
+            "type": "integer",
+            "name": "ROSCacheBlocks",
+            "restart_required": true
+        },
+        {
+            "description": "Number of large (>64K) ROS blocks that may be kept in the decompression cache (for Grouped ROSs)",
+            "type": "integer",
+            "name": "ROSCacheLargeBlocks",
+            "restart_required": true
+        },
+        {
+            "description": "Maximum of number of ROSes in a stratum once reached merge out happens",
+            "type": "integer",
+            "name": "ROSPerStratum",
+            "restart_required": false
+        },
+        {
+            "description": "Set the query duration threshold in microseconds to save profiling information to the dc_execution_engine_profiles table.",
+            "type": "integer",
+            "name": "SaveDCEEProfileThresholdUS",
+            "restart_required": false
+        },
+        {
+            "description": "NONE (Default) MD5 and SHA512",
+            "type": "string",
+            "name": "SecurityAlgorithm",
+            "restart_required": false
+        },
+        {
+            "description": "Auto projections will always be segmented. Default: true",
+            "type": "integer",
+            "name": "SegmentAutoProjection",
+            "restart_required": false
+        },
+        {
+            "description": "Create range segmentation on node_name for DataCollector tables",
+            "type": "integer",
+            "name": "SegmentDataCollector",
+            "restart_required": false
+        },
+        {
+            "description": "# Days. Delete closed session profiling data when data SessionProfilingAgeOut days old.",
+            "type": "integer",
+            "name": "SessionProfilingAgeOut",
+            "restart_required": false
+        },
+        {
+            "description": "If the average of the rows scanned squared during a delete is higher than this limit, a warning message about the projection is printed to the conole. Disable by setting to -1.",
+            "type": "integer",
+            "name": "SlowDeleteConsoleWarningLimit",
+            "restart_required": false
+        },
+        {
+            "description": "If the average of the rows scanned squared during a delete is higher than this limit, a warning message about the projection is printed to the vertica.log and saved in vs_comments. This limit is also used by evaluate_delete_performance to determine if a projection is likely to have slow delete performance. Disable by setting to -1. Console delete performance warnings will still be printed to log.",
+            "type": "integer",
+            "name": "SlowDeleteSystemWarningLimit",
+            "restart_required": false
+        },
+        {
+            "description": "Size per column below which a ROS is automatically stored grouped (bytes)",
+            "type": "integer",
+            "name": "SmallROSSize",
+            "restart_required": false
+        },
+        {
+            "description": "Least length of time (in seconds) a snapshot has existed for before systemTask tries to remove it",
+            "type": "integer",
+            "name": "SnapshotRetentionTime",
+            "restart_required": false
+        },
+        {
+            "description": "Where Vertica sends SNMP traps - 'host_name port CommunityString'. This is a comma-separated list.",
+            "type": "string",
+            "name": "SnmpTrapDestinationsList",
+            "restart_required": false
+        },
+        {
+            "description": "List of events that Vertica traps: Low Disk Space, Read Only File System, Loss of K Safety, Current Fault Tolerance at Critical Level, Too Many ROS Containers, WOS Over Flow, Node State Change, Recovery Failure, Recovery Error, Recovery Lock Error, Recovery Projection Retrieval Error, Refresh Error, Tuple Mover Error, Stale Checkpoint",
+            "type": "string",
+            "name": "SnmpTrapEvents",
+            "restart_required": false
+        },
+        {
+            "description": "Enable sending of SNMP traps",
+            "type": "integer",
+            "name": "SnmpTrapsEnabled",
+            "restart_required": false
+        },
+        {
+            "description": "SortCheck to generate SortCheck step in plan",
+            "type": "integer",
+            "name": "SortCheckOption",
+            "restart_required": false
+        },
+        {
+            "description": "Report Level for Sort Order violation. default for error. 0 for logging, 1 for error, 2 for panic",
+            "type": "integer",
+            "name": "SortOrderReportLevel",
+            "restart_required": false
+        },
+        {
+            "description": "Controls the number of Sort worker threads; 0 disables background threads",
+            "type": "integer",
+            "name": "SortWorkerThreads",
+            "restart_required": false
+        },
+        {
+            "description": "The server's SSL CA certificate",
+            "type": "string",
+            "name": "SSLCA",
+            "restart_required": true
+        },
+        {
+            "description": "The server's SSL certificate",
+            "type": "string",
+            "name": "SSLCertificate",
+            "restart_required": true
+        },
+        {
+            "description": "The server's SSL private key",
+            "type": "string",
+            "name": "SSLPrivateKey",
+            "restart_required": true
+        },
+        {
+            "description": "Disable backslash quoting in string constants; required to conform to standard SQL",
+            "type": "integer",
+            "name": "StandardConformingStrings",
+            "restart_required": false
+        },
+        {
+            "description": "Sets the behavior to deal with undeclared UDx function parameters",
+            "type": "integer",
+            "name": "StrictUDxParameterChecking",
+            "restart_required": false
+        },
+        {
+            "description": "Enable event trapping for Syslog",
+            "type": "integer",
+            "name": "SyslogEnabled",
+            "restart_required": false
+        },
+        {
+            "description": "Low Disk Space, Read Only File System, Loss of K Safety, Current Fault Tolerance at Critical Level, Too Many ROS Containers, WOS Over Flow, Node State Change, Recovery Failure, Recovery Error, Recovery Lock Error, Recovery Projection Retrieval Error, Refresh Error, Tuple Mover Error, Stale Checkpoint",
+            "type": "string",
+            "name": "SyslogEvents",
+            "restart_required": false
+        },
+        {
+            "description": "auth, uucp, authpriv (Linux only) local0, cron, local1, daemon, local2, ftp (Linux only) local3, lpr, local4, mail, local5, news, local6, user (default system) local7",
+            "type": "string",
+            "name": "SyslogFacility",
+            "restart_required": false
+        },
+        {
+            "description": "Interval between system resource utilization monitoring checks (seconds)",
+            "type": "integer",
+            "name": "SystemMonitorInterval",
+            "restart_required": false
+        },
+        {
+            "description": "A message is logged if a monitored system resource changes by at least SystemMonitorThreshold (percent)",
+            "type": "integer",
+            "name": "SystemMonitorThreshold",
+            "restart_required": false
+        },
+        {
+            "description": "Turn on terraced (multi-level) data network routing if it would reduce stream count by this factor",
+            "type": "integer",
+            "name": "TerraceRoutingFactor",
+            "restart_required": false
+        },
+        {
+            "description": "When updating the index to account for deleted records in the source table, pre-compute the tokens for the deleted records. This takes time, but speeds up the actual deletion.",
+            "type": "integer",
+            "name": "TextIndexComputeDeletedTokens",
+            "restart_required": false
+        },
+        {
+            "description": "Default maximum size of tokens stored for text-indexing. Only affects new indices. Larger values will decrease the performance of the index.",
+            "type": "integer",
+            "name": "TextIndexMaxTokenLength",
+            "restart_required": false
+        },
+        {
+            "description": "The max amount of memory TopK(Heap) can use in MB",
+            "type": "integer",
+            "name": "TopKHeapMaxMem",
+            "restart_required": false
+        },
+        {
+            "description": "READ COMMITTED (Default) - Last epoch for reads and current epoch for writes. SERIALIZABLE - Current epoch for reads and writes",
+            "type": "string",
+            "name": "TransactionIsolationLevel",
+            "restart_required": false
+        },
+        {
+            "description": "Determines whether the transaction is read/write or read-only. Read/write is the default",
+            "type": "string",
+            "name": "TransactionMode",
+            "restart_required": false
+        },
+        {
+            "description": "Trust pk and unique constraint as guarantee of uniqueness",
+            "type": "integer",
+            "name": "TrustConstraintsAsUnique",
+            "restart_required": false
+        },
+        {
+            "description": "Number of seconds to wait for UDx to finish a block of data before give up",
+            "type": "integer",
+            "name": "UDxFencedBlockTimeout",
+            "restart_required": false
+        },
+        {
+            "description": "Number of seconds to wait for UDx to finish cancel related clean up work",
+            "type": "integer",
+            "name": "UDxFencedCancelTimeout",
+            "restart_required": false
+        },
+        {
+            "description": "Number of seconds to wait for external procedures in UDx fenced mode",
+            "type": "integer",
+            "name": "UDxFencedExternalProcedureTimeout",
+            "restart_required": false
+        },
+        {
+            "description": "Optimizer uses modular hash for resegmenting intermediate results.",
+            "type": "integer",
+            "name": "UseModularHashForReseg",
+            "restart_required": false
+        },
+        {
+            "description": "Optimizer only considers redistribution choices which are cost model resilient.",
+            "type": "integer",
+            "name": "UseOnlyResilientRedistribution",
+            "restart_required": false
+        },
+        {
+            "description": "Include virtual table data from recovering nodes in monitoring query results",
+            "type": "integer",
+            "name": "UseRecoveringNodesInVirtualTableQueries",
+            "restart_required": false
+        },
+        {
+            "description": "Use safer decompression scheme to reduce the chance of crashes if disk data has been corrupted",
+            "type": "integer",
+            "name": "UseSafeDecompression",
+            "restart_required": false
+        },
+        {
+            "description": "Use 5.0-style truncating integer division for the '/' operator",
+            "type": "integer",
+            "name": "UseV50IntegerDivision",
+            "restart_required": false
+        },
+        {
+            "description": "Execute the external procedures in the zygote process",
+            "type": "integer",
+            "name": "UseZygoteForExternalProcedures",
+            "restart_required": false
+        },
+        {
+            "description": "Create a log entry each time a client opens a connection and closes it immediately; load balancers often do this for a health check",
+            "type": "integer",
+            "name": "WarnOnIncompleteStartupPacket",
+            "restart_required": false
+        },
+        {
+            "description": "Use materialization strategy to support the WITH clause",
+            "type": "integer",
+            "name": "WithClauseMaterialization",
+            "restart_required": false
+        }
+    ]
+}
