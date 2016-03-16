@@ -34,7 +34,7 @@ from trove.guestagent.datastore import service
 from trove.guestagent import pkg
 
 LOG = logging.getLogger(__name__)
-TIME_OUT = 1200  # FIXME(pmalik): should probably use config timeout
+TIME_OUT = 1200
 CONF = cfg.CONF
 CLUSTER_CFG = 'clustering'
 packager = pkg.Package()
@@ -421,7 +421,29 @@ class RedisAdmin(object):
         return self.__client.info(section=section)
 
     def persist_data(self):
-        return self.__client.save()
+        save_cmd = 'SAVE'
+        last_save = self.__client.lastsave()
+        LOG.debug("Starting Redis data persist")
+        if self.__client.bgsave():
+            save_cmd = 'BGSAVE'
+
+            def _timestamp_changed():
+                return last_save != self.__client.lastsave()
+
+            try:
+                utils.poll_until(_timestamp_changed, sleep_time=2,
+                                 time_out=TIME_OUT)
+            except exception.PollTimeOut:
+                raise RuntimeError(_("Timeout occurred waiting for Redis "
+                                   "persist (%s) to complete.") % save_cmd)
+
+        # If the background save fails for any reason, try doing a foreground
+        # one.  This blocks client connections, so we don't want it to be
+        # the default.
+        elif not self.__client.save():
+            raise exception.BackupCreationError(_("Could not persist "
+                                                "Redis data (%s)") % save_cmd)
+        LOG.debug("Redis data persist (%s) completed" % save_cmd)
 
     def set_master(self, host=None, port=None):
         self.__client.slaveof(host, port)
