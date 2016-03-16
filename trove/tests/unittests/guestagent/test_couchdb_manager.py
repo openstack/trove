@@ -19,6 +19,7 @@ from mock import patch
 from oslo_utils import netutils
 
 from trove.common.instance import ServiceStatuses
+from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.couchdb import (
     manager as couchdb_manager)
 from trove.guestagent.datastore.experimental.couchdb import (
@@ -56,6 +57,7 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         self.original_get_ip = netutils.get_my_ipv4
         self.orig_make_host_reachable = (
             couchdb_service.CouchDBApp.make_host_reachable)
+        self.orig_backup_restore = backup.restore
 
     def tearDown(self):
         super(GuestAgentCouchDBManagerTest, self).tearDown()
@@ -71,6 +73,7 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         netutils.get_my_ipv4 = self.original_get_ip
         couchdb_service.CouchDBApp.make_host_reachable = (
             self.orig_make_host_reachable)
+        backup.restore = self.orig_backup_restore
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -85,6 +88,7 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         mock_app = MagicMock()
         self.manager.appStatus = mock_status
         self.manager.app = mock_app
+        mount_point = '/var/lib/couchdb'
 
         mock_status.begin_install = MagicMock(return_value=None)
         mock_app.install_if_needed = MagicMock(return_value=None)
@@ -97,6 +101,12 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         volume.VolumeDevice.migrate_data = MagicMock(return_value=None)
         volume.VolumeDevice.mount = MagicMock(return_value=None)
         volume.VolumeDevice.mount_points = MagicMock(return_value=[])
+        backup.restore = MagicMock(return_value=None)
+
+        backup_info = {'id': backup_id,
+                       'location': 'fake-location',
+                       'type': 'CouchDBBackup',
+                       'checksum': 'fake-checksum'} if backup_id else None
 
         with patch.object(pkg.Package, 'pkg_is_installed',
                           return_value=MagicMock(
@@ -106,22 +116,28 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
                                  databases=None,
                                  memory_mb='2048', users=None,
                                  device_path=device_path,
-                                 mount_point="/var/lib/couchdb",
-                                 backup_info=None,
+                                 mount_point=mount_point,
+                                 backup_info=backup_info,
                                  overrides=None,
                                  cluster_config=None)
-
         # verification/assertion
         mock_status.begin_install.assert_any_call()
         mock_app.install_if_needed.assert_any_call(packages)
         mock_app.make_host_reachable.assert_any_call()
         mock_app.change_permissions.assert_any_call()
+        if backup_id:
+            backup.restore.assert_any_call(self.context,
+                                           backup_info,
+                                           mount_point)
 
     def test_prepare_pkg(self):
         self._prepare_dynamic(['couchdb'])
 
     def test_prepare_no_pkg(self):
         self._prepare_dynamic([])
+
+    def test_prepare_from_backup(self):
+        self._prepare_dynamic(['couchdb'], backup_id='123abc456')
 
     def test_restart(self):
         mock_status = MagicMock()

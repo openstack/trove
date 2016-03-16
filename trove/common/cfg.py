@@ -1071,13 +1071,15 @@ couchdb_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
-    cfg.StrOpt('backup_strategy', default=None,
+    cfg.StrOpt('backup_strategy', default='CouchDBBackup',
                help='Default strategy to perform backups.'),
     cfg.StrOpt('replication_strategy', default=None,
                help='Default strategy for replication.'),
-    cfg.StrOpt('backup_namespace', default=None,
+    cfg.StrOpt('backup_namespace', default='trove.guestagent.strategies'
+               '.backup.experimental.couchdb_impl',
                help='Namespace to load backup strategies from.'),
-    cfg.StrOpt('restore_namespace', default=None,
+    cfg.StrOpt('restore_namespace', default='trove.guestagent.strategies'
+               '.restore.experimental.couchdb_impl',
                help='Namespace to load restore strategies from.'),
     cfg.DictOpt('backup_incremental_strategy', default={},
                 help='Incremental Backup Runner based on the default '
