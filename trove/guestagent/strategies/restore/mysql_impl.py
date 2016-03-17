@@ -192,9 +192,12 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
     """Implementation of Restore Strategy for InnoBackupEx."""
     __strategy_name__ = 'innobackupex'
     base_restore_cmd = 'sudo xbstream -x -C %(restore_location)s'
-    base_prepare_cmd = ('sudo innobackupex --apply-log %(restore_location)s'
+    base_prepare_cmd = ('sudo innobackupex'
                         ' --defaults-file=%(restore_location)s/backup-my.cnf'
-                        ' --ibbackup xtrabackup 2>/tmp/innoprepare.log')
+                        ' --ibbackup=xtrabackup'
+                        ' --apply-log'
+                        ' %(restore_location)s'
+                        ' 2>/tmp/innoprepare.log')
 
     def __init__(self, *args, **kwargs):
         super(InnoBackupEx, self).__init__(*args, **kwargs)
@@ -233,11 +236,11 @@ class InnoBackupEx(base.RestoreRunner, MySQLRestoreMixin):
 class InnoBackupExIncremental(InnoBackupEx):
     __strategy_name__ = 'innobackupexincremental'
     incremental_prep = ('sudo innobackupex'
+                        ' --defaults-file=%(restore_location)s/backup-my.cnf'
+                        ' --ibbackup=xtrabackup'
                         ' --apply-log'
                         ' --redo-only'
                         ' %(restore_location)s'
-                        ' --defaults-file=%(restore_location)s/backup-my.cnf'
-                        ' --ibbackup xtrabackup'
                         ' %(incremental_args)s'
                         ' 2>/tmp/innoprepare.log')
 

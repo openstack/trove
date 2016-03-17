@@ -86,15 +86,21 @@ SQLDUMP_BACKUP_EXTRA_OPTS = (SQLDUMP_BACKUP_RAW %
                              {'extra_opts': '--events --routines --triggers'})
 XTRA_RESTORE_RAW = "sudo xbstream -x -C %(restore_location)s"
 XTRA_RESTORE = XTRA_RESTORE_RAW % {'restore_location': '/var/lib/mysql/data'}
-XTRA_INCR_PREPARE = ("sudo innobackupex --apply-log"
-                     " --redo-only /var/lib/mysql/data"
+XTRA_INCR_PREPARE = ("sudo innobackupex"
                      " --defaults-file=/var/lib/mysql/data/backup-my.cnf"
-                     " --ibbackup xtrabackup %(incr)s"
+                     " --ibbackup=xtrabackup"
+                     " --apply-log"
+                     " --redo-only"
+                     " /var/lib/mysql/data"
+                     " %(incr)s"
                      " 2>/tmp/innoprepare.log")
 SQLDUMP_RESTORE = "sudo mysql"
-PREPARE = ("sudo innobackupex --apply-log /var/lib/mysql/data "
-           "--defaults-file=/var/lib/mysql/data/backup-my.cnf "
-           "--ibbackup xtrabackup 2>/tmp/innoprepare.log")
+PREPARE = ("sudo innobackupex"
+           " --defaults-file=/var/lib/mysql/data/backup-my.cnf"
+           " --ibbackup=xtrabackup"
+           " --apply-log"
+           " /var/lib/mysql/data"
+           " 2>/tmp/innoprepare.log")
 CRYPTO_KEY = "default_aes_cbc_key"
 
 CBBACKUP_CMD = "tar cpPf - /tmp/backups"
