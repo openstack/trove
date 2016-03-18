@@ -1,0 +1,5 @@
+---
+features:
+  - Implement configuration groups for Cassandra 2.1.
+    You can now manage configuration of Cassandra datastores
+    using the Trove configuration groups capability.

@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fix bug 1537986 which corrects the pagination in the mysql user
+    list command. When internal users (ignore_users) are eliminated
+    from the list, the pagination was not correctly handled.

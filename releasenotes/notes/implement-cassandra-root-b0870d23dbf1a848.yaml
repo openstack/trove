@@ -1,0 +1,4 @@
+---
+features:
+  - OpenStack Trove now supports superuser access for the Cassandra
+    datastore via the root-enable and root-disable API's.

@@ -1,0 +1,8 @@
+---
+features:
+  - Vertica comes with a User Defined Load function that takes a URL as a
+    load source. This can be used to load files that are stored in Swift. As
+    this is a common use case, it is valuable to enable this by default.
+    This can be done in the post-prepare method for Vertica. A new UDL_LIBS
+    list has been added that describes any UDLs to be loaded into the
+    database. This change only has one entry - the curl function.

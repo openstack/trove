@@ -1,0 +1,6 @@
+---
+security:
+  - Fixes bug 1507841, provides a configuration setting to enable Role
+    Based Access Control (RBAC) for MongoDB clusters. If
+    mongodb.cluster_secure is set to False (default is True) then RBAC
+    will be disabled.

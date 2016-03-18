@@ -1,0 +1,14 @@
+---
+features:
+  - The adds support for pxc to grow a cluster.
+    * api and taskmanager support for shrinking a cluster
+    * validate that the networks given are the same for each instance in
+      the cluster.
+    * make sure to add the existing networks on an instance in the
+      cluster.
+    * add new Error task for grow and shrink.
+    * nova client version configuration changed to a string option rather
+      than an int option because the nova microversions change nova api
+      output. This was needed for the network interfaces on existing
+      instances.
+    * testing for grow and shrink cluster

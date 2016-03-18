@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fixes bug 1526024, a failure in growing a mongodb cluster because
+    of a problem in the way in which passwords were synchronized with
+    new query routers.
