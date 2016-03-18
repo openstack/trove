@@ -190,14 +190,16 @@ class TestClusterRootController(trove_testtools.TestCase):
         self.controller.root_create(req, body, tenant_id, uuid, is_cluster)
         mock_cluster_root_create.assert_called_with(req, body, tenant_id, uuid)
 
+    @patch.object(ClusterRootController, "check_cluster_instance_actions")
     @patch.object(ClusterRootController, "instance_root_create")
-    def test_root_create_instance(self, mock_instance_root_create):
+    def test_root_create_instance(self, mock_instance_root_create, mock_check):
         req = Mock()
         body = Mock()
         tenant_id = Mock()
         uuid = utils.generate_uuid()
         is_cluster = False
         self.controller.root_create(req, body, tenant_id, uuid, is_cluster)
+        mock_check.assert_called_with(uuid)
         mock_instance_root_create.assert_called_with(req, body, uuid)
 
     @patch.object(models.ClusterRoot, "load")

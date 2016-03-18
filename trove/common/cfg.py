@@ -993,7 +993,8 @@ mongodb_opts = [
                help='Maximum time to wait (in seconds) for a replica set '
                     'initialization process to complete.'),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.common.service.DefaultRootController',
+               default='trove.extensions.mongodb.service.'
+                       'MongoDBRootController',
                help='Root controller implementation for mongodb.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
