@@ -25,17 +25,23 @@ class CouchdbHelper(TestHelper):
         super(CouchdbHelper, self).__init__(expected_override_name)
         self._data_cache = dict()
         self.field_name = 'ff-%s'
-        self.database = 'foodb'
+        self.database = 'firstdb'
 
     def create_client(self, host, *args, **kwargs):
-        url = 'http://' + host + ':5984/'
+        username = self.get_helper_credentials()['name']
+        password = self.get_helper_credentials()["password"]
+        url = 'http://%(username)s:%(password)s@%(host)s:5984/' % {
+            'username': username,
+            'password': password,
+            'host': host,
+        }
         server = couchdb.Server(url)
         return server
 
     def add_actual_data(self, data_label, data_start, data_size, host,
                         *args, **kwargs):
         client = self.get_client(host, *args, **kwargs)
-        db = client.create(self.database + '_' + data_label)
+        db = client[self.database]
         doc = {}
         doc_id, doc_rev = db.save(doc)
         data = self._get_dataset(data_size)
@@ -67,7 +73,7 @@ class CouchdbHelper(TestHelper):
                            *args, **kwargs):
         expected_data = self._get_dataset(data_size)
         client = self.get_client(host, *args, **kwargs)
-        db = client[self.database + '_' + data_label]
+        db = client[self.database]
         actual_data = []
 
         TestRunner.assert_equal(len(db), 1)
@@ -85,3 +91,21 @@ class CouchdbHelper(TestHelper):
             TestRunner.assert_true(expected_row in actual_data,
                                    "Row not found in the result set: %s"
                                    % expected_row)
+
+    def get_helper_credentials(self):
+        return {'name': 'lite', 'password': 'litepass',
+                'database': self.database}
+
+    def get_helper_credentials_root(self):
+        return {'name': 'root', 'password': 'rootpass'}
+
+    def get_valid_database_definitions(self):
+        return [{'name': 'db1'}, {'name': 'db2'}, {"name": 'db3'}]
+
+    def get_valid_user_definitions(self):
+        return [{'name': 'user1', 'password': 'password1', 'databases': [],
+                 'host': '127.0.0.1'},
+                {'name': 'user2', 'password': 'password1',
+                 'databases': [{'name': 'db1'}], 'host': '0.0.0.0'},
+                {'name': 'user3', 'password': 'password1',
+                 'databases': [{'name': 'db1'}, {'name': 'db2'}]}]

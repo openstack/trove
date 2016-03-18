@@ -17,6 +17,7 @@ import os
 from mock import MagicMock
 from mock import patch
 from oslo_utils import netutils
+from testtools.matchers import Is, Equals, Not
 
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import backup
@@ -58,6 +59,21 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         self.orig_make_host_reachable = (
             couchdb_service.CouchDBApp.make_host_reachable)
         self.orig_backup_restore = backup.restore
+        self.orig_create_users = couchdb_service.CouchDBAdmin.create_user
+        self.orig_delete_user = couchdb_service.CouchDBAdmin.delete_user
+        self.orig_list_users = couchdb_service.CouchDBAdmin.list_users
+        self.orig_get_user = couchdb_service.CouchDBAdmin.get_user
+        self.orig_grant_access = couchdb_service.CouchDBAdmin.grant_access
+        self.orig_revoke_access = couchdb_service.CouchDBAdmin.revoke_access
+        self.orig_list_access = couchdb_service.CouchDBAdmin.list_access
+        self.orig_enable_root = couchdb_service.CouchDBAdmin.enable_root
+        self.orig_is_root_enabled = (
+            couchdb_service.CouchDBAdmin.is_root_enabled)
+        self.orig_create_databases = (
+            couchdb_service.CouchDBAdmin.create_database)
+        self.orig_list_databases = couchdb_service.CouchDBAdmin.list_databases
+        self.orig_delete_database = (
+            couchdb_service.CouchDBAdmin.delete_database)
 
     def tearDown(self):
         super(GuestAgentCouchDBManagerTest, self).tearDown()
@@ -74,6 +90,21 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         couchdb_service.CouchDBApp.make_host_reachable = (
             self.orig_make_host_reachable)
         backup.restore = self.orig_backup_restore
+        couchdb_service.CouchDBAdmin.create_user = self.orig_create_users
+        couchdb_service.CouchDBAdmin.delete_user = self.orig_delete_user
+        couchdb_service.CouchDBAdmin.list_users = self.orig_list_users
+        couchdb_service.CouchDBAdmin.get_user = self.orig_get_user
+        couchdb_service.CouchDBAdmin.grant_access = self.orig_grant_access
+        couchdb_service.CouchDBAdmin.revoke_access = self.orig_revoke_access
+        couchdb_service.CouchDBAdmin.list_access = self.orig_list_access
+        couchdb_service.CouchDBAdmin.enable_root = self.orig_enable_root
+        couchdb_service.CouchDBAdmin.is_root_enabled = (
+            self.orig_is_root_enabled)
+        couchdb_service.CouchDBAdmin.create_database = (
+            self.orig_create_databases)
+        couchdb_service.CouchDBAdmin.list_databases = self.orig_list_databases
+        couchdb_service.CouchDBAdmin.delete_database = (
+            self.orig_delete_database)
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -81,9 +112,10 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
         self.manager.update_status(self.context)
         mock_status.update.assert_any_call()
 
-    def _prepare_dynamic(self, packages,
+    def _prepare_dynamic(self, packages=None, databases=None,
                          config_content=None, device_path='/dev/vdb',
-                         is_db_installed=True, backup_id=None, overrides=None):
+                         is_db_installed=True, backup_id=None,
+                         overrides=None):
         mock_status = MagicMock()
         mock_app = MagicMock()
         self.manager.appStatus = mock_status
@@ -108,12 +140,16 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
                        'type': 'CouchDBBackup',
                        'checksum': 'fake-checksum'} if backup_id else None
 
+        couchdb_service.CouchDBAdmin.create_database = MagicMock(
+            return_value=None)
+        couchdb_service.CouchDBAdmin.create_user = MagicMock(return_value=None)
+
         with patch.object(pkg.Package, 'pkg_is_installed',
                           return_value=MagicMock(
                               return_value=is_db_installed)):
             self.manager.prepare(context=self.context, packages=packages,
                                  config_contents=config_content,
-                                 databases=None,
+                                 databases=databases,
                                  memory_mb='2048', users=None,
                                  device_path=device_path,
                                  mount_point=mount_point,
@@ -138,6 +174,9 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
 
     def test_prepare_from_backup(self):
         self._prepare_dynamic(['couchdb'], backup_id='123abc456')
+
+    def test_prepare_database(self):
+        self._prepare_dynamic(databases=['db1'])
 
     def test_restart(self):
         mock_status = MagicMock()
@@ -169,3 +208,107 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertTrue(output)
+
+    def test_create_user(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.create_user = MagicMock(return_value=None)
+        self.manager.create_user(self.context, ['user1'])
+        couchdb_service.CouchDBAdmin.create_user.assert_any_call(['user1'])
+
+    def test_delete_user(self):
+        user = ['user1']
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.delete_user = MagicMock(return_value=None)
+        self.manager.delete_user(self.context, user)
+        couchdb_service.CouchDBAdmin.delete_user.assert_any_call(user)
+
+    def test_list_users(self):
+        couchdb_service.CouchDBAdmin.list_users = MagicMock(
+            return_value=['user1'])
+        users = self.manager.list_users(self.context)
+        self.assertThat(users, Equals(['user1']))
+        couchdb_service.CouchDBAdmin.list_users.assert_any_call(
+            None, None, False)
+
+    def test_get_user(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.get_user = MagicMock(
+            return_value=['user1'])
+        self.manager.get_user(self.context, 'user1', None)
+        couchdb_service.CouchDBAdmin.get_user.assert_any_call(
+            'user1', None)
+
+    def test_grant_access(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.grant_access = MagicMock(
+            return_value=None)
+        self.manager.grant_access(self.context, 'user1', None, ['db1'])
+        couchdb_service.CouchDBAdmin.grant_access.assert_any_call(
+            'user1', ['db1'])
+
+    def test_revoke_access(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.revoke_access = MagicMock(
+            return_value=None)
+        self.manager.revoke_access(self.context, 'user1', None, ['db1'])
+        couchdb_service.CouchDBAdmin.revoke_access.assert_any_call(
+            'user1', ['db1'])
+
+    def test_list_access(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.list_access = MagicMock(
+            return_value=['user1'])
+        self.manager.list_access(self.context, 'user1', None)
+        couchdb_service.CouchDBAdmin.list_access.assert_any_call(
+            'user1', None)
+
+    def test_enable_root(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.enable_root = MagicMock(
+            return_value=True)
+        result = self.manager.enable_root(self.context)
+        self.assertThat(result, Equals(True))
+
+    def test_is_root_enabled(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.is_root_enabled = MagicMock(
+            return_value=True)
+        result = self.manager.is_root_enabled(self.context)
+        self.assertThat(result, Equals(True))
+
+    def test_create_databases(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.create_database = MagicMock(
+            return_value=None)
+        self.manager.create_database(self.context, ['db1'])
+        couchdb_service.CouchDBAdmin.create_database.assert_any_call(['db1'])
+
+    def test_delete_database(self):
+        databases = ['db1']
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.delete_database = MagicMock(
+            return_value=None)
+        self.manager.delete_database(self.context, databases)
+        couchdb_service.CouchDBAdmin.delete_database.assert_any_call(
+            databases)
+
+    def test_list_databases(self):
+        mock_status = MagicMock()
+        self.manager.appStatus = mock_status
+        couchdb_service.CouchDBAdmin.list_databases = MagicMock(
+            return_value=['database1'])
+        databases = self.manager.list_databases(self.context)
+        self.assertThat(databases, Not(Is(None)))
+        self.assertThat(databases, Equals(['database1']))
+        couchdb_service.CouchDBAdmin.list_databases.assert_any_call(
+            None, None, False)

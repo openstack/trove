@@ -188,6 +188,49 @@ class CassandraSchema(DatastoreSchema):
         return ['_name']
 
 
+class CouchDBSchema(DatastoreSchema):
+    '''Represents the CouchDB schema and its associated properties.
+
+    The database name must consist of one or more of the following characters
+    and the name must begin with a lowercase letter.
+
+    - Lowercase characters (a-z)
+    - Digits (0-9)
+    - Any of the characters _, $, (, ), +, -, and /
+    '''
+
+    name_regex = re.compile(r'^[a-z][a-z0-9_$()+/-]*$')
+
+    def __init__(self, name=None, deserializing=False):
+        super(CouchDBSchema, self).__init__()
+        self._ignore_dbs = cfg.get_ignored_dbs()
+        # need one or the other, not both, not none (!= ~ XOR)
+        if not (bool(deserializing) != bool(name)):
+            raise ValueError(_("Bad args. name: %(name)s, "
+                               "deserializing %(deser)s.")
+                             % ({'name': bool(name),
+                                 'deser': bool(deserializing)}))
+        if not deserializing:
+            self.name = name
+
+    @property
+    def _max_schema_name_length(self):
+        return None
+
+    def _is_valid_schema_name(self, value):
+        # https://wiki.apache.org/couchdb/HTTP_database_API
+        if value.lower() in self._ignore_dbs:
+            return False
+        if re.match(r'^[a-z]*$', value[0]):
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _dict_requirements(cls):
+        return ['_name']
+
+
 class MySQLDatabase(Base):
     """Represents a Database and its properties."""
 
@@ -813,6 +856,65 @@ class CassandraUser(DatastoreUser):
     @classmethod
     def _dict_requirements(cls):
         return ['_name']
+
+
+class CouchDBUser(DatastoreUser):
+    """Represents a CouchDB user and its associated properties."""
+
+    def __init__(self):
+        self._name = None
+        self._host = None
+        self._password = None
+        self._databases = []
+        self._ignore_users = cfg.get_ignored_users()
+
+    def _is_valid(self, value):
+        return True
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        if not self._is_valid(value):
+            raise ValueError(_("'%s' is not a valid user name.") % value)
+        else:
+            self._name = value
+
+    @property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def password(self, value):
+        if not self._is_valid(value):
+            raise ValueError(_("'%s' is not a valid password.") % value)
+        else:
+            self._password = value
+
+    @property
+    def databases(self):
+        return self._databases
+
+    @databases.setter
+    def databases(self, value):
+        mydb = ValidatedMySQLDatabase()
+        mydb.name = value
+        self._databases.append(mydb.serialize())
+
+    @property
+    def host(self):
+        if self._host is None:
+            return '%'
+        return self._host
+
+    @host.setter
+    def host(self, value):
+        if not self._is_valid_host_name(value):
+            raise ValueError(_("'%s' is not a valid hostname.") % value)
+        else:
+            self._host = value
 
 
 class MySQLUser(Base):
