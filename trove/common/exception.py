@@ -568,6 +568,11 @@ class ClusterShrinkMustNotLeaveClusterEmpty(TroveError):
                 "shrinking.")
 
 
+class ClusterShrinkInstanceInUse(TroveError):
+    message = _("Instance(s) %(id)s currently in use and cannot be deleted. "
+                "Details: %(reason)s")
+
+
 class ClusterInstanceOperationNotSupported(TroveError):
     message = _("Operation not supported for instances that are part of a "
                 "cluster.")

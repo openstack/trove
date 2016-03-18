@@ -212,10 +212,16 @@ class VerticaCluster(models.Cluster):
         db_info = self.db_info
         datastore_version = self.ds_version
 
-        db_instances = inst_models.DBInstance.find_all(cluster_id=db_info.id,
-                                                       deleted=False).all()
+        for db_instance in self.db_instances:
+            if db_instance.type == 'master':
+                if db_instance.id in instance_ids:
+                    raise exception.ClusterShrinkInstanceInUse(
+                        id=db_instance.id,
+                        reason="Cannot remove master node."
+                    )
 
-        all_instance_ids = [db_instance.id for db_instance in db_instances]
+        all_instance_ids = [db_instance.id for db_instance
+                            in self.db_instances]
 
         left_instances = [instance_id for instance_id
                           in all_instance_ids
