@@ -353,7 +353,7 @@ class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
         self.assertEqual([models.MongoDBSchema('db1').serialize(),
                           models.MongoDBSchema('db2').serialize()],
                          dbs)
-        self.assertEqual(models.MongoDBSchema('db3').serialize(),
+        self.assertEqual(models.MongoDBSchema('db2').serialize(),
                          next_marker)
 
     @mock.patch.object(service, 'MongoDBClient')
