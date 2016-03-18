@@ -560,6 +560,8 @@ class GuestLogRunner(TestRunner):
         # Now get the full contents of the log
         self.assert_log_generator(self.auth_client, log_name, lines=100000)
         log_lines = len(self._get_last_log_contents(log_name).splitlines())
+        # cap at 100, so the test can't run away if something goes wrong
+        log_lines = min(log_lines, 100)
         # Make sure we get the right number of log lines back each time
         for lines in range(1, log_lines):
             self.assert_log_generator(
