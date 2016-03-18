@@ -241,7 +241,7 @@ volume_support = True
 device_path = /dev/vdb
 
 [mongodb]
-tcp_ports = 2500, 27017
+tcp_ports = 2500, 27017, 27019
 volume_support = True
 device_path = /dev/vdb
 num_config_servers_per_cluster = 1

@@ -255,7 +255,7 @@ class MongoDBApp(object):
     def add_config_servers(self, config_server_hosts):
         """Set config servers on a query router (mongos) instance.
         """
-        config_servers_string = ','.join(['%s:27019' % host
+        config_servers_string = ','.join(['%s:%s' % (host, CONFIGSVR_PORT)
                                           for host in config_server_hosts])
         LOG.info(_("Setting config servers: %s") % config_servers_string)
         self.configuration_manager.apply_system_override(

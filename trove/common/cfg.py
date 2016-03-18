@@ -918,7 +918,7 @@ mongodb_group = cfg.OptGroup(
     'mongodb', title='MongoDB options',
     help="Oslo option group designed for MongoDB datastore")
 mongodb_opts = [
-    cfg.ListOpt('tcp_ports', default=["2500", "27017"],
+    cfg.ListOpt('tcp_ports', default=["2500", "27017", "27019"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
