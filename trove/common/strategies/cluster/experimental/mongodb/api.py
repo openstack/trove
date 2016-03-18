@@ -115,13 +115,24 @@ class MongoDbCluster(models.Cluster):
             task_status=ClusterTasks.BUILDING_INITIAL)
 
         replica_set_name = "rs1"
-        key = utils.generate_random_password()
 
         member_config = {"id": db_info.id,
                          "shard_id": utils.generate_uuid(),
                          "instance_type": "member",
-                         "replica_set_name": replica_set_name,
-                         "key": key}
+                         "replica_set_name": replica_set_name}
+
+        configsvr_config = {"id": db_info.id,
+                            "instance_type": "config_server"}
+
+        mongos_config = {"id": db_info.id,
+                         "instance_type": "query_router"}
+
+        if mongo_conf.cluster_secure:
+            cluster_key = utils.generate_random_password()
+            member_config['key'] = cluster_key
+            configsvr_config['key'] = cluster_key
+            mongos_config['key'] = cluster_key
+
         for i in range(0, num_instances):
             instance_name = "%s-%s-%s" % (name, replica_set_name, str(i + 1))
             inst_models.Instance.create(context, instance_name,
@@ -135,9 +146,6 @@ class MongoDbCluster(models.Cluster):
                                         configuration_id=None,
                                         cluster_config=member_config)
 
-        configsvr_config = {"id": db_info.id,
-                            "instance_type": "config_server",
-                            "key": key}
         for i in range(1, num_configsvr + 1):
             instance_name = "%s-%s-%s" % (name, "configsvr", str(i))
             inst_models.Instance.create(context, instance_name,
@@ -151,9 +159,6 @@ class MongoDbCluster(models.Cluster):
                                         configuration_id=None,
                                         cluster_config=configsvr_config)
 
-        mongos_config = {"id": db_info.id,
-                         "instance_type": "query_router",
-                         "key": key}
         for i in range(1, num_mongos + 1):
             instance_name = "%s-%s-%s" % (name, "mongos", str(i))
             inst_models.Instance.create(context, instance_name,
@@ -398,9 +403,10 @@ class MongoDbCluster(models.Cluster):
                           default_name_tag, key=None):
         """Loop through the instances and create them in this cluster."""
         cluster_config['id'] = self.id
-        if not key:
-            key = self.get_guest(self.arbitrary_query_router).get_key()
-        cluster_config['key'] = key
+        if CONF.get(self.datastore_version.manager).cluster_secure:
+            if not key:
+                key = self.get_guest(self.arbitrary_query_router).get_key()
+            cluster_config['key'] = key
         instance_ids = []
         for i, instance in enumerate(instances):
             name = instance.get('name', '%s-%s-%s' % (

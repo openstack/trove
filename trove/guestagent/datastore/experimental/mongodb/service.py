@@ -123,8 +123,6 @@ class MongoDBApp(object):
         # See: https://jira.mongodb.org/browse/SERVER-20075
         self._initialize_writable_run_dir()
 
-        # todo mvandijk: enable authorization.
-        # 'security.authorization': True
         self.configuration_manager.apply_system_override(
             {'processManagement.fork': False,
              'processManagement.pidFilePath': system.MONGO_PID_FILE,
@@ -215,14 +213,15 @@ class MongoDBApp(object):
 
     def _configure_cluster_security(self, key_value):
         """Force cluster key-file-based authentication.
+
+        This will enabled RBAC.
         """
         # Store the cluster member authentication key.
         self.store_key(key_value)
 
-        # TODO(mvandijk): enable cluster security once Trove features are in
-        # self.configuration_manager.apply_system_override(
-        #     {'security.clusterAuthMode': 'keyFile',
-        #      'security.keyFile': self.get_key_file()}, CNF_CLUSTER)
+        self.configuration_manager.apply_system_override(
+            {'security.clusterAuthMode': 'keyFile',
+             'security.keyFile': self.get_key_file()}, CNF_CLUSTER)
 
     def _configure_network(self, port=None):
         """Make the service accessible at a given (or default if not) port.
@@ -384,12 +383,15 @@ class MongoDBApp(object):
         """Create the Trove admin user.
 
         The service should not be running at this point.
+        This will enable role-based access control (RBAC) by default.
         """
         if self.status.is_running:
             raise RuntimeError(_("Cannot secure the instance. "
                                  "The service is still running."))
 
         try:
+            self.configuration_manager.apply_system_override(
+                {'security.authorization': 'enabled'})
             self._set_localhost_auth_bypass(True)
             self.start_db(update_db=False)
             password = utils.generate_random_password()
@@ -527,11 +529,11 @@ class MongoDBAdmin(object):
                 if not self._is_modifiable_user(user.name):
                     LOG.warning('Skipping creation of user with reserved '
                                 'name %(user)s' % {'user': user.name})
-                elif self._get_user_record(user.name):
+                elif self._get_user_record(user.name, client=client):
                     LOG.warning('Skipping creation of user with pre-existing '
                                 'name %(user)s' % {'user': user.name})
                 else:
-                    self.create_validated_user(user, client)
+                    self.create_validated_user(user, client=client)
 
     def delete_validated_user(self, user):
         """Deletes a user from their database. The caller should ensure that
@@ -555,19 +557,23 @@ class MongoDBAdmin(object):
         else:
             self.delete_validated_user(user)
 
-    def _get_user_record(self, name):
+    def _get_user_record(self, name, client=None):
         """Get the user's record."""
         user = models.MongoDBUser(name)
         if not self._is_modifiable_user(user.name):
             LOG.warning('Skipping retrieval of user with reserved '
                         'name %(user)s' % {'user': user.name})
             return None
-        with MongoDBClient(self._admin_user()) as admin_client:
-            user_info = admin_client.admin.system.users.find_one(
+        if client:
+            user_info = client.admin.system.users.find_one(
                 {'user': user.username, 'db': user.database.name})
-            if not user_info:
-                return None
-            user.roles = user_info['roles']
+        else:
+            with MongoDBClient(self._admin_user()) as admin_client:
+                user_info = admin_client.admin.system.users.find_one(
+                    {'user': user.username, 'db': user.database.name})
+        if not user_info:
+            return None
+        user.roles = user_info['roles']
         return user
 
     def get_user(self, name):
