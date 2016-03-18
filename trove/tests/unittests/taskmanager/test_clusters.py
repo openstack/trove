@@ -343,25 +343,24 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self.assertFalse(ret_val)
 
     @patch.object(ClusterTasks, 'get_guest')
-    @patch.object(ClusterTasks, 'get_cluster_admin_password')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
     def test_add_query_routers(self,
                                mock_dv,
                                mock_ds,
-                               mock_password,
                                mock_guest):
+        password = 'pwd'
         query_router = BaseInstance(
             Mock(), self.dbinst3, Mock(),
             InstanceServiceStatus(ServiceStatuses.NEW)
         )
-        mock_password.return_value = 'pwd'
 
         ret_val = self.clustertasks._add_query_routers([query_router],
-                                                       ['10.0.0.5'])
+                                                       ['10.0.0.5'],
+                                                       admin_password=password)
         mock_guest.assert_called_with(query_router)
         mock_guest().add_config_servers.assert_called_with(['10.0.0.5'])
-        mock_guest().store_admin_password.assert_called_with('pwd')
+        mock_guest().store_admin_password.assert_called_with(password)
         self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'get_guest')
@@ -371,20 +370,20 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
     def test_add_query_routers_new_cluster(self,
                                            mock_dv,
                                            mock_ds,
-                                           mock_password,
+                                           mock_gen_password,
                                            mock_guest):
+        password = 'pwd'
         query_router = BaseInstance(
             Mock(), self.dbinst3, Mock(),
             InstanceServiceStatus(ServiceStatuses.NEW)
         )
-        mock_password.return_value = 'pwd'
+        mock_gen_password.return_value = password
 
         ret_val = self.clustertasks._add_query_routers([query_router],
-                                                       ['10.0.0.5'],
-                                                       new_cluster=True)
+                                                       ['10.0.0.5'])
         mock_guest.assert_called_with(query_router)
         mock_guest().add_config_servers.assert_called_with(['10.0.0.5'])
-        mock_guest().create_admin_user.assert_called_with('pwd')
+        mock_guest().create_admin_user.assert_called_with(password)
         self.assertTrue(ret_val)
 
     @patch.object(ClusterTasks, 'reset_task')
@@ -411,6 +410,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         mock_reset_task.assert_called_with()
 
     @patch.object(ClusterTasks, '_add_query_routers')
+    @patch.object(ClusterTasks, 'get_cluster_admin_password')
     @patch.object(ClusterTasks, 'get_ip')
     @patch.object(Instance, 'load')
     @patch.object(datastore_models.Datastore, 'load')
@@ -420,6 +420,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
                                        mock_ds,
                                        mock_load,
                                        mock_ip,
+                                       mock_get_password,
                                        mock_add_query_router):
         query_router = BaseInstance(
             Mock(), self.dbinst3, Mock(),
@@ -436,7 +437,7 @@ class MongoDbClusterTasksTest(trove_testtools.TestCase):
         self._run_grow_cluster(new_instances_ids=[query_router.id])
 
         mock_add_query_router.assert_called_with(
-            [query_router], ['10.0.0.5']
+            [query_router], ['10.0.0.5'], admin_password=mock_get_password()
         )
 
     @patch.object(ClusterTasks, '_create_shard')

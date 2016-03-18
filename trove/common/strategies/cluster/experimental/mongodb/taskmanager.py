@@ -102,26 +102,8 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                                  for instance in config_servers]
             LOG.debug("config server ips: %s" % config_server_ips)
 
-            # Give the query routers the configsvr ips to connect to.
-            # Create the admin user on the query routers.
-            # The first will create the user, and the others will just reset
-            # the password to the same value.
-            LOG.debug("calling add_config_servers on, and sending admin user "
-                      "password to, query_routers")
-            try:
-                admin_created = False
-                admin_password = utils.generate_random_password()
-                for query_router in query_routers:
-                    guest = self.get_guest(query_router)
-                    guest.add_config_servers(config_server_ips)
-                    if admin_created:
-                        guest.store_admin_password(admin_password)
-                    else:
-                        guest.create_admin_user(admin_password)
-                        admin_created = True
-            except Exception:
-                LOG.exception(_("error adding config servers"))
-                self.update_statuses_on_failure(cluster_id)
+            if not self._add_query_routers(query_routers,
+                                           config_server_ips):
                 return
 
             if not self._create_shard(query_routers[0], members):
@@ -245,8 +227,10 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
                     self.get_ip(Instance.load(context, config_server_id))
                     for config_server_id in config_servers_ids
                 ]
-                if not self._add_query_routers(query_routers,
-                                               config_servers_ips):
+                if not self._add_query_routers(
+                        query_routers, config_servers_ips,
+                        admin_password=self.get_cluster_admin_password(context)
+                ):
                     return
                 instances.extend(query_routers)
             for instance in instances:
@@ -302,19 +286,12 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
 
         LOG.debug("end shrink_cluster for MongoDB cluster %s" % self.id)
 
-    def get_cluster_admin_password(self):
+    def get_cluster_admin_password(self, context):
         """The cluster admin's user credentials are stored on all query
         routers. Find one and get the guest to return the password.
         """
-        instance = self.query_router_instance()
+        instance = Instance.load(context, self._get_running_query_router_id())
         return self.get_guest(instance).get_admin_password()
-
-    def query_router_instance(self):
-        a_query_router = [i for i in self.db_instances
-                          if i.type == 'query_router'][0]
-        return self.load_instance(
-            self.context, self.id, a_query_router.id
-        )
 
     def _init_replica_set(self, primary_member, other_members):
         """Initialize the replica set by calling the primary member guest's
@@ -369,7 +346,7 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         return False
 
     def _add_query_routers(self, query_routers, config_server_ips,
-                           new_cluster=False):
+                           admin_password=None):
         """Configure the given query routers for the cluster.
         If this is a new_cluster an admin user will be created with a randomly
         generated password, else the password needs to be retrieved from
@@ -378,19 +355,16 @@ class MongoDbClusterTasks(task_models.ClusterTasks):
         LOG.debug('adding new query router(s) %s with config server '
                   'ips %s' % ([i.id for i in query_routers],
                               config_server_ips))
-        admin_password = utils.generate_random_password() if new_cluster \
-            else self.get_cluster_admin_password()
-        need_to_create_admin = new_cluster
         for query_router in query_routers:
             try:
                 LOG.debug("calling add_config_servers on query router %s"
                           % query_router.id)
                 guest = self.get_guest(query_router)
                 guest.add_config_servers(config_server_ips)
-                if need_to_create_admin:
+                if not admin_password:
                     LOG.debug("creating cluster admin user")
+                    admin_password = utils.generate_random_password()
                     guest.create_admin_user(admin_password)
-                    need_to_create_admin = False
                 else:
                     guest.store_admin_password(admin_password)
             except Exception:
