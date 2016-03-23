@@ -737,7 +737,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         self.assertIsNone(
             self.manager.apply_overrides(Mock(), NonCallableMagicMock()))
 
-    def test_enable_root(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_enable_root(self, _):
         with patch.object(self.manager._app, 'is_root_enabled',
                           return_value=False):
             with patch.object(cass_service.CassandraAdmin,
@@ -752,7 +753,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
                 self.manager.enable_root(self.context)
                 alter_mock.assert_called_once_with(ANY)
 
-    def test_is_root_enabled(self):
+    @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
+    def test_is_root_enabled(self, _):
         trove_admin = Mock()
         trove_admin.configure_mock(name=self.manager._app._ADMIN_USER)
         other_admin = Mock()
