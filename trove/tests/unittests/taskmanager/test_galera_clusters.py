@@ -117,9 +117,12 @@ class GaleraClusterTasksTest(trove_testtools.TestCase):
     @patch.object(DBInstance, 'find_all')
     @patch.object(datastore_models.Datastore, 'load')
     @patch.object(datastore_models.DatastoreVersion, 'load_by_uuid')
-    def test_create_cluster_instance_not_ready(self, mock_dv, mock_ds,
-                                               mock_find_all, mock_load,
-                                               mock_ready, mock_update):
+    @patch('trove.common.strategies.cluster.experimental.galera_common.'
+           'taskmanager.LOG')
+    def test_create_cluster_instance_not_ready(self, mock_logging, mock_dv,
+                                               mock_ds, mock_find_all,
+                                               mock_load, mock_ready,
+                                               mock_update):
         mock_find_all.return_value.all.return_value = [self.dbinst1]
         mock_load.return_value = BaseInstance(Mock(),
                                               self.dbinst1, Mock(),
@@ -215,11 +218,13 @@ class GaleraClusterTasksTest(trove_testtools.TestCase):
                                          remove_instances)
         mock_reset_task.assert_called_with()
 
+    @patch.object(Instance, 'load')
     @patch.object(GaleraCommonClusterTasks, 'update_statuses_on_failure')
     @patch('trove.common.strategies.cluster.experimental.galera_common.'
            'taskmanager.LOG')
     def test_shrink_cluster_does_not_exist(self, mock_logging,
-                                           mock_update_status):
+                                           mock_update_status,
+                                           mock_load):
         context = Mock()
         bad_cluster_id = '1234'
         remove_instances = [Mock()]
