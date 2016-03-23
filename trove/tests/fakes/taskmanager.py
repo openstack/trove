@@ -38,7 +38,10 @@ class FakeRpcClient(object):
         manager, method = self._get_tm_method(method_name)
 
         def func():
-            method(manager, context, *args, **kwargs)
+            try:
+                method(manager, context, *args, **kwargs)
+            except Exception:
+                LOG.exception("Error running %s", method)
 
         eventlet.spawn_after(0.1, func)
 
