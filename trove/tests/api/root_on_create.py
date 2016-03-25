@@ -120,7 +120,7 @@ class TestRootOnCreate(object):
     @test(depends_on=[test_root_still_enabled])
     def test_root_disable(self):
         """
-        After root disable ensure the the history enabled flag
+        After root disable ensure the history enabled flag
         is still enabled.
         """
         self.dbaas.root.delete(self.instance_id)

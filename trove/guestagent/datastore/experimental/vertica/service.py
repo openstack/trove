@@ -248,7 +248,7 @@ class VerticaApp(object):
                                                           db_password))
             system.shell_execute(create_db_command, "dbadmin")
         except exception.ProcessExecutionError:
-            # Give vertica some time to get the the node up, won't be available
+            # Give vertica some time to get the node up, won't be available
             # by the time adminTools -t db_add_node completes
             LOG.info(_("adminTools failed as expected - wait for node"))
         self.wait_for_node_status()
@@ -265,7 +265,7 @@ class VerticaApp(object):
                                                                db_password))
             system.shell_execute(create_db_command, "dbadmin")
         except exception.ProcessExecutionError:
-            # Give vertica some time to get the the node up, won't be available
+            # Give vertica some time to get the node up, won't be available
             # by the time adminTools -t db_add_node completes
             LOG.info(_("adminTools failed as expected - wait for node"))
 

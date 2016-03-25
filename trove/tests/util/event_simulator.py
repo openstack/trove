@@ -92,7 +92,7 @@ pulse Method
 ------------
 
 The pulse method is going through the stack(list) of threads looking for
-the the next thread to execute while updating the 'sleep' time and the if
+the next thread to execute while updating the 'sleep' time and the if
 the 'sleep' time is <=0 then it will run this thread until it calls for
 another time.sleep.
 
