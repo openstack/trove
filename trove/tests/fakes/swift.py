@@ -15,7 +15,6 @@
 
 from hashlib import md5
 from mock import MagicMock, patch
-import httplib
 import json
 import os
 import socket
@@ -24,6 +23,7 @@ import swiftclient.client as swift_client
 import uuid
 
 from oslo_log import log as logging
+from six.moves import http_client
 from swiftclient import client as swift
 
 from trove.common.i18n import _  # noqa
@@ -77,10 +77,10 @@ class FakeSwiftConnection(object):
         LOG.debug("fake head_container(%s)" % container)
         if container == 'missing_container':
             raise swift.ClientException('fake exception',
-                                        http_status=httplib.NOT_FOUND)
+                                        http_status=http_client.NOT_FOUND)
         elif container == 'unauthorized_container':
             raise swift.ClientException('fake exception',
-                                        http_status=httplib.UNAUTHORIZED)
+                                        http_status=http_client.UNAUTHORIZED)
         elif container == 'socket_error_on_head':
             raise socket.error(111, 'ECONNREFUSED')
         pass
@@ -102,7 +102,7 @@ class FakeSwiftConnection(object):
                   {'container': container, 'name': name})
         checksum = md5()
         if self.manifest_prefix and self.manifest_name == name:
-            for object_name in sorted(self.container_objects.iterkeys()):
+            for object_name in sorted(self.container_objects):
                 object_checksum = md5(self.container_objects[object_name])
                 # The manifest file etag for a HEAD or GET is the checksum of
                 # the concatenated checksums.

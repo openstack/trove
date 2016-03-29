@@ -30,8 +30,9 @@ class TestStreamCodecs(trove_testtools.TestCase):
 
     def test_serialize_deserialize_base64codec(self):
         random_data = bytearray(Random.new().read(12))
-        data = ['abc',
-                'numbers01234',
+        data = [b'abc',
+                b'numbers01234',
+                b'non-ascii:\xe9\xff',
                 random_data]
 
         codec = stream_codecs.Base64Codec()
