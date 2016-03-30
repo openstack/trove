@@ -20,6 +20,7 @@ from sqlalchemy.sql.expression import update
 
 from trove.common import cfg
 from trove.db.sqlalchemy.migrate_repo.schema import Table
+from trove.db.sqlalchemy import utils as db_utils
 
 CONF = cfg.CONF
 LEGACY_IMAGE_ID = "00000000-0000-0000-0000-000000000000"
@@ -89,6 +90,9 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
 
     instance_table = Table('instances', meta, autoload=True)
+    datastore_versions_table = Table('datastore_versions',
+                                     meta,
+                                     autoload=True)
 
     if has_instances_wo_datastore_version(instance_table):
         instances = find_all_instances_wo_datastore_version(instance_table)
@@ -97,9 +101,6 @@ def upgrade(migrate_engine):
         datastores_table = Table('datastores',
                                  meta,
                                  autoload=True)
-        datastore_versions_table = Table('datastore_versions',
-                                         meta,
-                                         autoload=True)
 
         version_id = create_legacy_version(datastores_table,
                                            datastore_versions_table,
@@ -111,7 +112,23 @@ def upgrade(migrate_engine):
                 values=dict(datastore_version_id=version_id)
             ).execute()
 
+    constraint_names = db_utils.get_foreign_key_constraint_names(
+        engine=migrate_engine,
+        table='instances',
+        columns=['datastore_version_id'],
+        ref_table='datastore_versions',
+        ref_columns=['id'])
+    db_utils.drop_foreign_key_constraints(
+        constraint_names=constraint_names,
+        columns=[instance_table.c.datastore_version_id],
+        ref_columns=[datastore_versions_table.c.id])
+
     instance_table.c.datastore_version_id.alter(nullable=False)
+
+    db_utils.create_foreign_key_constraints(
+        constraint_names=constraint_names,
+        columns=[instance_table.c.datastore_version_id],
+        ref_columns=[datastore_versions_table.c.id])
 
 
 def downgrade(migrate_engine):
