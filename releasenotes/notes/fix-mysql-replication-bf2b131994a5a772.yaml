@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fixes an issue with a failure to establish a new replica for MySQL
+    in some cases where a replica already exists and some data has
+    been inserted into the master. Bug 1563574
