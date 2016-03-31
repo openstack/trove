@@ -235,7 +235,7 @@ class DbaasTest(trove_testtools.TestCase):
 
     def test_load_mysqld_options(self):
 
-        output = "mysqld would've been started with the these args:\n"\
+        output = "mysqld would've been started with these args:\n"\
                  "--user=mysql --port=3306 --basedir=/usr "\
                  "--tmpdir=/tmp --skip-external-locking"
 
@@ -252,7 +252,7 @@ class DbaasTest(trove_testtools.TestCase):
         self.assertTrue("skip-external-locking" in options)
 
     def test_load_mysqld_options_contains_plugin_loads_options(self):
-        output = ("mysqld would've been started with the these args:\n"
+        output = ("mysqld would've been started with these args:\n"
                   "--plugin-load=blackhole=ha_blackhole.so "
                   "--plugin-load=federated=ha_federated.so")
 
