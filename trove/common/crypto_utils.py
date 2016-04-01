@@ -47,7 +47,7 @@ def unpad_after_decryption(data):
 
 def encrypt_data(data, key, iv_bit_count=IV_BIT_COUNT):
     md5_key = hashlib.md5(key).hexdigest()
-    iv = encode_data(Random.new().read(iv_bit_count))[:iv_bit_count]
+    iv = Random.new().read(iv_bit_count)[:iv_bit_count]
     aes = AES.new(md5_key, AES.MODE_CBC, iv)
     data = pad_for_encryption(data, iv_bit_count)
     encrypted = aes.encrypt(data)
