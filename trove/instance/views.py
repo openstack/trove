@@ -99,6 +99,9 @@ class InstanceDetailView(InstanceView):
             result['instance']['configuration'] = (self.
                                                    _build_configuration_info())
 
+        if self.instance.locality:
+            result['instance']['locality'] = self.instance.locality
+
         if (isinstance(self.instance, models.DetailInstance) and
                 self.instance.volume_used):
             used = self.instance.volume_used

@@ -34,6 +34,7 @@ class InstanceDeleteRunner(TestRunner):
 
         self.assert_instance_delete(self.instance_info.id, expected_states,
                                     expected_http_code)
+        self.assert_server_group_gone(self.instance_info.srv_grp_id)
 
     def assert_instance_delete(self, instance_id, expected_states,
                                expected_http_code):

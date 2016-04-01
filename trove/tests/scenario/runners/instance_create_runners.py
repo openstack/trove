@@ -45,7 +45,8 @@ class InstanceCreateRunner(TestRunner):
         instance_info = self.assert_instance_create(
             name, flavor, trove_volume_size, [], [], None, None,
             CONFIG.dbaas_datastore, CONFIG.dbaas_datastore_version,
-            expected_states, expected_http_code, create_helper_user=True)
+            expected_states, expected_http_code, create_helper_user=True,
+            locality='affinity')
 
         # Update the shared instance info.
         self.instance_info.id = instance_info.id
@@ -57,6 +58,8 @@ class InstanceCreateRunner(TestRunner):
             instance_info.dbaas_datastore_version)
         self.instance_info.dbaas_flavor_href = instance_info.dbaas_flavor_href
         self.instance_info.volume = instance_info.volume
+        self.instance_info.srv_grp_id = self.assert_server_group_exists(
+            self.instance_info.id)
 
     def run_initial_configuration_create(self, expected_http_code=200):
         dynamic_config = self.test_helper.get_dynamic_group()
@@ -123,18 +126,18 @@ class InstanceCreateRunner(TestRunner):
         return self.auth_client.find_flavor_self_href(flavor)
 
     def assert_instance_create(
-        self, name, flavor, trove_volume_size,
-        database_definitions, user_definitions,
+            self, name, flavor, trove_volume_size,
+            database_definitions, user_definitions,
             configuration_id, root_password, datastore, datastore_version,
-            expected_states, expected_http_code, create_helper_user=False):
+            expected_states, expected_http_code, create_helper_user=False,
+            locality=None):
         """This assert method executes a 'create' call and verifies the server
         response. It neither waits for the instance to become available
         nor it performs any other validations itself.
         It has been designed this way to increase test granularity
         (other tests may run while the instance is building) and also to allow
-        its reuse in other runners .
+        its reuse in other runners.
         """
-
         databases = database_definitions
         users = [{'name': item['name'], 'password': item['password']}
                  for item in user_definitions]
@@ -199,7 +202,8 @@ class InstanceCreateRunner(TestRunner):
                 configuration=configuration_id,
                 availability_zone="nova",
                 datastore=instance_info.dbaas_datastore,
-                datastore_version=instance_info.dbaas_datastore_version)
+                datastore_version=instance_info.dbaas_datastore_version,
+                locality=locality)
             self.assert_instance_action(
                 instance.id, expected_states[0:1], expected_http_code)
 
@@ -227,6 +231,9 @@ class InstanceCreateRunner(TestRunner):
                               instance._info['datastore']['version'],
                               "Unexpected instance datastore version")
             self.assert_configuration_group(instance_info.id, configuration_id)
+            if locality:
+                self.assert_equal(locality, instance._info['locality'],
+                                  "Unexpected locality")
 
         return instance_info
 

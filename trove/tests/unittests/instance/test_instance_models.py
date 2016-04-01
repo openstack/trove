@@ -43,7 +43,8 @@ class SimpleInstanceTest(trove_testtools.TestCase):
             InstanceTasks.BUILDING, name="TestInstance")
         self.instance = SimpleInstance(
             None, db_info, InstanceServiceStatus(
-                ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock())
+                ServiceStatuses.BUILDING), ds_version=Mock(), ds=Mock(),
+            locality='affinity')
         db_info.addresses = {"private": [{"addr": "123.123.123.123"}],
                              "internal": [{"addr": "10.123.123.123"}],
                              "public": [{"addr": "15.123.123.123"}]}
@@ -101,6 +102,9 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         self.assertTrue('10.123.123.123' in ip)
         self.assertTrue('123.123.123.123' in ip)
         self.assertTrue('15.123.123.123' in ip)
+
+    def test_locality(self):
+        self.assertEqual('affinity', self.instance.locality)
 
 
 class CreateInstanceTest(trove_testtools.TestCase):
@@ -172,6 +176,7 @@ class CreateInstanceTest(trove_testtools.TestCase):
         self.check = backup_models.DBBackup.check_swift_object_exist
         backup_models.DBBackup.check_swift_object_exist = Mock(
             return_value=True)
+        self.locality = 'affinity'
         super(CreateInstanceTest, self).setUp()
 
     @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
@@ -211,6 +216,19 @@ class CreateInstanceTest(trove_testtools.TestCase):
             self.datastore, self.datastore_version,
             self.volume_size, self.backup_id,
             self.az, self.nics, self.configuration)
+        self.assertIsNotNone(instance)
+
+    def test_can_instantiate_with_locality(self):
+        # make sure the backup will fit
+        self.backup.size = 0.2
+        self.backup.save()
+        instance = models.Instance.create(
+            self.context, self.name, self.flavor_id,
+            self.image_id, self.databases, self.users,
+            self.datastore, self.datastore_version,
+            self.volume_size, self.backup_id,
+            self.az, self.nics, self.configuration,
+            locality=self.locality)
         self.assertIsNotNone(instance)
 
 

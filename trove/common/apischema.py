@@ -349,7 +349,8 @@ instance = {
                         }
                     },
                     "nics": nics,
-                    "modules": module_list
+                    "modules": module_list,
+                    "locality": non_empty_string
                 }
             }
         }
