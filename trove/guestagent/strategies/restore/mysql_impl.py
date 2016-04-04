@@ -43,7 +43,8 @@ class MySQLRestoreMixin(object):
     RESET_ROOT_MYSQL_COMMANDS = ("START TRANSACTION;",
                                  "UPDATE `mysql`.`user` SET"
                                  " `password`=PASSWORD('')"
-                                 " WHERE `user`='root';",
+                                 " WHERE `user`='root'"
+                                 " AND `host` = 'localhost';",
                                  "FLUSH PRIVILEGES;",
                                  "COMMIT;")
     # This is a suffix MySQL appends to the file name given in
@@ -127,6 +128,10 @@ class MySQLRestoreMixin(object):
                                       "mysqld did not stop!"))
 
     def reset_root_password(self):
+        """Reset the password of the localhost root account used by Trove
+        for initial datastore configuration.
+        """
+
         with tempfile.NamedTemporaryFile() as init_file:
             operating_system.chmod(init_file.name, FileMode.ADD_READ_ALL,
                                    as_root=True)
