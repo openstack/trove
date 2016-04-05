@@ -496,7 +496,10 @@ class ConfigurationRunner(TestRunner):
             "TEST_" + str(datetime.now()) + "_config",
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
-            [], [], availability_zone="nova",
+            [], [],
+            datastore=self.instance_info.dbaas_datastore,
+            datastore_version=self.instance_info.dbaas_datastore_version,
+            availability_zone="nova",
             configuration=config_id)
         self.assert_client_code(200)
         self.assert_equal("BUILD", result.status, 'Unexpected inst status')
