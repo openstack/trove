@@ -237,7 +237,7 @@ class BaseDbStatus(object):
         :raises:              :class:`RuntimeError` on failure.
         """
         LOG.info(_("Starting database service."))
-        operating_system.start_service(service_candidates)
+        operating_system.start_service(service_candidates, timeout=timeout)
 
         self.wait_for_database_service_start(timeout, update_db=update_db)
 
@@ -284,7 +284,7 @@ class BaseDbStatus(object):
         :raises:              :class:`RuntimeError` on failure.
         """
         LOG.info(_("Stopping database service."))
-        operating_system.stop_service(service_candidates)
+        operating_system.stop_service(service_candidates, timeout=timeout)
 
         LOG.debug("Waiting for database to shutdown.")
         if not self._wait_for_database_service_status(
