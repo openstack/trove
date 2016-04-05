@@ -33,6 +33,7 @@ class ClusterViewTest(trove_testtools.TestCase):
 
     def setUp(self):
         super(ClusterViewTest, self).setUp()
+        self.locality = 'anti-affinity'
         self.cluster = Mock()
         self.cluster.created = 'Yesterday'
         self.cluster.updated = 'Now'
@@ -46,6 +47,7 @@ class ClusterViewTest(trove_testtools.TestCase):
         self.cluster.instances[0].volume.size = 1
         self.cluster.instances[0].slave_of_id = None
         self.cluster.instances[0].slaves = None
+        self.cluster.locality = self.locality
 
     def tearDown(self):
         super(ClusterViewTest, self).tearDown()
@@ -64,6 +66,7 @@ class ClusterViewTest(trove_testtools.TestCase):
         self.assertEqual(self.cluster.name, result['cluster']['name'])
         self.assertEqual(self.cluster.datastore_version.name,
                          result['cluster']['datastore']['version'])
+        self.assertEqual(self.locality, result['cluster']['locality'])
 
     @patch.object(ClusterView, 'build_instances', return_value=('10.0.0.1',
                                                                 []))

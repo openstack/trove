@@ -157,7 +157,7 @@ class TestClusterController(trove_testtools.TestCase):
         self.controller.create(req, body, tenant_id)
         mock_cluster_create.assert_called_with(context, 'products',
                                                datastore, datastore_version,
-                                               instances, {})
+                                               instances, {}, None)
 
     @patch.object(Cluster, 'load')
     def test_show_cluster(self,

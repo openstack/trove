@@ -172,12 +172,24 @@ class ClusterController(wsgi.Controller):
                               "nics": nics,
                               "availability_zone": availability_zone})
 
+        locality = body['cluster'].get('locality')
+        if locality:
+            locality_domain = ['affinity', 'anti-affinity']
+            locality_domain_msg = ("Invalid locality '%s'. "
+                                   "Must be one of ['%s']" %
+                                   (locality,
+                                    "', '".join(locality_domain)))
+            if locality not in locality_domain:
+                raise exception.BadRequest(msg=locality_domain_msg)
+
         context.notification = notification.DBaaSClusterCreate(context,
                                                                request=req)
         with StartNotification(context, name=name, datastore=datastore.name,
                                datastore_version=datastore_version.name):
             cluster = models.Cluster.create(context, name, datastore,
                                             datastore_version, instances,
-                                            extended_properties)
+                                            extended_properties,
+                                            locality)
+        cluster.locality = locality
         view = views.load_view(cluster, req=req, load_servers=False)
         return wsgi.Result(view.data(), 200)

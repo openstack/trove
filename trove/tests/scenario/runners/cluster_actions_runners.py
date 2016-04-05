@@ -41,8 +41,13 @@ class ClusterActionsRunner(TestRunner):
     def __init__(self):
         super(ClusterActionsRunner, self).__init__()
 
+        self.cluster_name = 'test_cluster'
         self.cluster_id = 0
+        self.cluster_inst_ids = None
+        self.cluster_count_before_create = None
+        self.srv_grp_id = None
         self.current_root_creds = None
+        self.locality = 'affinity'
 
     @property
     def is_using_existing_cluster(self):
@@ -52,9 +57,15 @@ class ClusterActionsRunner(TestRunner):
     def has_do_not_delete_cluster(self):
         return self.has_env_flag(self.DO_NOT_DELETE_CLUSTER_FLAG)
 
+    @property
+    def min_cluster_node_count(self):
+        return 2
+
     def run_cluster_create(self, num_nodes=None, expected_task_name='BUILDING',
                            expected_instance_states=['BUILD', 'ACTIVE'],
                            expected_http_code=200):
+        self.cluster_count_before_create = len(
+            self.auth_client.clusters.list())
         if not num_nodes:
             num_nodes = self.min_cluster_node_count
 
@@ -64,15 +75,11 @@ class ClusterActionsRunner(TestRunner):
                 volume_size=self.instance_info.volume['size'])] * num_nodes
 
         self.cluster_id = self.assert_cluster_create(
-            'test_cluster', instances_def, expected_task_name,
-            expected_instance_states, expected_http_code)
-
-    @property
-    def min_cluster_node_count(self):
-        return 2
+            self.cluster_name, instances_def, self.locality,
+            expected_task_name, expected_instance_states, expected_http_code)
 
     def assert_cluster_create(
-            self, cluster_name, instances_def, expected_task_name,
+            self, cluster_name, instances_def, locality, expected_task_name,
             expected_instance_states, expected_http_code):
         self.report.log("Testing cluster create: %s" % cluster_name)
 
@@ -86,8 +93,11 @@ class ClusterActionsRunner(TestRunner):
             cluster = self.auth_client.clusters.create(
                 cluster_name, self.instance_info.dbaas_datastore,
                 self.instance_info.dbaas_datastore_version,
-                instances=instances_def)
-            self._assert_cluster_action(cluster.id, expected_task_name,
+                instances=instances_def, locality=locality)
+            self._assert_cluster_values(cluster, expected_task_name)
+            # Don't give an expected task here or it will do a 'get' on
+            # the cluster.  We tested the cluster values above.
+            self._assert_cluster_action(cluster.id, None,
                                         expected_http_code)
             cluster_instances = self._get_cluster_instances(cluster.id)
             self.assert_all_instance_states(
@@ -95,6 +105,13 @@ class ClusterActionsRunner(TestRunner):
             # Create the helper user/database on the first node.
             # The cluster should handle the replication itself.
             self.create_test_helper_on_instance(cluster_instances[0])
+            # make sure the server_group was created
+            self.cluster_inst_ids = [inst.id for inst in cluster_instances]
+            for id in self.cluster_inst_ids:
+                srv_grp_id = self.assert_server_group_exists(id)
+                if self.srv_grp_id and self.srv_grp_id != srv_grp_id:
+                    self.fail("Found multiple server groups for cluster")
+                self.srv_grp_id = srv_grp_id
 
         cluster_id = cluster.id
 
@@ -103,7 +120,6 @@ class ClusterActionsRunner(TestRunner):
         # it may take up to the periodic task interval until the task name
         # gets updated in the Trove database.
         self._assert_cluster_states(cluster_id, ['NONE'])
-        self._assert_cluster_response(cluster_id, 'NONE')
 
         return cluster_id
 
@@ -112,7 +128,26 @@ class ClusterActionsRunner(TestRunner):
             cluster_id = os.environ.get(self.USE_CLUSTER_ID_FLAG)
             return self.auth_client.clusters.get(cluster_id)
 
-        return None
+    def run_cluster_list(self, expected_http_code=200):
+
+        self.assert_cluster_list(
+            self.cluster_count_before_create + 1,
+            expected_http_code)
+
+    def assert_cluster_list(self, expected_count,
+                            expected_http_code):
+        count = len(self.auth_client.clusters.list())
+        self.assert_client_code(expected_http_code)
+        self.assert_equal(expected_count, count, "Unexpected cluster count")
+
+    def run_cluster_show(self, expected_http_code=200,
+                         expected_task_name='NONE'):
+        self.assert_cluster_show(
+            self.cluster_id, expected_task_name, expected_http_code)
+
+    def assert_cluster_show(self, cluster_id, expected_task_name,
+                            expected_http_code):
+        self._assert_cluster_response(cluster_id, expected_task_name)
 
     def run_cluster_root_enable(self, expected_task_name=None,
                                 expected_http_code=200):
@@ -267,11 +302,15 @@ class ClusterActionsRunner(TestRunner):
         cluster_instances = self._get_cluster_instances(cluster_id)
 
         self.auth_client.clusters.delete(cluster_id)
+        # Since the server_group is removed right at the beginning of the
+        # cluster delete process we can't check for locality anymore.
         self._assert_cluster_action(cluster_id, expected_task_name,
-                                    expected_http_code)
+                                    expected_http_code, check_locality=False)
 
         self.assert_all_gone(cluster_instances, expected_last_instance_state)
         self._assert_cluster_gone(cluster_id)
+        # make sure the server group is gone too
+        self.assert_server_group_gone(self.srv_grp_id)
 
     def _get_cluster_instances(self, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
@@ -279,11 +318,13 @@ class ClusterActionsRunner(TestRunner):
                 for instance in cluster.instances]
 
     def _assert_cluster_action(
-            self, cluster_id, expected_state, expected_http_code):
+            self, cluster_id, expected_task_name, expected_http_code,
+            check_locality=True):
         if expected_http_code is not None:
             self.assert_client_code(expected_http_code)
-        if expected_state:
-            self._assert_cluster_response(cluster_id, expected_state)
+        if expected_task_name:
+            self._assert_cluster_response(cluster_id, expected_task_name,
+                                          check_locality=check_locality)
 
     def _assert_cluster_states(self, cluster_id, expected_states,
                                fast_fail_status=None):
@@ -314,8 +355,15 @@ class ClusterActionsRunner(TestRunner):
                                % (cluster_id, task))
         return task_name == task
 
-    def _assert_cluster_response(self, cluster_id, expected_state):
+    def _assert_cluster_response(self, cluster_id, expected_task_name,
+                                 expected_http_code=200, check_locality=True):
         cluster = self.auth_client.clusters.get(cluster_id)
+        self.assert_client_code(expected_http_code)
+        self._assert_cluster_values(cluster, expected_task_name,
+                                    check_locality=check_locality)
+
+    def _assert_cluster_values(self, cluster, expected_task_name,
+                               check_locality=True):
         with TypeCheck('Cluster', cluster) as check:
             check.has_field("id", six.string_types)
             check.has_field("name", six.string_types)
@@ -324,13 +372,18 @@ class ClusterActionsRunner(TestRunner):
             check.has_field("links", list)
             check.has_field("created", six.text_type)
             check.has_field("updated", six.text_type)
+            if check_locality:
+                check.has_field("locality", six.text_type)
             for instance in cluster.instances:
                 isinstance(instance, dict)
                 self.assert_is_not_none(instance['id'])
                 self.assert_is_not_none(instance['links'])
                 self.assert_is_not_none(instance['name'])
-        self.assert_equal(expected_state, cluster.task['name'],
+        self.assert_equal(expected_task_name, cluster.task['name'],
                           'Unexpected cluster task name')
+        if check_locality:
+            self.assert_equal(self.locality, cluster.locality,
+                              "Unexpected cluster locality")
 
     def _assert_cluster_gone(self, cluster_id):
         t0 = timer.time()

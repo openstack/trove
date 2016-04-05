@@ -24,6 +24,7 @@ from trove.common.i18n import _
 from trove.common.notification import DBaaSClusterGrow, DBaaSClusterShrink
 from trove.common.notification import StartNotification
 from trove.common import remote
+from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.common import utils
 from trove.datastore import models as datastore_models
@@ -89,6 +90,9 @@ class Cluster(object):
             self.ds = (datastore_models.Datastore.
                        load(self.ds_version.datastore_id))
         self._db_instances = None
+        self._server_group = None
+        self._server_group_loaded = False
+        self._locality = None
 
     @classmethod
     def get_guest(cls, instance):
@@ -198,13 +202,39 @@ class Cluster(object):
         return inst_models.Instances.load_all_by_cluster_id(
             self.context, self.db_info.id, load_servers=False)
 
+    @property
+    def server_group(self):
+        # The server group could be empty, so we need a flag to cache it
+        if not self._server_group_loaded and self.instances:
+            self._server_group = self.instances[0].server_group
+            self._server_group_loaded = True
+        return self._server_group
+
+    @property
+    def locality(self):
+        if not self._locality:
+            if self.server_group:
+                self._locality = srv_grp.ServerGroup.get_locality(
+                    self._server_group)
+        return self._locality
+
+    @locality.setter
+    def locality(self, value):
+        """This is to facilitate the fact that the server group may not be
+        set up before the create command returns.
+        """
+        self._locality = value
+
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties):
+               instances, extended_properties, locality):
+        locality = srv_grp.ServerGroup.build_scheduler_hint(
+            context, locality, name)
         api_strategy = strategy.load_api_strategy(datastore_version.manager)
         return api_strategy.cluster_class.create(context, name, datastore,
                                                  datastore_version, instances,
-                                                 extended_properties)
+                                                 extended_properties,
+                                                 locality)
 
     def validate_cluster_available(self, valid_states=[ClusterTasks.NONE]):
         if self.db_info.task_status not in valid_states:
@@ -224,6 +254,11 @@ class Cluster(object):
 
         self.update_db(task_status=ClusterTasks.DELETING)
 
+        # we force the server-group delete here since we need to load the
+        # group while the instances still exist. Also, since the instances
+        # take a while to be removed they might not all be gone even if we
+        # do it after the delete.
+        srv_grp.ServerGroup.delete(self.context, self.server_group, force=True)
         for db_inst in db_insts:
             instance = inst_models.load_any_instance(self.context, db_inst.id)
             instance.delete()
@@ -261,7 +296,7 @@ class Cluster(object):
 
     @staticmethod
     def load_instance(context, cluster_id, instance_id):
-        return inst_models.load_instance_with_guest(
+        return inst_models.load_instance_with_info(
             inst_models.DetailInstance, context, instance_id, cluster_id)
 
     @staticmethod
