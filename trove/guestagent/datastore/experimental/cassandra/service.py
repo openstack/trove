@@ -21,6 +21,7 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.cluster import Cluster
 from cassandra.cluster import NoHostAvailable
 from cassandra import OperationTimedOut
+from cassandra.policies import ConstantReconnectionPolicy
 from oslo_log import log as logging
 from oslo_utils import netutils
 
@@ -45,7 +46,6 @@ from trove.guestagent import pkg
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
-MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'cassandra'
 
 packager = pkg.Package()
 
@@ -134,6 +134,9 @@ class CassandraApp(object):
     @property
     def cqlsh_conf_path(self):
         return "~/.cassandra/cqlshrc"
+
+    def build_admin(self):
+        return CassandraAdmin(self.get_current_superuser())
 
     def install_if_needed(self, packages):
         """Prepare the guest machine with a Cassandra server installation."""
@@ -664,6 +667,12 @@ class CassandraApp(object):
             LOG.exception(_("The node failed to decommission itself."))
             self.status.set_status(rd_instance.ServiceStatuses.FAILED)
             return
+        finally:
+            # Cassandra connections have ability to automatically discover and
+            # fallback to other cluster nodes whenever a node goes down.
+            # Reset the status after decomissioning to ensure the heartbeat
+            # connection talks to this node only.
+            self.status = CassandraAppStatus(self.get_current_superuser())
 
         try:
             self.stop_db(update_db=True, do_not_start_on_reboot=True)
@@ -690,7 +699,7 @@ class CassandraApp(object):
         superuser-level access to all keyspaces.
         """
         cassandra = models.CassandraRootUser(password=root_password)
-        admin = CassandraAdmin(self.get_current_superuser())
+        admin = self.build_admin()
         if self.is_root_enabled():
             admin.alter_user_password(cassandra)
         else:
@@ -702,7 +711,7 @@ class CassandraApp(object):
         """The Trove administrative user ('os_admin') should normally be the
         only superuser in the system.
         """
-        found = CassandraAdmin(self.get_current_superuser()).list_superusers()
+        found = self.build_admin().list_superusers()
         return len([user for user in found
                     if user.name != self._ADMIN_USER]) > 0
 
@@ -717,11 +726,18 @@ class CassandraAppStatus(service.BaseDbStatus):
         """
         super(CassandraAppStatus, self).__init__()
         self.__user = superuser
+        self.__client = None
+
+    @property
+    def client(self):
+        if self.__client is None:
+            self.__client = CassandraLocalhostConnection(self.__user)
+        return self.__client
 
     def _get_actual_db_status(self):
         try:
-            with CassandraLocalhostConnection(self.__user):
-                return rd_instance.ServiceStatuses.RUNNING
+            self.client.execute('SELECT now() FROM system.local;')
+            return rd_instance.ServiceStatuses.RUNNING
         except NoHostAvailable:
             return rd_instance.ServiceStatuses.SHUTDOWN
         except Exception:
@@ -752,16 +768,22 @@ class CassandraAdmin(object):
 
     def __init__(self, user):
         self.__admin_user = user
+        self.__client = None
+
+    @property
+    def client(self):
+        if self.__client is None:
+            self.__client = CassandraLocalhostConnection(self.__admin_user)
+        return self.__client
 
     def create_user(self, context, users):
         """
         Create new non-superuser accounts.
         New users are by default granted full access to all database resources.
         """
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            for item in users:
-                self._create_user_and_grant(client,
-                                            self._deserialize_user(item))
+        for item in users:
+            self._create_user_and_grant(self.client,
+                                        self._deserialize_user(item))
 
     def _create_user_and_grant(self, client, user):
         """
@@ -784,27 +806,24 @@ class CassandraAdmin(object):
         access to all keyspaces.
         """
         LOG.debug("Creating a new superuser '%s'." % user.name)
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            client.execute("CREATE USER '{}' WITH PASSWORD %s SUPERUSER;",
-                           (user.name,), (user.password,))
-            client.execute("GRANT ALL PERMISSIONS ON ALL KEYSPACES TO '{}';",
-                           (user.name,))
+        self.client.execute("CREATE USER '{}' WITH PASSWORD %s SUPERUSER;",
+                            (user.name,), (user.password,))
+        self.client.execute(
+            "GRANT ALL PERMISSIONS ON ALL KEYSPACES TO '{}';", (user.name,))
 
     def delete_user(self, context, user):
         self.drop_user(self._deserialize_user(user))
 
     def drop_user(self, user):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            self._drop_user(client, user)
+        self._drop_user(self.client, user)
 
     def _drop_user(self, client, user):
         LOG.debug("Deleting user '%s'." % user.name)
         client.execute("DROP USER '{}';", (user.name, ))
 
     def get_user(self, context, username, hostname):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            user = self._find_user(client, username)
-            return user.serialize() if user is not None else None
+        user = self._find_user(self.client, username)
+        return user.serialize() if user is not None else None
 
     def _find_user(self, client, username):
         """
@@ -821,11 +840,9 @@ class CassandraAdmin(object):
         List all non-superuser accounts. Omit names on the ignored list.
         Return an empty set if None.
         """
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            users = [user.serialize() for user in
-                     self._get_listed_users(client)]
-            return pagination.paginate_list(users, limit, marker,
-                                            include_marker)
+        users = [user.serialize() for user in
+                 self._get_listed_users(self.client)]
+        return pagination.paginate_list(users, limit, marker, include_marker)
 
     def _get_listed_users(self, client):
         """
@@ -927,27 +944,24 @@ class CassandraAdmin(object):
 
     def list_superusers(self):
         """List all system users existing in the database."""
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            return self._get_users(client, lambda user: user.super)
+        return self._get_users(self.client, lambda user: user.super)
 
     def grant_access(self, context, username, hostname, databases):
         """
         Grant full access on keyspaces to a given username.
         """
         user = models.CassandraUser(username)
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            for db in databases:
-                self._grant_full_access_on_keyspace(
-                    client, models.CassandraSchema(db), user)
+        for db in databases:
+            self._grant_full_access_on_keyspace(
+                self.client, models.CassandraSchema(db), user)
 
     def revoke_access(self, context, username, hostname, database):
         """
         Revoke all permissions on any database resources from a given username.
         """
         user = models.CassandraUser(username)
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            self._revoke_all_access_on_keyspace(
-                client, models.CassandraSchema(database), user)
+        self._revoke_all_access_on_keyspace(
+            self.client, models.CassandraSchema(database), user)
 
     def _grant_full_access_on_keyspace(self, client, keyspace, user,
                                        check_reserved=True):
@@ -988,11 +1002,10 @@ class CassandraAdmin(object):
                        (keyspace.name, user.name))
 
     def update_attributes(self, context, username, hostname, user_attrs):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            user = self._load_user(client, username)
-            new_name = user_attrs.get('name')
-            new_password = user_attrs.get('password')
-            self._update_user(client, user, new_name, new_password)
+        user = self._load_user(self.client, username)
+        new_name = user_attrs.get('name')
+        new_password = user_attrs.get('password')
+        self._update_user(self.client, user, new_name, new_password)
 
     def _update_user(self, client, user, new_username, new_password):
         """
@@ -1029,13 +1042,12 @@ class CassandraAdmin(object):
         self._drop_user(client, user)
 
     def alter_user_password(self, user):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            self._alter_user_password(client, user)
+        self._alter_user_password(self.client, user)
 
     def change_passwords(self, context, users):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            for user in users:
-                self._alter_user_password(client, self._deserialize_user(user))
+        for user in users:
+            self._alter_user_password(self.client,
+                                      self._deserialize_user(user))
 
     def _alter_user_password(self, client, user):
         LOG.debug("Changing password of user '%s'." % user.name)
@@ -1043,10 +1055,9 @@ class CassandraAdmin(object):
                        "WITH PASSWORD %s;", (user.name,), (user.password,))
 
     def create_database(self, context, databases):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            for item in databases:
-                self._create_single_node_keyspace(
-                    client, self._deserialize_keyspace(item))
+        for item in databases:
+            self._create_single_node_keyspace(
+                self.client, self._deserialize_keyspace(item))
 
     def _create_single_node_keyspace(self, client, keyspace):
         """
@@ -1073,8 +1084,8 @@ class CassandraAdmin(object):
                        "'replication_factor' : 1 }};", (keyspace.name,))
 
     def delete_database(self, context, database):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            self._drop_keyspace(client, self._deserialize_keyspace(database))
+        self._drop_keyspace(self.client,
+                            self._deserialize_keyspace(database))
 
     def _drop_keyspace(self, client, keyspace):
         LOG.debug("Dropping keyspace '%s'." % keyspace.name)
@@ -1082,11 +1093,10 @@ class CassandraAdmin(object):
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            databases = [keyspace.serialize() for keyspace
-                         in self._get_available_keyspaces(client)]
-            return pagination.paginate_list(databases, limit, marker,
-                                            include_marker)
+        databases = [keyspace.serialize() for keyspace
+                     in self._get_available_keyspaces(self.client)]
+        return pagination.paginate_list(databases, limit, marker,
+                                        include_marker)
 
     def _get_available_keyspaces(self, client):
         """
@@ -1099,10 +1109,9 @@ class CassandraAdmin(object):
                 if db.keyspace_name not in self.ignore_dbs}
 
     def list_access(self, context, username, hostname):
-        with CassandraLocalhostConnection(self.__admin_user) as client:
-            user = self._find_user(client, username)
-            if user:
-                return user.databases
+        user = self._find_user(self.client, username)
+        if user:
+            return user.databases
 
         raise exception.UserNotFound(username)
 
@@ -1136,11 +1145,11 @@ class CassandraAdmin(object):
 
     @property
     def ignore_users(self):
-        return cfg.get_ignored_users(manager=MANAGER)
+        return cfg.get_ignored_users()
 
     @property
     def ignore_dbs(self):
-        return cfg.get_ignored_dbs(manager=MANAGER)
+        return cfg.get_ignored_dbs()
 
 
 class CassandraConnection(object):
@@ -1148,6 +1157,8 @@ class CassandraConnection(object):
 
     # Cassandra 2.1 only supports protocol versions 3 and lower.
     NATIVE_PROTOCOL_VERSION = 3
+    CONNECTION_TIMEOUT_SEC = CONF.agent_call_high_timeout
+    RECONNECT_DELAY_SEC = 3
 
     def __init__(self, contact_points, user):
         self.__user = user
@@ -1155,18 +1166,25 @@ class CassandraConnection(object):
         # After the driver connects to one of the nodes it will automatically
         # discover the rest.
         # Will connect to '127.0.0.1' if None contact points are given.
+        #
+        # Set the 'reconnection_policy' so that dead connections recover fast.
         self._cluster = Cluster(
             contact_points=contact_points,
             auth_provider=PlainTextAuthProvider(user.name, user.password),
-            protocol_version=self.NATIVE_PROTOCOL_VERSION)
+            protocol_version=self.NATIVE_PROTOCOL_VERSION,
+            connect_timeout=self.CONNECTION_TIMEOUT_SEC,
+            control_connection_timeout=self.CONNECTION_TIMEOUT_SEC,
+            reconnection_policy=ConstantReconnectionPolicy(
+                self.RECONNECT_DELAY_SEC, max_attempts=None))
         self.__session = None
 
+        self._connect()
+
     def __enter__(self):
-        self.__connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.__disconnect()
+        self._disconnect()
 
     def execute(self, query, identifiers=None, data_values=None, timeout=None):
         """
@@ -1182,7 +1200,7 @@ class CassandraConnection(object):
         There is no timeout if set to None.
         Return a set of rows or an empty list if None.
         """
-        if self.__is_active():
+        if self.is_active():
             try:
                 rows = self.__session.execute(self.__bind(query, identifiers),
                                               data_values, timeout)
@@ -1199,11 +1217,11 @@ class CassandraConnection(object):
             return query.format(*identifiers)
         return query
 
-    def __connect(self):
+    def _connect(self):
         if not self._cluster.is_shutdown:
             LOG.debug("Connecting to a Cassandra cluster as '%s'."
                       % self.__user.name)
-            if not self.__is_active():
+            if not self.is_active():
                 self.__session = self._cluster.connect()
             else:
                 LOG.debug("Connection already open.")
@@ -1216,18 +1234,22 @@ class CassandraConnection(object):
             LOG.debug("Cannot perform this operation on a terminated cluster.")
             raise exception.UnprocessableEntity()
 
-    def __disconnect(self):
-        if self.__is_active():
+    def _disconnect(self):
+        if self.is_active():
             try:
                 LOG.debug("Disconnecting from cluster: '%s'"
                           % self._cluster.metadata.cluster_name)
                 self._cluster.shutdown()
-                self.__session.shutdown()
             except Exception:
                 LOG.debug("Failed to disconnect from a Cassandra cluster.")
 
-    def __is_active(self):
+    def is_active(self):
         return self.__session and not self.__session.is_shutdown
+
+    def __del__(self):
+        # The connections would survive the parent object's GC.
+        # We need to close it explicitly.
+        self._disconnect()
 
 
 class CassandraLocalhostConnection(CassandraConnection):
