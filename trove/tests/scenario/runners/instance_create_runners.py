@@ -45,7 +45,7 @@ class InstanceCreateRunner(TestRunner):
         info = self.assert_instance_create(
             name, flavor, trove_volume_size, [], [], None, None,
             CONFIG.dbaas_datastore, CONFIG.dbaas_datastore_version,
-            expected_states, expected_http_code)
+            expected_states, expected_http_code, create_helper_user=True)
 
         # Update the shared instance info.
         self.instance_info.databases = info.databases
@@ -77,7 +77,8 @@ class InstanceCreateRunner(TestRunner):
 
     def run_initialized_instance_create(
             self, with_dbs=True, with_users=True, configuration_id=None,
-            expected_states=['BUILD', 'ACTIVE'], expected_http_code=200):
+            expected_states=['BUILD', 'ACTIVE'], expected_http_code=200,
+            create_helper_user=True):
         # TODO(pmalik): Instance create should return 202 Accepted (cast)
         # rather than 200 OK (call).
         name = self.instance_info.name
@@ -97,7 +98,8 @@ class InstanceCreateRunner(TestRunner):
                 self.init_inst_dbs, self.init_inst_users,
                 self.init_config_group_id, None,
                 CONFIG.dbaas_datastore, CONFIG.dbaas_datastore_version,
-                expected_states, expected_http_code)
+                expected_states, expected_http_code,
+                create_helper_user=create_helper_user)
 
             self.init_inst_id = info.id
         else:
@@ -121,7 +123,7 @@ class InstanceCreateRunner(TestRunner):
         self, name, flavor, trove_volume_size,
         database_definitions, user_definitions,
             configuration_id, root_password, datastore, datastore_version,
-            expected_states, expected_http_code):
+            expected_states, expected_http_code, create_helper_user=False):
         """This assert method executes a 'create' call and verifies the server
         response. It neither waits for the instance to become available
         nor it performs any other validations itself.
@@ -133,6 +135,21 @@ class InstanceCreateRunner(TestRunner):
         databases = database_definitions
         users = [{'name': item['name'], 'password': item['password']}
                  for item in user_definitions]
+
+        # Here we add helper user/database if any.
+        if create_helper_user:
+            helper_db_def, helper_user_def = self.build_helper_defs()
+            if helper_db_def:
+                self.report.log(
+                    "Appending a helper database '%s' to the instance "
+                    "definition." % helper_db_def['name'])
+                databases.append(helper_db_def)
+            if helper_user_def:
+                self.report.log(
+                    "Appending a helper user '%s:%s' to the instance "
+                    "definition."
+                    % (helper_user_def['name'], helper_user_def['password']))
+                users.append(helper_user_def)
 
         instance_info = InstanceTestInfo()
         instance_info.name = name
@@ -259,8 +276,8 @@ class InstanceCreateRunner(TestRunner):
         self.assert_is_none(full_list.next,
                             "Unexpected pagination in the database list.")
         listed_names = [database.name for database in full_list]
-        self.assert_list_elements_equal(expected_names, listed_names,
-                                        "Mismatch in instance databases.")
+        self.assert_is_sublist(expected_names, listed_names,
+                               "Mismatch in instance databases.")
 
     def _get_names(self, definitions):
         return [item['name'] for item in definitions]
@@ -271,8 +288,8 @@ class InstanceCreateRunner(TestRunner):
         self.assert_is_none(full_list.next,
                             "Unexpected pagination in the user list.")
         listed_names = [user.name for user in full_list]
-        self.assert_list_elements_equal(expected_names, listed_names,
-                                        "Mismatch in instance users.")
+        self.assert_is_sublist(expected_names, listed_names,
+                               "Mismatch in instance users.")
 
         # Verify that user definitions include only created databases.
         all_databases = self._get_names(

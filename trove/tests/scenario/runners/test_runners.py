@@ -33,6 +33,7 @@ CONF = cfg.CONF
 
 
 class TestRunner(object):
+
     """
     Base class for all 'Runner' classes.
 
@@ -165,8 +166,8 @@ class TestRunner(object):
         Use the current instance's datastore if None.
         """
         try:
-            return CONF.get(
-                datastore or self.instance_info.dbaas_datastore).get(name)
+            datastore = datastore or self.instance_info.dbaas_datastore
+            return CONF.get(datastore).get(name)
         except NoSuchOptError:
             return CONF.get(name)
 
@@ -177,7 +178,7 @@ class TestRunner(object):
     def get_existing_instance(self):
         if self.is_using_existing_instance:
             instance_id = os.environ.get(self.USE_INSTANCE_ID_FLAG)
-            return self._get_instance_info(instance_id)
+            return self.get_instance(instance_id)
 
         return None
 
@@ -217,23 +218,43 @@ class TestRunner(object):
                 self.fail(str(task.poll_exception()))
 
     def _assert_instance_states(self, instance_id, expected_states,
-                                fast_fail_status='ERROR'):
-        for status in expected_states:
-            start_time = timer.time()
-            try:
-                poll_until(lambda: self._has_status(
-                    instance_id, status, fast_fail_status=fast_fail_status),
-                    sleep_time=self.def_sleep_time,
-                    time_out=self.def_timeout)
-                self.report.log("Instance has gone '%s' in %s." %
-                                (status, self._time_since(start_time)))
-            except exception.PollTimeOut:
-                self.report.log(
-                    "Status of instance '%s' did not change to '%s' after %s."
-                    % (instance_id, status, self._time_since(start_time)))
-                return False
+                                fast_fail_status='ERROR',
+                                require_all_states=False):
+        """Keep polling for the expected instance states until the instance
+        acquires either the last or fast-fail state.
 
-        return True
+        If the instance state does not match the state expected at the time of
+        polling (and 'require_all_states' is not set) the code assumes the
+        instance had already acquired before and moves to the next expected
+        state.
+        """
+
+        found = False
+        for status in expected_states:
+            if require_all_states or found or self._has_status(
+                    instance_id, status, fast_fail_status=fast_fail_status):
+                found = True
+                start_time = timer.time()
+                try:
+                    poll_until(lambda: self._has_status(
+                        instance_id, status,
+                        fast_fail_status=fast_fail_status),
+                        sleep_time=self.def_sleep_time,
+                        time_out=self.def_timeout)
+                    self.report.log("Instance has gone '%s' in %s." %
+                                    (status, self._time_since(start_time)))
+                except exception.PollTimeOut:
+                    self.report.log(
+                        "Status of instance '%s' did not change to '%s' "
+                        "after %s."
+                        % (instance_id, status, self._time_since(start_time)))
+                    return False
+            else:
+                self.report.log(
+                    "Instance state was not '%s', moving to the next expected "
+                    "state." % status)
+
+        return found
 
     def _time_since(self, start_time):
         return '%.1fs' % (timer.time() - start_time)
@@ -290,11 +311,11 @@ class TestRunner(object):
 
     def _has_status(self, instance_id, status, fast_fail_status=None):
         instance = self.get_instance(instance_id)
-        self.report.log("Waiting for instance '%s' to become '%s': %s"
+        self.report.log("Polling instance '%s' for state '%s', was '%s'."
                         % (instance_id, status, instance.status))
         if fast_fail_status and instance.status == fast_fail_status:
             raise RuntimeError("Instance '%s' acquired a fast-fail status: %s"
-                               % (instance_id, status))
+                               % (instance_id, instance.status))
         return instance.status == status
 
     def get_instance(self, instance_id):
@@ -319,3 +340,46 @@ class TestRunner(object):
         self.assert_is_not_none(flavor, "Flavor '%s' not found." % flavor_name)
 
         return flavor
+
+    def copy_dict(self, d, ignored_keys=None):
+        return {k: v for k, v in d.items()
+                if not ignored_keys or k not in ignored_keys}
+
+    def create_test_helper_on_instance(self, instance_id):
+        """Here we add a helper user/database, if any, to a given instance
+        via the Trove API.
+        These are for internal use by the test framework and should
+        not be changed by individual test-cases.
+        """
+        database_def, user_def = self.build_helper_defs()
+        if database_def:
+            self.report.log(
+                "Creating a helper database '%s' on instance: %s"
+                % (database_def['name'], instance_id))
+            self.auth_client.databases.create(instance_id, [database_def])
+
+        if user_def:
+            self.report.log(
+                "Creating a helper user '%s:%s' on instance: %s"
+                % (user_def['name'], user_def['password'], instance_id))
+            self.auth_client.users.create(instance_id, [user_def])
+
+    def build_helper_defs(self):
+        """Build helper database and user JSON definitions if credentials
+        are defined by the helper.
+        """
+        database_def = None
+        user_def = None
+        credentials = self.test_helper.get_helper_credentials()
+        if credentials:
+            database = credentials.get('database')
+            if database:
+                database_def = {'name': database}
+
+            username = credentials.get('name')
+            if username:
+                password = credentials.get('password', '')
+                user_def = {'name': username, 'password': password,
+                            'databases': [{'name': database}]}
+
+        return database_def, user_def
