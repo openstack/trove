@@ -15,7 +15,7 @@
 
 from proboscis import test
 
-from trove.tests.api.instances import WaitForGuestInstallationToFinish
+from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
 
 
@@ -25,8 +25,7 @@ GROUP_BACKUP_LIST = "scenario.backup_list_group"
 GROUP_RESTORE = "scenario.restore_group"
 
 
-@test(depends_on_classes=[WaitForGuestInstallationToFinish],
-      groups=[GROUP])
+@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
 class BackupGroup(TestGroup):
     """Test Backup and Restore functionality."""
 

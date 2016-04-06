@@ -153,3 +153,12 @@ class RedisHelper(TestHelper):
         TestRunner.assert_equal(expected_value, value,
                                 "Unexpected value '%s' returned from Redis "
                                 "key '%s'" % (value, key))
+
+    def get_dynamic_group(self):
+        return {'hz': 15}
+
+    def get_non_dynamic_group(self):
+        return {'databases': 24}
+
+    def get_invalid_groups(self):
+        return [{'hz': 600}, {'databases': -1}, {'databases': 'string_value'}]
