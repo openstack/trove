@@ -52,3 +52,18 @@ def drop_foreign_key_constraints(constraint_names, columns,
                                                refcolumns=ref_columns,
                                                name=constraint_name)
         fkey_constraint.drop()
+
+
+def create_foreign_key_constraints(constraint_names, columns,
+                                   ref_columns):
+    """Create the foreign key constraints that match the given
+    criteria.
+    :param constraint_names: List of foreign key constraint names
+    :param columns: List of the foreign key columns.
+    :param ref_columns: List of the referenced columns.
+    """
+    for constraint_name in constraint_names:
+        fkey_constraint = ForeignKeyConstraint(columns=columns,
+                                               refcolumns=ref_columns,
+                                               name=constraint_name)
+        fkey_constraint.create()
