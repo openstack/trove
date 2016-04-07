@@ -135,3 +135,9 @@ class SqlHelper(TestHelper):
     def ping(self, host, *args, **kwargs):
         root_client = self.get_client(host, *args, **kwargs)
         root_client.execute("SELECT 1;")
+
+    def get_configuration_value(self, property_name, host, *args, **kwargs):
+        client = self.get_client(host, *args, **kwargs)
+        cmd = "SHOW GLOBAL VARIABLES LIKE '%s';" % property_name
+        row = client.execute(cmd).fetchone()
+        return row['Value']

@@ -360,6 +360,13 @@ class TestHelper(object):
         """
         return []
 
+    def get_configuration_value(self, property_name, host, *args, **kwargs):
+        """Use the client to retrieve the value of a given configuration
+        property.
+        """
+        raise SkipTest("Runtime configuration retrieval not implemented in %s"
+                       % self.get_class_name())
+
     ###################
     # Guest Log related
     ###################
