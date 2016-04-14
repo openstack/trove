@@ -187,6 +187,8 @@ class TestRunner(object):
     EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path', None)
     ROOT_PARTITION = not (VOLUME_SUPPORT or CONFIG.get('device_path', None))
 
+    GUEST_CAST_WAIT_TIMEOUT_SEC = 60
+
     # Here's where the info for the 'main' test instance goes
     instance_info = InstanceTestInfo()
     report = CONFIG.get_report()

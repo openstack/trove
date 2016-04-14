@@ -17,6 +17,8 @@ from six.moves.urllib import parse as urllib_parse
 
 from proboscis import SkipTest
 
+from trove.common import exception
+from trove.common.utils import poll_until
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -51,7 +53,29 @@ class UserActionsRunner(TestRunner):
                             expected_http_code):
         self.auth_client.users.create(instance_id, serial_users_def)
         self.assert_client_code(expected_http_code)
+        self._wait_for_user_create(instance_id, serial_users_def)
         return serial_users_def
+
+    def _wait_for_user_create(self, instance_id, expected_user_defs):
+        expected_user_names = {user_def['name']
+                               for user_def in expected_user_defs}
+        self.report.log("Waiting for all created users to appear in the "
+                        "listing: %s" % expected_user_names)
+
+        def _all_exist():
+            all_users = self._get_user_names(instance_id)
+            return all(usr in all_users for usr in expected_user_names)
+
+        try:
+            poll_until(_all_exist, time_out=self.GUEST_CAST_WAIT_TIMEOUT_SEC)
+            self.report.log("All users now exist on the instance.")
+        except exception.PollTimeOut:
+            self.fail("Some users were not created within the poll "
+                      "timeout: %ds" % self.GUEST_CAST_WAIT_TIMEOUT_SEC)
+
+    def _get_user_names(self, instance_id):
+        full_list = self.auth_client.users.list(instance_id)
+        return {user.name: user for user in full_list}
 
     def run_user_show(self, expected_http_code=200):
         for user_def in self.user_defs:
@@ -330,6 +354,8 @@ class UserActionsRunner(TestRunner):
                 user_def.update(update_attribites)
                 expected_def = user_def
 
+        self._wait_for_user_create(instance_id, self.user_defs)
+
         # Verify using 'user-show' and 'user-list'.
         self.assert_user_show(instance_id, expected_def, 200)
         self.assert_users_list(instance_id, self.user_defs, 200)
@@ -349,9 +375,22 @@ class UserActionsRunner(TestRunner):
                            self.auth_client.users.get,
                            instance_id, user_name, user_host)
 
-        for user in self.auth_client.users.list(instance_id):
-            if user.name == user_name:
-                self.fail("User still listed after delete: %s" % user_name)
+        self._wait_for_user_delete(instance_id, user_name)
+
+    def _wait_for_user_delete(self, instance_id, deleted_user_name):
+        self.report.log("Waiting for deleted user to disappear from the "
+                        "listing: %s" % deleted_user_name)
+
+        def _db_is_gone():
+            all_users = self._get_user_names(instance_id)
+            return deleted_user_name not in all_users
+
+        try:
+            poll_until(_db_is_gone, time_out=self.GUEST_CAST_WAIT_TIMEOUT_SEC)
+            self.report.log("User is now gone from the instance.")
+        except exception.PollTimeOut:
+            self.fail("User still listed after the poll timeout: %ds" %
+                      self.GUEST_CAST_WAIT_TIMEOUT_SEC)
 
     def run_nonexisting_user_show(
             self, expected_exception=exceptions.NotFound,
