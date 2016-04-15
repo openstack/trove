@@ -458,8 +458,7 @@ class MongoDBAppStatus(service.BaseDbStatus):
         return ds_instance.ServiceStatuses.SHUTDOWN
 
     def cleanup_stalled_db_services(self):
-        out, err = utils.execute_with_timeout(system.FIND_PID, shell=True)
-        pid = "".join(out.split(" ")[1:2])
+        pid, err = utils.execute_with_timeout(system.FIND_PID, shell=True)
         utils.execute_with_timeout(system.MONGODB_KILL % pid, shell=True)
 
 
