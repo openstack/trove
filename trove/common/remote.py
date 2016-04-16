@@ -40,8 +40,7 @@ def normalize_url(url):
 
 
 def get_endpoint(service_catalog, service_type=None,
-                 endpoint_region=CONF.os_region_name,
-                 endpoint_type='publicURL'):
+                 endpoint_region=None, endpoint_type='publicURL'):
     """
     Select an endpoint from the service catalog
 
@@ -53,6 +52,8 @@ def get_endpoint(service_catalog, service_type=None,
 
     Some parts copied from glance/common/auth.py.
     """
+    endpoint_region = endpoint_region or CONF.os_region_name
+
     if not service_catalog:
         raise exception.EmptyCatalog()
 

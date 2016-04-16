@@ -280,7 +280,8 @@ def correct_id_with_req(id, request):
     return id
 
 
-def generate_random_password(password_length=CONF.default_password_length):
+def generate_random_password(password_length=None):
+    password_length = password_length or CONF.default_password_length
     return passlib_utils.generate_password(size=password_length)
 
 
