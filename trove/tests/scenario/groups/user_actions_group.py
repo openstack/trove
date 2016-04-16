@@ -65,6 +65,24 @@ class UserActionsGroup(TestGroup):
 
     @test(depends_on=[create_users],
           runs_after=[list_users])
+    def show_user_access(self):
+        """Show user access list."""
+        self.test_runner.run_user_access_show()
+
+    @test(depends_on=[create_users],
+          runs_after=[show_user_access])
+    def revoke_user_access(self):
+        """Revoke user database access."""
+        self.test_runner.run_user_access_revoke()
+
+    @test(depends_on=[create_users],
+          runs_after=[revoke_user_access])
+    def grant_user_access(self):
+        """Grant user database access."""
+        self.test_runner.run_user_access_grant()
+
+    @test(depends_on=[create_users],
+          runs_after=[grant_user_access])
     def create_user_with_no_attributes(self):
         """Ensure creating a user with blank specification fails."""
         self.test_runner.run_user_create_with_no_attributes()
