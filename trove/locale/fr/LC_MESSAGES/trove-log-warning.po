@@ -1,44 +1,19 @@
-# Translations template for trove.
-# Copyright (C) 2015 ORGANIZATION
-# This file is distributed under the same license as the trove project.
-#
-# Translators:
-# Corinne Verheyde <cverheyd@hotmail.com>, 2015
-# Frédéric <frosmont@free.fr>, 2014
 # OpenStack Infra <zanata@openstack.org>, 2015. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: trove 5.0.0.dev47\n"
+"Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2015-09-24 09:51+0000\n"
+"POT-Creation-Date: 2016-04-16 13:54+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2015-07-24 10:07+0000\n"
-"Last-Translator: Corinne Verheyde <cverheyd@hotmail.com>\n"
-"Language: fr\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"Generated-By: Babel 2.0\n"
-"X-Generator: Zanata 3.7.3\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
 "Language-Team: French\n"
+"Language: fr\n"
+"X-Generator: Zanata 3.7.3\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
 
 #, python-format
 msgid "Could not load instance %s."
 msgstr "Impossible de charger l'instance %s."
-
-msgid ""
-"The OpenStack Profiler is enabled. Using one of the hmac_keys specified in "
-"the api-paste.ini file (typically in /etc/trove), a trace can be made of all "
-"requests. Only an admin user can retrieve the trace information, however.\n"
-"To disable the profiler, add the following to the configuration file:\n"
-"[profiler]\n"
-"enabled=false"
-msgstr ""
-"Le Profiler OpenStack est activé. Utilisant une des hmac_keys spécifiées "
-"dans le fichier api-paste.ini (typiquement /etc/trove), une trace peut être "
-"faite de toutes les requêtes. Néanmoins, seul un administrateur peut "
-"récupérer les informations de la trace.\n"
-"Pour désactiver le profiler, ajouter les lignes suivantes au fichier de "
-"configuration:\n"
-"[profiler]\n"
-"enabled=false"
