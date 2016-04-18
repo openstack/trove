@@ -522,6 +522,11 @@ class ModuleAccessForbidden(Forbidden):
                 "options. %(options)s")
 
 
+class ModuleInvalid(Forbidden):
+
+    message = _("The module you are applying is invalid: %(reason)s")
+
+
 class ClusterNotFound(NotFound):
     message = _("Cluster '%(cluster)s' cannot be found.")
 

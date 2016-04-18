@@ -16,6 +16,7 @@
 
 import Crypto.Random
 from proboscis import SkipTest
+import re
 import tempfile
 
 from troveclient.compat import exceptions
@@ -797,8 +798,10 @@ class ModuleRunner(TestRunner):
             self.assert_equal(expected_contents, module_apply.contents,
                               '%s Unexpected contents' % prefix)
         if expected_message is not None:
-            self.assert_equal(expected_message, module_apply.message,
-                              '%s Unexpected message' % prefix)
+            regex = re.compile(expected_message)
+            self.assert_true(regex.match(module_apply.message),
+                             "%s Unexpected message '%s', expected '%s'" %
+                             (prefix, module_apply.message, expected_message))
         if expected_status is not None:
             self.assert_equal(expected_status, module_apply.status,
                               '%s Unexpected status' % prefix)
@@ -827,7 +830,8 @@ class ModuleRunner(TestRunner):
                             % module.name)
             elif self.MODULE_BINARY_SUFFIX in module.name:
                 status = 'ERROR'
-                message = 'Message not found in contents file'
+                message = ('^(Could not extract ping message|'
+                           'Message not found in contents file).*')
                 contents = self.MODULE_BINARY_CONTENTS
                 if self.MODULE_BINARY_SUFFIX2 in module.name:
                     contents = self.MODULE_BINARY_CONTENTS2

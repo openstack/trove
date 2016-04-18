@@ -1,0 +1,6 @@
+---
+features:
+  - Added a module driver for New Relics licenses.
+    This allows activation of any New Relic software
+    that is installed on the image. Bug 1571711
+
