@@ -38,7 +38,7 @@ def update_dict(updates, target):
         return target
 
     if updates is not None:
-        for k, v in updates.iteritems():
+        for k, v in updates.items():
             if isinstance(v, collections.Mapping):
                 target[k] = update_dict(v, target.get(k, {}))
             else:

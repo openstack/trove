@@ -67,8 +67,8 @@ def get_custom_managers():
 
 
 def datastore_registry():
-    return dict(chain(defaults.iteritems(),
-                get_custom_managers().iteritems()))
+    return dict(chain(defaults.items(),
+                get_custom_managers().items()))
 
 
 def to_gb(bytes):

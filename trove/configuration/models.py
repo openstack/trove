@@ -93,7 +93,7 @@ class Configuration(object):
         LOG.debug("Saving configuration values for %s - "
                   "values: %s" % (cfg_id, values))
         config_items = []
-        for key, val in values.iteritems():
+        for key, val in values.items():
             config_item = DBConfigurationParameter.create(
                 configuration_id=cfg_id,
                 configuration_key=key,

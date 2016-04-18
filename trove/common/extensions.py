@@ -125,7 +125,7 @@ class ActionExtensionController(object):
         self.action_handlers[action_name] = handler
 
     def action(self, req, id, body):
-        for action_name, handler in self.action_handlers.iteritems():
+        for action_name, handler in self.action_handlers.items():
             if action_name in body:
                 return handler(body, req, id)
         # no action handler found (bump to downstream application)
@@ -191,7 +191,7 @@ class ExtensionsResource(wsgi.Resource):
 
     def index(self, req):
         extensions = []
-        for _alias, ext in self.extension_manager.extensions.iteritems():
+        for _alias, ext in self.extension_manager.extensions.items():
             extensions.append(self._translate(ext))
         return dict(extensions=extensions)
 
@@ -304,7 +304,7 @@ class ExtensionMiddleware(wsgi.Middleware):
 
     def _map_custom_collection_actions(self, resource_ext, mapper,
                                        controller_resource):
-        for action, method in resource_ext.collection_actions.iteritems():
+        for action, method in resource_ext.collection_actions.items():
             parent = resource_ext.parent
             conditions = dict(method=[method])
             path = "/%s/%s" % (resource_ext.collection, action)
@@ -362,7 +362,7 @@ class ExtensionManager(object):
                                     extension_resource,
                                     serializer=extension_resource.serializer)
         resources.append(res_ext)
-        for alias, ext in self.extensions.iteritems():
+        for alias, ext in self.extensions.items():
             try:
                 resources.extend(ext.get_resources())
             except AttributeError:
@@ -372,7 +372,7 @@ class ExtensionManager(object):
     def get_actions(self):
         """Returns a list of ActionExtension objects."""
         actions = []
-        for alias, ext in self.extensions.iteritems():
+        for alias, ext in self.extensions.items():
             try:
                 actions.extend(ext.get_actions())
             except AttributeError:
@@ -382,7 +382,7 @@ class ExtensionManager(object):
     def get_request_extensions(self):
         """Returns a list of RequestExtension objects."""
         request_exts = []
-        for alias, ext in self.extensions.iteritems():
+        for alias, ext in self.extensions.items():
             try:
                 request_exts.extend(ext.get_request_extensions())
             except AttributeError:

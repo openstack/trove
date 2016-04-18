@@ -88,7 +88,7 @@ class DatabaseModelBase(models.ModelBase):
 
     def merge_attributes(self, values):
         """dict.update() behaviour."""
-        for k, v in values.iteritems():
+        for k, v in values.items():
             self[k] = v
 
     @classmethod

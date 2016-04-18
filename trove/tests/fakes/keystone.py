@@ -37,7 +37,7 @@ class AuthProtocol(object):
 
     def _add_headers(self, env, headers):
         """Add http headers to environment."""
-        for (k, v) in headers.iteritems():
+        for (k, v) in headers.items():
             env_key = self._header_to_env_var(k)
             env[env_key] = v
 

@@ -47,7 +47,7 @@ class UsageVerifier(object):
                                    "No message type %s for resource %s" %
                                    (event_type, resource_id))
         with asserts.Check() as check:
-            for key, value in attrs.iteritems():
+            for key, value in attrs.items():
                 check.equal(found[key], value)
 
     def get_messages(self, resource_id, expected_messages=None):

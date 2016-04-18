@@ -218,7 +218,7 @@ class SwiftStorage(base.Storage):
             self._verify_checksum(headers.get('etag', ''), backup_checksum)
 
         _meta = {}
-        for key, value in headers.iteritems():
+        for key, value in headers.items():
             if key.startswith('x-object-meta'):
                 _meta[self._get_attr(key)] = value
 
@@ -231,7 +231,7 @@ class SwiftStorage(base.Storage):
 
         _headers = self.connection.head_object(container, filename)
         headers = {'X-Object-Manifest': _headers.get('x-object-manifest')}
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             headers[self._set_attr(key)] = value
 
         LOG.info(_("Writing metadata: %s"), str(headers))

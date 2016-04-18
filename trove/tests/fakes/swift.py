@@ -102,7 +102,7 @@ class FakeSwiftConnection(object):
                   {'container': container, 'name': name})
         checksum = md5()
         if self.manifest_prefix and self.manifest_name == name:
-            for object_name in sorted(self.container_objects.iterkeys()):
+            for object_name in sorted(self.container_objects):
                 object_checksum = md5(self.container_objects[object_name])
                 # The manifest file etag for a HEAD or GET is the checksum of
                 # the concatenated checksums.
