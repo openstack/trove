@@ -221,7 +221,7 @@ function finalize_trove_network {
 
     iniset $TROVE_CONF DEFAULT network_label_regex .*
     iniset $TROVE_CONF DEFAULT ip_regex .*
-    iniset $TROVE_CONF DEFAULT blacklist_regex ^10.0.1.*
+    iniset $TROVE_CONF DEFAULT black_list_regex ^10.0.1.*
     iniset $TROVE_CONF DEFAULT default_neutron_networks $management_network_id
     iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
 
