@@ -12,9 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from six.moves.urllib.parse import unquote
+
 from trove.common import exception
 from trove.guestagent.db import models as guest_models
-from urllib import unquote
 
 
 def populate_validated_databases(dbs):

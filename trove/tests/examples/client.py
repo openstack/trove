@@ -16,9 +16,9 @@ import json
 import os
 import re
 import time
-from urlparse import urlparse
 
 from proboscis.asserts import fail
+from six.moves.urllib.parse import urlparse
 from troveclient.compat.client import TroveHTTPClient
 
 from trove.tests.config import CONFIG
