@@ -31,7 +31,7 @@ LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 
-class ModuleManager():
+class ModuleManager(object):
     """This is a Manager utility class (mixin) for managing module-related
     tasks.
     """
@@ -72,6 +72,7 @@ class ModuleManager():
             status = 'OK' if applied else 'ERROR'
             admin_only = (not visible or tenant == cls.MODULE_APPLY_TO_ALL or
                           auto_apply)
+            result['removed'] = None
             result['status'] = status
             result['message'] = message
             result['updated'] = now
