@@ -123,6 +123,12 @@ class ConfigurationGroup(TestGroup):
         self.test_runner.run_attach_dynamic_group()
 
     @test(depends_on=[attach_dynamic_group])
+    def verify_dynamic_values(self):
+        """Verify dynamic values on the instance."""
+        self.test_runner.run_verify_dynamic_values()
+
+    @test(depends_on=[attach_dynamic_group],
+          runs_after=[verify_dynamic_values])
     def list_dynamic_inst_conf_groups_after(self):
         """Test list instances for dynamic group after attach."""
         self.test_runner.run_list_dynamic_inst_conf_groups_after()
@@ -165,6 +171,12 @@ class ConfigurationGroup(TestGroup):
         self.test_runner.run_attach_non_dynamic_group()
 
     @test(depends_on=[attach_non_dynamic_group])
+    def verify_non_dynamic_values(self):
+        """Verify non-dynamic values on the instance."""
+        self.test_runner.run_verify_non_dynamic_values()
+
+    @test(depends_on=[attach_non_dynamic_group],
+          runs_after=[verify_non_dynamic_values])
     def list_non_dynamic_inst_conf_groups_after(self):
         """Test list instances for non-dynamic group after attach."""
         self.test_runner.run_list_non_dynamic_inst_conf_groups_after()
@@ -201,12 +213,18 @@ class ConfigurationGroup(TestGroup):
 
     @test(depends_on=[create_instance_with_conf],
           runs_after=[create_dynamic_group, create_non_dynamic_group,
-          update_dynamic_group, update_non_dynamic_group])
+                      update_dynamic_group, update_non_dynamic_group])
     def wait_for_conf_instance(self):
         """Test create instance with conf group completes."""
         self.test_runner.run_wait_for_conf_instance()
 
     @test(depends_on=[wait_for_conf_instance])
+    def verify_instance_values(self):
+        """Verify configuration values on the instance."""
+        self.test_runner.run_verify_instance_values()
+
+    @test(depends_on=[wait_for_conf_instance],
+          runs_after=[verify_instance_values])
     def delete_conf_instance(self):
         """Test delete instance with conf group."""
         self.test_runner.run_delete_conf_instance()
