@@ -137,12 +137,14 @@ class Module(object):
     @staticmethod
     def create(context, name, module_type, contents,
                description, tenant_id, datastore,
-               datastore_version, auto_apply, visible, live_update):
+               datastore_version, auto_apply, visible, live_update,
+               priority_apply, apply_order, full_access):
         if module_type.lower() not in Modules.VALID_MODULE_TYPES:
             LOG.error(_("Valid module types: %s") % Modules.VALID_MODULE_TYPES)
             raise exception.ModuleTypeNotFound(module_type=module_type)
         Module.validate_action(
-            context, 'create', tenant_id, auto_apply, visible)
+            context, 'create', tenant_id, auto_apply, visible, priority_apply,
+            full_access)
         datastore_id, datastore_version_id = Module.validate_datastore(
             datastore, datastore_version)
         if Module.key_exists(
@@ -153,6 +155,9 @@ class Module(object):
             raise exception.ModuleAlreadyExists(
                 name=name, datastore=datastore_str, ds_version=ds_version_str)
         md5, processed_contents = Module.process_contents(contents)
+        is_admin = context.is_admin
+        if full_access:
+            is_admin = 0
         module = DBModule.create(
             name=name,
             type=module_type.lower(),
@@ -164,37 +169,53 @@ class Module(object):
             auto_apply=auto_apply,
             visible=visible,
             live_update=live_update,
+            priority_apply=priority_apply,
+            apply_order=apply_order,
+            is_admin=is_admin,
             md5=md5)
         return module
 
     # Certain fields require admin access to create/change/delete
     @staticmethod
-    def validate_action(context, action_str, tenant_id, auto_apply, visible):
-        error_str = None
-        if not context.is_admin:
-            option_strs = []
-            if tenant_id is None:
-                option_strs.append(_("Tenant: %s") % Modules.MATCH_ALL_NAME)
-            if auto_apply:
-                option_strs.append(_("Auto: %s") % auto_apply)
-            if not visible:
-                option_strs.append(_("Visible: %s") % visible)
-            if option_strs:
-                error_str = "(" + " ".join(option_strs) + ")"
-        if error_str:
+    def validate_action(context, action_str, tenant_id, auto_apply, visible,
+                        priority_apply, full_access):
+        admin_options_str = None
+        option_strs = []
+        if tenant_id is None:
+            option_strs.append(_("Tenant: %s") % Modules.MATCH_ALL_NAME)
+        if auto_apply:
+            option_strs.append(_("Auto: %s") % auto_apply)
+        if not visible:
+            option_strs.append(_("Visible: %s") % visible)
+        if priority_apply:
+            option_strs.append(_("Priority: %s") % priority_apply)
+        if full_access is not None:
+            if full_access and option_strs:
+                admin_options_str = "(" + ", ".join(option_strs) + ")"
+                raise exception.InvalidModelError(
+                    errors=_('Cannot make module full access: %s') %
+                    admin_options_str)
+            option_strs.append(_("Full Access: %s") % full_access)
+        if option_strs:
+            admin_options_str = "(" + ", ".join(option_strs) + ")"
+        if not context.is_admin and admin_options_str:
             raise exception.ModuleAccessForbidden(
-                action=action_str, options=error_str)
+                action=action_str, options=admin_options_str)
+        return admin_options_str
 
     @staticmethod
     def validate_datastore(datastore, datastore_version):
         datastore_id = None
         datastore_version_id = None
         if datastore:
-            ds, ds_ver = datastore_models.get_datastore_version(
-                type=datastore, version=datastore_version)
-            datastore_id = ds.id
             if datastore_version:
+                ds, ds_ver = datastore_models.get_datastore_version(
+                    type=datastore, version=datastore_version)
+                datastore_id = ds.id
                 datastore_version_id = ds_ver.id
+            else:
+                ds = datastore_models.Datastore.load(datastore)
+                datastore_id = ds.id
         elif datastore_version:
             msg = _("Cannot specify version without datastore")
             raise exception.BadRequest(message=msg)
@@ -237,7 +258,8 @@ class Module(object):
     def delete(context, module):
         Module.validate_action(
             context, 'delete',
-            module.tenant_id, module.auto_apply, module.visible)
+            module.tenant_id, module.auto_apply, module.visible,
+            module.priority_apply, None)
         Module.enforce_live_update(module.id, module.live_update, module.md5)
         module.deleted = True
         module.deleted_at = datetime.utcnow()
@@ -282,28 +304,33 @@ class Module(object):
         return module
 
     @staticmethod
-    def update(context, module, original_module):
+    def update(context, module, original_module, full_access):
         Module.enforce_live_update(
             original_module.id, original_module.live_update,
             original_module.md5)
-        # we don't allow any changes to 'admin'-type modules, even if
-        # the values changed aren't the admin ones.
-        access_tenant_id = (None if (original_module.tenant_id is None or
-                                     module.tenant_id is None)
-                            else module.tenant_id)
-        access_auto_apply = original_module.auto_apply or module.auto_apply
-        access_visible = original_module.visible and module.visible
-        Module.validate_action(
-            context, 'update',
-            access_tenant_id, access_auto_apply, access_visible)
+        # we don't allow any changes to 'is_admin' modules by non-admin
+        if original_module.is_admin and not context.is_admin:
+            raise exception.ModuleAccessForbidden(
+                action='update', options='(Module is an admin module)')
+        # we don't allow any changes to admin-only attributes by non-admin
+        admin_options = Module.validate_action(
+            context, 'update', module.tenant_id, module.auto_apply,
+            module.visible, module.priority_apply, full_access)
+        # make sure we set the is_admin flag, but only if it was
+        # originally is_admin or we changed an admin option
+        module.is_admin = original_module.is_admin or (
+            1 if admin_options else 0)
+        # but we turn it on/off if full_access is specified
+        if full_access is not None:
+            module.is_admin = 0 if full_access else 1
         ds_id, ds_ver_id = Module.validate_datastore(
             module.datastore_id, module.datastore_version_id)
         if module.contents != original_module.contents:
             md5, processed_contents = Module.process_contents(module.contents)
             module.md5 = md5
             module.contents = processed_contents
-        else:
-            # on load the contents were decrypted, so
+        elif hasattr(original_module, 'encrypted_contents'):
+            # on load the contents may have been decrypted, so
             # we need to put the encrypted contents back before we update
             module.contents = original_module.encrypted_contents
         if module.datastore_id:
@@ -415,6 +442,7 @@ class DBModule(models.DatabaseModelBase):
         'id', 'name', 'type', 'contents', 'description',
         'tenant_id', 'datastore_id', 'datastore_version_id',
         'auto_apply', 'visible', 'live_update',
+        'priority_apply', 'apply_order', 'is_admin',
         'md5', 'created', 'updated', 'deleted', 'deleted_at']
 
 

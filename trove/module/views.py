@@ -33,6 +33,9 @@ class ModuleView(object):
             datastore_id=self.module.datastore_id,
             datastore_version_id=self.module.datastore_version_id,
             auto_apply=self.module.auto_apply,
+            priority_apply=self.module.priority_apply,
+            apply_order=self.module.apply_order,
+            is_admin=self.module.is_admin,
             md5=self.module.md5,
             visible=self.module.visible,
             created=self.module.created,
@@ -48,13 +51,15 @@ class ModuleView(object):
         datastore = self.module.datastore_id
         datastore_version = self.module.datastore_version_id
         if datastore:
-            ds, ds_ver = (
-                datastore_models.get_datastore_version(
-                    type=datastore, version=datastore_version))
-            datastore = ds.name
             if datastore_version:
+                ds, ds_ver = (
+                    datastore_models.get_datastore_version(
+                        type=datastore, version=datastore_version))
+                datastore = ds.name
                 datastore_version = ds_ver.name
             else:
+                ds = datastore_models.Datastore.load(datastore)
+                datastore = ds.name
                 datastore_version = models.Modules.MATCH_ALL_NAME
         else:
             datastore = models.Modules.MATCH_ALL_NAME
@@ -95,5 +100,18 @@ class DetailedModuleView(ModuleView):
         if hasattr(self.module, 'instance_count'):
             module_dict["instance_count"] = self.module.instance_count
         if include_contents:
+            if not hasattr(self.module, 'encrypted_contents'):
+                self.module.encrypted_contents = self.module.contents
+                self.module.contents = models.Module.deprocess_contents(
+                    self.module.contents)
             module_dict['contents'] = self.module.contents
         return {"module": module_dict}
+
+
+def get_module_list(modules):
+    module_list = []
+    for module in modules:
+        module_info = DetailedModuleView(module).data(
+            include_contents=True)
+        module_list.append(module_info)
+    return module_list

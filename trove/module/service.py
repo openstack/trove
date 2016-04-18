@@ -91,11 +91,15 @@ class ModuleController(wsgi.Controller):
         auto_apply = body['module'].get('auto_apply', 0)
         visible = body['module'].get('visible', 1)
         live_update = body['module'].get('live_update', 0)
+        priority_apply = body['module'].get('priority_apply', 0)
+        apply_order = body['module'].get('apply_order', 5)
+        full_access = body['module'].get('full_access', None)
 
         module = models.Module.create(
             context, name, module_type, contents,
             description, module_tenant_id, datastore, ds_version,
-            auto_apply, visible, live_update)
+            auto_apply, visible, live_update, priority_apply,
+            apply_order, full_access)
         view_data = views.DetailedModuleView(module)
         return wsgi.Result(view_data.data(), 200)
 
@@ -154,8 +158,15 @@ class ModuleController(wsgi.Controller):
             module.visible = body['module']['visible']
         if 'live_update' in body['module']:
             module.live_update = body['module']['live_update']
+        if 'priority_apply' in body['module']:
+            module.priority_apply = body['module']['priority_apply']
+        if 'apply_order' in body['module']:
+            module.apply_order = body['module']['apply_order']
+        full_access = None
+        if 'full_access' in body['module']:
+            full_access = body['module']['full_access']
 
-        models.Module.update(context, module, original_module)
+        models.Module.update(context, module, original_module, full_access)
         view_data = views.DetailedModuleView(module)
         return wsgi.Result(view_data.data(), 200)
 

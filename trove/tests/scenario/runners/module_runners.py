@@ -42,6 +42,28 @@ class ModuleRunner(TestRunner):
         self.MODULE_BINARY_CONTENTS = Crypto.Random.new().read(20)
         self.MODULE_BINARY_CONTENTS2 = '\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
 
+        self.module_name_order = [
+            {'suffix': self.MODULE_BINARY_SUFFIX,
+             'priority': True, 'order': 1},
+            {'suffix': self.MODULE_BINARY_SUFFIX2,
+             'priority': True, 'order': 2},
+            {'suffix': '_hidden_all_tenant_auto_priority',
+             'priority': True, 'order': 3},
+            {'suffix': '_hidden', 'priority': True, 'order': 4},
+            {'suffix': '_auto', 'priority': True, 'order': 5},
+            {'suffix': '_live', 'priority': True, 'order': 6},
+            {'suffix': '_priority', 'priority': True, 'order': 7},
+            {'suffix': '_ds', 'priority': False, 'order': 1},
+            {'suffix': '_ds_ver', 'priority': False, 'order': 2},
+            {'suffix': '_all_tenant_ds_ver', 'priority': False, 'order': 3},
+            {'suffix': '', 'priority': False, 'order': 4},
+            {'suffix': '_ds_diff', 'priority': False, 'order': 5},
+            {'suffix': '_diff_tenant', 'priority': False, 'order': 6},
+            {'suffix': '_full_access', 'priority': False, 'order': 7},
+            {'suffix': '_for_update', 'priority': False, 'order': 8},
+            {'suffix': '_updated', 'priority': False, 'order': 8},
+        ]
+
         self.mod_inst_id = None
         self.temp_module = None
         self._module_type = None
@@ -82,12 +104,19 @@ class ModuleRunner(TestRunner):
     def update_test_module(self):
         return self._get_test_module(1)
 
-    def build_module_args(self, extra=None):
-        extra = extra or ''
-        name = self.MODULE_NAME + extra
-        desc = self.MODULE_DESC + extra.replace('_', ' ')
-        cont = self.get_module_contents(name)
-        return name, desc, cont
+    def build_module_args(self, name_order=None):
+        suffix = "_unknown"
+        priority = False
+        order = 5
+        if name_order is not None:
+            name_rec = self.module_name_order[name_order]
+            suffix = name_rec['suffix']
+            priority = name_rec['priority']
+            order = name_rec['order']
+        name = self.MODULE_NAME + suffix
+        description = self.MODULE_DESC + suffix.replace('_', ' ')
+        contents = self.get_module_contents(name)
+        return name, description, contents, priority, order
 
     def get_module_contents(self, name=None):
         message = self.get_module_message(name=name)
@@ -102,7 +131,8 @@ class ModuleRunner(TestRunner):
             return not mod.visible and mod.tenant_id and not mod.auto_apply
         return self._find_module(_match, "Could not find invisible module")
 
-    def _find_module(self, match_fn, not_found_message, find_all=False):
+    def _find_module(self, match_fn, not_found_message, find_all=False,
+                     fail_on_not_found=True):
         found = [] if find_all else None
         for test_module in self.test_modules:
             if match_fn(test_module):
@@ -112,7 +142,10 @@ class ModuleRunner(TestRunner):
                     found = test_module
                     break
         if not found:
-            self.fail(not_found_message)
+            if fail_on_not_found:
+                self.fail(not_found_message)
+            else:
+                SkipTest(not_found_message)
         return found
 
     def _find_auto_apply_module(self):
@@ -125,12 +158,33 @@ class ModuleRunner(TestRunner):
             return mod.tenant_id is None and mod.visible
         return self._find_module(_match, "Could not find all tenant module")
 
+    def _find_priority_apply_module(self):
+        def _match(mod):
+            return mod.priority_apply and mod.tenant_id and mod.visible
+        return self._find_module(_match,
+                                 "Could not find priority-apply module")
+
+    def _find_diff_datastore_module(self):
+        def _match(mod):
+            return (mod.datastore and
+                    mod.datastore != models.Modules.MATCH_ALL_NAME and
+                    mod.datastore != self.instance_info.dbaas_datastore)
+        return self._find_module(_match,
+                                 "Could not find different datastore module",
+                                 fail_on_not_found=False)
+
     def _find_all_auto_apply_modules(self, visible=None):
         def _match(mod):
             return mod.auto_apply and (
                 visible is None or mod.visible == visible)
         return self._find_module(
             _match, "Could not find all auto apply modules", find_all=True)
+
+    def _find_module_by_id(self, module_id):
+        def _match(mod):
+            return mod.id == module_id
+        return self._find_module(_match, "Could not find module with id %s" %
+                                 module_id)
 
     # Tests start here
     def run_module_delete_existing(self):
@@ -177,6 +231,36 @@ class ModuleRunner(TestRunner):
             client, client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
             visible=False)
+
+    def run_module_create_non_admin_priority(
+            self, expected_exception=exceptions.Forbidden,
+            expected_http_code=403):
+        client = self.auth_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            client, client.modules.create,
+            self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
+            priority_apply=True)
+
+    def run_module_create_non_admin_no_full_access(
+            self, expected_exception=exceptions.Forbidden,
+            expected_http_code=403):
+        client = self.auth_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            client, client.modules.create,
+            self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
+            full_access=False)
+
+    def run_module_create_full_access_with_admin_opt(
+            self, expected_exception=exceptions.BadRequest,
+            expected_http_code=400):
+        client = self.admin_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            client, client.modules.create,
+            self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS,
+            full_access=True, auto_apply=True)
 
     def run_module_create_bad_datastore(
             self, expected_exception=exceptions.NotFound,
@@ -228,33 +312,45 @@ class ModuleRunner(TestRunner):
             self.admin_client.modules.list())
         self.module_other_count_prior_to_create = len(
             self.unauth_client.modules.list())
-        name, description, contents = self.build_module_args()
-        self.assert_module_create(
-            self.auth_client,
-            name=name,
-            module_type=self.module_type,
-            contents=contents,
-            description=description)
+        self.assert_module_create(self.auth_client, 10)
 
-    def assert_module_create(self, client, name=None, module_type=None,
+    def assert_module_create(self, client, name_order,
+                             name=None, module_type=None,
                              contents=None, description=None,
                              all_tenants=False,
                              datastore=None, datastore_version=None,
                              auto_apply=False,
-                             live_update=False, visible=True):
+                             live_update=False, visible=True,
+                             priority_apply=None,
+                             apply_order=None,
+                             full_access=None):
+        (temp_name, temp_description, temp_contents,
+         temp_priority, temp_order) = self.build_module_args(name_order)
+        name = name if name is not None else temp_name
+        description = (
+            description if description is not None else temp_description)
+        contents = contents if contents is not None else temp_contents
+        priority_apply = (
+            priority_apply if priority_apply is not None else temp_priority)
+        apply_order = apply_order if apply_order is not None else temp_order
+        module_type = module_type or self.module_type
         result = client.modules.create(
             name, module_type, contents,
             description=description,
             all_tenants=all_tenants,
             datastore=datastore, datastore_version=datastore_version,
             auto_apply=auto_apply,
-            live_update=live_update, visible=visible)
+            live_update=live_update, visible=visible,
+            priority_apply=priority_apply,
+            apply_order=apply_order,
+            full_access=full_access)
         username = client.real_client.client.username
         if (('alt' in username and 'admin' not in username) or
                 ('admin' in username and visible)):
             self.module_create_count += 1
             if datastore:
-                self.module_ds_create_count += 1
+                if datastore == self.instance_info.dbaas_datastore:
+                    self.module_ds_create_count += 1
             else:
                 self.module_ds_all_create_count += 1
         elif not visible:
@@ -286,7 +382,8 @@ class ModuleRunner(TestRunner):
             expected_datastore=datastore,
             expected_datastore_version=datastore_version,
             expected_auto_apply=auto_apply,
-            expected_contents=contents)
+            expected_contents=contents,
+            expected_is_admin=('admin' in username and not full_access))
 
     def validate_module(self, module, validate_all=False,
                         expected_name=None,
@@ -304,7 +401,11 @@ class ModuleRunner(TestRunner):
                         expected_auto_apply=None,
                         expected_live_update=None,
                         expected_visible=None,
-                        expected_contents=None):
+                        expected_contents=None,
+                        expected_priority_apply=None,
+                        expected_apply_order=None,
+                        expected_is_admin=None,
+                        expected_full_access=None):
 
         if expected_all_tenants:
             expected_tenant = expected_tenant or models.Modules.MATCH_ALL_NAME
@@ -339,6 +440,18 @@ class ModuleRunner(TestRunner):
         if expected_auto_apply is not None:
             self.assert_equal(expected_auto_apply, module.auto_apply,
                               'Unexpected auto_apply')
+        if expected_priority_apply is not None:
+            self.assert_equal(expected_priority_apply, module.priority_apply,
+                              'Unexpected priority_apply')
+        if expected_apply_order is not None:
+            self.assert_equal(expected_apply_order, module.apply_order,
+                              'Unexpected apply_order')
+        if expected_is_admin is not None:
+            self.assert_equal(expected_is_admin, module.is_admin,
+                              'Unexpected is_admin')
+        if expected_full_access is not None:
+            self.assert_equal(expected_full_access, not module.is_admin,
+                              'Unexpected full_access')
         if validate_all:
             if expected_datastore_id:
                 self.assert_equal(expected_datastore_id, module.datastore_id,
@@ -355,13 +468,7 @@ class ModuleRunner(TestRunner):
                                   'Unexpected visible')
 
     def run_module_create_for_update(self):
-        name, description, contents = self.build_module_args('_for_update')
-        self.assert_module_create(
-            self.auth_client,
-            name=name,
-            module_type=self.module_type,
-            contents=contents,
-            description=description)
+        self.assert_module_create(self.auth_client, 14)
 
     def run_module_create_dupe(
             self, expected_exception=exceptions.BadRequest,
@@ -383,28 +490,16 @@ class ModuleRunner(TestRunner):
             datastore_version=self.instance_info.dbaas_datastore_version)
 
     def run_module_create_bin(self):
-        name, description, contents = self.build_module_args(
-            self.MODULE_BINARY_SUFFIX)
         self.assert_module_create(
-            self.admin_client,
-            name=name,
-            module_type=self.module_type,
+            self.admin_client, 0,
             contents=self.MODULE_BINARY_CONTENTS,
-            description=description,
-            auto_apply=True,
-            visible=False)
+            auto_apply=True, visible=False)
 
     def run_module_create_bin2(self):
-        name, description, contents = self.build_module_args(
-            self.MODULE_BINARY_SUFFIX2)
         self.assert_module_create(
-            self.admin_client,
-            name=name,
-            module_type=self.module_type,
+            self.admin_client, 1,
             contents=self.MODULE_BINARY_CONTENTS2,
-            description=description,
-            auto_apply=True,
-            visible=False)
+            auto_apply=True, visible=False)
 
     def run_module_show(self):
         test_module = self.main_test_module
@@ -419,7 +514,10 @@ class ModuleRunner(TestRunner):
             expected_datastore_version=test_module.datastore_version,
             expected_auto_apply=test_module.auto_apply,
             expected_live_update=False,
-            expected_visible=True)
+            expected_visible=True,
+            expected_priority_apply=test_module.priority_apply,
+            expected_apply_order=test_module.apply_order,
+            expected_is_admin=test_module.is_admin)
 
     def run_module_show_unauth_user(
             self, expected_exception=exceptions.NotFound,
@@ -434,28 +532,29 @@ class ModuleRunner(TestRunner):
             self.auth_client,
             self.module_count_prior_to_create + self.module_create_count)
 
-    def assert_module_list(self, client, expected_count, datastore=None,
-                           skip_validation=False):
+    def assert_module_list(self, client, expected_count, datastore=None):
         if datastore:
             module_list = client.modules.list(datastore=datastore)
         else:
             module_list = client.modules.list()
         self.assert_equal(expected_count, len(module_list),
                           "Wrong number of modules for list")
-        if not skip_validation:
-            for module in module_list:
-                if module.name != self.MODULE_NAME:
-                    continue
-                test_module = self.main_test_module
+        for module in module_list:
+            # only validate the test modules
+            if module.name.startswith(self.MODULE_NAME):
+                test_module = self._find_module_by_id(module.id)
                 self.validate_module(
-                    module, validate_all=False,
+                    module, validate_all=True,
                     expected_name=test_module.name,
                     expected_module_type=test_module.type,
                     expected_description=test_module.description,
                     expected_tenant=test_module.tenant,
                     expected_datastore=test_module.datastore,
                     expected_datastore_version=test_module.datastore_version,
-                    expected_auto_apply=test_module.auto_apply)
+                    expected_auto_apply=test_module.auto_apply,
+                    expected_priority_apply=test_module.priority_apply,
+                    expected_apply_order=test_module.apply_order,
+                    expected_is_admin=test_module.is_admin)
 
     def run_module_list_unauth_user(self):
         self.assert_module_list(
@@ -465,95 +564,103 @@ class ModuleRunner(TestRunner):
              self.module_other_create_count))
 
     def run_module_create_admin_all(self):
-        name, description, contents = self.build_module_args(
-            '_hidden_all_tenant_auto')
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 2,
             all_tenants=True,
             visible=False,
             auto_apply=True)
 
     def run_module_create_admin_hidden(self):
-        name, description, contents = self.build_module_args('_hidden')
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 3,
             visible=False)
 
     def run_module_create_admin_auto(self):
-        name, description, contents = self.build_module_args('_auto')
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 4,
             auto_apply=True)
 
     def run_module_create_admin_live_update(self):
-        name, description, contents = self.build_module_args('_live')
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 5,
             live_update=True)
 
-    def run_module_create_datastore(self):
-        name, description, contents = self.build_module_args('_ds')
+    def run_module_create_admin_priority_apply(self):
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 6)
+
+    def run_module_create_datastore(self):
+        self.assert_module_create(
+            self.admin_client, 7,
             datastore=self.instance_info.dbaas_datastore)
 
-    def run_module_create_ds_version(self):
-        name, description, contents = self.build_module_args('_ds_ver')
+    def run_module_create_different_datastore(self):
+        diff_datastore = self._get_different_datastore()
+        if not diff_datastore:
+            raise SkipTest("Could not find a different datastore")
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.auth_client, 11,
+            datastore=diff_datastore)
+
+    def _get_different_datastore(self):
+        different_datastore = None
+        datastores = self.admin_client.datastores.list()
+        for datastore in datastores:
+            self.report.log("Found datastore: %s" % datastore.name)
+            if datastore.name != self.instance_info.dbaas_datastore:
+                different_datastore = datastore.name
+                break
+        return different_datastore
+
+    def run_module_create_ds_version(self):
+        self.assert_module_create(
+            self.admin_client, 8,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
 
     def run_module_create_all_tenant(self):
-        name, description, contents = self.build_module_args(
-            '_all_tenant_ds_ver')
         self.assert_module_create(
-            self.admin_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description,
+            self.admin_client, 9,
             all_tenants=True,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
 
     def run_module_create_different_tenant(self):
-        name, description, contents = self.build_module_args()
         self.assert_module_create(
-            self.unauth_client,
-            name=name, module_type=self.module_type, contents=contents,
-            description=description)
+            self.unauth_client, 12)
+
+    def run_module_create_full_access(self):
+        self.assert_module_create(
+            self.admin_client, 13,
+            full_access=True)
+
+    def run_module_full_access_toggle(self):
+        self.assert_module_update(
+            self.admin_client,
+            self.main_test_module.id,
+            full_access=False)
+        self.assert_module_update(
+            self.admin_client,
+            self.main_test_module.id,
+            full_access=True)
 
     def run_module_list_again(self):
         self.assert_module_list(
             self.auth_client,
-            self.module_count_prior_to_create + self.module_create_count,
-            skip_validation=True)
+            self.module_count_prior_to_create + self.module_create_count)
 
     def run_module_list_ds(self):
         self.assert_module_list(
             self.auth_client,
             self.module_ds_count_prior_to_create + self.module_ds_create_count,
-            datastore=self.instance_info.dbaas_datastore,
-            skip_validation=True)
+            datastore=self.instance_info.dbaas_datastore)
 
     def run_module_list_ds_all(self):
         self.assert_module_list(
             self.auth_client,
             (self.module_ds_all_count_prior_to_create +
              self.module_ds_all_create_count),
-            datastore=models.Modules.MATCH_ALL_NAME,
-            skip_validation=True)
+            datastore=models.Modules.MATCH_ALL_NAME)
 
     def run_module_show_invisible(
             self, expected_exception=exceptions.NotFound,
@@ -570,54 +677,13 @@ class ModuleRunner(TestRunner):
             (self.module_admin_count_prior_to_create +
              self.module_create_count +
              self.module_admin_create_count +
-             self.module_other_create_count),
-            skip_validation=True)
+             self.module_other_create_count))
 
     def run_module_update(self):
         self.assert_module_update(
             self.auth_client,
             self.main_test_module.id,
             description=self.MODULE_DESC + " modified")
-
-    def run_module_update_same_contents(self):
-        old_md5 = self.main_test_module.md5
-        self.assert_module_update(
-            self.auth_client,
-            self.main_test_module.id,
-            contents=self.get_module_contents(self.main_test_module.name))
-        self.assert_equal(old_md5, self.main_test_module.md5,
-                          "MD5 changed with same contents")
-
-    def run_module_update_auto_toggle(self):
-        module = self._find_auto_apply_module()
-        toggle_off_args = {'auto_apply': False}
-        toggle_on_args = {'auto_apply': True}
-        self.assert_module_toggle(module, toggle_off_args, toggle_on_args)
-
-    def assert_module_toggle(self, module, toggle_off_args, toggle_on_args):
-        # First try to update the module based on the change
-        # (this should toggle the state and allow non-admin access)
-        self.assert_module_update(
-            self.admin_client, module.id, **toggle_off_args)
-        # Now we can update using the non-admin client
-        self.assert_module_update(
-            self.auth_client, module.id, description='Updated by auth')
-        # Now set it back
-        self.assert_module_update(
-            self.admin_client, module.id, description=module.description,
-            **toggle_on_args)
-
-    def run_module_update_all_tenant_toggle(self):
-        module = self._find_all_tenant_module()
-        toggle_off_args = {'all_tenants': False}
-        toggle_on_args = {'all_tenants': True}
-        self.assert_module_toggle(module, toggle_off_args, toggle_on_args)
-
-    def run_module_update_invisible_toggle(self):
-        module = self._find_invisible_module()
-        toggle_off_args = {'visible': True}
-        toggle_on_args = {'visible': False}
-        self.assert_module_toggle(module, toggle_off_args, toggle_on_args)
 
     def assert_module_update(self, client, module_id, **kwargs):
         result = client.modules.update(module_id, **kwargs)
@@ -637,6 +703,75 @@ class ModuleRunner(TestRunner):
             new_key = 'expected_' + key
             expected_args[new_key] = value
         self.validate_module(result, **expected_args)
+
+    def run_module_update_same_contents(self):
+        old_md5 = self.main_test_module.md5
+        self.assert_module_update(
+            self.auth_client,
+            self.main_test_module.id,
+            contents=self.get_module_contents(self.main_test_module.name))
+        self.assert_equal(old_md5, self.main_test_module.md5,
+                          "MD5 changed with same contents")
+
+    def run_module_update_auto_toggle(self,
+                                      expected_exception=exceptions.Forbidden,
+                                      expected_http_code=403):
+        module = self._find_auto_apply_module()
+        toggle_off_args = {'auto_apply': False}
+        toggle_on_args = {'auto_apply': True}
+        self.assert_module_toggle(module, toggle_off_args, toggle_on_args,
+                                  expected_exception=expected_exception,
+                                  expected_http_code=expected_http_code)
+
+    def assert_module_toggle(self, module, toggle_off_args, toggle_on_args,
+                             expected_exception, expected_http_code):
+        # First try to update the module based on the change
+        # (this should toggle the state but still not allow non-admin access)
+        client = self.admin_client
+        self.assert_module_update(client, module.id, **toggle_off_args)
+        # The non-admin client should fail to update
+        non_admin_client = self.auth_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            non_admin_client, non_admin_client.modules.update, module.id,
+            description='Updated by non-admin')
+        # Make sure we can still update with the admin client
+        self.assert_module_update(
+            client, module.id, description='Updated by admin')
+        # Now set it back
+        self.assert_module_update(
+            client, module.id, description=module.description,
+            **toggle_on_args)
+
+    def run_module_update_all_tenant_toggle(
+            self, expected_exception=exceptions.Forbidden,
+            expected_http_code=403):
+        module = self._find_all_tenant_module()
+        toggle_off_args = {'all_tenants': False}
+        toggle_on_args = {'all_tenants': True}
+        self.assert_module_toggle(module, toggle_off_args, toggle_on_args,
+                                  expected_exception=expected_exception,
+                                  expected_http_code=expected_http_code)
+
+    def run_module_update_invisible_toggle(
+            self, expected_exception=exceptions.Forbidden,
+            expected_http_code=403):
+        module = self._find_invisible_module()
+        toggle_off_args = {'visible': True}
+        toggle_on_args = {'visible': False}
+        self.assert_module_toggle(module, toggle_off_args, toggle_on_args,
+                                  expected_exception=expected_exception,
+                                  expected_http_code=expected_http_code)
+
+    def run_module_update_priority_toggle(
+            self, expected_exception=exceptions.Forbidden,
+            expected_http_code=403):
+        module = self._find_priority_apply_module()
+        toggle_off_args = {'priority_apply': False}
+        toggle_on_args = {'priority_apply': True}
+        self.assert_module_toggle(module, toggle_off_args, toggle_on_args,
+                                  expected_exception=expected_exception,
+                                  expected_http_code=expected_http_code)
 
     def run_module_update_unauth(
             self, expected_exception=exceptions.NotFound,
@@ -775,32 +910,47 @@ class ModuleRunner(TestRunner):
         self.assert_equal(expected_count, count,
                           "Wrong number of modules from query")
         expected_results = expected_results or {}
+        name_index = len(self.module_name_order)
         for modquery in modquery_list:
             if modquery.name in expected_results:
+                self.report.log("Validating module '%s'" % modquery.name)
                 expected = expected_results[modquery.name]
-                self.validate_module_info(
+                self.validate_module_apply_info(
                     modquery,
                     expected_status=expected['status'],
                     expected_message=expected['message'])
+                # make sure we're in the correct order
+                found = False
+                while name_index > 0:
+                    name_index -= 1
+                    name_order_rec = self.module_name_order[name_index]
+                    order_name = self.MODULE_NAME + name_order_rec['suffix']
+                    self.report.log("Next module order '%s'" % order_name)
+                    if order_name == modquery.name:
+                        self.report.log("Match found")
+                        found = True
+                        break
+                if name_index == 0 and not found:
+                    self.fail("Module '%s' was not found in the correct order"
+                              % modquery.name)
 
     def run_module_apply(self):
         self.assert_module_apply(self.auth_client, self.instance_info.id,
                                  self.main_test_module)
 
     def assert_module_apply(self, client, instance_id, module,
+                            expected_is_admin=False,
                             expected_status=None, expected_message=None,
                             expected_contents=None,
                             expected_http_code=200):
         module_apply_list = client.instances.module_apply(
             instance_id, [module.id])
         self.assert_client_code(client, expected_http_code)
-        admin_only = (not module.visible or module.auto_apply or
-                      not module.tenant_id)
         expected_status = expected_status or 'OK'
         expected_message = (expected_message or
                             self.get_module_message(module.name))
         for module_apply in module_apply_list:
-            self.validate_module_info(
+            self.validate_module_apply_info(
                 module_apply,
                 expected_name=module.name,
                 expected_module_type=module.type,
@@ -808,22 +958,22 @@ class ModuleRunner(TestRunner):
                 expected_datastore_version=module.datastore_version,
                 expected_auto_apply=module.auto_apply,
                 expected_visible=module.visible,
-                expected_admin_only=admin_only,
                 expected_contents=expected_contents,
                 expected_status=expected_status,
-                expected_message=expected_message)
+                expected_message=expected_message,
+                expected_is_admin=expected_is_admin)
 
-    def validate_module_info(self, module_apply,
-                             expected_name=None,
-                             expected_module_type=None,
-                             expected_datastore=None,
-                             expected_datastore_version=None,
-                             expected_auto_apply=None,
-                             expected_visible=None,
-                             expected_admin_only=None,
-                             expected_contents=None,
-                             expected_message=None,
-                             expected_status=None):
+    def validate_module_apply_info(self, module_apply,
+                                   expected_name=None,
+                                   expected_module_type=None,
+                                   expected_datastore=None,
+                                   expected_datastore_version=None,
+                                   expected_auto_apply=None,
+                                   expected_visible=None,
+                                   expected_contents=None,
+                                   expected_message=None,
+                                   expected_status=None,
+                                   expected_is_admin=None):
 
         prefix = "Module: %s -" % expected_name
         if expected_name:
@@ -845,9 +995,6 @@ class ModuleRunner(TestRunner):
         if expected_visible is not None:
             self.assert_equal(expected_visible, module_apply.visible,
                               '%s Unexpected visible' % prefix)
-        if expected_admin_only is not None:
-            self.assert_equal(expected_admin_only, module_apply.admin_only,
-                              '%s Unexpected admin_only' % prefix)
         if expected_contents is not None:
             self.assert_equal(expected_contents, module_apply.contents,
                               '%s Unexpected contents' % prefix)
@@ -859,6 +1006,20 @@ class ModuleRunner(TestRunner):
         if expected_status is not None:
             self.assert_equal(expected_status, module_apply.status,
                               '%s Unexpected status' % prefix)
+        if expected_is_admin is not None:
+            self.assert_equal(expected_is_admin, module_apply.is_admin,
+                              '%s Unexpected is_admin' % prefix)
+
+    def run_module_apply_wrong_module(
+            self, expected_exception=exceptions.BadRequest,
+            expected_http_code=400):
+        module = self._find_diff_datastore_module()
+        self.report.log("Found 'wrong' module: %s" % module.name)
+        client = self.auth_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            client, client.instances.module_apply,
+            self.instance_info.id, [module.id])
 
     def run_module_list_instance_after_apply(self):
         self.assert_module_list_instance(
@@ -873,7 +1034,8 @@ class ModuleRunner(TestRunner):
             self.auth_client, self.instance_info.id, 2)
 
     def run_module_update_after_remove(self):
-        name, description, contents = self.build_module_args('_updated')
+        name, description, contents, priority, order = (
+            self.build_module_args(15))
         self.assert_module_update(
             self.auth_client,
             self.update_test_module.id,
@@ -950,6 +1112,24 @@ class ModuleRunner(TestRunner):
         )
         self.assert_client_code(client, expected_http_code)
         return inst.id
+
+    def run_create_inst_with_wrong_module(
+            self, expected_exception=exceptions.BadRequest,
+            expected_http_code=400):
+        module = self._find_diff_datastore_module()
+        self.report.log("Found 'wrong' module: %s" % module.name)
+
+        client = self.auth_client
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            client, client.instances.create,
+            self.instance_info.name + '_wrong_ds',
+            self.instance_info.dbaas_flavor_href,
+            self.instance_info.volume,
+            datastore=self.instance_info.dbaas_datastore,
+            datastore_version=self.instance_info.dbaas_datastore_version,
+            nics=self.instance_info.nics,
+            modules=[module.id])
 
     def run_module_delete_applied(
             self, expected_exception=exceptions.Forbidden,

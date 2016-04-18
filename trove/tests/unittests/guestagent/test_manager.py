@@ -24,6 +24,7 @@ from mock import Mock
 from mock import patch
 from oslo_utils import encodeutils
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_is_none
 from proboscis.asserts import assert_true
 
 from trove.common.context import TroveContext
@@ -31,6 +32,7 @@ from trove.common import exception
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore import manager
 from trove.guestagent import guest_log
+from trove.guestagent.module import module_manager
 from trove import rpc
 from trove.tests.unittests import trove_testtools
 
@@ -110,6 +112,12 @@ class ManagerTest(trove_testtools.TestCase):
         self.expected_details_sys['type'] = 'SYS'
         self.expected_details_sys['status'] = 'Enabled'
         self.expected_details_sys['name'] = self.log_name_sys
+        self.expected_module_details = {
+            'name': 'mymod',
+            'type': 'ping',
+            'contents': 'e262cfe36134'
+        }
+        self.manager.module_manager = Mock()
 
     def tearDown(self):
         super(ManagerTest, self).tearDown()
@@ -475,3 +483,36 @@ class ManagerTest(trove_testtools.TestCase):
             self.manager.status.end_install(
                 error_occurred=True,
                 post_processing=ANY)
+
+    def test_module_list(self):
+        with patch.object(module_manager.ModuleManager, 'read_module_results',
+                          return_value=[
+                              self.expected_module_details]) as mock_rmr:
+            module_list = self.manager.module_list(self.context)
+            expected = [self.expected_module_details]
+            assert_equal(self._flatten_list_of_dicts(expected),
+                         self._flatten_list_of_dicts(module_list),
+                         "Wrong list: %s (Expected: %s)" % (
+                             self._flatten_list_of_dicts(module_list),
+                             self._flatten_list_of_dicts(expected)))
+            assert_equal(1, mock_rmr.call_count)
+
+    def test_module_apply(self):
+        with patch.object(
+                module_manager.ModuleManager, 'apply_module',
+                return_value=[self.expected_module_details]) as mock_am:
+            module_details = self.manager.module_apply(
+                self.context,
+                [{'module': self.expected_module_details}])
+            assert_equal([[self.expected_module_details]], module_details)
+            assert_equal(1, mock_am.call_count)
+
+    def test_module_remove(self):
+        with patch.object(
+                module_manager.ModuleManager, 'remove_module',
+                return_value=[self.expected_module_details]) as mock_rm:
+            module_details = self.manager.module_remove(
+                self.context,
+                {'module': self.expected_module_details})
+            assert_is_none(module_details)
+            assert_equal(1, mock_rm.call_count)

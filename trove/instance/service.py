@@ -536,13 +536,9 @@ class InstanceController(wsgi.Controller):
         self.authorize_instance_action(context, 'module_apply', instance)
         module_ids = [mod['id'] for mod in body.get('modules', [])]
         modules = module_models.Modules.load_by_ids(context, module_ids)
-        module_list = []
-        for module in modules:
-            module.contents = module_models.Module.deprocess_contents(
-                module.contents)
-            module_info = module_views.DetailedModuleView(module).data(
-                include_contents=True)
-            module_list.append(module_info)
+        models.validate_modules_for_apply(
+            modules, instance.datastore.id, instance.datastore_version.id)
+        module_list = module_views.get_module_list(modules)
         client = create_guest_client(context, id)
         result_list = client.module_apply(module_list)
         models.Instance.add_instance_modules(context, id, modules)

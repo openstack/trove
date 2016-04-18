@@ -64,6 +64,21 @@ class ModuleCreateGroup(TestGroup):
         self.test_runner.run_module_create_non_admin_hidden()
 
     @test
+    def module_create_non_admin_priority(self):
+        """Ensure create priority module for non-admin fails."""
+        self.test_runner.run_module_create_non_admin_priority()
+
+    @test
+    def module_create_non_admin_no_full_access(self):
+        """Ensure create no full access module for non-admin fails."""
+        self.test_runner.run_module_create_non_admin_no_full_access()
+
+    @test
+    def module_create_full_access_with_admin_opt(self):
+        """Ensure create full access module with admin opts fails."""
+        self.test_runner.run_module_create_full_access_with_admin_opt()
+
+    @test
     def module_create_bad_datastore(self):
         """Ensure create module with invalid datastore fails."""
         self.test_runner.run_module_create_bad_datastore()
@@ -154,12 +169,24 @@ class ModuleCreateGroup(TestGroup):
 
     @test(depends_on=[module_create, module_create_bin, module_create_bin2],
           runs_after=[module_create_admin_live_update])
+    def module_create_admin_priority_apply(self):
+        """Check that create module works with priority-apply option."""
+        self.test_runner.run_module_create_admin_priority_apply()
+
+    @test(depends_on=[module_create, module_create_bin, module_create_bin2],
+          runs_after=[module_create_admin_priority_apply])
     def module_create_datastore(self):
         """Check that create module with datastore works."""
         self.test_runner.run_module_create_datastore()
 
     @test(depends_on=[module_create, module_create_bin, module_create_bin2],
           runs_after=[module_create_datastore])
+    def module_create_different_datastore(self):
+        """Check that create module with different datastore works."""
+        self.test_runner.run_module_create_different_datastore()
+
+    @test(depends_on=[module_create, module_create_bin, module_create_bin2],
+          runs_after=[module_create_different_datastore])
     def module_create_ds_version(self):
         """Check that create module with ds version works."""
         self.test_runner.run_module_create_ds_version()
@@ -176,8 +203,20 @@ class ModuleCreateGroup(TestGroup):
         """Check that create with same name on different tenant works."""
         self.test_runner.run_module_create_different_tenant()
 
-    @test(depends_on=[module_create_all_tenant],
+    @test(depends_on=[module_create, module_create_bin, module_create_bin2],
           runs_after=[module_create_different_tenant])
+    def module_create_full_access(self):
+        """Check that create by admin with full access works."""
+        self.test_runner.run_module_create_full_access()
+
+    @test(depends_on=[module_create_all_tenant],
+          runs_after=[module_create_full_access])
+    def module_full_access_toggle(self):
+        """Check that toggling full access works."""
+        self.test_runner.run_module_full_access_toggle()
+
+    @test(depends_on=[module_create_all_tenant],
+          runs_after=[module_full_access_toggle])
     def module_list_again(self):
         """Check that list modules skips invisible modules."""
         self.test_runner.run_module_list_again()
@@ -236,60 +275,66 @@ class ModuleCreateGroup(TestGroup):
 
     @test(depends_on=[module_update],
           runs_after=[module_update_invisible_toggle])
+    def module_update_priority_toggle(self):
+        """Check that update module works for priority toggle."""
+        self.test_runner.run_module_update_priority_toggle()
+
+    @test(depends_on=[module_update],
+          runs_after=[module_update_priority_toggle])
     def module_update_unauth(self):
         """Ensure update module for unauth user fails."""
         self.test_runner.run_module_update_unauth()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_auto(self):
         """Ensure update module to auto_apply for non-admin fails."""
         self.test_runner.run_module_update_non_admin_auto()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_auto_off(self):
         """Ensure update module to auto_apply off for non-admin fails."""
         self.test_runner.run_module_update_non_admin_auto_off()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_auto_any(self):
         """Ensure any update module to auto_apply for non-admin fails."""
         self.test_runner.run_module_update_non_admin_auto_any()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_all_tenant(self):
         """Ensure update module to all tenant for non-admin fails."""
         self.test_runner.run_module_update_non_admin_all_tenant()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_all_tenant_off(self):
         """Ensure update module to all tenant off for non-admin fails."""
         self.test_runner.run_module_update_non_admin_all_tenant_off()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_all_tenant_any(self):
         """Ensure any update module to all tenant for non-admin fails."""
         self.test_runner.run_module_update_non_admin_all_tenant_any()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_invisible(self):
         """Ensure update module to invisible for non-admin fails."""
         self.test_runner.run_module_update_non_admin_invisible()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_invisible_off(self):
         """Ensure update module to invisible off for non-admin fails."""
         self.test_runner.run_module_update_non_admin_invisible_off()
 
     @test(depends_on=[module_update],
-          runs_after=[module_update_invisible_toggle])
+          runs_after=[module_update_priority_toggle])
     def module_update_non_admin_invisible_any(self):
         """Ensure any update module to invisible for non-admin fails."""
         self.test_runner.run_module_update_non_admin_invisible_any()
@@ -325,6 +370,11 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that module-apply works."""
         self.test_runner.run_module_apply()
 
+    @test(runs_after=[module_query_empty])
+    def module_apply_wrong_module(self):
+        """Ensure that module-apply for wrong module fails."""
+        self.test_runner.run_module_apply_wrong_module()
+
     @test(depends_on=[module_apply])
     def module_list_instance_after_apply(self):
         """Check that the instance has one module associated."""
@@ -355,6 +405,11 @@ class ModuleInstCreateGroup(TestGroup):
     def create_inst_with_mods(self):
         """Check that creating an instance with modules works."""
         self.test_runner.run_create_inst_with_mods()
+
+    @test(runs_after=[module_query_empty])
+    def create_inst_with_wrong_module(self):
+        """Ensure that creating an inst with wrong ds mod fails."""
+        self.test_runner.run_create_inst_with_wrong_module()
 
     @test(depends_on=[module_apply])
     def module_delete_applied(self):

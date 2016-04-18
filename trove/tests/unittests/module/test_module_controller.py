@@ -30,6 +30,8 @@ class TestModuleController(trove_testtools.TestCase):
                 "name": 'test_module',
                 "module_type": 'test',
                 "contents": 'my_contents\n',
+                "priority_apply": 0,
+                "apply_order": 5
             }
         }
 
@@ -44,7 +46,7 @@ class TestModuleController(trove_testtools.TestCase):
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
 
-    def test_validate_create_blankname(self):
+    def test_validate_create_blank_name(self):
         body = self.module
         body['module']['name'] = "     "
         schema = self.controller.get_schema('create', body)
@@ -64,4 +66,15 @@ class TestModuleController(trove_testtools.TestCase):
         errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
         self.assertEqual(1, len(errors))
         self.assertIn("'$#$%^^' does not match '^.*[0-9a-zA-Z]+.*$'",
+                      errors[0].message)
+
+    def test_validate_create_invalid_apply_order(self):
+        body = self.module
+        body['module']['apply_order'] = 12
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        self.assertEqual(1, len(errors))
+        self.assertIn("12 is greater than the maximum of 9",
                       errors[0].message)

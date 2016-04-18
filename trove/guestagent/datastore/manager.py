@@ -15,6 +15,7 @@
 #
 
 import abc
+import operator
 
 from oslo_config import cfg as oslo_cfg
 from oslo_log import log as logging
@@ -61,6 +62,8 @@ class Manager(periodic_task.PeriodicTasks):
     GUEST_LOG_DEFS_GENERAL_LABEL = 'general'
     GUEST_LOG_DEFS_ERROR_LABEL = 'error'
     GUEST_LOG_DEFS_SLOW_QUERY_LABEL = 'slow_query'
+
+    MODULE_APPLY_TO_ALL = module_manager.ModuleManager.MODULE_APPLY_TO_ALL
 
     def __init__(self, manager_name):
         super(Manager, self).__init__(CONF)
@@ -644,18 +647,36 @@ class Manager(periodic_task.PeriodicTasks):
     def module_apply(self, context, modules=None):
         LOG.info(_("Applying modules."))
         results = []
-        for module_data in modules:
-            module = module_data['module']
+        modules = [data['module'] for data in modules]
+        try:
+            # make sure the modules are applied in the correct order
+            modules.sort(key=operator.itemgetter('apply_order'))
+            modules.sort(key=operator.itemgetter('priority_apply'),
+                         reverse=True)
+        except KeyError:
+            # If we don't have ordering info then maybe we're running
+            # a version of the module feature before ordering was
+            # introduced.  In that case, since we don't have any
+            # way to order the modules we should just continue.
+            pass
+        for module in modules:
             id = module.get('id', None)
             module_type = module.get('type', None)
             name = module.get('name', None)
-            tenant = module.get('tenant', None)
-            datastore = module.get('datastore', None)
-            ds_version = module.get('datastore_version', None)
+            tenant = module.get('tenant', self.MODULE_APPLY_TO_ALL)
+            datastore = module.get('datastore', self.MODULE_APPLY_TO_ALL)
+            ds_version = module.get('datastore_version',
+                                    self.MODULE_APPLY_TO_ALL)
             contents = module.get('contents', None)
             md5 = module.get('md5', None)
             auto_apply = module.get('auto_apply', True)
             visible = module.get('visible', True)
+            is_admin = module.get('is_admin', None)
+            if is_admin is None:
+                # fall back to the old method of checking for an admin option
+                is_admin = (tenant == self.MODULE_APPLY_TO_ALL or
+                            not visible or
+                            auto_apply)
             if not name:
                 raise AttributeError(_("Module name not specified"))
             if not contents:
@@ -665,9 +686,14 @@ class Manager(periodic_task.PeriodicTasks):
                 raise exception.ModuleTypeNotFound(
                     _("No driver implemented for module type '%s'") %
                     module_type)
+            if (datastore and datastore != self.MODULE_APPLY_TO_ALL and
+                    datastore != CONF.datastore_manager):
+                reason = (_("Module not valid for datastore %s") %
+                          CONF.datastore_manager)
+                raise exception.ModuleInvalid(reason=reason)
             result = module_manager.ModuleManager.apply_module(
                 driver, module_type, name, tenant, datastore, ds_version,
-                contents, id, md5, auto_apply, visible)
+                contents, id, md5, auto_apply, visible, is_admin)
             results.append(result)
         LOG.info(_("Returning list of modules: %s") % results)
         return results
