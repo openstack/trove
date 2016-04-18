@@ -1,0 +1,4 @@
+---
+fixes:
+  - Do not remove MySQL root user on root-disable so that the
+    proper status can be reported on restore. Bug 1549600

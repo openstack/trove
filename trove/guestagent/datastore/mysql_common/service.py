@@ -1062,7 +1062,6 @@ class BaseMySqlRootAccess(object):
             return user.serialize()
 
     def disable_root(self):
-        """Disable the root user global access
+        """Reset the root password to an unknown value.
         """
-        with self.local_sql_client(self.mysql_app.get_engine()) as client:
-            client.execute(text(sql_query.REMOVE_ROOT))
+        self.enable_root(root_password=None)
