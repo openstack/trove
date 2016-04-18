@@ -138,7 +138,8 @@ class TroveBaseTraits(object):
         self.context = ctxt
         return self
 
-    def notify(self, event_type, publisher_id=CONF.host):
+    def notify(self, event_type, publisher_id=None):
+        publisher_id = publisher_id or CONF.host
         event_type = self.event_type_format % event_type
         event_payload = self.serialize(self.context)
         LOG.debug('Sending event: %(event_type)s, %(payload)s' %

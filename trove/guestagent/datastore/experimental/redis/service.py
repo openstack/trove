@@ -473,9 +473,9 @@ class RedisAdmin(object):
                 _("Redis command '%(cmd_name)s %(cmd_args)s' failed.")
                 % {'cmd_name': cmd_name, 'cmd_args': ' '.join(cmd_args)})
 
-    def wait_until(self, key, wait_value, section=None,
-                   timeout=CONF.usage_timeout):
+    def wait_until(self, key, wait_value, section=None, timeout=None):
         """Polls redis until the specified 'key' changes to 'wait_value'."""
+        timeout = timeout or CONF.usage_timeout
         LOG.debug("Waiting for Redis '%s' to be: %s." % (key, wait_value))
 
         def _check_info():
