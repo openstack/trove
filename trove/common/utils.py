@@ -20,7 +20,6 @@ import inspect
 import os
 import shutil
 import time
-import types
 import uuid
 
 from eventlet.timeout import Timeout
@@ -32,6 +31,7 @@ from oslo_utils import importutils
 from oslo_utils import strutils
 from oslo_utils import timeutils
 from passlib import utils as passlib_utils
+import six
 import six.moves.urllib.parse as urlparse
 
 from trove.common import cfg
@@ -327,4 +327,4 @@ def is_collection(item):
     """Return True is a given item is an iterable collection, but not a string.
     """
     return (isinstance(item, collections.Iterable) and
-            not isinstance(item, types.StringTypes))
+            not isinstance(item, (bytes, six.text_type)))
