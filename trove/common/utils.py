@@ -281,7 +281,10 @@ def correct_id_with_req(id, request):
 
 
 def generate_random_password(password_length=None):
-    password_length = password_length or CONF.default_password_length
+    password_length = (
+        password_length or
+        cfg.get_configuration_property('default_password_length')
+    )
     return passlib_utils.generate_password(size=password_length)
 
 
