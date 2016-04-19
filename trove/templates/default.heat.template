@@ -34,7 +34,7 @@ Resources:
       AWS::CloudFormation::Init:
         config:
           files:
-{% for file, content in files.iteritems() %}
+{% for file, content in files.items() %}
             {{ file }}:
               content: |
                 {{ content | indent(16) }}
