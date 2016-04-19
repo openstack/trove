@@ -682,7 +682,7 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
 
         def side_effect_func(*args, **kwargs):
             if 'instance_id' in kwargs:
-                return answers.next()
+                return next(answers)
             elif ('id' in kwargs and 'deleted' in kwargs
                   and not kwargs['deleted']):
                 return db_instance

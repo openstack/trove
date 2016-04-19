@@ -69,8 +69,8 @@ class MysqlBinlogReplication(mysql_base.MysqlReplicationBase):
         LOG.info(_("Reading log position from %s") % INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
-                row = csv.reader(f, delimiter='\t',
-                                 skipinitialspace=True).next()
+                row = next(csv.reader(f, delimiter='\t',
+                                      skipinitialspace=True))
                 return {
                     'log_file': row[0],
                     'log_position': int(row[1])
