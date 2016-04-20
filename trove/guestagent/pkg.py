@@ -24,7 +24,6 @@ from tempfile import NamedTemporaryFile
 
 from oslo_log import log as logging
 import pexpect
-import six
 
 from trove.common import exception
 from trove.common.exception import ProcessExecutionError
@@ -80,7 +79,7 @@ class PkgConfigureError(exception.TroveError):
     pass
 
 
-class BasePackagerMixin:
+class BasePackagerMixin(object):
 
     def pexpect_kill_proc(self, child):
         child.delayafterclose = 1
@@ -414,17 +413,9 @@ class DebianPackagerMixin(BasePackagerMixin):
                                            % package_name)
 
 
-class BasePackage(type):
-
-    def __new__(meta, name, bases, dct):
-        if operating_system.get_os() == operating_system.REDHAT:
-            bases += (RedhatPackagerMixin, )
-        else:
-            # The default is debian
-            bases += (DebianPackagerMixin,)
-        return super(BasePackage, meta).__new__(meta, name, bases, dct)
-
-
-@six.add_metaclass(BasePackage)
-class Package(object):
-    pass
+if operating_system.get_os() == operating_system.REDHAT:
+    class Package(RedhatPackagerMixin):
+        pass
+else:
+    class Package(DebianPackagerMixin):
+        pass
