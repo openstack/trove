@@ -26,27 +26,6 @@ from trove.module import models
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
-# Variables here are set up to be used across multiple groups,
-# since each group will instantiate a new runner
-random_data = Crypto.Random.new().read(20)
-test_modules = []
-module_count_prior_to_create = 0
-module_ds_count_prior_to_create = 0
-module_ds_all_count_prior_to_create = 0
-module_all_tenant_count_prior_to_create = 0
-module_auto_apply_count_prior_to_create = 0
-module_admin_count_prior_to_create = 0
-module_other_count_prior_to_create = 0
-
-module_create_count = 0
-module_ds_create_count = 0
-module_ds_all_create_count = 0
-module_all_tenant_create_count = 0
-module_auto_apply_create_count = 0
-module_admin_create_count = 0
-module_other_create_count = 0
-
-
 class ModuleRunner(TestRunner):
 
     def __init__(self):
@@ -62,12 +41,29 @@ class ModuleRunner(TestRunner):
         self.MODULE_NEG_CONTENTS = 'contents for negative tests'
         self.MODULE_BINARY_SUFFIX = '_bin_auto'
         self.MODULE_BINARY_SUFFIX2 = self.MODULE_BINARY_SUFFIX + '_2'
-        self.MODULE_BINARY_CONTENTS = random_data
+        self.MODULE_BINARY_CONTENTS = Crypto.Random.new().read(20)
         self.MODULE_BINARY_CONTENTS2 = '\x00\xFF\xea\x9c\x11\xfeok\xb1\x8ax'
 
         self.mod_inst_id = None
         self.temp_module = None
         self._module_type = None
+
+        self.test_modules = []
+        self.module_count_prior_to_create = 0
+        self.module_ds_count_prior_to_create = 0
+        self.module_ds_all_count_prior_to_create = 0
+        self.module_all_tenant_count_prior_to_create = 0
+        self.module_auto_apply_count_prior_to_create = 0
+        self.module_admin_count_prior_to_create = 0
+        self.module_other_count_prior_to_create = 0
+
+        self.module_create_count = 0
+        self.module_ds_create_count = 0
+        self.module_ds_all_create_count = 0
+        self.module_all_tenant_create_count = 0
+        self.module_auto_apply_create_count = 0
+        self.module_admin_create_count = 0
+        self.module_other_create_count = 0
 
     @property
     def module_type(self):
@@ -77,9 +73,9 @@ class ModuleRunner(TestRunner):
 
     @property
     def main_test_module(self):
-        if not test_modules or not test_modules[0]:
+        if not self.test_modules or not self.test_modules[0]:
             SkipTest("No main module created")
-        return test_modules[0]
+        return self.test_modules[0]
 
     def build_module_args(self, extra=None):
         extra = extra or ''
@@ -103,7 +99,7 @@ class ModuleRunner(TestRunner):
 
     def _find_module(self, match_fn, not_found_message, find_all=False):
         found = [] if find_all else None
-        for test_module in test_modules:
+        for test_module in self.test_modules:
             if match_fn(test_module):
                 if find_all:
                     found.append(test_module)
@@ -203,29 +199,22 @@ class ModuleRunner(TestRunner):
 
     def run_module_create(self):
         # Necessary to test that the count increases.
-        global module_count_prior_to_create
-        global module_ds_count_prior_to_create
-        global module_ds_all_count_prior_to_create
-        global module_all_tenant_count_prior_to_create
-        global module_auto_apply_count_prior_to_create
-        global module_admin_count_prior_to_create
-        global module_other_count_prior_to_create
-        module_count_prior_to_create = len(
+        self.module_count_prior_to_create = len(
             self.auth_client.modules.list())
-        module_ds_count_prior_to_create = len(
+        self.module_ds_count_prior_to_create = len(
             self.auth_client.modules.list(
                 datastore=self.instance_info.dbaas_datastore))
-        module_ds_all_count_prior_to_create = len(
+        self.module_ds_all_count_prior_to_create = len(
             self.auth_client.modules.list(
                 datastore=models.Modules.MATCH_ALL_NAME))
-        module_all_tenant_count_prior_to_create = len(
+        self.module_all_tenant_count_prior_to_create = len(
             self.unauth_client.modules.list())
-        module_auto_apply_count_prior_to_create = len(
+        self.module_auto_apply_count_prior_to_create = len(
             [module for module in self.admin_client.modules.list()
              if module.auto_apply])
-        module_admin_count_prior_to_create = len(
+        self.module_admin_count_prior_to_create = len(
             self.admin_client.modules.list())
-        module_other_count_prior_to_create = len(
+        self.module_other_count_prior_to_create = len(
             self.unauth_client.modules.list())
         name, description, contents = self.build_module_args()
         self.assert_module_create(
@@ -248,30 +237,22 @@ class ModuleRunner(TestRunner):
             datastore=datastore, datastore_version=datastore_version,
             auto_apply=auto_apply,
             live_update=live_update, visible=visible)
-        global module_create_count
-        global module_ds_create_count
-        global module_ds_all_create_count
-        global module_auto_apply_create_count
-        global module_all_tenant_create_count
-        global module_admin_create_count
-        global module_other_create_count
         if (client == self.auth_client or
                 (client == self.admin_client and visible)):
-            module_create_count += 1
+            self.module_create_count += 1
             if datastore:
-                module_ds_create_count += 1
+                self.module_ds_create_count += 1
             else:
-                module_ds_all_create_count += 1
+                self.module_ds_all_create_count += 1
         elif not visible:
-            module_admin_create_count += 1
+            self.module_admin_create_count += 1
         else:
-            module_other_create_count += 1
+            self.module_other_create_count += 1
         if all_tenants and visible:
-            module_all_tenant_create_count += 1
+            self.module_all_tenant_create_count += 1
         if auto_apply and visible:
-            module_auto_apply_create_count += 1
-        global test_modules
-        test_modules.append(result)
+            self.module_auto_apply_create_count += 1
+        self.test_modules.append(result)
 
         tenant_id = None
         tenant = models.Modules.MATCH_ALL_NAME
@@ -413,7 +394,7 @@ class ModuleRunner(TestRunner):
     def run_module_list(self):
         self.assert_module_list(
             self.auth_client,
-            module_count_prior_to_create + module_create_count)
+            self.module_count_prior_to_create + self.module_create_count)
 
     def assert_module_list(self, client, expected_count, datastore=None,
                            skip_validation=False):
@@ -441,8 +422,9 @@ class ModuleRunner(TestRunner):
     def run_module_list_unauth_user(self):
         self.assert_module_list(
             self.unauth_client,
-            module_all_tenant_count_prior_to_create +
-            module_all_tenant_create_count + module_other_create_count)
+            (self.module_all_tenant_count_prior_to_create +
+             self.module_all_tenant_create_count +
+             self.module_other_create_count))
 
     def run_module_create_admin_all(self):
         name, description, contents = self.build_module_args(
@@ -517,20 +499,21 @@ class ModuleRunner(TestRunner):
     def run_module_list_again(self):
         self.assert_module_list(
             self.auth_client,
-            module_count_prior_to_create + module_create_count,
+            self.module_count_prior_to_create + self.module_create_count,
             skip_validation=True)
 
     def run_module_list_ds(self):
         self.assert_module_list(
             self.auth_client,
-            module_ds_count_prior_to_create + module_ds_create_count,
+            self.module_ds_count_prior_to_create + self.module_ds_create_count,
             datastore=self.instance_info.dbaas_datastore,
             skip_validation=True)
 
     def run_module_list_ds_all(self):
         self.assert_module_list(
             self.auth_client,
-            module_ds_all_count_prior_to_create + module_ds_all_create_count,
+            (self.module_ds_all_count_prior_to_create +
+             self.module_ds_all_create_count),
             datastore=models.Modules.MATCH_ALL_NAME,
             skip_validation=True)
 
@@ -545,10 +528,10 @@ class ModuleRunner(TestRunner):
     def run_module_list_admin(self):
         self.assert_module_list(
             self.admin_client,
-            (module_admin_count_prior_to_create +
-             module_create_count +
-             module_admin_create_count +
-             module_other_create_count),
+            (self.module_admin_count_prior_to_create +
+             self.module_create_count +
+             self.module_admin_create_count +
+             self.module_other_create_count),
             skip_validation=True)
 
     def run_module_update(self):
@@ -599,17 +582,16 @@ class ModuleRunner(TestRunner):
 
     def assert_module_update(self, client, module_id, **kwargs):
         result = client.modules.update(module_id, **kwargs)
-        global test_modules
         found = False
         index = -1
-        for test_module in test_modules:
+        for test_module in self.test_modules:
             index += 1
             if test_module.id == module_id:
                 found = True
                 break
         if not found:
             self.fail("Could not find updated module in module list")
-        test_modules[index] = result
+        self.test_modules[index] = result
 
         expected_args = {}
         for key, value in kwargs.items():
@@ -701,7 +683,7 @@ class ModuleRunner(TestRunner):
     def run_module_list_instance_empty(self):
         self.assert_module_list_instance(
             self.auth_client, self.instance_info.id,
-            module_auto_apply_count_prior_to_create)
+            self.module_auto_apply_count_prior_to_create)
 
     def assert_module_list_instance(self, client, instance_id, expected_count,
                                     expected_http_code=200):
@@ -728,7 +710,7 @@ class ModuleRunner(TestRunner):
 
     def run_module_query_empty(self):
         self.assert_module_query(self.auth_client, self.instance_info.id,
-                                 module_auto_apply_count_prior_to_create)
+                                 self.module_auto_apply_count_prior_to_create)
 
     def assert_module_query(self, client, instance_id, expected_count,
                             expected_http_code=200, expected_results=None):
@@ -826,7 +808,7 @@ class ModuleRunner(TestRunner):
             self.auth_client, self.instance_info.id, 1)
 
     def run_module_query_after_apply(self):
-        expected_count = module_auto_apply_count_prior_to_create + 1
+        expected_count = self.module_auto_apply_count_prior_to_create + 1
         expected_results = self.create_default_query_expected_results(
             [self.main_test_module])
         self.assert_module_query(self.auth_client, self.instance_info.id,
@@ -1029,23 +1011,23 @@ class ModuleRunner(TestRunner):
 
     def run_module_delete(self):
         expected_count = len(self.auth_client.modules.list()) - 1
-        test_module = test_modules.pop(0)
+        test_module = self.test_modules.pop(0)
         self.assert_module_delete(self.auth_client, test_module.id,
                                   expected_count)
 
     def run_module_delete_admin(self):
         start_count = count = len(self.admin_client.modules.list())
-        for test_module in test_modules:
+        for test_module in self.test_modules:
             count -= 1
             self.report.log("Deleting module '%s' (tenant: %s)" % (
                 test_module.name, test_module.tenant_id))
             self.assert_module_delete(self.admin_client, test_module.id, count)
         self.assert_not_equal(start_count, count, "Nothing was deleted")
         count = len(self.admin_client.modules.list())
-        self.assert_equal(module_admin_count_prior_to_create, count,
+        self.assert_equal(self.module_admin_count_prior_to_create, count,
                           "Wrong number of admin modules after deleting all")
         count = len(self.auth_client.modules.list())
-        self.assert_equal(module_count_prior_to_create, count,
+        self.assert_equal(self.module_count_prior_to_create, count,
                           "Wrong number of modules after deleting all")
 
     def assert_module_delete(self, client, module_id, expected_count):

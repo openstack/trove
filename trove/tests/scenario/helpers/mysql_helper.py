@@ -33,11 +33,11 @@ class MysqlHelper(SqlHelper):
                 {'name': 'db2'}, {"name": 'db3'}]
 
     def get_valid_user_definitions(self):
-        return [{'name': 'user1', 'password': 'password1', 'databases': [],
+        return [{'name': 'a_user1', 'password': 'password1', 'databases': [],
                  'host': '127.0.0.1'},
-                {'name': 'user2', 'password': 'password1',
+                {'name': 'a_user2', 'password': 'password1',
                  'databases': [{'name': 'db1'}], 'host': '0.0.0.0'},
-                {'name': 'user3', 'password': 'password1',
+                {'name': 'a_user3', 'password': 'password1',
                  'databases': [{'name': 'db1'}, {'name': 'db2'}]}]
 
     def get_dynamic_group(self):

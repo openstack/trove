@@ -17,9 +17,16 @@ from proboscis import test
 
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.instance_actions_group"
+
+
+class InstanceActionsRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'instance_actions_runners'
+    _runner_cls = 'InstanceActionsRunner'
 
 
 @test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
@@ -27,7 +34,7 @@ class InstanceActionsGroup(TestGroup):
 
     def __init__(self):
         super(InstanceActionsGroup, self).__init__(
-            'instance_actions_runners', 'InstanceActionsRunner')
+            InstanceActionsRunnerFactory.instance())
 
     @test
     def instance_restart(self):

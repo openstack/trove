@@ -17,6 +17,7 @@ from proboscis import test
 
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.backup_restore_group"
@@ -25,13 +26,19 @@ GROUP_BACKUP_LIST = "scenario.backup_list_group"
 GROUP_RESTORE = "scenario.restore_group"
 
 
+class BackupRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'backup_runners'
+    _runner_cls = 'BackupRunner'
+
+
 @test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
 class BackupGroup(TestGroup):
     """Test Backup and Restore functionality."""
 
     def __init__(self):
         super(BackupGroup, self).__init__(
-            'backup_runners', 'BackupRunner')
+            BackupRunnerFactory.instance())
 
     @test(groups=[GROUP_BACKUP])
     def backup_create_instance_invalid(self):

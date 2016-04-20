@@ -25,9 +25,16 @@ from trove.tests.scenario.groups import replication_group
 from trove.tests.scenario.groups import root_actions_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.groups import user_actions_group
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.instance_delete_group"
+
+
+class InstanceDeleteRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'instance_delete_runners'
+    _runner_cls = 'InstanceDeleteRunner'
 
 
 @test(depends_on_groups=[instance_create_group.GROUP],
@@ -44,7 +51,7 @@ class InstanceDeleteGroup(TestGroup):
 
     def __init__(self):
         super(InstanceDeleteGroup, self).__init__(
-            'instance_delete_runners', 'InstanceDeleteRunner')
+            InstanceDeleteRunnerFactory.instance())
 
     @test
     def instance_delete(self):

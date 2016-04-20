@@ -16,9 +16,16 @@
 from proboscis import test
 
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.negative_cluster_actions_group"
+
+
+class NegativeClusterActionsRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'negative_cluster_actions_runners'
+    _runner_cls = 'NegativeClusterActionsRunner'
 
 
 @test(groups=[GROUP])
@@ -26,7 +33,7 @@ class NegativeClusterActionsGroup(TestGroup):
 
     def __init__(self):
         super(NegativeClusterActionsGroup, self).__init__(
-            'negative_cluster_actions_runners', 'NegativeClusterActionsRunner')
+            NegativeClusterActionsRunnerFactory.instance())
 
     @test
     def create_constrained_size_cluster(self):

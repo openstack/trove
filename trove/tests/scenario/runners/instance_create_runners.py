@@ -17,9 +17,10 @@ import json
 
 from proboscis import SkipTest
 
-from trove.tests.api.instances import CheckInstance, InstanceTestInfo
 from trove.tests.config import CONFIG
 from trove.tests.scenario.helpers.test_helper import DataType
+from trove.tests.scenario.runners.test_runners import CheckInstance
+from trove.tests.scenario.runners.test_runners import InstanceTestInfo
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
@@ -32,7 +33,8 @@ class InstanceCreateRunner(TestRunner):
         self.init_inst_users = None
         self.init_inst_host = None
         self.init_inst_data = None
-        self.init_config_group_id = None
+        self.init_inst_config_group_id = None
+        self.config_group_id = None
 
     def run_empty_instance_create(
             self, expected_states=['BUILD', 'ACTIVE'], expected_http_code=200):
@@ -40,20 +42,21 @@ class InstanceCreateRunner(TestRunner):
         flavor = self._get_instance_flavor()
         trove_volume_size = CONFIG.get('trove_volume_size', 1)
 
-        info = self.assert_instance_create(
+        instance_info = self.assert_instance_create(
             name, flavor, trove_volume_size, [], [], None, None,
             CONFIG.dbaas_datastore, CONFIG.dbaas_datastore_version,
             expected_states, expected_http_code, create_helper_user=True)
 
         # Update the shared instance info.
-        self.instance_info.databases = info.databases
-        self.instance_info.users = info.users
-        self.instance_info.dbaas_datastore = info.dbaas_datastore
-        self.instance_info.dbaas_datastore_version = (info.
-                                                      dbaas_datastore_version)
-        self.instance_info.dbaas_flavor_href = info.dbaas_flavor_href
-        self.instance_info.volume = info.volume
-        self.instance_info.id = info.id
+        self.instance_info.id = instance_info.id
+        self.instance_info.name = instance_info.name
+        self.instance_info.databases = instance_info.databases
+        self.instance_info.users = instance_info.users
+        self.instance_info.dbaas_datastore = instance_info.dbaas_datastore
+        self.instance_info.dbaas_datastore_version = (
+            instance_info.dbaas_datastore_version)
+        self.instance_info.dbaas_flavor_href = instance_info.dbaas_flavor_href
+        self.instance_info.volume = instance_info.volume
 
     def run_initial_configuration_create(self, expected_http_code=200):
         dynamic_config = self.test_helper.get_dynamic_group()
@@ -69,7 +72,7 @@ class InstanceCreateRunner(TestRunner):
                 datastore_version=self.instance_info.dbaas_datastore_version)
             self.assert_client_code(expected_http_code)
 
-            self.init_config_group_id = result.id
+            self.config_group_id = result.id
         else:
             raise SkipTest("No groups defined.")
 
@@ -83,6 +86,7 @@ class InstanceCreateRunner(TestRunner):
             # test instances.
             raise SkipTest("Using an existing instance.")
 
+        configuration_id = configuration_id or self.config_group_id
         name = self.instance_info.name + '_init'
         flavor = self._get_instance_flavor()
         trove_volume_size = CONFIG.get('trove_volume_size', 1)
@@ -90,15 +94,12 @@ class InstanceCreateRunner(TestRunner):
                               if with_dbs else [])
         self.init_inst_users = (self.test_helper.get_valid_user_definitions()
                                 if with_users else [])
-        if configuration_id:
-            self.init_config_group_id = configuration_id
-
-        if (self.init_inst_dbs or self.init_inst_users or
-                self.init_config_group_id):
+        self.init_inst_config_group_id = configuration_id
+        if (self.init_inst_dbs or self.init_inst_users or configuration_id):
             info = self.assert_instance_create(
                 name, flavor, trove_volume_size,
                 self.init_inst_dbs, self.init_inst_users,
-                self.init_config_group_id, None,
+                configuration_id, None,
                 CONFIG.dbaas_datastore, CONFIG.dbaas_datastore_version,
                 expected_states, expected_http_code,
                 create_helper_user=create_helper_user)
@@ -244,7 +245,7 @@ class InstanceCreateRunner(TestRunner):
         if self.init_inst_id:
             self.assert_instance_properties(
                 self.init_inst_id, self.init_inst_dbs, self.init_inst_users,
-                self.init_config_group_id, self.init_inst_data)
+                self.init_inst_config_group_id, self.init_inst_data)
 
     def assert_instance_properties(
             self, instance_id, expected_dbs_definitions,
@@ -316,10 +317,17 @@ class InstanceCreateRunner(TestRunner):
             self.assert_all_gone(self.init_inst_id, expected_states[-1])
         else:
             raise SkipTest("Cleanup is not required.")
+        self.init_inst_id = None
+        self.init_inst_dbs = None
+        self.init_inst_users = None
+        self.init_inst_host = None
+        self.init_inst_data = None
+        self.init_inst_config_group_id = None
 
     def run_initial_configuration_delete(self, expected_http_code=202):
-        if self.init_config_group_id:
-            self.auth_client.configurations.delete(self.init_config_group_id)
+        if self.config_group_id:
+            self.auth_client.configurations.delete(self.config_group_id)
             self.assert_client_code(expected_http_code)
         else:
             raise SkipTest("Cleanup is not required.")
+        self.config_group_id = None

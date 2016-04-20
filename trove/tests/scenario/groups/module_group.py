@@ -18,12 +18,19 @@ from proboscis import test
 
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.module_group"
 GROUP_MODULE_CREATE = "scenario.module_create_group"
-GROUP_INSTANCE_MODULE = "scenario.instance_module_group"
+GROUP_MODULE_INSTANCE = "scenario.module_instance_group"
 GROUP_MODULE_DELETE = "scenario.module_delete_group"
+
+
+class ModuleRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'module_runners'
+    _runner_cls = 'ModuleRunner'
 
 
 @test(groups=[GROUP, GROUP_MODULE_CREATE])
@@ -32,7 +39,7 @@ class ModuleGroup(TestGroup):
 
     def __init__(self):
         super(ModuleGroup, self).__init__(
-            'module_runners', 'ModuleRunner')
+            ModuleRunnerFactory.instance())
 
     @test(groups=[GROUP, GROUP_MODULE_CREATE])
     def module_delete_existing(self):
@@ -319,63 +326,63 @@ class ModuleGroup(TestGroup):
 
 @test(depends_on_groups=[instance_create_group.GROUP,
                          GROUP_MODULE_CREATE],
-      groups=[GROUP, GROUP_INSTANCE_MODULE])
+      groups=[GROUP, GROUP_MODULE_INSTANCE])
 class ModuleInstanceGroup(TestGroup):
     """Test Instance Module functionality."""
 
     def __init__(self):
         super(ModuleInstanceGroup, self).__init__(
-            'module_runners', 'ModuleRunner')
+            ModuleRunnerFactory.instance())
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE])
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE])
     def module_list_instance_empty(self):
         """Check that the instance has no modules associated."""
         self.test_runner.run_module_list_instance_empty()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           runs_after=[module_list_instance_empty])
     def module_instances_empty(self):
         """Check that the module hasn't been applied to any instances."""
         self.test_runner.run_module_instances_empty()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           runs_after=[module_instances_empty])
     def module_query_empty(self):
         """Check that the instance has no modules applied."""
         self.test_runner.run_module_query_empty()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           runs_after=[module_query_empty])
     def module_apply(self):
         """Check that module-apply works."""
         self.test_runner.run_module_apply()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_apply])
     def module_list_instance_after_apply(self):
         """Check that the instance has one module associated."""
         self.test_runner.run_module_list_instance_after_apply()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_apply])
     def module_query_after_apply(self):
         """Check that module-query works."""
         self.test_runner.run_module_query_after_apply()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_apply],
           runs_after=[module_query_after_apply])
     def create_inst_with_mods(self):
         """Check that creating an instance with modules works."""
         self.test_runner.run_create_inst_with_mods()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_apply])
     def module_delete_applied(self):
         """Ensure that deleting an applied module fails."""
         self.test_runner.run_module_delete_applied()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_apply],
           runs_after=[module_list_instance_after_apply,
                       module_query_after_apply])
@@ -383,54 +390,54 @@ class ModuleInstanceGroup(TestGroup):
         """Check that module-remove works."""
         self.test_runner.run_module_remove()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[module_remove])
     def module_query_empty_after(self):
         """Check that the instance has no modules applied after remove."""
         self.test_runner.run_module_query_empty()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[create_inst_with_mods],
           runs_after=[module_query_empty_after])
     def wait_for_inst_with_mods(self):
         """Wait for create instance with modules to finish."""
         self.test_runner.run_wait_for_inst_with_mods()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods])
     def module_query_after_inst_create(self):
         """Check that module-query works on new instance."""
         self.test_runner.run_module_query_after_inst_create()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods],
           runs_after=[module_query_after_inst_create])
     def module_retrieve_after_inst_create(self):
         """Check that module-retrieve works on new instance."""
         self.test_runner.run_module_retrieve_after_inst_create()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods],
           runs_after=[module_retrieve_after_inst_create])
     def module_query_after_inst_create_admin(self):
         """Check that module-query works for admin."""
         self.test_runner.run_module_query_after_inst_create_admin()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods],
           runs_after=[module_query_after_inst_create_admin])
     def module_retrieve_after_inst_create_admin(self):
         """Check that module-retrieve works for admin."""
         self.test_runner.run_module_retrieve_after_inst_create_admin()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods],
           runs_after=[module_retrieve_after_inst_create_admin])
     def module_delete_auto_applied(self):
         """Ensure that module-delete on auto-applied module fails."""
         self.test_runner.run_module_delete_auto_applied()
 
-    @test(groups=[GROUP, GROUP_INSTANCE_MODULE],
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
           depends_on=[wait_for_inst_with_mods],
           runs_after=[module_delete_auto_applied])
     def delete_inst_with_mods(self):
@@ -445,7 +452,7 @@ class ModuleDeleteGroup(TestGroup):
 
     def __init__(self):
         super(ModuleDeleteGroup, self).__init__(
-            'module_runners', 'ModuleRunner')
+            ModuleRunnerFactory.instance())
 
     @test(groups=[GROUP, GROUP_MODULE_DELETE])
     def module_delete_non_existent(self):

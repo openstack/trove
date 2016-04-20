@@ -156,9 +156,6 @@ guest_log_groups.extend([guest_log_group.GROUP])
 instance_actions_groups = list(instance_create_groups)
 instance_actions_groups.extend([instance_actions_group.GROUP])
 
-instance_module_groups = list(instance_create_groups)
-instance_module_groups.extend([module_group.GROUP_INSTANCE_MODULE])
-
 module_groups = list(instance_create_groups)
 module_groups.extend([module_group.GROUP])
 
@@ -187,7 +184,6 @@ register(["database"], database_actions_groups)
 register(["guest_log"], guest_log_groups)
 register(["instance", "instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
-register(["instance_module"], instance_module_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
 register(["replication"], replication_groups)
