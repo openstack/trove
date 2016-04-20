@@ -324,7 +324,8 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         return [item.serialize() for item in collection]
 
     @classmethod
-    def _get_random_name(self, size, chars=string.letters + string.digits):
+    def _get_random_name(self, size,
+                         chars=string.ascii_letters + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
 
     @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')

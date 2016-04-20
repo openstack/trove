@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sets import Set
-
 from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_service import periodic_task
@@ -181,7 +179,7 @@ class Manager(periodic_task.PeriodicTasks):
     def _most_current_replica(self, old_master, replica_models):
         last_txns = self._get_replica_txns(replica_models)
         master_ids = [txn[1] for txn in last_txns if txn[1]]
-        if len(Set(master_ids)) > 1:
+        if len(set(master_ids)) > 1:
             raise TroveError(_("Replicas of %s not all replicating"
                                " from same master") % old_master.id)
         return sorted(last_txns, key=lambda x: x[2], reverse=True)[0][0]
