@@ -24,12 +24,11 @@ from .service.install import PgSqlInstall
 from .service.root import PgSqlRoot
 from .service.status import PgSqlAppStatus
 
-import pgutil
-
 from trove.common import cfg
 from trove.common.notification import EndNotification
 from trove.common import utils
 from trove.guestagent import backup
+from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore import manager
 from trove.guestagent import guest_log
 from trove.guestagent import volume

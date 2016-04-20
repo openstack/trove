@@ -18,10 +18,10 @@ import re
 from oslo_log import log as logging
 from oslo_utils import strutils
 import webob.exc
-import wsgi
 
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import wsgi
 
 LOG = logging.getLogger(__name__)
 
