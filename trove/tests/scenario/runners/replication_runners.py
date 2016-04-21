@@ -86,6 +86,7 @@ class ReplicationRunner(TestRunner):
         CheckInstance(instance._info).slaves()
         self.assert_true(
             set(replica_ids).issubset(self._get_replica_set(instance_id)))
+        self._validate_master(instance_id)
 
     def _get_replica_set(self, master_id):
         instance = self.get_instance(master_id)
@@ -97,6 +98,7 @@ class ReplicationRunner(TestRunner):
         CheckInstance(instance._info).replica_of()
         self.assert_equal(master_id, instance._info['replica_of']['id'],
                           'Unexpected replication master ID')
+        self._validate_replica(instance_id)
 
     def run_create_multiple_replicas(self, expected_states=['BUILD', 'ACTIVE'],
                                      expected_http_code=200):
@@ -282,6 +284,20 @@ class ReplicationRunner(TestRunner):
     def run_cleanup_master_instance(self):
         pass
 
+    def _validate_master(self, instance_id):
+        """This method is intended to be overridden by each
+        datastore as needed. It is to be used for any database
+        specific master instance validation.
+        """
+        pass
+
+    def _validate_replica(self, instance_id):
+        """This method is intended to be overridden by each
+        datastore as needed. It is to be used for any database
+        specific replica instance validation.
+        """
+        pass
+
 
 class MysqlReplicationRunner(ReplicationRunner):
 
@@ -291,10 +307,43 @@ class MysqlReplicationRunner(ReplicationRunner):
                 self.auth_client.users.delete(self.master_id, user.name,
                                               user.host)
 
+    def _validate_master(self, instance_id):
+        """For Mysql validate that the master has its
+        binlog_format set to MIXED.
+        """
+        client = self.test_helper.get_client(
+            self.get_instance_host(instance_id))
+        self._validate_binlog_fmt(instance_id, client)
 
-class MariadbReplicationRunner(MysqlReplicationRunner):
-    pass
+    def _validate_replica(self, instance_id):
+        """For Mysql validate that any replica has its
+        binlog_format set to MIXED and it is in read_only
+        mode.
+        """
+        client = self.test_helper.get_client(
+            self.get_instance_host(instance_id))
+        self._validate_binlog_fmt(instance_id, client)
+        self._validate_read_only(instance_id, client)
+
+    def _validate_binlog_fmt(self, instance_id, client):
+        binlog_fmt = self._get_mysql_variable(client, 'binlog_format')
+        self.assert_equal('MIXED', binlog_fmt,
+                          'Wrong binlog format detected for %s' % instance_id)
+
+    def _validate_read_only(self, instance_id, client):
+        read_only = self._get_mysql_variable(client, 'read_only')
+        self.assert_equal('ON', read_only, 'Wrong read only mode detected '
+                          'for %s' % instance_id)
+
+    def _get_mysql_variable(self, client, variable):
+        cmd = "SHOW GLOBAL VARIABLES LIKE '%s'" % variable
+        row = client.execute(cmd).fetchone()
+        return row['Value']
 
 
 class PerconaReplicationRunner(MysqlReplicationRunner):
+    pass
+
+
+class MariadbReplicationRunner(MysqlReplicationRunner):
     pass

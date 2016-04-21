@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixed default configuration template for MySQL to ensure that
+    replication uses binlog_format. Bug 1563541.
