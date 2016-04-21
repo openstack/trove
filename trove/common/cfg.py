@@ -26,6 +26,7 @@ from osprofiler import opts as profiler
 from trove.version import version_info as version
 
 
+LOG = logging.getLogger(__name__)
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
 
 path_opts = [
@@ -1439,35 +1440,35 @@ def parse_args(argv, default_config_files=None):
              default_config_files=default_config_files)
 
 
-def get_ignored_dbs(manager=None):
+def get_ignored_dbs():
     try:
-        return get_configuration_property('ignore_dbs', manager=manager)
+        return get_configuration_property('ignore_dbs')
     except NoSuchOptError:
         return []
 
 
-def get_ignored_users(manager=None):
+def get_ignored_users():
     try:
-        return get_configuration_property('ignore_users', manager=manager)
+        return get_configuration_property('ignore_users')
     except NoSuchOptError:
         return []
 
 
-def get_configuration_property(property_name, manager=None):
+def get_configuration_property(property_name):
     """
     Get a configuration property.
     Try to get it from the datastore-specific section first.
     If it is not available, retrieve it from the DEFAULT section.
     """
 
-    # TODO(pmalik): Note that the unit and fake-integration tests
-    # do not define 'CONF.datastore_manager'. *MySQL* options will
-    # be loaded unless the caller passes a manager name explicitly.
-    #
-    # Once the tests are fixed this conditional expression should be removed
-    # and the proper value should always be either loaded from
-    # 'CONF.datastore_manager' or passed-in by the caller.
-    datastore_manager = manager or CONF.datastore_manager or 'mysql'
+    # Fake-integration tests do not define 'CONF.datastore_manager'.
+    # *MySQL* options will
+    # be loaded. This should never occur in a production environment.
+    datastore_manager = CONF.datastore_manager
+    if not datastore_manager:
+        datastore_manager = 'mysql'
+        LOG.warning(_("Manager name ('datastore_manager') not defined, "
+                      "using '%s' options instead.") % datastore_manager)
 
     try:
         return CONF.get(datastore_manager).get(property_name)

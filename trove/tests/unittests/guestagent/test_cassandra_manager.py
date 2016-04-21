@@ -38,10 +38,12 @@ from trove.guestagent.datastore.experimental.cassandra import (
 from trove.guestagent.db import models
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
+class GuestAgentCassandraDBManagerTest(DatastoreManagerTest):
 
     __MOUNT_POINT = '/var/lib/cassandra'
 
@@ -74,7 +76,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def setUp(self, *args, **kwargs):
-        super(GuestAgentCassandraDBManagerTest, self).setUp()
+        super(GuestAgentCassandraDBManagerTest, self).setUp('cassandra')
 
         conn_patcher = patch.multiple(cass_service.CassandraConnection,
                                       _connect=DEFAULT,

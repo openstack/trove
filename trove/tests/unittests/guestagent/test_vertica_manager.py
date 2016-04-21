@@ -30,17 +30,17 @@ from trove.guestagent.datastore.experimental.vertica import system
 from trove.guestagent import dbaas
 from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
-from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentManagerTest(trove_testtools.TestCase):
+class GuestAgentManagerTest(DatastoreManagerTest):
 
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
                     chown=DEFAULT, chmod=DEFAULT)
     def setUp(self, *args, **kwargs):
-        super(GuestAgentManagerTest, self).setUp()
-        self.context = trove_testtools.TroveTestContext(self)
+        super(GuestAgentManagerTest, self).setUp('vertica')
         self.manager = Manager()
         self.origin_format = volume.VolumeDevice.format
         self.origin_migrate_data = volume.VolumeDevice.migrate_data

@@ -24,13 +24,14 @@ from trove.guestagent.datastore.experimental.db2 import (
     service as db2_service)
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
-from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
+class GuestAgentDB2ManagerTest(DatastoreManagerTest):
 
     def setUp(self):
-        super(GuestAgentDB2ManagerTest, self).setUp()
+        super(GuestAgentDB2ManagerTest, self).setUp('db2')
         self.real_status = db2_service.DB2AppStatus.set_status
 
         class FakeInstanceServiceStatus(object):
@@ -41,7 +42,6 @@ class GuestAgentDB2ManagerTest(trove_testtools.TestCase):
 
         db2_service.DB2AppStatus.set_status = MagicMock(
             return_value=FakeInstanceServiceStatus())
-        self.context = trove_testtools.TroveTestContext(self)
         self.manager = db2_manager.Manager()
         self.real_db_app_status = db2_service.DB2AppStatus
         self.origin_format = volume.VolumeDevice.format

@@ -14,22 +14,21 @@
 
 from mock import MagicMock
 from mock import patch
-import testtools
 
-from trove.common.context import TroveContext
 from trove.guestagent.datastore.experimental.mariadb import (
     manager as mariadb_manager)
 from trove.guestagent.datastore.experimental.mariadb import (
     service as mariadb_service)
 from trove.guestagent.datastore.mysql_common import service as mysql_service
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentManagerTest(testtools.TestCase):
+class GuestAgentManagerTest(DatastoreManagerTest):
 
     def setUp(self):
-        super(GuestAgentManagerTest, self).setUp()
+        super(GuestAgentManagerTest, self).setUp('mariadb')
         self.manager = mariadb_manager.Manager()
-        self.context = TroveContext()
         patcher_rs = patch(
             'trove.guestagent.strategies.replication.get_instance')
         patcher_rs.start()

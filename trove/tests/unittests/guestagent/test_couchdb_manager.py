@@ -27,13 +27,14 @@ from trove.guestagent.datastore.experimental.couchdb import (
     service as couchdb_service)
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
-from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
+class GuestAgentCouchDBManagerTest(DatastoreManagerTest):
 
     def setUp(self):
-        super(GuestAgentCouchDBManagerTest, self).setUp()
+        super(GuestAgentCouchDBManagerTest, self).setUp('couchdb')
         self.real_status = couchdb_service.CouchDBAppStatus.set_status
 
         class FakeInstanceServiceStatus(object):
@@ -44,7 +45,6 @@ class GuestAgentCouchDBManagerTest(trove_testtools.TestCase):
 
         couchdb_service.CouchDBAppStatus.set_status = MagicMock(
             return_value=FakeInstanceServiceStatus())
-        self.context = trove_testtools.TroveTestContext(self)
         self.manager = couchdb_manager.Manager()
         self.pkg = couchdb_service.packager
         self.real_db_app_status = couchdb_service.CouchDBAppStatus
