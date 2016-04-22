@@ -48,7 +48,8 @@ class RedisHelper(TestHelper):
 
     def create_client(self, host, *args, **kwargs):
         user = self.get_helper_credentials()
-        client = redis.StrictRedis(password=user['password'], host=host)
+        password = kwargs.get('password', user['password'])
+        client = redis.StrictRedis(password=password, host=host)
         return client
 
     # Add data overrides
@@ -175,3 +176,10 @@ class RedisHelper(TestHelper):
 
     def get_invalid_groups(self):
         return [{'hz': 600}, {'databases': -1}, {'databases': 'string_value'}]
+
+    def ping(self, host, *args, **kwargs):
+        try:
+            client = self.get_client(host, *args, **kwargs)
+            return client.ping() == 'PONG'
+        except Exception:
+            return False
