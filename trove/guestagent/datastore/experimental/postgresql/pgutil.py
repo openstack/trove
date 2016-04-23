@@ -13,12 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
 import psycopg2
 
 from trove.common import exception
-
-LOG = logging.getLogger(__name__)
 
 PG_ADMIN = 'os_admin'
 

@@ -17,8 +17,6 @@
 Model classes that extend the instances functionality for MySQL instances.
 """
 
-from oslo_log import log as logging
-
 from trove.common import cfg
 from trove.common import exception
 from trove.common.notification import StartNotification
@@ -29,7 +27,6 @@ from trove.extensions.common.models import RootHistory
 from trove.guestagent.db import models as guest_models
 
 CONF = cfg.CONF
-LOG = logging.getLogger(__name__)
 
 
 def persisted_models():

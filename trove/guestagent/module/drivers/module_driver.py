@@ -17,12 +17,9 @@
 import abc
 import six
 
-from oslo_log import log as logging
-
 from trove.common import cfg
 
 
-LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 

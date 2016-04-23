@@ -21,12 +21,9 @@ context or provide additional information in their specific WSGI pipeline.
 """
 
 from oslo_context import context
-from oslo_log import log as logging
 
 from trove.common import local
 from trove.common.serializable_notification import SerializableNotification
-
-LOG = logging.getLogger(__name__)
 
 
 class TroveContext(context.RequestContext):

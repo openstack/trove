@@ -15,8 +15,6 @@
 
 import os
 
-from oslo_log import log as logging
-
 from trove.common import cfg
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.postgresql.service.status import (
@@ -24,7 +22,6 @@ from trove.guestagent.datastore.experimental.postgresql.service.status import (
 from trove.guestagent import guest_log
 
 
-LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
 

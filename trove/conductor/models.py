@@ -12,11 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from oslo_log import log as logging
-
 from trove.db import get_db_api
-
-LOG = logging.getLogger(__name__)
 
 
 def persisted_models():

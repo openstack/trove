@@ -16,7 +16,6 @@
 
 from trove.common import cfg
 from trove.common.remote import normalize_url
-import trove.openstack.common.log as logging
 
 from cinderclient.v2 import client as CinderClient
 from neutronclient.v2_0 import client as NeutronClient
@@ -51,7 +50,6 @@ remote_neutron_client = \
 """
 
 PROXY_AUTH_URL = CONF.trove_auth_url
-LOG = logging.getLogger(__name__)
 
 
 def nova_client_trove_admin(context=None):

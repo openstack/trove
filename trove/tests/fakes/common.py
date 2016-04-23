@@ -16,13 +16,11 @@
 """Common code to help in faking the models."""
 
 from novaclient import exceptions as nova_exceptions
-from oslo_log import log as logging
 
 from trove.common import cfg
 
 
 CONF = cfg.CONF
-LOG = logging.getLogger(__name__)
 
 
 def authorize(context):

@@ -13,13 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from trove.common import extensions
 from trove.extensions.common import service as common_service
 from trove.extensions.mysql import service as mysql_service
-
-LOG = logging.getLogger(__name__)
 
 
 class Mysql(extensions.ExtensionDescriptor):

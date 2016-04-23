@@ -14,12 +14,8 @@
 #    under the License.
 #
 
-from oslo_log import log as logging
-
 from trove.datastore import models as datastore_models
 from trove.module import models
-
-LOG = logging.getLogger(__name__)
 
 
 class ModuleView(object):
