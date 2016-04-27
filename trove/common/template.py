@@ -115,10 +115,6 @@ class SingleInstanceConfigTemplate(object):
         return abs(hash(self.instance_id) % (2 ** 31))
 
 
-class OverrideConfigTemplate(SingleInstanceConfigTemplate):
-    template_name = "override.config.template"
-
-
 def _validate_datastore(datastore_manager):
     try:
         CONF.get(datastore_manager)
