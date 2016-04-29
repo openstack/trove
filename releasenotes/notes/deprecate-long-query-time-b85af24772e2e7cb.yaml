@@ -1,0 +1,12 @@
+---
+deprecations:
+  - Make 'long query time' manageable via
+    configuration groups (see bug 1542485).
+    Deprecate the global 'guest_log_long_query_time'
+    option in preference of datastore-specific
+    configurations.
+    MySQL long_query_time
+    Percona long_query_time
+    Percona XtraDB Cluster long_query_time
+    MariaDB long_query_time
+    PostgreSQL log_min_duration_statement

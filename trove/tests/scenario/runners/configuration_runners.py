@@ -323,7 +323,16 @@ class ConfigurationRunner(TestRunner):
         host = self.get_instance_host(instance_id)
         for name, value in expected_configs.items():
             actual = self.test_helper.get_configuration_value(name, host)
-            self.assert_equal(str(value), str(actual),
+            # Compare floating point numbers as floats to avoid rounding
+            # and precision issues.
+            try:
+                expected_value = float(value)
+                actual_value = float(actual)
+            except ValueError:
+                expected_value = str(value)
+                actual_value = str(actual)
+
+            self.assert_equal(expected_value, actual_value,
                               "Unexpected value of property '%s'" % name)
 
     def run_list_dynamic_inst_conf_groups_after(self):

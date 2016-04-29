@@ -453,8 +453,8 @@ class Manager(periodic_task.PeriodicTasks):
         self.guest_log_context = context
         gl_cache = self.guest_log_cache
         result = filter(None, [gl_cache[log_name].show()
-                        if gl_cache[log_name].exposed else None
-                        for log_name in gl_cache.keys()])
+                               if gl_cache[log_name].exposed else None
+                               for log_name in gl_cache.keys()])
         LOG.info(_("Returning list of logs: %s") % result)
         return result
 
@@ -467,7 +467,7 @@ class Manager(periodic_task.PeriodicTasks):
         if publish and not disable:
             enable = True
         LOG.info(_("Processing guest log '%(log)s' "
-                 "(enable=%(en)s, disable=%(dis)s, "
+                   "(enable=%(en)s, disable=%(dis)s, "
                    "publish=%(pub)s, discard=%(disc)s).") %
                  {'log': log_name, 'en': enable, 'dis': disable,
                   'pub': publish, 'disc': discard})
@@ -554,8 +554,12 @@ class Manager(periodic_task.PeriodicTasks):
             config_man_values = cfg_values
             if section_label:
                 config_man_values = {section_label: cfg_values}
-            self.configuration_manager.apply_system_override(
-                config_man_values, change_id=apply_label)
+            # Applying the changes with a group id lower than the one used
+            # by user overrides. Any user defined value will override these
+            # settings (irrespective of order in which they are applied).
+            # See Bug 1542485
+            self.configuration_manager._apply_override(
+                '10-system-low-priority', apply_label, config_man_values)
         if restart_required:
             self.status.set_status(instance.ServiceStatuses.RESTART_REQUIRED)
         else:

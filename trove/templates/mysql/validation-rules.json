@@ -231,6 +231,12 @@
             "name": "performance_schema",
             "restart_required": true,
             "type": "boolean"
+        },
+        {
+            "name": "long_query_time",
+            "restart_required": false,
+            "min": 0,
+            "type": "float"
         }
     ]
 }

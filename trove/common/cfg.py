@@ -548,7 +548,10 @@ mysql_opts = [
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
-                    'in order to be logged in the slow_query log.'),
+                    'in order to be logged in the slow_query log.',
+               deprecated_for_removal=True,
+               deprecated_reason='Will be replaced by a configuration group '
+               'option: long_query_time'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',
@@ -632,7 +635,10 @@ percona_opts = [
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
-                    'in order to be logged in the slow_query log.'),
+                    'in order to be logged in the slow_query log.',
+               deprecated_for_removal=True,
+               deprecated_reason='Will be replaced by a configuration group '
+               'option: long_query_time'),
     cfg.IntOpt('default_password_length',
                default='${mysql.default_password_length}',
                help='Character length of generated passwords.',
@@ -721,7 +727,10 @@ pxc_opts = [
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
-                    'in order to be logged in the slow_query log.'),
+                    'in order to be logged in the slow_query log.',
+               deprecated_for_removal=True,
+               deprecated_reason='Will be replaced by a configuration group '
+               'option: long_query_time'),
     cfg.IntOpt('default_password_length',
                default='${mysql.default_password_length}',
                help='Character length of generated passwords.',
@@ -1102,7 +1111,10 @@ postgresql_opts = [
                help="The time in milliseconds that a statement must take in "
                     "in order to be logged in the 'general' log.  A value of "
                     "'0' logs all statements, while '-1' turns off "
-                    "statement logging."),
+                    "statement logging.",
+               deprecated_for_removal=True,
+               deprecated_reason='Will be replaced by configuration group '
+               'option: log_min_duration_statement'),
     cfg.IntOpt('default_password_length', default=36,
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',
@@ -1378,7 +1390,10 @@ mariadb_opts = [
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
-                    'in order to be logged in the slow_query log.'),
+                    'in order to be logged in the slow_query log.',
+               deprecated_for_removal=True,
+               deprecated_reason='Will be replaced by a configuration group '
+               'option: long_query_time'),
     cfg.BoolOpt('cluster_support', default=True,
                 help='Enable clusters to be created and managed.'),
     cfg.IntOpt('min_cluster_member_count', default=3,
