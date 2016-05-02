@@ -15,6 +15,8 @@
 #
 
 from Crypto import Random
+import mock
+import six
 
 from trove.common import crypto_utils
 from trove.tests.unittests import trove_testtools
@@ -30,17 +32,20 @@ class TestEncryptUtils(trove_testtools.TestCase):
 
     def test_encode_decode_string(self):
         random_data = bytearray(Random.new().read(12))
-        data = ['abc', 'numbers01234', '\x00\xFF\x00\xFF\xFF\x00', random_data]
+        data = [b'abc', b'numbers01234', b'\x00\xFF\x00\xFF\xFF\x00',
+                random_data, u'Unicode:\u20ac']
 
         for datum in data:
             encoded_data = crypto_utils.encode_data(datum)
             decoded_data = crypto_utils.decode_data(encoded_data)
+            if isinstance(datum, six.text_type):
+                decoded_data = decoded_data.decode('utf-8')
             self. assertEqual(datum, decoded_data,
                               "Encode/decode failed")
 
     def test_pad_unpad(self):
         for size in range(1, 100):
-            data_str = 'a' * size
+            data_str = b'a' * size
             padded_str = crypto_utils.pad_for_encryption(
                 data_str, crypto_utils.IV_BIT_COUNT)
             self.assertEqual(0, len(padded_str) % crypto_utils.IV_BIT_COUNT,
@@ -62,3 +67,46 @@ class TestEncryptUtils(trove_testtools.TestCase):
 
             self.assertEqual(orig_data, final_decoded,
                              "Decrypted data did not match original")
+
+    def test_encrypt(self):
+        # test encrypt() with an hardcoded IV
+        key = 'my_secure_key'
+        salt = b'x' * crypto_utils.IV_BIT_COUNT
+
+        with mock.patch('Crypto.Random.new') as mock_random:
+            mock_random.return_value.read.return_value = salt
+
+            for orig_data, expected in (
+                # byte string
+                (b'Hello World!',
+                 'eHh4eHh4eHh4eHh4eHh4eF5RK6VdDrAWl4Th1mNG2eps+VB2BouFRiY2Wa'
+                    'P/RRPT'),
+
+                # Unicoded string (encoded to UTF-8)
+                (u'Unicode:\u20ac',
+                 'eHh4eHh4eHh4eHh4eHh4eAMsI5YsrtMNAPJfVF0j9NegXML7OsJ0LuAy66'
+                    'LKv5F4'),
+            ):
+                orig_encoded = crypto_utils.encode_data(orig_data)
+                encrypted = crypto_utils.encrypt_data(orig_encoded, key)
+                encoded = crypto_utils.encode_data(encrypted)
+                self.assertEqual(expected, encoded)
+
+    def test_decrypt(self):
+        key = 'my_secure_key'
+
+        for encoded, expected in (
+            # byte string: b'Hello World!'
+            ('ZUhoNGVIaDRlSGg0ZUhoNL9PmM70hVcQ7j/kYF7Pw+BT7VSfsht0VsCIxy'
+                'KNN0NH',
+             b'Hello World!'),
+
+            # Unicoded string: u'Unicode:\u20ac'
+            ('ZUhoNGVIaDRlSGg0ZUhoNIHZLIuIcQCRwWY7PR2y7JcqoDf4ViqXIfh0uE'
+                'Rbg9BA',
+             b'Unicode:\xe2\x82\xac'),
+        ):
+            decoded = crypto_utils.decode_data(encoded)
+            decrypted = crypto_utils.decrypt_data(decoded, key)
+            final_decoded = crypto_utils.decode_data(decrypted)
+            self.assertEqual(expected, final_decoded)
