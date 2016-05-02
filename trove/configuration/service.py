@@ -16,6 +16,7 @@
 from datetime import datetime
 
 from oslo_log import log as logging
+import six
 
 import trove.common.apischema as apischema
 from trove.common import cfg
@@ -269,7 +270,7 @@ class ConfigurationsController(wsgi.Controller):
                 raise exception.UnprocessableEntity(message=msg)
 
             # integer min/max checking
-            if isinstance(v, (int, long)) and not isinstance(v, bool):
+            if isinstance(v, six.integer_types) and not isinstance(v, bool):
                 if rule.min_size is not None:
                     try:
                         min_value = int(rule.min_size)
@@ -307,9 +308,9 @@ class ConfigurationsController(wsgi.Controller):
         if value_type == "boolean":
             return bool
         elif value_type == "string":
-            return basestring
+            return six.string_types
         elif value_type == "integer":
-            return (int, long)
+            return six.integer_types
         else:
             raise exception.TroveError(_(
                 "Invalid or unsupported type defined in the "

@@ -17,6 +17,7 @@ import abc
 
 from lxml import etree
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 import routes
 import six
 import stevedore
@@ -398,7 +399,8 @@ class ExtensionManager(object):
             LOG.debug('Ext namespace: %s', extension.get_namespace())
             LOG.debug('Ext updated: %s', extension.get_updated())
         except AttributeError as ex:
-            LOG.exception(_("Exception loading extension: %s"), unicode(ex))
+            LOG.exception(_("Exception loading extension: %s"),
+                          encodeutils.exception_to_unicode(ex))
             return False
         return True
 

@@ -24,6 +24,7 @@ from proboscis import before_class
 from proboscis import SkipTest
 from proboscis import test
 from proboscis import TestProgram
+import six
 from troveclient.compat import client as trove_client
 from troveclient.compat import Dbaas
 from troveclient.compat import TroveHTTPClient
@@ -1008,10 +1009,12 @@ class MgmtHosts(Example):
                 check.equal(1, len(host.instances))
                 for instance in host.instances:
                     check.equal(instance['status'], 'ACTIVE')
-                    check.true(isinstance(instance['name'], basestring))
-                    check.true(isinstance(instance['id'], basestring))
-                    check.true(isinstance(instance['server_id'], basestring))
-                    check.true(isinstance(instance['tenant_id'], basestring))
+                    check.true(isinstance(instance['name'], six.string_types))
+                    check.true(isinstance(instance['id'], six.string_types))
+                    check.true(isinstance(instance['server_id'],
+                               six.string_types))
+                    check.true(isinstance(instance['tenant_id'],
+                               six.string_types))
 
     @test
     def mgmt_host_update_all(self):
@@ -1118,7 +1121,7 @@ class MgmtInstance(Example):
     @test
     @for_both
     def created(self, result):
-        assert_true(isinstance(result.created, basestring))
+        assert_true(isinstance(result.created, six.string_types))
 
     @test
     def deleted(self):
@@ -1153,8 +1156,8 @@ class MgmtInstance(Example):
         assert_true(isinstance(result.links, list))
         for link in result.links:
             assert_true(isinstance(link, dict))
-            assert_true(isinstance(link['href'], basestring))
-            assert_true(isinstance(link['rel'], basestring))
+            assert_true(isinstance(link['href'], six.string_types))
+            assert_true(isinstance(link['rel'], six.string_types))
 
     @test
     def local_id(self):
@@ -1164,12 +1167,12 @@ class MgmtInstance(Example):
     @test
     @for_both
     def name(self, result):
-        assert_true(isinstance(result.name, basestring))
+        assert_true(isinstance(result.name, six.string_types))
 
     @test
     @for_both
     def server_id(self, result):
-        assert_true(isinstance(result.server['id'], basestring))
+        assert_true(isinstance(result.server['id'], six.string_types))
 
     @test
     @for_both
@@ -1189,7 +1192,7 @@ class MgmtInstance(Example):
     @test
     @for_both
     def updated(self, result):
-        assert_true(isinstance(result.updated, basestring))
+        assert_true(isinstance(result.updated, six.string_types))
 
     @test
     @for_both

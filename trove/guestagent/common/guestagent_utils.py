@@ -17,6 +17,8 @@ import collections
 import os
 import re
 
+import six
+
 
 def update_dict(updates, target):
     """Recursively update a target dictionary with given updates.
@@ -103,7 +105,7 @@ def build_file_path(base_dir, base_name, *extensions):
 def to_bytes(value):
     """Convert numbers with a byte suffix to bytes.
     """
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
         pattern = re.compile('^(\d+)([K,M,G]{1})$')
         match = pattern.match(value)
         if match:

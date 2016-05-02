@@ -33,6 +33,7 @@ from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import SkipTest
 from proboscis import test
+import six
 from troveclient.compat import exceptions
 
 from trove.common import exception as rd_exceptions
@@ -952,11 +953,11 @@ class SecurityGroupsTest(object):
     def test_created_security_group(self):
         assert_is_not_none(self.testSecurityGroup)
         with TypeCheck('SecurityGroup', self.testSecurityGroup) as secGrp:
-            secGrp.has_field('id', basestring)
-            secGrp.has_field('name', basestring)
-            secGrp.has_field('description', basestring)
-            secGrp.has_field('created', basestring)
-            secGrp.has_field('updated', basestring)
+            secGrp.has_field('id', six.string_types)
+            secGrp.has_field('name', six.string_types)
+            secGrp.has_field('description', six.string_types)
+            secGrp.has_field('created', six.string_types)
+            secGrp.has_field('updated', six.string_types)
         assert_equal(self.testSecurityGroup.name, self.secGroupName)
         assert_equal(self.testSecurityGroup.description,
                      self.secGroupDescription)

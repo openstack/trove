@@ -18,6 +18,7 @@ from proboscis import before_class
 from proboscis.check import Check
 from proboscis import SkipTest
 from proboscis import test
+import six
 from troveclient.compat import exceptions
 
 from trove.common.utils import poll_until
@@ -32,6 +33,7 @@ from trove.tests.util import create_client
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 
+
 GROUP = "dbaas.api.mgmt.instances"
 
 
@@ -45,24 +47,24 @@ def mgmt_index_requires_admin_account():
 # These functions check some dictionaries in the returned response.
 def flavor_check(flavor):
     with CollectionCheck("flavor", flavor) as check:
-        check.has_element("id", basestring)
+        check.has_element("id", six.string_types)
         check.has_element("links", list)
 
 
 def datastore_check(datastore):
     with CollectionCheck("datastore", datastore) as check:
-        check.has_element("type", basestring)
-        check.has_element("version", basestring)
+        check.has_element("type", six.string_types)
+        check.has_element("version", six.string_types)
 
 
 def guest_status_check(guest_status):
     with CollectionCheck("guest_status", guest_status) as check:
-        check.has_element("state_description", basestring)
+        check.has_element("state_description", six.string_types)
 
 
 def volume_check(volume):
     with CollectionCheck("volume", volume) as check:
-        check.has_element("id", basestring)
+        check.has_element("id", six.string_types)
         check.has_element("size", int)
         check.has_element("used", float)
         check.has_element("total", float)
@@ -86,21 +88,21 @@ def mgmt_instance_get():
     for name in dir(api_instance):
         print(str(name) + "=" + str(getattr(api_instance, name)))
     with TypeCheck("instance", api_instance) as instance:
-        instance.has_field('created', basestring)
+        instance.has_field('created', six.string_types)
         instance.has_field('deleted', bool)
         # If the instance hasn't been deleted, this should be false... but
         # lets avoid creating more ordering work.
-        instance.has_field('deleted_at', (basestring, None))
+        instance.has_field('deleted_at', (six.string_types, None))
         instance.has_field('flavor', dict, flavor_check)
         instance.has_field('datastore', dict, datastore_check)
         instance.has_field('guest_status', dict, guest_status_check)
-        instance.has_field('id', basestring)
+        instance.has_field('id', six.string_types)
         instance.has_field('links', list)
-        instance.has_field('name', basestring)
-        # instance.has_field('server_status', basestring)
-        instance.has_field('status', basestring)
-        instance.has_field('tenant_id', basestring)
-        instance.has_field('updated', basestring)
+        instance.has_field('name', six.string_types)
+        # instance.has_field('server_status', six.string_types)
+        instance.has_field('status', six.string_types)
+        instance.has_field('tenant_id', six.string_types)
+        instance.has_field('updated', six.string_types)
         # Can be None if no volume is given on this instance.
         volume_support = CONFIG.get(datastore_type, 'mysql')['volume_support']
         if volume_support:
@@ -119,23 +121,23 @@ def mgmt_instance_get():
         with CollectionCheck("server", api_instance.server) as server:
             server.has_element("addresses", dict)
             server.has_element("deleted", bool)
-            server.has_element("deleted_at", (basestring, None))
-            server.has_element("host", basestring)
-            server.has_element("id", basestring)
+            server.has_element("deleted_at", (six.string_types, None))
+            server.has_element("host", six.string_types)
+            server.has_element("id", six.string_types)
             server.has_element("local_id", int)
-            server.has_element("name", basestring)
-            server.has_element("status", basestring)
-            server.has_element("tenant_id", basestring)
+            server.has_element("name", six.string_types)
+            server.has_element("status", six.string_types)
+            server.has_element("tenant_id", six.string_types)
 
     if (volume_support and
             CONFIG.trove_main_instance_has_volume):
         with CollectionCheck("volume", api_instance.volume) as volume:
             volume.has_element("attachments", list)
-            volume.has_element("availability_zone", basestring)
-            volume.has_element("created_at", (basestring, None))
-            volume.has_element("id", basestring)
+            volume.has_element("availability_zone", six.string_types)
+            volume.has_element("created_at", (six.string_types, None))
+            volume.has_element("id", six.string_types)
             volume.has_element("size", int)
-            volume.has_element("status", basestring)
+            volume.has_element("status", six.string_types)
 
 
 @test(groups=["fake." + GROUP])
@@ -178,21 +180,21 @@ class WhenMgmtInstanceGetIsCalledButServerIsNotReady(object):
         for name in dir(api_instance):
             print(str(name) + "=" + str(getattr(api_instance, name)))
         with TypeCheck("instance", api_instance) as instance:
-            instance.has_field('created', basestring)
+            instance.has_field('created', six.string_types)
             instance.has_field('deleted', bool)
             # If the instance hasn't been deleted, this should be false... but
             # lets avoid creating more ordering work.
-            instance.has_field('deleted_at', (basestring, None))
+            instance.has_field('deleted_at', (six.string_types, None))
             instance.has_field('flavor', dict, flavor_check)
             instance.has_field('datastore', dict, datastore_check)
             instance.has_field('guest_status', dict, guest_status_check)
-            instance.has_field('id', basestring)
+            instance.has_field('id', six.string_types)
             instance.has_field('links', list)
-            instance.has_field('name', basestring)
-            # instance.has_field('server_status', basestring)
-            instance.has_field('status', basestring)
-            instance.has_field('tenant_id', basestring)
-            instance.has_field('updated', basestring)
+            instance.has_field('name', six.string_types)
+            # instance.has_field('server_status', six.string_types)
+            instance.has_field('status', six.string_types)
+            instance.has_field('tenant_id', six.string_types)
+            instance.has_field('updated', six.string_types)
             # Can be None if no volume is given on this instance.
             instance.has_field('server', None)
             instance.has_field('volume', None)

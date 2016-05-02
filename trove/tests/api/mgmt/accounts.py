@@ -18,6 +18,7 @@ from proboscis import asserts
 from proboscis import before_class
 from proboscis.decorators import time_out
 from proboscis import test
+import six
 from troveclient.compat import exceptions
 
 from trove.common.utils import poll_until
@@ -190,7 +191,7 @@ class AccountWithBrokenInstance(object):
         # for having a broken instance in the roster.
         asserts.assert_equal(len(account_info.instances), 1)
         instance = account_info.instances[0]
-        asserts.assert_true(isinstance(instance['id'], basestring))
+        asserts.assert_true(isinstance(instance['id'], six.string_types))
         asserts.assert_equal(len(instance['id']), 36)
         asserts.assert_equal(instance['name'], self.name)
         asserts.assert_equal(instance['status'], "ERROR")
