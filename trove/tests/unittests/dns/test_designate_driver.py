@@ -18,6 +18,7 @@ from designateclient.v1.domains import Domain
 from designateclient.v1.records import Record
 from mock import MagicMock
 from mock import patch
+import six
 
 from trove.dns.designate import driver
 from trove.tests.unittests import trove_testtools
@@ -185,7 +186,10 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_DOMAIN_ID = '00000000-0000-0000-0000-000000000000'
         driver.DNS_DOMAIN_NAME = 'trove.com'
         driver.DNS_TTL = 3600
-        hashed_id = base64.b32encode(hashlib.md5(instance_id).digest())
+        hashed_id = hashlib.md5(instance_id.encode()).digest()
+        hashed_id = base64.b32encode(hashed_id)
+        if six.PY3:
+            hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" % (hashed_id_concat, driver.DNS_DOMAIN_NAME))
         factory = driver.DesignateInstanceEntryFactory()
@@ -202,7 +206,10 @@ class DesignateInstanceEntryFactoryTest(trove_testtools.TestCase):
         driver.DNS_DOMAIN_ID = '00000000-0000-0000-0000-000000000000'
         driver.DNS_DOMAIN_NAME = 'trove.com.'
         driver.DNS_TTL = 3600
-        hashed_id = base64.b32encode(hashlib.md5(instance_id).digest())
+        hashed_id = hashlib.md5(instance_id.encode()).digest()
+        hashed_id = base64.b32encode(hashed_id)
+        if six.PY3:
+            hashed_id = hashed_id.decode('ascii')
         hashed_id_concat = hashed_id[:11].lower()
         exp_hostname = ("%s.%s" %
                         (hashed_id_concat, driver.DNS_DOMAIN_NAME))[:-1]

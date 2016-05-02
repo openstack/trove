@@ -131,7 +131,7 @@ class Capabilities(object):
             # right back.
             return cap
 
-        self.capabilities = map(override, capability_defaults)
+        self.capabilities = [override(obj) for obj in capability_defaults]
 
         LOG.debug('Capabilities for datastore %(ds_id)s: %(capabilities)s' %
                   {'ds_id': self.datastore_version_id,
