@@ -88,8 +88,8 @@ class TestExtensionLoading(trove_testtools.TestCase):
             eps = pkg_resources.EntryPoint.parse_group('plugins', entry_points)
             mock_iter_eps.return_value = eps.values()
         extension_mgr = extensions.ExtensionManager()
-        self.assertEqual(DEFAULT_EXTENSION_MAP.keys().sort(),
-                         extension_mgr.extensions.keys().sort(),
+        self.assertEqual(sorted(DEFAULT_EXTENSION_MAP.keys()),
+                         sorted(extension_mgr.extensions.keys()),
                          "Invalid extension names")
         self._assert_default_extensions(extension_mgr.extensions)
 
