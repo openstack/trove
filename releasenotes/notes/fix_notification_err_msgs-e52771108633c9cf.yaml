@@ -1,0 +1,4 @@
+---
+fixes:
+  - Fixed wrong call in conductor when reporting a guest
+    notification exception. Bug 1577848
