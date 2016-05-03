@@ -134,11 +134,11 @@ common_opts = [
                help='Page size for listing configurations.'),
     cfg.IntOpt('modules_page_size', default=20,
                help='Page size for listing modules.'),
-    cfg.IntOpt('agent_call_low_timeout', default=5,
+    cfg.IntOpt('agent_call_low_timeout', default=15,
                help="Maximum time (in seconds) to wait for Guest Agent 'quick'"
                     "requests (such as retrieving a list of users or "
                     "databases)."),
-    cfg.IntOpt('agent_call_high_timeout', default=60,
+    cfg.IntOpt('agent_call_high_timeout', default=60 * 5,
                help="Maximum time (in seconds) to wait for Guest Agent 'slow' "
                     "requests (such as restarting the database)."),
     cfg.IntOpt('agent_replication_snapshot_timeout', default=36000,
@@ -146,7 +146,7 @@ common_opts = [
                     'Agent replication snapshot.'),
     # The guest_id opt definition must match the one in cmd/guest.py
     cfg.StrOpt('guest_id', default=None, help="ID of the Guest Instance."),
-    cfg.IntOpt('state_change_wait_time', default=3 * 60,
+    cfg.IntOpt('state_change_wait_time', default=60 * 10,
                help='Maximum time (in seconds) to wait for a state change.'),
     cfg.IntOpt('state_change_poll_time', default=3,
                help='Interval between state change poll requests (seconds).'),
@@ -169,12 +169,12 @@ common_opts = [
     cfg.StrOpt('mount_options', default='defaults,noatime',
                help='Options to use when mounting a volume.'),
     cfg.IntOpt('max_instances_per_tenant',
-               default=5,
+               default=10,
                help='Default maximum number of instances per tenant.',
                deprecated_name='max_instances_per_user'),
-    cfg.IntOpt('max_accepted_volume_size', default=5,
+    cfg.IntOpt('max_accepted_volume_size', default=10,
                help='Default maximum volume size (in GB) for an instance.'),
-    cfg.IntOpt('max_volumes_per_tenant', default=20,
+    cfg.IntOpt('max_volumes_per_tenant', default=40,
                help='Default maximum volume capacity (in GB) spanning across '
                     'all Trove volumes per tenant.',
                deprecated_name='max_volumes_per_user'),
@@ -220,7 +220,7 @@ common_opts = [
                help='Maximum time (in seconds) to wait for a server reboot.'),
     cfg.IntOpt('dns_time_out', default=60 * 2,
                help='Maximum time (in seconds) to wait for a DNS entry add.'),
-    cfg.IntOpt('resize_time_out', default=60 * 10,
+    cfg.IntOpt('resize_time_out', default=60 * 15,
                help='Maximum time (in seconds) to wait for a server resize.'),
     cfg.IntOpt('revert_time_out', default=60 * 10,
                help='Maximum time (in seconds) to wait for a server resize '
@@ -390,7 +390,7 @@ common_opts = [
                help="Describes the actual network manager used for "
                     "the management of network attributes "
                     "(security groups, floating IPs, etc.)."),
-    cfg.IntOpt('usage_timeout', default=900,
+    cfg.IntOpt('usage_timeout', default=60 * 30,
                help='Maximum time (in seconds) to wait for a Guest to become '
                     'active.'),
     cfg.IntOpt('restore_usage_timeout', default=36000,
