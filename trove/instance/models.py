@@ -105,7 +105,7 @@ def validate_volume_size(size):
     if size is None:
         raise exception.VolumeSizeNotSpecified()
     max_size = CONF.max_accepted_volume_size
-    if long(size) > max_size:
+    if int(size) > max_size:
         msg = ("Volume 'size' cannot exceed maximum "
                "of %d GB, %s cannot be accepted."
                % (max_size, size))
@@ -967,7 +967,7 @@ class Instance(BuiltInstance):
         if not self.volume_size:
             raise exception.BadRequest(_("Instance %s has no volume.")
                                        % self.id)
-        new_size_l = long(new_size)
+        new_size_l = int(new_size)
         validate_volume_size(new_size_l)
         return run_with_quotas(self.tenant_id,
                                {'volumes': new_size_l - self.volume_size},
