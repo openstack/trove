@@ -25,6 +25,10 @@ from trove.common.notification import DBaaSAPINotification
 from trove.tests import root_logger
 
 
+def is_bool(val):
+    return str(val).lower() in ['true', '1', 't', 'y', 'yes', 'on', 'set']
+
+
 def patch_notifier(test_case):
     notification_notify = mock.patch.object(
         DBaaSAPINotification, "_notify")
@@ -60,26 +64,31 @@ class TestCase(testtools.TestCase):
 
     _NEWLINE = '\n'
 
+    # Number of nested levels to examine when searching for mocks.
+    # Higher setting will potentially uncover more dangling objects,
+    # at the cost of increased scanning time.
+    _max_recursion_depth = int(os.getenv(
+        'TROVE_TESTS_UNMOCK_RECURSION_DEPTH', 2))
+    # Should we skip the remaining tests after the first failure.
+    _fail_fast = is_bool(os.getenv(
+        'TROVE_TESTS_UNMOCK_FAIL_FAST', False))
+    # Should we report only unique dangling mock references.
+    _only_unique = is_bool(os.getenv(
+        'TROVE_TESTS_UNMOCK_ONLY_UNIQUE', True))
+
     @classmethod
     def setUpClass(cls):
-        # Number of nested levels to examine when searching for mocks.
-        # Higher setting will potentially uncover more dangling objects,
-        # at the cost of increased scanning time.
-        cls._max_recursion_depth = int(os.getenv(
-            'TROVE_TESTS_UNMOCK_RECURSION_DEPTH', 1))
-        # Should we skip the remaining tests after the first failure.
-        cls._fail_fast = cls.is_bool(os.getenv(
-            'TROVE_TESTS_UNMOCK_FAIL_FAST', False))
-        # Should we report only unique dangling mock references.
-        cls._only_unique = cls.is_bool(os.getenv(
-            'TROVE_TESTS_UNMOCK_ONLY_UNIQUE', True))
+        super(TestCase, cls).setUpClass()
 
         cls._dangling_mocks = set()
+        cls._mocks_before = cls._find_mock_refs()
+
         root_logger.DefaultRootLogger(enable_backtrace=False)
 
     @classmethod
-    def is_bool(cls, val):
-        return str(val).lower() in ['true', '1', 't', 'y', 'yes', 'on', 'set']
+    def tearDownClass(cls):
+        cls._assert_modules_unmocked()
+        super(TestCase, cls).tearDownClass()
 
     def setUp(self):
         if self.__class__._fail_fast and self.__class__._dangling_mocks:
@@ -87,8 +96,6 @@ class TestCase(testtools.TestCase):
                           "references from a previous test case.")
 
         super(TestCase, self).setUp()
-        self.addCleanup(self._assert_modules_unmocked)
-        self._mocks_before = self._find_mock_refs()
         root_logger.DefaultRootHandler.set_info(self.id())
 
     def tearDown(self):
@@ -98,36 +105,39 @@ class TestCase(testtools.TestCase):
         root_logger.DefaultRootHandler.set_info(info=None)
         super(TestCase, self).tearDown()
 
-    def _assert_modules_unmocked(self):
+    @classmethod
+    def _assert_modules_unmocked(cls):
         """Check that all members of loaded modules are currently unmocked.
         Consider only new mocks created since the last setUp() call.
         """
-        mocks_after = self._find_mock_refs()
-        new_mocks = mocks_after.difference(self._mocks_before)
-        if self.__class__._only_unique:
+        mocks_after = cls._find_mock_refs()
+        new_mocks = mocks_after.difference(cls._mocks_before)
+        if cls._only_unique:
             # Remove mock references that have already been reported once in
             # this test suite (probably defined in setUp()).
-            new_mocks.difference_update(self.__class__._dangling_mocks)
+            new_mocks.difference_update(cls._dangling_mocks)
 
-        self.__class__._dangling_mocks.update(new_mocks)
+        cls._dangling_mocks.update(new_mocks)
 
         if new_mocks:
             messages = ["Member '%s' needs to be unmocked." % item[0]
                         for item in new_mocks]
-            self.fail(self._NEWLINE + self._NEWLINE.join(messages))
+            raise Exception(cls._NEWLINE + cls._NEWLINE.join(messages))
 
-    def _find_mock_refs(self):
+    @classmethod
+    def _find_mock_refs(cls):
         discovered_mocks = set()
-        for module_name, module in self._get_loaded_modules().items():
-            self._find_mocks(module_name, module, discovered_mocks, 1)
+        for module_name, module in cls._get_loaded_modules().items():
+            cls._find_mocks(module_name, module, discovered_mocks, 1)
 
         return discovered_mocks
 
-    def _find_mocks(self, parent_name, parent, container, depth):
+    @classmethod
+    def _find_mocks(cls, parent_name, parent, container, depth):
         """Search for mock members in the parent object.
         Descend into class types.
         """
-        if depth <= self.__class__._max_recursion_depth:
+        if depth <= cls._max_recursion_depth:
             try:
                 if isinstance(parent, mock.Mock):
                     # Add just the parent if it's a mock itself.
@@ -139,7 +149,7 @@ class TestCase(testtools.TestCase):
                         if isinstance(member, mock.Mock):
                             container.add((full_name, member))
                         elif inspect.isclass(member):
-                            self._find_mocks(
+                            cls._find_mocks(
                                 full_name, member, container, depth + 1)
             except ImportError:
                 pass  # Module cannot be imported - ignore it.
@@ -148,5 +158,6 @@ class TestCase(testtools.TestCase):
                 # See: https://bugs.launchpad.net/trove/+bug/1524918
                 pass
 
-    def _get_loaded_modules(self):
+    @classmethod
+    def _get_loaded_modules(cls):
         return {name: obj for name, obj in sys.modules.items() if obj}
