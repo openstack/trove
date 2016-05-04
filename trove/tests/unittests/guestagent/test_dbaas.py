@@ -106,9 +106,6 @@ FAKE_DB_2 = {"_name": "testDB2", "_character_set": "latin2",
 FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_host": "%", "_databases": [FAKE_DB]}]
 
-conductor_api.API.get_client = Mock()
-conductor_api.API.heartbeat = Mock()
-
 
 class FakeTime:
     COUNTER = 0
@@ -811,6 +808,9 @@ class MySqlAdminTest(trove_testtools.TestCase):
 class MySqlAppTest(trove_testtools.TestCase):
 
     def setUp(self):
+        conductor_cli_patcher = patch.object(conductor_api.API, 'get_client')
+        self.addCleanup(conductor_cli_patcher.stop)
+        conductor_cli_patcher.start()
         super(MySqlAppTest, self).setUp()
         self.orig_utils_execute_with_timeout = \
             mysql_common_service.utils.execute_with_timeout
@@ -906,29 +906,35 @@ class MySqlAppTest(trove_testtools.TestCase):
         mysql_common_service.utils.execute_with_timeout = Mock()
         self.appStatus.set_next_status(
             rd_instance.ServiceStatuses.SHUTDOWN)
+        self.patch_conf_property('guest_id', self.FAKE_ID)
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mySqlApp.stop_db(True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.SHUTDOWN.description}))
+            with patch.object(conductor_api.API, 'heartbeat') as patch_hb:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.mySqlApp.stop_db(True)
+                patch_hb.assert_called_once_with(
+                    self.FAKE_ID,
+                    {'service_status':
+                     rd_instance.ServiceStatuses.SHUTDOWN.description},
+                    sent=ANY)
 
     @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
     def test_stop_mysql_do_not_start_on_reboot(self, mock_execute):
 
         self.appStatus.set_next_status(
             rd_instance.ServiceStatuses.SHUTDOWN)
+        self.patch_conf_property('guest_id', self.FAKE_ID)
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mySqlApp.stop_db(True, True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.SHUTDOWN.description}))
-            self.assertEqual(2, mock_execute.call_count)
+            with patch.object(conductor_api.API, 'heartbeat') as patch_hb:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.mySqlApp.stop_db(True, True)
+                patch_hb.assert_called_once_with(
+                    self.FAKE_ID,
+                    {'service_status':
+                     rd_instance.ServiceStatuses.SHUTDOWN.description},
+                    sent=ANY)
+                self.assertEqual(2, mock_execute.call_count)
 
     @patch('trove.guestagent.datastore.service.LOG')
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
@@ -958,17 +964,20 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.mySqlApp.stop_db = Mock()
         self.mysql_stops_successfully()
         self.mysql_starts_successfully()
+        self.patch_conf_property('guest_id', self.FAKE_ID)
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mySqlApp.restart()
+            with patch.object(conductor_api.API, 'heartbeat') as patch_hb:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.mySqlApp.restart()
 
-            self.assertTrue(self.mySqlApp.stop_db.called)
-            self.assertTrue(self.mySqlApp.start_mysql.called)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.RUNNING.description}))
+                self.assertTrue(self.mySqlApp.stop_db.called)
+                self.assertTrue(self.mySqlApp.start_mysql.called)
+                patch_hb.assert_called_once_with(
+                    self.FAKE_ID,
+                    {'service_status':
+                     rd_instance.ServiceStatuses.RUNNING.description},
+                    sent=ANY)
 
     def test_restart_mysql_wont_start_up(self):
 
@@ -1008,14 +1017,17 @@ class MySqlAppTest(trove_testtools.TestCase):
         mysql_common_service.utils.execute_with_timeout = Mock()
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
+        self.patch_conf_property('guest_id', self.FAKE_ID)
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.mySqlApp.start_mysql(update_db=True)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.RUNNING.description}))
+            with patch.object(conductor_api.API, 'heartbeat') as patch_hb:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.mySqlApp.start_mysql(update_db=True)
+                patch_hb.assert_called_once_with(
+                    self.FAKE_ID,
+                    {'service_status':
+                     rd_instance.ServiceStatuses.RUNNING.description},
+                    sent=ANY)
 
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
     @patch('trove.guestagent.datastore.service.LOG')
@@ -1025,14 +1037,17 @@ class MySqlAppTest(trove_testtools.TestCase):
         self.mySqlApp._enable_mysql_on_boot = Mock()
         self.mySqlApp.state_change_wait_time = 1
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.SHUTDOWN)
+        self.patch_conf_property('guest_id', self.FAKE_ID)
 
         with patch.object(BaseDbStatus, 'prepare_completed') as patch_pc:
-            patch_pc.__get__ = Mock(return_value=True)
-            self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
-            self.assertTrue(conductor_api.API.heartbeat.called_once_with(
-                self.FAKE_ID,
-                {'service_status':
-                 rd_instance.ServiceStatuses.SHUTDOWN.description}))
+            with patch.object(conductor_api.API, 'heartbeat') as patch_hb:
+                patch_pc.__get__ = Mock(return_value=True)
+                self.assertRaises(RuntimeError, self.mySqlApp.start_mysql)
+                patch_hb.assert_called_once_with(
+                    self.FAKE_ID,
+                    {'service_status':
+                     rd_instance.ServiceStatuses.SHUTDOWN.description},
+                    sent=ANY)
 
     @patch('trove.guestagent.datastore.service.LOG')
     @patch('trove.guestagent.datastore.mysql_common.service.LOG')
