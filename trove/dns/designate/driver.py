@@ -23,6 +23,8 @@ import hashlib
 from designateclient.v1 import Client
 from designateclient.v1.records import Record
 from oslo_log import log as logging
+from oslo_utils import encodeutils
+import six
 
 from trove.common import cfg
 from trove.common import exception
@@ -142,7 +144,11 @@ class DesignateInstanceEntryFactory(driver.DnsInstanceEntryFactory):
     def create_entry(self, instance_id):
         zone = DesignateDnsZone(id=DNS_DOMAIN_ID, name=DNS_DOMAIN_NAME)
         # Constructing the hostname by hashing the instance ID.
-        name = base64.b32encode(hashlib.md5(instance_id).digest())[:11].lower()
+        name = encodeutils.to_utf8(instance_id)
+        name = hashlib.md5(name).digest()
+        name = base64.b32encode(name)[:11].lower()
+        if six.PY3:
+            name = name.decode('ascii')
         hostname = ("%s.%s" % (name, zone.name))
         # Removing the leading dot if present
         if hostname.endswith('.'):
