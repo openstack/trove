@@ -496,7 +496,7 @@ class WsgiLimiterTest(BaseLimitTestSuite):
 
     def _request_data(self, verb, path):
         """Get data describing a limit request verb/path."""
-        return jsonutils.dumps({"verb": verb, "path": path})
+        return jsonutils.dump_as_bytes({"verb": verb, "path": path})
 
     def _request(self, verb, url, username=None):
         """Make sure that POSTing to the given url causes the given username
@@ -561,9 +561,9 @@ class FakeHttplibSocket(object):
 
     def __init__(self, response_string):
         """Initialize new `FakeHttplibSocket`."""
-        self._buffer = six.StringIO(response_string)
+        self._buffer = six.BytesIO(response_string)
 
-    def makefile(self, _mode, _other):
+    def makefile(self, _mode, *args):
         """Returns the socket's internal buffer."""
         return self._buffer
 
@@ -580,7 +580,7 @@ class FakeHttplibConnection(object):
         self.app = app
         self.host = host
 
-    def request(self, method, path, body="", headers=None):
+    def request(self, method, path, body=b"", headers=None):
         """
         Requests made via this connection actually get translated and routed
         into our WSGI app, we then wait for the response and turn it back into
@@ -597,6 +597,8 @@ class FakeHttplibConnection(object):
 
         resp = str(req.get_response(self.app))
         resp = "HTTP/1.0 %s" % resp
+        if six.PY3:
+            resp = resp.encode("utf-8")
         sock = FakeHttplibSocket(resp)
         self.http_response = http_client.HTTPResponse(sock)
         self.http_response.begin()
@@ -676,8 +678,8 @@ class WsgiLimiterProxyTest(BaseLimitTestSuite):
         error = error.strip()
 
         self.assertAlmostEqual(float(delay), 60, 1)
-        self.assertEqual("403 Forbidden\n\nOnly 1 GET request(s) can be"
-                         " made to /delayed every minute.", error)
+        self.assertEqual(b"403 Forbidden\n\nOnly 1 GET request(s) can be"
+                         b" made to /delayed every minute.", error)
 
     def tearDown(self):
         # restore original HTTPConnection object
