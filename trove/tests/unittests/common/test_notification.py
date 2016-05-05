@@ -383,3 +383,29 @@ class TestDBaaSNotification(trove_testtools.TestCase):
         a, _ = notifier().info.call_args
         payload = a[2]
         self.assertTrue('instance_id' in payload)
+
+    def _test_notify_callback(self, fn, *args, **kwargs):
+        with patch.object(rpc, 'get_notifier') as notifier:
+            mock_callback = Mock()
+            self.test_n.register_notify_callback(mock_callback)
+            mock_context = Mock()
+            mock_context.notification = Mock()
+            self.test_n.context = mock_context
+            fn(*args, **kwargs)
+            self.assertTrue(notifier().info.called)
+            self.assertTrue(mock_callback.called)
+            self.test_n.register_notify_callback(None)
+
+    def test_notify_callback(self):
+        required_keys = {
+            'datastore': 'ds',
+            'name': 'name',
+            'flavor_id': 'flav_id',
+            'instance_id': 'inst_id',
+        }
+        self._test_notify_callback(self.test_n.notify_start,
+                                   **required_keys)
+        self._test_notify_callback(self.test_n.notify_end,
+                                   **required_keys)
+        self._test_notify_callback(self.test_n.notify_exc_info,
+                                   'error', 'exc')

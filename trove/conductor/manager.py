@@ -18,14 +18,14 @@ from oslo_service import periodic_task
 
 from trove.backup import models as bkup_models
 from trove.common import cfg
-from trove.common import exception
+from trove.common import exception as trove_exception
 from trove.common.i18n import _
 from trove.common.instance import ServiceStatus
 from trove.common.rpc import version as rpc_version
 from trove.common.serializable_notification import SerializableNotification
 from trove.conductor.models import LastSeen
 from trove.extensions.mysql import models as mysql_models
-from trove.instance import models as t_models
+from trove.instance import models as inst_models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -57,7 +57,7 @@ class Manager(periodic_task.PeriodicTasks):
         try:
             seen = LastSeen.load(instance_id=instance_id,
                                  method_name=method_name)
-        except exception.NotFound:
+        except trove_exception.NotFound:
             # This is fine.
             pass
 
@@ -86,7 +86,7 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Instance ID: %(instance)s, Payload: %(payload)s" %
                   {"instance": str(instance_id),
                    "payload": str(payload)})
-        status = t_models.InstanceServiceStatus.find_by(
+        status = inst_models.InstanceServiceStatus.find_by(
             instance_id=instance_id)
         if self._message_too_old(instance_id, 'heartbeat', sent):
             return

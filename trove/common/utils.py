@@ -331,3 +331,42 @@ def is_collection(item):
     """
     return (isinstance(item, collections.Iterable) and
             not isinstance(item, (bytes, six.text_type)))
+
+
+def format_output(message, format_len=79, truncate_len=None, replace_index=0):
+    """Recursive function to try and keep line lengths below a certain amount,
+    so they can be displayed nicely on the command-line or UI.
+    Tries replacement patterns one at a time (in round-robin fashion)
+    that insert \n at strategic spots.
+    """
+    replacements = [['. ', '.\n'], [' (', '\n('], [': ', ':\n    ']]
+    replace_index %= len(replacements)
+    if not isinstance(message, list):
+        message = message.splitlines(1)
+    msg_list = []
+    for line in message:
+        if len(line) > format_len:
+            ok_to_split_again = False
+            for count in range(0, len(replacements)):
+                lines = line.replace(
+                    replacements[replace_index][0],
+                    replacements[replace_index][1],
+                    1
+                ).splitlines(1)
+                replace_index = (replace_index + 1) % len(replacements)
+                if len(lines) > 1:
+                    ok_to_split_again = True
+                    break
+            for item in lines:
+                # If we spilt, but a line is still too long, do it again
+                if ok_to_split_again and len(item) > format_len:
+                    item = format_output(item, format_len=format_len,
+                                         replace_index=replace_index)
+                msg_list.append(item)
+        else:
+            msg_list.append(line)
+
+    msg_str = "".join(msg_list)
+    if truncate_len and len(msg_str) > truncate_len:
+        msg_str = msg_str[:truncate_len - 3] + '...'
+    return msg_str

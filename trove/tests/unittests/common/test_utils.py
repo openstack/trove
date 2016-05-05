@@ -22,15 +22,15 @@ from trove.common import utils
 from trove.tests.unittests import trove_testtools
 
 
-class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
+class TestUtils(trove_testtools.TestCase):
 
     def setUp(self):
-        super(TestTroveExecuteWithTimeout, self).setUp()
+        super(TestUtils, self).setUp()
         self.orig_utils_execute = utils.execute
         self.orig_utils_log_error = utils.LOG.error
 
     def tearDown(self):
-        super(TestTroveExecuteWithTimeout, self).tearDown()
+        super(TestUtils, self).tearDown()
         utils.execute = self.orig_utils_execute
         utils.LOG.error = self.orig_utils_log_error
 
@@ -81,3 +81,21 @@ class TestTroveExecuteWithTimeout(trove_testtools.TestCase):
     def test_pagination_limit(self):
         self.assertEqual(5, utils.pagination_limit(5, 9))
         self.assertEqual(5, utils.pagination_limit(9, 5))
+
+    def test_format_output(self):
+        data = [
+            ['', ''],
+            ['Single line', 'Single line'],
+            ['Long line no breaks ' * 10, 'Long line no breaks ' * 10],
+            ['Long line. Has breaks ' * 5,
+             'Long line.\nHas breaks ' * 2 + 'Long line. Has breaks ' * 3],
+            ['Long line with semi: ' * 4,
+             'Long line with semi:\n    ' +
+             'Long line with semi: ' * 3],
+            ['Long line with brack (' * 4,
+             'Long line with brack\n(' +
+             'Long line with brack (' * 3],
+        ]
+        for index, datum in enumerate(data):
+            self.assertEqual(datum[1], utils.format_output(datum[0]),
+                             "Error formatting line %d of data" % index)
