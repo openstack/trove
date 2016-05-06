@@ -168,7 +168,7 @@ class Coroutine(object):
 
         This should only be called by the thread which owns this object.
         """
-        # Only call this from it's own thread.
+        # Only call this from its own thread.
         assert eventlet.corolocal.get_ident() == self.id
         self.caller_sem.release()  # Relinquish control back to caller.
         self.my_sem.acquire(blocking=True, timeout=None)

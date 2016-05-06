@@ -960,7 +960,7 @@ class BaseMySqlApp(object):
             # but actually come up ok. we're looking into the timing issue on
             # parallel, but for now, we'd like to give it one more chance to
             # come up. so regardless of the execute_with_timeout() response,
-            # we'll assume mysql comes up and check it's status for a while.
+            # we'll assume mysql comes up and check its status for a while.
             pass
         if not self.status.wait_for_real_status_to_change_to(
                 rd_instance.ServiceStatuses.RUNNING,

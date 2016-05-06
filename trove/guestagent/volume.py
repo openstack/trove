@@ -56,7 +56,7 @@ class VolumeDevice(object):
         """Check that the device path exists.
 
         Verify that the device path has actually been created and can report
-        it's size, only then can it be available for formatting, retry
+        its size, only then can it be available for formatting, retry
         num_tries to account for the time lag.
         """
         try:
