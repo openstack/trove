@@ -288,6 +288,7 @@ cluster = {
                         "volume": volume,
                         "nics": nics,
                         "availability_zone": non_empty_string,
+                        "modules": module_list,
                         "related_to": non_empty_string,
                         "type": non_empty_string
                     }

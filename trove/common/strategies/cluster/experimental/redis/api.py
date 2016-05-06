@@ -105,7 +105,8 @@ class RedisCluster(models.Cluster):
                                             cluster_config={
                                                 "id": db_info.id,
                                                 "instance_type": "member"},
-                                            locality=locality
+                                            locality=locality,
+                                            modules=instance.get('modules')
                                             )
                 for instance in instances]
 
