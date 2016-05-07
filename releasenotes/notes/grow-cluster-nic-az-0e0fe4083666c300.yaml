@@ -1,0 +1,4 @@
+---
+fixes:
+  - Pass instance nic and az to cluster grow.  Add specific
+    Fix for mongodb to use the instance nic and az.

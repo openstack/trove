@@ -298,6 +298,11 @@ class Cluster(object):
                         instance['volume_size'] = int(node['volume']['size'])
                     if 'modules' in node:
                         instance['modules'] = node['modules']
+                    if 'nics' in node:
+                        instance['nics'] = node['nics']
+                    if 'availability_zone' in node:
+                        instance['availability_zone'] = (
+                            node['availability_zone'])
                     instances.append(instance)
                 return self.grow(instances)
         elif action == 'shrink':
