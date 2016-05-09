@@ -1,0 +1,4 @@
+---
+fixes:
+  - An invalid module driver is now logged correctly.
+    Bug 1579900

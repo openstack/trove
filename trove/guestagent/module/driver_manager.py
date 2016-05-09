@@ -69,7 +69,7 @@ class ModuleDriverManager(object):
                 supported = True
             else:
                 LOG.info(_("Driver '%s' not supported, skipping"),
-                         driver.get_type)
+                         driver.get_type())
         except AttributeError as ex:
             LOG.exception(_("Exception loading module driver: %s"),
                           encodeutils.exception_to_unicode(ex))
