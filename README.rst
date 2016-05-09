@@ -1,57 +1,34 @@
+=====
 Trove
---------
+=====
 
 Trove is Database as a Service for OpenStack.
 
+Getting Started
+---------------
 
-=============================
-Usage for integration testing
-=============================
-If you'd like to start up a fake Trove API daemon for integration testing
-with your own tool, run:
+If you'd like to run from the master branch, you can clone the git repo:
 
-.. code-block:: bash
-
-    $ ./tools/start-fake-mode.sh
-
-Stop the server with:
-
-.. code-block:: bash
-
-    $ ./tools/stop-fake-mode.sh
+    git clone https://github.com/openstack/trove
 
 
-======
-Tests
-======
-To run all tests and PEP8, run tox, like so:
+* Wiki: https://wiki.openstack.org/wiki/Trove
+* Developer Docs: http://docs.openstack.org/developer/trove
 
-.. code-block:: bash
+You can raise bugs here: https://bugs.launchpad.net/trove
 
-    $ tox
+Python client
+-------------
+https://git.openstack.org/cgit/openstack/python-troveclient
 
-To run just the tests for Python 2.7, run:
+References
+----------
 
-.. code-block:: bash
-
-    $ tox -epy27
-
-To run just PEP8, run:
-
-.. code-block:: bash
-
-    $ tox -epep8
-
-To generate a coverage report,run:
-
-.. code-block:: bash
-
-    $ tox -ecover
-
-(note: on some boxes, the results may not be accurate unless you run it twice)
-
-If you want to run only the tests in one file you can use testtools e.g.
-
-.. code-block:: bash
-
-    $ python -m testtools.run trove.tests.unittests.python.module.path
+* Installation docs:
+  http://docs.openstack.org/developer/trove/dev/install.html
+* Manual installation docs:
+  http://docs.openstack.org/developer/trove/dev/manual_install.html
+* Trove integration:
+  https://github.com/openstack/trove-integration
+* Build guest image:
+  http://docs.openstack.org/developer/trove/dev/building_guest_images.html
