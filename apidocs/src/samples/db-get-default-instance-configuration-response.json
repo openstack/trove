@@ -18,7 +18,7 @@
             "max_connections": "100",
             "max_heap_table_size": "16M",
             "max_user_connections": "100",
-            "myisam-recover": "BACKUP",
+            "myisam-recover-options": "BACKUP,FORCE",
             "open_files_limit": "512",
             "pid_file": "/var/run/mysqld/mysqld.pid",
             "port": "3306",
