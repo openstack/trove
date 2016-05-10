@@ -66,7 +66,7 @@ class TestCase(testtools.TestCase):
         # Higher setting will potentially uncover more dangling objects,
         # at the cost of increased scanning time.
         cls._max_recursion_depth = int(os.getenv(
-            'TROVE_TESTS_UNMOCK_RECURSION_DEPTH', 2))
+            'TROVE_TESTS_UNMOCK_RECURSION_DEPTH', 1))
         # Should we skip the remaining tests after the first failure.
         cls._fail_fast = cls.is_bool(os.getenv(
             'TROVE_TESTS_UNMOCK_FAIL_FAST', False))
