@@ -187,12 +187,11 @@ class CbBackup(base.RestoreRunner):
                         utils.execute_with_timeout(restore_cmd,
                                                    shell=True,
                                                    timeout=300)
-                    except exception.ProcessExecutionError as p:
+                    except exception.ProcessExecutionError:
                         # cbrestore fails or hangs at times:
                         # http://www.couchbase.com/issues/browse/MB-10832
                         # Retrying typically works
-                        LOG.error(p)
-                        LOG.error(_("cbrestore failed. Retrying..."))
+                        LOG.exception(_("cbrestore failed. Retrying..."))
                         utils.execute_with_timeout(restore_cmd,
                                                    shell=True,
                                                    timeout=300)
