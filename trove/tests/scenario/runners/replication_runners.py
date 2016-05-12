@@ -43,6 +43,9 @@ class ReplicationRunner(TestRunner):
         self.test_helper.add_data(data_type, host)
         self.used_data_sets.add(data_type)
 
+    def run_add_data_after_replica(self, data_type=DataType.micro):
+        self.assert_add_replication_data(data_type, self.master_host)
+
     def run_verify_data_for_replication(self, data_type=DataType.small):
         self.assert_verify_replication_data(data_type, self.master_host)
 
@@ -125,6 +128,9 @@ class ReplicationRunner(TestRunner):
             host = str(replica_instance._info['ip'][0])
             self.report.log("Checking data on host %s" % host)
             self.assert_verify_replication_data(data_type, host)
+
+    def run_verify_replica_data_after_single(self):
+        self.assert_verify_replica_data(self.instance_info.id, DataType.micro)
 
     def run_verify_replica_data_new(self):
         self.assert_verify_replica_data(self.instance_info.id, DataType.tiny)
