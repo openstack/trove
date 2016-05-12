@@ -390,7 +390,6 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_guest_prepare')
     @patch.object(template, 'SingleInstanceConfigTemplate')
-    @patch.object(template, 'OverrideConfigTemplate')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry',
                   side_effect=TroveError)
     @patch('trove.taskmanager.models.LOG')

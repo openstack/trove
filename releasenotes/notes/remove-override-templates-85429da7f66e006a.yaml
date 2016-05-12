@@ -1,0 +1,4 @@
+---
+fixes:
+  - Remove unused 'override.config.template' files.
+    Bug 1575852
