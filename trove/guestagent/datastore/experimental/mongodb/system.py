@@ -36,7 +36,7 @@ MONGO_KEY_FILE = '/etc/mongo_key'
 MONGOS_SERVICE_CANDIDATES = ["mongos"]
 MONGOD_SERVICE_CANDIDATES = ["mongodb", "mongod"]
 MONGODB_KILL = "sudo kill %s"
-FIND_PID = "ps xau | grep 'mongo[ds]'"
+FIND_PID = "ps xaco pid,cmd | awk '/mongo(d|db|s)/ {print $1}'"
 TIME_OUT = 1000
 
 MONGO_USER = {operating_system.REDHAT: "mongod",
