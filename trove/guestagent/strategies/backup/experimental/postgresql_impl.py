@@ -13,11 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from trove.guestagent.strategies.backup import base
-
-LOG = logging.getLogger(__name__)
 
 
 class PgDump(base.BackupRunner):

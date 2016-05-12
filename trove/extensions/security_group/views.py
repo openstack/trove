@@ -16,10 +16,6 @@
 
 import os
 
-from oslo_log import log as logging
-
-LOG = logging.getLogger(__name__)
-
 
 def _base_url(req):
     return req.application_url

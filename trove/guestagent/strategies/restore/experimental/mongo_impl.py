@@ -15,7 +15,6 @@
 #    under the License.
 #
 
-from oslo_log import log as logging
 from oslo_utils import netutils
 
 from trove.common import cfg
@@ -26,7 +25,6 @@ from trove.guestagent.datastore.experimental.mongodb import (
 from trove.guestagent.strategies.restore import base
 
 CONF = cfg.CONF
-LOG = logging.getLogger(__name__)
 IP = netutils.get_my_ipv4()
 LARGE_TIMEOUT = 1200
 MONGODB_DBPATH = CONF.mongodb.mount_point

@@ -13,14 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from trove.common import cfg
 from trove.common import exception
 from trove.extensions.common.service import ClusterRootController
 from trove.instance.models import DBInstance
 
-LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'mongodb'
 

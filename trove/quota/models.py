@@ -13,13 +13,9 @@
 #    under the License.
 
 
-from oslo_log import log as logging
-
 from trove.common import cfg
 from trove.common import utils
 from trove.db import models as dbmodels
-
-LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 
