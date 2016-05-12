@@ -46,6 +46,16 @@ class ReplicationGroup(TestGroup):
         self.test_runner.run_create_single_replica()
 
     @test(runs_after=[create_single_replica])
+    def add_data_after_replica(self):
+        """Add data to master after initial replica is setup"""
+        self.test_runner.run_add_data_after_replica()
+
+    @test(runs_after=[add_data_after_replica])
+    def verify_replica_data_after_single(self):
+        """Verify data exists on single replica"""
+        self.test_runner.run_verify_replica_data_after_single()
+
+    @test(runs_after=[verify_replica_data_after_single])
     def create_multiple_replicas(self):
         """Test creating multiple replicas."""
         self.test_runner.run_create_multiple_replicas()
