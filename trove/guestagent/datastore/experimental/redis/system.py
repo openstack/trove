@@ -31,7 +31,7 @@ REDIS_INIT = '/etc/init/redis-server.conf'
 REDIS_CLI = '/usr/bin/redis-cli'
 REDIS_BIN = '/usr/bin/redis-server'
 REDIS_PACKAGE = 'redis-server'
-SERVICE_CANDIDATES = ['redis-server']
+SERVICE_CANDIDATES = ['redis-server', 'redis']
 
 OS = get_os()
 if OS is 'redhat':
