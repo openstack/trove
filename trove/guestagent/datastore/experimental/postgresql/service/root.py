@@ -63,7 +63,7 @@ class PgSqlRoot(PgSqlUsers):
         called 'postgres'.
         This system account has no password and is *locked* by default,
         so that it can be used by *local* users only.
-        It should *never* be enabled (or it's password set)!!!
+        It should *never* be enabled (or its password set)!!!
         That would just open up a new attack vector on the system account.
 
         Remote clients should use a build-in *database* account of the same

@@ -1021,7 +1021,7 @@ class Instance(BuiltInstance):
 
     def eject_replica_source(self):
         self.validate_can_perform_action()
-        LOG.info(_LI("Ejecting replica source %s from it's replication set."),
+        LOG.info(_LI("Ejecting replica source %s from its replication set."),
                  self.id)
 
         if not self.slaves:

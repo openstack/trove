@@ -65,7 +65,7 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
 
     def test_find_by_instance_id(self):
         """
-        Test to retrieve a guest agents by it's id
+        Test to retrieve a guest agents by its id
         """
         # create a unique record
         instance_id = str(uuid.uuid4())
