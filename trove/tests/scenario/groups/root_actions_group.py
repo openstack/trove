@@ -15,11 +15,19 @@
 
 from proboscis import test
 
+from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.root_actions_group"
+
+
+class RootActionsRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'root_actions_runners'
+    _runner_cls = 'RootActionsRunner'
 
 
 @test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
@@ -27,11 +35,9 @@ class RootActionsGroup(TestGroup):
 
     def __init__(self):
         super(RootActionsGroup, self).__init__(
-            'root_actions_runners', 'RootActionsRunner')
-        self.backup_runner = self.get_runner(
-            'backup_runners', 'BackupRunner')
-        self.backup_runner2 = self.get_runner(
-            'backup_runners', 'BackupRunner')
+            RootActionsRunnerFactory.instance())
+        self.backup_runner = backup_group.BackupRunnerFactory.create()
+        self.backup_runner2 = backup_group.BackupRunnerFactory.create()
 
     @test
     def check_root_never_enabled(self):

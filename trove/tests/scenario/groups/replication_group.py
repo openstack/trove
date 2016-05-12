@@ -17,9 +17,16 @@ from proboscis import test
 
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.replication_group"
+
+
+class ReplicationRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'replication_runners'
+    _runner_cls = 'ReplicationRunner'
 
 
 @test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
@@ -28,7 +35,7 @@ class ReplicationGroup(TestGroup):
 
     def __init__(self):
         super(ReplicationGroup, self).__init__(
-            'replication_runners', 'ReplicationRunner')
+            ReplicationRunnerFactory.instance())
 
     @test
     def add_data_for_replication(self):

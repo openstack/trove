@@ -16,9 +16,16 @@
 from proboscis import test
 
 from trove.tests.scenario.groups.test_group import TestGroup
+from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.cluster_actions_group"
+
+
+class ClusterActionsRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'cluster_actions_runners'
+    _runner_cls = 'ClusterActionsRunner'
 
 
 @test(groups=[GROUP])
@@ -26,7 +33,7 @@ class ClusterActionsGroup(TestGroup):
 
     def __init__(self):
         super(ClusterActionsGroup, self).__init__(
-            'cluster_actions_runners', 'ClusterActionsRunner')
+            ClusterActionsRunnerFactory.instance())
 
     @test
     def cluster_create(self):

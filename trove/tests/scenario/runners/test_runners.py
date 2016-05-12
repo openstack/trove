@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
 import os
 import time as timer
 
@@ -23,14 +24,136 @@ from troveclient.compat import exceptions
 
 from trove.common import cfg
 from trove.common import exception
+from trove.common.strategies.strategy import Strategy
 from trove.common import utils
 from trove.common.utils import poll_until, build_polling_task
-from trove.tests.api.instances import instance_info
 from trove.tests.config import CONFIG
+from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 
 CONF = cfg.CONF
+
+TEST_RUNNERS_NS = 'trove.tests.scenario.runners'
+TEST_HELPERS_NS = 'trove.tests.scenario.helpers'
+TEST_HELPER_MODULE_NAME = 'test_helper'
+TEST_HELPER_BASE_NAME = 'TestHelper'
+
+
+class RunnerFactory(object):
+
+    _test_runner = None
+    _runner_ns = None
+    _runner_cls = None
+
+    @classmethod
+    def instance(cls):
+        """Returns the current instance of the runner, or creates a new
+        one if none exists. This is useful to have multiple 'group' classes
+        use the same runner so that state is maintained.
+        """
+        if not cls._test_runner:
+            cls._test_runner = cls.create()
+        return cls._test_runner
+
+    @classmethod
+    def create(cls):
+        """Returns a new instance of the runner. Tests that require a 'fresh'
+        runner (typically from a different 'group') can call this.
+        """
+        return cls._get_runner(cls._runner_ns, cls._runner_cls)
+
+    @classmethod
+    def _get_runner(cls, runner_module_name, runner_base_name,
+                    *args, **kwargs):
+        class_prefix = cls._get_test_datastore()
+        runner_cls = cls._load_dynamic_class(
+            runner_module_name, class_prefix, runner_base_name,
+            TEST_RUNNERS_NS)
+        runner = runner_cls(*args, **kwargs)
+        runner._test_helper = cls._get_helper()
+        return runner
+
+    @classmethod
+    def _get_helper(cls):
+        class_prefix = cls._get_test_datastore()
+        helper_cls = cls._load_dynamic_class(
+            TEST_HELPER_MODULE_NAME, class_prefix,
+            TEST_HELPER_BASE_NAME, TEST_HELPERS_NS)
+        return helper_cls(cls._build_class_name(
+            class_prefix, TEST_HELPER_BASE_NAME, strip_test=True))
+
+    @classmethod
+    def _get_test_datastore(cls):
+        return CONFIG.dbaas_datastore
+
+    @classmethod
+    def _load_dynamic_class(cls, module_name, class_prefix, base_name,
+                            namespace):
+        """Try to load a datastore specific class if it exists; use the
+        default otherwise.
+        """
+        # This is for overridden Runner classes
+        impl = cls._build_class_path(module_name, class_prefix, base_name)
+        clazz = cls._load_class('runner', impl, namespace)
+
+        if not clazz:
+            # This is for overridden Helper classes
+            module = module_name.replace('test', class_prefix.lower())
+            impl = cls._build_class_path(
+                module, class_prefix, base_name, strip_test=True)
+            clazz = cls._load_class('helper', impl, namespace)
+
+        if not clazz:
+            # Just import the base class
+            impl = cls._build_class_path(module_name, '', base_name)
+            clazz = cls._load_class(None, impl, namespace)
+
+        return clazz
+
+    @classmethod
+    def _load_class(cls, load_type, impl, namespace):
+        clazz = None
+        if not load_type or load_type in impl.lower():
+            try:
+                clazz = Strategy.get_strategy(impl, namespace)
+            except ImportError as ie:
+                # Only fail silently if it's something we expect,
+                # such as a missing override class.  Anything else
+                # shouldn't be suppressed.
+                l_msg = ie.message.lower()
+                if load_type not in l_msg or (
+                        'no module named' not in l_msg and
+                        'cannot be found' not in l_msg):
+                    raise
+        return clazz
+
+    @classmethod
+    def _build_class_path(cls, module_name, class_prefix, class_base,
+                          strip_test=False):
+        class_name = cls._build_class_name(
+            class_prefix, class_base, strip_test)
+        return '%s.%s' % (module_name, class_name)
+
+    @classmethod
+    def _build_class_name(cls, class_prefix, base_name, strip_test=False):
+        base = (base_name.replace('Test', '') if strip_test else base_name)
+        return '%s%s' % (class_prefix.capitalize(), base)
+
+
+class InstanceTestInfo(object):
+    """Stores new instance information used by dependent tests."""
+
+    def __init__(self):
+        self.id = None  # The ID of the instance in the database.
+        self.name = None  # Test name, generated each test run.
+        self.dbaas_flavor_href = None  # The flavor of the instance.
+        self.dbaas_datastore = None  # The datastore id
+        self.dbaas_datastore_version = None  # The datastore version id
+        self.volume = None  # The volume the instance will have.
+        self.nics = None  # The dict of type/id for nics used on the intance.
+        self.user = None  # The user instance who owns the instance.
+        self.users = None  # The users created on the instance.
 
 
 class TestRunner(object):
@@ -64,21 +187,27 @@ class TestRunner(object):
     EPHEMERAL_SUPPORT = not VOLUME_SUPPORT and CONFIG.get('device_path', None)
     ROOT_PARTITION = not (VOLUME_SUPPORT or CONFIG.get('device_path', None))
 
+    # Here's where the info for the 'main' test instance goes
+    instance_info = InstanceTestInfo()
     report = CONFIG.get_report()
 
     def __init__(self, sleep_time=10, timeout=1200):
         self.def_sleep_time = sleep_time
         self.def_timeout = timeout
 
-        self.instance_info = instance_info
-        instance_info.dbaas_datastore = CONFIG.dbaas_datastore
-        instance_info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
+        self.instance_info.name = "TEST_" + datetime.datetime.strftime(
+            datetime.datetime.now(), '%Y-%m-%d_%H:%M:%S')
+        self.instance_info.dbaas_datastore = CONFIG.dbaas_datastore
+        self.instance_info.dbaas_datastore_version = (
+            CONFIG.dbaas_datastore_version)
+        self.instance_info.user = CONFIG.users.find_user_by_name('alt_demo')
         if self.VOLUME_SUPPORT:
-            instance_info.volume = {'size': CONFIG.get('trove_volume_size', 1)}
+            self.instance_info.volume = {
+                'size': CONFIG.get('trove_volume_size', 1)}
         else:
-            instance_info.volume = None
+            self.instance_info.volume = None
 
-        self.auth_client = create_dbaas_client(self.instance_info.user)
+        self._auth_client = None
         self._unauth_client = None
         self._admin_client = None
         self._swift_client = None
@@ -152,6 +281,16 @@ class TestRunner(object):
         self._test_helper = test_helper
 
     @property
+    def auth_client(self):
+        if not self._auth_client:
+            self._auth_client = self._create_authorized_client()
+        return self._auth_client
+
+    def _create_authorized_client(self):
+        """Create a client from the normal 'authorized' user."""
+        return create_dbaas_client(self.instance_info.user)
+
+    @property
     def unauth_client(self):
         if not self._unauth_client:
             self._unauth_client = self._create_unauthorized_client()
@@ -223,7 +362,11 @@ class TestRunner(object):
 
     @property
     def is_using_existing_instance(self):
-        return self.has_env_flag(self.USE_INSTANCE_ID_FLAG)
+        return TestRunner.using_existing_instance()
+
+    @staticmethod
+    def using_existing_instance():
+        return TestRunner.has_env_flag(TestRunner.USE_INSTANCE_ID_FLAG)
 
     @staticmethod
     def has_env_flag(flag_name):
@@ -449,3 +592,114 @@ class TestRunner(object):
         return (database_def,
                 _get_credentials(credentials),
                 _get_credentials(credentials_root))
+
+
+class CheckInstance(AttrCheck):
+    """Class to check various attributes of Instance details."""
+
+    def __init__(self, instance):
+        super(CheckInstance, self).__init__()
+        self.instance = instance
+        self.volume_support = TestRunner.VOLUME_SUPPORT
+        self.existing_instance = TestRunner.is_using_existing_instance
+
+    def flavor(self):
+        if 'flavor' not in self.instance:
+            self.fail("'flavor' not found in instance.")
+        else:
+            allowed_attrs = ['id', 'links']
+            self.contains_allowed_attrs(
+                self.instance['flavor'], allowed_attrs,
+                msg="Flavor")
+            self.links(self.instance['flavor']['links'])
+
+    def datastore(self):
+        if 'datastore' not in self.instance:
+            self.fail("'datastore' not found in instance.")
+        else:
+            allowed_attrs = ['type', 'version']
+            self.contains_allowed_attrs(
+                self.instance['datastore'], allowed_attrs,
+                msg="datastore")
+
+    def volume_key_exists(self):
+        if 'volume' not in self.instance:
+            self.fail("'volume' not found in instance.")
+            return False
+        return True
+
+    def volume(self):
+        if not self.volume_support:
+            return
+        if self.volume_key_exists():
+            allowed_attrs = ['size']
+            if self.existing_instance:
+                allowed_attrs.append('used')
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
+
+    def used_volume(self):
+        if not self.volume_support:
+            return
+        if self.volume_key_exists():
+            allowed_attrs = ['size', 'used']
+            print(self.instance)
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
+
+    def volume_mgmt(self):
+        if not self.volume_support:
+            return
+        if self.volume_key_exists():
+            allowed_attrs = ['description', 'id', 'name', 'size']
+            self.contains_allowed_attrs(
+                self.instance['volume'], allowed_attrs,
+                msg="Volumes")
+
+    def addresses(self):
+        allowed_attrs = ['addr', 'version']
+        print(self.instance)
+        networks = ['usernet']
+        for network in networks:
+            for address in self.instance['addresses'][network]:
+                self.contains_allowed_attrs(
+                    address, allowed_attrs,
+                    msg="Address")
+
+    def guest_status(self):
+        allowed_attrs = ['created_at', 'deleted', 'deleted_at', 'instance_id',
+                         'state', 'state_description', 'updated_at']
+        self.contains_allowed_attrs(
+            self.instance['guest_status'], allowed_attrs,
+            msg="Guest status")
+
+    def mgmt_volume(self):
+        if not self.volume_support:
+            return
+        allowed_attrs = ['description', 'id', 'name', 'size']
+        self.contains_allowed_attrs(
+            self.instance['volume'], allowed_attrs,
+            msg="Volume")
+
+    def replica_of(self):
+        if 'replica_of' not in self.instance:
+            self.fail("'replica_of' not found in instance.")
+        else:
+            allowed_attrs = ['id', 'links']
+            self.contains_allowed_attrs(
+                self.instance['replica_of'], allowed_attrs,
+                msg="Replica-of links not found")
+            self.links(self.instance['replica_of']['links'])
+
+    def slaves(self):
+        if 'replicas' not in self.instance:
+            self.fail("'replicas' not found in instance.")
+        else:
+            allowed_attrs = ['id', 'links']
+            for slave in self.instance['replicas']:
+                self.contains_allowed_attrs(
+                    slave, allowed_attrs,
+                    msg="Replica links not found")
+                self.links(slave['links'])

@@ -18,12 +18,9 @@ import json
 from proboscis import SkipTest
 
 from trove.common.utils import generate_uuid
-from trove.tests.config import CONFIG
 from trove.tests.scenario.runners.test_runners import TestRunner
 from trove.tests.util.check import CollectionCheck
 from trove.tests.util.check import TypeCheck
-from trove.tests.util import create_dbaas_client
-from trove.tests.util.users import Requirements
 from troveclient.compat import exceptions
 
 
@@ -39,7 +36,6 @@ class ConfigurationRunner(TestRunner):
         self.non_dynamic_inst_count = 0
         self.initial_group_count = 0
         self.additional_group_count = 0
-        self.other_client = None
         self.config_id_for_inst = None
         self.config_inst_id = None
 
@@ -273,20 +269,12 @@ class ConfigurationRunner(TestRunner):
     def assert_conf_get_unauthorized_user(
             self, config_id, expected_exception=exceptions.NotFound,
             expected_http_code=404):
-        self._create_other_client()
         self.assert_raises(
             expected_exception, None,
-            self.other_client.configurations.get, config_id)
+            self.unauth_client.configurations.get, config_id)
         # we're using a different client, so we'll check the return code
         # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code, client=self.other_client)
-
-    def _create_other_client(self):
-        if not self.other_client:
-            requirements = Requirements(is_admin=False)
-            other_user = CONFIG.users.find_user(
-                requirements, black_list=[self.instance_info.user.auth_user])
-            self.other_client = create_dbaas_client(other_user)
+        self.assert_client_code(expected_http_code, client=self.unauth_client)
 
     def run_non_dynamic_conf_get_unauthorized_user(
             self, expected_exception=exceptions.NotFound,
