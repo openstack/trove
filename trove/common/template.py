@@ -33,6 +33,7 @@ SERVICE_PARSERS = {
     'mongodb': configurations.MongoDBConfParser,
     'mysql': configurations.MySQLConfParser,
     'percona': configurations.MySQLConfParser,
+    'mariadb': configurations.MySQLConfParser,
     'postgresql': configurations.PostgresqlConfParser,
     'cassandra': configurations.CassandraConfParser,
     'redis': configurations.RedisConfParser,
