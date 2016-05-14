@@ -1043,7 +1043,8 @@ postgresql_opts = [
     cfg.ListOpt('ignore_users', default=['os_admin', 'postgres', 'root']),
     cfg.ListOpt('ignore_dbs', default=['postgres']),
     cfg.StrOpt('root_controller',
-               default='trove.extensions.common.service.DefaultRootController',
+               default='trove.extensions.postgresql.service'
+               '.PostgreSQLRootController',
                help='Root controller implementation for postgresql.'),
     cfg.StrOpt('guest_log_exposed_logs', default='general',
                help='List of Guest Logs to expose for publishing.'),

@@ -1,0 +1,6 @@
+---
+fixes:
+  - Implement Postgres guestagent models for
+    databases and users.
+  - Implement RootController extension for the Postgres
+    datastore.
