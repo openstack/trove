@@ -29,7 +29,8 @@ class String(sqlalchemy.types.String):
 
 class Text(sqlalchemy.types.Text):
     def __init__(self, length=None, *args, **kwargs):
-        super(Text, self).__init__(*args, length=length, **kwargs)
+        super(Text, self).__init__(*args, **kwargs)
+        self.with_variant(sqlalchemy.types.Text(length=length), 'mysql')
 
 
 class Boolean(sqlalchemy.types.Boolean):
