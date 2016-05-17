@@ -231,8 +231,6 @@ common_opts = [
                 help="Permissions to grant to the 'root' user."),
     cfg.BoolOpt('root_grant_option', default=True,
                 help="Assign the 'root' user GRANT permissions."),
-    cfg.IntOpt('default_password_length', default=36,
-               help='Character length of generated passwords.'),
     cfg.IntOpt('http_get_rate', default=200,
                help="Maximum number of HTTP 'GET' requests (per minute)."),
     cfg.IntOpt('http_post_rate', default=200,
@@ -548,6 +546,10 @@ mysql_opts = [
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Percona
@@ -626,6 +628,11 @@ percona_opts = [
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.'),
+    cfg.IntOpt('default_password_length',
+               default='${mysql.default_password_length}',
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Percona XtraDB Cluster
@@ -708,6 +715,11 @@ pxc_opts = [
     cfg.IntOpt('guest_log_long_query_time', default=1000,
                help='The time in milliseconds that a statement must take in '
                     'in order to be logged in the slow_query log.'),
+    cfg.IntOpt('default_password_length',
+               default='${mysql.default_password_length}',
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 
@@ -780,6 +792,10 @@ redis_opts = [
                help='Root controller implementation for redis.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Cassandra
@@ -853,6 +869,10 @@ cassandra_opts = [
                '.cassandra.guestagent.CassandraGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Couchbase
@@ -911,6 +931,10 @@ couchbase_opts = [
                help='Root controller implementation for couchbase.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('default_password_length', default=24, min=6, max=24,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # MongoDB
@@ -998,6 +1022,10 @@ mongodb_opts = [
                help='Root controller implementation for mongodb.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # PostgreSQL
@@ -1053,6 +1081,10 @@ postgresql_opts = [
                     "in order to be logged in the 'general' log.  A value of "
                     "'0' logs all statements, while '-1' turns off "
                     "statement logging."),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Apache CouchDB
@@ -1109,7 +1141,10 @@ couchdb_opts = [
                 help='Databases to exclude when listing databases.',
                 deprecated_name='ignore_dbs',
                 deprecated_group='DEFAULT'),
-
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # Vertica
@@ -1174,6 +1209,10 @@ vertica_opts = [
                help='List of Guest Logs to expose for publishing.'),
     cfg.IntOpt('min_ksafety', default=0,
                help='Minimum k-safety setting permitted for vertica clusters'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # DB2
@@ -1228,6 +1267,10 @@ db2_opts = [
                help='Root controller implementation for db2.'),
     cfg.StrOpt('guest_log_exposed_logs', default='',
                help='List of Guest Logs to expose for publishing.'),
+    cfg.IntOpt('default_password_length', default=36,
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # MariaDB
@@ -1321,6 +1364,11 @@ mariadb_opts = [
                'galera_common.guestagent.GaleraCommonGuestAgentStrategy',
                help='Class that implements datastore-specific Guest Agent API '
                     'logic.'),
+    cfg.IntOpt('default_password_length',
+               default='${mysql.default_password_length}',
+               help='Character length of generated passwords.',
+               deprecated_name='default_password_length',
+               deprecated_group='DEFAULT'),
 ]
 
 # RPC version groups
