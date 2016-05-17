@@ -370,7 +370,7 @@ class BaseMySqlAdmin(object):
                                        )
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             q = sql_query.Query()
-            q.columns = ['User', 'Host', 'Password']
+            q.columns = ['User', 'Host']
             q.tables = ['mysql.user']
             q.where = ["Host != 'localhost'",
                        "User = '%s'" % username,
@@ -382,7 +382,6 @@ class BaseMySqlAdmin(object):
             if len(result) != 1:
                 return None
             found_user = result[0]
-            user.password = found_user['Password']
             user.host = found_user['Host']
             self._associate_dbs(user)
             return user
