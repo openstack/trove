@@ -24,9 +24,6 @@ from trove.common import instance as trove_instance
 from trove.common.notification import EndNotification
 from trove.guestagent import backup
 from trove.guestagent.datastore.experimental.cassandra import service
-from trove.guestagent.datastore.experimental.cassandra.service import (
-    CassandraAdmin
-)
 from trove.guestagent.datastore import manager
 from trove.guestagent import volume
 
@@ -37,10 +34,10 @@ CONF = cfg.CONF
 
 class Manager(manager.Manager):
 
-    def __init__(self):
-        self._app = service.CassandraApp()
-        self.__admin = CassandraAdmin(self.app.get_current_superuser())
-        super(Manager, self).__init__('cassandra')
+    def __init__(self, manager_name='cassandra'):
+        super(Manager, self).__init__(manager_name)
+        self._app = None
+        self._admin = None
 
     @property
     def status(self):
@@ -48,11 +45,18 @@ class Manager(manager.Manager):
 
     @property
     def app(self):
+        if self._app is None:
+            self._app = self.build_app()
         return self._app
+
+    def build_app(self):
+        return service.CassandraApp()
 
     @property
     def admin(self):
-        return self.__admin
+        if self._admin is None:
+            self._admin = self.app.build_admin()
+        return self._admin
 
     @property
     def configuration_manager(self):
@@ -145,7 +149,7 @@ class Manager(manager.Manager):
                     self.app.secure()
                     self.app.restart()
 
-            self.__admin = CassandraAdmin(self.app.get_current_superuser())
+            self._admin = self.app.build_admin()
 
         if not cluster_config and self.is_root_enabled(context):
             self.status.report_root(context, self.app.default_superuser_name)
@@ -272,7 +276,7 @@ class Manager(manager.Manager):
 
     def cluster_secure(self, context, password):
         os_admin = self.app.cluster_secure(password)
-        self.__admin = CassandraAdmin(self.app.get_current_superuser())
+        self._admin = self.app.build_admin()
         return os_admin
 
     def get_admin_credentials(self, context):
@@ -280,4 +284,4 @@ class Manager(manager.Manager):
 
     def store_admin_credentials(self, context, admin_credentials):
         self.app.store_admin_credentials(admin_credentials)
-        self.__admin = CassandraAdmin(self.app.get_current_superuser())
+        self._admin = self.app.build_admin()

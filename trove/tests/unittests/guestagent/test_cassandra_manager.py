@@ -75,6 +75,13 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def setUp(self, *args, **kwargs):
         super(GuestAgentCassandraDBManagerTest, self).setUp()
+
+        conn_patcher = patch.multiple(cass_service.CassandraConnection,
+                                      _connect=DEFAULT,
+                                      is_active=Mock(return_value=True))
+        self.addCleanup(conn_patcher.stop)
+        conn_patcher.start()
+
         self.real_status = cass_service.CassandraAppStatus.set_status
 
         class FakeInstanceServiceStatus(object):
@@ -87,9 +94,12 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             return_value=FakeInstanceServiceStatus())
         self.context = trove_testtools.TroveTestContext(self)
         self.manager = cass_manager.Manager()
-        self.manager._Manager__admin = cass_service.CassandraAdmin(
+        self.manager._app = cass_service.CassandraApp()
+        self.manager._admin = cass_service.CassandraAdmin(
             models.CassandraUser('Test'))
-        self.admin = self.manager._Manager__admin
+        self.admin = self.manager._admin
+        self.admin._CassandraAdmin__client = MagicMock()
+        self.conn = self.admin._CassandraAdmin__client
         self.pkg = cass_service.packager
         self.origin_os_path_exists = os.path.exists
         self.origin_format = volume.VolumeDevice.format
@@ -327,64 +337,58 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
     def _get_random_name(self, size, chars=string.letters + string.digits):
         return ''.join(random.choice(chars) for _ in range(size))
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_create_database(self, conn):
+    def test_create_database(self):
         db1 = models.CassandraSchema('db1')
         db2 = models.CassandraSchema('db2')
         db3 = models.CassandraSchema(self._get_random_name(32))
 
         self.manager.create_database(self.context,
                                      self._serialize_collection(db1, db2, db3))
-        conn.return_value.execute.assert_has_calls([
+        self.conn.execute.assert_has_calls([
             call(self.__CREATE_DB_FORMAT, (db1.name,)),
             call(self.__CREATE_DB_FORMAT, (db2.name,)),
             call(self.__CREATE_DB_FORMAT, (db3.name,))
         ])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_delete_database(self, conn):
+    def test_delete_database(self):
         db = models.CassandraSchema(self._get_random_name(32))
         self.manager.delete_database(self.context, db.serialize())
-        conn.return_value.execute.assert_called_once_with(
+        self.conn.execute.assert_called_once_with(
             self.__DROP_DB_FORMAT, (db.name,))
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_create_user(self, conn):
+    def test_create_user(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2', '')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
 
         self.manager.create_user(self.context,
                                  self._serialize_collection(usr1, usr2, usr3))
-        conn.return_value.execute.assert_has_calls([
+        self.conn.execute.assert_has_calls([
             call(self.__CREATE_USR_FORMAT, (usr1.name,), (usr1.password,)),
             call(self.__CREATE_USR_FORMAT, (usr2.name,), (usr2.password,)),
             call(self.__CREATE_USR_FORMAT, (usr3.name,), (usr3.password,))
         ])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_delete_user(self, conn):
+    def test_delete_user(self):
         usr = models.CassandraUser(self._get_random_name(1025), 'password')
         self.manager.delete_user(self.context, usr.serialize())
-        conn.return_value.execute.assert_called_once_with(
+        self.conn.execute.assert_called_once_with(
             self.__DROP_USR_FORMAT, (usr.name,))
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_change_passwords(self, conn):
+    def test_change_passwords(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2', '')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
 
         self.manager.change_passwords(self.context, self._serialize_collection(
             usr1, usr2, usr3))
-        conn.return_value.execute.assert_has_calls([
+        self.conn.execute.assert_has_calls([
             call(self.__ALTER_USR_FORMAT, (usr1.name,), (usr1.password,)),
             call(self.__ALTER_USR_FORMAT, (usr2.name,), (usr2.password,)),
             call(self.__ALTER_USR_FORMAT, (usr3.name,), (usr3.password,))
         ])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_alter_user_password(self, conn):
+    def test_alter_user_password(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2', '')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
@@ -392,14 +396,13 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         self.admin.alter_user_password(usr1)
         self.admin.alter_user_password(usr2)
         self.admin.alter_user_password(usr3)
-        conn.return_value.execute.assert_has_calls([
+        self.conn.execute.assert_has_calls([
             call(self.__ALTER_USR_FORMAT, (usr1.name,), (usr1.password,)),
             call(self.__ALTER_USR_FORMAT, (usr2.name,), (usr2.password,)),
             call(self.__ALTER_USR_FORMAT, (usr3.name,), (usr3.password,))
         ])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_grant_access(self, conn):
+    def test_grant_access(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr1', 'password')
         db1 = models.CassandraSchema('db1')
@@ -417,10 +420,11 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             expected.append(call(self.__GRANT_FORMAT,
                                  (modifier, db3.name, usr2.name)))
 
-        conn.return_value.execute.assert_has_calls(expected, any_order=True)
+        self.conn.execute.assert_has_calls(
+            expected,
+            any_order=True)
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_revoke_access(self, conn):
+    def test_revoke_access(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr1', 'password')
         db1 = models.CassandraSchema('db1')
@@ -428,19 +432,17 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
 
         self.manager.revoke_access(self.context, usr1.name, None, db1.name)
         self.manager.revoke_access(self.context, usr2.name, None, db2.name)
-        conn.return_value.execute.assert_has_calls([
+        self.conn.execute.assert_has_calls([
             call(self.__REVOKE_FORMAT, (db1.name, usr1.name)),
             call(self.__REVOKE_FORMAT, (db2.name, usr2.name))
         ])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_get_available_keyspaces(self, conn):
+    def test_get_available_keyspaces(self):
         self.manager.list_databases(self.context)
-        conn.return_value.execute.assert_called_once_with(
+        self.conn.execute.assert_called_once_with(
             self.__LIST_DB_FORMAT)
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_list_databases(self, conn):
+    def test_list_databases(self):
         db1 = models.CassandraSchema('db1')
         db2 = models.CassandraSchema('db2')
         db3 = models.CassandraSchema(self._get_random_name(32))
@@ -537,8 +539,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
 
             self.assertEqual({}, acl)
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_get_listed_users(self, conn):
+    def test_get_listed_users(self):
         usr1 = models.CassandraUser(self._get_random_name(1025))
         usr2 = models.CassandraUser(self._get_random_name(1025))
         usr3 = models.CassandraUser(self._get_random_name(1025))
@@ -554,7 +555,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         rv_3 = NonCallableMagicMock()
         rv_3.configure_mock(name=usr3.name, super=True)
 
-        with patch.object(conn.return_value, 'execute', return_value=iter(
+        with patch.object(self.conn, 'execute', return_value=iter(
                 [rv_1, rv_2, rv_3])):
             with patch.object(self.admin, '_get_acl',
                               return_value={usr1.name: {db1.name: {'SELECT'},
@@ -562,15 +563,14 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
                                             usr3.name: {db2.name: {'SELECT'}}}
                               ):
                 usrs = self.manager.list_users(self.context)
-                conn.return_value.execute.assert_has_calls([
+                self.conn.execute.assert_has_calls([
                     call(self.__LIST_USR_FORMAT),
                 ], any_order=True)
                 self.assertIn(usr1.serialize(), usrs[0])
                 self.assertIn(usr2.serialize(), usrs[0])
                 self.assertIn(usr3.serialize(), usrs[0])
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_list_access(self, conn):
+    def test_list_access(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
@@ -593,8 +593,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
             with ExpectedException(exception.UserNotFound):
                 self.manager.list_access(self.context, usr3.name, None)
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_list_users(self, conn):
+    def test_list_users(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
@@ -612,8 +611,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
         with patch.object(self.admin, self.__N_GLU, return_value=set()):
             self.assertEqual(([], None), self.manager.list_users(self.context))
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_get_user(self, conn):
+    def test_get_user(self):
         usr1 = models.CassandraUser('usr1')
         usr2 = models.CassandraUser('usr2')
         usr3 = models.CassandraUser(self._get_random_name(1025), 'password')
@@ -629,8 +627,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
 
     @patch.object(cass_service.CassandraAdmin, '_deserialize_keyspace',
                   side_effect=lambda p1: p1)
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_rename_user(self, conn, ks_deserializer):
+    def test_rename_user(self, ks_deserializer):
         usr = models.CassandraUser('usr')
         db1 = models.CassandraSchema('db1').serialize()
         db2 = models.CassandraSchema('db2').serialize()
@@ -652,8 +649,7 @@ class GuestAgentCassandraDBManagerTest(trove_testtools.TestCase):
                                                     call(ANY, db2, ANY)])
                             drop.assert_called_once_with(ANY, usr)
 
-    @patch.object(cass_service.CassandraLocalhostConnection, '__enter__')
-    def test_update_attributes(self, conn):
+    def test_update_attributes(self):
         usr = models.CassandraUser('usr', 'pwd')
 
         with patch.object(self.admin, self.__N_BU, return_value=usr):

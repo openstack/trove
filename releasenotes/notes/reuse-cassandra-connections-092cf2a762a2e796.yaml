@@ -1,0 +1,4 @@
+---
+fixes:
+  - Make guestagent reuse Cassandra connections to eliminate resource
+    leaks. Bug 1566946.
