@@ -98,12 +98,16 @@ class GaleraCommonCluster(cluster_models.Cluster):
         check_quotas(context.tenant, deltas)
 
         # Checking networks are same for the cluster
-        instance_nics = [instance.get('nics', None) for instance in instances]
-        if len(set(instance_nics)) != 1:
+        instance_nics = []
+        for instance in instances:
+            nics = instance.get('nics')
+            if nics:
+                instance_nics.append(nics[0].get('net-id'))
+        if len(set(instance_nics)) > 1:
             raise exception.ClusterNetworksNotEqual()
-        instance_nic = instance_nics[0]
-        if instance_nic is None:
+        if not instance_nics:
             return
+        instance_nic = instance_nics[0]
         try:
             nova_client.networks.get(instance_nic)
         except nova_exceptions.NotFound:
