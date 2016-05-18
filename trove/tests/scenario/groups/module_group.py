@@ -397,8 +397,35 @@ class ModuleInstanceGroup(TestGroup):
         self.test_runner.run_module_query_empty()
 
     @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
-          depends_on=[create_inst_with_mods],
+          depends_on=[module_remove],
           runs_after=[module_query_empty_after])
+    def module_apply_again(self):
+        """Check that module-apply works a second time."""
+        self.test_runner.run_module_apply()
+
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
+          depends_on=[module_apply],
+          runs_after=[module_query_empty_after])
+    def module_query_after_apply_again(self):
+        """Check that module-query works after second apply."""
+        self.test_runner.run_module_query_after_apply()
+
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
+          depends_on=[module_apply_again],
+          runs_after=[module_query_after_apply_again])
+    def module_remove_again(self):
+        """Check that module-remove works again."""
+        self.test_runner.run_module_remove()
+
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
+          depends_on=[module_remove_again])
+    def module_query_empty_after_again(self):
+        """Check that the instance has no modules applied after remove."""
+        self.test_runner.run_module_query_empty()
+
+    @test(groups=[GROUP, GROUP_MODULE_INSTANCE],
+          depends_on=[create_inst_with_mods],
+          runs_after=[module_query_empty_after_again])
     def wait_for_inst_with_mods(self):
         """Wait for create instance with modules to finish."""
         self.test_runner.run_wait_for_inst_with_mods()
