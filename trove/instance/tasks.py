@@ -80,6 +80,8 @@ class InstanceTasks(object):
     EJECTING = InstanceTask(0x09, 'EJECTING',
                             'Ejecting the replica source.')
     LOGGING = InstanceTask(0x0a, 'LOGGING', 'Transferring guest logs.')
+    DETACHING = InstanceTask(0x0b, 'DETACHING',
+                             'Detaching the instance from replica source.')
 
     BUILDING_ERROR_DNS = InstanceTask(0x50, 'BUILDING', 'Build error: DNS.',
                                       is_error=True)
