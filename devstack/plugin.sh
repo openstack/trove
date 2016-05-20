@@ -160,6 +160,9 @@ function configure_trove {
         setup_trove_logging $TROVE_CONDUCTOR_CONF
     fi
 
+    # Use these values only if they're set
+    iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
+
     # Set up Guest Agent conf
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_userid $RABBIT_USERID
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $TROVE_HOST_GATEWAY
