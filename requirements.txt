@@ -18,7 +18,7 @@ lxml>=2.3 # BSD
 passlib>=1.6 # BSD
 python-heatclient>=1.1.0 # Apache-2.0
 python-novaclient!=2.33.0,>=2.29.0 # Apache-2.0
-python-cinderclient>=1.6.0 # Apache-2.0
+python-cinderclient!=1.7.0,>=1.6.0 # Apache-2.0
 python-keystoneclient!=1.8.0,!=2.1.0,>=1.7.0 # Apache-2.0
 python-swiftclient>=2.2.0 # Apache-2.0
 python-designateclient>=1.5.0 # Apache-2.0
