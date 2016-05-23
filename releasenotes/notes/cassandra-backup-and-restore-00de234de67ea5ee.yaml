@@ -1,4 +1,4 @@
 ---
 features:
-  - Support has been added for Cassandra backup and resture using the
+  - Support has been added for Cassandra backup and restore using the
     Nodetool utility.
