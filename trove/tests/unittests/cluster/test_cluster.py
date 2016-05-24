@@ -84,7 +84,8 @@ class ClusterTest(trove_testtools.TestCase):
                           None, None
                           )
 
-    def test_create_unequal_flavors(self):
+    @patch.object(remote, 'create_nova_client')
+    def test_create_unequal_flavors(self, mock_client):
         instances = self.instances
         instances[0]['flavor_id'] = '4567'
         self.assertRaises(exception.ClusterFlavorsNotEqual,

@@ -87,6 +87,7 @@ class ClusterTest(trove_testtools.TestCase):
 
     @patch.object(DBCluster, 'create')
     @patch.object(inst_models.DBInstance, 'find_all')
+    @patch.object(remote, 'create_nova_client')
     def test_create_flavor_not_specified(self, *args):
         instances = self.instances
         instances[0]['flavor_id'] = None
