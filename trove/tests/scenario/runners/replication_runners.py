@@ -333,8 +333,11 @@ class MysqlReplicationRunner(ReplicationRunner):
 
     def _validate_binlog_fmt(self, instance_id, client):
         binlog_fmt = self._get_mysql_variable(client, 'binlog_format')
-        self.assert_equal('MIXED', binlog_fmt,
+        self.assert_equal(self._get_expected_binlog_format(), binlog_fmt,
                           'Wrong binlog format detected for %s' % instance_id)
+
+    def _get_expected_binlog_format(self):
+        return 'MIXED'
 
     def _validate_read_only(self, instance_id, client):
         read_only = self._get_mysql_variable(client, 'read_only')
@@ -352,4 +355,6 @@ class PerconaReplicationRunner(MysqlReplicationRunner):
 
 
 class MariadbReplicationRunner(MysqlReplicationRunner):
-    pass
+
+    def _get_expected_binlog_format(self):
+        return 'STATEMENT'
