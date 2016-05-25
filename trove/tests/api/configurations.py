@@ -250,7 +250,7 @@ class CreateConfigurations(ConfigurationsTestBase):
 
     @test
     def test_configurations_create_invalid_value_type(self):
-        """Test create configuration with invalild value type."""
+        """Test create configuration with invalid value type."""
         values = '{"key_buffer_size": "this is a string not int"}'
         assert_unprocessable(instance_info.dbaas.configurations.create,
                              CONFIG_NAME, values, CONFIG_DESC)
