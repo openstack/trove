@@ -48,7 +48,7 @@ class MysqlHelper(SqlHelper):
         return {'innodb_buffer_pool_size': 10485760}
 
     def get_invalid_groups(self):
-        return [{'key_buffer_size': 4}, {"join_buffer_size": 'string_value'}]
+        return [{'key_buffer_size': -1}, {"join_buffer_size": 'string_value'}]
 
     def get_exposed_user_log_names(self):
         return ['general', 'slow_query']
