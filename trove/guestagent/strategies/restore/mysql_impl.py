@@ -39,19 +39,12 @@ class MySQLRestoreMixin(object):
     RESET_ROOT_RETRY_TIMEOUT = 100
     RESET_ROOT_SLEEP_INTERVAL = 10
 
-    # Reset the root password in a single transaction with 'FLUSH PRIVILEGES'
-    # to ensure we never leave database wide open without 'grant tables'.
-    RESET_ROOT_MYSQL_COMMANDS = ("START TRANSACTION;",
-                                 "UPDATE `mysql`.`user` SET"
-                                 " `password`=PASSWORD('')"
-                                 " WHERE `user`='root'"
-                                 " AND `host` = 'localhost';",
-                                 "FLUSH PRIVILEGES;",
-                                 "COMMIT;")
+    RESET_ROOT_MYSQL_COMMANDS = ("SET PASSWORD FOR "
+                                 "'root'@'localhost'=PASSWORD('');")
     # This is a suffix MySQL appends to the file name given in
     # the '--log-error' startup parameter.
     _ERROR_LOG_SUFFIX = '.err'
-    _ERROR_MESSAGE_PATTERN = re.compile("^ERROR:\s+.+$")
+    _ERROR_MESSAGE_PATTERN = re.compile("ERROR")
 
     def mysql_is_running(self):
         try:
@@ -80,16 +73,12 @@ class MySQLRestoreMixin(object):
             raise exc
 
     def _start_mysqld_safe_with_init_file(self, init_file, err_log_file):
-        child = pexpect.spawn("sudo mysqld_safe"
-                              " --skip-grant-tables"
-                              " --skip-networking"
-                              " --init-file='%s'"
-                              " --log-error='%s'" %
-                              (init_file.name, err_log_file.name)
-                              )
+        child = pexpect.spawn(
+            "sudo mysqld_safe --init-file=%s --log-error=%s" %
+            (init_file.name, err_log_file.name))
         try:
-            i = child.expect(['Starting mysqld daemon'])
-            if i == 0:
+            index = child.expect(['Starting mysqld daemon'])
+            if index == 0:
                 LOG.info(_("Starting MySQL"))
         except pexpect.TIMEOUT:
             LOG.exception(_("Got a timeout launching mysqld_safe"))
@@ -110,7 +99,8 @@ class MySQLRestoreMixin(object):
 
             LOG.info(_("Root password reset successfully."))
             LOG.debug("Cleaning up the temp mysqld process.")
-            utils.execute_with_timeout("mysqladmin", "-uroot", "shutdown")
+            utils.execute_with_timeout("mysqladmin", "-uroot",
+                                       "--protocol=tcp", "shutdown")
             LOG.debug("Polling for shutdown to complete.")
             try:
                 utils.poll_until(self.mysql_is_not_running,
@@ -134,10 +124,10 @@ class MySQLRestoreMixin(object):
         """
 
         with tempfile.NamedTemporaryFile(mode='w') as init_file:
+            operating_system.write_file(init_file.name,
+                                        self.RESET_ROOT_MYSQL_COMMANDS)
             operating_system.chmod(init_file.name, FileMode.ADD_READ_ALL,
                                    as_root=True)
-            self._writelines_one_per_line(init_file,
-                                          self.RESET_ROOT_MYSQL_COMMANDS)
             # Do not attempt to delete the file as the 'trove' user.
             # The process writing into it may have assumed its ownership.
             # Only owners can delete temporary
@@ -149,38 +139,19 @@ class MySQLRestoreMixin(object):
                 self._start_mysqld_safe_with_init_file(init_file, err_log_file)
             finally:
                 err_log_file.close()
-                MySQLRestoreMixin._delete_file(err_log_file.name)
-
-    def _writelines_one_per_line(self, fp, lines):
-        fp.write(os.linesep.join(lines))
-        fp.flush()
+                operating_system.remove(
+                    err_log_file.name, force=True, as_root=True)
 
     def _find_first_error_message(self, fp):
-        if MySQLRestoreMixin._is_non_zero_file(fp):
-                return MySQLRestoreMixin._find_first_pattern_match(
-                    fp,
-                    self._ERROR_MESSAGE_PATTERN
-                )
+        if self._is_non_zero_file(fp):
+            return self._find_first_pattern_match(
+                fp, self._ERROR_MESSAGE_PATTERN)
         return None
 
-    @classmethod
-    def _delete_file(self, file_path):
-        """Force-remove a given file as root.
-        Do not raise an exception on failure.
-        """
-
-        if os.path.isfile(file_path):
-            try:
-                operating_system.remove(file_path, force=True, as_root=True)
-            except Exception:
-                LOG.exception(_("Could not remove file: '%s'") % file_path)
-
-    @classmethod
     def _is_non_zero_file(self, fp):
         file_path = fp.name
         return os.path.isfile(file_path) and (os.path.getsize(file_path) > 0)
 
-    @classmethod
     def _find_first_pattern_match(self, fp, pattern):
         for line in fp:
             if pattern.match(line):
