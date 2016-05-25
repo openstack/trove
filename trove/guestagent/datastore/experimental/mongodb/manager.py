@@ -148,7 +148,7 @@ class Manager(manager.Manager):
         return service.MongoDBAdmin().get_user(username)
 
     def grant_access(self, context, username, hostname, databases):
-        LOG.debug("Granting acccess.")
+        LOG.debug("Granting access.")
         return service.MongoDBAdmin().grant_access(username, databases)
 
     def revoke_access(self, context, username, hostname, database):
