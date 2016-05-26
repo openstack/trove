@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import commands
 import os
 import re
 import subprocess
@@ -265,27 +264,27 @@ class PkgDEBVersionTestCase(trove_testtools.TestCase):
         super(PkgDEBVersionTestCase, self).setUp()
         self.pkgName = 'mysql-server-5.5'
         self.pkgVersion = '5.5.28-0'
-        self.commands_output = commands.getstatusoutput
+        self.getoutput = pkg.getoutput
 
     def tearDown(self):
         super(PkgDEBVersionTestCase, self).tearDown()
-        commands.getstatusoutput = self.commands_output
+        pkg.getoutput = self.getoutput
 
     def test_version_success(self):
         cmd_out = "%s:\n  Installed: %s\n" % (self.pkgName, self.pkgVersion)
-        commands.getstatusoutput = Mock(return_value=(0, cmd_out))
+        pkg.getoutput = Mock(return_value=cmd_out)
         version = pkg.DebianPackagerMixin().pkg_version(self.pkgName)
         self.assertTrue(version)
         self.assertEqual(self.pkgVersion, version)
 
     def test_version_unknown_package(self):
         cmd_out = "N: Unable to locate package %s" % self.pkgName
-        commands.getstatusoutput = Mock(return_value=(0, cmd_out))
+        pkg.getoutput = Mock(return_value=cmd_out)
         self.assertFalse(pkg.DebianPackagerMixin().pkg_version(self.pkgName))
 
     def test_version_no_version(self):
         cmd_out = "%s:\n  Installed: %s\n" % (self.pkgName, "(none)")
-        commands.getstatusoutput = Mock(return_value=(0, cmd_out))
+        pkg.getoutput = Mock(return_value=cmd_out)
         self.assertFalse(pkg.DebianPackagerMixin().pkg_version(self.pkgName))
 
 
@@ -295,21 +294,21 @@ class PkgRPMVersionTestCase(trove_testtools.TestCase):
         super(PkgRPMVersionTestCase, self).setUp()
         self.pkgName = 'python-requests'
         self.pkgVersion = '0.14.2-1.el6'
-        self.commands_output = commands.getstatusoutput
+        self.getoutput = pkg.getoutput
 
     def tearDown(self):
         super(PkgRPMVersionTestCase, self).tearDown()
-        commands.getstatusoutput = self.commands_output
+        pkg.getoutput = self.getoutput
 
     @patch('trove.guestagent.pkg.LOG')
     def test_version_no_output(self, mock_logging):
         cmd_out = ''
-        commands.getstatusoutput = Mock(return_value=(0, cmd_out))
+        pkg.getoutput = Mock(return_value=cmd_out)
         self.assertIsNone(pkg.RedhatPackagerMixin().pkg_version(self.pkgName))
 
     def test_version_success(self):
         cmd_out = self.pkgVersion
-        commands.getstatusoutput = Mock(return_value=(0, cmd_out))
+        pkg.getoutput = Mock(return_value=cmd_out)
         version = pkg.RedhatPackagerMixin().pkg_version(self.pkgName)
         self.assertTrue(version)
         self.assertEqual(self.pkgVersion, version)
@@ -320,7 +319,7 @@ class PkgRPMInstallTestCase(trove_testtools.TestCase):
     def setUp(self):
         super(PkgRPMInstallTestCase, self).setUp()
         self.pkg = pkg.RedhatPackagerMixin()
-        self.commands_output = commands.getstatusoutput
+        self.getoutput = pkg.getoutput
         self.pkgName = 'packageName'
 
         p0 = patch('pexpect.spawn')
@@ -333,7 +332,7 @@ class PkgRPMInstallTestCase(trove_testtools.TestCase):
 
     def tearDown(self):
         super(PkgRPMInstallTestCase, self).tearDown()
-        commands.getstatusoutput = self.commands_output
+        pkg.getoutput = self.getoutput
 
     def test_pkg_is_installed_no_packages(self):
         packages = []
@@ -341,14 +340,14 @@ class PkgRPMInstallTestCase(trove_testtools.TestCase):
 
     def test_pkg_is_installed_yes(self):
         packages = ["package1=1.0", "package2"]
-        with patch.object(commands, 'getstatusoutput', MagicMock(
-                          return_value={1: "package1=1.0\n" "package2=2.0"})):
+        with patch.object(pkg, 'getoutput', MagicMock(
+                          return_value="package1=1.0\n" "package2=2.0")):
             self.assertTrue(self.pkg.pkg_is_installed(packages))
 
     def test_pkg_is_installed_no(self):
         packages = ["package1=1.0", "package2", "package3=3.0"]
-        with patch.object(commands, 'getstatusoutput', MagicMock(
-                          return_value={1: "package1=1.0\n" "package2=2.0"})):
+        with patch.object(pkg, 'getoutput', MagicMock(
+                          return_value="package1=1.0\n" "package2=2.0")):
             self.assertFalse(self.pkg.pkg_is_installed(packages))
 
     def test_permission_error(self):
@@ -520,11 +519,11 @@ class PkgDEBFixPackageSelections(trove_testtools.TestCase):
     def setUp(self):
         super(PkgDEBFixPackageSelections, self).setUp()
         self.pkg = pkg.DebianPackagerMixin()
-        self.commands_output = commands.getstatusoutput
+        self.getoutput = pkg.getoutput
 
     def tearDown(self):
         super(PkgDEBFixPackageSelections, self).tearDown()
-        commands.getstatusoutput = self.commands_output
+        pkg.getoutput = self.getoutput
 
     @patch.object(os, 'remove')
     @patch.object(pkg, 'NamedTemporaryFile')
@@ -533,8 +532,8 @@ class PkgDEBFixPackageSelections(trove_testtools.TestCase):
                                      mock_remove):
         packages = ["package1"]
         config_opts = {'option': 'some_opt'}
-        commands.getstatusoutput = Mock(
-            return_value=(0, "* package1/option: some_opt"))
+        pkg.getoutput = Mock(
+            return_value="* package1/option: some_opt")
         self.pkg._fix_package_selections(packages, config_opts)
         self.assertEqual(2, mock_execute.call_count)
         self.assertEqual(1, mock_remove.call_count)
@@ -547,8 +546,8 @@ class PkgDEBFixPackageSelections(trove_testtools.TestCase):
                                           mock_remove):
         packages = ["package1"]
         config_opts = {'option': 'some_opt'}
-        commands.getstatusoutput = Mock(
-            return_value=(0, "* package1/option: some_opt"))
+        pkg.getoutput = Mock(
+            return_value="* package1/option: some_opt")
         self.assertRaises(pkg.PkgConfigureError,
                           self.pkg._fix_package_selections,
                           packages, config_opts)
