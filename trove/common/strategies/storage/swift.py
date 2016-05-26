@@ -18,6 +18,7 @@ import hashlib
 import json
 
 from oslo_log import log as logging
+import six
 
 from trove.common import cfg
 from trove.common.i18n import _
@@ -156,7 +157,10 @@ class SwiftStorage(base.Storage):
                 'size_bytes': stream_reader.segment_length
             })
 
-            swift_checksum.update(segment_checksum)
+            if six.PY3:
+                swift_checksum.update(segment_checksum.encode())
+            else:
+                swift_checksum.update(segment_checksum)
 
         # All segments uploaded.
         num_segments = len(segment_results)
@@ -171,7 +175,7 @@ class SwiftStorage(base.Storage):
             metadata = {}
         metadata.update(stream.metadata())
         headers = {}
-        for key, value in metadata.iteritems():
+        for key, value in metadata.items():
             headers[self._set_attr(key)] = value
 
         LOG.debug('Metadata headers: %s' % str(headers))
