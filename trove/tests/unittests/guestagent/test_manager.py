@@ -22,6 +22,7 @@ from mock import DEFAULT
 from mock import MagicMock
 from mock import Mock
 from mock import patch
+from oslo_utils import encodeutils
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
@@ -462,8 +463,9 @@ class ManagerTest(trove_testtools.TestCase):
                 apply_overrides_on_prepare=MagicMock(
                     side_effect=expected_failure
                 )):
+            expected_msg = encodeutils.exception_to_unicode(expected_failure)
             self.assertRaisesRegexp(
-                Exception, expected_failure.message,
+                Exception, expected_msg,
                 self.manager.prepare,
                 self.context, packages, databases, memory_mb, users,
                 device_path, mount_point, backup_info, config_contents,
