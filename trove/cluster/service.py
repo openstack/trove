@@ -63,7 +63,7 @@ class ClusterController(wsgi.Controller):
                                          " one action specified in body"))
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
-        cluster.action(context, req, *body.items()[0])
+        cluster.action(context, req, *next(iter(body.items())))
 
         view = views.load_view(cluster, req=req, load_servers=False)
         wsgi_result = wsgi.Result(view.data(), 202)

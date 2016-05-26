@@ -15,7 +15,6 @@
 
 import abc
 import re
-import string
 
 import netaddr
 from six import u
@@ -573,7 +572,7 @@ class ValidatedMySQLDatabase(MySQLDatabase):
         if any([not value,
                 not self._is_valid(value),
                 not self.dbname.match(value),
-                string.find("%r" % value, "\\") != -1]):
+                ("%r" % value).find("\\") != -1]):
             raise ValueError(_("'%s' is not a valid database name.") % value)
         elif len(value) > 64:
             msg = _("Database name '%s' is too long. Max length = 64.")
@@ -966,7 +965,7 @@ class MySQLUser(Base):
     def _is_valid(self, value):
         if (not value or
                 self.not_supported_chars.search(value) or
-                string.find("%r" % value, "\\") != -1):
+                ("%r" % value).find("\\") != -1):
             return False
         else:
             return True
