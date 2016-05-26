@@ -65,7 +65,8 @@ class CbBackup(base.BackupRunner):
                                    system.COUCHBASE_REST_API,
                                    system.COUCHBASE_DUMP_DIR,
                                    '-u', 'root', '-p', password,
-                                   timeout=600)
+                                   timeout=600, run_as_root=True,
+                                   root_helper='sudo')
 
     def _run_pre_backup(self):
         try:
