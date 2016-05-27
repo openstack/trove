@@ -76,9 +76,9 @@ class BackupAgent(object):
                                 **backup_state)
         LOG.debug("Updated state for %s to %s.", backup_id, backup_state)
 
-        with runner(filename=backup_id, extra_opts=extra_opts,
-                    **parent_metadata) as bkup:
-            try:
+        try:
+            with runner(filename=backup_id, extra_opts=extra_opts,
+                        **parent_metadata) as bkup:
                 LOG.debug("Starting backup %s.", backup_id)
                 success, note, checksum, location = storage.save(
                     bkup.manifest,
@@ -112,18 +112,18 @@ class BackupAgent(object):
 
                 return meta
 
-            except Exception:
-                LOG.exception(
-                    _("Error saving backup: %(backup_id)s.") % backup_state)
-                backup_state.update({'state': BackupState.FAILED})
-                raise
-            finally:
-                LOG.info(_("Completed backup %(backup_id)s.") % backup_state)
-                conductor.update_backup(CONF.guest_id,
-                                        sent=timeutils.float_utcnow(),
-                                        **backup_state)
-                LOG.debug("Updated state for %s to %s.",
-                          backup_id, backup_state)
+        except Exception:
+            LOG.exception(
+                _("Error saving backup: %(backup_id)s.") % backup_state)
+            backup_state.update({'state': BackupState.FAILED})
+            raise
+        finally:
+            LOG.info(_("Completed backup %(backup_id)s.") % backup_state)
+            conductor.update_backup(CONF.guest_id,
+                                    sent=timeutils.float_utcnow(),
+                                    **backup_state)
+            LOG.debug("Updated state for %s to %s.",
+                      backup_id, backup_state)
 
     def execute_backup(self, context, backup_info,
                        runner=RUNNER, extra_opts=EXTRA_OPTS,
