@@ -66,7 +66,7 @@ class MgmtDataStoreVersion(object):
         """Tests the mgmt datastore version list method."""
         self.ds_versions = self.client.mgmt_datastore_versions.list()
         # By default we create two datastore-versions for mysql
-        assert_equal(2, len(self.ds_versions.items))
+        assert_equal(2, len(self.ds_versions))
 
     @test(depends_on=[test_mgmt_ds_version_list_original_count])
     def test_mgmt_ds_version_list_fields_present(self):
@@ -119,8 +119,8 @@ class MgmtDataStoreVersion(object):
         # Since we created one more ds_version
         # lets check count of total ds_versions, it should be increased by 1
         new_ds_versions = self.client.mgmt_datastore_versions.list()
-        assert_equal(len(self.ds_versions.items) + 1,
-                     len(new_ds_versions.items))
+        assert_equal(len(self.ds_versions) + 1,
+                     len(new_ds_versions))
 
         # Match the contents of newly created ds_version.
         self.created_version = self._find_ds_version_by_name('test_version1')
@@ -154,4 +154,4 @@ class MgmtDataStoreVersion(object):
         # Lets match the total count of ds_version,
         # it should get back to original
         ds_versions = self.client.mgmt_datastore_versions.list()
-        assert_equal(len(self.ds_versions.items), len(ds_versions.items))
+        assert_equal(len(self.ds_versions), len(ds_versions))
