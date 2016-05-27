@@ -32,7 +32,7 @@ class ModuleRunner(TestRunner):
         self.TIMEOUT_MODULE_APPLY = 60 * 10
 
         super(ModuleRunner, self).__init__(
-            sleep_time=10, timeout=self.TIMEOUT_MODULE_APPLY)
+            timeout=self.TIMEOUT_MODULE_APPLY)
 
         self.MODULE_CONTENTS_PATTERN = 'Message=%s\n'
         self.MODULE_MESSAGE_PATTERN = 'Hello World from: %s'
@@ -958,17 +958,16 @@ class ModuleRunner(TestRunner):
             expected_exception, expected_http_code,
             self.auth_client.modules.delete, module.id)
 
-    def run_delete_inst_with_mods(self, expected_last_state=['SHUTDOWN'],
-                                  expected_http_code=202):
-        self.assert_delete_instance(
-            self.mod_inst_id,
-            expected_last_state, expected_http_code)
+    def run_delete_inst_with_mods(self, expected_http_code=202):
+        self.assert_delete_instance(self.mod_inst_id, expected_http_code)
 
-    def assert_delete_instance(
-            self, instance_id, expected_last_state, expected_http_code):
+    def assert_delete_instance(self, instance_id, expected_http_code):
         self.auth_client.instances.delete(instance_id)
         self.assert_client_code(expected_http_code)
-        self.assert_all_gone(instance_id, expected_last_state)
+
+    def run_wait_for_delete_inst_with_mods(
+            self, expected_last_state=['SHUTDOWN']):
+        self.assert_all_gone(self.mod_inst_id, expected_last_state)
 
     # ModuleDeleteGroup methods
     def run_module_delete_non_existent(
