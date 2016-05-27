@@ -18,5 +18,5 @@ from trove.tests.scenario.helpers.mysql_helper import MysqlHelper
 
 class MariadbHelper(MysqlHelper):
 
-    def __init__(self, expected_override_name):
-        super(MariadbHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report):
+        super(MariadbHelper, self).__init__(expected_override_name, report)

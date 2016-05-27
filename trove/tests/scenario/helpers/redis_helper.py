@@ -22,8 +22,8 @@ from trove.tests.scenario.runners.test_runners import TestRunner
 
 class RedisHelper(TestHelper):
 
-    def __init__(self, expected_override_name):
-        super(RedisHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report):
+        super(RedisHelper, self).__init__(expected_override_name, report)
 
         self.key_patterns = ['user_a:%s', 'user_b:%s']
         self.value_pattern = 'id:%s'

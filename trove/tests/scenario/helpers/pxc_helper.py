@@ -18,5 +18,5 @@ from trove.tests.scenario.helpers.mysql_helper import MysqlHelper
 
 class PxcHelper(MysqlHelper):
 
-    def __init__(self, expected_override_name):
-        super(PxcHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report):
+        super(PxcHelper, self).__init__(expected_override_name, report)

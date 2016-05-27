@@ -190,6 +190,7 @@ class InstanceCreateRunner(TestRunner):
             self.report.log("Using an existing instance: %s" % instance.id)
             self.assert_equal(expected_states[-1], instance.status,
                               "Given instance is in a bad state.")
+            instance_info.name = instance.name
         else:
             self.report.log("Creating a new instance.")
             instance = self.auth_client.instances.create(

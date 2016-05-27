@@ -72,17 +72,19 @@ class RunnerFactory(object):
             runner_module_name, class_prefix, runner_base_name,
             TEST_RUNNERS_NS)
         runner = runner_cls(*args, **kwargs)
-        runner._test_helper = cls._get_helper()
+        runner._test_helper = cls._get_helper(runner.report)
         return runner
 
     @classmethod
-    def _get_helper(cls):
+    def _get_helper(cls, report):
         class_prefix = cls._get_test_datastore()
         helper_cls = cls._load_dynamic_class(
             TEST_HELPER_MODULE_NAME, class_prefix,
             TEST_HELPER_BASE_NAME, TEST_HELPERS_NS)
-        return helper_cls(cls._build_class_name(
-            class_prefix, TEST_HELPER_BASE_NAME, strip_test=True))
+        return helper_cls(
+            cls._build_class_name(class_prefix,
+                                  TEST_HELPER_BASE_NAME, strip_test=True),
+            report)
 
     @classmethod
     def _get_test_datastore(cls):
@@ -224,6 +226,13 @@ class TestRunner(object):
 
     @classmethod
     def assert_is_sublist(cls, sub_list, full_list, message=None):
+        if not message:
+            message = 'Unexpected sublist'
+        try:
+            message += ": sub_list '%s' (full_list '%s')." % (
+                sub_list, full_list)
+        except TypeError:
+            pass
         return cls.assert_true(set(sub_list).issubset(full_list), message)
 
     @classmethod
@@ -396,7 +405,7 @@ class TestRunner(object):
         return self.has_env_flag(self.DO_NOT_DELETE_INSTANCE_FLAG)
 
     def assert_instance_action(
-            self, instance_ids, expected_states, expected_http_code):
+            self, instance_ids, expected_states, expected_http_code=None):
         self.assert_client_code(expected_http_code)
         if expected_states:
             self.assert_all_instance_states(

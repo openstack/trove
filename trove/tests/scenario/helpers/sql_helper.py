@@ -27,8 +27,8 @@ class SqlHelper(TestHelper):
 
     DATA_COLUMN_NAME = 'value'
 
-    def __init__(self, expected_override_name, protocol, port=None):
-        super(SqlHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report, protocol, port=None):
+        super(SqlHelper, self).__init__(expected_override_name, report)
 
         self.protocol = protocol
         self.port = port

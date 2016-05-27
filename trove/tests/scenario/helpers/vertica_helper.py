@@ -20,8 +20,9 @@ from trove.tests.scenario.helpers.sql_helper import SqlHelper
 
 class VerticaHelper(SqlHelper):
 
-    def __init__(self, expected_override_name):
-        super(VerticaHelper, self).__init__(expected_override_name, 'vertica')
+    def __init__(self, expected_override_name, report):
+        super(VerticaHelper, self).__init__(expected_override_name, report,
+                                            'vertica')
 
     def get_helper_credentials(self):
         return {'name': 'lite', 'password': 'litepass', 'database': 'lite'}
