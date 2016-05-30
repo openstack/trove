@@ -21,6 +21,11 @@ from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.database_actions_group"
+GROUP_DB_ACTION_INST = "scenario.db_action_inst_group"
+GROUP_DB_ACTION_INST_CREATE = "scenario.db_action_inst_create_group"
+GROUP_DB_ACTION_INST_CREATE_WAIT = "scenario.db_action_inst_create_wait_group"
+GROUP_DB_ACTION_INST_DELETE = "scenario.db_action_inst_delete_group"
+GROUP_DB_ACTION_INST_DELETE_WAIT = "scenario.db_action_inst_delete_wait_group"
 
 
 class DatabaseActionsRunnerFactory(test_runners.RunnerFactory):
@@ -29,22 +34,22 @@ class DatabaseActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'DatabaseActionsRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
+class InstanceCreateRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'instance_create_runners'
+    _runner_cls = 'InstanceCreateRunner'
+
+
+@test(depends_on_groups=[instance_create_group.GROUP],
+      groups=[GROUP, GROUP_DB_ACTION_INST])
 class DatabaseActionsGroup(TestGroup):
+    """Test Database Actions functionality."""
 
     def __init__(self):
         super(DatabaseActionsGroup, self).__init__(
             DatabaseActionsRunnerFactory.instance())
-        self.instance_create_runner = (
-            instance_create_group.InstanceCreateRunnerFactory.create())
 
     @test
-    def create_initialized_instance(self):
-        """Create an instance with initial databases."""
-        self.instance_create_runner.run_initialized_instance_create(
-            with_dbs=True, with_users=False, configuration_id=None)
-
-    @test(runs_after=[create_initialized_instance])
     def create_databases(self):
         """Create databases on an existing instance."""
         self.test_runner.run_databases_create()
@@ -93,8 +98,34 @@ class DatabaseActionsGroup(TestGroup):
         """Ensure deleting a system database fails."""
         self.test_runner.run_system_database_delete()
 
-    @test(depends_on=[create_initialized_instance],
-          runs_after=[delete_system_database])
+
+@test(groups=[GROUP, GROUP_DB_ACTION_INST_CREATE])
+class DatabaseActionsInstCreateGroup(TestGroup):
+    """Test Database Actions Create functionality."""
+
+    def __init__(self):
+        super(DatabaseActionsInstCreateGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
+    def create_initialized_instance(self):
+        """Create an instance with initial databases."""
+        self.instance_create_runner.run_initialized_instance_create(
+            with_dbs=True, with_users=False, configuration_id=None)
+
+
+@test(depends_on_groups=[GROUP_DB_ACTION_INST_CREATE],
+      groups=[GROUP, GROUP_DB_ACTION_INST_CREATE_WAIT])
+class DatabaseActionsInstCreateWaitGroup(TestGroup):
+    """Wait for Database Actions Create to complete."""
+
+    def __init__(self):
+        super(DatabaseActionsInstCreateWaitGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
     def wait_for_instances(self):
         """Waiting for all instances to become active."""
         self.instance_create_runner.wait_for_created_instances()
@@ -109,7 +140,34 @@ class DatabaseActionsGroup(TestGroup):
         """Validate the initialized instance data and properties."""
         self.instance_create_runner.run_validate_initialized_instance()
 
-    @test(runs_after=[validate_initialized_instance])
+
+@test(depends_on_groups=[GROUP_DB_ACTION_INST_CREATE_WAIT],
+      groups=[GROUP, GROUP_DB_ACTION_INST_DELETE])
+class DatabaseActionsInstDeleteGroup(TestGroup):
+    """Test Database Actions Delete functionality."""
+
+    def __init__(self):
+        super(DatabaseActionsInstDeleteGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
     def delete_initialized_instance(self):
         """Delete the initialized instance."""
         self.instance_create_runner.run_initialized_instance_delete()
+
+
+@test(depends_on_groups=[GROUP_DB_ACTION_INST_DELETE],
+      groups=[GROUP, GROUP_DB_ACTION_INST_DELETE_WAIT])
+class DatabaseActionsInstDeleteWaitGroup(TestGroup):
+    """Wait for Database Actions Delete to complete."""
+
+    def __init__(self):
+        super(DatabaseActionsInstDeleteWaitGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
+    def wait_for_delete_initialized_instance(self):
+        """Wait for the initialized instance to delete."""
+        self.instance_create_runner.run_wait_for_initialized_instance_delete()
