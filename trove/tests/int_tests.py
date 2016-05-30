@@ -150,6 +150,10 @@ incremental_backup_groups.extend([backup_group.GROUP_INCREMENTAL])
 configuration_groups = list(instance_create_groups)
 configuration_groups.extend([configuration_group.GROUP])
 
+configuration_create_groups = list(base_groups)
+configuration_create_groups.extend([configuration_group.GROUP_CFGGRP_CREATE,
+                                    configuration_group.GROUP_CFGGRP_DELETE])
+
 database_actions_groups = list(instance_create_groups)
 database_actions_groups.extend([database_actions_group.GROUP])
 
@@ -184,6 +188,7 @@ register(["backup"], backup_groups)
 register(["incremental_backup"], incremental_backup_groups)
 register(["cluster"], cluster_actions_groups)
 register(["configuration"], configuration_groups)
+register(["configuration_create"], configuration_create_groups)
 register(["database"], database_actions_groups)
 register(["guest_log"], guest_log_groups)
 register(["instance", "instance_actions"], instance_actions_groups)
