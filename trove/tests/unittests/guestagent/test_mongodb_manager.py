@@ -22,15 +22,15 @@ import trove.guestagent.datastore.experimental.mongodb.manager as manager
 import trove.guestagent.datastore.experimental.mongodb.service as service
 import trove.guestagent.db.models as models
 import trove.guestagent.volume as volume
-import trove.tests.unittests.trove_testtools as trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentMongoDBManagerTest(trove_testtools.TestCase):
+class GuestAgentMongoDBManagerTest(DatastoreManagerTest):
 
     @mock.patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
-        super(GuestAgentMongoDBManagerTest, self).setUp()
-        self.context = trove_testtools.TroveTestContext(self)
+        super(GuestAgentMongoDBManagerTest, self).setUp('mongodb')
         self.manager = manager.Manager()
 
         self.execute_with_timeout_patch = mock.patch.object(

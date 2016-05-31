@@ -353,7 +353,7 @@ class DB2Admin(object):
                 user = item.split() if item != "" else None
                 LOG.debug("user = %r" % (user))
                 if (user is not None
-                    and (user[0] not in cfg.get_ignored_users(manager='db2')
+                    and (user[0] not in cfg.get_ignored_users()
                          and user[1] == 'Y')):
                     userlist.append(user[0])
             result = iter(userlist)

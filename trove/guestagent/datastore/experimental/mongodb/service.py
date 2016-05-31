@@ -480,7 +480,7 @@ class MongoDBAdmin(object):
         return type(self).admin_user
 
     def _is_modifiable_user(self, name):
-        if ((name in cfg.get_ignored_users(manager=MANAGER)) or
+        if ((name in cfg.get_ignored_users()) or
                 name == system.MONGO_ADMIN_NAME):
             return False
         return True
@@ -723,7 +723,7 @@ class MongoDBAdmin(object):
     def list_databases(self, limit=None, marker=None, include_marker=False):
         """Lists the databases."""
         db_names = self.list_database_names()
-        for hidden in cfg.get_ignored_dbs(manager=MANAGER):
+        for hidden in cfg.get_ignored_dbs():
             if hidden in db_names:
                 db_names.remove(hidden)
         databases = [models.MongoDBSchema(db_name).serialize()

@@ -33,13 +33,15 @@ from trove.guestagent import dbaas as base_dbaas
 from trove.guestagent import pkg as pkg
 from trove.guestagent import volume
 from trove.guestagent.volume import VolumeDevice
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 from trove.tests.unittests import trove_testtools
 
 
-class GuestAgentManagerTest(trove_testtools.TestCase):
+class GuestAgentManagerTest(DatastoreManagerTest):
 
     def setUp(self):
-        super(GuestAgentManagerTest, self).setUp()
+        super(GuestAgentManagerTest, self).setUp('mysql')
         self.context = trove_testtools.TroveTestContext(self)
         self.replication_strategy = 'MysqlGTIDReplication'
         self.patch_rs = patch(

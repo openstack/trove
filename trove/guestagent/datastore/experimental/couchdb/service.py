@@ -35,7 +35,6 @@ from trove.guestagent import pkg
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 packager = pkg.Package()
-MANAGER = CONF.datastore_manager if CONF.datastore_manager else 'couchdb'
 
 COUCHDB_LIB_DIR = "/var/lib/couchdb"
 COUCHDB_LOG_DIR = "/var/log/couchdb"
@@ -207,7 +206,7 @@ class CouchDBAdmin(object):
         return type(self).admin_user
 
     def _is_modifiable_user(self, name):
-        if name in cfg.get_ignored_users(manager=MANAGER):
+        if name in cfg.get_ignored_users():
             return False
         elif name == system.COUCHDB_ADMIN_NAME:
             return False
@@ -418,7 +417,7 @@ class CouchDBAdmin(object):
             user.name = username
             if not self._is_modifiable_user(user.name):
                 LOG.warning(_('Cannot grant access for reserved user '
-                            '%(user)s') % {'user': username})
+                              '%(user)s') % {'user': username})
             if not user:
                 raise exception.BadRequest(_(
                     'Cannot grant access for reserved or non-existant user '
@@ -523,7 +522,7 @@ class CouchDBAdmin(object):
              'admin_password': self._admin_user().password},
             shell=True)
         dbnames_list = eval(out)
-        for hidden in cfg.get_ignored_dbs(manager=MANAGER):
+        for hidden in cfg.get_ignored_dbs():
             if hidden in dbnames_list:
                 dbnames_list.remove(hidden)
         return dbnames_list
@@ -560,6 +559,7 @@ class CouchDBAdmin(object):
 
 class CouchDBCredentials(object):
     """Handles storing/retrieving credentials. Stored as json in files"""
+
     def __init__(self, username=None, password=None):
         self.username = username
         self.password = password

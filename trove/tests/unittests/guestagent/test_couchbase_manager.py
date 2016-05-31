@@ -30,14 +30,14 @@ from trove.guestagent.datastore.experimental.couchbase import (
 from trove.guestagent.datastore.experimental.couchbase import (
     service as couch_service)
 from trove.guestagent import volume
-from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class GuestAgentCouchbaseManagerTest(trove_testtools.TestCase):
+class GuestAgentCouchbaseManagerTest(DatastoreManagerTest):
 
     def setUp(self):
-        super(GuestAgentCouchbaseManagerTest, self).setUp()
-        self.context = trove_testtools.TroveTestContext(self)
+        super(GuestAgentCouchbaseManagerTest, self).setUp('couchbase')
         self.manager = couch_manager.Manager()
         self.packages = 'couchbase-server'
         app_patcher = patch.multiple(

@@ -297,8 +297,9 @@ class BaseAppTest(object):
 
     class AppTestCase(trove_testtools.TestCase):
 
-        def setUp(self, fake_id):
+        def setUp(self, fake_id, manager_name):
             super(BaseAppTest.AppTestCase, self).setUp()
+            self.patch_datastore_manager(manager_name)
             self.FAKE_ID = fake_id
             InstanceServiceStatus.create(
                 instance_id=self.FAKE_ID,
@@ -2315,7 +2316,7 @@ class MySqlAppStatusTest(trove_testtools.TestCase):
 class TestRedisApp(BaseAppTest.AppTestCase):
 
     def setUp(self):
-        super(TestRedisApp, self).setUp(str(uuid4()))
+        super(TestRedisApp, self).setUp(str(uuid4()), 'redis')
         self.orig_os_path_eu = os.path.expanduser
         os.path.expanduser = Mock(return_value='/tmp/.file')
 
@@ -2389,7 +2390,7 @@ class CassandraDBAppTest(BaseAppTest.AppTestCase):
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     @patch('trove.guestagent.datastore.experimental.cassandra.service.LOG')
     def setUp(self, mock_logging, _):
-        super(CassandraDBAppTest, self).setUp(str(uuid4()))
+        super(CassandraDBAppTest, self).setUp(str(uuid4()), 'cassandra')
         self.sleep = time.sleep
         self.orig_time_time = time.time
         self.pkg_version = cass_service.packager.pkg_version
@@ -2470,7 +2471,7 @@ class CouchbaseAppTest(BaseAppTest.AppTestCase):
         }
 
     def setUp(self):
-        super(CouchbaseAppTest, self).setUp(str(uuid4()))
+        super(CouchbaseAppTest, self).setUp(str(uuid4()), 'couchbase')
         self.orig_utils_execute_with_timeout = (
             couchservice.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -2538,7 +2539,7 @@ class CouchDBAppTest(BaseAppTest.AppTestCase):
         }
 
     def setUp(self):
-        super(CouchDBAppTest, self).setUp(str(uuid4()))
+        super(CouchDBAppTest, self).setUp(str(uuid4()), 'couchdb')
         self.orig_utils_execute_with_timeout = (
             couchdb_service.utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -2603,7 +2604,7 @@ class MongoDBAppTest(BaseAppTest.AppTestCase):
 
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, _):
-        super(MongoDBAppTest, self).setUp(str(uuid4()))
+        super(MongoDBAppTest, self).setUp(str(uuid4()), 'mongodb')
         self.orig_utils_execute_with_timeout = (mongo_service.
                                                 utils.execute_with_timeout)
         self.orig_time_sleep = time.sleep
@@ -3713,7 +3714,7 @@ class PostgresAppTest(BaseAppTest.AppTestCase):
 
     @patch.object(pg_config.PgSqlConfig, '_find_config_file', return_value='')
     def setUp(self, _):
-        super(PostgresAppTest, self).setUp(str(uuid4()))
+        super(PostgresAppTest, self).setUp(str(uuid4()), 'postgresql')
         self.orig_time_sleep = time.sleep
         self.orig_time_time = time.time
         time.sleep = Mock()

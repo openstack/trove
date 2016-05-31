@@ -23,19 +23,19 @@ from trove.guestagent.datastore.experimental.redis import (
 from trove.guestagent.datastore.experimental.redis.manager import (
     Manager as RedisManager)
 from trove.guestagent.volume import VolumeDevice
-from trove.tests.unittests import trove_testtools
+from trove.tests.unittests.guestagent.test_datastore_manager import \
+    DatastoreManagerTest
 
 
-class RedisGuestAgentManagerTest(trove_testtools.TestCase):
+class RedisGuestAgentManagerTest(DatastoreManagerTest):
 
     @patch.object(redis_service.RedisApp, '_build_admin_client')
     @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
     def setUp(self, *args, **kwargs):
-        super(RedisGuestAgentManagerTest, self).setUp()
+        super(RedisGuestAgentManagerTest, self).setUp('redis')
         self.patch_ope = patch('os.path.expanduser')
         self.mock_ope = self.patch_ope.start()
         self.addCleanup(self.patch_ope.stop)
-        self.context = trove_testtools.TroveTestContext(self)
         self.replication_strategy = 'RedisSyncReplication'
         self.patch_rs = patch(
             'trove.guestagent.strategies.replication.get_strategy',
