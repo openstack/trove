@@ -309,11 +309,16 @@ class InstanceCreateRunner(TestRunner):
                 "Definition of user '%s' specifies databases not included in "
                 "the list of initial databases." % user['name'])
 
-    def run_initialized_instance_delete(self, expected_states=['SHUTDOWN'],
-                                        expected_http_code=202):
+    def run_initialized_instance_delete(self, expected_http_code=202):
         if self.init_inst_id:
             self.auth_client.instances.delete(self.init_inst_id)
             self.assert_client_code(expected_http_code)
+        else:
+            raise SkipTest("Cleanup is not required.")
+
+    def run_wait_for_initialized_instance_delete(self,
+                                                 expected_states=['SHUTDOWN']):
+        if self.init_inst_id:
             self.assert_all_gone(self.init_inst_id, expected_states[-1])
         else:
             raise SkipTest("Cleanup is not required.")

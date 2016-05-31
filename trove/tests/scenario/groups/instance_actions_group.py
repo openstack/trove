@@ -21,6 +21,8 @@ from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.instance_actions_group"
+GROUP_INST_ACTIONS = "scenario.inst_actions_group"
+GROUP_INST_ACTIONS_WAIT = "scenario.inst_actions_wait_group"
 
 
 class InstanceActionsRunnerFactory(test_runners.RunnerFactory):
@@ -29,8 +31,10 @@ class InstanceActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceActionsRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
+@test(depends_on_groups=[instance_create_group.GROUP],
+      groups=[GROUP, GROUP_INST_ACTIONS])
 class InstanceActionsGroup(TestGroup):
+    """Test Instance Actions functionality."""
 
     def __init__(self):
         super(InstanceActionsGroup, self).__init__(
@@ -50,3 +54,18 @@ class InstanceActionsGroup(TestGroup):
     def instance_resize_flavor(self):
         """Resize instance flavor."""
         self.test_runner.run_instance_resize_flavor()
+
+
+@test(depends_on_groups=[GROUP_INST_ACTIONS],
+      groups=[GROUP, GROUP_INST_ACTIONS_WAIT])
+class InstanceActionsWaitGroup(TestGroup):
+    """Test that Instance Actions Completes."""
+
+    def __init__(self):
+        super(InstanceActionsWaitGroup, self).__init__(
+            InstanceActionsRunnerFactory.instance())
+
+    @test
+    def wait_for_instance_resize_flavor(self):
+        """Wait for resize instance flavor to complete."""
+        self.test_runner.run_wait_for_instance_resize_flavor()
