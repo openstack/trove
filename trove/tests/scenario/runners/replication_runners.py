@@ -220,7 +220,7 @@ class ReplicationRunner(TestRunner):
             self.test_helper.remove_data(data_set, host)
 
     def run_detach_replica_from_source(self,
-                                       expected_states=['ACTIVE'],
+                                       expected_states=['DETACH', 'ACTIVE'],
                                        expected_http_code=202):
         self.assert_detach_replica_from_source(
             self.instance_info.id, self.replica_1_id,
@@ -236,7 +236,7 @@ class ReplicationRunner(TestRunner):
             replica_id, expected_states, expected_http_code)
 
         self._assert_is_master(master_id, other_replica_ids)
-        self._assert_is_not_replica(replica_id, master_id)
+        self._assert_is_not_replica(replica_id)
 
     def assert_detach_replica(
             self, replica_id, expected_states, expected_http_code):
@@ -245,13 +245,19 @@ class ReplicationRunner(TestRunner):
         self.assert_instance_action(
             replica_id, expected_states, expected_http_code)
 
-    def _assert_is_not_replica(self, instance_id, master_id):
-        try:
-            self._assert_is_replica(instance_id, master_id)
-            self.fail("Non-replica '%s' is still replica of '%s'" %
-                      (instance_id, master_id))
-        except AssertionError:
-            pass
+    def _assert_is_not_replica(self, instance_id):
+        instance = self.get_instance(instance_id)
+        self.assert_client_code(200)
+
+        if 'replica_of' not in instance._info:
+            try:
+                self._validate_replica(instance_id)
+                self.fail("The instance is still configured as a replica "
+                          "after detached: %s" % instance_id)
+            except AssertionError:
+                pass
+        else:
+            self.fail("Unexpected replica_of ID.")
 
     def run_delete_detached_replica(self,
                                     expected_last_state=['SHUTDOWN'],

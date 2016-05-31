@@ -99,6 +99,7 @@ class InstanceStatus(object):
     RESTART_REQUIRED = "RESTART_REQUIRED"
     PROMOTE = "PROMOTE"
     EJECT = "EJECT"
+    DETACH = "DETACH"
 
 
 def validate_volume_size(size):
@@ -301,6 +302,8 @@ class SimpleInstance(object):
             return InstanceStatus.EJECT
         if InstanceTasks.LOGGING.action == action:
             return InstanceStatus.LOGGING
+        if InstanceTasks.DETACHING.action == action:
+            return InstanceStatus.DETACH
 
         # Check for server status.
         if self.db_info.server_status in ["BUILD", "ERROR", "REBOOT",
@@ -1002,6 +1005,9 @@ class Instance(BuiltInstance):
         if not self.slave_of_id:
             raise exception.BadRequest(_("Instance %s is not a replica.")
                                        % self.id)
+
+        self.update_db(task_status=InstanceTasks.DETACHING)
+
         task_api.API(self.context).detach_replica(self.id)
 
     def promote_to_replica_source(self):

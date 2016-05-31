@@ -1178,6 +1178,9 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         except (GuestError, GuestTimeout):
             LOG.exception(_("Failed to detach replica %s.") % self.id)
             raise
+        finally:
+            if not for_failover:
+                self.reset_task_status()
 
     def attach_replica(self, master):
         LOG.debug("Calling attach_replica on %s" % self.id)
