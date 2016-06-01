@@ -193,10 +193,11 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
         self.orig_DBI_find_by = DBInstance.find_by
         self.userdata = "hello moto"
         self.guestconfig_content = "guest config"
-        with NamedTemporaryFile(suffix=".cloudinit", delete=False) as f:
+        with NamedTemporaryFile(mode="w", suffix=".cloudinit",
+                                delete=False) as f:
             self.cloudinit = f.name
             f.write(self.userdata)
-        with NamedTemporaryFile(delete=False) as f:
+        with NamedTemporaryFile(mode="w", delete=False) as f:
             self.guestconfig = f.name
             f.write(self.guestconfig_content)
         self.freshinstancetasks = taskmanager_models.FreshInstanceTasks(
