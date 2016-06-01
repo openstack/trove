@@ -15,6 +15,7 @@
 #
 
 import hashlib
+import json
 
 from oslo_log import log as logging
 
@@ -64,8 +65,12 @@ class StreamReader(object):
         return '%s_%08d' % (self.base_filename, self.file_number)
 
     @property
-    def prefix(self):
-        return '%s/%s_' % (self.container, self.base_filename)
+    def first_segment(self):
+        return '%s_%08d' % (self.base_filename, 0)
+
+    @property
+    def segment_path(self):
+        return '%s/%s' % (self.container, self.segment)
 
     def read(self, chunk_size=CHUNK_SIZE):
         if self.end_of_segment:
@@ -97,29 +102,40 @@ class SwiftStorage(base.Storage):
         super(SwiftStorage, self).__init__(*args, **kwargs)
         self.connection = create_swift_client(self.context)
 
-    def save(self, filename, stream):
+    def save(self, filename, stream, metadata=None):
         """Persist information from the stream to swift.
 
         The file is saved to the location <BACKUP_CONTAINER>/<filename>.
+        It will be a Swift Static Large Object (SLO).
         The filename is defined on the backup runner manifest property
         which is typically in the format '<backup_id>.<ext>.gz'
         """
 
+        LOG.info(_('Saving %(filename)s to %(container)s in swift.')
+                 % {'filename': filename, 'container': BACKUP_CONTAINER})
+
         # Create the container if it doesn't already exist
+        LOG.debug('Creating container %s.' % BACKUP_CONTAINER)
         self.connection.put_container(BACKUP_CONTAINER)
 
         # Swift Checksum is the checksum of the concatenated segment checksums
         swift_checksum = hashlib.md5()
 
         # Wrap the output of the backup process to segment it for swift
-        stream_reader = StreamReader(stream, filename)
+        stream_reader = StreamReader(stream, filename, MAX_FILE_SIZE)
+        LOG.debug('Using segment size %s' % stream_reader.max_file_size)
 
         url = self.connection.url
         # Full location where the backup manifest is stored
         location = "%s/%s/%s" % (url, BACKUP_CONTAINER, filename)
 
+        # Information about each segment upload job
+        segment_results = []
+
         # Read from the stream and write to the container in swift
         while not stream_reader.end_of_file:
+            LOG.debug('Saving segment %s.' % stream_reader.segment)
+            path = stream_reader.segment_path
             etag = self.connection.put_object(BACKUP_CONTAINER,
                                               stream_reader.segment,
                                               stream_reader)
@@ -134,30 +150,71 @@ class SwiftStorage(base.Storage):
                           {'tag': etag, 'checksum': segment_checksum})
                 return False, "Error saving data to Swift!", None, location
 
+            segment_results.append({
+                'path': path,
+                'etag': etag,
+                'size_bytes': stream_reader.segment_length
+            })
+
             swift_checksum.update(segment_checksum)
 
-        # Create the manifest file
-        # We create the manifest file after all the segments have been uploaded
-        # so a partial swift object file can't be downloaded; if the manifest
-        # file exists then all segments have been uploaded so the whole backup
-        # file can be downloaded.
-        headers = {'X-Object-Manifest': stream_reader.prefix}
-        # The etag returned from the manifest PUT is the checksum of the
-        # manifest object (which is empty); this is not the checksum we want
-        self.connection.put_object(BACKUP_CONTAINER,
-                                   filename,
-                                   contents='',
-                                   headers=headers)
+        # All segments uploaded.
+        num_segments = len(segment_results)
+        LOG.debug('File uploaded in %s segments.' % num_segments)
 
+        # An SLO will be generated if the backup was more than one segment in
+        # length.
+        large_object = num_segments > 1
+
+        # Meta data is stored as headers
+        if metadata is None:
+            metadata = {}
+        metadata.update(stream.metadata())
+        headers = {}
+        for key, value in metadata.iteritems():
+            headers[self._set_attr(key)] = value
+
+        LOG.debug('Metadata headers: %s' % str(headers))
+        if large_object:
+            LOG.info(_('Creating the manifest file.'))
+            manifest_data = json.dumps(segment_results)
+            LOG.debug('Manifest contents: %s' % manifest_data)
+            # The etag returned from the manifest PUT is the checksum of the
+            # manifest object (which is empty); this is not the checksum we
+            # want.
+            self.connection.put_object(BACKUP_CONTAINER,
+                                       filename,
+                                       manifest_data,
+                                       query_string='multipart-manifest=put')
+
+            # Validation checksum is the Swift Checksum
+            final_swift_checksum = swift_checksum.hexdigest()
+        else:
+            LOG.info(_('Backup fits in a single segment. Moving segment '
+                       '%(segment)s to %(filename)s.')
+                     % {'segment': stream_reader.first_segment,
+                        'filename': filename})
+            segment_result = segment_results[0]
+            # Just rename it via a special put copy.
+            headers['X-Copy-From'] = segment_result['path']
+            self.connection.put_object(BACKUP_CONTAINER,
+                                       filename, '',
+                                       headers=headers)
+            # Delete the old segment file that was copied
+            LOG.debug('Deleting the old segment file %s.'
+                      % stream_reader.first_segment)
+            self.connection.delete_object(BACKUP_CONTAINER,
+                                          stream_reader.first_segment)
+            final_swift_checksum = segment_result['etag']
+
+        # Validate the object by comparing checksums
+        # Get the checksum according to Swift
         resp = self.connection.head_object(BACKUP_CONTAINER, filename)
         # swift returns etag in double quotes
         # e.g. '"dc3b0827f276d8d78312992cc60c2c3f"'
         etag = resp['etag'].strip('"')
 
-        # Check the checksum of the concatenated segment checksums against
-        # swift manifest etag.
         # Raise an error and mark backup as failed
-        final_swift_checksum = swift_checksum.hexdigest()
         if etag != final_swift_checksum:
             LOG.error(
                 _("Error saving data to swift. Manifest "
@@ -229,8 +286,7 @@ class SwiftStorage(base.Storage):
 
         storage_url, container, filename = self._explodeLocation(location)
 
-        _headers = self.connection.head_object(container, filename)
-        headers = {'X-Object-Manifest': _headers.get('x-object-manifest')}
+        headers = {}
         for key, value in metadata.items():
             headers[self._set_attr(key)] = value
 

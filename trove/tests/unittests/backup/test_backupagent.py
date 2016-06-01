@@ -106,7 +106,7 @@ class MockSwift(object):
         self.etag.update(self.store)
         return self.etag.hexdigest()
 
-    def save(self, filename, stream):
+    def save(self, filename, stream, metadata=None):
         location = '%s/%s/%s' % (self.url, self.container, filename)
         return True, 'w00t', 'fake-checksum', location
 
@@ -128,7 +128,7 @@ class MockStorage(Storage):
     def load(self, location, backup_checksum):
         pass
 
-    def save(self, filename, stream):
+    def save(self, filename, stream, metadata=None):
         pass
 
     def load_metadata(self, location, checksum):
@@ -407,6 +407,8 @@ class BackupAgentTest(trove_testtools.TestCase):
                            'location': 'fake-location',
                            'type': 'InnoBackupEx',
                            'checksum': 'fake-checksum',
+                           'datastore': 'mysql',
+                           'datastore_version': '5.5'
                            }
 
             self.assertRaises(backupagent.BackupError, agent.execute_backup,
