@@ -1,5 +1,4 @@
 [DEFAULT]
-verbose = True
 debug = True
 trove_auth_url = http://0.0.0.0:5000/v2.0
 
