@@ -1,0 +1,5 @@
+---
+fixes:
+    - Fixed issue where module-apply after module-remove
+      caused module-query to skip reporting on that
+      module. Bug 1571799
