@@ -384,3 +384,7 @@ class MongodbClusterActionsRunner(ClusterActionsRunner):
 
     def run_cluster_root_enable(self):
         raise SkipTest("Operation is currently not supported.")
+
+    @property
+    def min_cluster_node_count(self):
+        return 3

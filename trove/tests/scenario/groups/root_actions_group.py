@@ -15,16 +15,13 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
+from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.root_actions_group"
-GROUP_ROOT_ACTION_INST = "scenario.root_action_inst_group"
-GROUP_ROOT_ACTION_INST_RESTORE = "scenario.root_action_inst_restore_group"
-GROUP_ROOT_ACTION_INST_RESTORE_WAIT = "scenario.root_action_inst_restore_wait"
-GROUP_ROOT_ACTION_INST_DELETE = "scenario.root_action_inst_delete_group"
 
 
 class RootActionsRunnerFactory(test_runners.RunnerFactory):
@@ -45,13 +42,13 @@ class BackupRunnerFactory2(test_runners.RunnerFactory):
     _runner_cls = 'BackupRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP],
-      groups=[GROUP, GROUP_ROOT_ACTION_INST])
-class RootActionsGroup(TestGroup):
-    """Test Root Actions functionality."""
+@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+      groups=[GROUP, groups.ROOT_ACTION_ENABLE])
+class RootActionsEnableGroup(TestGroup):
+    """Test Root Actions Enable functionality."""
 
     def __init__(self):
-        super(RootActionsGroup, self).__init__(
+        super(RootActionsEnableGroup, self).__init__(
             RootActionsRunnerFactory.instance())
         self.backup_runner = BackupRunnerFactory.instance()
         self.backup_runner2 = BackupRunnerFactory2.instance()
@@ -101,8 +98,19 @@ class RootActionsGroup(TestGroup):
         """Check the root is still enabled."""
         self.test_runner.run_check_root_enabled()
 
-    @test(depends_on=[check_root_enabled],
-          runs_after=[check_root_still_enabled])
+
+@test(depends_on_groups=[groups.ROOT_ACTION_ENABLE],
+      groups=[GROUP, groups.ROOT_ACTION_DISABLE])
+class RootActionsDisableGroup(TestGroup):
+    """Test Root Actions Disable functionality."""
+
+    def __init__(self):
+        super(RootActionsDisableGroup, self).__init__(
+            RootActionsRunnerFactory.instance())
+        self.backup_runner = BackupRunnerFactory.instance()
+        self.backup_runner2 = BackupRunnerFactory2.instance()
+
+    @test
     def disable_root(self):
         """Disable root."""
         self.test_runner.check_root_disable_supported()
@@ -122,13 +130,14 @@ class RootActionsGroup(TestGroup):
         self.backup_runner2.run_backup_create_completed()
 
 
-@test(depends_on_groups=[GROUP_ROOT_ACTION_INST],
-      groups=[GROUP, GROUP_ROOT_ACTION_INST_RESTORE])
-class RootActionsInstRestoreGroup(TestGroup):
-    """Test Root Actions Restore functionality."""
+@test(depends_on_groups=[groups.ROOT_ACTION_DISABLE],
+      groups=[GROUP, groups.ROOT_ACTION_INST, groups.ROOT_ACTION_INST_CREATE],
+      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT])
+class RootActionsInstCreateGroup(TestGroup):
+    """Test Root Actions Instance Create functionality."""
 
     def __init__(self):
-        super(RootActionsInstRestoreGroup, self).__init__(
+        super(RootActionsInstCreateGroup, self).__init__(
             RootActionsRunnerFactory.instance())
         self.backup_runner = BackupRunnerFactory.instance()
         self.backup_runner2 = BackupRunnerFactory2.instance()
@@ -136,22 +145,24 @@ class RootActionsInstRestoreGroup(TestGroup):
     @test
     def restore_root_enabled_instance(self):
         """Restore the root-enabled instance."""
-        self.backup_runner.run_restore_from_backup()
+        self.backup_runner.run_restore_from_backup(suffix='_root_enable')
 
     @test
     def restore_root_disabled_instance(self):
         """Restore the root-disabled instance."""
         self.test_runner.check_root_disable_supported()
-        self.backup_runner2.run_restore_from_backup()
+        self.backup_runner2.run_restore_from_backup(suffix='_root_disable')
 
 
-@test(depends_on_groups=[GROUP_ROOT_ACTION_INST_RESTORE],
-      groups=[GROUP, GROUP_ROOT_ACTION_INST_RESTORE_WAIT])
-class RootActionsInstRestoreWaitGroup(TestGroup):
-    """Wait for Root Actions Restore to complete."""
+@test(depends_on_groups=[groups.ROOT_ACTION_INST_CREATE],
+      groups=[GROUP, groups.ROOT_ACTION_INST,
+              groups.ROOT_ACTION_INST_CREATE_WAIT],
+      runs_after_groups=[guest_log_group.GROUP])
+class RootActionsInstCreateWaitGroup(TestGroup):
+    """Wait for Root Actions Instance Create to complete."""
 
     def __init__(self):
-        super(RootActionsInstRestoreWaitGroup, self).__init__(
+        super(RootActionsInstCreateWaitGroup, self).__init__(
             RootActionsRunnerFactory.instance())
         self.backup_runner = BackupRunnerFactory.instance()
         self.backup_runner2 = BackupRunnerFactory2.instance()
@@ -184,10 +195,10 @@ class RootActionsInstRestoreWaitGroup(TestGroup):
             instance_id, root_creds)
 
 
-@test(depends_on_groups=[GROUP_ROOT_ACTION_INST_RESTORE_WAIT],
-      groups=[GROUP, GROUP_ROOT_ACTION_INST_DELETE])
+@test(depends_on_groups=[groups.ROOT_ACTION_INST_CREATE_WAIT],
+      groups=[GROUP, groups.ROOT_ACTION_INST, groups.ROOT_ACTION_INST_DELETE])
 class RootActionsInstDeleteGroup(TestGroup):
-    """Test Root Actions Delete functionality."""
+    """Test Root Actions Instance Delete functionality."""
 
     def __init__(self):
         super(RootActionsInstDeleteGroup, self).__init__(
@@ -216,3 +227,27 @@ class RootActionsInstDeleteGroup(TestGroup):
         """Delete the root-disabled instance backup."""
         self.test_runner.check_root_disable_supported()
         self.backup_runner2.run_delete_backup()
+
+
+@test(depends_on_groups=[groups.ROOT_ACTION_INST_DELETE],
+      groups=[GROUP, groups.ROOT_ACTION_INST,
+              groups.ROOT_ACTION_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
+class RootActionsInstDeleteWaitGroup(TestGroup):
+    """Wait for Root Actions Instance Delete to complete."""
+
+    def __init__(self):
+        super(RootActionsInstDeleteWaitGroup, self).__init__(
+            RootActionsRunnerFactory.instance())
+        self.backup_runner = BackupRunnerFactory.instance()
+        self.backup_runner2 = BackupRunnerFactory2.instance()
+
+    @test
+    def wait_for_restored_instance_delete(self):
+        """Wait for the root-enabled instance to be deleted."""
+        self.backup_runner.run_wait_for_restored_instance_delete()
+
+    @test
+    def wait_for_restored_instance2_delete(self):
+        """Wait for the root-disabled instance to be deleted."""
+        self.backup_runner2.run_wait_for_restored_instance_delete()

@@ -15,17 +15,13 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
+from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.user_actions_group"
-GROUP_USR_ACTION_INST = "scenario.usr_action_inst_group"
-GROUP_USR_ACTION_INST_CREATE = "scenario.usr_action_inst_create_group"
-GROUP_USR_ACTION_INST_CREATE_WAIT = "scenario.usr_action_inst_create_wait_grp"
-GROUP_USR_ACTION_INST_DELETE = "scenario.usr_action_inst_delete_group"
-GROUP_USR_ACTION_INST_DELETE_WAIT = "scenario.usr_action_inst_delete_wait_grp"
 
 
 class UserActionsRunnerFactory(test_runners.RunnerFactory):
@@ -46,13 +42,13 @@ class DatabaseActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'DatabaseActionsRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP],
-      groups=[GROUP, GROUP_USR_ACTION_INST])
-class UserActionsGroup(TestGroup):
-    """Test User Actions functionality."""
+@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+      groups=[GROUP, groups.USER_ACTION_CREATE])
+class UserActionsCreateGroup(TestGroup):
+    """Test User Actions Create functionality."""
 
     def __init__(self):
-        super(UserActionsGroup, self).__init__(
+        super(UserActionsCreateGroup, self).__init__(
             UserActionsRunnerFactory.instance())
         self.database_actions_runner = DatabaseActionsRunnerFactory.instance()
 
@@ -139,56 +135,67 @@ class UserActionsGroup(TestGroup):
         """Update an existing user."""
         self.test_runner.run_user_attribute_update()
 
-    @test(depends_on=[create_users],
-          runs_after=[update_user_attributes])
-    def delete_user(self):
-        """Delete the created users."""
-        self.test_runner.run_user_delete()
-
-    @test(runs_after=[delete_user])
+    @test
     def show_nonexisting_user(self):
-        """Delete non-existing users."""
+        """Ensure show on non-existing user fails."""
         self.test_runner.run_nonexisting_user_show()
 
-    @test(runs_after=[show_nonexisting_user])
+    @test
     def update_nonexisting_user(self):
         """Ensure updating a non-existing user fails."""
         self.test_runner.run_nonexisting_user_update()
 
-    @test(runs_after=[update_nonexisting_user])
+    @test
     def delete_nonexisting_user(self):
         """Ensure deleting a non-existing user fails."""
         self.test_runner.run_nonexisting_user_delete()
 
-    @test(runs_after=[delete_nonexisting_user])
+    @test
     def create_system_user(self):
         """Ensure creating a system user fails."""
         self.test_runner.run_system_user_create()
 
-    @test(runs_after=[create_system_user])
+    @test
     def show_system_user(self):
         """Ensure showing a system user fails."""
         self.test_runner.run_system_user_show()
 
-    @test(runs_after=[show_system_user])
+    @test
     def update_system_user(self):
         """Ensure updating a system user fails."""
         self.test_runner.run_system_user_attribute_update()
 
-    @test(runs_after=[update_system_user])
+
+@test(depends_on_groups=[groups.USER_ACTION_CREATE],
+      groups=[GROUP, groups.USER_ACTION_DELETE])
+class UserActionsDeleteGroup(TestGroup):
+    """Test User Actions Delete functionality."""
+
+    def __init__(self):
+        super(UserActionsDeleteGroup, self).__init__(
+            UserActionsRunnerFactory.instance())
+        self.database_actions_runner = DatabaseActionsRunnerFactory.instance()
+
+    @test
+    def delete_user(self):
+        """Delete the created users."""
+        self.test_runner.run_user_delete()
+
+    @test
     def delete_system_user(self):
         """Ensure deleting a system user fails."""
         self.test_runner.run_system_user_delete()
 
-    @test(depends_on=[create_user_databases], runs_after=[delete_system_user])
+    @test
     def delete_user_databases(self):
         """Delete the user databases."""
         self.database_actions_runner.run_database_delete()
 
 
-@test(groups=[GROUP, GROUP_USR_ACTION_INST_CREATE])
+@test(groups=[GROUP, groups.USER_ACTION_INST, groups.USER_ACTION_INST_CREATE],
+      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT])
 class UserActionsInstCreateGroup(TestGroup):
-    """Test User Actions Create functionality."""
+    """Test User Actions Instance Create functionality."""
 
     def __init__(self):
         super(UserActionsInstCreateGroup, self).__init__(
@@ -200,13 +207,15 @@ class UserActionsInstCreateGroup(TestGroup):
         """Create an instance with initial users."""
         self.instance_create_runner.run_initialized_instance_create(
             with_dbs=False, with_users=True, configuration_id=None,
-            create_helper_user=False)
+            create_helper_user=False, name_suffix='_user')
 
 
-@test(depends_on_groups=[GROUP_USR_ACTION_INST_CREATE],
-      groups=[GROUP, GROUP_USR_ACTION_INST_CREATE_WAIT])
+@test(depends_on_groups=[groups.USER_ACTION_INST_CREATE],
+      groups=[GROUP, groups.USER_ACTION_INST,
+              groups.USER_ACTION_INST_CREATE_WAIT],
+      runs_after_groups=[guest_log_group.GROUP])
 class UserActionsInstCreateWaitGroup(TestGroup):
-    """Wait for User Actions Create to complete."""
+    """Wait for User Actions Instance Create to complete."""
 
     def __init__(self):
         super(UserActionsInstCreateWaitGroup, self).__init__(
@@ -224,10 +233,10 @@ class UserActionsInstCreateWaitGroup(TestGroup):
         self.instance_create_runner.run_validate_initialized_instance()
 
 
-@test(depends_on_groups=[GROUP_USR_ACTION_INST_CREATE_WAIT],
-      groups=[GROUP, GROUP_USR_ACTION_INST_DELETE])
+@test(depends_on_groups=[groups.USER_ACTION_INST_CREATE_WAIT],
+      groups=[GROUP, groups.USER_ACTION_INST, groups.USER_ACTION_INST_DELETE])
 class UserActionsInstDeleteGroup(TestGroup):
-    """Test User Actions Delete functionality."""
+    """Test User Actions Instance Delete functionality."""
 
     def __init__(self):
         super(UserActionsInstDeleteGroup, self).__init__(
@@ -240,10 +249,12 @@ class UserActionsInstDeleteGroup(TestGroup):
         self.instance_create_runner.run_initialized_instance_delete()
 
 
-@test(depends_on_groups=[GROUP_USR_ACTION_INST_DELETE],
-      groups=[GROUP, GROUP_USR_ACTION_INST_DELETE_WAIT])
+@test(depends_on_groups=[groups.USER_ACTION_INST_DELETE],
+      groups=[GROUP, groups.USER_ACTION_INST,
+              groups.USER_ACTION_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
 class UserActionsInstDeleteWaitGroup(TestGroup):
-    """Wait for User Actions Delete to complete."""
+    """Wait for User Actions Instance Delete to complete."""
 
     def __init__(self):
         super(UserActionsInstDeleteWaitGroup, self).__init__(

@@ -15,16 +15,8 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import backup_group
-from trove.tests.scenario.groups import configuration_group
-from trove.tests.scenario.groups import database_actions_group
-from trove.tests.scenario.groups import instance_actions_group
-from trove.tests.scenario.groups import instance_create_group
-from trove.tests.scenario.groups import module_group
-from trove.tests.scenario.groups import replication_group
-from trove.tests.scenario.groups import root_actions_group
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
-from trove.tests.scenario.groups import user_actions_group
 from trove.tests.scenario.runners import test_runners
 
 
@@ -37,17 +29,23 @@ class InstanceDeleteRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'InstanceDeleteRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP],
-      groups=[GROUP],
-      runs_after_groups=[backup_group.GROUP_BACKUP,
-                         configuration_group.GROUP,
-                         database_actions_group.GROUP,
-                         instance_actions_group.GROUP,
-                         module_group.GROUP,
-                         replication_group.GROUP,
-                         root_actions_group.GROUP,
-                         user_actions_group.GROUP])
+@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+      groups=[GROUP, groups.INST_DELETE],
+      runs_after_groups=[groups.INST_INIT_DELETE,
+                         groups.INST_ACTIONS,
+                         groups.INST_ACTIONS_RESIZE_WAIT,
+                         groups.BACKUP_INST_DELETE,
+                         groups.BACKUP_INC_INST_DELETE,
+                         groups.CFGGRP_INST_DELETE,
+                         groups.DB_ACTION_DELETE,
+                         groups.DB_ACTION_INST_DELETE,
+                         groups.MODULE_INST_DELETE,
+                         groups.REPL_INST_DELETE_WAIT,
+                         groups.ROOT_ACTION_INST_DELETE,
+                         groups.USER_ACTION_DELETE,
+                         groups.USER_ACTION_INST_DELETE])
 class InstanceDeleteGroup(TestGroup):
+    """Test Instance Delete functionality."""
 
     def __init__(self):
         super(InstanceDeleteGroup, self).__init__(
@@ -57,3 +55,26 @@ class InstanceDeleteGroup(TestGroup):
     def instance_delete(self):
         """Delete an existing instance."""
         self.test_runner.run_instance_delete()
+
+
+@test(depends_on_groups=[groups.INST_DELETE],
+      groups=[GROUP, groups.INST_DELETE_WAIT],
+      runs_after_groups=[groups.BACKUP_INST_DELETE_WAIT,
+                         groups.BACKUP_INC_INST_DELETE_WAIT,
+                         groups.CFGGRP_INST_DELETE_WAIT,
+                         groups.DB_ACTION_INST_DELETE_WAIT,
+                         groups.MODULE_INST_DELETE_WAIT,
+                         groups.REPL_INST_DELETE_WAIT,
+                         groups.ROOT_ACTION_INST_DELETE_WAIT,
+                         groups.USER_ACTION_INST_DELETE_WAIT])
+class InstanceDeleteWaitGroup(TestGroup):
+    """Test that Instance Delete Completes."""
+
+    def __init__(self):
+        super(InstanceDeleteWaitGroup, self).__init__(
+            InstanceDeleteRunnerFactory.instance())
+
+    @test
+    def instance_delete_wait(self):
+        """Wait for existing instance to be gone."""
+        self.test_runner.run_instance_delete_wait()

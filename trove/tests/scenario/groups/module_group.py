@@ -16,19 +16,12 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.module_group"
-GROUP_MODULE_CREATE = "scenario.module_create_group"
-GROUP_MODULE_INST = "scenario.module_inst_group"
-GROUP_MODULE_INST_CREATE = "scenario.module_inst_create_group"
-GROUP_MODULE_INST_CREATE_WAIT = "scenario.module_inst_create_wait_group"
-GROUP_MODULE_INST_DELETE = "scenario.module_inst_delete_group"
-GROUP_MODULE_INST_DELETE_WAIT = "scenario.module_inst_delete_wait_group"
-GROUP_MODULE_DELETE = "scenario.module_delete_group"
 
 
 class ModuleRunnerFactory(test_runners.RunnerFactory):
@@ -37,12 +30,12 @@ class ModuleRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ModuleRunner'
 
 
-@test(groups=[GROUP, GROUP_MODULE_CREATE])
-class ModuleGroup(TestGroup):
-    """Test Module functionality."""
+@test(groups=[GROUP, groups.MODULE_CREATE])
+class ModuleCreateGroup(TestGroup):
+    """Test Module Create functionality."""
 
     def __init__(self):
-        super(ModuleGroup, self).__init__(
+        super(ModuleCreateGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
     @test
@@ -292,14 +285,13 @@ class ModuleGroup(TestGroup):
         self.test_runner.run_module_update_non_admin_invisible_any()
 
 
-@test(depends_on_groups=[instance_create_group.GROUP,
-                         GROUP_MODULE_CREATE],
-      groups=[GROUP, GROUP_MODULE_INST, GROUP_MODULE_INST_CREATE])
-class ModuleInstanceCreateGroup(TestGroup):
-    """Test Instance Module Create functionality."""
+@test(depends_on_groups=[groups.INST_CREATE_WAIT, groups.MODULE_CREATE],
+      groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_CREATE])
+class ModuleInstCreateGroup(TestGroup):
+    """Test Module Instance Create functionality."""
 
     def __init__(self):
-        super(ModuleInstanceCreateGroup, self).__init__(
+        super(ModuleInstCreateGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
     @test
@@ -379,13 +371,14 @@ class ModuleInstanceCreateGroup(TestGroup):
         self.test_runner.run_module_query_empty()
 
 
-@test(depends_on_groups=[GROUP_MODULE_INST_CREATE],
-      groups=[GROUP, GROUP_MODULE_INST, GROUP_MODULE_INST_CREATE_WAIT])
-class ModuleInstanceCreateWaitGroup(TestGroup):
-    """Test that Instance Module Create Completes."""
+@test(depends_on_groups=[groups.MODULE_INST_CREATE],
+      groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_CREATE_WAIT],
+      runs_after_groups=[groups.INST_ACTIONS])
+class ModuleInstCreateWaitGroup(TestGroup):
+    """Test that Module Instance Create Completes."""
 
     def __init__(self):
-        super(ModuleInstanceCreateWaitGroup, self).__init__(
+        super(ModuleInstCreateWaitGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
     @test
@@ -423,13 +416,13 @@ class ModuleInstanceCreateWaitGroup(TestGroup):
         self.test_runner.run_module_delete_auto_applied()
 
 
-@test(depends_on_groups=[GROUP_MODULE_INST_CREATE_WAIT],
-      groups=[GROUP, GROUP_MODULE_INST, GROUP_MODULE_INST_DELETE])
-class ModuleInstanceDeleteGroup(TestGroup):
-    """Test Instance Module Delete functionality."""
+@test(depends_on_groups=[groups.MODULE_INST_CREATE_WAIT],
+      groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_DELETE])
+class ModuleInstDeleteGroup(TestGroup):
+    """Test Module Instance Delete functionality."""
 
     def __init__(self):
-        super(ModuleInstanceDeleteGroup, self).__init__(
+        super(ModuleInstDeleteGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
     @test
@@ -438,13 +431,14 @@ class ModuleInstanceDeleteGroup(TestGroup):
         self.test_runner.run_delete_inst_with_mods()
 
 
-@test(depends_on_groups=[GROUP_MODULE_INST_DELETE],
-      groups=[GROUP, GROUP_MODULE_INST, GROUP_MODULE_INST_DELETE_WAIT])
-class ModuleInstanceDeleteWaitGroup(TestGroup):
-    """Test that Instance Module Delete Completes."""
+@test(depends_on_groups=[groups.MODULE_INST_DELETE],
+      groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
+class ModuleInstDeleteWaitGroup(TestGroup):
+    """Test that Module Instance Delete Completes."""
 
     def __init__(self):
-        super(ModuleInstanceDeleteWaitGroup, self).__init__(
+        super(ModuleInstDeleteWaitGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
     @test
@@ -453,9 +447,9 @@ class ModuleInstanceDeleteWaitGroup(TestGroup):
         self.test_runner.run_wait_for_delete_inst_with_mods()
 
 
-@test(depends_on_groups=[GROUP_MODULE_CREATE],
-      runs_after_groups=[GROUP_MODULE_INST_DELETE_WAIT],
-      groups=[GROUP, GROUP_MODULE_DELETE])
+@test(depends_on_groups=[groups.MODULE_CREATE],
+      runs_after_groups=[groups.MODULE_INST_DELETE_WAIT],
+      groups=[GROUP, groups.MODULE_DELETE])
 class ModuleDeleteGroup(TestGroup):
     """Test Module Delete functionality."""
 
@@ -463,48 +457,41 @@ class ModuleDeleteGroup(TestGroup):
         super(ModuleDeleteGroup, self).__init__(
             ModuleRunnerFactory.instance())
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE])
     def module_delete_non_existent(self):
         """Ensure delete non-existent module fails."""
         self.test_runner.run_module_delete_non_existent()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE])
     def module_delete_unauth_user(self):
         """Ensure delete module by unauth user fails."""
         self.test_runner.run_module_delete_unauth_user()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete_unauth_user])
+    @test(runs_after=[module_delete_unauth_user,
+                      module_delete_non_existent])
     def module_delete_hidden_by_non_admin(self):
         """Ensure delete hidden module by non-admin user fails."""
         self.test_runner.run_module_delete_hidden_by_non_admin()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete_hidden_by_non_admin])
+    @test(runs_after=[module_delete_hidden_by_non_admin])
     def module_delete_all_tenant_by_non_admin(self):
         """Ensure delete all tenant module by non-admin user fails."""
         self.test_runner.run_module_delete_all_tenant_by_non_admin()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete_all_tenant_by_non_admin])
+    @test(runs_after=[module_delete_all_tenant_by_non_admin])
     def module_delete_auto_by_non_admin(self):
         """Ensure delete auto-apply module by non-admin user fails."""
         self.test_runner.run_module_delete_auto_by_non_admin()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete_auto_by_non_admin])
+    @test(runs_after=[module_delete_auto_by_non_admin])
     def module_delete(self):
         """Check that delete module works."""
         self.test_runner.run_module_delete()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete])
+    @test(runs_after=[module_delete])
     def module_delete_admin(self):
         """Check that delete module works for admin."""
         self.test_runner.run_module_delete_admin()
 
-    @test(groups=[GROUP, GROUP_MODULE_DELETE],
-          runs_after=[module_delete_admin])
+    @test(runs_after=[module_delete_admin])
     def module_delete_remaining(self):
         """Delete all remaining test modules."""
         self.test_runner.run_module_delete_existing()

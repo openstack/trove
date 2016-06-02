@@ -365,9 +365,10 @@ class BackupRunner(BackupRunnerMixin):
     def run_wait_for_inc_backup_2(self):
         self._verify_backup(self.backup_inc_2_info.id)
 
-    def run_restore_from_backup(self, expected_http_code=200):
+    def run_restore_from_backup(self, expected_http_code=200, suffix=''):
         self.restore_instance_id = self.assert_restore_from_backup(
-            self.backup_info.id, expected_http_code=expected_http_code)
+            self.backup_info.id, suffix=suffix,
+            expected_http_code=expected_http_code)
 
     def assert_restore_from_backup(self, backup_ref, suffix='',
                                    expected_http_code=200):
@@ -391,7 +392,7 @@ class BackupRunner(BackupRunnerMixin):
 
     def run_restore_from_inc_1_backup(self, expected_http_code=200):
         self.restore_inc_1_instance_id = self.assert_restore_from_backup(
-            self.backup_inc_1_info.id, '_inc_1',
+            self.backup_inc_1_info.id, suffix='_inc_1',
             expected_http_code=expected_http_code)
 
     def run_restore_from_backup_completed(

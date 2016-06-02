@@ -29,10 +29,7 @@ from trove.tests.scenario.runners.test_runners import TestRunner
 class ModuleRunner(TestRunner):
 
     def __init__(self):
-        self.TIMEOUT_MODULE_APPLY = 60 * 10
-
-        super(ModuleRunner, self).__init__(
-            timeout=self.TIMEOUT_MODULE_APPLY)
+        super(ModuleRunner, self).__init__()
 
         self.MODULE_CONTENTS_PATTERN = 'Message=%s\n'
         self.MODULE_MESSAGE_PATTERN = 'Hello World from: %s'
@@ -842,7 +839,7 @@ class ModuleRunner(TestRunner):
 
     def run_create_inst_with_mods(self, expected_http_code=200):
         self.mod_inst_id = self.assert_inst_mod_create(
-            self.main_test_module.id, 'module_1', expected_http_code)
+            self.main_test_module.id, '_module', expected_http_code)
 
     def assert_inst_mod_create(self, module_id, name_suffix,
                                expected_http_code):

@@ -15,7 +15,8 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
+from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
@@ -35,13 +36,17 @@ class ReplicationRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ReplicationRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP],
-      groups=[GROUP, GROUP_REPL_CREATE])
-class ReplicationCreateGroup(TestGroup):
-    """Test Replication Create functionality."""
+@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+      groups=[GROUP, groups.REPL_INST_CREATE],
+      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT,
+                         groups.USER_ACTION_INST_DELETE,
+                         groups.ROOT_ACTION_INST_DELETE,
+                         guest_log_group.GROUP])
+class ReplicationInstCreateGroup(TestGroup):
+    """Test Replication Instance Create functionality."""
 
     def __init__(self):
-        super(ReplicationCreateGroup, self).__init__(
+        super(ReplicationInstCreateGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
@@ -65,13 +70,14 @@ class ReplicationCreateGroup(TestGroup):
         self.test_runner.run_create_single_replica()
 
 
-@test(depends_on_groups=[GROUP_REPL_CREATE],
-      groups=[GROUP, GROUP_REPL_CREATE_WAIT])
-class ReplicationCreateWaitGroup(TestGroup):
-    """Wait for Replication Create to complete."""
+@test(depends_on_groups=[groups.REPL_INST_CREATE],
+      groups=[GROUP, groups.REPL_INST_CREATE_WAIT],
+      runs_after_groups=[groups.INST_INIT_DELETE_WAIT])
+class ReplicationInstCreateWaitGroup(TestGroup):
+    """Wait for Replication Instance Create to complete."""
 
     def __init__(self):
-        super(ReplicationCreateWaitGroup, self).__init__(
+        super(ReplicationInstCreateWaitGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
@@ -110,13 +116,13 @@ class ReplicationCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_replica_data_after_single()
 
 
-@test(depends_on_groups=[GROUP_REPL_CREATE_WAIT],
-      groups=[GROUP, GROUP_REPL_MULTI_CREATE])
-class ReplicationMultiCreateGroup(TestGroup):
-    """Test Replication Multi-Create functionality."""
+@test(depends_on_groups=[groups.REPL_INST_CREATE_WAIT],
+      groups=[GROUP, groups.REPL_INST_MULTI_CREATE])
+class ReplicationInstMultiCreateGroup(TestGroup):
+    """Test Replication Instance Multi-Create functionality."""
 
     def __init__(self):
-        super(ReplicationMultiCreateGroup, self).__init__(
+        super(ReplicationInstMultiCreateGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
@@ -124,7 +130,19 @@ class ReplicationMultiCreateGroup(TestGroup):
         """Test creating multiple replicas."""
         self.test_runner.run_create_multiple_replicas()
 
-    @test(runs_after=[create_multiple_replicas])
+
+@test(depends_on_groups=[groups.REPL_INST_CREATE_WAIT],
+      groups=[GROUP, groups.REPL_INST_DELETE_NON_AFFINITY_WAIT],
+      runs_after_groups=[groups.REPL_INST_MULTI_CREATE,
+                         groups.USER_ACTION_DELETE])
+class ReplicationInstDeleteNonAffReplWaitGroup(TestGroup):
+    """Wait for Replication Instance Non-Affinity repl to be gone."""
+
+    def __init__(self):
+        super(ReplicationInstDeleteNonAffReplWaitGroup, self).__init__(
+            ReplicationRunnerFactory.instance())
+
+    @test
     def wait_for_delete_non_affinity_repl(self):
         """Wait for the non-affinity replica to delete."""
         self.test_runner.run_wait_for_delete_non_affinity_repl()
@@ -135,13 +153,13 @@ class ReplicationMultiCreateGroup(TestGroup):
         self.test_runner.run_delete_non_affinity_master()
 
 
-@test(depends_on_groups=[GROUP_REPL_MULTI_CREATE],
-      groups=[GROUP, GROUP_REPL_MULTI_CREATE_WAIT])
-class ReplicationMultiCreateWaitGroup(TestGroup):
-    """Wait for Replication Multi-Create to complete."""
+@test(depends_on_groups=[groups.REPL_INST_DELETE_NON_AFFINITY_WAIT],
+      groups=[GROUP, groups.REPL_INST_MULTI_CREATE_WAIT])
+class ReplicationInstMultiCreateWaitGroup(TestGroup):
+    """Wait for Replication Instance Multi-Create to complete."""
 
     def __init__(self):
-        super(ReplicationMultiCreateWaitGroup, self).__init__(
+        super(ReplicationInstMultiCreateWaitGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
@@ -270,13 +288,13 @@ class ReplicationMultiCreateWaitGroup(TestGroup):
         self.test_runner.run_detach_replica_from_source()
 
 
-@test(depends_on_groups=[GROUP_REPL_MULTI_CREATE_WAIT],
-      groups=[GROUP, GROUP_REPL_DELETE])
-class ReplicationDeleteGroup(TestGroup):
-    """Test Replication Delete functionality."""
+@test(depends_on_groups=[groups.REPL_INST_MULTI_CREATE_WAIT],
+      groups=[GROUP, groups.REPL_INST_DELETE])
+class ReplicationInstDeleteGroup(TestGroup):
+    """Test Replication Instance Delete functionality."""
 
     def __init__(self):
-        super(ReplicationDeleteGroup, self).__init__(
+        super(ReplicationInstDeleteGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
@@ -290,13 +308,13 @@ class ReplicationDeleteGroup(TestGroup):
         self.test_runner.run_delete_all_replicas()
 
 
-@test(depends_on_groups=[GROUP_REPL_DELETE],
-      groups=[GROUP, GROUP_REPL_DELETE_WAIT])
-class ReplicationDeleteWaitGroup(TestGroup):
-    """Wait for Replication Delete to complete."""
+@test(depends_on_groups=[groups.REPL_INST_DELETE],
+      groups=[GROUP, groups.REPL_INST_DELETE_WAIT])
+class ReplicationInstDeleteWaitGroup(TestGroup):
+    """Wait for Replication Instance Delete to complete."""
 
     def __init__(self):
-        super(ReplicationDeleteWaitGroup, self).__init__(
+        super(ReplicationInstDeleteWaitGroup, self).__init__(
             ReplicationRunnerFactory.instance())
 
     @test
