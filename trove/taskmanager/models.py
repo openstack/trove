@@ -1046,10 +1046,16 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         LOG.debug("Begin _delete_resources for instance %s" % self.id)
         server_id = self.db_info.compute_instance_id
         old_server = self.nova_client.servers.get(server_id)
-        LOG.debug("Stopping datastore on instance %s before deleting any "
-                  "resources." % self.id)
         try:
-            self.guest.stop_db()
+            # The server may have already been marked as 'SHUTDOWN'
+            # but check for 'ACTIVE' in case of any race condition
+            # We specifically don't want to attempt to stop db if
+            # the server is in 'ERROR' or 'FAILED" state, as it will
+            # result in a long timeout
+            if self.server_status_matches(['ACTIVE', 'SHUTDOWN'], server=self):
+                LOG.debug("Stopping datastore on instance %s before deleting "
+                          "any resources." % self.id)
+                self.guest.stop_db()
         except Exception:
             LOG.exception(_("Error stopping the datastore before attempting "
                             "to delete instance id %s.") % self.id)
