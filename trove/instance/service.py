@@ -312,15 +312,6 @@ class InstanceController(wsgi.Controller):
                 return configuration_id
 
     def _modify_instance(self, context, req, instance, **kwargs):
-        """Modifies the instance using the specified keyword arguments
-        'detach_replica': ignored if not present or False, if True,
-        specifies the instance is a replica that will be detached from
-        its master
-        'configuration_id': Ignored if not present, if None, detaches an
-        an attached configuration group, if not None, attaches the
-        specified configuration group
-        """
-
         if 'detach_replica' in kwargs and kwargs['detach_replica']:
             LOG.debug("Detaching replica from source.")
             context.notification = notification.DBaaSInstanceDetach(
@@ -342,6 +333,14 @@ class InstanceController(wsgi.Controller):
                                                                   request=req))
                 with StartNotification(context, instance_id=instance.id):
                     instance.unassign_configuration()
+        if 'datastore_version' in kwargs:
+            datastore_version = datastore_models.DatastoreVersion.load(
+                instance.datastore, kwargs['datastore_version'])
+            context.notification = (
+                notification.DBaaSInstanceUpgrade(context, request=req))
+            with StartNotification(context, instance_id=instance.id,
+                                   datastore_version_id=datastore_version.id):
+                instance.upgrade(datastore_version)
         if kwargs:
             instance.update_db(**kwargs)
 
@@ -381,6 +380,10 @@ class InstanceController(wsgi.Controller):
             args['name'] = body['instance']['name']
         if 'configuration' in body['instance']:
             args['configuration_id'] = self._configuration_parse(context, body)
+        if 'datastore_version' in body['instance']:
+            args['datastore_version'] = body['instance'].get(
+                'datastore_version')
+
         self._modify_instance(context, req, instance, **args)
         return wsgi.Result(None, 202)
 

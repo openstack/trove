@@ -250,6 +250,78 @@ class CreateInstanceTest(trove_testtools.TestCase):
         self.assertIsNotNone(instance)
 
 
+class TestInstanceUpgrade(trove_testtools.TestCase):
+
+    def setUp(self):
+        self.context = trove_testtools.TroveTestContext(self, is_admin=True)
+        util.init_db()
+
+        self.datastore = datastore_models.DBDatastore.create(
+            id=str(uuid.uuid4()),
+            name='test' + str(uuid.uuid4()),
+            default_version_id=str(uuid.uuid4()))
+
+        self.datastore_version1 = datastore_models.DBDatastoreVersion.create(
+            id=self.datastore.default_version_id,
+            name='name' + str(uuid.uuid4()),
+            image_id='old_image',
+            packages=str(uuid.uuid4()),
+            datastore_id=self.datastore.id,
+            manager='test',
+            active=1)
+
+        self.datastore_version2 = datastore_models.DBDatastoreVersion.create(
+            id=str(uuid.uuid4()),
+            name='name' + str(uuid.uuid4()),
+            image_id='new_image',
+            packages=str(uuid.uuid4()),
+            datastore_id=self.datastore.id,
+            manager='test',
+            active=1)
+
+        self.safe_nova_client = models.create_nova_client
+        models.create_nova_client = nova.fake_create_nova_client
+        super(TestInstanceUpgrade, self).setUp()
+
+    def tearDown(self):
+        self.datastore.delete()
+        self.datastore_version1.delete()
+        self.datastore_version2.delete()
+        models.create_nova_client = self.safe_nova_client
+        super(TestInstanceUpgrade, self).tearDown()
+
+    @patch.object(task_api.API, 'get_client', Mock(return_value=Mock()))
+    @patch.object(task_api.API, 'upgrade')
+    def test_upgrade(self, task_upgrade):
+        instance_model = DBInstance(
+            InstanceTasks.NONE,
+            id=str(uuid.uuid4()),
+            name="TestUpgradeInstance",
+            datastore_version_id=self.datastore_version1.id)
+        instance_model.set_task_status(InstanceTasks.NONE)
+        instance_model.save()
+        instance_status = InstanceServiceStatus(
+            ServiceStatuses.RUNNING,
+            id=str(uuid.uuid4()),
+            instance_id=instance_model.id)
+        instance_status.save()
+        self.assertIsNotNone(instance_model)
+        instance = models.load_instance(models.Instance, self.context,
+                                        instance_model.id)
+
+        try:
+            instance.upgrade(self.datastore_version2)
+
+            self.assertEqual(self.datastore_version2.id,
+                             instance.db_info.datastore_version_id)
+            self.assertEqual(InstanceTasks.UPGRADING,
+                             instance.db_info.task_status)
+            self.assertTrue(task_upgrade.called)
+        finally:
+            instance_status.delete()
+            instance_model.delete()
+
+
 class TestReplication(trove_testtools.TestCase):
 
     def setUp(self):

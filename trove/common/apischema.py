@@ -370,6 +370,7 @@ instance = {
                     "replica_of": {},
                     "name": non_empty_string,
                     "configuration": configuration_id,
+                    "datastore_version": non_empty_string,
                 }
             }
         }

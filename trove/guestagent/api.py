@@ -267,6 +267,17 @@ class API(object):
                 server.stop()
                 server.wait()
 
+    def pre_upgrade(self):
+        """Prepare the guest for upgrade."""
+        LOG.debug("Sending the call to prepare the guest for upgrade.")
+        return self._call("pre_upgrade", AGENT_HIGH_TIMEOUT, self.version_cap)
+
+    def post_upgrade(self, upgrade_info):
+        """Recover the guest after upgrading the guest's image."""
+        LOG.debug("Recover the guest after upgrading the guest's image.")
+        self._call("post_upgrade", AGENT_HIGH_TIMEOUT, self.version_cap,
+                   upgrade_info=upgrade_info)
+
     def restart(self):
         """Restart the database server."""
         LOG.debug("Sending the call to restart the database process "

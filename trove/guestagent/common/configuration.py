@@ -96,7 +96,7 @@ class ConfigurationManager(object):
         """Return the current value at a given key or 'default'.
         """
         if self._value_cache is None:
-            self._refresh_cache()
+            self.refresh_cache()
 
         return self._value_cache.get(key, default)
 
@@ -139,7 +139,7 @@ class ConfigurationManager(object):
                 self._base_config_path, FileMode.ADD_READ_ALL,
                 as_root=self._requires_root)
 
-            self._refresh_cache()
+            self.refresh_cache()
 
     def has_system_override(self, change_id):
         """Return whether a given 'system' change exists.
@@ -178,7 +178,7 @@ class ConfigurationManager(object):
                 group_name, change_id, self._codec.deserialize(options))
         else:
             self._override_strategy.apply(group_name, change_id, options)
-            self._refresh_cache()
+            self.refresh_cache()
 
     def remove_system_override(self, change_id=DEFAULT_CHANGE_ID):
         """Revert a 'system' configuration change.
@@ -192,9 +192,9 @@ class ConfigurationManager(object):
 
     def _remove_override(self, group_name, change_id):
         self._override_strategy.remove(group_name, change_id)
-        self._refresh_cache()
+        self.refresh_cache()
 
-    def _refresh_cache(self):
+    def refresh_cache(self):
         self._value_cache = self.parse_configuration()
 
 

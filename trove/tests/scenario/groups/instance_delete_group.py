@@ -33,6 +33,7 @@ class InstanceDeleteRunnerFactory(test_runners.RunnerFactory):
       groups=[GROUP, groups.INST_DELETE],
       runs_after_groups=[groups.INST_INIT_DELETE,
                          groups.INST_ACTIONS,
+                         groups.INST_UPGRADE,
                          groups.INST_ACTIONS_RESIZE_WAIT,
                          groups.BACKUP_INST_DELETE,
                          groups.BACKUP_INC_INST_DELETE,

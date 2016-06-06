@@ -242,6 +242,56 @@ class MySqlManager(manager.Manager):
         if snapshot:
             self.attach_replica(context, snapshot, snapshot['config'])
 
+    def pre_upgrade(self, context):
+        app = self.mysql_app(self.mysql_app_status.get())
+        data_dir = app.get_data_dir()
+        mount_point, _data = os.path.split(data_dir)
+        save_dir = "%s/etc_mysql" % mount_point
+        save_etc_dir = "%s/etc" % mount_point
+        home_save = "%s/trove_user" % mount_point
+
+        app.status.begin_restart()
+        app.stop_db()
+
+        if operating_system.exists("/etc/my.cnf", as_root=True):
+            operating_system.create_directory(save_etc_dir, as_root=True)
+            operating_system.copy("/etc/my.cnf", save_etc_dir,
+                                  preserve=True, as_root=True)
+
+        operating_system.copy("/etc/mysql/.", save_dir,
+                              preserve=True, as_root=True)
+
+        operating_system.copy("%s/." % os.path.expanduser('~'), home_save,
+                              preserve=True, as_root=True)
+
+        self.unmount_volume(context, mount_point=data_dir)
+        return {
+            'mount_point': mount_point,
+            'save_dir': save_dir,
+            'save_etc_dir': save_etc_dir,
+            'home_save': home_save
+        }
+
+    def post_upgrade(self, context, upgrade_info):
+        app = self.mysql_app(self.mysql_app_status.get())
+        app.stop_db()
+        if 'device' in upgrade_info:
+            self.mount_volume(context, mount_point=upgrade_info['mount_point'],
+                              device_path=upgrade_info['device'],
+                              write_to_fstab=True)
+
+        if operating_system.exists(upgrade_info['save_etc_dir'],
+                                   is_directory=True, as_root=True):
+            operating_system.copy("%s/." % upgrade_info['save_etc_dir'],
+                                  "/etc", preserve=True, as_root=True)
+
+        operating_system.copy("%s/." % upgrade_info['save_dir'], "/etc/mysql",
+                              preserve=True, as_root=True)
+        operating_system.copy("%s/." % upgrade_info['home_save'],
+                              os.path.expanduser('~'),
+                              preserve=True, as_root=True)
+        app.start_mysql()
+
     def restart(self, context):
         app = self.mysql_app(self.mysql_app_status.get())
         app.restart()
