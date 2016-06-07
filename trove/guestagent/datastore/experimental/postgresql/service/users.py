@@ -13,17 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import itertools
-
 from oslo_log import log as logging
 
 from trove.common import cfg
+from trove.common import exception
 from trove.common.i18n import _
 from trove.common.notification import EndNotification
+from trove.common import pagination
 from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.access import (
     PgSqlAccess)
+from trove.guestagent.db import models
+from trove.guestagent.db.models import PostgreSQLSchema
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -51,32 +53,46 @@ class PgSqlUsers(PgSqlAccess):
             'REPLICATION',
             'LOGIN']
 
-    def _create_admin_user(self, context):
+    def _create_admin_user(self, context, databases=None):
         """Create an administrative user for Trove.
         Force password encryption.
         """
         password = utils.generate_random_password()
-        os_admin = {'_name': self.ADMIN_USER, '_password': password,
-                    '_databases': [{'_name': self.ADMIN_USER}]}
+        os_admin = models.PostgreSQLUser(self.ADMIN_USER, password)
+        if databases:
+            os_admin.databases.extend([db.serialize() for db in databases])
         self._create_user(context, os_admin, True, *self.ADMIN_OPTIONS)
 
     def create_user(self, context, users):
         """Create users and grant privileges for the specified databases.
 
-        The users parameter is a list of dictionaries in the following form:
-
-            {"_name": "", "_password": "", "_databases": [{"_name": ""}, ...]}
+        The users parameter is a list of serialized Postgres users.
         """
         with EndNotification(context):
             for user in users:
-                self._create_user(context, user, None)
+                self._create_user(
+                    context,
+                    models.PostgreSQLUser.deserialize_user(user), None)
 
     def _create_user(self, context, user, encrypt_password=None, *options):
+        """Create a user and grant privileges for the specified databases.
+
+        :param user:              User to be created.
+        :type user:               PostgreSQLUser
+
+        :param encrypt_password:  Store passwords encrypted if True.
+                                  Fallback to configured default
+                                  behavior if None.
+        :type encrypt_password:   boolean
+
+        :param options:           Other user options.
+        :type options:            list
+        """
         LOG.info(
             _("{guest_id}: Creating user {user} {with_clause}.")
             .format(
                 guest_id=CONF.guest_id,
-                user=user['_name'],
+                user=user.name,
                 with_clause=pgutil.UserQuery._build_with_clause(
                     '<SANITIZED>',
                     encrypt_password,
@@ -86,18 +102,23 @@ class PgSqlUsers(PgSqlAccess):
         )
         pgutil.psql(
             pgutil.UserQuery.create(
-                user['_name'],
-                user['_password'],
+                user.name,
+                user.password,
                 encrypt_password,
                 *options
             ),
             timeout=30,
         )
+        self._grant_access(
+            context, user.name,
+            [PostgreSQLSchema.deserialize_schema(db) for db in user.databases])
+
+    def _grant_access(self, context, username, databases):
         self.grant_access(
             context,
-            user['_name'],
+            username,
             None,
-            [d['_name'] for d in user['_databases']],
+            [db.name for db in databases],
         )
 
     def list_users(
@@ -108,121 +129,111 @@ class PgSqlUsers(PgSqlAccess):
             include_marker=False,
     ):
         """List all users on the instance along with their access permissions.
-
-        Return value is a list of dictionaries in the following form:
-
-            [{"_name": "", "_password": None, "_host": None,
-              "_databases": [{"_name": ""}, ...]}, ...]
+        Return a paginated list of serialized Postgres users.
         """
+        page, next_name = pagination.paginate_object_list(
+            self._get_users(context), 'name', limit, marker, include_marker)
+        return [db.serialize() for db in page], next_name
+
+    def _get_users(self, context):
+        """Return all non-system Postgres users on the instance."""
         results = pgutil.query(
             pgutil.UserQuery.list(ignore=cfg.get_ignored_users()),
             timeout=30,
         )
-        # Convert results into dictionaries.
-        results = (
-            {
-                '_name': r[0].strip(),
-                '_password': None,
-                '_host': None,
-                '_databases': self.list_access(context, r[0], None),
-            }
-            for r in results
-        )
+        return [self._build_user(context, row[0].strip()) for row in results]
 
-        # Force __iter__ of generator until marker found.
-        if marker is not None:
-            try:
-                item = next(results)
-                while item['_name'] != marker:
-                    item = next(results)
-            except StopIteration:
-                pass
-
-        remainder = None
-        if limit is not None:
-            remainder = results
-            results = itertools.islice(results, limit)
-
-        results = tuple(results)
-
-        next_marker = None
-        if remainder is not None:
-            try:
-                next_marker = next(remainder)
-            except StopIteration:
-                pass
-
-        return results, next_marker
+    def _build_user(self, context, username):
+        """Build a model representation of a Postgres user.
+        Include all databases it has access to.
+        """
+        user = models.PostgreSQLUser(username)
+        dbs = self.list_access(context, username, None)
+        for d in dbs:
+            user.databases.append(d)
+        return user
 
     def delete_user(self, context, user):
         """Delete the specified user.
-
-        The user parameter is a dictionary in the following form:
-
-            {"_name": ""}
         """
         with EndNotification(context):
-            LOG.info(
-                _("{guest_id}: Dropping user {name}.").format(
-                    guest_id=CONF.guest_id,
-                    name=user['_name'],
-                )
+            self._drop_user(models.PostgreSQLUser.deserialize_user(user))
+
+    def _drop_user(self, user):
+        """Drop a given Postgres user.
+
+        :param user:              User to be dropped.
+        :type user:               PostgreSQLUser
+        """
+        LOG.info(
+            _("{guest_id}: Dropping user {name}.").format(
+                guest_id=CONF.guest_id,
+                name=user.name,
             )
-            pgutil.psql(
-                pgutil.UserQuery.drop(name=user['_name']),
-                timeout=30,
-            )
+        )
+        pgutil.psql(
+            pgutil.UserQuery.drop(name=user.name),
+            timeout=30,
+        )
 
     def get_user(self, context, username, hostname):
-        """Return a single user matching the criteria.
+        """Return a serialized representation of a user with a given name.
+        """
+        user = self._find_user(context, username)
+        return user.serialize() if user is not None else None
 
-        The username and hostname parameter are strings.
-
-        The return value is a dictionary in the following form:
-
-            {"_name": "", "_host": None, "_password": None,
-             "_databases": [{"_name": ""}, ...]}
-
-        Where "_databases" is a list of databases the user has access to.
+    def _find_user(self, context, username):
+        """Lookup a user with a given username.
+        Return a new Postgres user instance or raise if no match is found.
         """
         results = pgutil.query(
             pgutil.UserQuery.get(name=username),
             timeout=30,
         )
-        results = tuple(results)
-        if len(results) < 1:
-            return None
 
-        return {
-            "_name": results[0][0],
-            "_host": None,
-            "_password": None,
-            "_databases": self.list_access(context, username, None),
-        }
+        if results:
+            return self._build_user(context, username)
+
+        return None
+
+    def user_exists(self, username):
+        """Return whether a given user exists on the instance."""
+        results = pgutil.query(
+            pgutil.UserQuery.get(name=username),
+            timeout=30,
+        )
+
+        return bool(results)
 
     def change_passwords(self, context, users):
         """Change the passwords of one or more existing users.
-
-        The users parameter is a list of dictionaries in the following form:
-
-            {"name": "", "password": ""}
+        The users parameter is a list of serialized Postgres users.
         """
         with EndNotification(context):
             for user in users:
-                self.alter_user(context, user, None)
+                self.alter_user(
+                    context,
+                    models.PostgreSQLUser.deserialize_user(user), None)
 
     def alter_user(self, context, user, encrypt_password=None, *options):
         """Change the password and options of an existing users.
 
-        The user parameter is a dictionary of the following form:
+        :param user:              User to be altered.
+        :type user:               PostgreSQLUser
 
-            {"name": "", "password": ""}
+        :param encrypt_password:  Store passwords encrypted if True.
+                                  Fallback to configured default
+                                  behavior if None.
+        :type encrypt_password:   boolean
+
+        :param options:           Other user options.
+        :type options:            list
         """
         LOG.info(
             _("{guest_id}: Altering user {user} {with_clause}.")
             .format(
                 guest_id=CONF.guest_id,
-                user=user['_name'],
+                user=user.name,
                 with_clause=pgutil.UserQuery._build_with_clause(
                     '<SANITIZED>',
                     encrypt_password,
@@ -232,8 +243,8 @@ class PgSqlUsers(PgSqlAccess):
         )
         pgutil.psql(
             pgutil.UserQuery.alter_user(
-                user['_name'],
-                user['_password'],
+                user.name,
+                user.password,
                 encrypt_password,
                 *options),
             timeout=30,
@@ -250,47 +261,42 @@ class PgSqlUsers(PgSqlAccess):
         Each key/value pair in user_attrs is optional.
         """
         with EndNotification(context):
-            if user_attrs.get('password') is not None:
-                self.change_passwords(
-                    context,
-                    (
-                        {
-                            "name": username,
-                            "password": user_attrs['password'],
-                        },
-                    ),
-                )
+            user = self._build_user(context, username)
+            new_username = user_attrs.get('name')
+            new_password = user_attrs.get('password')
 
-            if user_attrs.get('name') is not None:
-                access = self.list_access(context, username, None)
-                LOG.info(
-                    _("{guest_id}: Changing username for {old} to {new}."
-                      ).format(
-                          guest_id=CONF.guest_id,
-                          old=username,
-                          new=user_attrs['name'],
-                    )
-                )
-                pgutil.psql(
-                    pgutil.psql.UserQuery.update_name(
-                        old=username,
-                        new=user_attrs['name'],
-                    ),
-                    timeout=30,
-                )
-                # Regrant all previous access after the name change.
-                LOG.info(
-                    _("{guest_id}: Regranting permissions from {old} "
-                      "to {new}.")
-                    .format(
-                        guest_id=CONF.guest_id,
-                        old=username,
-                        new=user_attrs['name'],
-                    )
-                )
-                self.grant_access(
-                    context,
-                    username=user_attrs['name'],
-                    hostname=None,
-                    databases=(db['_name'] for db in access)
-                )
+            if new_username is not None:
+                self._rename_user(context, user, new_username)
+                # Make sure we can retrieve the renamed user.
+                user = self._find_user(context, new_username)
+                if user is None:
+                    raise exception.TroveError(_(
+                        "Renamed user %s could not be found on the instance.")
+                        % new_username)
+
+            if new_password is not None:
+                user.password = new_password
+                self.alter_user(context, user)
+
+    def _rename_user(self, context, user, new_username):
+        """Rename a given Postgres user and transfer all access to the
+        new name.
+
+        :param user:              User to be renamed.
+        :type user:               PostgreSQLUser
+        """
+        LOG.info(
+            _("{guest_id}: Changing username for {old} to {new}.").format(
+                guest_id=CONF.guest_id,
+                old=user.name,
+                new=new_username,
+            )
+        )
+        # PostgreSQL handles the permission transfer itself.
+        pgutil.psql(
+            pgutil.UserQuery.update_name(
+                old=user.name,
+                new=new_username,
+            ),
+            timeout=30,
+        )
