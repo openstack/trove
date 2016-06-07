@@ -14,7 +14,8 @@
 #    under the License.
 
 import datetime
-from oslo_utils import timeutils
+
+from trove.common import timeutils
 
 
 class LimitView(object):
@@ -27,7 +28,7 @@ class LimitView(object):
         next_avail = get_utc(self.rate_limit.get("resetTime", 0))
 
         return {"limit": {
-            "nextAvailable": timeutils.isotime(at=next_avail),
+            "nextAvailable": timeutils.isotime(next_avail),
             "remaining": self.rate_limit.get("remaining", 0),
             "unit": self.rate_limit.get("unit", ""),
             "value": self.rate_limit.get("value", ""),

@@ -18,11 +18,11 @@ import copy
 import traceback
 
 from oslo_log import log as logging
-from oslo_utils import timeutils
 
 from trove.common import cfg
 from trove.common.exception import TroveError
 from trove.common.i18n import _
+from trove.common import timeutils
 from trove.conductor import api as conductor_api
 from trove import rpc
 

@@ -19,6 +19,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common import models
 from trove.common import pagination
+from trove.common import timeutils
 from trove.common import utils
 from trove.db import db_query
 from trove.db import get_db_api
@@ -33,7 +34,7 @@ class DatabaseModelBase(models.ModelBase):
     def create(cls, **values):
         init_vals = {
             'id': utils.generate_uuid(),
-            'created': utils.utcnow(),
+            'created': timeutils.utcnow(),
         }
         if hasattr(cls, 'deleted'):
             init_vals['deleted'] = False
@@ -58,20 +59,20 @@ class DatabaseModelBase(models.ModelBase):
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
-        self['updated'] = utils.utcnow()
+        self['updated'] = timeutils.utcnow()
         LOG.debug("Saving %(name)s: %(dict)s",
                   {'name': self.__class__.__name__,
                    'dict': strutils.mask_dict_password(self.__dict__)})
         return self.db_api.save(self)
 
     def delete(self):
-        self['updated'] = utils.utcnow()
+        self['updated'] = timeutils.utcnow()
         LOG.debug("Deleting %(name)s: %(dict)s",
                   {'name': self.__class__.__name__,
                    'dict': strutils.mask_dict_password(self.__dict__)})
 
         if self.preserve_on_delete:
-            self['deleted_at'] = utils.utcnow()
+            self['deleted_at'] = timeutils.utcnow()
             self['deleted'] = True
             return self.db_api.save(self)
         else:
@@ -81,7 +82,7 @@ class DatabaseModelBase(models.ModelBase):
         for key in values:
             if hasattr(self, key):
                 setattr(self, key, values[key])
-        self['updated'] = utils.utcnow()
+        self['updated'] = timeutils.utcnow()
         return self.db_api.save(self)
 
     def __init__(self, **kwargs):

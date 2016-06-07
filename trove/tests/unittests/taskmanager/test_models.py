@@ -11,7 +11,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import datetime
 import os
 from tempfile import NamedTemporaryFile
 import uuid
@@ -23,7 +22,6 @@ from mock import Mock, MagicMock, patch, PropertyMock, call
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
 import novaclient.v2.servers
-from oslo_utils import timeutils
 from swiftclient.client import ClientException
 from testtools.matchers import Equals, Is
 
@@ -39,6 +37,7 @@ from trove.common.instance import ServiceStatuses
 from trove.common.notification import TroveInstanceModifyVolume
 from trove.common import remote
 import trove.common.template as template
+from trove.common import timeutils
 from trove.common import utils
 from trove.datastore import models as datastore_models
 import trove.db.models
@@ -651,8 +650,8 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                                  datastore_id='id-1',
                                  flavor_id='6',
                                  manager='mysql',
-                                 created=datetime.datetime.utcnow(),
-                                 updated=datetime.datetime.utcnow(),
+                                 created=timeutils.utcnow(),
+                                 updated=timeutils.utcnow(),
                                  compute_instance_id='computeinst-id-1',
                                  tenant_id='testresize-tenant-id',
                                  volume_size='1',

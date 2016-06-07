@@ -14,6 +14,7 @@
 
 
 from trove.common import cfg
+from trove.common import timeutils
 from trove.common import utils
 from trove.db import models as dbmodels
 
@@ -31,8 +32,8 @@ class Quota(dbmodels.DatabaseModelBase):
                     'hard_limit', 'id']
 
     def __init__(self, tenant_id, resource, hard_limit,
-                 id=utils.generate_uuid(), created=utils.utcnow(),
-                 update=utils.utcnow()):
+                 id=utils.generate_uuid(), created=timeutils.utcnow(),
+                 update=timeutils.utcnow()):
         self.tenant_id = tenant_id
         self.resource = resource
         self.hard_limit = hard_limit

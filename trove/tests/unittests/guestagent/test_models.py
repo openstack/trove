@@ -16,6 +16,7 @@ from datetime import datetime
 
 from mock import Mock, MagicMock, patch
 
+from trove.common import timeutils
 from trove.common import utils
 from trove.db import models as dbmodels
 from trove.db.sqlalchemy import api as dbapi
@@ -27,7 +28,7 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
     def setUp(self):
         super(AgentHeartBeatTest, self).setUp()
         self.origin_get_db_api = dbmodels.get_db_api
-        self.origin_utcnow = utils.utcnow
+        self.origin_utcnow = timeutils.utcnow
         self.origin_db_api_save = dbapi.save
         self.origin_is_valid = dbmodels.DatabaseModelBase.is_valid
         self.origin_generate_uuid = utils.generate_uuid
@@ -35,7 +36,7 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
     def tearDown(self):
         super(AgentHeartBeatTest, self).tearDown()
         dbmodels.get_db_api = self.origin_get_db_api
-        utils.utcnow = self.origin_utcnow
+        timeutils.utcnow = self.origin_utcnow
         dbapi.save = self.origin_db_api_save
         dbmodels.DatabaseModelBase.is_valid = self.origin_is_valid
         utils.generate_uuid = self.origin_generate_uuid
@@ -52,14 +53,14 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
 
     @patch('trove.db.models.DatabaseModelBase')
     def test_save(self, dmb_mock):
-        utils.utcnow = Mock()
+        timeutils.utcnow = Mock()
         dbmodels.get_db_api = MagicMock(
             return_value=dbmodels.DatabaseModelBase)
         dbapi.save = Mock()
         dbmodels.DatabaseModelBase.is_valid = Mock(return_value=True)
         self.heartBeat = models.AgentHeartBeat()
         self.heartBeat.save()
-        self.assertEqual(1, utils.utcnow.call_count)
+        self.assertEqual(1, timeutils.utcnow.call_count)
 
     def test_is_active(self):
         models.AGENT_HEARTBEAT = 10000000000

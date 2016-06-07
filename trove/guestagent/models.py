@@ -20,6 +20,7 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
+from trove.common import timeutils
 from trove.common import utils
 from trove.db import get_db_api
 from trove.db import models as dbmodels
@@ -56,7 +57,7 @@ class AgentHeartBeat(dbmodels.DatabaseModelBase):
     def save(self):
         if not self.is_valid():
             raise exception.InvalidModelError(errors=self.errors)
-        self['updated_at'] = utils.utcnow()
+        self['updated_at'] = timeutils.utcnow()
         LOG.debug("Saving %(name)s: %(dict)s",
                   {'name': self.__class__.__name__, 'dict': self.__dict__})
         return get_db_api().save(self)

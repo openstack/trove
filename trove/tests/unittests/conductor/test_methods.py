@@ -13,6 +13,7 @@
 #    under the License.
 
 from mock import patch
+from oslo_utils import timeutils
 
 from trove.backup import models as bkup_models
 from trove.backup import state
@@ -20,7 +21,6 @@ from trove.common import exception as t_exception
 from trove.common.instance import ServiceStatuses
 from trove.common import utils
 from trove.conductor import manager as conductor_manager
-from trove.guestagent.common import timeutils
 from trove.instance import models as t_models
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
@@ -151,7 +151,7 @@ class ConductorMethodTests(trove_testtools.TestCase):
         build_p = {'service_status': ServiceStatuses.BUILDING.description}
         iss_id = self._create_iss()
         iss = self._get_iss(iss_id)
-        now = timeutils.float_utcnow()
+        now = timeutils.utcnow_ts(microsecond=True)
         future = now + 60
         self.cond_mgr.heartbeat(None, self.instance_id, new_p, sent=now)
         self.cond_mgr.heartbeat(None, self.instance_id, build_p, sent=future)
@@ -164,7 +164,7 @@ class ConductorMethodTests(trove_testtools.TestCase):
         build_p = {'service_status': ServiceStatuses.BUILDING.description}
         iss_id = self._create_iss()
         iss = self._get_iss(iss_id)
-        now = timeutils.float_utcnow()
+        now = timeutils.utcnow_ts(microsecond=True)
         past = now - 60
         self.cond_mgr.heartbeat(None, self.instance_id, new_p, sent=past)
         self.cond_mgr.heartbeat(None, self.instance_id, build_p, sent=past)
@@ -176,7 +176,7 @@ class ConductorMethodTests(trove_testtools.TestCase):
         new_name = "renamed"
         bkup_id = self._create_backup(old_name)
         bkup = self._get_backup(bkup_id)
-        now = timeutils.float_utcnow()
+        now = timeutils.utcnow_ts(microsecond=True)
         future = now + 60
         self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
                                     sent=now, name=old_name)
@@ -190,7 +190,7 @@ class ConductorMethodTests(trove_testtools.TestCase):
         new_name = "renamed"
         bkup_id = self._create_backup(old_name)
         bkup = self._get_backup(bkup_id)
-        now = timeutils.float_utcnow()
+        now = timeutils.utcnow_ts(microsecond=True)
         past = now - 60
         self.cond_mgr.update_backup(None, self.instance_id, bkup_id,
                                     sent=now, name=old_name)

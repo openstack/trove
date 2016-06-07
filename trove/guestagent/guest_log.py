@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
 import enum
 import hashlib
 import os
@@ -26,6 +25,7 @@ from trove.common import exception
 from trove.common.i18n import _
 from trove.common.remote import create_swift_client
 from trove.common import stream_codecs
+from trove.common import timeutils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
 
@@ -404,7 +404,7 @@ class GuestLog(object):
             'log': self._name}
 
     def _object_name(self):
-        return 'log-%s' % str(datetime.utcnow()).replace(' ', 'T')
+        return 'log-%s' % str(timeutils.utcnow()).replace(' ', 'T')
 
     def _get_meta_details(self):
         LOG.debug("Getting meta details for '%s'", self._name)

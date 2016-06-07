@@ -15,7 +15,6 @@
 """I totally stole most of this from melange, thx guys!!!"""
 
 import collections
-import datetime
 import inspect
 import os
 import shutil
@@ -29,7 +28,6 @@ from oslo_log import log as logging
 from oslo_service import loopingcall
 from oslo_utils import importutils
 from oslo_utils import strutils
-from oslo_utils import timeutils
 from passlib import pwd
 import six
 import six.moves.urllib.parse as urlparse
@@ -46,7 +44,6 @@ import_object = importutils.import_object
 import_module = importutils.import_module
 bool_from_string = strutils.bool_from_string
 execute = processutils.execute
-isotime = timeutils.isotime
 
 
 def build_jinja_environment():
@@ -97,10 +94,6 @@ def exclude(key_values, *exclude_keys):
 
 def generate_uuid():
     return str(uuid.uuid4())
-
-
-def utcnow():
-    return datetime.datetime.utcnow()
 
 
 def raise_if_process_errored(process, exception):

@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
 import json
 
 from oslo_log import log as logging
@@ -22,6 +21,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.exception import ModelNotFoundError
 from trove.common.i18n import _
+from trove.common import timeutils
 from trove.common import utils
 from trove.datastore import models as dstore_models
 from trove.db import get_db_api
@@ -103,7 +103,7 @@ class Configuration(object):
 
     @staticmethod
     def delete(context, group):
-        deleted_at = datetime.utcnow()
+        deleted_at = timeutils.utcnow()
         Configuration.remove_all_items(context, group.id, deleted_at)
         group.deleted = True
         group.deleted_at = deleted_at
@@ -313,7 +313,7 @@ class DatastoreConfigurationParameters(object):
         config_param = DatastoreConfigurationParameters.load_parameter_by_name(
             version_id, config_param_name)
         config_param.deleted = True
-        config_param.deleted_at = datetime.utcnow()
+        config_param.deleted_at = timeutils.utcnow()
         config_param.save()
 
     @classmethod

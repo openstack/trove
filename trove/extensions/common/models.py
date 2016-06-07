@@ -18,7 +18,7 @@ from oslo_log import log as logging
 from trove.common.db import models as guest_models
 from trove.common import exception
 from trove.common.remote import create_guest_client
-from trove.common import utils
+from trove.common import timeutils
 from trove.db import get_db_api
 from trove.instance import models as base_models
 
@@ -106,7 +106,7 @@ class RootHistory(object):
     def __init__(self, instance_id, user):
         self.id = instance_id
         self.user = user
-        self.created = utils.utcnow()
+        self.created = timeutils.utcnow()
 
     def save(self):
         LOG.debug("Saving %(name)s: %(dict)s",

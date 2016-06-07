@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
-
 from oslo_log import log as logging
 import six
 
@@ -27,6 +25,7 @@ from trove.common import notification
 from trove.common.notification import StartNotification, EndNotification
 from trove.common import pagination
 from trove.common import policy
+from trove.common import timeutils
 from trove.common import wsgi
 from trove.configuration import models
 from trove.configuration.models import DBConfigurationParameter
@@ -194,7 +193,7 @@ class ConfigurationsController(wsgi.Controller):
                                name=group.name, description=group.description):
             items = self._configuration_items_list(group,
                                                    body['configuration'])
-            deleted_at = datetime.utcnow()
+            deleted_at = timeutils.utcnow()
             models.Configuration.remove_all_items(context, group.id,
                                                   deleted_at)
             models.Configuration.save(group, items)

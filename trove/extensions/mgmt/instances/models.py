@@ -19,7 +19,7 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import remote
-from trove.common import utils
+from trove.common import timeutils
 from trove.extensions.mysql import models as mysql_models
 from trove.instance import models as instance_models
 from trove import rpc
@@ -186,12 +186,11 @@ class NotificationTransformer(object):
 
     @staticmethod
     def _get_audit_period():
-        now = datetime.datetime.now()
-        audit_start = utils.isotime(
-            now - datetime.timedelta(
-                seconds=CONF.exists_notification_interval),
-            subsecond=True)
-        audit_end = utils.isotime(now, subsecond=True)
+        now = timeutils.utcnow()
+        start_time = now - datetime.timedelta(
+            seconds=CONF.exists_notification_interval)
+        audit_start = timeutils.isotime(start_time)
+        audit_end = timeutils.isotime(now)
         return audit_start, audit_end
 
     def _get_service_id(self, datastore_manager, id_map):

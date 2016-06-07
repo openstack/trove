@@ -15,13 +15,13 @@
 #
 
 from oslo_log import log as logging
+from oslo_utils import timeutils
 
 from trove.backup.state import BackupState
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.strategies.storage import get_storage_strategy
 from trove.conductor import api as conductor_api
-from trove.guestagent.common import timeutils
 from trove.guestagent.dbaas import get_filesystem_volume_stats
 from trove.guestagent.strategies.backup.base import BackupError
 from trove.guestagent.strategies.backup.base import UnknownBackupType
@@ -74,7 +74,7 @@ class BackupAgent(object):
             'state': BackupState.BUILDING,
         }
         conductor.update_backup(CONF.guest_id,
-                                sent=timeutils.float_utcnow(),
+                                sent=timeutils.utcnow_ts(microsecond=True),
                                 **backup_state)
         LOG.debug("Updated state for %s to %s.", backup_id, backup_state)
 
@@ -120,7 +120,8 @@ class BackupAgent(object):
         finally:
             LOG.info(_("Completed backup %(backup_id)s."), backup_state)
             conductor.update_backup(CONF.guest_id,
-                                    sent=timeutils.float_utcnow(),
+                                    sent=timeutils.utcnow_ts(
+                                        microsecond=True),
                                     **backup_state)
             LOG.debug("Updated state for %s to %s.",
                       backup_id, backup_state)
