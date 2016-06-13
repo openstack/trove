@@ -13,6 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
+from mock import patch
+
+from trove.common import pagination
 from trove.guestagent.common import guestagent_utils
 from trove.tests.unittests import trove_testtools
 
@@ -145,3 +149,29 @@ class TestGuestagentUtils(trove_testtools.TestCase):
         self.assertEqual('Hello!', guestagent_utils.to_bytes('Hello!'))
         self.assertEqual('', guestagent_utils.to_bytes(''))
         self.assertIsNone(guestagent_utils.to_bytes(None))
+
+    @patch.object(pagination, 'paginate_object_list')
+    def test_paginate_list(self, paginate_obj_mock):
+        limit = Mock()
+        marker = Mock()
+        include_marker = Mock()
+        test_list = [Mock(), Mock(), Mock()]
+        guestagent_utils.paginate_list(
+            test_list,
+            limit=limit, marker=marker, include_marker=include_marker)
+        paginate_obj_mock.assert_called_once_with(
+            test_list, 'name',
+            limit=limit, marker=marker, include_marker=include_marker)
+
+    def test_serialize_list(self):
+        test_list = [Mock(), Mock(), Mock()]
+        with patch.object(guestagent_utils, 'paginate_list',
+                          return_value=(test_list[:2], test_list[-2])
+                          ) as paginate_lst_mock:
+            _, next_name = guestagent_utils.serialize_list(test_list)
+            paginate_lst_mock.assert_called_once_with(
+                test_list,
+                limit=None, marker=None, include_marker=False)
+            for item in paginate_lst_mock.return_value[0]:
+                item.serialize.assert_called_once_with()
+            self.assertEqual(paginate_lst_mock.return_value[1], next_name)

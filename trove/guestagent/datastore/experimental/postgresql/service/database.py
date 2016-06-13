@@ -18,7 +18,7 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.notification import EndNotification
-from trove.common import pagination
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.db import models
 
@@ -97,9 +97,9 @@ class PgSqlDatabase(object):
         """List all databases on the instance.
         Return a paginated list of serialized Postgres databases.
         """
-        page, next_name = pagination.paginate_object_list(
-            self._get_databases(), 'name', limit, marker, include_marker)
-        return [db.serialize() for db in page], next_name
+        return guestagent_utils.serialize_list(
+            self._get_databases(),
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def _get_databases(self):
         """Return all non-system Postgres databases on the instance."""

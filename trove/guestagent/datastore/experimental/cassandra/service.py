@@ -29,7 +29,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
-from trove.common import pagination
 from trove.common.stream_codecs import IniCodec
 from trove.common.stream_codecs import PropertiesCodec
 from trove.common.stream_codecs import SafeYamlCodec
@@ -840,9 +839,9 @@ class CassandraAdmin(object):
         List all non-superuser accounts. Omit names on the ignored list.
         Return an empty set if None.
         """
-        users = [user.serialize() for user in
-                 self._get_listed_users(self.client)]
-        return pagination.paginate_list(users, limit, marker, include_marker)
+        return guestagent_utils.serialize_list(
+            self._get_listed_users(self.client),
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def _get_listed_users(self, client):
         """
@@ -1093,10 +1092,9 @@ class CassandraAdmin(object):
 
     def list_databases(self, context, limit=None, marker=None,
                        include_marker=False):
-        databases = [keyspace.serialize() for keyspace
-                     in self._get_available_keyspaces(self.client)]
-        return pagination.paginate_list(databases, limit, marker,
-                                        include_marker)
+        return guestagent_utils.serialize_list(
+            self._get_available_keyspaces(self.client),
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def _get_available_keyspaces(self, client):
         """
