@@ -115,8 +115,12 @@ function configure_trove {
         iniset_conditional $TROVE_CONF DEFAULT max_instances_per_tenant $TROVE_MAX_INSTANCES_PER_TENANT
         iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
 
-        iniset $TROVE_CONF DEFAULT rabbit_userid $RABBIT_USERID
-        iniset $TROVE_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
+        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
+        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+
+
         iniset $TROVE_CONF database connection `database_connection_url trove`
         iniset $TROVE_CONF DEFAULT default_datastore $TROVE_DATASTORE_TYPE
         setup_trove_logging $TROVE_CONF
@@ -136,8 +140,11 @@ function configure_trove {
         iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT usage_timeout $TROVE_USAGE_TIMEOUT
         iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT rabbit_userid $RABBIT_USERID
-        iniset $TROVE_TASKMANAGER_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT rpc_backend "rabbit"
+        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
+        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+
         iniset $TROVE_TASKMANAGER_CONF database connection `database_connection_url trove`
         iniset $TROVE_TASKMANAGER_CONF DEFAULT taskmanager_manager trove.taskmanager.manager.Manager
         iniset $TROVE_TASKMANAGER_CONF DEFAULT nova_proxy_admin_user radmin
@@ -149,8 +156,11 @@ function configure_trove {
 
     # (Re)create trove conductor conf file if needed
     if is_service_enabled tr-cond; then
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT rabbit_userid $RABBIT_USERID
-        iniset $TROVE_CONDUCTOR_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_CONDUCTOR_CONF DEFAULT rpc_backend "rabbit"
+        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
+        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
+        iniset $TROVE_CONDUCTOR_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+
         iniset $TROVE_CONDUCTOR_CONF database connection `database_connection_url trove`
         iniset $TROVE_CONDUCTOR_CONF DEFAULT nova_proxy_admin_user radmin
         iniset $TROVE_CONDUCTOR_CONF DEFAULT nova_proxy_admin_tenant_name trove
@@ -164,9 +174,12 @@ function configure_trove {
     iniset_conditional $TROVE_GUESTAGENT_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
     # Set up Guest Agent conf
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_userid $RABBIT_USERID
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $TROVE_HOST_GATEWAY
-    iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_password $RABBIT_PASSWORD
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT rpc_backend "rabbit"
+
+    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
+    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
+    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $TROVE_HOST_GATEWAY
+
     iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_user radmin
     iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_tenant_name trove
     iniset $TROVE_GUESTAGENT_CONF DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
