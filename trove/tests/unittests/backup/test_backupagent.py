@@ -16,7 +16,7 @@ import hashlib
 import mock
 import os
 
-from mock import Mock, MagicMock, patch, ANY, DEFAULT
+from mock import Mock, MagicMock, patch, ANY, DEFAULT, call
 from oslo_utils import netutils
 from webob.exc import HTTPNotFound
 
@@ -329,28 +329,27 @@ class BackupAgentTest(trove_testtools.TestCase):
         agent.execute_backup(context=None, backup_info=backup_info,
                              runner=MockBackup)
 
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
+        conductor_api.API.update_backup.assert_has_calls([
+            call(
                 ANY,
                 backup_id=backup_info['id'],
-                state=BackupState.NEW))
-
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
-                ANY,
-                backup_id=backup_info['id'],
+                sent=ANY,
                 size=ANY,
-                state=BackupState.BUILDING))
-
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
+                state=BackupState.BUILDING
+            ),
+            call(
                 ANY,
                 backup_id=backup_info['id'],
-                checksum=ANY,
+                checksum='fake-checksum',
                 location=ANY,
-                note=ANY,
-                backup_type=backup_info['type'],
-                state=BackupState.COMPLETED))
+                note='w00t',
+                sent=ANY,
+                size=ANY,
+                backup_type=MockBackup.backup_type,
+                state=BackupState.COMPLETED,
+                success=True
+            )
+        ])
 
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(conductor_api.API, 'update_backup',
@@ -369,28 +368,27 @@ class BackupAgentTest(trove_testtools.TestCase):
                           context=None, backup_info=backup_info,
                           runner=MockCheckProcessBackup)
 
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
+        conductor_api.API.update_backup.assert_has_calls([
+            call(
                 ANY,
                 backup_id=backup_info['id'],
-                state=BackupState.NEW))
-
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
-                ANY,
-                backup_id=backup_info['id'],
+                sent=ANY,
                 size=ANY,
-                state=BackupState.BUILDING))
-
-        self.assertTrue(
-            conductor_api.API.update_backup.called_once_with(
+                state=BackupState.BUILDING
+            ),
+            call(
                 ANY,
                 backup_id=backup_info['id'],
-                checksum=ANY,
+                checksum='fake-checksum',
                 location=ANY,
-                note=ANY,
-                backup_type=backup_info['type'],
-                state=BackupState.FAILED))
+                note='w00t',
+                sent=ANY,
+                size=ANY,
+                backup_type=MockCheckProcessBackup.backup_type,
+                state=BackupState.FAILED,
+                success=True
+            )
+        ])
 
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(conductor_api.API, 'update_backup',
@@ -415,11 +413,26 @@ class BackupAgentTest(trove_testtools.TestCase):
                               context=None, backup_info=backup_info,
                               runner=MockLossyBackup)
 
-            self.assertTrue(
-                conductor_api.API.update_backup.called_once_with(
+            conductor_api.API.update_backup.assert_has_calls([
+                call(ANY,
+                     backup_id=backup_info['id'],
+                     sent=ANY,
+                     size=ANY,
+                     state=BackupState.BUILDING
+                     ),
+                call(
                     ANY,
                     backup_id=backup_info['id'],
-                    state=BackupState.FAILED))
+                    checksum='y',
+                    location='z',
+                    note='Error',
+                    sent=ANY,
+                    size=ANY,
+                    backup_type=MockLossyBackup.backup_type,
+                    state=BackupState.FAILED,
+                    success=False
+                )]
+            )
 
     def test_execute_restore(self):
         """This test should ensure backup agent
@@ -465,12 +478,12 @@ class BackupAgentTest(trove_testtools.TestCase):
     @patch.object(MySqlApp, 'get_data_dir', return_value='/var/lib/mysql/data')
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     @patch.object(MockSwift, 'load_metadata', return_value={'lsn': '54321'})
-    @patch.object(MockStorage, 'save_metadata')
+    @patch.object(MockSwift, 'save')
     @patch.object(backupagent, 'get_storage_strategy', return_value=MockSwift)
     @patch('trove.guestagent.backup.backupagent.LOG')
     def test_backup_incremental_metadata(self, mock_logging,
                                          get_storage_strategy_mock,
-                                         save_metadata_mock,
+                                         save_mock,
                                          load_metadata_mock,
                                          get_datadir_mock):
         meta = {
@@ -484,22 +497,21 @@ class BackupAgentTest(trove_testtools.TestCase):
                             __exit__=MagicMock(return_value=True)):
             agent = backupagent.BackupAgent()
 
+            expected_metadata = {'datastore': 'mysql',
+                                 'datastore_version': 'bo.gus'}
             bkup_info = {'id': '123',
                          'location': 'fake-location',
                          'type': 'InnoBackupEx',
                          'checksum': 'fake-checksum',
-                         'parent': {'location': 'fake', 'checksum': 'md5'},
-                         'datastore': 'mysql',
-                         'datastore_version': 'bo.gus'
-                         }
+                         'parent': {'location': 'fake', 'checksum': 'md5'}}
+            bkup_info.update(expected_metadata)
 
             agent.execute_backup(TroveContext(),
                                  bkup_info,
                                  '/var/lib/mysql/data')
 
-            self.assertTrue(MockStorage.save_metadata.called_once_with(
-                            ANY,
-                            meta))
+            save_mock.assert_called_once_with(
+                ANY, ANY, metadata=expected_metadata)
 
     @patch.object(conductor_api.API, 'get_client', Mock(return_value=Mock()))
     def test_backup_incremental_bad_metadata(self):
