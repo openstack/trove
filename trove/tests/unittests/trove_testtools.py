@@ -82,7 +82,6 @@ class TestCase(testtools.TestCase):
         super(TestCase, cls).setUpClass()
 
         cls._dangling_mocks = set()
-        cls._mocks_before = cls._find_mock_refs()
 
         root_logger.DefaultRootLogger(enable_backtrace=False)
 
@@ -112,10 +111,8 @@ class TestCase(testtools.TestCase):
     @classmethod
     def _assert_modules_unmocked(cls):
         """Check that all members of loaded modules are currently unmocked.
-        Consider only new mocks created since the last setUp() call.
         """
-        mocks_after = cls._find_mock_refs()
-        new_mocks = mocks_after.difference(cls._mocks_before)
+        new_mocks = cls._find_mock_refs()
         if cls._only_unique:
             # Remove mock references that have already been reported once in
             # this test suite (probably defined in setUp()).
