@@ -1,0 +1,137 @@
+Prerequisites
+-------------
+
+Before you install and configure the Database service, you must create a
+database, service credentials, and API endpoints.
+
+#. To create the database, complete these steps:
+
+   * Use the database access client to connect to the database
+     server as the ``root`` user:
+
+     .. code-block:: console
+
+        $ mysql -u root -p
+
+   * Create the ``trove`` database:
+
+     .. code-block:: console
+
+        CREATE DATABASE trove;
+
+   * Grant proper access to the ``trove`` database:
+
+     .. code-block:: console
+
+        GRANT ALL PRIVILEGES ON trove.* TO 'trove'@'localhost' \
+          IDENTIFIED BY 'TROVE_DBPASS';
+        GRANT ALL PRIVILEGES ON trove.* TO 'trove'@'%' \
+          IDENTIFIED BY 'TROVE_DBPASS';
+
+     Replace ``TROVE_DBPASS`` with a suitable password.
+
+   * Exit the database access client.
+
+#. Source the ``admin`` credentials to gain access to
+   admin-only CLI commands:
+
+   .. code-block:: console
+
+      $ . admin-openrc
+
+#. To create the service credentials, complete these steps:
+
+   * Create the ``trove`` user:
+
+     .. code-block:: console
+
+        $ openstack user create --domain default --password-prompt trove
+        User Password:
+        Repeat User Password:
+        +-----------+-----------------------------------+
+        | Field     | Value                             |
+        +-----------+-----------------------------------+
+        | domain_id | default                           |
+        | enabled   | True                              |
+        | id        | ca2e175b851943349be29a328cc5e360  |
+        | name      | trove                             |
+        +-----------+-----------------------------------+
+
+   * Add the ``admin`` role to the ``trove`` user:
+
+     .. code-block:: console
+
+        $ openstack role add --project service --user trove admin
+
+     .. note::
+
+        This command provides no output.
+
+   * Create the ``trove`` service entity:
+
+     .. code-block:: console
+
+        $ openstack service create --name trove \
+          --description "Database" database
+        +-------------+-----------------------------------+
+        | Field       | Value                             |
+        +-------------+-----------------------------------+
+        | description | Database                          |
+        | enabled     | True                              |
+        | id          | 727841c6f5df4773baa4e8a5ae7d72eb  |
+        | name        | trove                             |
+        | type        | database                          |
+        +-------------+-----------------------------------+
+
+
+#. Create the Database service API endpoints:
+
+   .. code-block:: console
+
+      $ openstack endpoint create --region RegionOne \
+        database public http://controller:8779/v1.0/%\(tenant_id\)s
+      +--------------+----------------------------------------------+
+      | Field        | Value                                        |
+      +--------------+----------------------------------------------+
+      | enabled      | True                                         |
+      | id           | 3f4dab34624e4be7b000265f25049609             |
+      | interface    | public                                       |
+      | region       | RegionOne                                    |
+      | region_id    | RegionOne                                    |
+      | service_id   | 727841c6f5df4773baa4e8a5ae7d72eb             |
+      | service_name | trove                                        |
+      | service_type | database                                     |
+      | url          | http://controller:8779/v1.0/%\(tenant_id\)s  |
+      +--------------+----------------------------------------------+
+
+      $ openstack endpoint create --region RegionOne \
+        database internal http://controller:8779/v1.0/%\(tenant_id\)s
+      +--------------+----------------------------------------------+
+      | Field        | Value                                        |
+      +--------------+----------------------------------------------+
+      | enabled      | True                                         |
+      | id           | 9489f78e958e45cc85570fec7e836d98             |
+      | interface    | internal                                     |
+      | region       | RegionOne                                    |
+      | region_id    | RegionOne                                    |
+      | service_id   | 727841c6f5df4773baa4e8a5ae7d72eb             |
+      | service_name | trove                                        |
+      | service_type | database                                     |
+      | url          | http://controller:8779/v1.0/%\(tenant_id\)s  |
+      +--------------+----------------------------------------------+
+
+      $ openstack endpoint create --region RegionOne \
+        database admin http://controller:8779/v1.0/%\(tenant_id\)s
+      +--------------+----------------------------------------------+
+      | Field        | Value                                        |
+      +--------------+----------------------------------------------+
+      | enabled      | True                                         |
+      | id           | 76091559514b40c6b7b38dde790efe99             |
+      | interface    | admin                                        |
+      | region       | RegionOne                                    |
+      | region_id    | RegionOne                                    |
+      | service_id   | 727841c6f5df4773baa4e8a5ae7d72eb             |
+      | service_name | trove                                        |
+      | service_type | database                                     |
+      | url          | http://controller:8779/v1.0/%\(tenant_id\)s  |
+      +--------------+----------------------------------------------+
