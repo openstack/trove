@@ -11,6 +11,7 @@ coverage>=3.6 # Apache-2.0
 nose # LGPL
 nosexcover # BSD
 openstack-doc-tools>=0.23 # Apache-2.0
+openstackdocstheme>=1.0.3 # Apache-2.0
 openstack.nose-plugin>=0.7 # Apache-2.0
 WebTest>=2.0 # MIT
 wsgi-intercept>=0.6.1 # MIT License

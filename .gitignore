@@ -25,6 +25,7 @@ trove.iml
 # Sphinx
 doc/build/*
 doc/source/api/*
+install-guide/build/
 
 # Docs
 .DS_Store
