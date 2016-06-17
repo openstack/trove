@@ -491,7 +491,7 @@ class CreateInstanceFail(object):
                 check.guest_status()
 
     @test
-    def test_create_failure_with_datastore_default_notfound(self):
+    def test_create_failure_with_datastore_default_not_defined(self):
         if not FAKE:
             raise SkipTest("This test only for fake mode.")
         if VOLUME_SUPPORT:
@@ -511,8 +511,8 @@ class CreateInstanceFail(object):
                           volume, databases, users)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
-                         "Please specify datastore. Default datastore "
-                         "cannot be found.")
+                         "Please specify datastore. No default datastore "
+                         "is defined.")
         datastore_models.CONF.default_datastore = \
             origin_default_datastore
 

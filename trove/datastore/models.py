@@ -489,8 +489,15 @@ class DatastoreVersions(object):
 def get_datastore_version(type=None, version=None, return_inactive=False):
     datastore = type or CONF.default_datastore
     if not datastore:
-        raise exception.DatastoreDefaultDatastoreNotFound()
-    datastore = Datastore.load(datastore)
+        raise exception.DatastoreDefaultDatastoreNotDefined()
+    try:
+        datastore = Datastore.load(datastore)
+    except exception.DatastoreNotFound:
+        if not type:
+            raise exception.DatastoreDefaultDatastoreNotFound(
+                datastore=datastore)
+        raise
+
     version = version or datastore.default_version_id
     if not version:
         raise exception.DatastoreDefaultVersionNotFound(
