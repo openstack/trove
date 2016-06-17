@@ -24,3 +24,16 @@ class QuotaView(object):
         for resource_name, quota in self.quotas.items():
             rtn[resource_name] = quota.hard_limit
         return {'quotas': rtn}
+
+
+class QuotaUsageView(object):
+
+    def __init__(self, usages):
+        self.usages = usages
+
+    def data(self):
+        return {'quotas': [{'resource': resource,
+                            'in_use': usage['in_use'],
+                            'reserved': usage['reserved'],
+                            'limit': usage['limit']
+                            } for resource, usage in self.usages.items()]}

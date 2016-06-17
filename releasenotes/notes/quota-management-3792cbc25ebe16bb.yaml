@@ -1,0 +1,4 @@
+features:
+  - New quota management APIs for reviewing and changing
+    the quota for a particular tenant.  Requires admin
+    privileges.
