@@ -167,8 +167,8 @@ class ConfigurationsTestBase(object):
         """Returns the expected test configurations for the default datastore
         defined in the Test Config as dbaas_datastore.
         """
-        default_datatstore = CONFIG.get('dbaas_datastore', None)
-        datastore_test_configs = CONFIG.get(default_datatstore, {})
+        default_datastore = CONFIG.get('dbaas_datastore', None)
+        datastore_test_configs = CONFIG.get(default_datastore, {})
         return datastore_test_configs.get("configurations", {})
 
 
