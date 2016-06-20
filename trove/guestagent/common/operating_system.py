@@ -229,6 +229,10 @@ class FileMode(object):
         return cls(reset=[stat.S_IRUSR | stat.S_IWUSR])  # =0600
 
     @classmethod
+    def SET_USR_RWX(cls):
+        return cls(reset=[stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR])  # =0700
+
+    @classmethod
     def ADD_ALL_R(cls):
         return cls(add=[stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH])  # +0444
 

@@ -52,7 +52,7 @@ class PostgresqlHelper(SqlHelper):
 
     def get_invalid_groups(self):
         return [{'timezone': 997},
-                {"max_worker_processes": 'string_value'},
+                {"vacuum_cost_delay": 'string_value'},
                 {"standard_conforming_strings": 'string_value'}]
 
     def get_exposed_user_log_names(self):
