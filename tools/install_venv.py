@@ -22,6 +22,8 @@
 Installation script for Trove's development virtualenv
 """
 
+from __future__ import print_function
+
 import os
 import subprocess
 import sys
@@ -35,7 +37,7 @@ PY_VERSION = "python%s.%s" % (sys.version_info[0], sys.version_info[1])
 
 
 def die(message, *args):
-    print >> sys.stderr, message % args
+    print(message % args, file=sys.stderr)
     sys.exit(1)
 
 
@@ -71,34 +73,34 @@ def check_dependencies():
     """Make sure virtualenv is in the path."""
 
     if not HAS_VIRTUALENV:
-        print 'not found.'
+        print('not found.')
         # Try installing it via easy_install...
         if HAS_EASY_INSTALL:
-            print 'Installing virtualenv via easy_install...',
+            print('Installing virtualenv via easy_install...'),
             if not (run_command(['which', 'easy_install']) and
                     run_command(['easy_install', 'virtualenv'])):
                 die('ERROR: virtualenv not found.\n\Trove development'
                     ' requires virtualenv, please install it using your'
                     ' favorite package management tool')
-            print 'done.'
-    print 'done.'
+            print('done.')
+    print('done.')
 
 
 def create_virtualenv(venv=VENV):
     """Creates the virtual environment and installs PIP only into the
     virtual environment
     """
-    print 'Creating venv...',
+    print('Creating venv...'),
     run_command(['virtualenv', '-q', '--no-site-packages', VENV])
-    print 'done.'
-    print 'Installing pip in virtualenv...',
+    print('done.')
+    print('Installing pip in virtualenv...'),
     if not run_command(['tools/with_venv.sh', 'easy_install', 'pip']).strip():
         die("Failed to install pip.")
-    print 'done.'
+    print('done.')
 
 
 def install_dependencies(venv=VENV):
-    print 'Installing dependencies with pip (this can take a while)...'
+    print('Installing dependencies with pip (this can take a while)...')
     # Install greenlet by hand - just listing it in the requires file does not
     # get it in stalled in the right order
     run_command(['tools/with_venv.sh', '-E', venv, 'pip', 'install',
@@ -133,7 +135,7 @@ def print_help():
 
     Also, make test will automatically use the virtualenv.
     """
-    print help
+    print(help)
 
 
 def main(argv):
