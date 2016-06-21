@@ -15,13 +15,17 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import database_actions_group
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.user_actions_group"
+GROUP_USR_ACTION_INST = "scenario.usr_action_inst_group"
+GROUP_USR_ACTION_INST_CREATE = "scenario.usr_action_inst_create_group"
+GROUP_USR_ACTION_INST_CREATE_WAIT = "scenario.usr_action_inst_create_wait_grp"
+GROUP_USR_ACTION_INST_DELETE = "scenario.usr_action_inst_delete_group"
+GROUP_USR_ACTION_INST_DELETE_WAIT = "scenario.usr_action_inst_delete_wait_grp"
 
 
 class UserActionsRunnerFactory(test_runners.RunnerFactory):
@@ -30,25 +34,29 @@ class UserActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'UserActionsRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP], groups=[GROUP])
+class InstanceCreateRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'instance_create_runners'
+    _runner_cls = 'InstanceCreateRunner'
+
+
+class DatabaseActionsRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'database_actions_runners'
+    _runner_cls = 'DatabaseActionsRunner'
+
+
+@test(depends_on_groups=[instance_create_group.GROUP],
+      groups=[GROUP, GROUP_USR_ACTION_INST])
 class UserActionsGroup(TestGroup):
+    """Test User Actions functionality."""
 
     def __init__(self):
         super(UserActionsGroup, self).__init__(
             UserActionsRunnerFactory.instance())
-        self.instance_create_runner = (
-            instance_create_group.InstanceCreateRunnerFactory.create())
-        self.database_actions_runner = (
-            database_actions_group.DatabaseActionsRunnerFactory.create())
+        self.database_actions_runner = DatabaseActionsRunnerFactory.instance()
 
     @test
-    def create_initialized_instance(self):
-        """Create an instance with initial users."""
-        self.instance_create_runner.run_initialized_instance_create(
-            with_dbs=False, with_users=True, configuration_id=None,
-            create_helper_user=False)
-
-    @test(runs_after=[create_initialized_instance])
     def create_user_databases(self):
         """Create user databases on an existing instance."""
         # These databases may be referenced by the users (below) so we need to
@@ -177,8 +185,35 @@ class UserActionsGroup(TestGroup):
         """Delete the user databases."""
         self.database_actions_runner.run_database_delete()
 
-    @test(depends_on=[create_initialized_instance],
-          runs_after=[delete_user_databases])
+
+@test(groups=[GROUP, GROUP_USR_ACTION_INST_CREATE])
+class UserActionsInstCreateGroup(TestGroup):
+    """Test User Actions Create functionality."""
+
+    def __init__(self):
+        super(UserActionsInstCreateGroup, self).__init__(
+            UserActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
+    def create_initialized_instance(self):
+        """Create an instance with initial users."""
+        self.instance_create_runner.run_initialized_instance_create(
+            with_dbs=False, with_users=True, configuration_id=None,
+            create_helper_user=False)
+
+
+@test(depends_on_groups=[GROUP_USR_ACTION_INST_CREATE],
+      groups=[GROUP, GROUP_USR_ACTION_INST_CREATE_WAIT])
+class UserActionsInstCreateWaitGroup(TestGroup):
+    """Wait for User Actions Create to complete."""
+
+    def __init__(self):
+        super(UserActionsInstCreateWaitGroup, self).__init__(
+            UserActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
     def wait_for_instances(self):
         """Waiting for all instances to become active."""
         self.instance_create_runner.wait_for_created_instances()
@@ -188,7 +223,34 @@ class UserActionsGroup(TestGroup):
         """Validate the initialized instance data and properties."""
         self.instance_create_runner.run_validate_initialized_instance()
 
-    @test(runs_after=[validate_initialized_instance])
+
+@test(depends_on_groups=[GROUP_USR_ACTION_INST_CREATE_WAIT],
+      groups=[GROUP, GROUP_USR_ACTION_INST_DELETE])
+class UserActionsInstDeleteGroup(TestGroup):
+    """Test User Actions Delete functionality."""
+
+    def __init__(self):
+        super(UserActionsInstDeleteGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
     def delete_initialized_instance(self):
         """Delete the initialized instance."""
         self.instance_create_runner.run_initialized_instance_delete()
+
+
+@test(depends_on_groups=[GROUP_USR_ACTION_INST_DELETE],
+      groups=[GROUP, GROUP_USR_ACTION_INST_DELETE_WAIT])
+class UserActionsInstDeleteWaitGroup(TestGroup):
+    """Wait for User Actions Delete to complete."""
+
+    def __init__(self):
+        super(UserActionsInstDeleteWaitGroup, self).__init__(
+            DatabaseActionsRunnerFactory.instance())
+        self.instance_create_runner = InstanceCreateRunnerFactory.instance()
+
+    @test
+    def wait_for_delete_initialized_instance(self):
+        """Wait for the initialized instance to delete."""
+        self.instance_create_runner.run_wait_for_initialized_instance_delete()
