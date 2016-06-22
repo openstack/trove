@@ -59,7 +59,7 @@ def read_file(path, codec=IdentityCodec(), as_root=False, decode=True):
         if as_root:
             return _read_file_as_root(path, codec, decode=decode)
 
-        with open(path, 'rb') as fp:
+        with open(path, 'r') as fp:
             if decode:
                 return codec.deserialize(fp.read())
             return codec.serialize(fp.read())
@@ -144,11 +144,12 @@ def write_file(path, data, codec=IdentityCodec(), as_root=False, encode=True):
         if as_root:
             _write_file_as_root(path, data, codec, encode=encode)
         else:
-            with open(path, 'wb', 0) as fp:
+            with open(path, 'w') as fp:
                 if encode:
                     fp.write(codec.serialize(data))
                 else:
                     fp.write(codec.deserialize(data))
+                fp.flush()
     else:
         raise exception.UnprocessableEntity(_("Invalid path: %s") % path)
 
@@ -170,11 +171,12 @@ def _write_file_as_root(path, data, codec, encode=True):
     """
     # The files gets removed automatically once the managing object goes
     # out of scope.
-    with tempfile.NamedTemporaryFile('wb', 0, delete=False) as fp:
+    with tempfile.NamedTemporaryFile('w', delete=False) as fp:
         if encode:
             fp.write(codec.serialize(data))
         else:
             fp.write(codec.deserialize(data))
+        fp.flush()
         fp.close()  # Release the resource before proceeding.
         copy(fp.name, path, force=True, as_root=True)
 

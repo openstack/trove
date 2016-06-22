@@ -19,6 +19,7 @@ import abc
 from oslo_config import cfg as oslo_cfg
 from oslo_log import log as logging
 from oslo_service import periodic_task
+from oslo_utils import encodeutils
 
 from trove.common import cfg
 from trove.common import exception
@@ -285,7 +286,7 @@ class Manager(periodic_task.PeriodicTasks):
         except Exception as ex:
             self.prepare_error = True
             LOG.exception(_("An error occurred preparing datastore: %s") %
-                          ex.message)
+                          encodeutils.exception_to_unicode(ex))
             raise
         finally:
             LOG.info(_("Ending datastore prepare for '%s'.") % self.manager)
