@@ -23,6 +23,7 @@ import swiftclient.client as swift_client
 import uuid
 
 from oslo_log import log as logging
+import six
 from six.moves import http_client
 from swiftclient import client as swift
 
@@ -108,7 +109,10 @@ class FakeSwiftConnection(object):
                 object_checksum = md5(self.container_objects[object_name])
                 # The manifest file etag for a HEAD or GET is the checksum of
                 # the concatenated checksums.
-                checksum.update(object_checksum.hexdigest())
+                if six.PY3:
+                    checksum.update(object_checksum.hexdigest().encode())
+                else:
+                    checksum.update(object_checksum.hexdigest())
             # this is included to test bad swift segment etags
             if name.startswith("bad_manifest_etag_"):
                 return {'etag': '"this_is_an_intentional_bad_manifest_etag"'}
@@ -172,7 +176,10 @@ class FakeSwiftConnection(object):
             # container is where the object segments are in and prefix is the
             # common prefix for all segments.
             self.manifest_name = name
-            object_checksum.update(contents)
+            if isinstance(contents, six.text_type):
+                object_checksum.update(contents.encode('utf-8'))
+            else:
+                object_checksum.update(contents)
         elif self.COPY_OBJECT_HEADER_KEY in headers:
             # this is a copy object operation
             source_path = headers.get(self.COPY_OBJECT_HEADER_KEY)
@@ -181,7 +188,7 @@ class FakeSwiftConnection(object):
         else:
             if hasattr(contents, 'read'):
                 chunk_size = 128
-                object_content = ""
+                object_content = b""
                 chunk = contents.read(chunk_size)
                 while chunk:
                     object_content += chunk

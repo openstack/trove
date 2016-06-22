@@ -254,7 +254,7 @@ class SwiftStorageLoad(trove_testtools.TestCase):
 class MockBackupStream(MockBackupRunner):
 
     def read(self, chunk_size):
-        return 'X' * chunk_size
+        return b'X' * chunk_size
 
 
 class StreamReaderTests(trove_testtools.TestCase):
@@ -287,11 +287,11 @@ class StreamReaderTests(trove_testtools.TestCase):
     def test_segment_almost_complete(self):
         self.stream.segment_length = 98
         results = self.stream.read(2)
-        self.assertEqual('XX', results)
+        self.assertEqual(b'XX', results)
         self.assertEqual('123_00000000', self.stream.segment,
                          "The Segment should still be the same")
         self.assertEqual(100, self.stream.segment_length)
-        checksum = hashlib.md5('XX')
+        checksum = hashlib.md5(b'XX')
         checksum = checksum.hexdigest()
         segment_checksum = self.stream.segment_checksum.hexdigest()
         self.assertEqual(checksum, segment_checksum,
