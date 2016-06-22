@@ -144,7 +144,13 @@ class DatastoreVersionInactive(TroveError):
 class DatastoreDefaultDatastoreNotFound(TroveError):
 
     message = _("Please specify datastore. Default datastore "
-                "cannot be found.")
+                "'%(datastore)s' cannot be found.")
+
+
+class DatastoreDefaultDatastoreNotDefined(TroveError):
+
+    message = _("Please specify datastore. No default datastore "
+                "is defined.")
 
 
 class DatastoreDefaultVersionNotFound(TroveError):
