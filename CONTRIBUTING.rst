@@ -87,6 +87,34 @@ Other references:
    - http://docs.openstack.org/developer/hacking/
    - https://review.openstack.org/#/c/116176/
 
+Approving changes
+=================
+
+The Trove project follows the conventions below in approving changes.
+
+1. In general, two core reviewers must +2 a change before it can be
+   approved. In practice this means that coreA can +2 the change, then
+   coreB can +2/+A the change and it can be merged.
+
+2. coreA and coreB should belong to different organizations.
+
+3. For requirements changes proposed by the Proposal Bot or
+   translations proposed by Zanata, a single core reviewer can review
+   and approve the change.
+
+NOTE:
+
+For the remainder of the Newton release cycle, we will relax the above
+conventions. These relaxations apply to the master branch only.
+
+We will adopt a practice of lazy consensus for approving all changes
+and a single core reviewer can review and approve a change. This could
+be done, for example, by allowing all reviewers know that he or she
+intends to approve some change or set of changes if there are no
+additional negative comments by a certain time definite.
+
+We will however still require that at least one other person review
+(and +1 or +2) the change before it can be +A'ed.
 
 Trove Documentation
 ===================
