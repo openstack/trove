@@ -142,10 +142,12 @@ instance_create_groups.extend([instance_create_group.GROUP,
                                instance_delete_group.GROUP])
 
 backup_groups = list(instance_create_groups)
-backup_groups.extend([backup_group.GROUP])
+backup_groups.extend([backup_group.GROUP_BACKUP,
+                      backup_group.GROUP_RESTORE])
 
-incremental_backup_groups = list(instance_create_groups)
-incremental_backup_groups.extend([backup_group.GROUP_INCREMENTAL])
+backup_incremental_groups = list(backup_groups)
+backup_incremental_groups.extend([backup_group.GROUP_INC_BACKUP,
+                                  backup_group.GROUP_INC_RESTORE])
 
 configuration_groups = list(instance_create_groups)
 configuration_groups.extend([configuration_group.GROUP])
@@ -185,7 +187,7 @@ common_groups.extend([guest_log_groups, module_groups])
 
 # Register: Component based groups
 register(["backup"], backup_groups)
-register(["incremental_backup"], incremental_backup_groups)
+register(["backup_incremental"], backup_incremental_groups)
 register(["cluster"], cluster_actions_groups)
 register(["configuration"], configuration_groups)
 register(["configuration_create"], configuration_create_groups)
@@ -213,10 +215,11 @@ register(["couchdb_supported"], common_groups, backup_groups,
 register(["postgresql_supported"], common_groups,
          backup_groups, database_actions_groups, configuration_groups,
          root_actions_groups, user_actions_groups,
-         incremental_backup_groups)
+         backup_incremental_groups)
 register(["mysql_supported", "percona_supported"], common_groups,
          backup_groups, configuration_groups, database_actions_groups,
-         replication_groups, root_actions_groups, user_actions_groups)
+         replication_groups, root_actions_groups, user_actions_groups,
+         backup_incremental_groups)
 register(["mariadb_supported"], common_groups,
          backup_groups, cluster_actions_groups, configuration_groups,
          database_actions_groups, replication_groups, root_actions_groups,
