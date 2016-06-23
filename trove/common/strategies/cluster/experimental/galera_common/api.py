@@ -125,22 +125,21 @@ class GaleraCommonCluster(cluster_models.Cluster):
                                                      str(name_index))
                 name_index += 1
 
-        return map(lambda instance:
-                   Instance.create(context,
-                                   instance['name'],
-                                   instance['flavor_id'],
-                                   datastore_version.image_id,
-                                   [], [],
-                                   datastore, datastore_version,
-                                   instance.get('volume_size', None),
-                                   None,
-                                   availability_zone=instance.get(
-                                       'availability_zone', None),
-                                   nics=instance.get('nics', None),
-                                   configuration_id=None,
-                                   cluster_config=member_config
-                                   ),
-                   instances)
+        return [Instance.create(context,
+                                instance['name'],
+                                instance['flavor_id'],
+                                datastore_version.image_id,
+                                [], [],
+                                datastore, datastore_version,
+                                instance.get('volume_size', None),
+                                None,
+                                availability_zone=instance.get(
+                                    'availability_zone', None),
+                                nics=instance.get('nics', None),
+                                configuration_id=None,
+                                cluster_config=member_config
+                                )
+                for instance in instances]
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,

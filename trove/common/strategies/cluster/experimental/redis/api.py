@@ -56,7 +56,7 @@ class RedisCluster(models.Cluster):
 
         # Validate and Cache flavors
         nova_client = remote.create_nova_client(context)
-        unique_flavors = set(map(lambda i: i['flavor_id'], instances))
+        unique_flavors = set(inst['flavor_id'] for inst in instances)
         flavor_cache = {}
         for fid in unique_flavors:
             try:
@@ -89,24 +89,23 @@ class RedisCluster(models.Cluster):
         check_quotas(context.tenant, quota_request)
 
         # Creating member instances
-        return map(lambda instance:
-                   inst_models.Instance.create(context,
-                                               instance['name'],
-                                               instance['flavor_id'],
-                                               datastore_version.image_id,
-                                               [], [],
-                                               datastore, datastore_version,
-                                               instance.get('volume_size'),
-                                               None,
-                                               instance.get(
-                                                   'availability_zone', None),
-                                               instance.get('nics', None),
-                                               configuration_id=None,
-                                               cluster_config={
-                                                   "id": db_info.id,
-                                                   "instance_type": "member"}
-                                               ),
-                   instances)
+        return [inst_models.Instance.create(context,
+                                            instance['name'],
+                                            instance['flavor_id'],
+                                            datastore_version.image_id,
+                                            [], [],
+                                            datastore, datastore_version,
+                                            instance.get('volume_size'),
+                                            None,
+                                            instance.get(
+                                                'availability_zone', None),
+                                            instance.get('nics', None),
+                                            configuration_id=None,
+                                            cluster_config={
+                                                "id": db_info.id,
+                                                "instance_type": "member"}
+                                            )
+                for instance in instances]
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
@@ -180,10 +179,14 @@ class RedisCluster(models.Cluster):
             remain_insts = [inst_models.Instance.load(self.context, inst.id)
                             for inst in all_instances
                             if inst.id not in removal_ids]
-            map(lambda x: Cluster.get_guest(x).remove_nodes(node_ids),
-                remain_insts)
-            map(lambda x: x.update_db(cluster_id=None), removal_insts)
-            map(inst_models.Instance.delete, removal_insts)
+
+            for inst in remain_insts:
+                guest = Cluster.get_guest(inst)
+                guest.remove_nodes(node_ids)
+            for inst in removal_insts:
+                inst.update_db(cluster_id=None)
+            for inst in removal_insts:
+                inst_models.Instance.delete(inst)
 
             return RedisCluster(self.context, cluster_info,
                                 self.ds, self.ds_version)
