@@ -1,0 +1,4 @@
+---
+fixes:
+  - Replace the deprecated 'myisam-recover' option
+    with its newer counterpart 'myisam-recover-options'.
