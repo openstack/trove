@@ -42,7 +42,7 @@ class TestPaginatedDataView(trove_testtools.TestCase):
                                             next_page_marker=52)
         self.assertEqual("52", view.next_page_marker)
 
-    def _do_paginate_list(self, limit=None, marker=None, include_marker=False):
+    def _do_paginate_list(self, limit=None, marker='', include_marker=False):
         li = ['a', 'b', 'c', 'd', 'e']
         return pagination.paginate_list(li, limit=limit, marker=marker,
                                         include_marker=include_marker)

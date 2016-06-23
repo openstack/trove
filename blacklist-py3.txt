@@ -3,7 +3,6 @@
 backup.test_backup_models
 cluster.test_galera_cluster
 cluster.test_redis_cluster
-common.test_pagination
 guestagent.test_cassandra_manager
 guestagent.test_dbaas
 guestagent.test_mongodb_manager
