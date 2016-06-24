@@ -24,6 +24,8 @@ class InstanceActionsRunner(TestRunner):
     def __init__(self):
         super(InstanceActionsRunner, self).__init__()
 
+        self.resize_flavor_id = self._get_resize_flavor().id
+
     def _get_resize_flavor(self):
         if self.EPHEMERAL_SUPPORT:
             flavor_name = CONFIG.values.get(
@@ -53,10 +55,9 @@ class InstanceActionsRunner(TestRunner):
             expected_states=['RESIZE', 'ACTIVE'],
             expected_http_code=202):
         if self.VOLUME_SUPPORT:
-            self.assert_instance_resize_volume(self.instance_info.id,
-                                               resize_amount,
-                                               expected_states,
-                                               expected_http_code)
+            self.assert_instance_resize_volume(
+                self.instance_info.id, resize_amount, expected_states,
+                expected_http_code)
         else:
             raise SkipTest("Volume support is disabled.")
 
@@ -74,27 +75,26 @@ class InstanceActionsRunner(TestRunner):
                                     expected_http_code)
 
         instance = self.get_instance(instance_id)
-        self.assert_equal(instance.volume['size'], new_volume_size,
+        self.assert_equal(new_volume_size, instance.volume['size'],
                           'Unexpected new volume size')
 
-    def run_instance_resize_flavor(
-            self, expected_states=['RESIZE', 'ACTIVE'],
-            expected_http_code=202):
-        resize_flavor = self._get_resize_flavor()
-        self.assert_instance_resize_flavor(self.instance_info.id,
-                                           resize_flavor, expected_states,
-                                           expected_http_code)
+    def run_instance_resize_flavor(self, expected_http_code=202):
+        self.assert_instance_resize_flavor(
+            self.instance_info.id, self.resize_flavor_id, expected_http_code)
 
-    def assert_instance_resize_flavor(self, instance_id, resize_flavor,
-                                      expected_states, expected_http_code):
-        self.report.log("Testing resize to '%s' on instance: %s"
-                        % (resize_flavor, instance_id))
+    def assert_instance_resize_flavor(self, instance_id, resize_flavor_id,
+                                      expected_http_code):
+        self.report.log("Testing resize to '%s' on instance: %s" %
+                        (resize_flavor_id, instance_id))
+        self.auth_client.instances.resize_instance(
+            instance_id, resize_flavor_id)
+        self.assert_client_code(expected_http_code)
 
-        self.auth_client.instances.resize_instance(instance_id,
-                                                   resize_flavor.id)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
-
-        instance = self.get_instance(instance_id)
-        self.assert_equal(instance.flavor['id'], resize_flavor.id,
+    def run_wait_for_instance_resize_flavor(
+            self, expected_states=['RESIZE', 'ACTIVE']):
+        self.report.log("Waiting for resize to '%s' on instance: %s" %
+                        (self.resize_flavor_id, self.instance_info.id))
+        self._assert_instance_states(self.instance_info.id, expected_states)
+        instance = self.get_instance(self.instance_info.id)
+        self.assert_equal(self.resize_flavor_id, instance.flavor['id'],
                           'Unexpected resize flavor_id')
