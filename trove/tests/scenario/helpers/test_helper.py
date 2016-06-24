@@ -38,11 +38,13 @@ class DataType(Enum):
     tiny = 3
     # another tiny dataset (also for replication propagation)
     tiny2 = 4
+    # a third tiny dataset (also for replication propagation)
+    tiny3 = 5
     # small amount of data (this can be added to each instance
     # after creation, for example).
-    small = 5
+    small = 6
     # large data, enough to make creating a backup take 20s or more.
-    large = 6
+    large = 7
 
 
 class TestHelper(object):
@@ -67,7 +69,7 @@ class TestHelper(object):
     # actual data manipulation work.
     DT_ACTUAL = 'actual'
 
-    def __init__(self, expected_override_name):
+    def __init__(self, expected_override_name, report):
         """Initialize the helper class by creating a number of stub
         functions that each datastore specific class can chose to
         override.  Basically, the functions are of the form:
@@ -86,6 +88,7 @@ class TestHelper(object):
         super(TestHelper, self).__init__()
 
         self._expected_override_name = expected_override_name
+        self.report = report
 
         # For building data access functions
         # name/fn pairs for each action
@@ -113,6 +116,9 @@ class TestHelper(object):
                 self.DATA_SIZE: 100},
             DataType.tiny2.name: {
                 self.DATA_START: 2000,
+                self.DATA_SIZE: 100},
+            DataType.tiny3.name: {
+                self.DATA_START: 3000,
                 self.DATA_SIZE: 100},
             DataType.small.name: {
                 self.DATA_START: 10000,
@@ -180,13 +186,25 @@ class TestHelper(object):
     ##############
     def add_data(self, data_type, host, *args, **kwargs):
         """Adds data of type 'data_type' to the database.  Descendant
-        classes should implement a function for each DataType value
-        of the form 'add_{DataType.name}_data' - for example:
-            'add_tiny_data'
-            'add_small_data'
-            ...
-        Since this method may be called multiple times, the implemented
-        'add_*_data' functions should be idempotent.
+        classes should implement a function 'add_actual_data' that has the
+        following signature:
+            def add_actual_data(
+                self,        # standard self reference
+                data_label,  # label used to identify the 'type' to add
+                data_start,  # a start count
+                data_size,   # a size to use
+                host,        # the host to add the data to
+                *args,       # for possible future expansion
+                **kwargs     # for possible future expansion
+            ):
+        The data_label could be used to create a database or a table if the
+        datastore supports that.  The data_start and data_size values are
+        designed not to overlap, such that all the data could be stored
+        in a single namespace (for example, creating ids from data_start
+        to data_start + data_size).
+
+        Since this method may be called multiple times, the
+        'add_actual_data' function should be idempotent.
         """
         self._perform_data_action(self.FN_ADD, data_type.name, host,
                                   *args, **kwargs)
@@ -203,9 +221,27 @@ class TestHelper(object):
         datastore.  This can be done by testing edge cases, and possibly
         some random elements within the set.  See
         instructions for 'add_data' for implementation guidance.
+        By default, the verification is attempted 10 times, sleeping for 3
+        seconds between each attempt.  This can be controlled by the
+        retry_count and retry_sleep kwarg values.
         """
-        self._perform_data_action(self.FN_VERIFY, data_type.name, host,
-                                  *args, **kwargs)
+        retry_count = kwargs.pop('retry_count', 10) or 0
+        retry_sleep = kwargs.pop('retry_sleep', 3) or 0
+        attempts = -1
+        while True:
+            attempts += 1
+            try:
+                self._perform_data_action(self.FN_VERIFY, data_type.name, host,
+                                          *args, **kwargs)
+                break
+            except Exception as ex:
+                self.report.log("Attempt %d to verify data type %s failed\n%s"
+                                % (attempts, data_type.name, ex))
+                if attempts > retry_count:
+                    raise
+                self.report.log("Trying again (after %d second sleep)" %
+                                retry_sleep)
+                sleep(retry_sleep)
 
     def _perform_data_action(self, fn_type, fn_name, host, *args, **kwargs):
         fns = self._data_fns[fn_type]
@@ -284,15 +320,6 @@ class TestHelper(object):
             for name, fn in members:
                 if name in fns:
                     fns[name] = fn
-
-    #####################
-    # Replication related
-    #####################
-    def wait_for_replicas(self):
-        """Wait for data to propagate to all the replicas.  Datastore
-        specific overrides could increase (or decrease) this delay.
-        """
-        sleep(30)
 
     #######################
     # Database/User related

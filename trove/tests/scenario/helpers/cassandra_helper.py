@@ -58,8 +58,8 @@ class CassandraHelper(TestHelper):
 
     DATA_COLUMN_NAME = 'value'
 
-    def __init__(self, expected_override_name):
-        super(CassandraHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report):
+        super(CassandraHelper, self).__init__(expected_override_name, report)
 
         self._data_cache = dict()
 

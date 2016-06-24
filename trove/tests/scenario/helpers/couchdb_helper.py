@@ -21,8 +21,8 @@ from trove.tests.scenario.runners.test_runners import TestRunner
 
 class CouchdbHelper(TestHelper):
 
-    def __init__(self, expected_override_name):
-        super(CouchdbHelper, self).__init__(expected_override_name)
+    def __init__(self, expected_override_name, report):
+        super(CouchdbHelper, self).__init__(expected_override_name, report)
         self._data_cache = dict()
         self.field_name = 'ff-%s'
         self.database = 'firstdb'
