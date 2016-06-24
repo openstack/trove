@@ -913,7 +913,7 @@ class Instance(BuiltInstance):
                   "%(ds_version)s and flavor %(flavor)s.",
                   {'ds_version': self.ds_version, 'flavor': flavor})
         config = template.SingleInstanceConfigTemplate(
-            self.ds_version, flavor, id)
+            self.ds_version, flavor, self.id)
         return config.render_dict()
 
     def resize_flavor(self, new_flavor_id):
