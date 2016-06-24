@@ -28,6 +28,7 @@ from trove.common.i18n import _
 from trove.common.notification import DBaaSQuotas, EndNotification
 from trove.common import remote
 import trove.common.rpc.version as rpc_version
+from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 import trove.extensions.mgmt.instances.models as mgmtmodels
 from trove.instance.tasks import InstanceTasks
@@ -288,6 +289,11 @@ class Manager(periodic_task.PeriodicTasks):
         replica_backup_created = False
         replicas = []
 
+        master_instance_tasks = BuiltInstanceTasks.load(context, slave_of_id)
+        server_group = master_instance_tasks.server_group
+        scheduler_hints = srv_grp.ServerGroup.convert_to_hint(server_group)
+        LOG.debug("Using scheduler hints for locality: %s" % scheduler_hints)
+
         try:
             for replica_index in range(0, len(ids)):
                 try:
@@ -306,7 +312,7 @@ class Manager(periodic_task.PeriodicTasks):
                         packages, volume_size, replica_backup_id,
                         availability_zone, root_passwords[replica_index],
                         nics, overrides, None, snapshot, volume_type,
-                        modules)
+                        modules, scheduler_hints)
                     replicas.append(instance_tasks)
                 except Exception:
                     # if it's the first replica, then we shouldn't continue
@@ -327,7 +333,7 @@ class Manager(periodic_task.PeriodicTasks):
                          image_id, databases, users, datastore_manager,
                          packages, volume_size, backup_id, availability_zone,
                          root_password, nics, overrides, slave_of_id,
-                         cluster_config, volume_type, modules):
+                         cluster_config, volume_type, modules, locality):
         if slave_of_id:
             self._create_replication_slave(context, instance_id, name,
                                            flavor, image_id, databases, users,
@@ -341,12 +347,16 @@ class Manager(periodic_task.PeriodicTasks):
                 raise AttributeError(_(
                     "Cannot create multiple non-replica instances."))
             instance_tasks = FreshInstanceTasks.load(context, instance_id)
+
+            scheduler_hints = srv_grp.ServerGroup.build_scheduler_hint(
+                context, locality, instance_id)
             instance_tasks.create_instance(flavor, image_id, databases, users,
                                            datastore_manager, packages,
                                            volume_size, backup_id,
                                            availability_zone, root_password,
                                            nics, overrides, cluster_config,
-                                           None, volume_type, modules)
+                                           None, volume_type, modules,
+                                           scheduler_hints)
             timeout = (CONF.restore_usage_timeout if backup_id
                        else CONF.usage_timeout)
             instance_tasks.wait_for_instance(timeout, flavor)
@@ -355,7 +365,7 @@ class Manager(periodic_task.PeriodicTasks):
                         image_id, databases, users, datastore_manager,
                         packages, volume_size, backup_id, availability_zone,
                         root_password, nics, overrides, slave_of_id,
-                        cluster_config, volume_type, modules):
+                        cluster_config, volume_type, modules, locality):
         with EndNotification(context,
                              instance_id=(instance_id[0]
                                           if type(instance_id) is list
@@ -365,7 +375,8 @@ class Manager(periodic_task.PeriodicTasks):
                                   datastore_manager, packages, volume_size,
                                   backup_id, availability_zone,
                                   root_password, nics, overrides, slave_of_id,
-                                  cluster_config, volume_type, modules)
+                                  cluster_config, volume_type, modules,
+                                  locality)
 
     def update_overrides(self, context, instance_id, overrides):
         instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)

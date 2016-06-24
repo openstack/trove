@@ -27,6 +27,7 @@ class TestInstanceController(trove_testtools.TestCase):
     def setUp(self):
         super(TestInstanceController, self).setUp()
         self.controller = InstanceController()
+        self.locality = 'affinity'
         self.instance = {
             "instance": {
                 "volume": {"size": "1"},
@@ -46,7 +47,8 @@ class TestInstanceController(trove_testtools.TestCase):
                     {
                         "name": "db2"
                     }
-                ]
+                ],
+                "locality": self.locality
             }
         }
         self.context = trove_testtools.TroveTestContext(self)
@@ -148,6 +150,20 @@ class TestInstanceController(trove_testtools.TestCase):
         self.assertEqual(1, len(errors))
         self.assertIn("'$#$%^^' does not match '^.*[0-9a-zA-Z]+.*$'",
                       errors[0].message)
+
+    def test_validate_create_invalid_locality(self):
+        body = self.instance
+        body['instance']['locality'] = "$%^"
+        schema = self.controller.get_schema('create', body)
+        validator = jsonschema.Draft4Validator(schema)
+        self.assertFalse(validator.is_valid(body))
+        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+        error_messages = [error.message for error in errors]
+        error_paths = [error.path.pop() for error in errors]
+        self.assertEqual(1, len(errors))
+        self.assertIn("'$%^' does not match '^.*[0-9a-zA-Z]+.*$'",
+                      error_messages)
+        self.assertIn("locality", error_paths)
 
     def test_validate_restart(self):
         body = {"restart": {}}

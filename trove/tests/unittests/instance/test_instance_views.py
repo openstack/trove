@@ -62,6 +62,7 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
         self.instance.slave_of_id = None
         self.instance.slaves = []
+        self.instance.locality = 'affinity'
 
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
@@ -90,3 +91,10 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
                          result['instance']['datastore']['version'])
         self.assertNotIn('hostname', result['instance'])
         self.assertEqual([self.ip], result['instance']['ip'])
+
+    def test_locality(self):
+        self.instance.hostname = None
+        view = InstanceDetailView(self.instance, Mock())
+        result = view.data()
+        self.assertEqual(self.instance.locality,
+                         result['instance']['locality'])

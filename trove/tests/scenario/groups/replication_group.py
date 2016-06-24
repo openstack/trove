@@ -44,10 +44,15 @@ class ReplicationGroup(TestGroup):
 
     @test(depends_on=[add_data_for_replication])
     def verify_data_for_replication(self):
-        """Verify data exists on master."""
+        """Verify initial data exists on master."""
         self.test_runner.run_verify_data_for_replication()
 
     @test(runs_after=[verify_data_for_replication])
+    def create_non_affinity_master(self):
+        """Test creating a non-affinity master."""
+        self.test_runner.run_create_non_affinity_master()
+
+    @test(runs_after=[create_non_affinity_master])
     def create_single_replica(self):
         """Test creating a single replica."""
         self.test_runner.run_create_single_replica()
@@ -63,18 +68,50 @@ class ReplicationGroup(TestGroup):
         self.test_runner.run_verify_replica_data_after_single()
 
     @test(runs_after=[verify_replica_data_after_single])
+    def wait_for_non_affinity_master(self):
+        """Wait for non-affinity master to complete."""
+        self.test_runner.run_wait_for_non_affinity_master()
+
+    @test(runs_after=[wait_for_non_affinity_master])
+    def create_non_affinity_replica(self):
+        """Test creating a non-affinity replica."""
+        self.test_runner.run_create_non_affinity_replica()
+
+    @test(runs_after=[create_non_affinity_replica])
     def create_multiple_replicas(self):
         """Test creating multiple replicas."""
         self.test_runner.run_create_multiple_replicas()
 
-    @test(depends_on=[create_single_replica, create_multiple_replicas])
+    @test(runs_after=[create_multiple_replicas])
+    def wait_for_non_affinity_replica_fail(self):
+        """Wait for non-affinity replica to fail."""
+        self.test_runner.run_wait_for_non_affinity_replica_fail()
+
+    @test(runs_after=[wait_for_non_affinity_replica_fail])
+    def delete_non_affinity_repl(self):
+        """Test deleting non-affinity replica."""
+        self.test_runner.run_delete_non_affinity_repl()
+
+    @test(runs_after=[delete_non_affinity_repl])
+    def delete_non_affinity_master(self):
+        """Test deleting non-affinity master."""
+        self.test_runner.run_delete_non_affinity_master()
+
+    @test(depends_on=[create_single_replica, create_multiple_replicas],
+          runs_after=[delete_non_affinity_master])
+    def verify_replica_data_orig(self):
+        """Verify original data was transferred to replicas."""
+        self.test_runner.run_verify_replica_data_orig()
+
+    @test(depends_on=[create_single_replica, create_multiple_replicas],
+          runs_after=[verify_replica_data_orig])
     def add_data_to_replicate(self):
-        """Add data to master to verify replication."""
+        """Add new data to master to verify replication."""
         self.test_runner.run_add_data_to_replicate()
 
     @test(depends_on=[add_data_to_replicate])
     def verify_data_to_replicate(self):
-        """Verify data exists on master."""
+        """Verify new data exists on master."""
         self.test_runner.run_verify_data_to_replicate()
 
     @test(depends_on=[create_single_replica, create_multiple_replicas,
@@ -87,13 +124,6 @@ class ReplicationGroup(TestGroup):
     @test(depends_on=[create_single_replica, create_multiple_replicas,
                       add_data_to_replicate],
           runs_after=[wait_for_data_to_replicate])
-    def verify_replica_data_orig(self):
-        """Verify original data was transferred to replicas."""
-        self.test_runner.run_verify_replica_data_orig()
-
-    @test(depends_on=[create_single_replica, create_multiple_replicas,
-                      add_data_to_replicate],
-          runs_after=[verify_replica_data_orig])
     def verify_replica_data_new(self):
         """Verify new data was transferred to replicas."""
         self.test_runner.run_verify_replica_data_new()
@@ -128,8 +158,14 @@ class ReplicationGroup(TestGroup):
         """Test promoting a replica to replica source (master)."""
         self.test_runner.run_promote_to_replica_source()
 
+    @test(depends_on=[promote_to_replica_source])
+    def verify_replica_data_new_master(self):
+        """Verify data is still on new master."""
+        self.test_runner.run_verify_replica_data_new_master()
+
     @test(depends_on=[create_single_replica, create_multiple_replicas,
-                      promote_to_replica_source])
+                      promote_to_replica_source],
+          runs_after=[verify_replica_data_new_master])
     def add_data_to_replicate2(self):
         """Add data to new master to verify replication."""
         self.test_runner.run_add_data_to_replicate2()
