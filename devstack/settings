@@ -3,10 +3,16 @@
 
 # Set up default directories
 TROVE_DIR=${TROVE_DIR:-${DEST}/trove}
+TROVE_REPO=${TROVE_REPO:-${GIT_BASE}/openstack/trove.git}
+TROVE_BRANCH=${TROVE_BRANCH:-master}
 
-TROVECLIENT_DIR=${TROVECLIENT_DIR:-${DEST}/python-troveclient}
-TROVECLIENT_REPO=${TROVECLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}
-TROVECLIENT_BRANCH=${TROVECLIENT_BRANCH:-master}
+TROVE_CLIENT_DIR=${TROVE_CLIENT_DIR:-${TROVECLIENT_DIR:-${DEST}/python-troveclient}}
+TROVE_CLIENT_REPO=${TROVE_CLIENT_REPO:-${TROVECLIENT_REPO:-${GIT_BASE}/openstack/python-troveclient.git}}
+TROVE_CLIENT_BRANCH=${TROVE_CLIENT_BRANCH:-${TROVECLIENT_BRANCH:-master}}
+
+TROVE_DASHBOARD_DIR=${TROVE_DASHBOARD_DIR:-${DEST}/trove-dashboard}
+TROVE_DASHBOARD_REPO=${TROVE_DASHBOARD_REPO:-${GIT_BASE}/openstack/trove-dashboard.git}
+TROVE_DASHBOARD_BRANCH=${TROVE_DASHBOARD_BRANCH:-master}
 
 # Set up configuration directory and files
 TROVE_CONF_DIR=${TROVE_CONF_DIR:-/etc/trove}

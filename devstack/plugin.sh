@@ -73,9 +73,19 @@ function create_trove_accounts {
 # cleanup_trove() - Remove residual data files, anything left over from previous
 # runs that a clean run would need to clean up
 function cleanup_trove {
-    #Clean up dirs
+    # Clean up dirs
     rm -fr $TROVE_AUTH_CACHE_DIR/*
     rm -fr $TROVE_CONF_DIR/*
+
+    if is_service_enabled horizon; then
+        cleanup_trove_dashboard
+    fi
+}
+
+
+# cleanup_trove_dashboard() - Remove Trove dashboard files from Horizon
+function cleanup_trove_dashboard {
+    rm -f $HORIZON_DIR/openstack_dashboard/local/enabled/_17*database*.py
 }
 
 
@@ -194,13 +204,24 @@ function configure_trove {
 # install_trove() - Collect source and prepare
 function install_trove {
     setup_develop $TROVE_DIR
+
+    if is_service_enabled horizon; then
+        install_trove_dashboard
+    fi
+}
+
+# install_trove_dashboard() - Collect source and prepare
+function install_trove_dashboard {
+    git_clone $TROVE_DASHBOARD_REPO $TROVE_DASHBOARD_DIR $TROVE_DASHBOARD_BRANCH
+    setup_develop $TROVE_DASHBOARD_DIR
+    cp $TROVE_DASHBOARD_DIR/trove_dashboard/enabled/_17*database*.py $HORIZON_DIR/openstack_dashboard/local/enabled
 }
 
 # install_python_troveclient() - Collect source and prepare
 function install_python_troveclient {
     if use_library_from_git "python-troveclient"; then
-        git_clone $TROVECLIENT_REPO $TROVECLIENT_DIR $TROVECLIENT_BRANCH
-        setup_develop $TROVECLIENT_DIR
+        git_clone $TROVE_CLIENT_REPO $TROVE_CLIENT_DIR $TROVE_CLIENT_BRANCH
+        setup_develop $TROVE_CLIENT_DIR
     fi
 }
 
@@ -298,7 +319,6 @@ if is_service_enabled trove; then
         echo_summary "Installing Trove"
         install_trove
         install_python_troveclient
-        cleanup_trove
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         echo_summary "Configuring Trove"
         configure_trove
@@ -328,6 +348,7 @@ if is_service_enabled trove; then
 
     if [[ "$1" == "unstack" ]]; then
         stop_trove
+        cleanup_trove
     fi
 fi
 
