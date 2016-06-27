@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from mock import Mock
 from mock import patch
 import uuid
 
@@ -62,6 +63,27 @@ class AgentHeartBeatTest(trove_testtools.TestCase):
         self.assertIsNotNone(heartbeat.updated_at)
         self.assertIsNotNone(heartbeat.guest_agent_version)
         self.assertEqual("1.2.3", heartbeat.guest_agent_version)
+
+    def test_create_invalid_model_error(self):
+        """
+        Test the creation failure of a new agent heartbeat record
+        """
+        instance = Mock()
+        instance.errors = {}
+        instance.is_valid = Mock(return_value=False)
+        with patch.object(AgentHeartBeat, 'save', return_value=instance):
+            self.assertRaises(exception.InvalidModelError,
+                              AgentHeartBeat.create)
+
+    def test_save_invalid_model_error(self):
+        """
+        Test the save failure of an agent heartbeat record
+        """
+        instance_id = str(uuid.uuid4())
+        heartbeat = AgentHeartBeat.create(
+            instance_id=instance_id)
+        with patch.object(AgentHeartBeat, 'is_valid', return_value=False):
+            self.assertRaises(exception.InvalidModelError, heartbeat.save)
 
     def test_find_by_instance_id(self):
         """
