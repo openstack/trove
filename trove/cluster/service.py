@@ -25,6 +25,7 @@ from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
+from trove.common import policy
 from trove.common import utils
 from trove.common import wsgi
 from trove.datastore import models as datastore_models
@@ -38,6 +39,11 @@ class ClusterController(wsgi.Controller):
 
     """Controller for cluster functionality."""
     schemas = apischema.cluster.copy()
+
+    @classmethod
+    def authorize_cluster_action(cls, context, cluster_rule_name, cluster):
+        policy.authorize_on_target(context, 'cluster:%s' % cluster_rule_name,
+                                   {'tenant': cluster.tenant_id})
 
     @classmethod
     def get_action_schema(cls, body, action_schema):
@@ -58,15 +64,25 @@ class ClusterController(wsgi.Controller):
                   {"req": req, "id": id, "tenant_id": tenant_id})
         if not body:
             raise exception.BadRequest(_("Invalid request body."))
+
         if len(body) != 1:
             raise exception.BadRequest(_("Action request should have exactly"
                                          " one action specified in body"))
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
+        if ('reset-status' in body and
+                'force_delete' not in body['reset-status']):
+            self.authorize_cluster_action(context, 'reset-status', cluster)
+        elif ('reset-status' in body and
+                'force_delete' in body['reset-status']):
+            self.authorize_cluster_action(context, 'force_delete', cluster)
+        else:
+            self.authorize_cluster_action(context, 'action', cluster)
         cluster.action(context, req, *next(iter(body.items())))
 
         view = views.load_view(cluster, req=req, load_servers=False)
         wsgi_result = wsgi.Result(view.data(), 202)
+
         return wsgi_result
 
     def show(self, req, tenant_id, id):
@@ -77,6 +93,7 @@ class ClusterController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
+        self.authorize_cluster_action(context, 'show', cluster)
         return wsgi.Result(views.load_view(cluster, req=req).data(), 200)
 
     def show_instance(self, req, tenant_id, cluster_id, instance_id):
@@ -92,6 +109,7 @@ class ClusterController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, cluster_id)
+        self.authorize_cluster_action(context, 'show_instance', cluster)
         instance = models.Cluster.load_instance(context, cluster.id,
                                                 instance_id)
         return wsgi.Result(views.ClusterInstanceDetailView(
@@ -105,6 +123,7 @@ class ClusterController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         cluster = models.Cluster.load(context, id)
+        self.authorize_cluster_action(context, 'delete', cluster)
         context.notification = notification.DBaaSClusterDelete(context,
                                                                request=req)
         with StartNotification(context, cluster_id=id):
@@ -118,8 +137,18 @@ class ClusterController(wsgi.Controller):
                                              "tenant_id": tenant_id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        # This theoretically allows the Admin tenant list clusters for
+        # only one particular tenant as opposed to listing all clusters for
+        # for all tenants.
+        # * As far as I can tell this is the only call which actually uses the
+        #   passed-in 'tenant_id' for anything.
         if not context.is_admin and context.tenant != tenant_id:
             raise exception.TroveOperationAuthError(tenant_id=context.tenant)
+
+        # The rule checks that the currently authenticated tenant can perform
+        # the 'cluster-list' action.
+        policy.authorize_on_tenant(context, 'cluster:index')
 
         # load all clusters and instances for the tenant
         clusters, marker = models.Cluster.load_all(context, tenant_id)
@@ -134,6 +163,8 @@ class ClusterController(wsgi.Controller):
                   {"tenant_id": tenant_id, "req": req, "body": body})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'cluster:create')
+
         name = body['cluster']['name']
         datastore_args = body['cluster'].get('datastore', {})
         datastore, datastore_version = (

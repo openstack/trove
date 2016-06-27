@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from trove.common import policy
 from trove.common import wsgi
 from trove.limits import views
 from trove.quota.quota import QUOTAS
@@ -27,6 +28,8 @@ class LimitsController(wsgi.Controller):
         """
         Return all absolute and rate limit information.
         """
+        context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'limits:index')
         quotas = QUOTAS.get_all_quotas_by_tenant(tenant_id)
         abs_limits = {k: v['hard_limit'] for k, v in quotas.items()}
         rate_limits = req.environ.get("trove.limits", [])

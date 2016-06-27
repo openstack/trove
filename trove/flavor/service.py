@@ -17,6 +17,7 @@
 import six
 
 from trove.common import exception
+from trove.common import policy
 from trove.common import wsgi
 from trove.flavor import models
 from trove.flavor import views
@@ -30,12 +31,16 @@ class FlavorController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         self._validate_flavor_id(id)
         flavor = models.Flavor(context=context, flavor_id=id)
+        # Flavors do not bind to a particular tenant.
+        # Only authorize the current tenant.
+        policy.authorize_on_tenant(context, 'flavor:show')
         # Pass in the request to build accurate links.
         return wsgi.Result(views.FlavorView(flavor, req).data(), 200)
 
     def index(self, req, tenant_id):
         """Return all flavors."""
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'flavor:index')
         flavors = models.Flavors(context=context)
         return wsgi.Result(views.FlavorsView(flavors, req).data(), 200)
 

@@ -45,6 +45,7 @@ class BaseLimitTestSuite(trove_testtools.TestCase):
 
     def setUp(self):
         super(BaseLimitTestSuite, self).setUp()
+        self.context = trove_testtools.TroveTestContext(self)
         self.absolute_limits = {"max_instances": 55,
                                 "max_volumes": 100,
                                 "max_backups": 40}
@@ -60,7 +61,7 @@ class LimitsControllerTest(BaseLimitTestSuite):
         limit_controller = LimitsController()
 
         req = MagicMock()
-        req.environ = {}
+        req.environ = {'trove.context': self.context}
 
         view = limit_controller.index(req, "test_tenant_id")
         expected = {'limits': [{'verb': 'ABSOLUTE'}]}
@@ -122,7 +123,7 @@ class LimitsControllerTest(BaseLimitTestSuite):
                                        hard_limit=55)}
 
         req = MagicMock()
-        req.environ = {"trove.limits": limits}
+        req.environ = {"trove.limits": limits, 'trove.context': self.context}
 
         with patch.object(QUOTAS, 'get_all_quotas_by_tenant',
                           return_value=abs_limits):

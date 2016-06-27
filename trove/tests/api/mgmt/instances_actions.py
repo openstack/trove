@@ -18,6 +18,7 @@ from proboscis import after_class
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_raises
 from proboscis import before_class
+from proboscis import SkipTest
 from proboscis import test
 
 from trove.backup import models as backup_models
@@ -30,6 +31,7 @@ from trove.extensions.mgmt.instances.service import MgmtInstanceController
 from trove.instance import models as imodels
 from trove.instance.models import DBInstance
 from trove.instance.tasks import InstanceTasks
+from trove.tests.config import CONFIG
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import test_config
 from trove.tests.util.users import Requirements
@@ -79,6 +81,7 @@ class MgmtInstanceBase(object):
 
 @test(groups=[GROUP])
 class RestartTaskStatusTests(MgmtInstanceBase):
+
     @before_class
     def setUp(self):
         super(RestartTaskStatusTests, self).setUp()
@@ -137,6 +140,9 @@ class RestartTaskStatusTests(MgmtInstanceBase):
 
     @test
     def mgmt_reset_task_status_clears_backups(self):
+        if CONFIG.fake_mode:
+            raise SkipTest("Test requires an instance.")
+
         self.reset_task_status()
         self._reload_db_info()
         assert_equal(self.db_info.task_status, InstanceTasks.NONE)
@@ -201,5 +207,6 @@ class RestartTaskStatusTests(MgmtInstanceBase):
             found_backup.delete()
         admin = test_config.users.find_user(Requirements(is_admin=True))
         admin_dbaas = create_dbaas_client(admin)
-        result = admin_dbaas.instances.backups(self.db_info.id)
-        assert_equal(0, len(result))
+        if not CONFIG.fake_mode:
+            result = admin_dbaas.instances.backups(self.db_info.id)
+            assert_equal(0, len(result))

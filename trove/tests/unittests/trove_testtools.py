@@ -23,6 +23,7 @@ import testtools
 from trove.common import cfg
 from trove.common.context import TroveContext
 from trove.common.notification import DBaaSAPINotification
+from trove.common import policy
 from trove.tests import root_logger
 
 
@@ -100,6 +101,11 @@ class TestCase(testtools.TestCase):
 
         # Default manager used by all unittsest unless explicitly overridden.
         self.patch_datastore_manager('mysql')
+
+        policy_patcher = mock.patch.object(policy, 'get_enforcer',
+                                           return_value=mock.MagicMock())
+        self.addCleanup(policy_patcher.stop)
+        policy_patcher.start()
 
     def tearDown(self):
         # yes, this is gross and not thread aware.

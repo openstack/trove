@@ -18,7 +18,6 @@ import jsonschema
 from mock import MagicMock
 from mock import Mock
 from mock import patch
-from testtools import TestCase
 from testtools.matchers import Is, Equals
 from trove.cluster import models
 from trove.cluster.models import Cluster, DBCluster
@@ -33,7 +32,8 @@ from trove.datastore import models as datastore_models
 from trove.tests.unittests import trove_testtools
 
 
-class TestClusterController(TestCase):
+class TestClusterController(trove_testtools.TestCase):
+
     def setUp(self):
         super(TestClusterController, self).setUp()
         self.controller = ClusterController()
@@ -248,7 +248,8 @@ class TestClusterController(TestCase):
         cluster.delete.assert_called_with()
 
 
-class TestClusterControllerWithStrategy(TestCase):
+class TestClusterControllerWithStrategy(trove_testtools.TestCase):
+
     def setUp(self):
         super(TestClusterControllerWithStrategy, self).setUp()
         self.controller = ClusterController()

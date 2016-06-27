@@ -27,6 +27,7 @@ from trove.common.i18n import _LI
 from trove.common import notification
 from trove.common.notification import StartNotification
 from trove.common import pagination
+from trove.common import policy
 from trove.common.remote import create_guest_client
 from trove.common import utils
 from trove.common import wsgi
@@ -46,6 +47,11 @@ class InstanceController(wsgi.Controller):
 
     """Controller for instance functionality."""
     schemas = apischema.instance.copy()
+
+    @classmethod
+    def authorize_instance_action(cls, context, instance_rule_name, instance):
+        policy.authorize_on_target(context, 'instance:%s' % instance_rule_name,
+                                   {'tenant': instance.tenant_id})
 
     @classmethod
     def get_action_schema(cls, body, action_schema):
@@ -106,6 +112,7 @@ class InstanceController(wsgi.Controller):
     def _action_restart(self, context, req, instance, body):
         context.notification = notification.DBaaSInstanceRestart(context,
                                                                  request=req)
+        self.authorize_instance_action(context, 'restart', instance)
         with StartNotification(context, instance_id=instance.id):
             instance.restart()
         return wsgi.Result(None, 202)
@@ -136,6 +143,8 @@ class InstanceController(wsgi.Controller):
     def _action_resize_volume(self, context, req, instance, volume):
         context.notification = notification.DBaaSInstanceResizeVolume(
             context, request=req)
+        self.authorize_instance_action(context, 'resize_volume', instance)
+
         with StartNotification(context, instance_id=instance.id,
                                new_size=volume['size']):
             instance.resize_volume(volume['size'])
@@ -144,6 +153,8 @@ class InstanceController(wsgi.Controller):
     def _action_resize_flavor(self, context, req, instance, flavorRef):
         context.notification = notification.DBaaSInstanceResizeInstance(
             context, request=req)
+        self.authorize_instance_action(context, 'resize_flavor', instance)
+
         new_flavor_id = utils.get_id_from_href(flavorRef)
         with StartNotification(context, instance_id=instance.id,
                                new_flavor_id=new_flavor_id):
@@ -154,6 +165,8 @@ class InstanceController(wsgi.Controller):
         raise webob.exc.HTTPNotImplemented()
 
     def _action_promote_to_replica_source(self, context, req, instance, body):
+        self.authorize_instance_action(
+            context, 'promote_to_replica_source', instance)
         context.notification = notification.DBaaSInstanceEject(context,
                                                                request=req)
         with StartNotification(context, instance_id=instance.id):
@@ -161,6 +174,8 @@ class InstanceController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def _action_eject_replica_source(self, context, req, instance, body):
+        self.authorize_instance_action(
+            context, 'eject_replica_source', instance)
         context.notification = notification.DBaaSInstancePromote(context,
                                                                  request=req)
         with StartNotification(context, instance_id=instance.id):
@@ -168,6 +183,11 @@ class InstanceController(wsgi.Controller):
         return wsgi.Result(None, 202)
 
     def _action_reset_status(self, context, req, instance, body):
+        if 'force_delete' in body['reset_status']:
+            self.authorize_instance_action(context, 'force_delete', instance)
+        else:
+            self.authorize_instance_action(
+                context, 'reset_status', instance)
         context.notification = notification.DBaaSInstanceResetStatus(
             context, request=req)
         with StartNotification(context, instance_id=instance.id):
@@ -183,6 +203,7 @@ class InstanceController(wsgi.Controller):
         LOG.info(_LI("Listing database instances for tenant '%s'"), tenant_id)
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'instance:index')
         clustered_q = req.GET.get('include_clustered', '').lower()
         include_clustered = clustered_q == 'true'
         servers, marker = models.Instances.load(context, include_clustered)
@@ -197,6 +218,10 @@ class InstanceController(wsgi.Controller):
                  id)
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
+
+        instance = models.Instance.load(context, id)
+        self.authorize_instance_action(context, 'backups', instance)
+
         backups, marker = backup_model.list_for_instance(context, id)
         view = backup_views.BackupViews(backups)
         paged = pagination.SimplePaginatedDataView(req.url, 'backups', view,
@@ -213,6 +238,7 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
         server = models.load_instance_with_info(models.DetailInstance,
                                                 context, id)
+        self.authorize_instance_action(context, 'show', server)
         return wsgi.Result(views.InstanceDetailView(server,
                                                     req=req).data(), 200)
 
@@ -224,6 +250,7 @@ class InstanceController(wsgi.Controller):
         LOG.debug("req : '%s'\n\n", req)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.load_any_instance(context, id)
+        self.authorize_instance_action(context, 'delete', instance)
         context.notification = notification.DBaaSInstanceDelete(
             context, request=req)
         with StartNotification(context, instance_id=instance.id):
@@ -247,6 +274,7 @@ class InstanceController(wsgi.Controller):
         LOG.debug("req : '%s'\n\n", strutils.mask_password(req))
         LOG.debug("body : '%s'\n\n", strutils.mask_password(body))
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'instance:create')
         context.notification = notification.DBaaSInstanceCreate(context,
                                                                 request=req)
         datastore_args = body['instance'].get('datastore', {})
@@ -267,6 +295,25 @@ class InstanceController(wsgi.Controller):
                                    database_names)
         except ValueError as ve:
             raise exception.BadRequest(msg=ve)
+
+        modules = body['instance'].get('modules')
+
+        # The following operations have their own API calls.
+        # We need to make sure the same policies are enforced when
+        # creating an instance.
+        # i.e. if attaching configuration group to an existing instance is not
+        # allowed, it should not be possible to create a new instance with the
+        # group attached either
+        if configuration:
+            policy.authorize_on_tenant(context, 'instance:update')
+        if modules:
+            policy.authorize_on_tenant(context, 'instance:module_apply')
+        if users:
+            policy.authorize_on_tenant(
+                context, 'instance:extension:user:create')
+        if databases:
+            policy.authorize_on_tenant(
+                context, 'instance:extension:database:create')
 
         if 'volume' in body['instance']:
             volume_info = body['instance']['volume']
@@ -289,7 +336,6 @@ class InstanceController(wsgi.Controller):
                                            # also check for older name
                                            body['instance'].get('slave_of'))
         replica_count = body['instance'].get('replica_count')
-        modules = body['instance'].get('modules')
         locality = body['instance'].get('locality')
         if locality:
             locality_domain = ['affinity', 'anti-affinity']
@@ -371,6 +417,7 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
 
         instance = models.Instance.load(context, id)
+        self.authorize_instance_action(context, 'update', instance)
 
         # Make sure args contains a 'configuration_id' argument,
         args = {}
@@ -388,6 +435,7 @@ class InstanceController(wsgi.Controller):
         context = req.environ[wsgi.CONTEXT_KEY]
 
         instance = models.Instance.load(context, id)
+        self.authorize_instance_action(context, 'edit', instance)
 
         args = {}
         args['detach_replica'] = ('replica_of' in body['instance'] or
@@ -411,6 +459,8 @@ class InstanceController(wsgi.Controller):
         LOG.info(_LI("Getting default configuration for instance %s"), id)
         context = req.environ[wsgi.CONTEXT_KEY]
         instance = models.Instance.load(context, id)
+        self.authorize_instance_action(context, 'configuration', instance)
+
         LOG.debug("Server: %s", instance)
         config = instance.get_default_configuration_template()
         LOG.debug("Default config for instance %(instance_id)s is %(config)s",
@@ -425,6 +475,7 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)
+        self.authorize_instance_action(context, 'guest_log_list', instance)
         client = create_guest_client(context, id)
         guest_log_list = client.guest_log_list()
         return wsgi.Result({'logs': guest_log_list}, 200)
@@ -454,6 +505,7 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)
+        self.authorize_instance_action(context, 'module_list', instance)
         from_guest = bool(req.GET.get('from_guest', '').lower())
         include_contents = bool(req.GET.get('include_contents', '').lower())
         if from_guest:
@@ -481,6 +533,7 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)
+        self.authorize_instance_action(context, 'module_apply', instance)
         module_ids = [mod['id'] for mod in body.get('modules', [])]
         modules = module_models.Modules.load_by_ids(context, module_ids)
         module_list = []
@@ -501,6 +554,7 @@ class InstanceController(wsgi.Controller):
         instance = models.Instance.load(context, id)
         if not instance:
             raise exception.NotFound(uuid=id)
+        self.authorize_instance_action(context, 'module_remove', instance)
         module = module_models.Module.load(context, module_id)
         module_info = module_views.DetailedModuleView(module).data()
         client = create_guest_client(context, id)

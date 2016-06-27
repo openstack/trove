@@ -25,6 +25,7 @@ from trove.common.i18n import _
 from trove.common import notification
 from trove.common.notification import StartNotification, EndNotification
 from trove.common import pagination
+from trove.common import policy
 from trove.common import wsgi
 from trove.configuration import models
 from trove.configuration.models import DBConfigurationParameter
@@ -41,9 +42,16 @@ class ConfigurationsController(wsgi.Controller):
 
     schemas = apischema.configuration
 
+    @classmethod
+    def authorize_config_action(cls, context, config_rule_name, config):
+        policy.authorize_on_target(
+            context, 'configuration:%s' % config_rule_name,
+            {'tenant': config.tenant_id})
+
     def index(self, req, tenant_id):
         context = req.environ[wsgi.CONTEXT_KEY]
         configs, marker = models.Configurations.load(context)
+        policy.authorize_on_tenant(context, 'configuration:index')
         view = views.ConfigurationsView(configs)
         paged = pagination.SimplePaginatedDataView(req.url, 'configurations',
                                                    view, marker)
@@ -54,6 +62,7 @@ class ConfigurationsController(wsgi.Controller):
                   % {"tenant": tenant_id, "id": id})
         context = req.environ[wsgi.CONTEXT_KEY]
         configuration = models.Configuration.load(context, id)
+        self.authorize_config_action(context, 'show', configuration)
         configuration_items = models.Configuration.load_items(context, id)
 
         configuration.instance_count = instances_models.DBInstance.find_all(
@@ -68,6 +77,7 @@ class ConfigurationsController(wsgi.Controller):
     def instances(self, req, tenant_id, id):
         context = req.environ[wsgi.CONTEXT_KEY]
         configuration = models.Configuration.load(context, id)
+        self.authorize_config_action(context, 'instances', configuration)
         instances = instances_models.DBInstance.find_all(
             tenant_id=context.tenant,
             configuration_id=configuration.id,
@@ -89,6 +99,7 @@ class ConfigurationsController(wsgi.Controller):
         LOG.debug("body : '%s'\n\n" % req)
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'configuration:create')
         context.notification = notification.DBaaSConfigurationCreate(
             context, request=req)
         name = body['configuration']['name']
@@ -137,10 +148,11 @@ class ConfigurationsController(wsgi.Controller):
         LOG.info(msg % {"tenant_id": tenant_id, "cfg_id": id})
 
         context = req.environ[wsgi.CONTEXT_KEY]
+        group = models.Configuration.load(context, id)
+        self.authorize_config_action(context, 'delete', group)
         context.notification = notification.DBaaSConfigurationDelete(
             context, request=req)
         with StartNotification(context, configuration_id=id):
-            group = models.Configuration.load(context, id)
             instances = instances_models.DBInstance.find_all(
                 tenant_id=context.tenant,
                 configuration_id=id,
@@ -157,6 +169,15 @@ class ConfigurationsController(wsgi.Controller):
 
         context = req.environ[wsgi.CONTEXT_KEY]
         group = models.Configuration.load(context, id)
+        # Note that changing the configuration group will also
+        # indirectly affect all the instances which attach it.
+        #
+        # The Trove instance itself won't be changed (the same group is still
+        # attached) but the configuration values will.
+        #
+        # The operator needs to keep this in mind when defining the related
+        # policies.
+        self.authorize_config_action(context, 'update', group)
 
         # if name/description are provided in the request body, update the
         # model with these values as well.
@@ -181,10 +202,11 @@ class ConfigurationsController(wsgi.Controller):
 
     def edit(self, req, body, tenant_id, id):
         context = req.environ[wsgi.CONTEXT_KEY]
+        group = models.Configuration.load(context, id)
+        self.authorize_config_action(context, 'edit', group)
         context.notification = notification.DBaaSConfigurationEdit(
             context, request=req)
         with StartNotification(context, configuration_id=id):
-            group = models.Configuration.load(context, id)
             items = self._configuration_items_list(group,
                                                    body['configuration'])
             models.Configuration.save(group, items)
@@ -329,7 +351,18 @@ class ConfigurationsController(wsgi.Controller):
 
 class ParametersController(wsgi.Controller):
 
+    @classmethod
+    def authorize_request(cls, req, rule_name):
+        """Parameters (configuration templates) bind to a datastore.
+        Datastores are not owned by any particular tenant so we only check
+        the current tenant is allowed to perform the action.
+        """
+        context = req.environ[wsgi.CONTEXT_KEY]
+        policy.authorize_on_tenant(context, 'configuration-parameter:%s'
+                                   % rule_name)
+
     def index(self, req, tenant_id, datastore, id):
+        self.authorize_request(req, 'index')
         ds, ds_version = ds_models.get_datastore_version(
             type=datastore, version=id)
         rules = models.DatastoreConfigurationParameters.load_parameters(
@@ -338,6 +371,7 @@ class ParametersController(wsgi.Controller):
                            200)
 
     def show(self, req, tenant_id, datastore, id, name):
+        self.authorize_request(req, 'show')
         ds, ds_version = ds_models.get_datastore_version(
             type=datastore, version=id)
         rule = models.DatastoreConfigurationParameters.load_parameter_by_name(
@@ -345,6 +379,7 @@ class ParametersController(wsgi.Controller):
         return wsgi.Result(views.ConfigurationParameterView(rule).data(), 200)
 
     def index_by_version(self, req, tenant_id, version):
+        self.authorize_request(req, 'index_by_version')
         ds_version = ds_models.DatastoreVersion.load_by_uuid(version)
         rules = models.DatastoreConfigurationParameters.load_parameters(
             ds_version.id)
@@ -352,6 +387,7 @@ class ParametersController(wsgi.Controller):
                            200)
 
     def show_by_version(self, req, tenant_id, version, name):
+        self.authorize_request(req, 'show_by_version')
         ds_models.DatastoreVersion.load_by_uuid(version)
         rule = models.DatastoreConfigurationParameters.load_parameter_by_name(
             version, name)

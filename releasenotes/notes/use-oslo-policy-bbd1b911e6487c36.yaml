@@ -1,0 +1,8 @@
+---
+features:
+  - Add RBAC (role-based access control)
+    enforcement on all trove APIs.
+    Allows to define a role-based access rule
+    for every trove API call
+    (rule definitions are available in
+     /etc/trove/policy.json).
