@@ -318,6 +318,24 @@ class ClusterTasks(Cluster):
 
 class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
+    def _delete_resources(self, deleted_at):
+        LOG.debug("Begin _delete_resources for instance %s" % self.id)
+
+        # If volume has "available" status, delete it manually.
+        try:
+            if self.volume_id:
+                volume_client = create_cinder_client(self.context)
+                volume = volume_client.volumes.get(self.volume_id)
+                if volume.status == "available":
+                    LOG.info(_("Deleting volume %(v)s for instance: %(i)s.")
+                             % {'v': self.volume_id, 'i': self.id})
+                    volume.delete()
+        except Exception:
+            LOG.exception(_("Error deleting volume of instance %(id)s.") %
+                          {'id': self.db_info.id})
+
+        LOG.debug("End _delete_resource for instance %s" % self.id)
+
     def _get_injected_files(self, datastore_manager):
         injected_config_location = CONF.get('injected_config_location')
         guest_info = CONF.get('guest_info')
