@@ -626,6 +626,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
                     " ORDER BY schema_name ASC LIMIT " + str(limit + 1) + ";"
                     )
         with patch.object(self.mock_client, 'execute') as mock_execute:
+            mock_execute.return_value.rowcount = 0
             self.mySqlAdmin.list_databases(limit)
             self._assert_execute_call(expected, mock_execute)
 
@@ -684,6 +685,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
                     )
 
         with patch.object(self.mock_client, 'execute') as mock_execute:
+            mock_execute.return_value.rowcount = 0
             self.mySqlAdmin.list_users(limit)
             self._assert_execute_call(expected, mock_execute)
 
@@ -2941,7 +2943,7 @@ class VerticaAppTest(trove_testtools.TestCase):
         self.assertEqual(0, vertica_system.shell_execute.call_count)
 
     def test_vertica_write_config(self):
-        temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
+        temp_file_handle = tempfile.NamedTemporaryFile("w", delete=False)
         mock_mkstemp = MagicMock(return_value=(temp_file_handle))
         mock_unlink = Mock(return_value=0)
         self.app.write_config(config=self.test_config,
@@ -2967,7 +2969,7 @@ class VerticaAppTest(trove_testtools.TestCase):
 
     def test_vertica_error_in_write_config_verify_unlink(self):
         mock_unlink = Mock(return_value=0)
-        temp_file_handle = tempfile.NamedTemporaryFile(delete=False)
+        temp_file_handle = tempfile.NamedTemporaryFile("w", delete=False)
         mock_mkstemp = MagicMock(return_value=temp_file_handle)
 
         with patch.object(vertica_system, 'shell_execute',
