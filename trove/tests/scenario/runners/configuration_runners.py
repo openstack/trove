@@ -506,7 +506,7 @@ class ConfigurationRunner(TestRunner):
     def assert_create_instance_with_conf(self, config_id):
         # test that a new instance will apply the configuration on create
         result = self.auth_client.instances.create(
-            "TEST_" + str(datetime.now()) + "_config",
+            self.instance_info.name + "_config",
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
             [], [],

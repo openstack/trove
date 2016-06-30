@@ -15,19 +15,12 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.configuration_group"
-GROUP_CFGGRP_CREATE = "scenario.cfggrp_create_group"
-GROUP_CFGGRP_INST = "scenario.cfggrp_inst_group"
-GROUP_CFGGRP_INST_CREATE = "scenario.cfggrp_inst_create_group"
-GROUP_CFGGRP_INST_CREATE_WAIT = "scenario.cfggrp_inst_create_wait_group"
-GROUP_CFGGRP_INST_DELETE = "scenario.cfggrp_inst_delete_group"
-GROUP_CFGGRP_INST_DELETE_WAIT = "scenario.cfggrp_inst_delete_wait_group"
-GROUP_CFGGRP_DELETE = "scenario.cfggrp_delete_group"
 
 
 class ConfigurationRunnerFactory(test_runners.RunnerFactory):
@@ -36,7 +29,8 @@ class ConfigurationRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ConfigurationRunner'
 
 
-@test(groups=[GROUP, GROUP_CFGGRP_CREATE])
+@test(groups=[GROUP, groups.CFGGRP_CREATE],
+      runs_after_groups=[groups.MODULE_CREATE])
 class ConfigurationCreateGroup(TestGroup):
     """Test Configuration Group functionality."""
 
@@ -100,9 +94,11 @@ class ConfigurationCreateGroup(TestGroup):
         self.test_runner.run_non_dynamic_conf_get_unauthorized_user()
 
 
-@test(depends_on_groups=[instance_create_group.GROUP,
-                         GROUP_CFGGRP_CREATE],
-      groups=[GROUP, GROUP_CFGGRP_INST, GROUP_CFGGRP_INST_CREATE])
+@test(depends_on_groups=[groups.INST_CREATE_WAIT,
+                         groups.CFGGRP_CREATE],
+      groups=[GROUP, groups.CFGGRP_INST,
+              groups.CFGGRP_INST_CREATE],
+      runs_after_groups=[groups.MODULE_INST_CREATE])
 class ConfigurationInstCreateGroup(TestGroup):
     """Test Instance Configuration Group Create functionality."""
 
@@ -235,8 +231,11 @@ class ConfigurationInstCreateGroup(TestGroup):
         self.test_runner.run_detach_non_dynamic_group()
 
 
-@test(depends_on_groups=[GROUP_CFGGRP_INST_CREATE],
-      groups=[GROUP, GROUP_CFGGRP_INST, GROUP_CFGGRP_INST_CREATE_WAIT])
+@test(depends_on_groups=[groups.CFGGRP_INST_CREATE],
+      groups=[GROUP, groups.CFGGRP_INST,
+              groups.CFGGRP_INST_CREATE_WAIT],
+      runs_after_groups=[groups.INST_ACTIONS,
+                         groups.MODULE_INST_CREATE_WAIT])
 class ConfigurationInstCreateWaitGroup(TestGroup):
     """Test that Instance Configuration Group Create Completes."""
     def __init__(self):
@@ -254,8 +253,10 @@ class ConfigurationInstCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_instance_values()
 
 
-@test(depends_on_groups=[GROUP_CFGGRP_INST_CREATE_WAIT],
-      groups=[GROUP, GROUP_CFGGRP_INST, GROUP_CFGGRP_INST_DELETE])
+@test(depends_on_groups=[groups.CFGGRP_INST_CREATE_WAIT],
+      groups=[GROUP, groups.CFGGRP_INST,
+              groups.CFGGRP_INST_DELETE],
+      runs_after_groups=[groups.MODULE_INST_DELETE])
 class ConfigurationInstDeleteGroup(TestGroup):
     """Test Instance Configuration Group Delete functionality."""
 
@@ -269,8 +270,10 @@ class ConfigurationInstDeleteGroup(TestGroup):
         self.test_runner.run_delete_conf_instance()
 
 
-@test(depends_on_groups=[GROUP_CFGGRP_INST_DELETE],
-      groups=[GROUP, GROUP_CFGGRP_INST, GROUP_CFGGRP_INST_DELETE_WAIT])
+@test(depends_on_groups=[groups.CFGGRP_INST_DELETE],
+      groups=[GROUP, groups.CFGGRP_INST,
+              groups.CFGGRP_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
 class ConfigurationInstDeleteWaitGroup(TestGroup):
     """Test that Instance Configuration Group Delete Completes."""
 
@@ -284,9 +287,9 @@ class ConfigurationInstDeleteWaitGroup(TestGroup):
         self.test_runner.run_wait_for_delete_conf_instance()
 
 
-@test(depends_on_groups=[GROUP_CFGGRP_CREATE],
-      runs_after_groups=[GROUP_CFGGRP_INST_DELETE_WAIT],
-      groups=[GROUP, GROUP_CFGGRP_DELETE])
+@test(depends_on_groups=[groups.CFGGRP_CREATE],
+      runs_after_groups=[groups.CFGGRP_INST_DELETE_WAIT],
+      groups=[GROUP, groups.CFGGRP_DELETE])
 class ConfigurationDeleteGroup(TestGroup):
     """Test Configuration Group Delete functionality."""
 

@@ -23,12 +23,6 @@ from troveclient.compat import exceptions
 
 class DatabaseActionsRunner(TestRunner):
 
-    # TODO(pmalik): I believe the 202 (Accepted) should be replaced by
-    # 200 (OK) as the actions are generally very fast and their results
-    # available immediately upon execution of the request. This would
-    # likely require replacing GA casts with calls which I believe are
-    # more appropriate anyways.
-
     def __init__(self):
         super(DatabaseActionsRunner, self).__init__()
         self.db_defs = []

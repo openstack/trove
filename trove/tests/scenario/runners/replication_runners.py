@@ -61,7 +61,7 @@ class ReplicationRunner(TestRunner):
 
     def run_create_non_affinity_master(self, expected_http_code=200):
         self.non_affinity_master_id = self.auth_client.instances.create(
-            self.instance_info.name + 'non-affinity',
+            self.instance_info.name + '_non-affinity',
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
             datastore=self.instance_info.dbaas_datastore,
@@ -78,7 +78,7 @@ class ReplicationRunner(TestRunner):
     def assert_replica_create(
             self, master_id, replica_name, replica_count, expected_http_code):
         replica = self.auth_client.instances.create(
-            self.instance_info.name + replica_name,
+            self.instance_info.name + '_' + replica_name,
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume, replica_of=master_id,
             datastore=self.instance_info.dbaas_datastore,
@@ -136,7 +136,7 @@ class ReplicationRunner(TestRunner):
 
     def run_create_non_affinity_replica(self, expected_http_code=200):
         self.non_affinity_repl_id = self.auth_client.instances.create(
-            self.instance_info.name + 'non-affinity-repl',
+            self.instance_info.name + '_non-affinity-repl',
             self.instance_info.dbaas_flavor_href,
             self.instance_info.volume,
             datastore=self.instance_info.dbaas_datastore,
@@ -152,6 +152,7 @@ class ReplicationRunner(TestRunner):
     def run_wait_for_multiple_replicas(
             self, expected_states=['BUILD', 'ACTIVE']):
         replica_ids = self._get_replica_set(self.master_id)
+        self.report.log("Waiting for replicas: %s" % replica_ids)
         self.assert_instance_action(replica_ids, expected_states)
         self._assert_is_master(self.master_id, replica_ids)
         for replica_id in replica_ids:
@@ -306,7 +307,7 @@ class ReplicationRunner(TestRunner):
 
     def assert_remove_replicated_data(self, host):
         """In order for this to work, the corresponding datastore
-        'helper' class should implement the 'remove_<type>_data' method.
+        'helper' class should implement the 'remove_actual_data' method.
         """
         for data_set in self.used_data_sets:
             self.report.log("Removing replicated data set: %s" % data_set)
@@ -369,7 +370,7 @@ class ReplicationRunner(TestRunner):
     def run_wait_for_delete_replicas(
             self, expected_last_status=['SHUTDOWN']):
         replica_ids = self._get_replica_set(self.master_id)
-        replica_ids.update(self.replica_1_id)
+        replica_ids.add(self.replica_1_id)
         self.assert_all_gone(replica_ids,
                              expected_last_status=expected_last_status)
 

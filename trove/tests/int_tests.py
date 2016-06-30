@@ -32,6 +32,7 @@ from trove.tests.api import root
 from trove.tests.api import user_access
 from trove.tests.api import users
 from trove.tests.api import versions
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups import backup_group
 from trove.tests.scenario.groups import cluster_actions_group
 from trove.tests.scenario.groups import configuration_group
@@ -142,19 +143,18 @@ instance_create_groups.extend([instance_create_group.GROUP,
                                instance_delete_group.GROUP])
 
 backup_groups = list(instance_create_groups)
-backup_groups.extend([backup_group.GROUP_BACKUP,
-                      backup_group.GROUP_RESTORE])
+backup_groups.extend([groups.BACKUP,
+                      groups.BACKUP_INST])
 
 backup_incremental_groups = list(backup_groups)
-backup_incremental_groups.extend([backup_group.GROUP_INC_BACKUP,
-                                  backup_group.GROUP_INC_RESTORE])
+backup_incremental_groups.extend([backup_group.GROUP])
 
 configuration_groups = list(instance_create_groups)
 configuration_groups.extend([configuration_group.GROUP])
 
 configuration_create_groups = list(base_groups)
-configuration_create_groups.extend([configuration_group.GROUP_CFGGRP_CREATE,
-                                    configuration_group.GROUP_CFGGRP_DELETE])
+configuration_create_groups.extend([groups.CFGGRP_CREATE,
+                                    groups.CFGGRP_DELETE])
 
 database_actions_groups = list(instance_create_groups)
 database_actions_groups.extend([database_actions_group.GROUP])
@@ -169,8 +169,8 @@ module_groups = list(instance_create_groups)
 module_groups.extend([module_group.GROUP])
 
 module_create_groups = list(base_groups)
-module_create_groups.extend([module_group.GROUP_MODULE_CREATE,
-                             module_group.GROUP_MODULE_DELETE])
+module_create_groups.extend([groups.MODULE_CREATE,
+                             groups.MODULE_DELETE])
 
 replication_groups = list(instance_create_groups)
 replication_groups.extend([replication_group.GROUP])

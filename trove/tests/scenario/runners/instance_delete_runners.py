@@ -23,24 +23,26 @@ class InstanceDeleteRunner(TestRunner):
     def __init__(self):
         super(InstanceDeleteRunner, self).__init__()
 
-    def run_instance_delete(
-            self, expected_states=['SHUTDOWN'],
-            expected_http_code=202):
+    def run_instance_delete(self, expected_http_code=202):
         if self.has_do_not_delete_instance:
             self.report.log("TESTS_DO_NOT_DELETE_INSTANCE=True was "
                             "specified, skipping delete...")
             raise proboscis.SkipTest("TESTS_DO_NOT_DELETE_INSTANCE "
                                      "was specified.")
 
-        self.assert_instance_delete(self.instance_info.id, expected_states,
-                                    expected_http_code)
-        self.assert_server_group_gone(self.instance_info.srv_grp_id)
+        self.assert_instance_delete(self.instance_info.id, expected_http_code)
 
-    def assert_instance_delete(self, instance_id, expected_states,
-                               expected_http_code):
+    def assert_instance_delete(self, instance_id, expected_http_code):
         self.report.log("Testing delete on instance: %s" % instance_id)
 
         self.auth_client.instances.delete(instance_id)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
-        self.assert_all_gone(instance_id, expected_states[-1])
+        self.assert_client_code(expected_http_code)
+
+    def run_instance_delete_wait(self, expected_states=['SHUTDOWN']):
+        if self.has_do_not_delete_instance:
+            self.report.log("TESTS_DO_NOT_DELETE_INSTANCE=True was "
+                            "specified, skipping delete wait...")
+            raise proboscis.SkipTest("TESTS_DO_NOT_DELETE_INSTANCE "
+                                     "was specified.")
+        self.assert_all_gone(self.instance_info.id, expected_states[-1])
+        self.assert_server_group_gone(self.instance_info.srv_grp_id)

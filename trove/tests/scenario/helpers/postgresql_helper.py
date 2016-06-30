@@ -55,6 +55,12 @@ class PostgresqlHelper(SqlHelper):
                 {"vacuum_cost_delay": 'string_value'},
                 {"standard_conforming_strings": 'string_value'}]
 
+    def get_configuration_value(self, property_name, host, *args, **kwargs):
+        client = self.get_client(host, *args, **kwargs)
+        cmd = "SHOW %s;" % property_name
+        row = client.execute(cmd).fetchone()
+        return row[0]
+
     def get_exposed_user_log_names(self):
         return ['general']
 

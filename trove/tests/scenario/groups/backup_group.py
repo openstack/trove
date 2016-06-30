@@ -15,29 +15,12 @@
 
 from proboscis import test
 
-from trove.tests.scenario.groups import instance_create_group
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.backup_restore_group"
-GROUP_BACKUP = "scenario.backup_group"
-GROUP_BACKUP_CREATE = "scenario.backup_create_group"
-GROUP_BACKUP_DELETE = "scenario.backup_delete_group"
-GROUP_RESTORE = "scenario.restore_group"
-GROUP_RESTORE_CREATE = "scenario.restore_create_group"
-GROUP_RESTORE_CREATE_WAIT = "scenario.restore_create_wait_group"
-GROUP_RESTORE_DELETE = "scenario.restore_delete_group"
-GROUP_RESTORE_DELETE_WAIT = "scenario.restore_delete_wait_group"
-
-GROUP_INC_BACKUP = "scenario.inc_backup_group"
-GROUP_INC_BACKUP_CREATE = "scenario.inc_backup_create_group"
-GROUP_INC_BACKUP_DELETE = "scenario.inc_backup_delete_group"
-GROUP_INC_RESTORE = "scenario.inc_restore_group"
-GROUP_INC_RESTORE_CREATE = "scenario.inc_restore_create_group"
-GROUP_INC_RESTORE_CREATE_WAIT = "scenario.inc_restore_create_wait_group"
-GROUP_INC_RESTORE_DELETE = "scenario.inc_restore_delete_group"
-GROUP_INC_RESTORE_DELETE_WAIT = "scenario.inc_restore_delete_wait_group"
 
 GROUP_INCREMENTAL = "scenario.incremental_backup_restore_group"
 GROUP_INCREMENTAL_BACKUP = "scenario.incremental_backup_group"
@@ -50,13 +33,15 @@ class BackupRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'BackupRunner'
 
 
-@test(depends_on_groups=[instance_create_group.GROUP],
-      groups=[GROUP, GROUP_BACKUP, GROUP_BACKUP_CREATE])
-class BackupGroup(TestGroup):
-    """Test Backup functionality."""
+@test(depends_on_groups=[groups.INST_CREATE_WAIT],
+      groups=[GROUP, groups.BACKUP, groups.BACKUP_CREATE],
+      runs_after_groups=[groups.MODULE_INST_CREATE_WAIT,
+                         groups.CFGGRP_INST_CREATE_WAIT])
+class BackupCreateGroup(TestGroup):
+    """Test Backup Create functionality."""
 
     def __init__(self):
-        super(BackupGroup, self).__init__(
+        super(BackupCreateGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -165,13 +150,13 @@ class BackupGroup(TestGroup):
         self.test_runner.run_backup_get_unauthorized_user()
 
 
-@test(depends_on_groups=[GROUP_BACKUP_CREATE],
-      groups=[GROUP, GROUP_INC_BACKUP, GROUP_INC_BACKUP_CREATE])
-class BackupIncGroup(TestGroup):
-    """Test Incremental Backup functionality."""
+@test(depends_on_groups=[groups.BACKUP_CREATE],
+      groups=[GROUP, groups.BACKUP_INC, groups.BACKUP_INC_CREATE])
+class BackupIncCreateGroup(TestGroup):
+    """Test Backup Incremental Create functionality."""
 
     def __init__(self):
-        super(BackupIncGroup, self).__init__(
+        super(BackupIncCreateGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -227,13 +212,15 @@ class BackupIncGroup(TestGroup):
         self.test_runner.run_instance_goes_active()
 
 
-@test(depends_on_groups=[GROUP_BACKUP_CREATE],
-      groups=[GROUP, GROUP_RESTORE, GROUP_RESTORE_CREATE])
-class RestoreCreateGroup(TestGroup):
-    """Test Restore Create functionality."""
+@test(depends_on_groups=[groups.BACKUP_CREATE],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_CREATE],
+      runs_after_groups=[groups.MODULE_INST_DELETE,
+                         groups.CFGGRP_INST_DELETE])
+class BackupInstCreateGroup(TestGroup):
+    """Test Backup Instance Create functionality."""
 
     def __init__(self):
-        super(RestoreCreateGroup, self).__init__(
+        super(BackupInstCreateGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -242,14 +229,15 @@ class RestoreCreateGroup(TestGroup):
         self.test_runner.run_restore_from_backup()
 
 
-@test(depends_on_groups=[GROUP_INC_BACKUP_CREATE],
-      groups=[GROUP, GROUP_INC_RESTORE, GROUP_INC_RESTORE_CREATE],
-      runs_after_groups=[GROUP_RESTORE_CREATE])
-class RestoreIncCreateGroup(TestGroup):
-    """Test Restore Incremental Create functionality."""
+@test(depends_on_groups=[groups.BACKUP_INC_CREATE],
+      groups=[GROUP, groups.BACKUP_INC_INST,
+              groups.BACKUP_INC_INST_CREATE],
+      runs_after_groups=[groups.BACKUP_INST_CREATE])
+class BackupIncInstCreateGroup(TestGroup):
+    """Test Backup Incremental Instance Create functionality."""
 
     def __init__(self):
-        super(RestoreIncCreateGroup, self).__init__(
+        super(BackupIncInstCreateGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -258,14 +246,16 @@ class RestoreIncCreateGroup(TestGroup):
         self.test_runner.run_restore_from_inc_1_backup()
 
 
-@test(depends_on_groups=[GROUP_RESTORE_CREATE],
-      groups=[GROUP, GROUP_RESTORE, GROUP_RESTORE_CREATE_WAIT],
-      runs_after_groups=[GROUP_INC_RESTORE_CREATE])
-class RestoreCreateWaitGroup(TestGroup):
-    """Test Restore Create completes."""
+@test(depends_on_groups=[groups.BACKUP_INST_CREATE],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_CREATE_WAIT],
+      runs_after_groups=[groups.BACKUP_INC_INST_CREATE,
+                         groups.DB_ACTION_INST_CREATE,
+                         groups.INST_ACTIONS_RESIZE])
+class BackupInstCreateWaitGroup(TestGroup):
+    """Test Backup Instance Create completes."""
 
     def __init__(self):
-        super(RestoreCreateWaitGroup, self).__init__(
+        super(BackupInstCreateWaitGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -279,14 +269,15 @@ class RestoreCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_data_in_restored_instance()
 
 
-@test(depends_on_groups=[GROUP_INC_RESTORE_CREATE],
-      groups=[GROUP, GROUP_INC_RESTORE, GROUP_INC_RESTORE_CREATE_WAIT],
-      runs_after_groups=[GROUP_RESTORE_CREATE])
-class RestoreIncCreateWaitGroup(TestGroup):
-    """Test Restore Incremental Create completes."""
+@test(depends_on_groups=[groups.BACKUP_INC_INST_CREATE],
+      groups=[GROUP, groups.BACKUP_INC_INST,
+              groups.BACKUP_INC_INST_CREATE_WAIT],
+      runs_after_groups=[groups.BACKUP_INST_CREATE_WAIT])
+class BackupIncInstCreateWaitGroup(TestGroup):
+    """Test Backup Incremental Instance Create completes."""
 
     def __init__(self):
-        super(RestoreIncCreateWaitGroup, self).__init__(
+        super(BackupIncInstCreateWaitGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -300,14 +291,14 @@ class RestoreIncCreateWaitGroup(TestGroup):
         self.test_runner.run_verify_data_in_restored_inc_1_instance()
 
 
-@test(depends_on_groups=[GROUP_RESTORE_CREATE_WAIT],
-      groups=[GROUP, GROUP_RESTORE, GROUP_RESTORE_DELETE],
-      runs_after_groups=[GROUP_INC_RESTORE_CREATE_WAIT])
-class RestoreDeleteGroup(TestGroup):
-    """Test Restore Delete functionality."""
+@test(depends_on_groups=[groups.BACKUP_INST_CREATE_WAIT],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE],
+      runs_after_groups=[groups.BACKUP_INC_INST_CREATE_WAIT])
+class BackupInstDeleteGroup(TestGroup):
+    """Test Backup Instance Delete functionality."""
 
     def __init__(self):
-        super(RestoreDeleteGroup, self).__init__(
+        super(BackupInstDeleteGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -316,14 +307,15 @@ class RestoreDeleteGroup(TestGroup):
         self.test_runner.run_delete_restored_instance()
 
 
-@test(depends_on_groups=[GROUP_INC_RESTORE_CREATE_WAIT],
-      groups=[GROUP, GROUP_INC_RESTORE, GROUP_INC_RESTORE_DELETE],
-      runs_after_groups=[GROUP_RESTORE_DELETE])
-class RestoreIncDeleteGroup(TestGroup):
-    """Test Restore Incremental Delete functionality."""
+@test(depends_on_groups=[groups.BACKUP_INC_INST_CREATE_WAIT],
+      groups=[GROUP, groups.BACKUP_INC_INST,
+              groups.BACKUP_INC_INST_DELETE],
+      runs_after_groups=[groups.BACKUP_INST_DELETE])
+class BackupIncInstDeleteGroup(TestGroup):
+    """Test Backup Incremental Instance Delete functionality."""
 
     def __init__(self):
-        super(RestoreIncDeleteGroup, self).__init__(
+        super(BackupIncInstDeleteGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -332,13 +324,14 @@ class RestoreIncDeleteGroup(TestGroup):
         self.test_runner.run_delete_restored_inc_1_instance()
 
 
-@test(depends_on_groups=[GROUP_RESTORE_DELETE],
-      groups=[GROUP, GROUP_RESTORE, GROUP_RESTORE_DELETE_WAIT])
-class RestoreDeleteWaitGroup(TestGroup):
-    """Test Restore Delete completes."""
+@test(depends_on_groups=[groups.BACKUP_INST_DELETE],
+      groups=[GROUP, groups.BACKUP_INST, groups.BACKUP_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
+class BackupInstDeleteWaitGroup(TestGroup):
+    """Test Backup Instance Delete completes."""
 
     def __init__(self):
-        super(RestoreDeleteWaitGroup, self).__init__(
+        super(BackupInstDeleteWaitGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -347,14 +340,15 @@ class RestoreDeleteWaitGroup(TestGroup):
         self.test_runner.run_wait_for_restored_instance_delete()
 
 
-@test(depends_on_groups=[GROUP_INC_RESTORE_DELETE],
-      groups=[GROUP, GROUP_INC_RESTORE, GROUP_INC_RESTORE_DELETE_WAIT],
-      runs_after_groups=[GROUP_RESTORE_DELETE_WAIT])
-class RestoreIncDeleteWaitGroup(TestGroup):
-    """Test Restore Incremental Delete completes."""
+@test(depends_on_groups=[groups.BACKUP_INC_INST_DELETE],
+      groups=[GROUP, groups.BACKUP_INC_INST,
+              groups.BACKUP_INC_INST_DELETE_WAIT],
+      runs_after_groups=[groups.INST_DELETE])
+class BackupIncInstDeleteWaitGroup(TestGroup):
+    """Test Backup Incremental Instance Delete completes."""
 
     def __init__(self):
-        super(RestoreIncDeleteWaitGroup, self).__init__(
+        super(BackupIncInstDeleteWaitGroup, self).__init__(
             BackupRunnerFactory.instance())
 
     @test
@@ -363,9 +357,9 @@ class RestoreIncDeleteWaitGroup(TestGroup):
         self.test_runner.run_wait_for_restored_inc_1_instance_delete()
 
 
-@test(depends_on_groups=[GROUP_INC_BACKUP_CREATE],
-      groups=[GROUP, GROUP_INC_BACKUP, GROUP_INC_BACKUP_DELETE],
-      runs_after_groups=[GROUP_INC_RESTORE_DELETE_WAIT])
+@test(depends_on_groups=[groups.BACKUP_INC_CREATE],
+      groups=[GROUP, groups.BACKUP_INC, groups.BACKUP_INC_DELETE],
+      runs_after_groups=[groups.BACKUP_INC_INST_CREATE_WAIT])
 class BackupIncDeleteGroup(TestGroup):
     """Test Backup Incremental Delete functionality."""
 
@@ -377,14 +371,15 @@ class BackupIncDeleteGroup(TestGroup):
     def delete_inc_2_backup(self):
         """Test deleting the inc 2 backup."""
         # We only delete the inc 2 backup, as the inc 1 should be deleted
-        # by the full backup delete.
+        # by the full backup delete that runs after.
         self.test_runner.run_delete_inc_2_backup()
 
 
-@test(depends_on_groups=[GROUP_BACKUP_CREATE],
-      groups=[GROUP, GROUP_BACKUP, GROUP_BACKUP_DELETE],
-      runs_after_groups=[GROUP_INC_BACKUP_DELETE,
-                         GROUP_RESTORE_DELETE_WAIT])
+@test(depends_on_groups=[groups.BACKUP_CREATE],
+      groups=[GROUP, groups.BACKUP, groups.BACKUP_DELETE],
+      runs_after_groups=[groups.BACKUP_INST_CREATE_WAIT,
+                         groups.BACKUP_INC_DELETE,
+                         groups.INST_ACTIONS_RESIZE_WAIT])
 class BackupDeleteGroup(TestGroup):
     """Test Backup Delete functionality."""
 

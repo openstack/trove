@@ -419,10 +419,16 @@ class TestRunner(object):
                               "Unexpected client status code")
 
     def assert_all_instance_states(self, instance_ids, expected_states):
-        tasks = [build_polling_task(
-            lambda: self._assert_instance_states(instance_id, expected_states),
-            sleep_time=self.def_sleep_time, time_out=self.def_timeout)
-            for instance_id in instance_ids]
+        self.report.log("Waiting for states (%s) for instances: %s" %
+                        (expected_states, instance_ids))
+
+        def _make_fn(inst_id):
+            return lambda: self._assert_instance_states(
+                inst_id, expected_states)
+
+        tasks = [build_polling_task(_make_fn(instance_id),
+                 sleep_time=self.def_sleep_time, time_out=self.def_timeout)
+                 for instance_id in instance_ids]
         poll_until(lambda: all(poll_task.ready() for poll_task in tasks),
                    sleep_time=self.def_sleep_time, time_out=self.def_timeout)
 
@@ -446,6 +452,8 @@ class TestRunner(object):
         state.
         """
 
+        self.report.log("Waiting for states (%s) for instance: %s" %
+                        (expected_states, instance_id))
         found = False
         for status in expected_states:
             if require_all_states or found or self._has_status(
@@ -458,8 +466,9 @@ class TestRunner(object):
                         fast_fail_status=fast_fail_status),
                         sleep_time=self.def_sleep_time,
                         time_out=self.def_timeout)
-                    self.report.log("Instance has gone '%s' in %s." %
-                                    (status, self._time_since(start_time)))
+                    self.report.log("Instance '%s' has gone '%s' in %s." %
+                                    (instance_id, status,
+                                     self._time_since(start_time)))
                 except exception.PollTimeOut:
                     self.report.log(
                         "Status of instance '%s' did not change to '%s' "
@@ -488,10 +497,15 @@ class TestRunner(object):
                           "list section.")
 
     def _wait_all_deleted(self, instance_ids, expected_last_status):
-        tasks = [build_polling_task(
-            lambda: self._wait_for_delete(instance_id, expected_last_status),
-            sleep_time=self.def_sleep_time, time_out=self.def_timeout)
-            for instance_id in instance_ids]
+        self.report.log("Waiting for instances to be gone: %s (status %s)" %
+                        (instance_ids, expected_last_status))
+
+        def _make_fn(inst_id):
+            return lambda: self._wait_for_delete(inst_id, expected_last_status)
+
+        tasks = [build_polling_task(_make_fn(instance_id),
+                 sleep_time=self.def_sleep_time, time_out=self.def_timeout)
+                 for instance_id in instance_ids]
         poll_until(lambda: all(poll_task.ready() for poll_task in tasks),
                    sleep_time=self.def_sleep_time, time_out=self.def_timeout)
 
@@ -504,13 +518,14 @@ class TestRunner(object):
                 self.fail(str(task.poll_exception()))
 
     def _wait_for_delete(self, instance_id, expected_last_status):
+        self.report.log("Waiting for instance to be gone: %s (status %s)" %
+                        (instance_id, expected_last_status))
         start_time = timer.time()
         try:
             self._poll_while(instance_id, expected_last_status,
                              sleep_time=self.def_sleep_time,
                              time_out=self.def_timeout)
         except exceptions.NotFound:
-            self.assert_client_code(404)
             self.report.log("Instance was removed in %s." %
                             self._time_since(start_time))
             return True

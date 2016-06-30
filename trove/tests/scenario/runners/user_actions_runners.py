@@ -370,11 +370,6 @@ class UserActionsRunner(TestRunner):
 
         self.auth_client.users.delete(instance_id, user_name, user_host)
         self.assert_client_code(expected_http_code)
-
-        self.assert_raises(exceptions.NotFound, 404,
-                           self.auth_client.users.get,
-                           instance_id, user_name, user_host)
-
         self._wait_for_user_delete(instance_id, user_name)
 
     def _wait_for_user_delete(self, instance_id, deleted_user_name):
