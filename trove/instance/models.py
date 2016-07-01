@@ -1249,11 +1249,9 @@ class Instances(object):
         if instance_ids and len(instance_ids) > 1:
             raise exception.DatastoreOperationNotSupported(
                 operation='module-instances', datastore='current')
-            db_infos = DBInstance.query().filter_by(**query_opts)
-        else:
-            if instance_ids:
-                query_opts['id'] = instance_ids[0]
-            db_infos = DBInstance.find_all(**query_opts)
+        if instance_ids:
+            query_opts['id'] = instance_ids[0]
+        db_infos = DBInstance.find_all(**query_opts)
         limit = utils.pagination_limit(context.limit, Instances.DEFAULT_LIMIT)
         data_view = DBInstance.find_by_pagination('instances', db_infos, "foo",
                                                   limit=limit,
