@@ -16,6 +16,11 @@
 from tempest import config
 import tempest.test
 
+from trove.tests.tempest.services.database.json import flavors_client
+from trove.tests.tempest.services.database.json import limits_client
+from trove.tests.tempest.services.database.json import versions_client
+
+
 CONF = config.CONF
 
 
