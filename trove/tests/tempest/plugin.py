@@ -15,6 +15,7 @@
 
 import os
 
+from tempest import config
 from tempest.test_discover import plugins
 
 from trove.tests.tempest import config as trove_config
@@ -31,11 +32,15 @@ class TroveTempestPlugin(plugins.TempestPlugin):
         return full_test_dir, base_path
 
     def register_opts(self, conf):
-        conf.register_group(trove_config.messaging_group)
-        conf.register_opts(trove_config.DatabaseGroup, group='database')
-        conf.register_opts(trove_config.service_option,
-                           group='service_available')
+        config.register_opt_group(
+            conf, trove_config.service_available_group,
+            trove_config.ServiceAvailableGroup
+        )
+        config.register_opt_group(
+            conf, trove_config.database_group,
+            trove_config.DatabaseGroup
+        )
 
     def get_opt_lists(self):
-        return [('database', trove_config.MessagingGroup),
-                ('service_available', [trove_config.service_option])]
+        return [('database', trove_config.DatabaseGroup),
+                ('service_available', trove_config.ServiceAvailableGroup)]

@@ -17,7 +17,7 @@ from tempest.lib import decorators
 from tempest import test
 from testtools import testcase as testtools
 
-from trove.tests.tempest.tests.api import base
+from trove.tests.tempest.tests.api.database import base
 
 
 class DatabaseFlavorsTest(base.BaseDatabaseTest):
@@ -71,6 +71,17 @@ class DatabaseFlavorsTest(base.BaseDatabaseTest):
         for os_flavor in os_flavors:
             db_flavor =\
                 self.client.show_db_flavor(os_flavor['id'])['flavor']
-            self._check_values(['id', 'name', 'ram'], db_flavor, os_flavor)
+            if db_flavor['id']:
+                self.assertIn('id', db_flavor)
+                self.assertEqual(str(db_flavor['id']), str(os_flavor['id']),
+                                 "DB flavor id differs from OS flavor id value"
+                                 )
+            else:
+                self.assertIn('str_id', db_flavor)
+                self.assertEqual(db_flavor['str_id'], str(os_flavor['id']),
+                                 "DB flavor id differs from OS flavor id value"
+                                 )
+
+            self._check_values(['name', 'ram'], db_flavor, os_flavor)
             self._check_values(['disk', 'vcpus', 'swap'], db_flavor, os_flavor,
                                in_db=False)

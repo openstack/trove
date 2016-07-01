@@ -18,7 +18,7 @@ from tempest.lib import decorators
 from tempest.lib import exceptions as lib_exc
 from testtools import testcase as testtools
 
-from trove.tests.tempest.tests.api import base
+from trove.tests.tempest.tests.api.database import base
 
 
 class DatabaseFlavorsNegativeTest(base.BaseDatabaseTest):
