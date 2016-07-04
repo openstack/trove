@@ -7,7 +7,7 @@ use = call:trove.common.wsgi:versioned_urlmap
 paste.app_factory = trove.versions:app_factory
 
 [pipeline:troveapi]
-pipeline = faultwrapper authtoken authorization contextwrapper extensions ratelimit troveapp
+pipeline = faultwrapper http_proxy_to_wsgi authtoken authorization contextwrapper extensions ratelimit troveapp
 #pipeline = debug extensions troveapp
 
 [filter:extensions]
@@ -42,3 +42,6 @@ paste.app_factory = trove.common.api:app_factory
 #Add this filter to log request and response for debugging
 [filter:debug]
 paste.filter_factory = trove.common.wsgi:Debug
+
+[filter:http_proxy_to_wsgi]
+use = egg:oslo.middleware#http_proxy_to_wsgi
