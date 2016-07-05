@@ -40,6 +40,7 @@ class FlavorView(object):
             'links': self._build_links(),
             'name': self.flavor.name,
             'ram': self.flavor.ram,
+            'vcpus': self.flavor.vcpus,
             'str_id': str(self.flavor.id),
         }
 

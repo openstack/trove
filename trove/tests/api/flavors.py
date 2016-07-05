@@ -146,8 +146,8 @@ class Flavors(object):
 
     @test
     def test_flavor_list_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage',
-                         'str_id']
+        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'links',
+                         'local_storage', 'str_id']
         flavors = self.rd_client.flavors.list()
         attrcheck = AttrCheck()
         for flavor in flavors:
@@ -159,8 +159,8 @@ class Flavors(object):
 
     @test
     def test_flavor_get_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'links', 'local_storage',
-                         'str_id']
+        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'links',
+                         'local_storage', 'str_id']
         flavor = self.rd_client.flavors.get(1)
         attrcheck = AttrCheck()
         flavor_dict = flavor._info
