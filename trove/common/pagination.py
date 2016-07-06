@@ -29,7 +29,7 @@ def paginate_list(li, limit=None, marker=None, include_marker=False,
     """Sort the given list and return a sublist containing a page of items.
 
     :param list li:             The list to be paginated.
-    :param int limit:           Maximum number of iterms to be returned.
+    :param int limit:           Maximum number of items to be returned.
     :param marker:              Key of the first item to appear on the sublist.
     :param bool include_marker: Include the marker value itself in the sublist.
     :param lambda key:          Sorting expression.
