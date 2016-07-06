@@ -295,6 +295,6 @@ class LocalSqlClient(object):
 
     @staticmethod
     def init_engine(user, password, host):
-        return create_engine("mysql://%s:%s@%s:3306" %
+        return create_engine("mysql+pymysql://%s:%s@%s:3306" %
                              (user, password, host),
                              pool_recycle=1800, echo=True)

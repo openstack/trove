@@ -27,7 +27,7 @@ control_exchange = trove
 #trace_sqlalchemy = True
 
 [database]
-connection = mysql://root:e1a2c042c828d3566d0a@localhost/trove
+connection = mysql+pymysql://root:e1a2c042c828d3566d0a@localhost/trove
 
 [oslo_messaging_rabbit]
 # The RabbitMQ broker address where a single node is used. (string value)

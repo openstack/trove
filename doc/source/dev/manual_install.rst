@@ -71,7 +71,7 @@ List of packages to be installed:
 .. code-block:: bash
 
    $ sudo apt-get install build-essential libxslt1-dev qemu-utils mysql-client \
-     git python-dev python-pexpect python-mysqldb libmysqlclient-dev
+     git python-dev python-pexpect python-pymysql libmysqlclient-dev
 
 Python settings
 ---------------
@@ -254,7 +254,7 @@ Create the Trove database schema:
 
   - Connect to the storage backend (MySQL, PostgreSQL)
   - Create a database called `trove` (this database will be used for storing Trove ORM)
-  - Compose connection string. Example: mysql://<user>:<password>@<backend_host>:<backend_port>/<database_name>
+  - Compose connection string. Example: mysql+pymysql://<user>:<password>@<backend_host>:<backend_port>/<database_name>
 
 Initialize the database
 =======================

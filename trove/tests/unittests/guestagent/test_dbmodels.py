@@ -40,7 +40,7 @@ class MySQLDatabaseTest(trove_testtools.TestCase):
         self.assertEqual(test_name, self.mysqlDb.name)
 
     def test_is_valid_positive(self):
-        self.assertTrue(self.mysqlDb._is_valid('mysqldb'))
+        self.assertTrue(self.mysqlDb._is_valid('pymysql'))
 
     def test_is_valid_negative(self):
         self.assertFalse(self.mysqlDb._is_valid('mysql'))
