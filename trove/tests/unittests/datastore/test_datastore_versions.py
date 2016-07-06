@@ -23,7 +23,7 @@ class TestDatastoreVersions(TestDatastoreBase):
                                                   self.ds_version)
         self.assertEqual(self.ds_version, datastore_version.name)
 
-    def test_datastore_verison_capabilities(self):
+    def test_datastore_version_capabilities(self):
         self.datastore_version.capabilities.add(self.cap1, enabled=False)
         test_filtered_capabilities = self.capability_name_filter(
             self.datastore_version.capabilities)

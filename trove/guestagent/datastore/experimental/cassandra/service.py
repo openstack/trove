@@ -1013,7 +1013,7 @@ class CassandraAdmin(object):
         Updatable attributes include username and password.
         If a new username and password are given a new user with those
         attributes is created and all permissions from the original
-        user get transfered to it. The original user is then dropped
+        user get transferred to it. The original user is then dropped
         therefore revoking its permissions.
         If only new password is specified the existing user gets altered
         with that password.
