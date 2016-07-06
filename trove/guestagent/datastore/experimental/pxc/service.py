@@ -75,8 +75,8 @@ class PXCApp(galera_service.GaleraApp):
         except Exception:
             LOG.debug('failed to query mysql')
         # creating the admin user after the config files are written because
-        # percona pxc was not commiting the grant for the admin user after
-        # removing the annon users.
+        # pxc was not committing the grant for the admin user after removing
+        # the annon users.
         self._wait_for_mysql_to_be_really_alive(
             CONF.timeout_wait_for_service)
         with self.local_sql_client(engine) as client:
