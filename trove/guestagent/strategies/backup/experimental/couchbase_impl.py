@@ -95,14 +95,14 @@ class CbBackup(base.BackupRunner):
                 operating_system.copy(system.pwd_file,
                                       system.COUCHBASE_DUMP_DIR,
                                       preserve=True, as_root=True)
-        except exception.ProcessExecutionError as p:
-            LOG.error(p)
-            raise p
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error during pre-backup phase."))
+            raise
 
     def _run_post_backup(self):
         try:
             for cmd in self.post_backup_commands:
                 utils.execute_with_timeout(*cmd)
-        except exception.ProcessExecutionError as p:
-            LOG.error(p)
-            raise p
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error during post-backup phase."))
+            raise
