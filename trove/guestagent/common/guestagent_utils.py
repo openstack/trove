@@ -117,6 +117,6 @@ def to_bytes(value):
                 'G': 1024 ** 3,
             }[suffix]
 
-            return str(int(round(factor * float(value))))
+            return int(round(factor * float(value)))
 
     return value

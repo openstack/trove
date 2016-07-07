@@ -55,32 +55,23 @@ class TestOperatingSystem(trove_testtools.TestCase):
 
     def test_ini_file_codec(self):
         data_no_none = {"Section1": {"s1k1": 's1v1',
-                                     "s1k2": '3.1415926535'},
-                        "Section2": {"s2k1": '1',
-                                     "s2k2": 'True'}}
+                                     "s1k2": 3.1415926535},
+                        "Section2": {"s2k1": 1,
+                                     "s2k2": True}}
 
         self._test_file_codec(data_no_none, IniCodec())
 
         data_with_none = {"Section1": {"s1k1": 's1v1',
-                                       "s1k2": '3.1415926535'},
-                          "Section2": {"s2k1": '1',
-                                       "s2k2": 'True',
+                                       "s1k2": 3.1415926535},
+                          "Section2": {"s2k1": 1,
+                                       "s2k2": True,
                                        "s2k3": None}}
 
         # Keys with None values will be written without value.
         self._test_file_codec(data_with_none, IniCodec())
 
-        # Non-string values will be converted to strings.
-        data_with_none_as_objects = {"Section1": {"s1k1": 's1v1',
-                                                  "s1k2": 3.1415926535},
-                                     "Section2": {"s2k1": 1,
-                                                  "s2k2": True,
-                                                  "s2k3": None}}
-        self._test_file_codec(data_with_none_as_objects, IniCodec(),
-                              expected_data=data_with_none)
-
         # None will be replaced with 'default_value'.
-        default_value = '1'
+        default_value = 1
         expected_data = guestagent_utils.update_dict(
             {"Section2": {"s2k3": default_value}}, dict(data_with_none))
         self._test_file_codec(data_with_none,
@@ -92,7 +83,11 @@ class TestOperatingSystem(trove_testtools.TestCase):
                 "Section2": {"s2k1": '1',
                              "s2k2": 'True'},
                 "Section3": {"Section4": {"s4k1": '3.1415926535',
-                                          "s4k2": None}}
+                                          "s4k2": None}},
+                "Section5": {"s5k1": 1,
+                             "s5k2": True},
+                "Section6": {"Section7": {"s7k1": 3.1415926535,
+                                          "s7k2": None}}
                 }
 
         self._test_file_codec(data, YamlCodec())
@@ -128,7 +123,11 @@ class TestOperatingSystem(trove_testtools.TestCase):
                 "Section2": {"s2k1": '1',
                              "s2k2": 'True'},
                 "Section3": {"Section4": {"s4k1": '3.1415926535',
-                                          "s4k2": None}}
+                                          "s4k2": None}},
+                "Section5": {"s5k1": 1,
+                             "s5k2": True},
+                "Section6": {"Section7": {"s7k1": 3.1415926535,
+                                          "s7k2": None}}
                 }
 
         self._test_file_codec(data, JsonCodec())
