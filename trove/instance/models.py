@@ -26,7 +26,7 @@ from oslo_log import log as logging
 from trove.backup.models import Backup
 from trove.common import cfg
 from trove.common import exception
-from trove.common import i18n as i18n
+from trove.common.i18n import _, _LE, _LI, _LW
 import trove.common.instance as tr_instance
 from trove.common.notification import StartNotification
 from trove.common.remote import create_cinder_client
@@ -48,8 +48,6 @@ from trove.module import models as module_models
 from trove.module import views as module_views
 from trove.quota.quota import run_with_quotas
 from trove.taskmanager import api as task_api
-
-(_, _LE, _LI, _LW) = (i18n._, i18n._LE, i18n._LI, i18n._LW)
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
