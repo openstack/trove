@@ -22,10 +22,6 @@ from trove.tests.scenario.runners import test_runners
 
 GROUP = "scenario.backup_restore_group"
 
-GROUP_INCREMENTAL = "scenario.incremental_backup_restore_group"
-GROUP_INCREMENTAL_BACKUP = "scenario.incremental_backup_group"
-GROUP_INCREMENTAL_RESTORE = "scenario.incremental_restore_group"
-
 
 class BackupRunnerFactory(test_runners.RunnerFactory):
 
