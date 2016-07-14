@@ -28,11 +28,13 @@ class FlavorView(object):
 
     def data(self):
 
-        # If the flavor id cannot be cast to an int, we simply return
+        # If the flavor id is not an int, we simply return
         # no id and rely on str_id instead.
-        try:
+        if isinstance(self.flavor.id, int) or (
+                self.flavor.id.isdigit() and
+                not self.flavor.id.startswith('0')):
             f_id = int(self.flavor.id)
-        except ValueError:
+        else:
             f_id = None
 
         flavor = {
