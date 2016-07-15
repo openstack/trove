@@ -39,45 +39,53 @@ on the runtime environment, making them difficult to debug.
 
 There are several possible strategies available for dealing with dangling
 mock objects (see the section on recommended patterns).
-Further information is available in [1]_.
+Further information is available in [1]_, [2]_, [3]_.
 
 Dangling Mock Detector
 ----------------------
 
 All Trove unit tests should extend 'trove_testtools.TestCase'.
 It is a subclass of 'testtools.TestCase' which automatically checks for
-dangling mock objects after each test.
-It does that by recording mock instances in loaded modules before and after
-a test case. It marks the test as failed and reports the leaked reference if it
+dangling mock objects at each test class teardown.
+It marks the tests as failed and reports the leaked reference if it
 finds any.
 
 Recommended Mocking Patterns
 ----------------------------
 
-- Mocking a class or object shared across multiple test cases.
-  Use the patcher pattern in conjunction with the setUp() and tearDown()
-  methods [ see section 26.4.3.5. of [1]_ ].
+Mocking a class or object shared across multiple test cases.
+Use the patcher pattern in conjunction with the setUp()
+method [ see section 26.4.3.5. of [1]_ ].
 
 .. code-block:: python
 
     def setUp(self):
         super(CouchbaseBackupTests, self).setUp()
         self.exe_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.addCleanup(self.exe_timeout_patch.stop)
 
     def test_case(self):
-        # This line can be moved to the setUp() method if the mock object
-        # is not needed.
-        mock_object = self.exe_timeout_patch.start()
+        mock_exe_timeout = self.exe_timeout_patch.start()
 
-    def tearDown(self):
-        super(CouchbaseBackupTests, self).tearDown()
-        self.exe_timeout_patch.stop()
+If the mock object is required in the majority of test cases the following
+pattern may be more efficient.
 
-Note also: patch.stopall()
-This method stops all active patches that were started with start.
+.. code-block:: python
 
-- Mocking a class or object for a single entire test case.
-  Use the decorator pattern.
+    def setUp(self):
+        super(CouchbaseBackupTests, self).setUp()
+        self.exe_timeout_patch = patch.object(utils, 'execute_with_timeout')
+        self.addCleanup(self.exe_timeout_patch.stop)
+        self.mock_exe_timeout = self.exe_timeout_patch.start()
+
+    def test_case(self):
+        # All test cases can now reference 'self.mock_exe_timeout'.
+
+- Note also: patch.stopall()
+  This method stops all active patches that were started with start.
+
+Mocking a class or object for a single entire test case.
+Use the decorator pattern.
 
 .. code-block:: python
 
@@ -91,8 +99,8 @@ This method stops all active patches that were started with start.
     def test_case(self, generate_random_password, execute_with_timeout):
         pass
 
-- Mocking a class or object for a smaller scope within one test case.
-  Use the context manager pattern.
+Mocking a class or object for a smaller scope within one test case.
+Use the context manager pattern.
 
 .. code-block:: python
 
@@ -109,7 +117,35 @@ This method stops all active patches that were started with start.
             password_mock = mocks['generate_random_password']
             execute_mock = mocks['execute_with_timeout_mock']
 
+Mocking global configuration properties.
+Use 'patch_conf_property' method from 'trove_testtools.TestCase'.
+
+.. code-block:: python
+
+    def test_case(self):
+        self.patch_conf_property('max_accepted_volume_size', 10)
+
+Datastore-specific configuration properties can be mocked by passing
+an optional 'section' argument to the above call.
+
+.. code-block:: python
+
+    def test_case(self):
+        self.patch_conf_property('cluster_support', False, section='redis')
+
+- Note also: 'patch_datastore_manager()'
+  'datastore_manager' name has to be set properly when testing
+  datastore-specific code to ensure correct configuration options get loaded.
+  This is a convenience method for mocking 'datastore_manager' name.
+
+.. code-block:: python
+
+    def test_case(self):
+        self.patch_datastore_manager('cassandra')
+
 References
 ----------
 
 .. [1] Mock Guide: https://docs.python.org/3/library/unittest.mock.html
+.. [2] Python Mock Gotchas: http://alexmarandon.com/articles/python_mock_gotchas/
+.. [3] Mocking Mistakes: http://engineroom.trackmaven.com/blog/mocking-mistakes/
