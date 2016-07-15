@@ -12,18 +12,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import threading
+
+from trove.common import cfg
+from trove.db import get_db_api
+from trove.db.sqlalchemy import session
+
+CONF = cfg.CONF
 DB_SETUP = None
+LOCK = threading.Lock()
 
 
 def init_db():
-    global DB_SETUP
-    if DB_SETUP:
-        return
-    from trove.common import cfg
-    from trove.db import get_db_api
-    from trove.db.sqlalchemy import session
-    CONF = cfg.CONF
-    db_api = get_db_api()
-    db_api.db_sync(CONF)
-    session.configure_db(CONF)
-    DB_SETUP = True
+    with LOCK:
+        global DB_SETUP
+        if not DB_SETUP:
+            db_api = get_db_api()
+            db_api.db_sync(CONF)
+            session.configure_db(CONF)
+            DB_SETUP = True
