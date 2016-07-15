@@ -1,0 +1,4 @@
+---
+other:
+  - The minimum version of oslo.concurrency required has been changed
+    from 3.5.0 to 3.7.1
