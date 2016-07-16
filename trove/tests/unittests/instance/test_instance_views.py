@@ -63,6 +63,13 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.slave_of_id = None
         self.instance.slaves = []
         self.instance.locality = 'affinity'
+        self.fault_message = 'Error'
+        self.fault_details = 'details'
+        self.fault_date = 'now'
+        self.instance.fault = Mock()
+        self.instance.fault.message = self.fault_message
+        self.instance.fault.details = self.fault_details
+        self.instance.fault.updated = self.fault_date
 
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
@@ -98,3 +105,13 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         result = view.data()
         self.assertEqual(self.instance.locality,
                          result['instance']['locality'])
+
+    def test_fault(self):
+        view = InstanceDetailView(self.instance, Mock())
+        result = view.data()
+        self.assertEqual(self.fault_message,
+                         result['instance']['fault']['message'])
+        self.assertEqual(self.fault_details,
+                         result['instance']['fault']['details'])
+        self.assertEqual(self.fault_date,
+                         result['instance']['fault']['created'])

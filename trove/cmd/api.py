@@ -20,8 +20,12 @@ from trove.common import profile
 @with_initialize
 def main(CONF):
     from trove.common import cfg
+    from trove.common import notification
     from trove.common import wsgi
+    from trove.instance import models as inst_models
 
+    notification.DBaaSAPINotification.register_notify_callback(
+        inst_models.persist_instance_fault)
     cfg.set_api_config_defaults()
     profile.setup_profiler('api', CONF.host)
     conf_file = CONF.find_file(CONF.api_paste_config)

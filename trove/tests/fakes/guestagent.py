@@ -241,7 +241,7 @@ class FakeGuest(object):
                 status.status = rd_instance.ServiceStatuses.RUNNING
             status.save()
             AgentHeartBeat.create(instance_id=self.id)
-        eventlet.spawn_after(3.0, update_db)
+        eventlet.spawn_after(3.5, update_db)
 
     def _set_task_status(self, new_status='RUNNING'):
         from trove.instance.models import InstanceServiceStatus

@@ -481,7 +481,7 @@ class CreateInstanceFail(object):
                              'hostname', 'id', 'name', 'datastore',
                              'server_state_description', 'status', 'updated',
                              'users', 'volume', 'root_enabled_at',
-                             'root_enabled_by']
+                             'root_enabled_by', 'fault']
             with CheckInstance(result._info) as check:
                 check.contains_allowed_attrs(
                     result._info, allowed_attrs,
@@ -693,7 +693,7 @@ class CreateInstance(object):
 
         # Check these attrs only are returned in create response
         allowed_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
-                         'name', 'status', 'updated', 'datastore']
+                         'name', 'status', 'updated', 'datastore', 'fault']
         if ROOT_ON_CREATE:
             allowed_attrs.append('password')
         if VOLUME_SUPPORT:
@@ -1156,7 +1156,7 @@ class TestInstanceListing(object):
     def test_get_instance(self):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
-                         'datastore']
+                         'datastore', 'fault']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         else:
@@ -1244,7 +1244,7 @@ class TestInstanceListing(object):
                          'flavor', 'guest_status', 'host', 'hostname', 'id',
                          'name', 'root_enabled_at', 'root_enabled_by',
                          'server_state_description', 'status', 'datastore',
-                         'updated', 'users', 'volume']
+                         'updated', 'users', 'volume', 'fault']
         with CheckInstance(result._info) as check:
             check.contains_allowed_attrs(
                 result._info, allowed_attrs,

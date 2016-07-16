@@ -295,6 +295,15 @@ class DBaaSAPINotification(object):
     '''
 
     event_type_format = 'dbaas.%s.%s'
+    notify_callback = None
+
+    @classmethod
+    def register_notify_callback(cls, callback):
+        """A callback registered here will be fired whenever
+        a notification is sent out. The callback should
+        take a notification object, and event_qualifier.
+        """
+        cls.notify_callback = callback
 
     @abc.abstractmethod
     def event_type(self):
@@ -324,7 +333,7 @@ class DBaaSAPINotification(object):
 
     def optional_error_traits(self):
         'Returns list of optional traits for error notification'
-        return []
+        return ['instance_id']
 
     def required_base_traits(self):
         return ['tenant_id', 'client_ip', 'server_ip', 'server_type',
@@ -395,6 +404,8 @@ class DBaaSAPINotification(object):
         del context.notification
         notifier = rpc.get_notifier(service=self.payload['server_type'])
         notifier.info(context, qualified_event_type, self.payload)
+        if self.notify_callback:
+            self.notify_callback(event_qualifier)
 
     def notify_start(self, **kwargs):
         self._notify('start', self.required_start_traits(),

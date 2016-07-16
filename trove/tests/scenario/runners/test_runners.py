@@ -153,10 +153,12 @@ class InstanceTestInfo(object):
         self.dbaas_flavor_href = None  # The flavor of the instance.
         self.dbaas_datastore = None  # The datastore id
         self.dbaas_datastore_version = None  # The datastore version id
+        self.volume_size = None  # The size of volume the instance will have.
         self.volume = None  # The volume the instance will have.
         self.nics = None  # The dict of type/id for nics used on the intance.
         self.user = None  # The user instance who owns the instance.
         self.users = None  # The users created on the instance.
+        self.databases = None  # The databases created on the instance.
 
 
 class TestRunner(object):
@@ -207,9 +209,11 @@ class TestRunner(object):
             CONFIG.dbaas_datastore_version)
         self.instance_info.user = CONFIG.users.find_user_by_name('alt_demo')
         if self.VOLUME_SUPPORT:
+            self.instance_info.volume_size = CONFIG.get('trove_volume_size', 1)
             self.instance_info.volume = {
-                'size': CONFIG.get('trove_volume_size', 1)}
+                'size': self.instance_info.volume_size}
         else:
+            self.instance_info.volume_size = None
             self.instance_info.volume = None
 
         self._auth_client = None
@@ -418,13 +422,17 @@ class TestRunner(object):
             self.assert_equal(expected_http_code, client.last_http_code,
                               "Unexpected client status code")
 
-    def assert_all_instance_states(self, instance_ids, expected_states):
+    def assert_all_instance_states(self, instance_ids, expected_states,
+                                   fast_fail_status=None,
+                                   require_all_states=False):
         self.report.log("Waiting for states (%s) for instances: %s" %
                         (expected_states, instance_ids))
 
         def _make_fn(inst_id):
             return lambda: self._assert_instance_states(
-                inst_id, expected_states)
+                inst_id, expected_states,
+                fast_fail_status=fast_fail_status,
+                require_all_states=require_all_states)
 
         tasks = [build_polling_task(_make_fn(instance_id),
                  sleep_time=self.def_sleep_time, time_out=self.def_timeout)
@@ -441,7 +449,7 @@ class TestRunner(object):
                 self.fail(str(task.poll_exception()))
 
     def _assert_instance_states(self, instance_id, expected_states,
-                                fast_fail_status=['ERROR', 'FAILED'],
+                                fast_fail_status=None,
                                 require_all_states=False):
         """Keep polling for the expected instance states until the instance
         acquires either the last or fast-fail state.
@@ -454,6 +462,9 @@ class TestRunner(object):
 
         self.report.log("Waiting for states (%s) for instance: %s" %
                         (expected_states, instance_id))
+
+        if fast_fail_status is None:
+            fast_fail_status = ['ERROR', 'FAILED']
         found = False
         for status in expected_states:
             if require_all_states or found or self._has_status(
@@ -595,8 +606,9 @@ class TestRunner(object):
         if server_group:
             self.fail("Found left-over server group: %s" % server_group)
 
-    def get_instance(self, instance_id):
-        return self.auth_client.instances.get(instance_id)
+    def get_instance(self, instance_id, client=None):
+        client = client or self.auth_client
+        return client.instances.get(instance_id)
 
     def get_instance_host(self, instance_id=None):
         instance_id = instance_id or self.instance_info.id
@@ -782,3 +794,16 @@ class CheckInstance(AttrCheck):
                     slave, allowed_attrs,
                     msg="Replica links not found")
                 self.links(slave['links'])
+
+    def fault(self, is_admin=False):
+        if 'fault' not in self.instance:
+            self.fail("'fault' not found in instance.")
+        else:
+            allowed_attrs = ['message', 'created', 'details']
+            self.contains_allowed_attrs(
+                self.instance['fault'], allowed_attrs,
+                msg="Fault")
+            if is_admin and not self.instance['fault']['details']:
+                self.fail("Missing fault details")
+            if not is_admin and self.instance['fault']['details']:
+                self.fail("Fault details provided for non-admin")

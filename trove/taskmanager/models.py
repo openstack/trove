@@ -348,6 +348,8 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         # Make sure the service becomes active before sending a usage
         # record to avoid over billing a customer for an instance that
         # fails to build properly.
+        error_message = ''
+        error_details = ''
         try:
             utils.poll_until(self._service_is_active,
                              sleep_time=USAGE_SLEEP_TIME,
@@ -355,14 +357,22 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             LOG.info(_("Created instance %s successfully.") % self.id)
             TroveInstanceCreate(instance=self,
                                 instance_size=flavor['ram']).notify()
-        except PollTimeOut:
+        except PollTimeOut as ex:
             LOG.error(_("Failed to create instance %s. "
                         "Timeout waiting for instance to become active. "
                         "No usage create-event was sent.") % self.id)
             self.update_statuses_on_time_out()
-        except Exception:
+            error_message = "%s" % ex
+            error_details = traceback.format_exc()
+        except Exception as ex:
             LOG.exception(_("Failed to send usage create-event for "
                             "instance %s.") % self.id)
+            error_message = "%s" % ex
+            error_details = traceback.format_exc()
+        finally:
+            if error_message:
+                inst_models.save_instance_fault(
+                    self.id, error_message, error_details)
 
     def create_instance(self, flavor, image_id, databases, users,
                         datastore_manager, packages, volume_size,
@@ -621,10 +631,18 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             raise TroveError(_("Service not active, status: %s") % status)
 
         c_id = self.db_info.compute_instance_id
-        nova_status = self.nova_client.servers.get(c_id).status
-        if nova_status in [InstanceStatus.ERROR,
-                           InstanceStatus.FAILED]:
-            raise TroveError(_("Server not active, status: %s") % nova_status)
+        server = self.nova_client.servers.get(c_id)
+        server_status = server.status
+        if server_status in [InstanceStatus.ERROR,
+                             InstanceStatus.FAILED]:
+            server_message = ''
+            if server.fault:
+                server_message = "\nServer error: %s" % (
+                    server.fault.get('message', 'Unknown'))
+            raise TroveError(_("Server not active, status: %(status)s"
+                               "%(srv_msg)s") %
+                             {'status': server_status,
+                              'srv_msg': server_message})
         return False
 
     def _create_server_volume(self, flavor_id, image_id, security_groups,
@@ -844,7 +862,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                    "exc": exc,
                    "trace": traceback.format_exc()})
         self.update_db(task_status=task_status)
-        raise TroveError(message=message)
+        exc_message = '\n%s' % exc if exc else ''
+        full_message = "%s%s" % (message, exc_message)
+        raise TroveError(message=full_message)
 
     def _create_volume(self, volume_size, volume_type, datastore_manager):
         LOG.debug("Begin _create_volume for id: %s" % self.id)

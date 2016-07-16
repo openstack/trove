@@ -22,9 +22,13 @@ extra_opts = [openstack_cfg.StrOpt('taskmanager_manager')]
 
 
 def startup(conf, topic):
+    from trove.common import notification
     from trove.common.rpc import service as rpc_service
     from trove.common.rpc import version as rpc_version
+    from trove.instance import models as inst_models
 
+    notification.DBaaSAPINotification.register_notify_callback(
+        inst_models.persist_instance_fault)
     server = rpc_service.RpcService(
         manager=conf.taskmanager_manager, topic=topic,
         rpc_api_version=rpc_version.RPC_API_VERSION)
