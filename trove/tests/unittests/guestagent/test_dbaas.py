@@ -426,7 +426,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
         dbaas.orig_configuration_manager = dbaas.MySqlApp.configuration_manager
         dbaas.MySqlApp.configuration_manager = Mock()
         dbaas.orig_get_auth_password = dbaas.MySqlApp.get_auth_password
-        dbaas.MySqlApp.get_auth_password = Mock()
+        dbaas.MySqlApp.get_auth_password = Mock(return_value='root_pwd')
         self.orig_configuration_manager = \
             mysql_common_service.BaseMySqlApp.configuration_manager
         mysql_common_service.BaseMySqlApp.configuration_manager = Mock()
@@ -1586,8 +1586,6 @@ class MySqlAppMockTest(trove_testtools.TestCase):
                 app = MySqlApp(mock_status)
                 app._reset_configuration = MagicMock()
                 app.start_mysql = MagicMock(return_value=None)
-                app._wait_for_mysql_to_be_really_alive = MagicMock(
-                    return_value=True)
                 app.stop_db = MagicMock(return_value=None)
                 app.secure('foo')
                 reset_config_calls = [call('foo', auth_pwd_mock.return_value)]

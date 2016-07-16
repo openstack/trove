@@ -474,3 +474,9 @@ class PerconaUserActionsRunner(MysqlUserActionsRunner):
 
     def __init__(self):
         super(PerconaUserActionsRunner, self).__init__()
+
+
+class PxcUserActionsRunner(MysqlUserActionsRunner):
+
+    def __init__(self):
+        super(PxcUserActionsRunner, self).__init__()
