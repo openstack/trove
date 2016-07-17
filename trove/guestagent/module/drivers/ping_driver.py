@@ -37,37 +37,24 @@ class PingDriver(module_driver.ModuleDriver):
     be 'Hello.'
     """
 
-    def get_type(self):
-        return 'ping'
-
     def get_description(self):
-        return "Ping Guestagent Module Driver"
+        return "Ping Module Driver"
 
     def get_updated(self):
         return date(2016, 3, 4)
 
-    def apply(self, name, datastore, ds_version, data_file):
-        success = False
-        message = "Message not found in contents file"
-        try:
-            data = operating_system.read_file(
-                data_file, codec=stream_codecs.KeyValueCodec())
-            for key, value in data.items():
-                if 'message' == key.lower():
-                    success = True
-                    message = value
-                    break
-        except Exception:
-            # assume we couldn't read the file, because there was some
-            # issue with it (for example, it's a binary file). Just log
-            # it and drive on.
-            LOG.error(_("Could not extract contents from '%s' - possibly "
-                      "a binary file?") % name)
+    @module_driver.output(
+        log_message=_('Extracting %(type)s message'),
+        fail_message=_('Could not extract %(type)s message'))
+    def apply(self, name, datastore, ds_version, data_file, admin_module):
+        data = operating_system.read_file(
+            data_file, codec=stream_codecs.KeyValueCodec())
+        for key, value in data.items():
+            if 'message' == key.lower():
+                return True, value
+        return False, 'Message not found in contents file'
 
-        return success, message
-
-    def _is_binary(self, data_str):
-        bool(data_str.translate(None, self.TEXT_CHARS))
-
+    @module_driver.output(
+        log_message=_('Removing %(type)s module'))
     def remove(self, name, datastore, ds_version, data_file):
         return True, ""
