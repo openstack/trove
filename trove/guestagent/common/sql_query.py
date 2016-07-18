@@ -346,68 +346,43 @@ class CreateUser(object):
         return " ".join(query) + ";"
 
 
-class UpdateUser(object):
+class RenameUser(object):
 
-    def __init__(self, user, host=None, clear=None, new_user=None,
+    def __init__(self, user, host=None, new_user=None,
                  new_host=None):
         self.user = user
-        self.host = host
-        self.clear = clear
+        self.host = host or '%'
         self.new_user = new_user
         self.new_host = new_host
 
     def __repr__(self):
         return str(self)
 
-    @property
-    def _set_password(self):
-        if self.clear:
-            return "Password=PASSWORD('%s')" % self.clear
+    def __str__(self):
+        properties = {'old_name': self.user,
+                      'old_host': self.host,
+                      'new_name': self.new_user or self.user,
+                      'new_host': self.new_host or self.host}
+        return ("RENAME USER '%(old_name)s'@'%(old_host)s' TO "
+                "'%(new_name)s'@'%(new_host)s';" % properties)
 
-    @property
-    def _set_user(self):
-        if self.new_user:
-            return "User='%s'" % self.new_user
 
-    @property
-    def _set_host(self):
-        if self.new_host:
-            return "Host='%s'" % self.new_host
+class SetPassword(object):
 
-    @property
-    def _host(self):
-        if not self.host:
-            return "%"
-        return self.host
+    def __init__(self, user, host=None, new_password=None):
+        self.user = user
+        self.host = host or '%'
+        self.new_password = new_password or ''
 
-    @property
-    def _set_attrs(self):
-        sets = [self._set_user,
-                self._set_host,
-                self._set_password,
-                ]
-        sets = [s for s in sets if s]
-        sets = ', '.join(sets)
-        return 'SET %s' % sets
-
-    @property
-    def _where(self):
-        clauses = []
-        if self.user:
-            clauses.append("User = '%s'" % self.user)
-        if self.host:
-            clauses.append("Host = '%s'" % self._host)
-        if not clauses:
-            return ""
-        return "WHERE %s" % " AND ".join(clauses)
+    def __repr__(self):
+        return str(self)
 
     def __str__(self):
-        query = ["UPDATE mysql.user",
-                 self._set_attrs,
-                 self._where,
-                 ]
-        query = [q for q in query if q]
-        return " ".join(query) + ";"
+        properties = {'user_name': self.user,
+                      'user_host': self.host,
+                      'new_password': self.new_password}
+        return ("SET PASSWORD FOR '%(user_name)s'@'%(user_host)s' = "
+                "PASSWORD('%(new_password)s');" % properties)
 
 
 class DropUser(object):

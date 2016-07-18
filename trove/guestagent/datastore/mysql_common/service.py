@@ -257,8 +257,8 @@ class BaseMySqlAdmin(object):
                 user = models.MySQLUser()
                 user.deserialize(user_dict)
                 LOG.debug("\tDeserialized: %s." % user.__dict__)
-                uu = sql_query.UpdateUser(user.name, host=user.host,
-                                          clear=user.password)
+                uu = sql_query.SetPassword(user.name, host=user.host,
+                                           new_password=user.password)
                 t = text(str(uu))
                 client.execute(t)
 
@@ -266,33 +266,28 @@ class BaseMySqlAdmin(object):
         """Change the attributes of an existing user."""
         LOG.debug("Changing user attributes for user %s." % username)
         user = self._get_user(username, hostname)
-        db_access = set()
-        grantee = set()
-        with self.local_sql_client(self.mysql_app.get_engine()) as client:
-            q = sql_query.Query()
-            q.columns = ["grantee", "table_schema"]
-            q.tables = ["information_schema.SCHEMA_PRIVILEGES"]
-            q.group = ["grantee", "table_schema"]
-            q.where = ["privilege_type != 'USAGE'"]
-            t = text(str(q))
-            db_result = client.execute(t)
-            for db in db_result:
-                grantee.add(db['grantee'])
-                if db['grantee'] == "'%s'@'%s'" % (user.name, user.host):
-                    db_name = db['table_schema']
-                    db_access.add(db_name)
-        with self.local_sql_client(self.mysql_app.get_engine()) as client:
-            uu = sql_query.UpdateUser(user.name, host=user.host,
-                                      clear=user_attrs.get('password'),
-                                      new_user=user_attrs.get('name'),
-                                      new_host=user_attrs.get('host'))
-            t = text(str(uu))
-            client.execute(t)
-            uname = user_attrs.get('name') or username
-            host = user_attrs.get('host') or hostname
-            find_user = "'%s'@'%s'" % (uname, host)
-            if find_user not in grantee:
-                self.grant_access(uname, host, db_access)
+
+        new_name = user_attrs.get('name')
+        new_host = user_attrs.get('host')
+        new_password = user_attrs.get('password')
+
+        if new_name or new_host or new_password:
+
+            with self.local_sql_client(self.mysql_app.get_engine()) as client:
+
+                if new_password is not None:
+                    uu = sql_query.SetPassword(user.name, host=user.host,
+                                               new_password=new_password)
+
+                    t = text(str(uu))
+                    client.execute(t)
+
+                if new_name or new_host:
+                    uu = sql_query.RenameUser(user.name, host=user.host,
+                                              new_user=new_name,
+                                              new_host=new_host)
+                    t = text(str(uu))
+                    client.execute(t)
 
     def create_database(self, databases):
         """Create the list of specified databases."""
@@ -659,8 +654,9 @@ class BaseMySqlApp(object):
     def _generate_root_password(client):
         """Generate and set a random root password and forget about it."""
         localhost = "localhost"
-        uu = sql_query.UpdateUser("root", host=localhost,
-                                  clear=utils.generate_random_password())
+        uu = sql_query.SetPassword(
+            "root", host=localhost,
+            new_password=utils.generate_random_password())
         t = text(str(uu))
         client.execute(t)
 
@@ -1055,8 +1051,8 @@ class BaseMySqlRootAccess(object):
                 LOG.debug(err)
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             print(client)
-            uu = sql_query.UpdateUser(user.name, host=user.host,
-                                      clear=user.password)
+            uu = sql_query.SetPassword(user.name, host=user.host,
+                                       new_password=user.password)
             t = text(str(uu))
             client.execute(t)
 

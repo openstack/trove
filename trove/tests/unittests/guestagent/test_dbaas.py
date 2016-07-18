@@ -474,67 +474,43 @@ class MySqlAdminTest(trove_testtools.TestCase):
 
     def test_change_passwords(self):
         user = [{"name": "test_user", "host": "%", "password": "password"}]
-        expected = ("UPDATE mysql.user SET Password="
-                    "PASSWORD('password') WHERE User = 'test_user' "
-                    "AND Host = '%';")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
         with patch.object(self.mock_client, 'execute') as mock_execute:
             self.mySqlAdmin.change_passwords(user)
             self._assert_execute_call(expected, mock_execute)
 
     def test_update_attributes_password(self):
-        db_result = [{"grantee": "'test_user'@'%'", "table_schema": "db1"},
-                     {"grantee": "'test_user'@'%'", "table_schema": "db2"}]
-        expected = ("UPDATE mysql.user SET Password="
-                    "PASSWORD('password') WHERE User = 'test_user' "
-                    "AND Host = '%';")
+        expected = ("SET PASSWORD FOR 'test_user'@'%' = PASSWORD('password');")
         user = MagicMock()
         user.name = "test_user"
         user.host = "%"
         user_attrs = {"password": "password"}
-        with patch.object(self.mock_client, 'execute',
-                          return_value=db_result) as mock_execute:
+        with patch.object(self.mock_client, 'execute') as mock_execute:
             with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
-                with patch.object(self.mySqlAdmin, 'grant_access'):
-                    self.mySqlAdmin.update_attributes('test_user', '%',
-                                                      user_attrs)
-                    self.assertEqual(0,
-                                     self.mySqlAdmin.grant_access.call_count)
-                    self._assert_execute_call(expected, mock_execute,
-                                              call_idx=1)
+                self.mySqlAdmin.update_attributes('test_user', '%', user_attrs)
+                self._assert_execute_call(expected, mock_execute)
 
     def test_update_attributes_name(self):
         user = MagicMock()
         user.name = "test_user"
         user.host = "%"
         user_attrs = {"name": "new_name"}
-        expected = ("UPDATE mysql.user SET User='new_name' "
-                    "WHERE User = 'test_user' AND Host = '%';")
+        expected = ("RENAME USER 'test_user'@'%' TO 'new_name'@'%';")
         with patch.object(self.mock_client, 'execute') as mock_execute:
             with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
-                with patch.object(self.mySqlAdmin, 'grant_access'):
-                    self.mySqlAdmin.update_attributes('test_user', '%',
-                                                      user_attrs)
-                    self.mySqlAdmin.grant_access.assert_called_with(
-                        'new_name', '%', set([]))
-                    self._assert_execute_call(expected, mock_execute,
-                                              call_idx=1)
+                self.mySqlAdmin.update_attributes('test_user', '%', user_attrs)
+                self._assert_execute_call(expected, mock_execute)
 
     def test_update_attributes_host(self):
         user = MagicMock()
         user.name = "test_user"
         user.host = "%"
         user_attrs = {"host": "new_host"}
-        expected = ("UPDATE mysql.user SET Host='new_host' "
-                    "WHERE User = 'test_user' AND Host = '%';")
+        expected = ("RENAME USER 'test_user'@'%' TO 'test_user'@'new_host';")
         with patch.object(self.mock_client, 'execute') as mock_execute:
             with patch.object(self.mySqlAdmin, '_get_user', return_value=user):
-                with patch.object(self.mySqlAdmin, 'grant_access'):
-                    self.mySqlAdmin.update_attributes('test_user', '%',
-                                                      user_attrs)
-                    self.mySqlAdmin.grant_access.assert_called_with(
-                        'test_user', 'new_host', set([]))
-                    self._assert_execute_call(expected, mock_execute,
-                                              call_idx=1)
+                self.mySqlAdmin.update_attributes('test_user', '%', user_attrs)
+                self._assert_execute_call(expected, mock_execute)
 
     def test_create_database(self):
         databases = []
@@ -1437,9 +1413,8 @@ class MySqlAppTest(trove_testtools.TestCase):
                           return_value=self.mock_client):
             self.mySqlApp.secure_root()
         update_root_password, _ = self.mock_execute.call_args_list[0]
-        update_expected = ("UPDATE mysql.user SET Password="
-                           "PASSWORD('some_password') "
-                           "WHERE User = 'root' AND Host = 'localhost';")
+        update_expected = ("SET PASSWORD FOR 'root'@'localhost' = "
+                           "PASSWORD('some_password');")
 
         remove_root, _ = self.mock_execute.call_args_list[1]
         remove_expected = ("DELETE FROM mysql.user WHERE "
@@ -1680,7 +1655,7 @@ class MySqlRootStatusTest(trove_testtools.TestCase):
             mock_execute.assert_any_call(TextClauseMatcher(
                 'GRANT ALL PRIVILEGES ON *.*'))
             mock_execute.assert_any_call(TextClauseMatcher(
-                'UPDATE mysql.user'))
+                'SET PASSWORD'))
 
     @patch.object(MySqlRootAccess, 'enable_root')
     def test_root_disable(self, enable_root_mock):
