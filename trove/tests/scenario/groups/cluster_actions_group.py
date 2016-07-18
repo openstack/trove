@@ -15,6 +15,7 @@
 
 from proboscis import test
 
+from trove.tests.scenario import groups
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
@@ -28,7 +29,16 @@ class ClusterActionsRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ClusterActionsRunner'
 
 
-@test(groups=[GROUP])
+@test(groups=[GROUP],
+      runs_after_groups=[groups.MODULE_INST_DELETE,
+                         groups.CFGGRP_INST_DELETE,
+                         groups.INST_ACTIONS_RESIZE_WAIT,
+                         groups.DB_ACTION_INST_DELETE,
+                         groups.USER_ACTION_DELETE,
+                         groups.USER_ACTION_INST_DELETE,
+                         groups.ROOT_ACTION_INST_DELETE,
+                         groups.REPL_INST_DELETE_WAIT,
+                         groups.INST_DELETE_WAIT])
 class ClusterActionsGroup(TestGroup):
 
     def __init__(self):

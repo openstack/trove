@@ -16,18 +16,11 @@
 from proboscis import test
 
 from trove.tests.scenario import groups
-from trove.tests.scenario.groups import guest_log_group
 from trove.tests.scenario.groups.test_group import TestGroup
 from trove.tests.scenario.runners import test_runners
 
 
 GROUP = "scenario.replication_group"
-GROUP_REPL_CREATE = "scenario.repl_create_group"
-GROUP_REPL_CREATE_WAIT = "scenario.repl_create_wait_group"
-GROUP_REPL_MULTI_CREATE = "scenario.repl_multi_create_group"
-GROUP_REPL_MULTI_CREATE_WAIT = "scenario.repl_multi_create_wait_group"
-GROUP_REPL_DELETE = "scenario.repl_delete_group"
-GROUP_REPL_DELETE_WAIT = "scenario.repl_delete_wait_group"
 
 
 class ReplicationRunnerFactory(test_runners.RunnerFactory):
@@ -38,10 +31,13 @@ class ReplicationRunnerFactory(test_runners.RunnerFactory):
 
 @test(depends_on_groups=[groups.INST_CREATE_WAIT],
       groups=[GROUP, groups.REPL_INST_CREATE],
-      runs_after_groups=[groups.INST_ACTIONS_RESIZE_WAIT,
+      runs_after_groups=[groups.MODULE_INST_DELETE,
+                         groups.CFGGRP_INST_DELETE,
+                         groups.INST_ACTIONS_RESIZE_WAIT,
+                         groups.DB_ACTION_INST_DELETE,
+                         groups.USER_ACTION_DELETE,
                          groups.USER_ACTION_INST_DELETE,
-                         groups.ROOT_ACTION_INST_DELETE,
-                         guest_log_group.GROUP])
+                         groups.ROOT_ACTION_INST_DELETE])
 class ReplicationInstCreateGroup(TestGroup):
     """Test Replication Instance Create functionality."""
 
