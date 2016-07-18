@@ -52,8 +52,8 @@ class InstanceErrorCreateGroup(TestGroup):
 
 
 @test(depends_on_groups=[groups.INST_ERROR_CREATE],
-      groups=[GROUP, groups.INST_ERROR_CREATE_WAIT],
-      runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE])
+      runs_after_groups=[groups.MODULE_CREATE, groups.CFGGRP_CREATE],
+      groups=[GROUP, groups.INST_ERROR_CREATE_WAIT])
 class InstanceErrorCreateWaitGroup(TestGroup):
     """Test that Instance Error Create Completes."""
 
@@ -94,6 +94,7 @@ class InstanceErrorDeleteGroup(TestGroup):
 
 
 @test(depends_on_groups=[groups.INST_ERROR_DELETE],
+      runs_after_groups=[groups.MODULE_INST_CREATE],
       groups=[GROUP, groups.INST_ERROR_DELETE_WAIT])
 class InstanceErrorDeleteWaitGroup(TestGroup):
     """Test that Instance Error Delete Completes."""

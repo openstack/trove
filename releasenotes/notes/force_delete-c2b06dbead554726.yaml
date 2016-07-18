@@ -1,0 +1,6 @@
+features:
+  - The reset-status command will set the task and status
+    of an instance to ERROR after which it can be deleted.
+  - The force-delete command will allow the deletion of
+    an instance even if the instance is stuck in BUILD
+    state.

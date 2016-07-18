@@ -506,6 +506,16 @@ class DBaaSInstanceDelete(DBaaSAPINotification):
         return ['instance_id']
 
 
+class DBaaSInstanceResetStatus(DBaaSAPINotification):
+
+    def event_type(self):
+        return 'instance_reset_status'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['instance_id']
+
+
 class DBaaSInstanceDetach(DBaaSAPINotification):
 
     @abc.abstractmethod
@@ -559,6 +569,17 @@ class DBaaSClusterDelete(DBaaSAPINotification):
     @abc.abstractmethod
     def event_type(self):
         return 'cluster_delete'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['cluster_id']
+
+
+class DBaaSClusterResetStatus(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'cluster_reset_status'
 
     @abc.abstractmethod
     def required_start_traits(self):
