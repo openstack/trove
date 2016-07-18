@@ -24,6 +24,7 @@ from trove.tests.unittests import trove_testtools
 
 
 class TestConfigurationParser(trove_testtools.TestCase):
+
     def setUp(self):
         super(TestConfigurationParser, self).setUp()
 
@@ -42,11 +43,12 @@ class TestConfigurationParser(trove_testtools.TestCase):
         d_parsed = dict(parsed)
         self.assertIsNotNone(d_parsed)
         self.assertEqual("/var/run/mysqld/mysqld.pid", d_parsed["pid-file"])
-        self.assertEqual('15', d_parsed["connect_timeout"])
+        self.assertEqual(15, d_parsed["connect_timeout"])
         self.assertEqual('1', d_parsed["skip-external-locking"])
 
 
 class TestConfigurationController(trove_testtools.TestCase):
+
     def setUp(self):
         super(TestConfigurationController, self).setUp()
         self.controller = ConfigurationsController()
@@ -179,6 +181,7 @@ class TestConfigurationController(trove_testtools.TestCase):
 
 
 class TestConfigurationsParameterController(trove_testtools.TestCase):
+
     def setUp(self):
         super(TestConfigurationsParameterController, self).setUp()
         self.controller = service.ConfigurationsParameterController()

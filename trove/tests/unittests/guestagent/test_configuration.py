@@ -122,27 +122,27 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
                                             'value': '1.4142'}},
                              1,
                              {'Section_1': {'name': 'sqrt(2)',
-                                            'value': '1.4142'}}
+                                            'value': 1.4142}}
                              )
 
         user_overrides_v2 = ('id2',
-                             {'Section_1': {'is_number': 'False'}},
+                             {'Section_1': {'is_number': False}},
                              2,
-                             {'Section_1': {'is_number': 'False'}}
+                             {'Section_1': {'is_number': False}}
                              )
 
         system_overrides_v1 = ('id1',
                                {'Section_1': {'name': 'e',
-                                              'value': '2.7183'}},
+                                              'value': 2.7183}},
                                1,
                                {'Section_1': {'name': 'e',
-                                              'value': '2.7183'}}
+                                              'value': 2.7183}}
                                )
 
         system_overrides_v2 = ('id2',
-                               {'Section_2': {'is_number': 'True'}},
+                               {'Section_2': {'is_number': True}},
                                2,
-                               {'Section_2': {'is_number': 'True'}}
+                               {'Section_2': {'is_number': True}}
                                )
 
         self._test_import_override_strategy(
@@ -153,36 +153,36 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
         # single file.
         user_overrides_v1 = ('id1',
                              {'Section_1': {'name': 'sqrt(2)',
-                                            'value': '1.4142'}},
+                                            'value': 1.4142}},
                              1,
                              {'Section_1': {'name': 'sqrt(2)',
-                                            'is_number': 'False',
-                                            'value': '1.4142'}}
+                                            'is_number': False,
+                                            'value': 1.4142}}
                              )
 
         user_overrides_v2 = ('id1',
-                             {'Section_1': {'is_number': 'False'}},
+                             {'Section_1': {'is_number': False}},
                              1,
                              {'Section_1': {'name': 'sqrt(2)',
-                                            'is_number': 'False',
-                                            'value': '1.4142'}}
+                                            'is_number': False,
+                                            'value': 1.4142}}
                              )
 
         system_overrides_v1 = ('id1',
                                {'Section_1': {'name': 'e',
-                                              'value': '2.7183'}},
+                                              'value': 2.7183}},
                                1,
                                {'Section_1': {'name': 'e',
-                                              'value': '2.7183'},
-                                'Section_2': {'is_number': 'True'}}
+                                              'value': 2.7183},
+                                'Section_2': {'is_number': True}}
                                )
 
         system_overrides_v2 = ('id1',
-                               {'Section_2': {'is_number': 'True'}},
+                               {'Section_2': {'is_number': True}},
                                1,
                                {'Section_1': {'name': 'e',
-                                              'value': '2.7183'},
-                                'Section_2': {'is_number': 'True'}}
+                                              'value': 2.7183},
+                                'Section_2': {'is_number': True}}
                                )
 
         self._test_import_override_strategy(
@@ -193,8 +193,8 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
     def _test_import_override_strategy(
             self, system_overrides, user_overrides, test_multi_rev):
         base_config_contents = {'Section_1': {'name': 'pi',
-                                              'is_number': 'True',
-                                              'value': '3.1415'}
+                                              'is_number': True,
+                                              'value': 3.1415}
                                 }
 
         codec = IniCodec()
@@ -361,21 +361,21 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
     @patch.multiple(operating_system, chmod=Mock(), chown=Mock())
     def _assert_get_value(self, override_strategy):
         base_config_contents = {'Section_1': {'name': 'pi',
-                                              'is_number': 'True',
-                                              'value': '3.1415'}
+                                              'is_number': True,
+                                              'value': 3.1415}
                                 }
 
         config_overrides_v1a = {'Section_1': {'name': 'sqrt(2)',
-                                              'value': '1.4142'}
+                                              'value': 1.4142}
                                 }
 
         config_overrides_v2 = {'Section_1': {'name': 'e',
-                                             'value': '2.7183'},
+                                             'value': 2.7183},
                                'Section_2': {'foo': 'bar'}
                                }
 
         config_overrides_v1b = {'Section_1': {'name': 'sqrt(4)',
-                                              'value': '2.0'}
+                                              'value': 2.0}
                                 }
 
         codec = IniCodec()
@@ -397,22 +397,22 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
 
             # Test value before applying overrides.
             self.assertEqual('pi', manager.get_value('Section_1')['name'])
-            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
+            self.assertEqual(3.1415, manager.get_value('Section_1')['value'])
 
             # Test value after applying overrides.
             manager.apply_user_override(config_overrides_v1a, change_id='id1')
             self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
-            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
+            self.assertEqual(1.4142, manager.get_value('Section_1')['value'])
             manager.apply_user_override(config_overrides_v2, change_id='id2')
             self.assertEqual('e', manager.get_value('Section_1')['name'])
-            self.assertEqual('2.7183', manager.get_value('Section_1')['value'])
+            self.assertEqual(2.7183, manager.get_value('Section_1')['value'])
             self.assertEqual('bar', manager.get_value('Section_2')['foo'])
 
             # Editing change 'id1' become visible only after removing
             # change 'id2', which overrides 'id1'.
             manager.apply_user_override(config_overrides_v1b, change_id='id1')
             self.assertEqual('e', manager.get_value('Section_1')['name'])
-            self.assertEqual('2.7183', manager.get_value('Section_1')['value'])
+            self.assertEqual(2.7183, manager.get_value('Section_1')['value'])
 
             # Test value after removing overrides.
 
@@ -420,35 +420,35 @@ class TestConfigurationOverrideStrategy(trove_testtools.TestCase):
             # removing 'id2'.
             manager.remove_user_override(change_id='id2')
             self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
-            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
+            self.assertEqual(2.0, manager.get_value('Section_1')['value'])
 
             # Back to the base.
             manager.remove_user_override(change_id='id1')
             self.assertEqual('pi', manager.get_value('Section_1')['name'])
-            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
+            self.assertEqual(3.1415, manager.get_value('Section_1')['value'])
             self.assertIsNone(manager.get_value('Section_2'))
 
             # Test system overrides.
             manager.apply_system_override(
                 config_overrides_v1b, change_id='id1')
             self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
-            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
+            self.assertEqual(2.0, manager.get_value('Section_1')['value'])
 
             # The system values should take precedence over the user
             # override.
             manager.apply_user_override(
                 config_overrides_v1a, change_id='id1')
             self.assertEqual('sqrt(4)', manager.get_value('Section_1')['name'])
-            self.assertEqual('2.0', manager.get_value('Section_1')['value'])
+            self.assertEqual(2.0, manager.get_value('Section_1')['value'])
 
             # The user values should become visible only after removing the
             # system change.
             manager.remove_system_override(change_id='id1')
             self.assertEqual('sqrt(2)', manager.get_value('Section_1')['name'])
-            self.assertEqual('1.4142', manager.get_value('Section_1')['value'])
+            self.assertEqual(1.4142, manager.get_value('Section_1')['value'])
 
             # Back to the base.
             manager.remove_user_override(change_id='id1')
             self.assertEqual('pi', manager.get_value('Section_1')['name'])
-            self.assertEqual('3.1415', manager.get_value('Section_1')['value'])
+            self.assertEqual(3.1415, manager.get_value('Section_1')['value'])
             self.assertIsNone(manager.get_value('Section_2'))

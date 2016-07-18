@@ -1,0 +1,7 @@
+---
+fixes:
+  - Fix IniCodec to deserialize Python objects.
+    This also brings it in line with other codecs.
+    guestagent_utils.to_bytes return the byte values
+    as ints.
+    See bug 1599656
