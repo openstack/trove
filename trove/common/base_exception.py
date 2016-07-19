@@ -121,9 +121,9 @@ class OpenstackException(Exception):
         try:
             self._error_string = self.message % kwargs
 
-        except Exception as e:
+        except Exception:
             if _FATAL_EXCEPTION_FORMAT_ERRORS:
-                raise e
+                raise
             else:
                 # at least get the core message out if something happened
                 self._error_string = self.message

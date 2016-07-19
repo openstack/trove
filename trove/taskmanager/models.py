@@ -1801,7 +1801,7 @@ class ResizeActionBase(object):
             self._assert_processes_are_ok()
             LOG.debug("Confirming nova action")
             self._confirm_nova_action()
-        except Exception as ex:
+        except Exception:
             LOG.exception(_("Exception during nova action."))
             if need_to_revert:
                 LOG.error(_("Reverting action for instance %s") %
@@ -1817,7 +1817,7 @@ class ResizeActionBase(object):
                             "Nova server status is not ACTIVE"))
 
             LOG.error(_("Error resizing instance %s.") % self.instance.id)
-            raise ex
+            raise
 
         LOG.debug("Recording success")
         self._record_action_success()

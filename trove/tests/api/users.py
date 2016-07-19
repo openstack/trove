@@ -69,7 +69,7 @@ class TestUsers(object):
             self.dbaas.databases.create(instance_info.id, databases)
         except exceptions.BadRequest as e:
             if "Validation error" in e.message:
-                raise e
+                raise
         if not FAKE:
             time.sleep(5)
 

@@ -66,9 +66,9 @@ class SecurityGroup(DatabaseModelBase):
                     user=context.user,
                     tenant_id=context.tenant)
 
-        except exception.SecurityGroupCreationError as e:
+        except exception.SecurityGroupCreationError:
             LOG.exception(_("Failed to create remote security group."))
-            raise e
+            raise
 
     @classmethod
     def create_for_instance(cls, instance_id, context):
@@ -163,9 +163,9 @@ class SecurityGroupRule(DatabaseModelBase):
                     cidr=cidr,
                     group_id=sec_group['id'])
 
-        except exception.SecurityGroupRuleCreationError as e:
+        except exception.SecurityGroupRuleCreationError:
             LOG.exception(_("Failed to create remote security group."))
-            raise e
+            raise
 
     def get_security_group(self, tenant_id):
         return SecurityGroup.find_by(id=self.group_id,

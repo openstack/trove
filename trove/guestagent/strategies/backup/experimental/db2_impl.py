@@ -62,10 +62,10 @@ class DB2Backup(base.BackupRunner):
                     'dbname': dbName, 'dir': DB2_BACKUP_DIR})
 
             service.run_command(system.UNQUIESCE_DB2)
-        except exception.ProcessExecutionError as e:
+        except exception.ProcessExecutionError:
             LOG.debug("Caught exception when preparing the directory")
             self.cleanup()
-            raise e
+            raise
 
     @property
     def cmd(self):

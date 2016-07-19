@@ -45,9 +45,9 @@ class CbBackup(base.RestoreRunner):
     def pre_restore(self):
         try:
             operating_system.remove(system.COUCHBASE_DUMP_DIR, force=True)
-        except exception.ProcessExecutionError as p:
-            LOG.error(p)
-            raise p
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Error during pre-restore phase."))
+            raise
 
     def post_restore(self):
         try:

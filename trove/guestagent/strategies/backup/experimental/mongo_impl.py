@@ -70,10 +70,10 @@ class MongoDump(base.BackupRunner):
                 run_as_root=True, root_helper='sudo',
                 timeout=LARGE_TIMEOUT
             )
-        except exception.ProcessExecutionError as e:
+        except exception.ProcessExecutionError:
             LOG.debug("Caught exception when creating the dump")
             self.cleanup()
-            raise e
+            raise
 
     @property
     def cmd(self):
