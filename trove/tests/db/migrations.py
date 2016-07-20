@@ -129,11 +129,16 @@ class TestTroveMigrations(object):
     def _execute_cmd(self, cmd=None):
         """Shell out and run the given command."""
         out, err = processutils.trycmd(cmd, shell=True)
-        assert_equal('', err,
-                     "Failed to run: '%(cmd)s' "
-                     "Output: '%(stdout)s' "
-                     "Error: '%(stderr)s'" %
-                     {'cmd': cmd, 'stdout': out, 'stderr': err})
+        # Until someone wants to rewrite this to avoid the warning
+        # we need to handle it for newer versions of mysql
+        valid_err = err == '' or \
+            err == 'mysql: [Warning] Using a password on the ' \
+                   'command line interface can be insecure.\n'
+        assert_true(valid_err,
+                    "Failed to run: '%(cmd)s' "
+                    "Output: '%(stdout)s' "
+                    "Error: '%(stderr)s'" %
+                    {'cmd': cmd, 'stdout': out, 'stderr': err})
 
     def _reset_mysql(self):
         """Reset the MySQL test database
