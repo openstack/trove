@@ -408,37 +408,32 @@ class MysqlReplicationRunner(ReplicationRunner):
         """For Mysql validate that the master has its
         binlog_format set to MIXED.
         """
-        client = self.test_helper.get_client(
-            self.get_instance_host(instance_id))
-        self._validate_binlog_fmt(instance_id, client)
+        host = self.get_instance_host(instance_id)
+        self._validate_binlog_fmt(instance_id, host)
 
     def _validate_replica(self, instance_id):
         """For Mysql validate that any replica has its
         binlog_format set to MIXED and it is in read_only
         mode.
         """
-        client = self.test_helper.get_client(
-            self.get_instance_host(instance_id))
-        self._validate_binlog_fmt(instance_id, client)
-        self._validate_read_only(instance_id, client)
+        host = self.get_instance_host(instance_id)
+        self._validate_binlog_fmt(instance_id, host)
+        self._validate_read_only(instance_id, host)
 
-    def _validate_binlog_fmt(self, instance_id, client):
-        binlog_fmt = self._get_mysql_variable(client, 'binlog_format')
+    def _validate_binlog_fmt(self, instance_id, host):
+        binlog_fmt = self.test_helper.get_configuration_value('binlog_format',
+                                                              host)
         self.assert_equal(self._get_expected_binlog_format(), binlog_fmt,
                           'Wrong binlog format detected for %s' % instance_id)
 
     def _get_expected_binlog_format(self):
         return 'MIXED'
 
-    def _validate_read_only(self, instance_id, client):
-        read_only = self._get_mysql_variable(client, 'read_only')
+    def _validate_read_only(self, instance_id, host):
+        read_only = self.test_helper.get_configuration_value('read_only',
+                                                             host)
         self.assert_equal('ON', read_only, 'Wrong read only mode detected '
                           'for %s' % instance_id)
-
-    def _get_mysql_variable(self, client, variable):
-        cmd = "SHOW GLOBAL VARIABLES LIKE '%s'" % variable
-        row = client.execute(cmd).fetchone()
-        return row['Value']
 
 
 class PerconaReplicationRunner(MysqlReplicationRunner):
