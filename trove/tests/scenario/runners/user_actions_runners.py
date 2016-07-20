@@ -41,6 +41,13 @@ class UserActionsRunner(TestRunner):
             return self.user_defs[0]
         raise SkipTest("No valid user definitions provided.")
 
+    @property
+    def non_existing_user_def(self):
+        user_def = self.test_helper.get_non_existing_user_definition()
+        if user_def:
+            return user_def
+        raise SkipTest("No valid user definitions provided.")
+
     def run_users_create(self, expected_http_code=202):
         users = self.test_helper.get_valid_user_definitions()
         if users:
@@ -229,15 +236,15 @@ class UserActionsRunner(TestRunner):
     def run_user_create_with_blank_name(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
-        usr_def = self.test_helper.get_non_existing_user_definition()
         # Test with missing user name attribute.
-        no_name_usr_def = self.copy_dict(usr_def, ignored_keys=['name'])
+        no_name_usr_def = self.copy_dict(self.non_existing_user_def,
+                                         ignored_keys=['name'])
         self.assert_users_create_failure(
             self.instance_info.id, no_name_usr_def,
             expected_exception, expected_http_code)
 
         # Test with empty user name attribute.
-        blank_name_usr_def = self.copy_dict(usr_def)
+        blank_name_usr_def = self.copy_dict(self.non_existing_user_def)
         blank_name_usr_def.update({'name': ''})
         self.assert_users_create_failure(
             self.instance_info.id, blank_name_usr_def,
@@ -246,15 +253,16 @@ class UserActionsRunner(TestRunner):
     def run_user_create_with_blank_password(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
-        usr_def = self.test_helper.get_non_existing_user_definition()
         # Test with missing password attribute.
-        no_pass_usr_def = self.copy_dict(usr_def, ignored_keys=['password'])
+        no_pass_usr_def = self.copy_dict(self.non_existing_user_def,
+                                         ignored_keys=['password'])
         self.assert_users_create_failure(
             self.instance_info.id, no_pass_usr_def,
             expected_exception, expected_http_code)
 
         # Test with missing databases attribute.
-        no_db_usr_def = self.copy_dict(usr_def, ignored_keys=['databases'])
+        no_db_usr_def = self.copy_dict(self.non_existing_user_def,
+                                       ignored_keys=['databases'])
         self.assert_users_create_failure(
             self.instance_info.id, no_db_usr_def,
             expected_exception, expected_http_code)
@@ -390,9 +398,9 @@ class UserActionsRunner(TestRunner):
     def run_nonexisting_user_show(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
-        usr_def = self.test_helper.get_non_existing_user_definition()
         self.assert_user_show_failure(
-            self.instance_info.id, {'name': usr_def['name']},
+            self.instance_info.id,
+            {'name': self.non_existing_user_def['name']},
             expected_exception, expected_http_code)
 
     def assert_user_show_failure(self, instance_id, user_def,
@@ -418,8 +426,7 @@ class UserActionsRunner(TestRunner):
 
     def run_nonexisting_user_update(self, expected_http_code=404):
         # Test valid update on a non-existing user.
-        usr_def = self.test_helper.get_non_existing_user_definition()
-        update_def = {'name': usr_def['name']}
+        update_def = {'name': self.non_existing_user_def['name']}
         self.assert_user_attribute_update_failure(
             self.instance_info.id, update_def, update_def,
             exceptions.NotFound, expected_http_code)
@@ -427,9 +434,9 @@ class UserActionsRunner(TestRunner):
     def run_nonexisting_user_delete(
             self, expected_exception=exceptions.NotFound,
             expected_http_code=404):
-        usr_def = self.test_helper.get_non_existing_user_definition()
         self.assert_user_delete_failure(
-            self.instance_info.id, {'name': usr_def['name']},
+            self.instance_info.id,
+            {'name': self.non_existing_user_def['name']},
             expected_exception, expected_http_code)
 
     def assert_user_delete_failure(

@@ -33,6 +33,13 @@ class DatabaseActionsRunner(TestRunner):
             return self.db_defs[0]
         raise SkipTest("No valid database definitions provided.")
 
+    @property
+    def non_existing_db_def(self):
+        db_def = self.test_helper.get_non_existing_database_definition()
+        if db_def:
+            return db_def
+        raise SkipTest("No valid database definitions provided.")
+
     def run_databases_create(self, expected_http_code=202):
         databases = self.test_helper.get_valid_database_definitions()
         if databases:
@@ -196,9 +203,9 @@ class DatabaseActionsRunner(TestRunner):
     def run_nonexisting_database_delete(self, expected_http_code=202):
         # Deleting a non-existing database is expected to succeed as if the
         # database was deleted.
-        db_def = self.test_helper.get_non_existing_database_definition()
         self.assert_database_delete(
-            self.instance_info.id, db_def['name'], expected_http_code)
+            self.instance_info.id, self.non_existing_db_def['name'],
+            expected_http_code)
 
     def run_system_database_delete(
             self, expected_exception=exceptions.BadRequest,
