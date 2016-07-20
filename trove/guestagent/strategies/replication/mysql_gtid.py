@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-import csv
-
 from oslo_log import log as logging
 
 from trove.common import cfg
@@ -75,8 +73,7 @@ class MysqlGTIDReplication(mysql_base.MysqlReplicationBase):
         LOG.info(_("Reading last master GTID from %s") % INFO_FILE)
         try:
             with open(INFO_FILE, 'rb') as f:
-                row = csv.reader(f, delimiter='\t',
-                                 skipinitialspace=True).next()
+                row = f.read().split('\t')
                 return row[2]
         except (IOError, IndexError) as ex:
             LOG.exception(ex)
