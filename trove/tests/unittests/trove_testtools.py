@@ -166,9 +166,12 @@ class TestCase(testtools.TestCase):
     def patch_datastore_manager(self, manager_name):
         return self.patch_conf_property('datastore_manager', manager_name)
 
-    def patch_conf_property(self, property_name, value):
+    def patch_conf_property(self, property_name, value, section=None):
+        target = cfg.CONF
+        if section:
+            target = target.get(section)
         conf_patcher = mock.patch.object(
-            cfg.CONF, property_name,
+            target, property_name,
             new_callable=mock.PropertyMock(return_value=value))
         self.addCleanup(conf_patcher.stop)
         return conf_patcher.start()
