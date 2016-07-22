@@ -25,13 +25,7 @@ from trove.common.i18n import _
 from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.guestagent.datastore.experimental.postgresql import pgutil
-from trove.guestagent.datastore.experimental.postgresql.service.config import(
-    PgSqlConfig)
-from trove.guestagent.datastore.experimental.postgresql.service.process import(
-    PgSqlProcess)
-from trove.guestagent.datastore.experimental.postgresql.service.users import(
-    PgSqlUsers)
+from trove.guestagent.datastore.experimental.postgresql.service import PgSqlApp
 from trove.guestagent.strategies.backup import base
 
 CONF = cfg.CONF
@@ -85,18 +79,8 @@ class PgBaseBackupUtil(object):
                      if walre.search(wal_file) and wal_file >= last_wal]
         return wal_files
 
-    @staticmethod
-    def recreate_wal_archive_dir():
-        operating_system.remove(WAL_ARCHIVE_DIR, force=True, recursive=True,
-                                as_root=True)
-        operating_system.create_directory(WAL_ARCHIVE_DIR,
-                                          user=PgSqlProcess.PGSQL_OWNER,
-                                          group=PgSqlProcess.PGSQL_OWNER,
-                                          force=True, as_root=True)
 
-
-class PgBaseBackup(base.BackupRunner, PgSqlConfig, PgBaseBackupUtil,
-                   PgSqlUsers):
+class PgBaseBackup(base.BackupRunner, PgBaseBackupUtil):
     """Base backups are taken with the pg_basebackup filesystem-level backup
      tool pg_basebackup creates a copy of the binary files in the PostgreSQL
      cluster data directory and enough WAL segments to allow the database to
@@ -107,6 +91,7 @@ class PgBaseBackup(base.BackupRunner, PgSqlConfig, PgBaseBackupUtil,
     __strategy_name__ = 'pg_basebackup'
 
     def __init__(self, *args, **kwargs):
+        self._app = None
         super(PgBaseBackup, self).__init__(*args, **kwargs)
         self.label = None
         self.stop_segment = None
@@ -117,10 +102,20 @@ class PgBaseBackup(base.BackupRunner, PgSqlConfig, PgBaseBackupUtil,
         self.mrb = None
 
     @property
+    def app(self):
+        if self._app is None:
+            self._app = self._build_app()
+        return self._app
+
+    def _build_app(self):
+        return PgSqlApp()
+
+    @property
     def cmd(self):
         cmd = ("pg_basebackup -h %s -U %s --pgdata=-"
                " --label=%s --format=tar --xlog " %
-               (self.UNIX_SOCKET_DIR, self.ADMIN_USER, self.base_filename))
+               (self.app.pgsql_run_dir, self.app.ADMIN_USER,
+                self.base_filename))
 
         return cmd + self.zip_cmd + self.encrypt_cmd
 
@@ -208,11 +203,11 @@ class PgBaseBackup(base.BackupRunner, PgSqlConfig, PgBaseBackupUtil,
 
     def _run_post_backup(self):
         """Get rid of WAL data we don't need any longer"""
-        arch_cleanup_bin = os.path.join(self.pgsql_extra_bin_dir,
+        arch_cleanup_bin = os.path.join(self.app.pgsql_extra_bin_dir,
                                         "pg_archivecleanup")
         bk_file = os.path.basename(self.most_recent_backup_file())
         cmd_full = " ".join((arch_cleanup_bin, WAL_ARCHIVE_DIR, bk_file))
-        utils.execute("sudo", "su", "-", self.PGSQL_OWNER, "-c",
+        utils.execute("sudo", "su", "-", self.app.pgsql_owner, "-c",
                       "%s" % cmd_full)
 
 
@@ -233,16 +228,11 @@ class PgBaseBackupIncremental(PgBaseBackup):
 
     def _run_pre_backup(self):
         self.backup_label = self.base_filename
-        result = pgutil.query("SELECT pg_start_backup('%s', true)" %
-                              self.backup_label)
-        self.start_segment = result[0][0]
+        self.start_segment = self.app.pg_start_backup(self.backup_label)
 
-        result = pgutil.query("SELECT pg_xlogfile_name('%s')" %
-                              self.start_segment)
-        self.start_wal_file = result[0][0]
+        self.start_wal_file = self.app.pg_xlogfile_name(self.start_segment)
 
-        result = pgutil.query("SELECT pg_stop_backup()")
-        self.stop_segment = result[0][0]
+        self.stop_segment = self.app.pg_stop_backup()
 
         # We have to hack this because self.command is
         # initialized in the base class before we get here, which is

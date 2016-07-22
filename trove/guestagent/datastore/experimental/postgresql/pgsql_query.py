@@ -1,4 +1,6 @@
 # Copyright (c) 2013 OpenStack Foundation
+# Copyright (c) 2016 Tesora, Inc.
+#
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,76 +14,6 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import psycopg2
-
-from trove.common import exception
-from trove.common.i18n import _
-
-PG_ADMIN = 'os_admin'
-
-
-class PostgresConnection(object):
-
-    def __init__(self, autocommit=False, **connection_args):
-        self._autocommit = autocommit
-        self._connection_args = connection_args
-
-    def execute(self, statement, identifiers=None, data_values=None):
-        """Execute a non-returning statement.
-        """
-        self._execute_stmt(statement, identifiers, data_values, False)
-
-    def query(self, query, identifiers=None, data_values=None):
-        """Execute a query and return the result set.
-        """
-        return self._execute_stmt(query, identifiers, data_values, True)
-
-    def _execute_stmt(self, statement, identifiers, data_values, fetch):
-        if statement:
-            with psycopg2.connect(**self._connection_args) as connection:
-                connection.autocommit = self._autocommit
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        self._bind(statement, identifiers), data_values)
-                    if fetch:
-                        return cursor.fetchall()
-        else:
-            raise exception.UnprocessableEntity(_("Invalid SQL statement: %s")
-                                                % statement)
-
-    def _bind(self, statement, identifiers):
-        if identifiers:
-            return statement.format(*identifiers)
-        return statement
-
-
-class PostgresLocalhostConnection(PostgresConnection):
-
-    HOST = 'localhost'
-
-    def __init__(self, user, password=None, port=5432, autocommit=False):
-        super(PostgresLocalhostConnection, self).__init__(
-            autocommit=autocommit, user=user, password=password,
-            host=self.HOST, port=port)
-
-
-# TODO(pmalik): No need to recreate the connection every time.
-def psql(statement, timeout=30):
-    """Execute a non-returning statement (usually DDL);
-    Turn autocommit ON (this is necessary for statements that cannot run
-    within an implicit transaction, like CREATE DATABASE).
-    """
-    return PostgresLocalhostConnection(
-        PG_ADMIN, autocommit=True).execute(statement)
-
-
-# TODO(pmalik): No need to recreate the connection every time.
-def query(query, timeout=30):
-    """Execute a query and return the result set.
-    """
-    return PostgresLocalhostConnection(
-        PG_ADMIN, autocommit=False).query(query)
 
 
 class DatabaseQuery(object):

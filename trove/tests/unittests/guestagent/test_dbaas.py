@@ -57,11 +57,7 @@ from trove.guestagent.datastore.experimental.mongodb import (
 from trove.guestagent.datastore.experimental.mongodb import (
     system as mongo_system)
 from trove.guestagent.datastore.experimental.postgresql import (
-    manager as pg_manager)
-from trove.guestagent.datastore.experimental.postgresql.service import (
-    config as pg_config)
-from trove.guestagent.datastore.experimental.postgresql.service import (
-    status as pg_status)
+    service as pg_service)
 from trove.guestagent.datastore.experimental.pxc import (
     service as pxc_service)
 from trove.guestagent.datastore.experimental.redis import service as rservice
@@ -296,6 +292,7 @@ class BaseAppTest(object):
             super(BaseAppTest.AppTestCase, self).setUp()
             self.patch_datastore_manager(manager_name)
             self.FAKE_ID = fake_id
+            util.init_db()
             InstanceServiceStatus.create(
                 instance_id=self.FAKE_ID,
                 status=rd_instance.ServiceStatuses.NEW)
@@ -3705,35 +3702,19 @@ class MariaDBAppTest(trove_testtools.TestCase):
 
 class PostgresAppTest(BaseAppTest.AppTestCase):
 
-    class FakePostgresApp(pg_manager.Manager):
-        """Postgresql design is currently different than other datastores.
-        It does not have an App class, only the Manager, so we fake one.
-        The fake App just passes the calls onto the Postgres manager.
-        """
-
-        def restart(self):
-            super(PostgresAppTest.FakePostgresApp, self).restart(Mock())
-
-        def start_db(self):
-            super(PostgresAppTest.FakePostgresApp, self).start_db(Mock())
-
-        def stop_db(self):
-            super(PostgresAppTest.FakePostgresApp, self).stop_db(Mock())
-
-    @patch.object(pg_config.PgSqlConfig, '_find_config_file', return_value='')
-    def setUp(self, _):
+    @patch.object(utils, 'execute_with_timeout', return_value=('0', ''))
+    @patch.object(pg_service.PgSqlApp, '_find_config_file', return_value='')
+    @patch.object(pg_service.PgSqlApp,
+                  'pgsql_extra_bin_dir', PropertyMock(return_value=''))
+    def setUp(self, mock_cfg, mock_exec):
         super(PostgresAppTest, self).setUp(str(uuid4()), 'postgresql')
         self.orig_time_sleep = time.sleep
         self.orig_time_time = time.time
         time.sleep = Mock()
         time.time = Mock(side_effect=faketime)
-        status = FakeAppStatus(self.FAKE_ID,
-                               rd_instance.ServiceStatuses.NEW)
-        self.pg_status_patcher = patch.object(pg_status.PgSqlAppStatus, 'get',
-                                              return_value=status)
-        self.addCleanup(self.pg_status_patcher.stop)
-        self.pg_status_patcher.start()
-        self.postgres = PostgresAppTest.FakePostgresApp()
+        self.postgres = pg_service.PgSqlApp()
+        self.postgres.status = FakeAppStatus(self.FAKE_ID,
+                                             rd_instance.ServiceStatuses.NEW)
 
     @property
     def app(self):
@@ -3749,7 +3730,7 @@ class PostgresAppTest(BaseAppTest.AppTestCase):
 
     @property
     def expected_service_candidates(self):
-        return self.postgres.SERVICE_CANDIDATES
+        return self.postgres.service_candidates
 
     def tearDown(self):
         time.sleep = self.orig_time_sleep
