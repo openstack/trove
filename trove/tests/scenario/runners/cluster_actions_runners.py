@@ -58,9 +58,11 @@ class ClusterActionsRunner(TestRunner):
         if not num_nodes:
             num_nodes = self.min_cluster_node_count
 
+        instance_flavor = self.get_instance_flavor()
+
         instances_def = [
             self.build_flavor(
-                flavor_id=self.instance_info.dbaas_flavor_href,
+                flavor_id=self.get_flavor_href(instance_flavor),
                 volume_size=self.instance_info.volume['size'])] * num_nodes
 
         self.cluster_id = self.assert_cluster_create(

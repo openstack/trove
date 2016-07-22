@@ -41,7 +41,7 @@ class InstanceCreateRunner(TestRunner):
     def run_empty_instance_create(
             self, expected_states=['BUILD', 'ACTIVE'], expected_http_code=200):
         name = self.instance_info.name
-        flavor = self._get_instance_flavor()
+        flavor = self.get_instance_flavor()
         volume_size = self.instance_info.volume_size
 
         instance_info = self.assert_instance_create(
@@ -93,7 +93,7 @@ class InstanceCreateRunner(TestRunner):
 
         configuration_id = configuration_id or self.config_group_id
         name = self.instance_info.name + name_suffix
-        flavor = self._get_instance_flavor()
+        flavor = self.get_instance_flavor()
         volume_size = self.instance_info.volume_size
         self.init_inst_dbs = (self.test_helper.get_valid_database_definitions()
                               if with_dbs else [])
@@ -114,25 +114,6 @@ class InstanceCreateRunner(TestRunner):
             # There is no need to run this test as it's effectively the same as
             # the empty instance test.
             raise SkipTest("No testable initial properties provided.")
-
-    def _get_instance_flavor(self, fault_num=None):
-        name_format = 'instance%s%s_flavor_name'
-        default = 'm1.tiny'
-        fault_str = ''
-        eph_str = ''
-        if fault_num:
-            fault_str = '_fault_%d' % fault_num
-        if self.EPHEMERAL_SUPPORT:
-            eph_str = '_eph'
-            default = 'eph.rd-tiny'
-
-        name = name_format % (fault_str, eph_str)
-        flavor_name = CONFIG.values.get(name, default)
-
-        return self.get_flavor(flavor_name)
-
-    def _get_flavor_href(self, flavor):
-        return self.auth_client.find_flavor_self_href(flavor)
 
     def assert_instance_create(
             self, name, flavor, trove_volume_size,
@@ -172,7 +153,7 @@ class InstanceCreateRunner(TestRunner):
         instance_info.users = users
         instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         instance_info.dbaas_datastore_version = CONFIG.dbaas_datastore_version
-        instance_info.dbaas_flavor_href = self._get_flavor_href(flavor)
+        instance_info.dbaas_flavor_href = self.get_flavor_href(flavor)
         if self.VOLUME_SUPPORT:
             instance_info.volume = {'size': trove_volume_size}
         else:
@@ -253,7 +234,7 @@ class InstanceCreateRunner(TestRunner):
             raise SkipTest("Using an existing instance.")
 
         name = self.instance_info.name + '_error'
-        flavor = self._get_instance_flavor(fault_num=1)
+        flavor = self.get_instance_flavor(fault_num=1)
         volume_size = self.instance_info.volume_size
 
         inst = self.assert_instance_create(
@@ -269,7 +250,7 @@ class InstanceCreateRunner(TestRunner):
             raise SkipTest("Using an existing instance.")
 
         name = self.instance_info.name + '_error2'
-        flavor = self._get_instance_flavor(fault_num=2)
+        flavor = self.get_instance_flavor(fault_num=2)
         volume_size = self.instance_info.volume_size
 
         inst = self.assert_instance_create(

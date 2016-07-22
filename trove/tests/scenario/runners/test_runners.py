@@ -630,6 +630,25 @@ class TestRunner(object):
 
         return flavor
 
+    def get_instance_flavor(self, fault_num=None):
+        name_format = 'instance%s%s_flavor_name'
+        default = 'm1.tiny'
+        fault_str = ''
+        eph_str = ''
+        if fault_num:
+            fault_str = '_fault_%d' % fault_num
+        if self.EPHEMERAL_SUPPORT:
+            eph_str = '_eph'
+            default = 'eph.rd-tiny'
+
+        name = name_format % (fault_str, eph_str)
+        flavor_name = CONFIG.values.get(name, default)
+
+        return self.get_flavor(flavor_name)
+
+    def get_flavor_href(self, flavor):
+        return self.auth_client.find_flavor_self_href(flavor)
+
     def copy_dict(self, d, ignored_keys=None):
         return {k: v for k, v in d.items()
                 if not ignored_keys or k not in ignored_keys}
