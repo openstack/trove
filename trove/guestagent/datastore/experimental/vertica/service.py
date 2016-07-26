@@ -372,7 +372,7 @@ class VerticaApp(object):
                      temp_function=tempfile.NamedTemporaryFile):
         """Write the configuration contents to vertica.cnf file."""
         LOG.debug('Defining config holder at %s.' % system.VERTICA_CONF)
-        tempfile = temp_function(delete=False)
+        tempfile = temp_function('w', delete=False)
         try:
             config.write(tempfile)
             tempfile.close()
@@ -549,7 +549,7 @@ class VerticaApp(object):
         all_keys = '\n'.join(public_keys) + "\n"
 
         try:
-            with tempfile.NamedTemporaryFile(delete=False) as tempkeyfile:
+            with tempfile.NamedTemporaryFile("w", delete=False) as tempkeyfile:
                 tempkeyfile.write(all_keys)
             copy_key_cmd = (("install -o %(user)s -m 600 %(source)s %(target)s"
                              ) % {'user': user, 'source': tempkeyfile.name,

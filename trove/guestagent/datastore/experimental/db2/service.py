@@ -14,6 +14,7 @@
 #    under the License.
 
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 
 from trove.common import cfg
 from trove.common import exception
@@ -248,8 +249,9 @@ class DB2Admin(object):
                 next_marker = None
             LOG.debug("databases = %s." % str(databases))
         except exception.ProcessExecutionError as pe:
+            err_msg = encodeutils.exception_to_unicode(pe)
             LOG.exception(_("An error occurred listing databases: %s.") %
-                          pe.message)
+                          err_msg)
             pass
         return databases, next_marker
 

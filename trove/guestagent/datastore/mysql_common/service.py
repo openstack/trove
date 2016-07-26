@@ -21,10 +21,11 @@ from collections import defaultdict
 import os
 import re
 import six
-import urllib
 import uuid
 
 from oslo_log import log as logging
+from oslo_utils import encodeutils
+from six.moves import urllib
 import sqlalchemy
 from sqlalchemy import exc
 from sqlalchemy import interfaces
@@ -364,9 +365,10 @@ class BaseMySqlAdmin(object):
             user.name = username  # Could possibly throw a BadRequest here.
         except ValueError as ve:
             LOG.exception(_("Error Getting user information"))
+            err_msg = encodeutils.exception_to_unicode(ve)
             raise exception.BadRequest(_("Username %(user)s is not valid"
                                          ": %(reason)s") %
-                                       {'user': username, 'reason': ve.message}
+                                       {'user': username, 'reason': err_msg}
                                        )
         with self.local_sql_client(self.mysql_app.get_engine()) as client:
             q = sql_query.Query()
@@ -465,7 +467,7 @@ class BaseMySqlAdmin(object):
                 mysql_db.collate = database[2]
                 databases.append(mysql_db.serialize())
         LOG.debug("databases = " + str(databases))
-        if database_names.rowcount <= limit:
+        if limit is not None and database_names.rowcount <= limit:
             next_marker = None
         return databases, next_marker
 
@@ -529,7 +531,7 @@ class BaseMySqlAdmin(object):
                 self._associate_dbs(mysql_user)
                 next_marker = row['Marker']
                 users.append(mysql_user.serialize())
-        if result.rowcount <= limit:
+        if limit is not None and result.rowcount <= limit:
             next_marker = None
         LOG.debug("users = " + str(users))
 
@@ -610,7 +612,7 @@ class BaseMySqlApp(object):
         pwd = self.get_auth_password()
         ENGINE = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
-                                     urllib.quote(pwd.strip())),
+                                     urllib.parse.quote(pwd.strip())),
             pool_recycle=120, echo=CONF.sql_query_logging,
             listeners=[self.keep_alive_connection_cls()])
         return ENGINE
@@ -693,7 +695,7 @@ class BaseMySqlApp(object):
         LOG.debug("Switching to the '%s' user now." % ADMIN_USER_NAME)
         engine = sqlalchemy.create_engine(
             CONNECTION_STR_FORMAT % (ADMIN_USER_NAME,
-                                     urllib.quote(admin_password)),
+                                     urllib.parse.quote(admin_password)),
             echo=True)
         with self.local_sql_client(engine) as client:
             self._remove_anonymous_user(client)
