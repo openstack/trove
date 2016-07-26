@@ -1,8 +1,6 @@
 # Use a blacklist of tests known to fail on Python 3, until
 # all unit tests will pass on Python 3.
-backup.test_backup_models
 guestagent.test_cassandra_manager
 guestagent.test_mongodb_manager
 guestagent.test_operating_system
 guestagent.test_volume
-mgmt.test_datastores
