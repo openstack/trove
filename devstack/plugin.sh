@@ -294,7 +294,18 @@ function finalize_trove_network {
     iniset $TROVE_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
 
     iniset $TROVE_TASKMANAGER_CONF DEFAULT network_driver trove.network.neutron.NeutronDriver
+    iniset $TROVE_TASKMANAGER_CONF cassandra tcp_ports 22,7000,7001,7199,9042,9160
+    iniset $TROVE_TASKMANAGER_CONF couchbase tcp_ports 22,8091,8092,4369,11209-11211,21100-21199
+    iniset $TROVE_TASKMANAGER_CONF couchdb 22,5984
+    iniset $TROVE_TASKMANAGER_CONF db2 22,50000
+    iniset $TROVE_TASKMANAGER_CONF mariadb tcp_ports 22,3306,4444,4567,4568
+    iniset $TROVE_TASKMANAGER_CONF mongodb tcp_ports 22,2500,27017,27019
     iniset $TROVE_TASKMANAGER_CONF mysql tcp_ports 22,3306
+    iniset $TROVE_TASKMANAGER_CONF percona tcp_ports 22,3306
+    iniset $TROVE_TASKMANAGER_CONF postgresql tcp_ports 22,5432
+    iniset $TROVE_TASKMANAGER_CONF pxc 22,3306,4444,4567,4568
+    iniset $TROVE_TASKMANAGER_CONF redis tcp_ports 22,6379,16379
+    iniset $TROVE_TASKMANAGER_CONF vertica tcp_ports 22,5433,5434,5444,5450,4803
 }
 
 # start_trove() - Start running processes, including screen
