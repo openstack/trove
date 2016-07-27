@@ -286,6 +286,7 @@ class ModuleCreateGroup(TestGroup):
 
 
 @test(depends_on_groups=[groups.INST_CREATE_WAIT, groups.MODULE_CREATE],
+      runs_after_groups=[groups.INST_ERROR_DELETE],
       groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_CREATE])
 class ModuleInstCreateGroup(TestGroup):
     """Test Module Instance Create functionality."""

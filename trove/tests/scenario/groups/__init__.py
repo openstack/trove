@@ -76,6 +76,13 @@ INST_DELETE = "scenario.inst_delete_grp"
 INST_DELETE_WAIT = "scenario.inst_delete_wait_grp"
 
 
+# Instance Error Create Group
+INST_ERROR_CREATE = "scenario.inst_error_create_grp"
+INST_ERROR_CREATE_WAIT = "scenario.inst_error_create_wait_grp"
+INST_ERROR_DELETE = "scenario.inst_error_delete_grp"
+INST_ERROR_DELETE_WAIT = "scenario.inst_error_delete_wait_grp"
+
+
 # Module Group
 MODULE_CREATE = "scenario.module_create_grp"
 MODULE_DELETE = "scenario.module_delete_grp"
