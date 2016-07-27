@@ -22,6 +22,7 @@ import tempfile
 from oslo_log import log as logging
 import pexpect
 
+from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import utils
@@ -301,8 +302,9 @@ class InnoBackupExIncremental(InnoBackupEx):
             self._incremental_restore(parent_location, parent_checksum)
             # for *this* backup set the incremental_dir
             # just use the checksum for the incremental path as it is
-            # sufficiently unique /var/lib/mysql/data/<checksum>
-            incremental_dir = os.path.join(self.restore_location, checksum)
+            # sufficiently unique /var/lib/mysql/<checksum>
+            incremental_dir = os.path.join(
+                cfg.get_configuration_property('mount_point'), checksum)
             operating_system.create_directory(incremental_dir, as_root=True)
             command = self._incremental_restore_cmd(incremental_dir)
         else:

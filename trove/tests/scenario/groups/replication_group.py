@@ -29,6 +29,12 @@ class ReplicationRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ReplicationRunner'
 
 
+class BackupRunnerFactory(test_runners.RunnerFactory):
+
+    _runner_ns = 'backup_runners'
+    _runner_cls = 'BackupRunner'
+
+
 @test(depends_on_groups=[groups.INST_CREATE_WAIT],
       groups=[GROUP, groups.REPL_INST_CREATE],
       runs_after_groups=[groups.MODULE_INST_DELETE,
@@ -120,11 +126,24 @@ class ReplicationInstMultiCreateGroup(TestGroup):
     def __init__(self):
         super(ReplicationInstMultiCreateGroup, self).__init__(
             ReplicationRunnerFactory.instance())
+        self.backup_runner = BackupRunnerFactory.instance()
 
     @test
+    def backup_master_instance(self):
+        """Backup the master instance."""
+        self.backup_runner.run_backup_create()
+        self.backup_runner.run_backup_create_completed()
+        self.test_runner.master_backup_count += 1
+
+    @test(depends_on=[backup_master_instance])
     def create_multiple_replicas(self):
         """Test creating multiple replicas."""
         self.test_runner.run_create_multiple_replicas()
+
+    @test(depends_on=[create_multiple_replicas])
+    def check_has_incremental_backup(self):
+        """Test that creating multiple replicas uses incr backup."""
+        self.backup_runner.run_check_has_incremental()
 
 
 @test(depends_on_groups=[groups.REPL_INST_CREATE_WAIT],
@@ -312,6 +331,7 @@ class ReplicationInstDeleteWaitGroup(TestGroup):
     def __init__(self):
         super(ReplicationInstDeleteWaitGroup, self).__init__(
             ReplicationRunnerFactory.instance())
+        self.backup_runner = BackupRunnerFactory.instance()
 
     @test
     def wait_for_delete_replicas(self):
@@ -320,8 +340,11 @@ class ReplicationInstDeleteWaitGroup(TestGroup):
 
     @test(runs_after=[wait_for_delete_replicas])
     def test_backup_deleted(self):
-        """Test that the created backup is now gone."""
+        """Remove the full backup and test that the created backup
+           is now gone.
+        """
         self.test_runner.run_test_backup_deleted()
+        self.backup_runner.run_delete_backup()
 
     @test(runs_after=[test_backup_deleted])
     def cleanup_master_instance(self):
