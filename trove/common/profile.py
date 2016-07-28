@@ -20,11 +20,10 @@ from osprofiler import notifier
 from osprofiler import web
 
 from trove.common import cfg
-from trove.common import i18n
+from trove.common.i18n import _LW
 from trove import rpc
 
 
-_LW = i18n._LW
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
 
