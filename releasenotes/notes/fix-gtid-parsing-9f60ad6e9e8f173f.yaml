@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fixed parsing of GTID references containing a list
+    of GTIDs from xtrabackup_binlog_info file on
+    MySql replicas.
