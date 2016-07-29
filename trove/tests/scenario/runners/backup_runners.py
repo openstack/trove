@@ -23,90 +23,7 @@ from trove.tests.scenario.helpers.test_helper import DataType
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
-class BackupRunnerMixin(TestRunner):
-    def _verify_backup(self, backup_id):
-        def _result_is_active():
-            backup = self.auth_client.backups.get(backup_id)
-            if backup.status == 'COMPLETED':
-                return True
-            else:
-                self.assert_not_equal('FAILED', backup.status,
-                                      'Backup status should not be')
-                return False
-
-        poll_until(_result_is_active, time_out=self.TIMEOUT_BACKUP_CREATE)
-
-    def _wait_until_backup_is_gone(self, backup_id):
-        def _backup_is_gone():
-            try:
-                self.auth_client.backups.get(backup_id)
-                return False
-            except exceptions.NotFound:
-                return True
-
-        poll_until(_backup_is_gone,
-                   time_out=self.TIMEOUT_BACKUP_DELETE)
-
-    def assert_restore_from_backup(self, backup_ref):
-        result = self._restore_from_backup(backup_ref)
-        # TODO(peterstac) - This should probably return code 202
-        self.assert_client_code(200)
-        self.assert_equal('BUILD', result.status,
-                          'Unexpected instance status')
-        self.restore_instance_id = result.id
-
-    def _restore_from_backup(self, backup_ref):
-        restore_point = {'backupRef': backup_ref}
-        result = self.auth_client.instances.create(
-            self.instance_info.name + '_restore',
-            self.instance_info.dbaas_flavor_href,
-            self.instance_info.volume,
-            nics=self.instance_info.nics,
-            restorePoint=restore_point,
-            datastore=self.instance_info.dbaas_datastore,
-            datastore_version=self.instance_info.dbaas_datastore_version)
-        return result
-
-    def run_restore_from_backup_completed(
-            self, expected_states=['BUILD', 'ACTIVE'],
-            # TODO(peterstac) - This should probably return code 202
-            expected_http_code=200):
-        self.assert_restore_from_backup_completed(
-            self.restore_instance_id, expected_states, expected_http_code)
-        self.restore_host = self.get_instance_host(self.restore_instance_id)
-
-    def assert_restore_from_backup_completed(
-            self, instance_id, expected_states, expected_http_code):
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
-
-    def run_verify_data_in_restored_instance(self):
-        self.assert_verify_backup_data(self.restore_host)
-
-    def run_verify_data_for_backup(self):
-        self.assert_verify_backup_data(self.backup_host)
-
-    def assert_verify_backup_data(self, host):
-        """In order for this to work, the corresponding datastore
-        'helper' class should implement the 'verify_large_data' method.
-        """
-        self.test_helper.verify_data(DataType.large, host)
-
-    def run_delete_restored_instance(
-            self, expected_states=['SHUTDOWN'],
-            expected_http_code=202):
-        self.assert_delete_restored_instance(
-            self.restore_instance_id, expected_states, expected_http_code)
-
-    def assert_delete_restored_instance(
-            self, instance_id, expected_states, expected_http_code):
-        self.auth_client.instances.delete(instance_id)
-        self.assert_instance_action(instance_id, expected_states,
-                                    expected_http_code)
-        self.assert_all_gone(instance_id, expected_states[-1])
-
-
-class BackupRunner(BackupRunnerMixin):
+class BackupRunner(TestRunner):
 
     def __init__(self):
         self.TIMEOUT_BACKUP_CREATE = 60 * 30
@@ -122,6 +39,7 @@ class BackupRunner(BackupRunnerMixin):
         self.backup_count_prior_to_create = 0
         self.backup_count_for_ds_prior_to_create = 0
         self.backup_count_for_instance_prior_to_create = 0
+        self.databases_before_backup = None
 
         self.backup_inc_1_info = None
         self.backup_inc_2_info = None
@@ -179,8 +97,15 @@ class BackupRunner(BackupRunnerMixin):
             self.auth_client.instances.backups(self.instance_info.id))
 
     def run_backup_create(self):
+        if self.test_helper.get_valid_database_definitions():
+            self.databases_before_backup = self._get_databases(
+                self.instance_info.id)
         self.backup_info = self.assert_backup_create(
             self.BACKUP_NAME, self.BACKUP_DESC, self.instance_info.id)
+
+    def _get_databases(self, instance_id):
+        return [database.name for database in
+                self.auth_client.databases.list(instance_id)]
 
     def assert_backup_create(self, name, desc, instance_id, parent_id=None):
         result = self.auth_client.backups.create(
@@ -415,9 +340,26 @@ class BackupRunner(BackupRunnerMixin):
     def run_verify_data_in_restored_instance(self):
         self.assert_verify_backup_data(self.restore_host, DataType.large)
 
+    def run_verify_databases_in_restored_instance(self):
+        self.assert_verify_backup_databases(self.restore_instance_id,
+                                            self.databases_before_backup)
+
     def run_verify_data_in_restored_inc_1_instance(self):
         self.assert_verify_backup_data(self.restore_inc_1_host, DataType.large)
         self.assert_verify_backup_data(self.restore_inc_1_host, DataType.tiny)
+
+    def run_verify_databases_in_restored_inc_1_instance(self):
+        self.assert_verify_backup_databases(self.restore_instance_id,
+                                            self.databases_before_backup)
+
+    def assert_verify_backup_databases(self, instance_id, expected_databases):
+        if expected_databases is not None:
+            actual = self._get_databases(instance_id)
+            self.assert_list_elements_equal(
+                expected_databases, actual,
+                "Unexpected databases on the restored instance.")
+        else:
+            raise SkipTest("Datastore does not support databases.")
 
     def run_delete_restored_instance(self, expected_http_code=202):
         self.assert_delete_restored_instance(

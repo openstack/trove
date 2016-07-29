@@ -203,7 +203,7 @@ class TestRunner(object):
         self.def_timeout = timeout
 
         self.instance_info.name = "TEST_" + datetime.datetime.strftime(
-            datetime.datetime.now(), '%Y-%m-%d_%H:%M:%S')
+            datetime.datetime.now(), '%Y_%m_%d__%H_%M_%S')
         self.instance_info.dbaas_datastore = CONFIG.dbaas_datastore
         self.instance_info.dbaas_datastore_version = (
             CONFIG.dbaas_datastore_version)
@@ -434,9 +434,11 @@ class TestRunner(object):
                 fast_fail_status=fast_fail_status,
                 require_all_states=require_all_states)
 
-        tasks = [build_polling_task(_make_fn(instance_id),
-                 sleep_time=self.def_sleep_time, time_out=self.def_timeout)
-                 for instance_id in instance_ids]
+        tasks = [
+            build_polling_task(
+                _make_fn(instance_id),
+                sleep_time=self.def_sleep_time,
+                time_out=self.def_timeout) for instance_id in instance_ids]
         poll_until(lambda: all(poll_task.ready() for poll_task in tasks),
                    sleep_time=self.def_sleep_time, time_out=self.def_timeout)
 
@@ -514,9 +516,11 @@ class TestRunner(object):
         def _make_fn(inst_id):
             return lambda: self._wait_for_delete(inst_id, expected_last_status)
 
-        tasks = [build_polling_task(_make_fn(instance_id),
-                 sleep_time=self.def_sleep_time, time_out=self.def_timeout)
-                 for instance_id in instance_ids]
+        tasks = [
+            build_polling_task(
+                _make_fn(instance_id),
+                sleep_time=self.def_sleep_time,
+                time_out=self.def_timeout) for instance_id in instance_ids]
         poll_until(lambda: all(poll_task.ready() for poll_task in tasks),
                    sleep_time=self.def_sleep_time, time_out=self.def_timeout)
 

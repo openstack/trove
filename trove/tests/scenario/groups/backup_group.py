@@ -264,6 +264,11 @@ class BackupInstCreateWaitGroup(TestGroup):
         """Verify data in restored instance."""
         self.test_runner.run_verify_data_in_restored_instance()
 
+    @test(depends_on=[restore_from_backup_completed])
+    def verify_databases_in_restored_instance(self):
+        """Verify databases in restored instance."""
+        self.test_runner.run_verify_databases_in_restored_instance()
+
 
 @test(depends_on_groups=[groups.BACKUP_INC_INST_CREATE],
       groups=[GROUP, groups.BACKUP_INC_INST,
@@ -285,6 +290,11 @@ class BackupIncInstCreateWaitGroup(TestGroup):
     def verify_data_in_restored_inc_1_instance(self):
         """Verify data in restored inc 1 instance."""
         self.test_runner.run_verify_data_in_restored_inc_1_instance()
+
+    @test(depends_on=[restore_from_inc_1_backup_completed])
+    def verify_databases_in_restored_inc_1_instance(self):
+        """Verify databases in restored inc 1 instance."""
+        self.test_runner.run_verify_databases_in_restored_inc_1_instance()
 
 
 @test(depends_on_groups=[groups.BACKUP_INST_CREATE_WAIT],
