@@ -19,8 +19,8 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.notification import EndNotification
-from trove.common import pagination
 from trove.common import utils
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.access import (
     PgSqlAccess)
@@ -131,9 +131,9 @@ class PgSqlUsers(PgSqlAccess):
         """List all users on the instance along with their access permissions.
         Return a paginated list of serialized Postgres users.
         """
-        page, next_name = pagination.paginate_object_list(
-            self._get_users(context), 'name', limit, marker, include_marker)
-        return [db.serialize() for db in page], next_name
+        return guestagent_utils.serialize_list(
+            self._get_users(context),
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def _get_users(self, context):
         """Return all non-system Postgres users on the instance."""

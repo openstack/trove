@@ -23,7 +23,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as ds_instance
-from trove.common import pagination
 from trove.common.stream_codecs import JsonCodec, SafeYamlCodec
 from trove.common import utils as utils
 from trove.guestagent.common.configuration import ConfigurationManager
@@ -591,10 +590,11 @@ class MongoDBAdmin(object):
                 user = models.MongoDBUser(name=user_info['_id'])
                 user.roles = user_info['roles']
                 if self._is_modifiable_user(user.name):
-                    users.append(user.serialize())
+                    users.append(user)
         LOG.debug('users = ' + str(users))
-        return pagination.paginate_list(users, limit, marker,
-                                        include_marker)
+        return guestagent_utils.serialize_list(
+            users,
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def change_passwords(self, users):
         with MongoDBClient(self._admin_user()) as admin_client:
@@ -726,11 +726,12 @@ class MongoDBAdmin(object):
         for hidden in cfg.get_ignored_dbs():
             if hidden in db_names:
                 db_names.remove(hidden)
-        databases = [models.MongoDBSchema(db_name).serialize()
+        databases = [models.MongoDBSchema(db_name)
                      for db_name in db_names]
         LOG.debug('databases = ' + str(databases))
-        return pagination.paginate_list(databases, limit, marker,
-                                        include_marker)
+        return guestagent_utils.serialize_list(
+            databases,
+            limit=limit, marker=marker, include_marker=include_marker)
 
     def add_shard(self, url):
         """Runs the addShard command."""

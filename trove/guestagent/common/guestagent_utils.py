@@ -19,6 +19,8 @@ import re
 
 import six
 
+from trove.common import pagination
+
 
 def update_dict(updates, target):
     """Recursively update a target dictionary with given updates.
@@ -120,3 +122,21 @@ def to_bytes(value):
             return int(round(factor * float(value)))
 
     return value
+
+
+def paginate_list(li, limit=None, marker=None, include_marker=False):
+    """Paginate a list of objects based on the name attribute.
+    :returns:           Page sublist and a marker (name of the last item).
+    """
+    return pagination.paginate_object_list(
+        li, 'name', limit=limit, marker=marker, include_marker=include_marker)
+
+
+def serialize_list(li, limit=None, marker=None, include_marker=False):
+    """
+    Paginate (by name) and serialize a given object list.
+    :returns:           A serialized and paginated version of a given list.
+    """
+    page, next_name = paginate_list(li, limit=limit, marker=marker,
+                                    include_marker=include_marker)
+    return [item.serialize() for item in page], next_name
