@@ -592,9 +592,13 @@ class BaseMySqlApp(object):
         return self._keep_alive_connection_cls
 
     @property
+    def service_candidates(self):
+        return ["mysql", "mysqld", "mysql-server"]
+
+    @property
     def mysql_service(self):
-        MYSQL_SERVICE_CANDIDATES = ["mysql", "mysqld", "mysql-server"]
-        return operating_system.service_discovery(MYSQL_SERVICE_CANDIDATES)
+        service_candidates = self.service_candidates
+        return operating_system.service_discovery(service_candidates)
 
     configuration_manager = ConfigurationManager(
         MYSQL_CONFIG, MYSQL_OWNER, MYSQL_OWNER, CFG_CODEC, requires_root=True,

@@ -62,3 +62,18 @@ class Replication(Strategy):
     @abc.abstractmethod
     def demote_master(self, service):
         """Turn off replication on a master site."""
+
+    @property
+    def repl_backup_runner(self):
+        """Backup runner to be used to snapshot for replication"""
+        return None
+
+    @property
+    def repl_incr_backup_runner(self):
+        """Incremental backup runner to be used to snapshot for replication"""
+        return None
+
+    @property
+    def repl_backup_extra_opts(self):
+        """Extra options to be passed to the backup agent"""
+        return None

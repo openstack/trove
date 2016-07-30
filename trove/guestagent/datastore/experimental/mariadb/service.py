@@ -16,6 +16,7 @@
 
 from oslo_log import log as logging
 
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.galera_common import service as galera_service
 from trove.guestagent.datastore.mysql_common import service as mysql_service
 
@@ -24,10 +25,21 @@ LOG = logging.getLogger(__name__)
 
 class MariaDBApp(galera_service.GaleraApp):
 
+    OS = operating_system.get_os()
+
     def __init__(self, status):
         super(MariaDBApp, self).__init__(
             status, mysql_service.BaseLocalSqlClient,
             mysql_service.BaseKeepAliveConnection)
+
+    @property
+    def service_candidates(self):
+        service_candidates = super(MariaDBApp, self).service_candidates
+        return {
+            operating_system.DEBIAN: service_candidates,
+            operating_system.REDHAT: ["mariadb"],
+            operating_system.SUSE: service_candidates
+        }[self.OS]
 
     @property
     def mysql_service(self):
