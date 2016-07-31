@@ -31,8 +31,11 @@ wiki <http://wiki.openstack.org>`_, blogs, or on IRC at
 ``#openstack-trove`` on ``irc.freenode.net``.
 
 
+House Rules
+===========
+
 Code Reviews
-============
+------------
 
 We value your contribution in reviewing code changes submitted by
 others, as this helps increase the quality of the product as well.
@@ -88,7 +91,7 @@ Other references:
    - https://review.openstack.org/#/c/116176/
 
 Approving changes
-=================
+-----------------
 
 The Trove project follows the conventions below in approving changes.
 
@@ -115,6 +118,27 @@ additional negative comments by a certain time definite.
 
 We will however still require that at least one other person review
 (and +1 or +2) the change before it can be +A'ed.
+
+Abandoning changes
+------------------
+
+At the Trove mid-cycle held in July 2016 we discussed our process for
+abandoning changes and concluded that we would adopt the following
+process.
+
+1. We will take a more proactive policy towards abandoning changes
+   that have not been merged for a long time.
+
+2. A list of changes proposed for abandonment will be presented at a
+   weekly meeting and if there is no objection, those changes will be
+   abandoned. If the patch sets are associated with bugs, the bugs
+   will be unassigned.
+
+3. In general, changes will be proposed for abandonment if the change
+   being proposed has either been addressed in some other patch set,
+   or if the patch is not being actively maintained by the author and
+   there is no available volunteer who will step up to take over the
+   patch set.
 
 Trove Documentation
 ===================
@@ -172,6 +196,9 @@ tox will use the `openstack-doc-tools package
 <https://github.com/openstack/openstack-doc-tools>`_ for execution of
 these tests. openstack-doc-tools has a requirement on maven for the
 build check.
+
+Testing
+=======
 
 Usage for integration testing
 -----------------------------
