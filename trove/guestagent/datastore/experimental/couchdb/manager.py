@@ -131,7 +131,7 @@ class Manager(manager.Manager):
         return service.CouchDBAdmin().get_user(username, hostname)
 
     def grant_access(self, context, username, hostname, databases):
-        LOG.debug("Granting acccess.")
+        LOG.debug("Granting access.")
         return service.CouchDBAdmin().grant_access(username, databases)
 
     def revoke_access(self, context, username, hostname, database):

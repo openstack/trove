@@ -73,7 +73,7 @@ class VolumeDevice(object):
     def _check_format(self):
         """Checks that an unmounted volume is formatted."""
         cmd = "sudo dumpe2fs %s" % self.device_path
-        LOG.debug("Checking whether %s is formated: %s." %
+        LOG.debug("Checking whether %s is formatted: %s." %
                   (self.device_path, cmd))
 
         child = pexpect.spawn(cmd)
