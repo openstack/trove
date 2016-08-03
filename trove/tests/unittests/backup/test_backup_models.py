@@ -16,12 +16,15 @@ import datetime
 from mock import DEFAULT
 from mock import MagicMock
 from mock import patch
+from swiftclient.client import ClientException
 
 from trove.backup import models
 from trove.backup import state
 from trove.common import context
 from trove.common import exception
+from trove.common import remote
 from trove.common import utils
+from trove.db.models import DatabaseModelBase
 from trove.instance import models as instance_models
 from trove.taskmanager import api
 from trove.tests.unittests import trove_testtools
@@ -190,8 +193,6 @@ class BackupCreateTest(trove_testtools.TestCase):
         instance = MagicMock()
         with patch.object(instance_models.BuiltInstance, 'load',
                           return_value=instance):
-            instance.validate_can_perform_action = MagicMock(
-                return_value=None)
             with patch.object(
                 models.Backup, 'validate_can_perform_action',
                 side_effect=exception.DatastoreOperationNotSupported
@@ -200,6 +201,39 @@ class BackupCreateTest(trove_testtools.TestCase):
                                   models.Backup.create,
                                   self.context, self.instance_id,
                                   BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_backup_cluster_instance_operation_not_supported(self):
+        instance = MagicMock()
+        instance.cluster_id = 'bad_id'
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance),\
+            patch.object(models.Backup, 'validate_can_perform_action',
+                         return_value=None),\
+            patch.object(models.Backup, 'verify_swift_auth_token',
+                         return_value=None):
+            self.assertRaises(exception.ClusterInstanceOperationNotSupported,
+                              models.Backup.create,
+                              self.context, self.instance_id,
+                              BACKUP_NAME, BACKUP_DESC)
+
+    def test_create_backup_creation_error(self):
+        instance = MagicMock()
+        instance.cluster_id = None
+        with patch.object(instance_models.BuiltInstance, 'load',
+                          return_value=instance),\
+            patch.object(models.Backup, 'validate_can_perform_action',
+                         return_value=None),\
+            patch.object(models.Backup, 'verify_swift_auth_token',
+                         return_value=None),\
+            patch.object(DatabaseModelBase, 'is_valid',
+                         return_value=False),\
+            patch('trove.quota.quota.QuotaEngine.reserve',
+                  return_value=[]):
+            DatabaseModelBase.errors = {}
+            self.assertRaises(exception.BackupCreationError,
+                              models.Backup.create,
+                              self.context, self.instance_id,
+                              BACKUP_NAME, BACKUP_DESC)
 
 
 class BackupDeleteTest(trove_testtools.TestCase):
@@ -356,6 +390,57 @@ class BackupORMTest(trove_testtools.TestCase):
 
     def test_filename(self):
         self.assertEqual(BACKUP_FILENAME, self.backup.filename)
+
+    def test_filename_bad(self):
+
+        def _set_bad_filename():
+            self.backup.location = 'bad'
+            self.backup.filename
+
+        self.assertRaises(ValueError, _set_bad_filename)
+
+    def test_check_swift_object_exist_integrity_error(self):
+        mock_client = MagicMock()
+        mock_client.head_object.return_value = {'etag': ''}
+        with patch.object(remote, 'get_endpoint', return_value=None),\
+            patch.object(remote, 'Connection',
+                         return_value=mock_client):
+            self.assertRaises(exception.RestoreBackupIntegrityError,
+                              self.backup.check_swift_object_exist,
+                              self.context, True)
+
+    def test_check_swift_object_exist_client_exception(self):
+        with patch.object(remote, 'get_endpoint', return_value=None),\
+            patch.object(remote, 'Connection',
+                         side_effect=ClientException(self.context.tenant)):
+            self.assertRaises(exception.SwiftAuthError,
+                              self.backup.check_swift_object_exist,
+                              self.context)
+
+    def test_check_swift_object_exist_client_exception_404(self):
+        e = ClientException(self.context.tenant)
+        e.http_status = 404
+        with patch.object(remote, 'get_endpoint', return_value=None),\
+            patch.object(remote, 'Connection',
+                         side_effect=e):
+            self.assertFalse(
+                self.backup.check_swift_object_exist(self.context))
+
+    def test_swift_auth_token_client_exception(self):
+        with patch.object(remote, 'get_endpoint', return_value=None),\
+            patch.object(remote, 'Connection',
+                         side_effect=ClientException(self.context.tenant)):
+            self.assertRaises(exception.SwiftAuthError,
+                              models.Backup.verify_swift_auth_token,
+                              self.context)
+
+    def test_swift_auth_token_no_service_endpoint(self):
+        with patch.object(remote, 'get_endpoint', return_value=None),\
+            patch.object(remote, 'Connection',
+                         side_effect=exception.NoServiceEndpoint):
+            self.assertRaises(exception.SwiftNotFound,
+                              models.Backup.verify_swift_auth_token,
+                              self.context)
 
 
 class PaginationTests(trove_testtools.TestCase):
