@@ -16,7 +16,7 @@
 from tempest.lib import decorators
 from testtools import testcase as testtools
 
-from trove.tests.tempest.tests.api import base
+from trove.tests.tempest.tests.api.database import base
 
 
 class DatabaseLimitsTest(base.BaseDatabaseTest):
