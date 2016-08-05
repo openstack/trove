@@ -60,8 +60,19 @@ class TroveContext(context.RequestContext):
         local.store.context = self
 
     @classmethod
+    def _remove_incompatible_context_args(cls, values):
+        context_keys = vars(cls()).keys()
+        for dict_key in values.keys():
+            if dict_key not in context_keys:
+                LOG.debug("Argument being removed before instantiating "
+                          "TroveContext object - %s" % dict_key)
+                values.pop(dict_key, None)
+        return values
+
+    @classmethod
     def from_dict(cls, values):
         n_values = values.pop('trove_notification', None)
+        values = cls._remove_incompatible_context_args(values)
         context = cls(**values)
         if n_values:
             context.notification = SerializableNotification.deserialize(
