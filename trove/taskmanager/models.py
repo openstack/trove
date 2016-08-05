@@ -1032,8 +1032,11 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             self.id, self.context)
         tcp_ports = CONF.get(datastore_manager).tcp_ports
         udp_ports = CONF.get(datastore_manager).udp_ports
+        icmp = CONF.get(datastore_manager).icmp
         self._create_rules(security_group, tcp_ports, 'tcp')
         self._create_rules(security_group, udp_ports, 'udp')
+        if icmp:
+            self._create_rules(security_group, None, 'icmp')
         return [security_group["name"]]
 
     def _create_rules(self, s_group, ports, protocol):
@@ -1049,16 +1052,22 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                              'to': to_port}
             raise MalformedSecurityGroupRuleError(message=msg)
 
-        for port_or_range in set(ports):
-            try:
-                from_, to_ = (None, None)
-                from_, to_ = utils.gen_ports(port_or_range)
-                cidr = CONF.trove_security_group_rule_cidr
-                SecurityGroupRule.create_sec_group_rule(
-                    s_group, protocol, int(from_), int(to_),
-                    cidr, self.context)
-            except (ValueError, TroveError):
-                set_error_and_raise([from_, to_])
+        cidr = CONF.trove_security_group_rule_cidr
+
+        if protocol == 'icmp':
+            SecurityGroupRule.create_sec_group_rule(
+                s_group, 'icmp', None, None,
+                cidr, self.context)
+        else:
+            for port_or_range in set(ports):
+                try:
+                    from_, to_ = (None, None)
+                    from_, to_ = utils.gen_ports(port_or_range)
+                    SecurityGroupRule.create_sec_group_rule(
+                        s_group, protocol, int(from_), int(to_),
+                        cidr, self.context)
+                except (ValueError, TroveError):
+                    set_error_and_raise([from_, to_])
 
     def _build_heat_nics(self, nics):
         ifaces = []

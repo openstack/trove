@@ -216,6 +216,8 @@ rabbit_password=f7999d1955c5014aa32c
 #rabbit_virtual_host=/
 
 [mysql]
+# Whether to permit ICMP. default is False.
+icmp = True
 # Format (single port or port range): A, B-C
 # where C greater than B
 tcp_ports = 3306

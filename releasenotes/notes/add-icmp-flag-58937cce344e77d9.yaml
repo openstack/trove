@@ -1,0 +1,5 @@
+---
+features:
+  - Add icmp option for DB security group.
+    if icmp=True, users will be allowed to
+    ping to DB instances.
