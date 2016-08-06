@@ -79,6 +79,20 @@ API for the specific database.
 
 The Trove Guest Agent runs on the Trove Guest Instance.
 
+------------------------------------------
+Injected Configuration for the Guest Agent
+------------------------------------------
+
+When TaskManager launches the guest VM it injects the specific settings
+for the guest into the VM, into the file /etc/trove/conf.d/guest_info.conf.
+The file is injected one of three ways. If use_heat=True, it is injected
+during the heat launch process. If use_nova_server_config_drive=True
+it is injected via ConfigDrive. Otherwise it is passed to the nova
+create call as the 'files' parameter and will be injected based on
+the configuration of Nova; the Nova default is to discard the files.
+If the settings in guest_info.conf are not present on the guest
+Guest Agent will fail to start up.
+
 ------------------------------
 Persistent Storage, Networking
 ------------------------------
