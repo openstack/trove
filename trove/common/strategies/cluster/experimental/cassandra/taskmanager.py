@@ -193,59 +193,54 @@ class CassandraClusterTasks(task_models.ClusterTasks):
             cluster_node_ids = self.find_cluster_node_ids(cluster_id)
             cluster_nodes = self.load_cluster_nodes(context, cluster_node_ids)
 
-            # Recompute the seed nodes based on the updated cluster geometry.
-            seeds = self.choose_seed_nodes(cluster_nodes)
+            old_nodes = [node for node in cluster_nodes
+                         if node['id'] not in new_instance_ids]
 
-            # Configure each cluster node with the updated list of seeds.
-            # Since we are adding to an existing cluster, ensure that the
-            # new nodes have auto-bootstrapping enabled.
-            # Start the added nodes.
             try:
-                LOG.debug("Selected seed nodes: %s" % seeds)
 
-                # Update the seeds on all nodes.
-                # Also retrieve the superuser password from one previously
-                # existing node.
-                admin_creds = None
+                # All nodes should have the same seeds and credentials.
+                # Retrieve the information from the first node.
+                test_node = old_nodes[0]
+                current_seeds = test_node['guest'].get_seeds()
+                admin_creds = test_node['guest'].get_admin_credentials()
+
+                # Bootstrap new nodes.
+                # Seed nodes do not bootstrap. Current running nodes
+                # must be used as seeds during the process.
+                # Since we are adding to an existing cluster, ensure that the
+                # new nodes have auto-bootstrapping enabled.
+                # Start the added nodes.
+                LOG.debug("Starting new nodes.")
+                for node in added_nodes:
+                    node['guest'].set_auto_bootstrap(True)
+                    node['guest'].set_seeds(current_seeds)
+                    node['guest'].store_admin_credentials(admin_creds)
+                    node['guest'].restart()
+                    node['guest'].cluster_complete()
+
+                # Recompute the seed nodes based on the updated cluster
+                # geometry.
+                seeds = self.choose_seed_nodes(cluster_nodes)
+
+                # Configure each cluster node with the updated list of seeds.
+                LOG.debug("Updating all nodes with new seeds: %s" % seeds)
                 for node in cluster_nodes:
-                    LOG.debug("Configuring node: %s." % node['id'])
                     node['guest'].set_seeds(seeds)
-                    if (admin_creds is None) and (node not in added_nodes):
-                        admin_creds = node['guest'].get_admin_credentials()
-
-                # Start any seeds from the added nodes first.
-                LOG.debug("Starting new seed nodes.")
-                for node in added_nodes:
-                    if node['ip'] in seeds:
-                        node['guest'].set_auto_bootstrap(True)
-                        node['guest'].store_admin_credentials(admin_creds)
-                        node['guest'].restart()
-                        node['guest'].cluster_complete()
-
-                LOG.debug("All new seeds running, starting the remaining of "
-                          "added nodes.")
-                for node in added_nodes:
-                    if node['ip'] not in seeds:
-                        node['guest'].set_auto_bootstrap(True)
-                        node['guest'].store_admin_credentials(admin_creds)
-                        node['guest'].restart()
-                        node['guest'].cluster_complete()
 
                 # Run nodetool cleanup on each of the previously existing nodes
                 # to remove the keys that no longer belong to those nodes.
                 # Wait for cleanup to complete on one node before running
                 # it on the next node.
                 LOG.debug("Cleaning up orphan data on old cluster nodes.")
-                for node in cluster_nodes:
-                    if node not in added_nodes:
-                        nid = node['id']
-                        node['guest'].node_cleanup_begin()
-                        node['guest'].node_cleanup()
-                        LOG.debug("Waiting for node to finish its "
-                                  "cleanup: %s" % nid)
-                        if not self._all_instances_running([nid], cluster_id):
-                            LOG.warning(_("Node did not complete cleanup "
-                                          "successfully: %s") % nid)
+                for node in old_nodes:
+                    nid = node['id']
+                    node['guest'].node_cleanup_begin()
+                    node['guest'].node_cleanup()
+                    LOG.debug("Waiting for node to finish its "
+                              "cleanup: %s" % nid)
+                    if not self._all_instances_running([nid], cluster_id):
+                        LOG.warning(_("Node did not complete cleanup "
+                                      "successfully: %s") % nid)
 
                 LOG.debug("Cluster configuration finished successfully.")
             except Exception:
@@ -307,7 +302,7 @@ class CassandraClusterTasks(task_models.ClusterTasks):
                         context, cluster_node_ids)
 
                     remaining_nodes = [node for node in cluster_nodes
-                                       if node not in removed_nodes]
+                                       if node['id'] not in removal_ids]
                     seeds = self.choose_seed_nodes(remaining_nodes)
                     LOG.debug("Selected seed nodes: %s" % seeds)
                     for node in remaining_nodes:
