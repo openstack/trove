@@ -74,6 +74,7 @@ root_grant_option = True
 # Directory and path for log files
 log_dir = /var/log/trove/
 log_file = logfile.txt
+log_config_append = /etc/trove/trove-logging-guestagent.conf
 
 [profiler]
 # If False fully disable profiling feature.
