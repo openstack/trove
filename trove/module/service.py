@@ -20,6 +20,7 @@ from oslo_log import log as logging
 
 import trove.common.apischema as apischema
 from trove.common import cfg
+from trove.common import exception
 from trove.common.i18n import _
 from trove.common import pagination
 from trove.common import wsgi
@@ -110,12 +111,28 @@ class ModuleController(wsgi.Controller):
         if 'all_tenants' in body['module']:
             module.tenant_id = (None if body['module']['all_tenants']
                                 else tenant_id)
+        ds_changed = False
+        ds_ver_changed = False
         if 'datastore' in body['module']:
             if 'type' in body['module']['datastore']:
                 module.datastore_id = body['module']['datastore']['type']
+                ds_changed = True
             if 'version' in body['module']['datastore']:
                 module.datastore_version_id = (
                     body['module']['datastore']['version'])
+                ds_ver_changed = True
+        if 'all_datastores' in body['module']:
+            if ds_changed:
+                raise exception.ModuleInvalid(
+                    reason=_('You cannot set a datastore and specify '
+                             '--all_datastores'))
+            module.datastore_id = None
+        if 'all_datastore_versions' in body['module']:
+            if ds_ver_changed:
+                raise exception.ModuleInvalid(
+                    reason=_('You cannot set a datastore version and specify '
+                             '--all_datastore_versions'))
+            module.datastore_version_id = None
         if 'auto_apply' in body['module']:
             module.auto_apply = body['module']['auto_apply']
         if 'visible' in body['module']:

@@ -530,7 +530,7 @@ class ModuleAccessForbidden(Forbidden):
 
 class ModuleInvalid(Forbidden):
 
-    message = _("The module you are applying is invalid: %(reason)s")
+    message = _("The module is invalid: %(reason)s")
 
 
 class ClusterNotFound(NotFound):

@@ -78,6 +78,10 @@ class ModuleManager(object):
             result['updated'] = now
             result['id'] = module_id
             result['md5'] = md5
+            result['type'] = module_type
+            result['name'] = name
+            result['datastore'] = datastore
+            result['datastore_version'] = ds_version
             result['tenant'] = tenant
             result['auto_apply'] = auto_apply
             result['visible'] = visible

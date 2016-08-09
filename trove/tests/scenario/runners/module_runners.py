@@ -69,11 +69,18 @@ class ModuleRunner(TestRunner):
             self._module_type = self.test_helper.get_valid_module_type()
         return self._module_type
 
+    def _get_test_module(self, index):
+        if not self.test_modules or len(self.test_modules) < (index + 1):
+            raise SkipTest("Requested module not created")
+        return self.test_modules[index]
+
     @property
     def main_test_module(self):
-        if not self.test_modules or not self.test_modules[0]:
-            SkipTest("No main module created")
-        return self.test_modules[0]
+        return self._get_test_module(0)
+
+    @property
+    def update_test_module(self):
+        return self._get_test_module(1)
 
     def build_module_args(self, extra=None):
         extra = extra or ''
@@ -269,7 +276,7 @@ class ModuleRunner(TestRunner):
             expected_tenant=tenant,
             expected_tenant_id=tenant_id,
             expected_datastore=datastore,
-            expected_ds_version=datastore_version,
+            expected_datastore_version=datastore_version,
             expected_auto_apply=auto_apply,
             expected_contents=contents)
 
@@ -281,8 +288,10 @@ class ModuleRunner(TestRunner):
                         expected_tenant_id=None,
                         expected_datastore=None,
                         expected_datastore_id=None,
-                        expected_ds_version=None,
-                        expected_ds_version_id=None,
+                        expected_all_datastores=None,
+                        expected_datastore_version=None,
+                        expected_datastore_version_id=None,
+                        expected_all_datastore_versions=None,
                         expected_all_tenants=None,
                         expected_auto_apply=None,
                         expected_live_update=None,
@@ -291,6 +300,12 @@ class ModuleRunner(TestRunner):
 
         if expected_all_tenants:
             expected_tenant = expected_tenant or models.Modules.MATCH_ALL_NAME
+        if expected_all_datastores:
+            expected_datastore = models.Modules.MATCH_ALL_NAME
+            expected_datastore_id = None
+        if expected_all_datastore_versions:
+            expected_datastore_version = models.Modules.MATCH_ALL_NAME
+            expected_datastore_version_id = None
         if expected_name:
             self.assert_equal(expected_name, module.name,
                               'Unexpected module name')
@@ -309,8 +324,8 @@ class ModuleRunner(TestRunner):
         if expected_datastore:
             self.assert_equal(expected_datastore, module.datastore,
                               'Unexpected datastore')
-        if expected_ds_version:
-            self.assert_equal(expected_ds_version,
+        if expected_datastore_version:
+            self.assert_equal(expected_datastore_version,
                               module.datastore_version,
                               'Unexpected datastore version')
         if expected_auto_apply is not None:
@@ -320,8 +335,8 @@ class ModuleRunner(TestRunner):
             if expected_datastore_id:
                 self.assert_equal(expected_datastore_id, module.datastore_id,
                                   'Unexpected datastore id')
-            if expected_ds_version_id:
-                self.assert_equal(expected_ds_version_id,
+            if expected_datastore_version_id:
+                self.assert_equal(expected_datastore_version_id,
                                   module.datastore_version_id,
                                   'Unexpected datastore version id')
             if expected_live_update is not None:
@@ -331,6 +346,15 @@ class ModuleRunner(TestRunner):
                 self.assert_equal(expected_visible, module.visible,
                                   'Unexpected visible')
 
+    def run_module_create_for_update(self):
+        name, description, contents = self.build_module_args('_for_update')
+        self.assert_module_create(
+            self.auth_client,
+            name=name,
+            module_type=self.module_type,
+            contents=contents,
+            description=description)
+
     def run_module_create_dupe(
             self, expected_exception=exceptions.BadRequest,
             expected_http_code=400):
@@ -338,6 +362,15 @@ class ModuleRunner(TestRunner):
             expected_exception, expected_http_code,
             self.auth_client.modules.create,
             self.MODULE_NAME, self.module_type, self.MODULE_NEG_CONTENTS)
+
+    def run_module_update_missing_datastore(
+            self, expected_exception=exceptions.BadRequest,
+            expected_http_code=400):
+        self.assert_raises(
+            expected_exception, expected_http_code,
+            self.auth_client.modules.update,
+            self.update_test_module.id,
+            datastore_version=self.instance_info.dbaas_datastore_version)
 
     def run_module_create_bin(self):
         name, description, contents = self.build_module_args(
@@ -373,7 +406,7 @@ class ModuleRunner(TestRunner):
             expected_description=test_module.description,
             expected_tenant=test_module.tenant,
             expected_datastore=test_module.datastore,
-            expected_ds_version=test_module.datastore_version,
+            expected_datastore_version=test_module.datastore_version,
             expected_auto_apply=test_module.auto_apply,
             expected_live_update=False,
             expected_visible=True)
@@ -414,7 +447,7 @@ class ModuleRunner(TestRunner):
                     expected_description=test_module.description,
                     expected_tenant=test_module.tenant,
                     expected_datastore=test_module.datastore,
-                    expected_ds_version=test_module.datastore_version,
+                    expected_datastore_version=test_module.datastore_version,
                     expected_auto_apply=test_module.auto_apply)
 
     def run_module_list_unauth_user(self):
@@ -707,8 +740,14 @@ class ModuleRunner(TestRunner):
                           "Wrong number of instances applied from module")
 
     def run_module_query_empty(self):
-        self.assert_module_query(self.auth_client, self.instance_info.id,
-                                 self.module_auto_apply_count_prior_to_create)
+        self.assert_module_query(
+            self.auth_client, self.instance_info.id,
+            self.module_auto_apply_count_prior_to_create)
+
+    def run_module_query_after_remove(self):
+        self.assert_module_query(
+            self.auth_client, self.instance_info.id,
+            self.module_auto_apply_count_prior_to_create + 1)
 
     def assert_module_query(self, client, instance_id, expected_count,
                             expected_http_code=200, expected_results=None):
@@ -748,7 +787,7 @@ class ModuleRunner(TestRunner):
                 expected_name=module.name,
                 expected_module_type=module.type,
                 expected_datastore=module.datastore,
-                expected_ds_version=module.datastore_version,
+                expected_datastore_version=module.datastore_version,
                 expected_auto_apply=module.auto_apply,
                 expected_visible=module.visible,
                 expected_admin_only=admin_only,
@@ -760,7 +799,7 @@ class ModuleRunner(TestRunner):
                              expected_name=None,
                              expected_module_type=None,
                              expected_datastore=None,
-                             expected_ds_version=None,
+                             expected_datastore_version=None,
                              expected_auto_apply=None,
                              expected_visible=None,
                              expected_admin_only=None,
@@ -778,8 +817,8 @@ class ModuleRunner(TestRunner):
         if expected_datastore:
             self.assert_equal(expected_datastore, module_apply.datastore,
                               '%s Unexpected datastore' % prefix)
-        if expected_ds_version:
-            self.assert_equal(expected_ds_version,
+        if expected_datastore_version:
+            self.assert_equal(expected_datastore_version,
                               module_apply.datastore_version,
                               '%s Unexpected datastore version' % prefix)
         if expected_auto_apply is not None:
@@ -806,6 +845,24 @@ class ModuleRunner(TestRunner):
     def run_module_list_instance_after_apply(self):
         self.assert_module_list_instance(
             self.auth_client, self.instance_info.id, 1)
+
+    def run_module_apply_another(self):
+        self.assert_module_apply(self.auth_client, self.instance_info.id,
+                                 self.update_test_module)
+
+    def run_module_list_instance_after_apply_another(self):
+        self.assert_module_list_instance(
+            self.auth_client, self.instance_info.id, 2)
+
+    def run_module_update_after_remove(self):
+        name, description, contents = self.build_module_args('_updated')
+        self.assert_module_update(
+            self.auth_client,
+            self.update_test_module.id,
+            name=name,
+            datastore=self.instance_info.dbaas_datastore,
+            datastore_version=self.instance_info.dbaas_datastore_version,
+            contents=contents)
 
     def run_module_query_after_apply(self):
         expected_count = self.module_auto_apply_count_prior_to_create + 1
@@ -841,6 +898,22 @@ class ModuleRunner(TestRunner):
             }
         return expected_results
 
+    def run_module_query_after_apply_another(self):
+        expected_count = self.module_auto_apply_count_prior_to_create + 2
+        expected_results = self.create_default_query_expected_results(
+            [self.main_test_module, self.update_test_module])
+        self.assert_module_query(self.auth_client, self.instance_info.id,
+                                 expected_count=expected_count,
+                                 expected_results=expected_results)
+
+    def run_module_update_after_remove_again(self):
+        self.assert_module_update(
+            self.auth_client,
+            self.update_test_module.id,
+            name=self.MODULE_NAME + '_updated_back',
+            all_datastores=True,
+            all_datastore_versions=True)
+
     def run_create_inst_with_mods(self, expected_http_code=200):
         self.mod_inst_id = self.assert_inst_mod_create(
             self.main_test_module.id, '_module', expected_http_code)
@@ -868,7 +941,7 @@ class ModuleRunner(TestRunner):
 
     def run_module_remove(self):
         self.assert_module_remove(self.auth_client, self.instance_info.id,
-                                  self.main_test_module.id)
+                                  self.update_test_module.id)
 
     def assert_module_remove(self, client, instance_id, module_id,
                              expected_http_code=200):
