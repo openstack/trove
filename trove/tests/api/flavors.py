@@ -59,8 +59,6 @@ def assert_attributes_equal(name, os_flavor, dbaas_flavor):
 def assert_flavors_roughly_equivalent(os_flavor, dbaas_flavor):
     assert_attributes_equal('name', os_flavor, dbaas_flavor)
     assert_attributes_equal('ram', os_flavor, dbaas_flavor)
-    assert_false(hasattr(dbaas_flavor, 'disk'),
-                 "The attribute 'disk' s/b absent from the dbaas API.")
 
 
 def assert_link_list_is_equal(flavor):
@@ -146,7 +144,7 @@ class Flavors(object):
 
     @test
     def test_flavor_list_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'links',
+        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'disk', 'links',
                          'local_storage', 'str_id']
         flavors = self.rd_client.flavors.list()
         attrcheck = AttrCheck()
@@ -159,7 +157,7 @@ class Flavors(object):
 
     @test
     def test_flavor_get_attrs(self):
-        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'links',
+        allowed_attrs = ['id', 'name', 'ram', 'vcpus', 'disk', 'links',
                          'local_storage', 'str_id']
         flavor = self.rd_client.flavors.get(1)
         attrcheck = AttrCheck()

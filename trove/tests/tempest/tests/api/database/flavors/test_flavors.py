@@ -82,6 +82,7 @@ class DatabaseFlavorsTest(base.BaseDatabaseTest):
                                  "DB flavor id differs from OS flavor id value"
                                  )
 
-            self._check_values(['name', 'ram', 'vcpus'], db_flavor, os_flavor)
-            self._check_values(['disk', 'swap'], db_flavor, os_flavor,
+            self._check_values(['name', 'ram', 'vcpus',
+                                'disk'], db_flavor, os_flavor)
+            self._check_values(['swap'], db_flavor, os_flavor,
                                in_db=False)

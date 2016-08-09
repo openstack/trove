@@ -14,6 +14,7 @@
         "name": "m1.tiny",
         "ram": 512,
         "str_id": "1",
+        "disk":0,
         "vcpus": 10
     }
 }
