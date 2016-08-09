@@ -9,6 +9,7 @@ trove.egg*
 trove/vcsversion.py
 *py*.egg
 .coverage
+coverage.xml
 cover/
 dist/
 host-syslog.log
