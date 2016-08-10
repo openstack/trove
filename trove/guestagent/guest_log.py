@@ -294,7 +294,7 @@ class GuestLog(object):
             self._header_digest = hashlib.md5(log.readline()).hexdigest()
 
     def _get_headers(self):
-        return {'X-Delete-After': CONF.guest_log_expiry}
+        return {'X-Delete-After': str(CONF.guest_log_expiry)}
 
     def publish_log(self):
         if self.exposed:
@@ -347,7 +347,7 @@ class GuestLog(object):
                 yield current_chunk
 
         def _write_log_component():
-            object_headers.update({'x-object-meta-lines': log_lines})
+            object_headers.update({'x-object-meta-lines': str(log_lines)})
             component_name = '%s%s' % (self._object_prefix(),
                                        self._object_name())
             self.swift_client.put_object(container_name,
