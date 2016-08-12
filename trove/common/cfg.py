@@ -191,7 +191,7 @@ common_opts = [
     cfg.IntOpt('trove_conductor_workers',
                help='Number of workers for the Conductor service. The default '
                'will be the number of CPUs available.'),
-    cfg.BoolOpt('use_nova_server_config_drive', default=False,
+    cfg.BoolOpt('use_nova_server_config_drive', default=True,
                 help='Use config drive for file injection when booting '
                 'instance.'),
     cfg.BoolOpt('use_nova_server_volume', default=False,
