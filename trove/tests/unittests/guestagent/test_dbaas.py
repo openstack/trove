@@ -727,7 +727,7 @@ class MySqlAdminTest(trove_testtools.TestCase):
         username = "user1"
         hostname = "%"
         user = [{"User": "user1", "Host": "%", 'Password': 'some_thing'}]
-        expected = ("SELECT User, Host, Password FROM mysql.user "
+        expected = ("SELECT User, Host FROM mysql.user "
                     "WHERE Host != 'localhost' AND User = 'user1' "
                     "AND Host = '%' ORDER BY User, Host;")
 
