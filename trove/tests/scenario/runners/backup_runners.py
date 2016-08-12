@@ -449,3 +449,22 @@ class BackupRunner(TestRunner):
         for data_type in self.data_types_added:
             self.test_helper.remove_data(data_type, self.backup_host)
         self.data_types_added = []
+
+    def run_check_has_incremental(self):
+        self.assert_incremental_exists(self.backup_info.id)
+
+    def assert_incremental_exists(self, parent_id):
+        def _backup_with_parent_found():
+            backup_list = self.auth_client.backups.list()
+            for bkup in backup_list:
+                if bkup.parent_id == parent_id:
+                    return True
+
+            return False
+
+        poll_until(_backup_with_parent_found, time_out=30)
+
+
+class RedisBackupRunner(BackupRunner):
+    def run_check_has_incremental(self):
+        pass
