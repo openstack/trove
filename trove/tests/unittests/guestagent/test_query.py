@@ -351,82 +351,59 @@ class CreateUserTest(QueryTestBase):
                          "IDENTIFIED BY 'password123';", str(cu))
 
 
-class UpdateUserTest(QueryTestBase):
+class RenameUserTest(QueryTestBase):
+
     def setUp(self):
-        super(UpdateUserTest, self).setUp()
+        super(RenameUserTest, self).setUp()
 
     def tearDown(self):
-        super(UpdateUserTest, self).tearDown()
+        super(RenameUserTest, self).tearDown()
 
     def test_rename_user(self):
         username = 'root'
         hostname = 'localhost'
         new_user = 'root123'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
+        uu = sql_query.RenameUser(user=username, host=hostname,
                                   new_user=new_user)
-        self.assertEqual("UPDATE mysql.user SET User='root123' "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
-
-    def test_change_password(self):
-        username = 'root'
-        hostname = 'localhost'
-        new_password = 'password123'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
-                                  clear=new_password)
-        self.assertEqual("UPDATE mysql.user SET "
-                         "Password=PASSWORD('password123') "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
+        self.assertEqual("RENAME USER 'root'@'localhost' "
+                         "TO 'root123'@'localhost';", str(uu))
 
     def test_change_host(self):
         username = 'root'
         hostname = 'localhost'
         new_host = '%'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
+        uu = sql_query.RenameUser(user=username, host=hostname,
                                   new_host=new_host)
-        self.assertEqual("UPDATE mysql.user SET Host='%' "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
-
-    def test_change_password_and_username(self):
-        username = 'root'
-        hostname = 'localhost'
-        new_user = 'root123'
-        new_password = 'password123'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
-                                  clear=new_password, new_user=new_user)
-        self.assertEqual("UPDATE mysql.user SET User='root123', "
-                         "Password=PASSWORD('password123') "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
-
-    def test_change_username_password_hostname(self):
-        username = 'root'
-        hostname = 'localhost'
-        new_user = 'root123'
-        new_password = 'password123'
-        new_host = '%'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
-                                  clear=new_password, new_user=new_user,
-                                  new_host=new_host)
-        self.assertEqual("UPDATE mysql.user SET User='root123', "
-                         "Host='%', "
-                         "Password=PASSWORD('password123') "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
+        self.assertEqual("RENAME USER 'root'@'localhost' "
+                         "TO 'root'@'%';", str(uu))
 
     def test_change_username_and_hostname(self):
         username = 'root'
         hostname = 'localhost'
         new_user = 'root123'
         new_host = '%'
-        uu = sql_query.UpdateUser(user=username, host=hostname,
-                                  new_host=new_host, new_user=new_user)
-        self.assertEqual("UPDATE mysql.user SET User='root123', "
-                         "Host='%' "
-                         "WHERE User = 'root' "
-                         "AND Host = 'localhost';", str(uu))
+        uu = sql_query.RenameUser(user=username, host=hostname,
+                                  new_user=new_user, new_host=new_host)
+        self.assertEqual("RENAME USER 'root'@'localhost' "
+                         "TO 'root123'@'%';", str(uu))
+
+
+class SetPasswordTest(QueryTestBase):
+
+    def setUp(self):
+        super(SetPasswordTest, self).setUp()
+
+    def tearDown(self):
+        super(SetPasswordTest, self).tearDown()
+
+    def test_alter_user(self):
+        username = 'root'
+        hostname = 'localhost'
+        new_password = 'new_password'
+        uu = sql_query.SetPassword(user=username, host=hostname,
+                                   new_password=new_password)
+        self.assertEqual("SET PASSWORD FOR 'root'@'localhost' = "
+                         "PASSWORD('new_password');", str(uu))
 
 
 class DropUserTest(QueryTestBase):

@@ -34,10 +34,15 @@ class UserActionsRunner(TestRunner):
     def __init__(self):
         super(UserActionsRunner, self).__init__()
         self.user_defs = []
+        self.renamed_user_orig_def = None
 
     @property
     def first_user_def(self):
         if self.user_defs:
+            # Try to use the first user with databases if any.
+            for user_def in self.user_defs:
+                if user_def['databases']:
+                    return user_def
             return self.user_defs[0]
         raise SkipTest("No valid user definitions provided.")
 
@@ -359,6 +364,7 @@ class UserActionsRunner(TestRunner):
         expected_def = None
         for user_def in self.user_defs:
             if user_def['name'] == user_name:
+                self.renamed_user_orig_def = dict(user_def)
                 user_def.update(update_attribites)
                 expected_def = user_def
 
@@ -367,6 +373,30 @@ class UserActionsRunner(TestRunner):
         # Verify using 'user-show' and 'user-list'.
         self.assert_user_show(instance_id, expected_def, 200)
         self.assert_users_list(instance_id, self.user_defs, 200)
+
+    def run_user_recreate_with_no_access(self, expected_http_code=202):
+        if (self.renamed_user_orig_def and
+                self.renamed_user_orig_def['databases']):
+            self.assert_user_recreate_with_no_access(
+                self.instance_info.id, self.renamed_user_orig_def,
+                expected_http_code)
+        else:
+            raise SkipTest("No renamed users with databases.")
+
+    def assert_user_recreate_with_no_access(self, instance_id, original_def,
+                                            expected_http_code=202):
+        # Recreate a previously renamed user without assigning any access
+        # rights to it.
+        recreated_user_def = dict(original_def)
+        recreated_user_def.update({'databases': []})
+        user_def = self.assert_users_create(
+            instance_id, [recreated_user_def], expected_http_code)
+
+        # Append the new user to defs for cleanup.
+        self.user_defs.extend(user_def)
+
+        # Assert empty user access.
+        self.assert_user_access_show(instance_id, recreated_user_def, 200)
 
     def run_user_delete(self, expected_http_code=202):
         for user_def in self.user_defs:
