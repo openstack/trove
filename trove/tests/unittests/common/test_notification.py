@@ -117,11 +117,11 @@ class TestNotificationCastWrapper(trove_testtools.TestCase):
 
     def test_with_notification(self):
         context = trove_testtools.TroveTestContext(self)
-        self.assertEqual(True, context.notification.needs_end_notification)
+        self.assertTrue(context.notification.needs_end_notification)
         with notification.NotificationCastWrapper(context, "foo"):
             self.assertEqual('foo', context.notification.server_type)
         self.assertEqual('api', context.notification.server_type)
-        self.assertEqual(False, context.notification.needs_end_notification)
+        self.assertFalse(context.notification.needs_end_notification)
 
 
 class TestTroveBaseTraits(trove_testtools.TestCase):
