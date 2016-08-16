@@ -332,15 +332,14 @@ register(
             database_actions_groups,
             root_actions_groups,
             user_actions_groups, ],
-    multi=[cluster_actions_groups, ]
+    multi=[]
 )
 
 register(
     ["redis_supported"],
     single=[common_groups,
             backup_groups, ],
-    multi=[replication_promote_groups,
-           cluster_actions_groups, ]
+    multi=[replication_promote_groups, ]
 )
 
 register(

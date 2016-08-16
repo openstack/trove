@@ -704,14 +704,19 @@ function mod_confs() {
     # Enable neutron tests if needed
     sed -i "s/%neutron_enabled%/$ENABLE_NEUTRON/g" $TEST_CONF
 
-    # If neutron is enabled, we create a shared network and write this info to the
-    # confs so that the integration tests can use it.
+    # If neutron is enabled, the devstack plugin will have created an alt_demo
+    # network - write this info to the confs so that the integration tests can
+    # use it.
     if [[ $ENABLE_NEUTRON = true ]]; then
-        management_network_id=$(neutron --os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT net-list | awk '/ alt-private / {print $2}')
-        management_subnet=$(neutron --os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT subnet-list | awk '/ alt-private-subnet / {print $2}')
-        echo "Using neutron network $management_network_id and subnet $management_subnet"
-        sed -i "s,%shared_network%,$management_network_id,g" $TEST_CONF
-        sed -i "s,%shared_network_subnet%,$management_subnet,g" $TEST_CONF
+        local credentials="--os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT --os-region $REGION_NAME"
+        TROVE_NET_ID=$(openstack $credentials network list | grep " $TROVE_PRIVATE_NETWORK_NAME " | awk '{print $2}')
+        TROVE_SUBNET_ID=$(openstack $credentials subnet list | grep " $TROVE_PRIVATE_SUBNET_NAME " | awk '{print $2}')
+        # echo "Using network ${TROVE_PRIVATE_NETWORK_NAME} (${TROVE_NET_ID}): ${TROVE_PRIVATE_SUBNET_NAME} (${TROVE_SUBNET_ID})"
+        # sed -i "s,%shared_network%,$TROVE_NET_ID,g" $TEST_CONF
+        # sed -i "s,%shared_network_subnet%,$TROVE_SUBNET_ID,g" $TEST_CONF
+        # remove the network stuff until the alt_demo network issues are sorted out
+        sed -i "/%shared_network%/d" $TEST_CONF
+        sed -i "/%shared_network_subnet%/d" $TEST_CONF
     else
         # do not leave invalid keys in the configuration when using Nova for networking
         sed -i "/%shared_network%/d" $TEST_CONF
@@ -1224,11 +1229,12 @@ function cmd_kick_start() {
 
 function cmd_dsvm_gate_tests() {
     exclaim "Running cmd_dsvm_gate_tests ..."
+    ACTUAL_HOSTNAME=$(hostname -I | sed 's/[0-9]*\.[0-9]*\.[0-9]*\.1\b//g' | sed 's/[0-9a-z][0-9a-z]*:.*:[0-9a-z][0-9a-z]*//g' | sed 's/ /\n/g' | sed '/^$/d' | sort -bu | head -1)
     DATASTORE_TYPE=${1:-'mysql'}
     TEST_GROUP=${2:-${DATASTORE_TYPE}}
     HOST_SCP_USERNAME=${3:-'jenkins'}
     GUEST_USERNAME=${4:-'ubuntu'}
-    CONTROLLER_IP=${5:-'10.1.0.1'}
+    CONTROLLER_IP=${5:-$ACTUAL_HOSTNAME}
     ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
     export REPORT_DIRECTORY=${REPORT_DIRECTORY:=$HOME/dsvm-report/}
     export TROVE_REPORT_DIR=$HOME/dsvm-report/

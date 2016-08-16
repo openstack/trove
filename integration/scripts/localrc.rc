@@ -5,7 +5,6 @@ SERVICE_TOKEN=$SERVICE_TOKEN
 ADMIN_PASSWORD=$ADMIN_PASSWORD
 SERVICE_PASSWORD=$SERVICE_PASSWORD
 
-PUBLIC_INTERFACE=eth0
 IP_VERSION=4
 TROVE_LOGDIR=$TROVE_LOGDIR
 TROVE_AUTH_CACHE_DIR=$TROVE_AUTH_CACHE_DIR
@@ -24,6 +23,7 @@ if [[ $ENABLE_NEUTRON = true ]]; then
     ENABLED_SERVICES+=,neutron,q-svc,q-agt,q-dhcp,q-l3,q-meta
     disable_service n-net
 else
+    PUBLIC_INTERFACE=eth0
     enable_service n-net
     disable_service neutron q-svc q-agt q-dhcp q-l3 q-meta
 fi
