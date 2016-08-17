@@ -15,11 +15,13 @@
 #
 
 from mock import Mock
+from mock import patch
 
 from testtools import ExpectedException
 from trove.common import exception
 from trove.common import utils
 from trove.tests.unittests import trove_testtools
+from trove.tests.util import utils as test_utils
 
 
 class TestUtils(trove_testtools.TestCase):
@@ -123,3 +125,49 @@ class TestUtils(trove_testtools.TestCase):
     def test_to_mb_zero(self):
         result = utils.to_mb(0)
         self.assertEqual(0.0, result)
+
+    @patch('trove.common.utils.LOG')
+    def test_retry_decorator(self, _):
+
+        class TestEx1(Exception):
+            pass
+
+        class TestEx2(Exception):
+            pass
+
+        class TestEx3(Exception):
+            pass
+
+        class TestExecutor(object):
+
+            def _test_foo(self, arg):
+                return arg
+
+            @test_utils.retry(TestEx1, retries=5, delay_fun=lambda n: 0.2)
+            def test_foo_1(self, arg):
+                return self._test_foo(arg)
+
+            @test_utils.retry((TestEx1, TestEx2), delay_fun=lambda n: 0.2)
+            def test_foo_2(self, arg):
+                return self._test_foo(arg)
+
+        def assert_retry(fun, side_effect, exp_call_num, exp_exception):
+            with patch.object(te, '_test_foo', side_effect=side_effect) as f:
+                mock_arg = Mock()
+                if exp_exception:
+                    self.assertRaises(exp_exception, fun, mock_arg)
+                else:
+                    fun(mock_arg)
+
+                f.assert_called_with(mock_arg)
+                self.assertEqual(exp_call_num, f.call_count)
+
+        te = TestExecutor()
+        assert_retry(te.test_foo_1, [TestEx1, None], 2, None)
+        assert_retry(te.test_foo_1, TestEx3, 1, TestEx3)
+        assert_retry(te.test_foo_1, TestEx1, 5, TestEx1)
+        assert_retry(te.test_foo_1, [TestEx1, TestEx3], 2, TestEx3)
+        assert_retry(te.test_foo_2, [TestEx1, TestEx2, None], 3, None)
+        assert_retry(te.test_foo_2, TestEx3, 1, TestEx3)
+        assert_retry(te.test_foo_2, TestEx2, 3, TestEx2)
+        assert_retry(te.test_foo_2, [TestEx1, TestEx3, TestEx2], 2, TestEx3)
