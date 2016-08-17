@@ -61,6 +61,12 @@ Verify operation of the Database service.
         | visibility       | private                              |
         +------------------+--------------------------------------+
 
+   * An alternate method of launching trove guests is to use an existing
+     Linux distro image and `configure the trove guest using Cloud-init
+     <http://docs.openstack.org/developer/trove/dev/guest_cloud_init.html>`_ .
+     This saves the effort of creating a customized image, but at the
+     cost of a slower startup time.
+
    * Create a datastore. You need to create a separate datastore for
      each type of database you want to use, for example, MySQL, MongoDB,
      Cassandra. This example shows you how to create a datastore for a

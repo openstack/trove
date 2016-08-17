@@ -63,7 +63,11 @@
       password = TROVE_PASS
 
 5. Edit the ``trove-taskmanager.conf`` file so it includes the required
-   settings to connect to the OpenStack Compute service as shown below:
+   settings to connect to the OpenStack Compute service as shown below.
+   Include ConfigDrive settings so that configuration is injected
+   into the Guest VM. And finally, if using Nova Network, set the
+   the network driver name and a regex which allows Projects to
+   launch Guests on any of their networks.
 
    .. code-block:: ini
 
@@ -78,6 +82,13 @@
       nova_proxy_admin_pass = ADMIN_PASS
       nova_proxy_admin_tenant_name = service
       taskmanager_manager = trove.taskmanager.manager.Manager
+
+      # Inject configuration into guest via ConfigDrive
+      use_nova_server_config_drive = True
+
+      # Set these if using Neutron Networking
+      network_driver=trove.network.neutron.NeutronDriver
+      network_label_regex=.*
 
 6. Edit the ``/etc/trove/trove-guestagent.conf`` file
    so that future trove guests can connect to your OpenStack environment:

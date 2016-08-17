@@ -6,6 +6,7 @@ Database service
 
    get_started.rst
    install.rst
+   dashboard.rst
    verify.rst
    next-steps.rst
 
