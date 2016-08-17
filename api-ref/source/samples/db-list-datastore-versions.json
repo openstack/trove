@@ -1,0 +1,18 @@
+{
+    "name": "5.6",
+    "links": [
+        {
+            "href": "https://10.240.28.38:8779/v1.0/27bee406abb5486e81ef3ff4382aabaf/datastores/versions/2dc7faa0-efff-4c2b-8cff-bcd949c518a5",
+            "rel": "self"
+        },
+        {
+            "href": "https://10.240.28.38:8779/datastores/versions/2dc7faa0-efff-4c2b-8cff-bcd949c518a5",
+            "rel": "bookmark"
+        }
+    ],
+    "image": "b69fbd9e-b31d-46ff-8afb-cbf452f6f835",
+    "active": 1,
+    "datastore": "3a8968d8-e5f5-4452-83ca-f6c90b5de06a",
+    "packages": "mysql-server-5.6",
+    "id": "2dc7faa0-efff-4c2b-8cff-bcd949c518a5"
+}

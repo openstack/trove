@@ -1,0 +1,76 @@
+{
+    "instances": [
+        {
+            "datastore": {
+                "type": "mysql",
+                "version": "5.5"
+            },
+            "flavor": {
+                "id": "1",
+                "links": [
+                    {
+                        "href": "https://troveapi.org/v1.0/1234/flavors/1",
+                        "rel": "self"
+                    },
+                    {
+                        "href": "https://troveapi.org/flavors/1",
+                        "rel": "bookmark"
+                    }
+                ]
+            },
+            "hostname": "e09ad9a3f73309469cf1f43d11e79549caf9acf2.troveexampledb.com",
+            "id": "43a6ea86-e959-4735-9e46-a6a5d4a2d80f",
+            "links": [
+                {
+                    "href": "https://troveapi.org/v1.0/1234/instances/43a6ea86-e959-4735-9e46-a6a5d4a2d80f",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://troveapi.org/instances/43a6ea86-e959-4735-9e46-a6a5d4a2d80f",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "The Third Instance",
+            "status": "ACTIVE",
+            "volume": {
+                "size": 2
+            }
+        },
+        {
+            "datastore": {
+                "type": "mysql",
+                "version": "5.5"
+            },
+            "flavor": {
+                "id": "1",
+                "links": [
+                    {
+                        "href": "https://troveapi.org/v1.0/1234/flavors/1",
+                        "rel": "self"
+                    },
+                    {
+                        "href": "https://troveapi.org/flavors/1",
+                        "rel": "bookmark"
+                    }
+                ]
+            },
+            "hostname": "e09ad9a3f73309469cf1f43d11e79549caf9acf2.troveexampledb.com",
+            "id": "44b277eb-39be-4921-be31-3d61b43651d7",
+            "links": [
+                {
+                    "href": "https://troveapi.org/v1.0/1234/instances/44b277eb-39be-4921-be31-3d61b43651d7",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://troveapi.org/instances/44b277eb-39be-4921-be31-3d61b43651d7",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "json_rack_instance",
+            "status": "ACTIVE",
+            "volume": {
+                "size": 2
+            }
+        }
+    ]
+}

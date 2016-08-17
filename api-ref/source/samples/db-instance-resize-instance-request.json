@@ -1,0 +1,5 @@
+{
+    "resize": {
+        "flavorRef": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/2"
+    }
+}

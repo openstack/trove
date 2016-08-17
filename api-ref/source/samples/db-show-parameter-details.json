@@ -1,0 +1,8 @@
+{
+    "name": "connect_timeout",
+    "min": 2,
+    "max": 31536000,
+    "restart_required": false,
+    "type": "integer",
+    "datastore_version_id": "f8e67741-e767-4137-b394-3fb8a3fafd2f"
+}

@@ -1,6 +1,0 @@
-{
-    "badRequest": {
-        "code": 400,
-        "message": "Volume 'size' needs to be a positive integer value, -1.0 cannot be accepted."
-    }
-}

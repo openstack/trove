@@ -1,0 +1,40 @@
+{
+    "instance": {
+        "created": "2014-10-30T12:30:00",
+        "datastore": {
+            "type": "mysql",
+            "version": "5.5"
+        },
+        "flavor": {
+            "id": "1",
+            "links": [
+                {
+                    "href": "https://troveapi.org/v1.0/1234/flavors/1",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://troveapi.org/flavors/1",
+                    "rel": "bookmark"
+                }
+            ]
+        },
+        "hostname": "e09ad9a3f73309469cf1f43d11e79549caf9acf2.troveexampledb.com",
+        "id": "d5a9db64-7ef7-41c5-8e1e-4013166874bc",
+        "links": [
+            {
+                "href": "https://troveapi.org/v1.0/1234/instances/d5a9db64-7ef7-41c5-8e1e-4013166874bc",
+                "rel": "self"
+            },
+            {
+                "href": "https://troveapi.org/instances/d5a9db64-7ef7-41c5-8e1e-4013166874bc",
+                "rel": "bookmark"
+            }
+        ],
+        "name": "backup_instance",
+        "status": "BUILD",
+        "updated": "2014-10-30T12:30:00",
+        "volume": {
+            "size": 2
+        }
+    }
+}

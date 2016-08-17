@@ -143,59 +143,14 @@ process.
 Trove Documentation
 ===================
 
-This repository also contains the following OpenStack manual:
+This repository also contains the Database Services API Reference.
+To build the API reference, run::
 
-* Database Services API Reference
+    $ tox -e api-ref
 
-Prerequisites for Building the Documentation
---------------------------------------------
-`Apache Maven <http://maven.apache.org/>`_ must be installed to build the
-documentation.
+The generated documentation is found::
 
-To install Maven 3 for Ubuntu 12.04 and later, and Debian wheezy and later::
-
-    apt-get install maven
-
-On Fedora 15 and later::
-
-    yum install maven3
-
-Building
---------
-The manuals are in the ``apidocs`` directory.
-
-To build a specific guide, look for a ``pom.xml`` file within a subdirectory,
-then run the ``mvn`` command in that directory. For example::
-
-    cd apidocs
-    mvn clean generate-sources
-
-The generated PDF documentation file is::
-
-    apidocs/target/docbkx/webhelp/cdb-devguide/cdb-devguide-reviewer.pdf
-
-The root of the generated HTML documentation is::
-
-    apidocs/target/docbkx/webhelp/cdb-devguide/content/index.html
-
-Testing of changes and building of the manual
-----------------------------------------------
-
-Install the python tox package and run ``tox`` from the top-level
-directory to use the same tests that are done as part of our Jenkins
-gating jobs.
-
-If you like to run individual tests, run:
-
- * ``tox -e checkniceness`` - to run the niceness tests
- * ``tox -e checksyntax`` - to run syntax checks
- * ``tox -e checkdeletions`` - to check that no deleted files are referenced
- * ``tox -e checkbuild`` - to actually build the manual
-
-tox will use the `openstack-doc-tools package
-<https://github.com/openstack/openstack-doc-tools>`_ for execution of
-these tests. openstack-doc-tools has a requirement on maven for the
-build check.
+    api-ref/html/index.html
 
 Testing
 =======

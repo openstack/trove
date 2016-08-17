@@ -58,7 +58,7 @@ class SnippetWriter(object):
         headers.append("Accept: %s" % output_headers['Accept'])
         print("OUTPUT HEADERS: %s" % output_headers)
         headers.append("Content-Type: %s" % output_headers['Content-Type'])
-        self.write_file(user_details, name, "-%s.txt" % content_type, url,
+        self.write_file(user_details, name, "-%s-http.txt" % content_type, url,
                         method, "request", output='\n'.join(headers))
 
         pretty_body = self.format_body(body, content_type)
@@ -82,7 +82,7 @@ class SnippetWriter(object):
         new_lines = [x[0] for x in lines]
         joined_lines = '\n'.join(new_lines)
 
-        self.write_file(user_details, name, "-%s.txt" % content_type, url,
+        self.write_file(user_details, name, "-%s-http.txt" % content_type, url,
                         method, "response", output=joined_lines)
 
         if body:

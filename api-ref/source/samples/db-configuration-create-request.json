@@ -1,0 +1,14 @@
+{
+    "configuration": {
+        "datastore": {
+            "type": "a00000a0-00a0-0a00-00a0-000a000000aa",
+            "version": "b00000b0-00b0-0b00-00b0-000b000000bb"
+        },
+        "description": "example description",
+        "name": "example-configuration-name",
+        "values": {
+            "collation_server": "latin1_swedish_ci",
+            "connect_timeout": 120
+        }
+    }
+}
