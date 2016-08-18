@@ -1,0 +1,286 @@
+# variables in path
+accountId:
+  description: |
+    The account ID of the owner of the instance.
+  in: path
+  required: false
+  type: string
+configId:
+  description: |
+    The ID of the configuration group.
+  in: path
+  required: false
+  type: string
+databaseName:
+  description: |
+    The name for the database.
+  in: path
+  required: false
+  type: string
+datastore_name:
+  description: |
+    The name of the data store.
+  in: path
+  required: false
+  type: string
+datastore_version_id:
+  description: |
+    The UUID of the data store version.
+  in: path
+  required: false
+  type: string
+flavorId:
+  description: |
+    The ID for the flavor.
+  in: path
+  required: false
+  type: string
+instanceId:
+  description: |
+    The ID for the database instance.
+  in: path
+  required: false
+  type: string
+parameter_name:
+  description: |
+    The name of the parameter for which to show
+    details.
+  in: path
+  required: false
+  type: string
+# variables in body
+characterSet:
+  description: |
+    A set of symbols and encodings. Default is
+    ``utf8``.  For information about supported character sets and
+    collations, see `Character Sets and Collations in MySQL
+    <http://dev.mysql.com/doc/refman/5.1/en/charset-mysql.html>`_.
+  in: body
+  required: false
+  type: string
+collate:
+  description: |
+    A set of rules for comparing characters in a
+    character set. Default is ``utf8_general_ci``.  For information
+    about supported character sets and collations, see `Character Sets
+    and Collations in MySQL <http://dev.mysql.com/doc/refman/5.1/en
+    /charset-mysql.html>`_.
+  in: body
+  required: false
+  type: string
+configuration:
+  description: |
+    ID of the configuration group that you want to
+    attach to the instance.
+  in: body
+  required: true
+  type: string
+configuration_1:
+  description: |
+    ID of the configuration group to attach to the
+    instance.
+  in: body
+  required: false
+  type: string
+configuration_2:
+  description: |
+    To detach a configuration group, set the
+    configuration parameter to null.
+  in: body
+  required: true
+  type: string
+created:
+  description: |
+    The date and time when the resource was created.
+
+    The date and time stamp format is `ISO 8601
+    <https://en.wikipedia.org/wiki/ISO_8601>`_:
+
+    ::
+
+       CCYY-MM-DDThh:mm:ss±hh:mm
+
+    For example, ``2015-08-27T09:49:58-05:00``.
+
+    The ``±hh:mm`` value, if included, is the time zone as an offset
+    from UTC. In the previous example, the offset value is ``-05:00``.
+  in: body
+  required: true
+  type: string
+databases:
+  description: |
+    A ``databases`` object.
+  in: body
+  required: false
+  type: array
+datastore:
+  description: |
+    Data store assigned to the configuration group.
+    Required if you did not configure the default data store.
+  in: body
+  required: true
+  type: string
+datastore_1:
+  description: |
+    Name of the datastore to use when creating the
+    instance.
+  in: body
+  required: false
+  type: string
+datastore_version:
+  description: |
+    Name of the datastore version to use when
+    creating the instance.
+  in: body
+  required: false
+  type: string
+description:
+  description: |
+    New description of the configuration group.
+  in: body
+  required: true
+  type: string
+flavor:
+  description: |
+    A ``flavor`` object, which includes the flavor ID
+    (integer) and flavor relative links.
+  in: body
+  required: true
+  type: object
+flavorRef:
+  description: |
+    Reference (href), which is the actual URI to a
+    flavor as it appears in the list flavors response.  Rather than
+    the flavor URI, you can also pass the flavor ID (integer) as the
+    ``flavorRef`` value. For example, ``1``.
+  in: body
+  required: true
+  type: string
+instance:
+  description: |
+    An ``instance`` object.
+  in: body
+  required: true
+  type: object
+name:
+  description: |
+    Name of the configuration group you are creating.
+  in: body
+  required: true
+  type: string
+name_1:
+  description: |
+    A database name.  You cannot use the
+    ``lost+found``, ``information_schema``, or ``mysql`` database name
+    to create a database because these names are reserved for system
+    databases.  Valid characters in a database name are  - Upper and
+    lower case letters.  - Numbers.  - ``@``, ``?``, ``#``, and spaces
+    except at the beginning or end of   the database name.  - ``_`` is
+    allowed anywhere in the database name.  You cannot use these
+    characters in a database name. The maximum length of a database
+    name is 64 characters.
+  in: body
+  required: false
+  type: string
+name_2:
+  description: |
+    The user name for the database on instance
+    creation.
+  in: body
+  required: false
+  type: string
+name_3:
+  description: |
+    New name of the configuration group.
+  in: body
+  required: true
+  type: string
+password:
+  description: |
+    The password for those users on instance
+    creation.
+  in: body
+  required: false
+  type: string
+replica_count:
+  description: |
+    Number of replicas to create (defaults to 1).
+  in: body
+  required: false
+  type: integer
+replica_of:
+  description: |
+    ID or name of an existing instance to replicate
+    from.
+  in: body
+  required: false
+  type: string
+replica_of_1:
+  description: |
+    To detach a replica, set ``replica_of`` to null.
+  in: body
+  required: true
+  type: string
+size:
+  description: |
+    The volume size, in gigabytes (GB). A valid value
+    is from 1 to 50.
+  in: body
+  required: true
+  type: integer
+slave_of:
+  description: |
+    To detach a replica, set ``slave_of`` to null.
+  in: body
+  required: true
+  type: string
+type:
+  description: |
+    The volume type to use. You can list the
+    available volume types on your system by using the ``cinder type-
+    list`` command.  If you want to specify a volume type, you must
+    also specify a volume size.
+  in: body
+  required: false
+  type: string
+updated:
+  description: |
+    The date and time when the resource was updated.
+
+    The date and time stamp format is `ISO 8601
+    <https://en.wikipedia.org/wiki/ISO_8601>`_:
+
+    ::
+
+       CCYY-MM-DDThh:mm:ss±hh:mm
+
+    The ``±hh:mm`` value, if included, is the time zone as an offset
+    from UTC.
+
+    For example, ``2015-08-27T09:49:58-05:00``.
+
+    The UTC time zone is assumed.
+  in: body
+  required: true
+  type: string
+users:
+  description: |
+    A ``users`` object.
+  in: body
+  required: true
+  type: array
+values:
+  description: |
+    Dictionary that lists configuration parameter
+    names and associated values.
+  in: body
+  required: true
+  type: string
+values_1:
+  description: |
+    Dictionary that lists configuration parameter
+    names and associated values.
+  in: body
+  required: true
+  type: object
+

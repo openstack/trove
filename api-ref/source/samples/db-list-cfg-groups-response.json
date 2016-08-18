@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "datastore_name": "mysql",
+            "updated": "2015-07-01T16:38:27",
+            "name": "group1",
+            "created": "2015-07-01T16:38:27",
+            "datastore_version_name": "5.6",
+            "id": "2aa51628-5c42-4086-8682-137caffd2ba6",
+            "datastore_version_id": "2dc7faa0-efff-4c2b-8cff-bcd949c518a5",
+            "description": null
+        }
+    ]
+}

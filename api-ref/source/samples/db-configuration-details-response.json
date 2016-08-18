@@ -1,0 +1,17 @@
+{
+    "configuration": {
+        "created": "2014-10-30T12:30:00",
+        "datastore_name": "mysql",
+        "datastore_version_id": "b00000b0-00b0-0b00-00b0-000b000000bb",
+        "datastore_version_name": "5.5",
+        "description": "example description",
+        "id": "43a6ea86-e959-4735-9e46-a6a5d4a2d80f",
+        "instance_count": 0,
+        "name": "example-configuration-name",
+        "updated": "2014-10-30T12:30:00",
+        "values": {
+            "collation_server": "latin1_swedish_ci",
+            "connect_timeout": 120
+        }
+    }
+}

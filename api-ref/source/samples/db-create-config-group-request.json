@@ -1,0 +1,15 @@
+{
+    "configuration": {
+        "datastore": [
+            {
+                "type": "mysql"
+            }
+        ],
+        "values": [
+            {
+                "sync_binlog": 1
+            }
+        ],
+        "name": "group1"
+    }
+}

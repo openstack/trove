@@ -1,0 +1,16 @@
+{
+    "configuration": {
+        "datastore_name": "mysql",
+        "updated": "2015-11-22T19:07:20",
+        "values": {
+            "connect_timeout": 17
+        },
+        "name": "group1",
+        "created": "2015-11-20T20:51:24",
+        "datastore_version_name": "5.6",
+        "instance_count": 1,
+        "id": "1c8a4fdd-690c-4e6e-b2e1-148b8d738770",
+        "datastore_version_id": "b9f97132-467b-4f8e-b12d-947cfc223ac3",
+        "description": null
+    }
+}

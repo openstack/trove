@@ -1,0 +1,7 @@
+{
+    "configuration": {
+        "values": {
+            "connect_timeout": 17
+        }
+    }
+}

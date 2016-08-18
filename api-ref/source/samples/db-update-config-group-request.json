@@ -1,0 +1,9 @@
+{
+    "configuration": {
+        "values": {
+            "connect_timeout": 18
+        },
+        "name": "new_name",
+        "description": "New description"
+    }
+}

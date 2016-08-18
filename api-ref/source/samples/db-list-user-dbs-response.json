@@ -1,0 +1,13 @@
+{
+    "user": {
+        "name": "exampleuser",
+        "databases": [
+            {
+                "name": "databaseA"
+            },
+            {
+                "name": "databaseB"
+            }
+        ]
+    }
+}
