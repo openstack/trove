@@ -22,7 +22,7 @@ python-cinderclient!=1.7.0,!=1.7.1,>=1.6.0 # Apache-2.0
 python-keystoneclient!=2.1.0,>=2.0.0 # Apache-2.0
 python-swiftclient>=2.2.0 # Apache-2.0
 python-designateclient>=1.5.0 # Apache-2.0
-python-neutronclient>=4.2.0 # Apache-2.0
+python-neutronclient>=5.1.0 # Apache-2.0
 iso8601>=0.1.11 # MIT
 jsonschema!=2.5.0,<3.0.0,>=2.0.0 # MIT
 Jinja2>=2.8 # BSD License (3 clause)
@@ -40,8 +40,8 @@ Babel>=2.3.4 # BSD
 six>=1.9.0 # MIT
 stevedore>=1.16.0 # Apache-2.0
 oslo.messaging>=5.2.0 # Apache-2.0
-osprofiler>=1.3.0 # Apache-2.0
+osprofiler>=1.4.0 # Apache-2.0
 oslo.log>=1.14.0 # Apache-2.0
 oslo.db>=4.10.0 # Apache-2.0
 enum34;python_version=='2.7' or python_version=='2.6' or python_version=='3.3' # BSD
-xmltodict>=0.10.1  # MIT
+xmltodict>=0.10.1 # MIT
