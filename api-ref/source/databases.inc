@@ -51,8 +51,6 @@ Create database
 
 Creates a database within an instance.
 
-The ``name`` of the database is a required attribute.
-
 Error response codes:202,413,405,404,403,401,400,422,503,500,501,
 
 

@@ -17,13 +17,13 @@ Enables the root user for a database instance and returns the root password.
 This operation generates a root password for the root user and
 enables the root user to log in from any host.
 
-Changes that you make as a root user can impact the database
-instance and API operations in unpredictable and detrimental ways.
-When you enable the root user, you accept the possibility that we
-cannot support your database instance. We might not be able to
-assist you if you change core MySQL settings. These changes can be,
-but are not limited to, turning off bin logs, removing users that
-we use to access your instance, and so on.
+Changes that you make as a root user can impact the database instance
+and API operations in unpredictable and detrimental ways.  When you
+enable the root user, you accept the possibility that we cannot
+support your database instance. We might not be able to assist you if
+you change core database settings. These changes can be, but are not
+limited to, turning off bin logs, removing users that we use to access
+your instance, and so on.
 
 
 Normal response codes: 200
@@ -202,16 +202,19 @@ This table lists the required attributes for creating users:
 
 **Required attributes for user**
 
-+-----------------+---------------------------------------------------------------------+------------------------------------+----------+
-|    Applies to   |                                 Name                                |            Description             | Required |
-+-----------------+---------------------------------------------------------------------+------------------------------------+----------+
-|       User      |                                 name                                | Name of the user for the database. |   Yes    |
-+-----------------+---------------------------------------------------------------------+------------------------------------+----------+
-|     password    |                  User password for database access.                 |                Yes                 |          |
-+-----------------+---------------------------------------------------------------------+------------------------------------+----------+
-| (database) name | Name of the database that the user can access. You must specify one |                 No                 |          |
-|                 |                       or more database names.                       |                                    |          |
-+-----------------+---------------------------------------------------------------------+------------------------------------+----------+
++-----------------+------+------------------------------------+----------+
+|    Applies to   | Name |            Description             | Required |
++-----------------+------+------------------------------------+----------+
+|       User      | name | Name of the user for the database. |   Yes    |
++-----------------+------+------------------------------------+----------+
+|     password    |      | User password for database access. |   Yes    |
++-----------------+------+-------------------------+----------+----------+
+| (database) name |      | Name of the database(s) that the   |          |
+|                 |      | user can access. You can specify   |   No     |
+|                 |      | one or more database names.        |          |
++-----------------+------+------------------------------------+----------+
+
+Name of the database that the user can access. You can specify one or more database names.
 
  **Notes**
 
