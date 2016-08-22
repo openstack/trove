@@ -139,7 +139,7 @@ common_opts = [
                help="Maximum time (in seconds) to wait for Guest Agent 'quick'"
                     "requests (such as retrieving a list of users or "
                     "databases)."),
-    cfg.IntOpt('agent_call_high_timeout', default=60 * 5,
+    cfg.IntOpt('agent_call_high_timeout', default=60 * 10,
                help="Maximum time (in seconds) to wait for Guest Agent 'slow' "
                     "requests (such as restarting the database)."),
     cfg.IntOpt('agent_replication_snapshot_timeout', default=36000,
