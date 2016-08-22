@@ -21,8 +21,9 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.notification import (DBaaSClusterGrow, DBaaSClusterShrink,
-                                       DBaaSClusterResetStatus)
+from trove.common.notification import DBaaSClusterGrow, DBaaSClusterShrink
+from trove.common.notification import DBaaSClusterResetStatus
+from trove.common.notification import DBaaSClusterUpgrade
 from trove.common.notification import StartNotification
 from trove.common import remote
 from trove.common import server_group as srv_grp
@@ -310,6 +311,13 @@ class Cluster(object):
             with StartNotification(context, cluster_id=self.id):
                 return self.reset_status()
 
+        elif action == 'upgrade':
+            context.notification = DBaaSClusterUpgrade(context, request=req)
+            dv_id = param['datastore_version']
+            dv = datastore_models.DatastoreVersion.load(self.datastore, dv_id)
+            with StartNotification(context, cluster_id=self.id,
+                                   datastore_version=dv.id):
+                return self.upgrade(dv)
         else:
             raise exception.BadRequest(_("Action %s not supported") % action)
 
@@ -318,6 +326,9 @@ class Cluster(object):
 
     def shrink(self, instance_ids):
             raise exception.BadRequest(_("Action 'shrink' not supported"))
+
+    def upgrade(self, datastore_version):
+            raise exception.BadRequest(_("Action 'upgrade' not supported"))
 
     @staticmethod
     def load_instance(context, cluster_id, instance_id):
