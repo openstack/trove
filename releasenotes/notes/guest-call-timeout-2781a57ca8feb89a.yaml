@@ -1,0 +1,4 @@
+fixes:
+  - Increased agent_call_high_timeout config setting to 10 minutes.  This
+    configures the length of time that the taskmanager will wait for an
+    asynchronous guest agent call to complete.
