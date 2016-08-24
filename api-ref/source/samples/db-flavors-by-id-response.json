@@ -1,5 +1,6 @@
 {
     "flavor": {
+        "ephemeral": 0,
         "id": 1,
         "links": [
             {
