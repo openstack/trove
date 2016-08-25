@@ -9,7 +9,7 @@ reno>=0.1.1 # Apache2
 coverage>=3.6 # Apache-2.0
 nose # LGPL
 nosexcover # BSD
-openstack-doc-tools>=0.23 # Apache-2.0
+openstack-doc-tools<1.0.0,>=0.23 # Apache-2.0
 openstack.nose-plugin>=0.7 # Apache-2.0
 WebTest>=2.0 # MIT
 wsgi-intercept>=0.6.1 # MIT License
