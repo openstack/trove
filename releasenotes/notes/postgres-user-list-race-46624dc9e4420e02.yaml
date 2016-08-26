@@ -1,0 +1,4 @@
+---
+fixes:
+  - Close the race condition window in user-list
+    call. Closes-Bug 1617464

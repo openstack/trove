@@ -19,7 +19,6 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.guestagent.datastore.experimental.postgresql import pgutil
-from trove.guestagent.db import models
 
 LOG = logging.getLogger(__name__)
 CONF = cfg.CONF
@@ -78,17 +77,8 @@ class PgSqlAccess(object):
         Return a list of serialized Postgres databases.
         """
 
-        if self.user_exists(username):
-            return [db.serialize() for db in self._get_databases_for(username)]
+        user = self._find_user(context, username)
+        if user is not None:
+            return user.databases
 
         raise exception.UserNotFound(username)
-
-    def _get_databases_for(self, username):
-        """Return all Postgres databases accessible by a given user."""
-        results = pgutil.query(
-            pgutil.AccessQuery.list(user=username),
-            timeout=30,
-        )
-        return [models.PostgreSQLSchema(
-            row[0].strip(), character_set=row[1], collate=row[2])
-            for row in results]

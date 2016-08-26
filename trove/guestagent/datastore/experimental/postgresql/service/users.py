@@ -141,16 +141,23 @@ class PgSqlUsers(PgSqlAccess):
             pgutil.UserQuery.list(ignore=cfg.get_ignored_users()),
             timeout=30,
         )
-        return [self._build_user(context, row[0].strip()) for row in results]
 
-    def _build_user(self, context, username):
+        names = set([row[0].strip() for row in results])
+        return [self._build_user(context, name, results) for name in names]
+
+    def _build_user(self, context, username, acl=None):
         """Build a model representation of a Postgres user.
         Include all databases it has access to.
         """
         user = models.PostgreSQLUser(username)
-        dbs = self.list_access(context, username, None)
-        for d in dbs:
-            user.databases.append(d)
+        if acl:
+            dbs = [models.PostgreSQLSchema(row[1].strip(),
+                                           character_set=row[2],
+                                           collate=row[3])
+                   for row in acl if row[0] == username and row[1] is not None]
+            for d in dbs:
+                user.databases.append(d.serialize())
+
         return user
 
     def delete_user(self, context, user):
@@ -199,7 +206,7 @@ class PgSqlUsers(PgSqlAccess):
         )
 
         if results:
-            return self._build_user(context, username)
+            return self._build_user(context, username, results)
 
         return None
 

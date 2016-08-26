@@ -129,13 +129,15 @@ class UserQuery(object):
     def list(cls, ignore=()):
         """Query to list all users."""
 
-        statement = "SELECT usename FROM pg_catalog.pg_user"
+        statement = (
+            "SELECT usename, datname, pg_encoding_to_char(encoding), "
+            "datcollate FROM pg_catalog.pg_user "
+            "LEFT JOIN pg_catalog.pg_database "
+            "ON CONCAT(usename, '=CTc/os_admin') = ANY(datacl::text[]) "
+            "WHERE (datistemplate ISNULL OR datistemplate = false)")
         if ignore:
-            # User a simple tautology so all clauses can be AND'ed without
-            # crazy special logic.
-            statement += " WHERE 1=1"
-        for name in ignore:
-            statement += " AND usename != '{name}'".format(name=name)
+            for name in ignore:
+                statement += " AND usename != '{name}'".format(name=name)
 
         return statement
 
@@ -156,10 +158,7 @@ class UserQuery(object):
     def get(cls, name):
         """Query to get a single user."""
 
-        return (
-            "SELECT usename FROM pg_catalog.pg_user "
-            "WHERE usename = '{name}'".format(name=name)
-        )
+        return cls.list() + " AND usename = '{name}'".format(name=name)
 
     @classmethod
     def create(cls, name, password, encrypt_password=None, *options):
@@ -225,18 +224,6 @@ class UserQuery(object):
 
 
 class AccessQuery(object):
-
-    @classmethod
-    def list(cls, user):
-        """Query to list grants for a user."""
-
-        return (
-            "SELECT datname, pg_encoding_to_char(encoding), datcollate "
-            "FROM pg_database "
-            "WHERE datistemplate = false "
-            "AND 'user \"{user}\"=CTc/{admin}' = ANY (datacl)".format(
-                user=user, admin=PG_ADMIN)
-        )
 
     @classmethod
     def grant(cls, user, database):
