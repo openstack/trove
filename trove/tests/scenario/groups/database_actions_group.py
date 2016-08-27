@@ -180,4 +180,4 @@ class DatabaseActionsInstDeleteWaitGroup(TestGroup):
     @test
     def wait_for_delete_initialized_instance(self):
         """Wait for the initialized instance to delete."""
-        self.instance_create_runner.run_wait_for_error_init_delete()
+        self.instance_create_runner.run_wait_for_init_delete()
