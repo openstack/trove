@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
+
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 
@@ -20,7 +22,11 @@ from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import instance as rd_instance
+from trove.common.stream_codecs import PropertiesCodec
 from trove.common import utils as utils
+from trove.guestagent.common.configuration import ConfigurationManager
+from trove.guestagent.common.configuration import ImportOverrideStrategy
+from trove.guestagent.common import guestagent_utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.db2 import system
 from trove.guestagent.datastore import service
@@ -28,6 +34,9 @@ from trove.guestagent.db import models
 
 CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
+MOUNT_POINT = CONF.db2.mount_point
+FAKE_CFG = os.path.join(MOUNT_POINT, "db2.cfg.fake")
+DB2_DEFAULT_CFG = os.path.join(MOUNT_POINT, "db2_default_dbm.cfg")
 
 
 class DB2App(object):
@@ -43,6 +52,87 @@ class DB2App(object):
         )
         LOG.debug("state_change_wait_time = %s." % self.state_change_wait_time)
         self.status = status
+        self.dbm_default_config = {}
+        self.init_config()
+
+    def init_config(self):
+        if not operating_system.exists(MOUNT_POINT, True):
+            operating_system.create_directory(MOUNT_POINT,
+                                              system.DB2_INSTANCE_OWNER,
+                                              system.DB2_INSTANCE_OWNER,
+                                              as_root=True)
+        """
+        The database manager configuration file - db2systm is stored  under the
+        /home/db2inst1/sqllib directory. To update the configuration
+        parameters, DB2 recommends using the command - UPDATE DBM CONFIGURATION
+        commands instead of directly updating the config file.
+
+        The existing PropertiesCodec implementation has been reused to handle
+        text-file operations. Configuration overrides are implemented using
+        the ImportOverrideStrategy of the guestagent configuration manager.
+        """
+        LOG.debug("Initialize DB2 configuration")
+        revision_dir = (
+            guestagent_utils.build_file_path(
+                os.path.join(MOUNT_POINT,
+                             os.path.dirname(system.DB2_INSTANCE_OWNER)),
+                ConfigurationManager.DEFAULT_STRATEGY_OVERRIDES_SUB_DIR)
+        )
+        if not operating_system.exists(FAKE_CFG):
+            operating_system.write_file(FAKE_CFG, '', as_root=True)
+            operating_system.chown(FAKE_CFG, system.DB2_INSTANCE_OWNER,
+                                   system.DB2_INSTANCE_OWNER, as_root=True)
+        self.configuration_manager = (
+            ConfigurationManager(FAKE_CFG, system.DB2_INSTANCE_OWNER,
+                                 system.DB2_INSTANCE_OWNER,
+                                 PropertiesCodec(delimiter='='),
+                                 requires_root=True,
+                                 override_strategy=ImportOverrideStrategy(
+                                     revision_dir, "cnf"))
+        )
+        '''
+        Below we are getting the database manager default configuration and
+        saving it to the DB2_DEFAULT_CFG file. This is done to help with
+        correctly resetting the configurations to the original values when
+        user wants to detach a user-defined configuration group from an
+        instance. DB2 provides a command to reset the database manager
+        configuration parameters (RESET DBM CONFIGURATION) but this command
+        resets all the configuration parameters to the system defaults. When
+        we build a DB2 guest image there are certain configurations
+        parameters like SVCENAME which we set so that the instance can start
+        correctly. Hence resetting this value to the system default will
+        render the instance in an unstable state. Instead, the recommended
+        way for resetting a subset of configuration parameters is to save
+        the output of GET DBM CONFIGURATION of the original configuration
+        and then call UPDATE DBM CONFIGURATION to reset the value.
+          http://www.ibm.com/support/knowledgecenter/SSEPGG_10.5.0/
+        com.ibm.db2.luw.admin.cmd.doc/doc/r0001970.html
+        '''
+        if not operating_system.exists(DB2_DEFAULT_CFG):
+            run_command(system.GET_DBM_CONFIGURATION % {
+                "dbm_config": DB2_DEFAULT_CFG})
+        self.process_default_dbm_config()
+
+    def process_default_dbm_config(self):
+        """
+        Once the default database manager configuration is saved to
+        DB2_DEFAULT_CFG, we try to store the configuration parameters
+        and values into a dictionary object, dbm_default_config. For
+        example, a sample content of the database manager configuration
+        file looks like this:
+         Buffer pool                         (DFT_MON_BUFPOOL) = OFF
+        We need to process this so that we key it on the configuration
+        parameter DFT_MON_BUFPOOL.
+        """
+        with open(DB2_DEFAULT_CFG) as cfg_file:
+            for line in cfg_file:
+                if '=' in line:
+                    item = line.rstrip('\n').split(' = ')
+                    fIndex = item[0].rfind('(')
+                    lIndex = item[0].rfind(')')
+                    if fIndex > -1:
+                        param = item[0][fIndex + 1: lIndex]
+                        self.dbm_default_config.update({param: item[1]})
 
     def update_hostname(self):
         """
@@ -92,14 +182,8 @@ class DB2App(object):
                 "Command to disable DB2 server on boot failed."))
 
     def start_db_with_conf_changes(self, config_contents):
-        '''
-         Will not be implementing configuration change API for DB2 in
-         the Kilo release. Currently all that this method does is to start
-         the DB2 server without any configuration changes. Looks like
-         this needs to be implemented to enable volume resize on the guest
-         agent side.
-        '''
         LOG.info(_("Starting DB2 with configuration changes."))
+        self.configuration_manager.save_configuration(config_contents)
         self.start_db(True)
 
     def start_db(self, update_db=False):
@@ -141,6 +225,50 @@ class DB2App(object):
             self.start_db()
         finally:
             self.status.end_restart()
+
+    def update_overrides(self, context, overrides, remove=False):
+        if overrides:
+            self.apply_overrides(overrides)
+
+    def remove_overrides(self):
+        config = self.configuration_manager.get_user_override()
+        self._reset_config(config)
+        self.configuration_manager.remove_user_override()
+
+    def apply_overrides(self, overrides):
+        self._apply_config(overrides)
+        self.configuration_manager.apply_user_override(overrides)
+
+    def _update_dbm_config(self, param, value):
+        out, err = run_command(
+            system.UPDATE_DBM_CONFIGURATION % {
+                "parameter": param,
+                "value": value})
+        if err:
+            if err.is_warning():
+                LOG.warning(err)
+            else:
+                LOG.error(err)
+                raise RuntimeError(_("Failed to update config %s") % param)
+
+    def _reset_config(self, config):
+        try:
+            for k, v in config.iteritems():
+                default_cfg_value = self.dbm_default_config[k]
+                self._update_dbm_config(k, default_cfg_value)
+        except Exception:
+            LOG.exception(_("DB2 configuration reset failed."))
+            raise RuntimeError(_("DB2 configuration reset failed."))
+        LOG.info(_("DB2 configuration reset completed."))
+
+    def _apply_config(self, config):
+        try:
+            for k, v in config.items():
+                self._update_dbm_config(k, v)
+        except Exception:
+            LOG.exception(_("DB2 configuration apply failed"))
+            raise RuntimeError(_("DB2 configuration apply failed"))
+        LOG.info(_("DB2 config apply completed."))
 
 
 class DB2AppStatus(service.BaseDbStatus):

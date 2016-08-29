@@ -58,3 +58,6 @@ GET_DB_SIZE = (
     "db2 call get_dbsize_info(?, ?, ?, -1) ")
 GET_DB_NAMES = ("find /home/db2inst1/db2inst1/backup/ -type f -name '*.001' |"
                 " grep -Po \"(?<=backup/)[^.']*(?=\.)\"")
+GET_DBM_CONFIGURATION = "db2 get dbm configuration > %(dbm_config)s"
+UPDATE_DBM_CONFIGURATION = ("db2 update database manager configuration using "
+                            "%(parameter)s %(value)s")

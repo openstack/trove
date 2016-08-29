@@ -12,12 +12,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from mock import DEFAULT
 from mock import MagicMock
 from mock import patch
 from testtools.matchers import Is, Equals, Not
 
 from trove.common.instance import ServiceStatuses
 from trove.guestagent import backup
+from trove.guestagent.common import configuration
+from trove.guestagent.common.configuration import ImportOverrideStrategy
+from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.db2 import (
     manager as db2_manager)
 from trove.guestagent.datastore.experimental.db2 import (
@@ -30,7 +34,11 @@ from trove.tests.unittests.guestagent.test_datastore_manager import \
 
 class GuestAgentDB2ManagerTest(DatastoreManagerTest):
 
-    def setUp(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    @patch.object(db2_service.DB2App, 'process_default_dbm_config')
+    def setUp(self, *arg, **kwargs):
         super(GuestAgentDB2ManagerTest, self).setUp('db2')
         self.real_status = db2_service.DB2AppStatus.set_status
 
@@ -58,6 +66,9 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
         self.orig_delete_user = db2_service.DB2Admin.delete_user
         self.orig_update_hostname = db2_service.DB2App.update_hostname
         self.orig_backup_restore = backup.restore
+        self.orig_init_config = db2_service.DB2App.init_config
+        self.orig_update_overrides = db2_service.DB2App.update_overrides
+        self.orig_remove_overrides = db2_service.DB2App.remove_overrides
 
     def tearDown(self):
         super(GuestAgentDB2ManagerTest, self).tearDown()
@@ -78,6 +89,9 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
         db2_service.DB2Admin.delete_user = self.orig_delete_user
         db2_service.DB2App.update_hostname = self.orig_update_hostname
         backup.restore = self.orig_backup_restore
+        db2_service.DB2App.init_config = self.orig_init_config
+        db2_service.DB2App.update_overrides = self.orig_update_overrides
+        db2_service.DB2App.remove_overrides = self.orig_remove_overrides
 
     def test_update_status(self):
         mock_status = MagicMock()
@@ -97,8 +111,9 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
     def test_prepare_from_backup(self):
         self._prepare_dynamic(['db2'], backup_id='123backup')
 
+    @patch.object(configuration.ConfigurationManager, 'save_configuration')
     def _prepare_dynamic(self, packages=None, databases=None, users=None,
-                         config_content=None, device_path='/dev/vdb',
+                         config_content='MockContent', device_path='/dev/vdb',
                          is_db_installed=True, backup_id=None, overrides=None):
 
         backup_info = {'id': backup_id,
@@ -152,6 +167,9 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
             backup.restore.assert_any_call(self.context,
                                            backup_info,
                                            '/home/db2inst1/db2inst1')
+        self.assertTrue(
+            self.manager.configuration_manager.save_configuration.called
+        )
 
     def test_restart(self):
         mock_status = MagicMock()
@@ -170,6 +188,12 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
         self.manager.stop_db(self.context)
         db2_service.DB2App.stop_db.assert_any_call(
             do_not_start_on_reboot=False)
+
+    def test_start_db_with_conf_changes(self):
+        with patch.object(db2_service.DB2App, 'start_db_with_conf_changes'):
+            self.manager.start_db_with_conf_changes(self.context, 'something')
+            db2_service.DB2App.start_db_with_conf_changes.assert_any_call(
+                'something')
 
     def test_create_database(self):
         mock_status = MagicMock()
@@ -228,13 +252,19 @@ class GuestAgentDB2ManagerTest(DatastoreManagerTest):
         self.assertThat(users, Equals(get_user_mock.return_value))
         get_user_mock.assert_any_call(username, hostname)
 
-    def test_reset_configuration(self):
-        try:
-            configuration = {'config_contents': 'some junk'}
-            self.manager.reset_configuration(self.context, configuration)
-        except Exception:
-            self.fail("reset_configuration raised exception unexpectedly.")
-
     def test_rpc_ping(self):
         output = self.manager.rpc_ping(self.context)
         self.assertTrue(output)
+
+    def test_update_update_overrides(self):
+        configuration = {"DIAGSIZE": 50}
+        db2_service.DB2App.update_overrides = MagicMock()
+        self.manager.update_overrides(self.context, configuration, False)
+        db2_service.DB2App.update_overrides.assert_any_call(self.context,
+                                                            configuration)
+
+    def test_reset_update_overrides(self):
+        configuration = {}
+        db2_service.DB2App.remove_overrides = MagicMock()
+        self.manager.update_overrides(self.context, configuration, True)
+        db2_service.DB2App.remove_overrides.assert_any_call()

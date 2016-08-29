@@ -3247,7 +3247,12 @@ class VerticaAppTest(trove_testtools.TestCase):
 
 class DB2AppTest(trove_testtools.TestCase):
 
-    def setUp(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    @patch.object(db2service, 'run_command')
+    @patch.object(db2service.DB2App, 'process_default_dbm_config')
+    def setUp(self, *args, **kwargs):
         super(DB2AppTest, self).setUp()
         self.orig_utils_execute_with_timeout = (
             db2service.utils.execute_with_timeout)
@@ -3258,6 +3263,7 @@ class DB2AppTest(trove_testtools.TestCase):
         self.appStatus = FakeAppStatus(self.FAKE_ID,
                                        rd_instance.ServiceStatuses.NEW)
         self.db2App = db2service.DB2App(self.appStatus)
+        self.db2App.init_config()
         dbaas.CONF.guest_id = self.FAKE_ID
 
     def tearDown(self):
@@ -3279,7 +3285,12 @@ class DB2AppTest(trove_testtools.TestCase):
         self.db2App.stop_db()
         self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
 
-    def test_restart_server(self):
+    @patch.object(ImportOverrideStrategy, '_initialize_import_directory')
+    @patch.multiple(operating_system, exists=DEFAULT, write_file=DEFAULT,
+                    chown=DEFAULT, chmod=DEFAULT)
+    @patch.object(db2service, 'run_command')
+    @patch.object(db2service.DB2App, 'process_default_dbm_config')
+    def test_restart_server(self, *args, **kwargs):
         self.appStatus.set_next_status(rd_instance.ServiceStatuses.RUNNING)
         mock_status = MagicMock(return_value=None)
         app = db2service.DB2App(mock_status)
@@ -3301,6 +3312,35 @@ class DB2AppTest(trove_testtools.TestCase):
                           return_value=None):
             self.db2App.start_db()
             self.assert_reported_status(rd_instance.ServiceStatuses.NEW)
+
+    @patch.object(ConfigurationManager, 'save_configuration')
+    @patch.object(db2service.DB2App, 'start_db')
+    def test_start_db_with_conf_changes(self, start_db, save_cfg):
+        config = {'DIAGSIZE': '10'}
+        self.db2App.start_db_with_conf_changes(config)
+        start_db.assert_called_once_with(True)
+        save_cfg.assert_called_once_with(config)
+
+    @patch.object(ConfigurationManager, 'apply_user_override')
+    @patch.object(db2service.DB2App, '_apply_config')
+    def test_update_overrides(self, apply_user_override, apply_config):
+        overrides = {'DIAGSIZE': 50}
+        context = MagicMock()
+        self.db2App.update_overrides(context, overrides)
+        apply_user_override.assert_called_once_with(overrides)
+        apply_config.assert_called_once_with(overrides)
+
+    @patch.object(ConfigurationManager, 'get_user_override')
+    @patch.object(ConfigurationManager, 'remove_user_override')
+    @patch.object(db2service.DB2App, '_reset_config')
+    def test_remove_overrides(self, reset_config, remove_user_override,
+                              get_user_override):
+        overrides = {'DIAGSIZE': 50}
+        get_user_override.return_value = overrides
+        self.db2App.remove_overrides()
+        get_user_override.assert_called_once()
+        reset_config.assert_called_once_with(overrides)
+        remove_user_override.assert_called_once()
 
 
 class DB2AdminTest(trove_testtools.TestCase):
