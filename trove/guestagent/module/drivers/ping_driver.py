@@ -16,17 +16,10 @@
 
 from datetime import date
 
-from oslo_log import log as logging
-
-from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.guestagent.common import operating_system
 from trove.guestagent.module.drivers import module_driver
-
-
-LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
 
 
 class PingDriver(module_driver.ModuleDriver):

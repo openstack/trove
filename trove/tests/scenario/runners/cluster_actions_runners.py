@@ -19,16 +19,12 @@ from proboscis import SkipTest
 import six
 import time as timer
 
-from trove.common import cfg
 from trove.common import exception
 from trove.common.utils import poll_until
 from trove.tests.scenario.helpers.test_helper import DataType
 from trove.tests.scenario.runners.test_runners import TestRunner
 from trove.tests.util.check import TypeCheck
 from troveclient.compat import exceptions
-
-
-CONF = cfg.CONF
 
 
 class ClusterActionsRunner(TestRunner):

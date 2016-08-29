@@ -13,13 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from trove.common import cfg
 from trove.guestagent.datastore.experimental.postgresql import pgutil
 from trove.guestagent.datastore.experimental.postgresql.service.users import (
     PgSqlUsers)
 from trove.guestagent.db import models
-
-CONF = cfg.CONF
 
 
 class PgSqlRoot(PgSqlUsers):

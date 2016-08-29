@@ -15,7 +15,6 @@
 
 from oslo_log import log as logging
 
-from trove.common import cfg
 from trove.common import exception
 from trove.common.remote import create_guest_client
 from trove.common import utils
@@ -24,7 +23,6 @@ from trove.guestagent.db import models as guest_models
 from trove.instance import models as base_models
 
 
-CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 

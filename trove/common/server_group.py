@@ -18,12 +18,10 @@ import six
 
 from oslo_log import log as logging
 
-from trove.common import cfg
 from trove.common.i18n import _
 from trove.common.remote import create_nova_client
 
 
-CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 

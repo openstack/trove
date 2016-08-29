@@ -14,15 +14,8 @@
 #    under the License.
 #
 
-from oslo_log import log as logging
-
-from trove.common import cfg
 from trove.guestagent.datastore.galera_common import service as galera_service
 from trove.guestagent.datastore.mysql_common import service as mysql_service
-
-LOG = logging.getLogger(__name__)
-
-CONF = cfg.CONF
 
 
 class PXCApp(galera_service.GaleraApp):

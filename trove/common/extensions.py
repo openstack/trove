@@ -26,12 +26,10 @@ import webob.exc
 
 from trove.common import base_exception as exception
 from trove.common import base_wsgi
-from trove.common import cfg
 from trove.common.i18n import _
 from trove.common import wsgi
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
 DEFAULT_XMLNS = "http://docs.openstack.org/trove"
 XMLNS_ATOM = "http://www.w3.org/2005/Atom"
 

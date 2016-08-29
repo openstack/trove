@@ -13,9 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-from trove.common import cfg
-
-CONF = cfg.CONF
 
 url_ref = {
     "type": "string",

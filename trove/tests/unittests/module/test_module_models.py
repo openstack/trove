@@ -16,13 +16,10 @@
 
 from mock import Mock, patch
 
-from trove.common import cfg
 from trove.module import models
 from trove.taskmanager import api as task_api
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
-
-CONF = cfg.CONF
 
 
 class CreateModuleTest(trove_testtools.TestCase):

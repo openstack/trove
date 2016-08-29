@@ -21,12 +21,9 @@ from mock import patch
 from trove.cluster.views import ClusterInstanceDetailView
 from trove.cluster.views import ClusterView
 from trove.cluster.views import load_view
-from trove.common import cfg
 from trove.common.strategies.cluster.experimental.mongodb.api import (
     MongoDbClusterView)
 from trove.tests.unittests import trove_testtools
-
-CONF = cfg.CONF
 
 
 class ClusterViewTest(trove_testtools.TestCase):
