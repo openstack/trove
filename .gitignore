@@ -30,11 +30,7 @@ install-guide/build/
 
 # Docs
 .DS_Store
-apidocs/.DS_Store
-apidocs/src/.DS_Store
-apidocs/src/samples/.DS_Store
-apidocs/includewars.xml
-apidocs/src/bookinfo.xml
+api-ref/build/
 
 # Files created by releasenotes build
 releasenotes/build
