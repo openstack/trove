@@ -260,8 +260,7 @@ class BackupRunner(TestRunner):
             self.unauth_client.backups.get, self.backup_info.id)
         # we're using a different client, so we'll check the return code
         # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code=expected_http_code,
-                                client=self.unauth_client)
+        self.assert_client_code(expected_http_code, client=self.unauth_client)
 
     def run_add_data_for_inc_backup_1(self):
         self.backup_host = self.get_instance_host()
@@ -304,7 +303,7 @@ class BackupRunner(TestRunner):
     def assert_restore_from_backup(self, backup_ref, suffix='',
                                    expected_http_code=200):
         result = self._restore_from_backup(backup_ref, suffix=suffix)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.assert_equal('BUILD', result.status,
                           'Unexpected instance status')
         return result.id
@@ -374,7 +373,7 @@ class BackupRunner(TestRunner):
     def assert_delete_restored_instance(
             self, instance_id, expected_http_code):
         self.auth_client.instances.delete(instance_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
     def run_delete_restored_inc_1_instance(self, expected_http_code=202):
         self.assert_delete_restored_instance(
@@ -412,8 +411,7 @@ class BackupRunner(TestRunner):
             self.unauth_client.backups.delete, self.backup_info.id)
         # we're using a different client, so we'll check the return code
         # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code=expected_http_code,
-                                client=self.unauth_client)
+        self.assert_client_code(expected_http_code, client=self.unauth_client)
 
     def run_delete_inc_2_backup(self, expected_http_code=202):
         self.assert_delete_backup(
@@ -423,7 +421,7 @@ class BackupRunner(TestRunner):
     def assert_delete_backup(
             self, backup_id, expected_http_code):
         self.auth_client.backups.delete(backup_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self._wait_until_backup_is_gone(backup_id)
 
     def _wait_until_backup_is_gone(self, backup_id):

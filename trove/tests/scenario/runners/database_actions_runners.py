@@ -53,7 +53,7 @@ class DatabaseActionsRunner(TestRunner):
     def assert_databases_create(self, instance_id, serial_databases_def,
                                 expected_http_code):
         self.auth_client.databases.create(instance_id, serial_databases_def)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.wait_for_database_create(instance_id, serial_databases_def)
         return serial_databases_def
 
@@ -64,7 +64,7 @@ class DatabaseActionsRunner(TestRunner):
     def assert_databases_list(self, instance_id, expected_database_defs,
                               expected_http_code, limit=2):
         full_list = self.auth_client.databases.list(instance_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         listed_databases = {database.name: database for database in full_list}
         self.assert_is_none(full_list.next,
                             "Unexpected pagination in the list.")
@@ -86,7 +86,7 @@ class DatabaseActionsRunner(TestRunner):
 
         # Test list pagination.
         list_page = self.auth_client.databases.list(instance_id, limit=limit)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
         self.assert_true(len(list_page) <= limit)
         if len(full_list) > limit:
@@ -104,7 +104,8 @@ class DatabaseActionsRunner(TestRunner):
                               "in the page.")
             list_page = self.auth_client.databases.list(
                 instance_id, marker=marker)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
             self.assert_pagination_match(
                 list_page, full_list, limit, len(full_list))
 
@@ -163,7 +164,7 @@ class DatabaseActionsRunner(TestRunner):
             database_name,
             expected_http_code):
         self.auth_client.databases.delete(instance_id, database_name)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self._wait_for_database_delete(instance_id, database_name)
 
     def _wait_for_database_delete(self, instance_id, deleted_database_name):

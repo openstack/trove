@@ -139,7 +139,7 @@ class ClusterActionsRunner(TestRunner):
     def assert_cluster_list(self, expected_count,
                             expected_http_code):
         count = len(self.auth_client.clusters.list())
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.assert_equal(expected_count, count, "Unexpected cluster count")
 
     def run_cluster_show(self, expected_http_code=200,
@@ -328,7 +328,8 @@ class ClusterActionsRunner(TestRunner):
             self, cluster_id, expected_task_name, expected_http_code,
             check_locality=True):
         if expected_http_code is not None:
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
         if expected_task_name:
             self._assert_cluster_response(cluster_id, expected_task_name,
                                           check_locality=check_locality)
@@ -365,7 +366,7 @@ class ClusterActionsRunner(TestRunner):
     def _assert_cluster_response(self, cluster_id, expected_task_name,
                                  expected_http_code=200, check_locality=True):
         cluster = self.auth_client.clusters.get(cluster_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self._assert_cluster_values(cluster, expected_task_name,
                                     check_locality=check_locality)
 
@@ -401,7 +402,7 @@ class ClusterActionsRunner(TestRunner):
                 "Cluster '%s' still existed after %s seconds."
                 % (cluster_id, self._time_since(t0)))
         except exceptions.NotFound:
-            self.assert_client_code(404)
+            self.assert_client_code(404, client=self.auth_client)
 
 
 class CassandraClusterActionsRunner(ClusterActionsRunner):

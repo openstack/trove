@@ -66,7 +66,7 @@ class UserActionsRunner(TestRunner):
     def assert_users_create(self, instance_id, serial_users_def,
                             expected_http_code):
         self.auth_client.users.create(instance_id, serial_users_def)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.wait_for_user_create(instance_id, serial_users_def)
         return serial_users_def
 
@@ -82,7 +82,7 @@ class UserActionsRunner(TestRunner):
 
         queried_user = self.auth_client.users.get(
             instance_id, user_name, user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self._assert_user_matches(queried_user, expected_user_def)
 
     def _assert_user_matches(self, user, expected_user_def):
@@ -100,7 +100,7 @@ class UserActionsRunner(TestRunner):
     def assert_users_list(self, instance_id, expected_user_defs,
                           expected_http_code, limit=2):
         full_list = self.auth_client.users.list(instance_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         listed_users = {user.name: user for user in full_list}
         self.assert_is_none(full_list.next,
                             "Unexpected pagination in the list.")
@@ -121,7 +121,7 @@ class UserActionsRunner(TestRunner):
 
         # Test list pagination.
         list_page = self.auth_client.users.list(instance_id, limit=limit)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
         self.assert_true(len(list_page) <= limit)
         if len(full_list) > limit:
@@ -138,7 +138,8 @@ class UserActionsRunner(TestRunner):
                               "Pagination marker should be the last element "
                               "in the page.")
             list_page = self.auth_client.users.list(instance_id, marker=marker)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
             self.assert_pagination_match(
                 list_page, full_list, limit, len(full_list))
 
@@ -155,7 +156,7 @@ class UserActionsRunner(TestRunner):
         user_name, user_host = self._get_user_name_host_pair(user_def)
         user_dbs = self.auth_client.users.list_access(instance_id, user_name,
                                                       hostname=user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
         expected_dbs = {db_def['name'] for db_def in user_def['databases']}
         listed_dbs = [db.name for db in user_dbs]
@@ -190,7 +191,7 @@ class UserActionsRunner(TestRunner):
                                   database, expected_http_code):
         self.auth_client.users.revoke(
             instance_id, user_name, database, hostname=user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         user_dbs = self.auth_client.users.list_access(
             instance_id, user_name, hostname=user_host)
         self.assert_false(any(db.name == database for db in user_dbs),
@@ -206,7 +207,7 @@ class UserActionsRunner(TestRunner):
                                  database, expected_http_code):
         self.auth_client.users.grant(
             instance_id, user_name, [database], hostname=user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         user_dbs = self.auth_client.users.list_access(
             instance_id, user_name, hostname=user_host)
         self.assert_true(any(db.name == database for db in user_dbs),
@@ -339,7 +340,7 @@ class UserActionsRunner(TestRunner):
 
         self.auth_client.users.update_attributes(
             instance_id, user_name, update_attribites, user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
         # Update the stored definitions with the new value.
         expected_def = None
@@ -388,7 +389,7 @@ class UserActionsRunner(TestRunner):
         user_name, user_host = self._get_user_name_host_pair(user_def)
 
         self.auth_client.users.delete(instance_id, user_name, user_host)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self._wait_for_user_delete(instance_id, user_name)
 
     def _wait_for_user_delete(self, instance_id, deleted_user_name):

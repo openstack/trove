@@ -40,7 +40,7 @@ class InstanceErrorCreateRunner(TestRunner):
             nics=self.instance_info.nics,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.error_inst_id = inst.id
 
     def run_create_error2_instance(self, expected_http_code=200):
@@ -57,7 +57,7 @@ class InstanceErrorCreateRunner(TestRunner):
             nics=self.instance_info.nics,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         self.error2_inst_id = inst.id
 
     def run_wait_for_error_instances(self, expected_states=['ERROR']):
@@ -75,7 +75,8 @@ class InstanceErrorCreateRunner(TestRunner):
         if not self.error_inst_id:
             raise SkipTest("No error instance created.")
 
-        instance = self.get_instance(self.error_inst_id)
+        instance = self.get_instance(
+            self.error_inst_id, self.auth_client)
         with CheckInstance(instance._info) as check:
             check.fault()
 
@@ -101,10 +102,12 @@ class InstanceErrorCreateRunner(TestRunner):
     def run_delete_error_instances(self, expected_http_code=202):
         if self.error_inst_id:
             self.auth_client.instances.delete(self.error_inst_id)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
         if self.error2_inst_id:
             self.auth_client.instances.delete(self.error2_inst_id)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
 
     def run_wait_for_error_delete(self, expected_states=['SHUTDOWN']):
         delete_ids = []

@@ -386,8 +386,7 @@ class ModuleRunner(TestRunner):
             self.unauth_client.modules.get, self.main_test_module.id)
         # we're using a different client, so we'll check the return code
         # on it explicitly, instead of depending on 'assert_raises'
-        self.assert_client_code(expected_http_code=expected_http_code,
-                                client=self.unauth_client)
+        self.assert_client_code(expected_http_code, client=self.unauth_client)
 
     def run_module_list(self):
         self.assert_module_list(
@@ -686,7 +685,7 @@ class ModuleRunner(TestRunner):
     def assert_module_list_instance(self, client, instance_id, expected_count,
                                     expected_http_code=200):
         module_list = client.instances.modules(instance_id)
-        self.assert_client_code(expected_http_code, client)
+        self.assert_client_code(expected_http_code, client=client)
         count = len(module_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of modules from list instance")
@@ -701,7 +700,7 @@ class ModuleRunner(TestRunner):
     def assert_module_instances(self, client, module_id, expected_count,
                                 expected_http_code=200):
         instance_list = client.modules.instances(module_id)
-        self.assert_client_code(expected_http_code, client)
+        self.assert_client_code(expected_http_code, client=client)
         count = len(instance_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of instances applied from module")
@@ -713,7 +712,7 @@ class ModuleRunner(TestRunner):
     def assert_module_query(self, client, instance_id, expected_count,
                             expected_http_code=200, expected_results=None):
         modquery_list = client.instances.module_query(instance_id)
-        self.assert_client_code(expected_http_code, client)
+        self.assert_client_code(expected_http_code, client=client)
         count = len(modquery_list)
         self.assert_equal(expected_count, count,
                           "Wrong number of modules from query")
@@ -736,7 +735,7 @@ class ModuleRunner(TestRunner):
                             expected_http_code=200):
         module_apply_list = client.instances.module_apply(
             instance_id, [module.id])
-        self.assert_client_code(expected_http_code, client)
+        self.assert_client_code(expected_http_code, client=client)
         admin_only = (not module.visible or module.auto_apply or
                       not module.tenant_id)
         expected_status = expected_status or 'OK'
@@ -856,7 +855,7 @@ class ModuleRunner(TestRunner):
             nics=self.instance_info.nics,
             modules=[module_id],
         )
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
         return inst.id
 
     def run_module_delete_applied(
@@ -873,7 +872,7 @@ class ModuleRunner(TestRunner):
     def assert_module_remove(self, client, instance_id, module_id,
                              expected_http_code=200):
         client.instances.module_remove(instance_id, module_id)
-        self.assert_client_code(expected_http_code, client)
+        self.assert_client_code(expected_http_code, client=client)
 
     def run_wait_for_inst_with_mods(self, expected_states=['BUILD', 'ACTIVE']):
         self.assert_instance_action(self.mod_inst_id, expected_states, None)
@@ -903,7 +902,7 @@ class ModuleRunner(TestRunner):
             prefix = 'contents'
             modretrieve_list = client.instances.module_retrieve(
                 instance_id, directory=temp_dir, prefix=prefix)
-            self.assert_client_code(expected_http_code, client)
+            self.assert_client_code(expected_http_code, client=client)
             count = len(modretrieve_list)
             self.assert_equal(expected_count, count,
                               "Wrong number of modules from retrieve")
@@ -964,7 +963,7 @@ class ModuleRunner(TestRunner):
 
     def assert_delete_instance(self, instance_id, expected_http_code):
         self.auth_client.instances.delete(instance_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
     def run_wait_for_delete_inst_with_mods(
             self, expected_last_state=['SHUTDOWN']):

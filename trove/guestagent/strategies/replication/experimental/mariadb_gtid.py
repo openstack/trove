@@ -55,6 +55,7 @@ class MariaDBGTIDReplication(mysql_base.MysqlReplicationBase):
             "MASTER_PORT=%(port)s, "
             "MASTER_USER='%(user)s', "
             "MASTER_PASSWORD='%(password)s', "
+            "MASTER_CONNECT_RETRY=15, "
             "MASTER_USE_GTID=slave_pos" %
             {
                 'host': snapshot['master']['host'],

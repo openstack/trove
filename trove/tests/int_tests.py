@@ -177,6 +177,10 @@ guest_log_groups.extend([guest_log_group.GROUP])
 instance_actions_groups = list(instance_create_groups)
 instance_actions_groups.extend([instance_actions_group.GROUP])
 
+instance_groups = list(instance_actions_groups)
+instance_groups.extend([instance_error_create_group.GROUP,
+                        instance_force_delete_group.GROUP])
+
 module_groups = list(instance_create_groups)
 module_groups.extend([module_group.GROUP])
 
@@ -197,9 +201,8 @@ user_actions_groups = list(instance_create_groups)
 user_actions_groups.extend([user_actions_group.GROUP])
 
 # groups common to all datastores
-common_groups = list(instance_actions_groups)
-common_groups.extend([guest_log_groups, instance_error_create_groups,
-                      instance_force_delete_groups, module_groups])
+common_groups = list(instance_groups)
+common_groups.extend([guest_log_groups, module_groups])
 
 # Register: Component based groups
 register(["backup"], backup_groups)
@@ -210,11 +213,12 @@ register(["configuration"], configuration_groups)
 register(["configuration_create"], configuration_create_groups)
 register(["database"], database_actions_groups)
 register(["guest_log"], guest_log_groups)
-register(["instance", "instance_actions"], instance_actions_groups)
+register(["instance"], instance_groups)
+register(["instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
-register(["instance_error_create"], instance_error_create_groups)
-register(["instance_upgrade"], instance_upgrade_groups)
+register(["instance_error"], instance_error_create_groups)
 register(["instance_force_delete"], instance_force_delete_groups)
+register(["instance_upgrade"], instance_upgrade_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
 register(["replication"], replication_groups)
@@ -223,35 +227,100 @@ register(["root"], root_actions_groups)
 register(["user"], user_actions_groups)
 
 # Register: Datastore based groups
-# These should contain all functionality currently supported by the datastore
-register(["db2_supported"], common_groups,
-         database_actions_groups, user_actions_groups, configuration_groups)
-register(["cassandra_supported"], common_groups,
-         user_actions_groups, database_actions_groups,
-         backup_groups, configuration_groups, cluster_actions_groups)
-register(["couchbase_supported"], common_groups, backup_groups,
-         root_actions_groups)
-register(["couchdb_supported"], common_groups, backup_groups,
-         user_actions_groups, database_actions_groups, root_actions_groups)
-register(["postgresql_supported"], common_groups,
-         backup_groups, database_actions_groups, configuration_groups,
-         root_actions_groups, user_actions_groups,
-         backup_incremental_groups, replication_groups)
-register(["mysql_supported", "percona_supported"], common_groups,
-         backup_groups, configuration_groups, database_actions_groups,
-         replication_promote_groups, instance_upgrade_groups,
-         root_actions_groups, user_actions_groups, backup_incremental_groups)
-register(["mariadb_supported"], common_groups,
-         backup_groups, cluster_actions_groups, configuration_groups,
-         database_actions_groups, replication_promote_groups,
-         root_actions_groups, user_actions_groups)
-register(["mongodb_supported"], common_groups,
-         backup_groups, cluster_actions_groups, configuration_groups,
-         database_actions_groups, root_actions_groups, user_actions_groups)
-register(["pxc_supported"], common_groups,
-         backup_groups, configuration_groups, database_actions_groups,
-         cluster_actions_groups, root_actions_groups, user_actions_groups)
-register(["redis_supported"], common_groups,
-         backup_groups, replication_promote_groups, cluster_actions_groups)
-register(["vertica_supported"], common_groups,
-         cluster_actions_groups, root_actions_groups, configuration_groups)
+# These should contain all functionality currently supported by the datastore.
+# Keeping them in alphabetical order may reduce the number of merge conflicts.
+register(
+    ["db2_supported"], common_groups,
+    configuration_groups,
+    database_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["cassandra_supported"], common_groups,
+    backup_groups,
+    database_actions_groups,
+    cluster_actions_groups,
+    configuration_groups,
+    user_actions_groups,
+)
+
+register(
+    ["couchbase_supported"], common_groups,
+    backup_groups,
+    root_actions_groups,
+)
+
+register(
+    ["couchdb_supported"], common_groups,
+    backup_groups,
+    database_actions_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["postgresql_supported"], common_groups,
+    backup_incremental_groups,
+    database_actions_groups,
+    configuration_groups,
+    replication_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["mysql_supported", "percona_supported"], common_groups,
+    backup_incremental_groups,
+    configuration_groups,
+    database_actions_groups,
+    instance_upgrade_groups,
+    replication_promote_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["mariadb_supported"], common_groups,
+    backup_incremental_groups,
+    cluster_actions_groups,
+    configuration_groups,
+    database_actions_groups,
+    replication_promote_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["mongodb_supported"], common_groups,
+    backup_groups,
+    cluster_actions_groups,
+    configuration_groups,
+    database_actions_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["pxc_supported"], common_groups,
+    backup_incremental_groups,
+    cluster_actions_groups,
+    configuration_groups,
+    database_actions_groups,
+    root_actions_groups,
+    user_actions_groups,
+)
+
+register(
+    ["redis_supported"], common_groups,
+    backup_groups,
+    cluster_actions_groups,
+    replication_promote_groups,
+)
+
+register(
+    ["vertica_supported"], common_groups,
+    cluster_actions_groups,
+    configuration_groups,
+    root_actions_groups,
+)

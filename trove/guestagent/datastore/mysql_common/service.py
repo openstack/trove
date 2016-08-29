@@ -25,6 +25,7 @@ import uuid
 
 from oslo_log import log as logging
 from oslo_utils import encodeutils
+from pymysql import err as pymysql_err
 from six.moves import urllib
 import sqlalchemy
 from sqlalchemy import exc
@@ -565,6 +566,14 @@ class BaseKeepAliveConnection(interfaces.PoolListener):
                 dbapi_con.ping()
         except dbapi_con.OperationalError as ex:
             if ex.args[0] in (2006, 2013, 2014, 2045, 2055):
+                raise exc.DisconnectionError()
+            else:
+                raise
+        # MariaDB seems to timeout the client in a different
+        # way than MySQL and PXC, which manifests itself as
+        # an invalid packet sequence.  Handle it as well.
+        except pymysql_err.InternalError as ex:
+            if "Packet sequence number wrong" in ex.message:
                 raise exc.DisconnectionError()
             else:
                 raise
