@@ -15,6 +15,7 @@
 
 from proboscis import SkipTest
 
+from trove.common import utils
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -198,6 +199,19 @@ class PostgresqlRootActionsRunner(RootActionsRunner):
 
 
 class CouchbaseRootActionsRunner(RootActionsRunner):
+
+    def _assert_connect(
+            self, instance_id, expected_response, test_connect_creds):
+        host = self.get_instance_host(instance_id=instance_id)
+        self.report.log("Pinging instance %s with credentials: %s"
+                        % (instance_id, test_connect_creds))
+        mgmt_port = 8091
+        mgmt_creds = '%s:%s' % (test_connect_creds[0], test_connect_creds[1])
+        rest_endpoint = ('http://%s:%d/pools/nodes'
+                         % (host, mgmt_port))
+        out, err = utils.execute_with_timeout(
+            'curl', '-u', mgmt_creds, rest_endpoint)
+        self.assert_equal(expected_response, out and len(out) > 0)
 
     def check_root_disable_supported(self):
         raise SkipTest("Operation is currently not supported.")
