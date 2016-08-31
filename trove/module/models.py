@@ -139,7 +139,7 @@ class Module(object):
                description, tenant_id, datastore,
                datastore_version, auto_apply, visible, live_update):
         if module_type.lower() not in Modules.VALID_MODULE_TYPES:
-            LOG.error("Valid module types: %s" % Modules.VALID_MODULE_TYPES)
+            LOG.error(_("Valid module types: %s") % Modules.VALID_MODULE_TYPES)
             raise exception.ModuleTypeNotFound(module_type=module_type)
         Module.validate_action(
             context, 'create', tenant_id, auto_apply, visible)

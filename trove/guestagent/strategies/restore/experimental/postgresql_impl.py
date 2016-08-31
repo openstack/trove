@@ -171,7 +171,7 @@ class PgBaseBackupIncremental(PgBaseBackup):
 
         metadata = self.storage.load_metadata(location, checksum)
         if 'parent_location' in metadata:
-            LOG.info("Found parent at %s", metadata['parent_location'])
+            LOG.info(_("Found parent at %s"), metadata['parent_location'])
             parent_location = metadata['parent_location']
             parent_checksum = metadata['parent_checksum']
             self._incremental_restore(parent_location, parent_checksum)

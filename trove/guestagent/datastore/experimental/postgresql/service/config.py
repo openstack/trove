@@ -198,7 +198,7 @@ class PgSqlConfig(PgSqlProcess):
         if self.configuration_manager.has_system_override(BACKUP_CFG_OVERRIDE):
             return
 
-        LOG.info("Applying changes to WAL config for use by base backups")
+        LOG.info(_("Applying changes to WAL config for use by base backups"))
         wal_arch_loc = CONF.postgresql.wal_archive_location
         if not os.path.isdir(wal_arch_loc):
             raise RuntimeError(_("Cannot enable backup as WAL dir '%s' does "

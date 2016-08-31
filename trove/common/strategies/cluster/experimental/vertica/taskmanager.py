@@ -196,7 +196,7 @@ class VerticaClusterTasks(task_models.ClusterTasks):
                                                     db_instance.id)
                     if self.get_ip(master_instance) in remove_member_ips:
                         raise RuntimeError(_("Cannot remove master instance!"))
-                    LOG.debug(_("Marking cluster k-safety: %s") % k)
+                    LOG.debug("Marking cluster k-safety: %s" % k)
                     self.get_guest(master_instance).mark_design_ksafe(k)
                     self.get_guest(master_instance).shrink_cluster(
                         remove_member_ips)
