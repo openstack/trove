@@ -541,7 +541,7 @@ class Manager(periodic_task.PeriodicTasks):
                      "no configuration manager defined!") %
                    {'verb': verb, 'log': log_name})
             LOG.error(msg)
-            raise exception.GuestError(msg)
+            raise exception.GuestError(original_message=msg)
 
         return restart_required
 

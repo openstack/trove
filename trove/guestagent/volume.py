@@ -67,8 +67,8 @@ class VolumeDevice(object):
                           attempts=num_tries)
         except ProcessExecutionError:
             LOG.exception(_("Error getting device status"))
-            raise GuestError(_("InvalidDevicePath(path=%s)") %
-                             self.device_path)
+            raise GuestError(original_message=_(
+                "InvalidDevicePath(path=%s)") % self.device_path)
 
     def _check_format(self):
         """Checks that an unmounted volume is formatted."""
@@ -131,8 +131,8 @@ class VolumeDevice(object):
                           run_as_root=True, root_helper="sudo")
         except ProcessExecutionError:
             LOG.exception(_("Error resizing file system."))
-            raise GuestError(_("Error resizing the filesystem: %s") %
-                             self.device_path)
+            raise GuestError(original_message=_(
+                "Error resizing the filesystem: %s") % self.device_path)
 
     def unmount(self, mount_point):
         if os.path.exists(mount_point):
@@ -158,8 +158,9 @@ class VolumeDevice(object):
 
         except ProcessExecutionError:
             LOG.exception(_("Error retrieving mount points"))
-            raise GuestError(_("Could not obtain a list of mount points for "
-                               "device: %s") % device_path)
+            raise GuestError(original_message=_(
+                "Could not obtain a list of mount points for device: %s") %
+                device_path)
 
     def set_readahead_size(self, readahead_size,
                            execute_function=utils.execute):
@@ -172,8 +173,8 @@ class VolumeDevice(object):
             LOG.exception(_("Error setting readhead size to %(size)s "
                             "for device %(device)s.") %
                           {'size': readahead_size, 'device': self.device_path})
-            raise GuestError(_("Error setting readhead size: %s.") %
-                             self.device_path)
+            raise GuestError(original_message=_(
+                "Error setting readhead size: %s.") % self.device_path)
 
 
 class VolumeMountPoint(object):
