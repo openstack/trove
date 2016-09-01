@@ -337,7 +337,7 @@ class TestSchemaController(trove_testtools.TestCase):
 
     def test_validate_mixed(self):
         schema = self.controller.get_schema('create', self.body)
-        self.assertNotEqual(schema, None)
+        self.assertIsNotNone(schema)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(self.body))
 
@@ -345,14 +345,14 @@ class TestSchemaController(trove_testtools.TestCase):
         body = self.body.copy()
         body['databases'].append({"collate": "some_collation"})
         schema = self.controller.get_schema('create', body)
-        self.assertNotEqual(schema, None)
+        self.assertIsNotNone(schema)
         validator = jsonschema.Draft4Validator(schema)
         self.assertFalse(validator.is_valid(body))
 
     def test_validate_empty(self):
         body = {"databases": []}
         schema = self.controller.get_schema('create', body)
-        self.assertNotEqual(schema, None)
+        self.assertIsNotNone(schema)
         self.assertIn('databases', body)
         validator = jsonschema.Draft4Validator(schema)
         self.assertTrue(validator.is_valid(body))
