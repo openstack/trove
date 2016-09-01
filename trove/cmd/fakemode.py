@@ -39,7 +39,7 @@ def main(conf):
             start_server(conf)
         else:
             print("Starting server:%s" % pid)
-            pid_file = CONF.pid_file
+            pid_file = conf.pid_file
             with open(pid_file, 'w') as f:
                 f.write(str(pid))
     else:
