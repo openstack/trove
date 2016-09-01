@@ -156,7 +156,7 @@ restore_namespace = trove.guestagent.strategies.restore.experimental.cassandra_i
 
 [db2]
 # For db2, the following are the defaults for backup, and restore:
-# backup_strategy = DB2Backup
+# backup_strategy = DB2OfflineBackup
 # backup_namespace = trove.guestagent.strategies.backup.experimental.db2_impl
 # restore_namespace = trove.guestagent.strategies.restore.experimental.db2_impl
 

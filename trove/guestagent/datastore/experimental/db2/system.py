@@ -13,8 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from trove.common import cfg
+
+CONF = cfg.CONF
 TIMEOUT = 1200
 DB2_INSTANCE_OWNER = "db2inst1"
+MOUNT_POINT = CONF.db2.mount_point
+DB2_BACKUP_DIR = MOUNT_POINT + "/backup"
+DB2_ARCHIVE_LOGS_DIR = MOUNT_POINT + "/ArchiveLogs"
 UPDATE_HOSTNAME = (
     'source /home/db2inst1/sqllib/db2profile;'
     'db2set -g DB2SYSTEM="$(hostname)"')
@@ -50,14 +56,34 @@ LIST_DB_USERS = (
     "db2 +o  connect to %(dbname)s; "
     "db2 -x  select grantee, dataaccessauth from sysibm.sysdbauth; "
     "db2 connect reset")
-BACKUP_DB = "db2 backup database %(dbname)s to %(dir)s"
-RESTORE_DB = (
-    "db2 restore database %(dbname)s from %(dir)s")
+OFFLINE_BACKUP_DB = "db2 backup database %(dbname)s to " + DB2_BACKUP_DIR
+RESTORE_OFFLINE_DB = (
+    "db2 restore database %(dbname)s from " + DB2_BACKUP_DIR)
 GET_DB_SIZE = (
-    "db2 connect to %(dbname)s;"
-    "db2 call get_dbsize_info(?, ?, ?, -1) ")
+    "db2 +o connect to %(dbname)s;"
+    "db2 call get_dbsize_info\(?, ?, ?, -1\) | "
+    "grep -A1 'DATABASESIZE' | grep 'Parameter Value' | sed 's/.*[:]//' |"
+    " tr -d '\n'; db2 +o connect reset")
 GET_DB_NAMES = ("find /home/db2inst1/db2inst1/backup/ -type f -name '*.001' |"
                 " grep -Po \"(?<=backup/)[^.']*(?=\.)\"")
 GET_DBM_CONFIGURATION = "db2 get dbm configuration > %(dbm_config)s"
 UPDATE_DBM_CONFIGURATION = ("db2 update database manager configuration using "
                             "%(parameter)s %(value)s")
+UPDATE_DB_LOG_CONFIGURATION = (
+    "db2 update database configuration for "
+    "%(dbname)s using LOGARCHMETH1 'DISK:" + DB2_ARCHIVE_LOGS_DIR + "'")
+LOG_UTILIZATION = (
+    "db2 +o connect to %(dbname)s;"
+    "db2 -x SELECT TOTAL_LOG_USED_KB FROM SYSIBMADM.LOG_UTILIZATION | "
+    "tr -d '\n';db2 +o connect reset")
+ONLINE_BACKUP_DB = (
+    "db2 backup database %(dbname)s ONLINE to " +
+    DB2_BACKUP_DIR + " INCLUDE LOGS")
+RESTORE_ONLINE_DB = (
+    "db2 RESTORE DATABASE %(dbname)s FROM " + DB2_BACKUP_DIR
+    + " LOGTARGET " + DB2_ARCHIVE_LOGS_DIR)
+ROLL_FORWARD_DB = (
+    "db2 ROLLFORWARD DATABASE %(dbname)s TO END OF BACKUP "
+    "AND COMPLETE OVERFLOW LOG PATH '(" + DB2_ARCHIVE_LOGS_DIR + ")'")
+RECOVER_FROM_BACKUP_PENDING_MODE = (
+    "db2 backup database %(dbname)s to /dev/null")

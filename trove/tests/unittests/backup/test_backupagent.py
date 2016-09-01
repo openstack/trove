@@ -252,7 +252,9 @@ class BackupAgentTest(trove_testtools.TestCase):
         self.assertIsNotNone(cbbackup.manifest)
         self.assertIn('gz.enc', cbbackup.manifest)
 
-    def test_backup_impl_DB2Backup(self):
+    @mock.patch.object(db2_impl.DB2Backup, 'list_dbnames',
+                       return_value=['testdb1', 'testdb2'])
+    def test_backup_impl_DB2Backup(self, _):
         netutils.get_my_ipv4 = Mock(return_value="1.1.1.1")
         db2_backup = db2_impl.DB2Backup('db2backup', extra_opts='')
         self.assertIsNotNone(db2_backup)

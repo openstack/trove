@@ -54,6 +54,14 @@ class DB2App(object):
         self.status = status
         self.dbm_default_config = {}
         self.init_config()
+        '''
+        If DB2 guest agent has been configured for online backups,
+        every database that is created will be configured for online
+        backups. Since online backups are done using archive logging,
+        we need to create a directory to store the archived logs.
+        '''
+        if CONF.db2.backup_strategy == 'DB2OnlineBackup':
+            create_db2_dir(system.DB2_ARCHIVE_LOGS_DIR)
 
     def init_config(self):
         if not operating_system.exists(MOUNT_POINT, True):
@@ -295,6 +303,20 @@ def run_command(command, superuser=system.DB2_INSTANCE_OWNER,
                                       command, timeout=timeout)
 
 
+def create_db2_dir(dir_name):
+    if not operating_system.exists(dir_name, True):
+        operating_system.create_directory(dir_name,
+                                          system.DB2_INSTANCE_OWNER,
+                                          system.DB2_INSTANCE_OWNER,
+                                          as_root=True)
+
+
+def remove_db2_dir(dir_name):
+    operating_system.remove(dir_name,
+                            force=True,
+                            as_root=True)
+
+
 class DB2Admin(object):
     """
     Handles administrative tasks on the DB2 instance.
@@ -316,6 +338,26 @@ class DB2Admin(object):
                     "There was an error creating database: %s.") % dbName)
                 db_create_failed.append(dbName)
                 pass
+
+            '''
+            Configure each database to do archive logging for online
+            backups. Once the database is configured, it will go in to a
+            BACKUP PENDING state. In this state, the database will not
+            be accessible for any operations. To get the database back to
+            normal mode, we have to do a full offline backup as soon as we
+            configure it for archive logging.
+            '''
+            try:
+                if CONF.db2.backup_strategy == 'DB2OnlineBackup':
+                    run_command(system.UPDATE_DB_LOG_CONFIGURATION % {
+                        'dbname': dbName})
+                    run_command(system.RECOVER_FROM_BACKUP_PENDING_MODE % {
+                        'dbname': dbName})
+            except exception:
+                LOG.exception(_(
+                    "There was an error while configuring the database for "
+                    "online backup: %s.") % dbName)
+
         if len(db_create_failed) > 0:
             LOG.exception(_("Creating the following databases failed: %s.") %
                           db_create_failed)
