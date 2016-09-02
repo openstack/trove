@@ -134,7 +134,7 @@ class TestNotificationTransformer(MockMgmtInstanceTest):
         self.assertThat(payload['audit_period_beginning'],
                         Not(Is(None)))
         self.assertThat(payload['audit_period_ending'], Not(Is(None)))
-        self.assertTrue(status.lower() in [db['state'] for db in payloads])
+        self.assertIn(status.lower(), [db['state'] for db in payloads])
         self.addCleanup(self.do_cleanup, instance, service_status)
 
     def test_get_service_id(self):

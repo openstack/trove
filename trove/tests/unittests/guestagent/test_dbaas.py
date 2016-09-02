@@ -245,7 +245,7 @@ class DbaasTest(trove_testtools.TestCase):
         self.assertEqual(["3306"], options["port"])
         self.assertEqual(["/usr"], options["basedir"])
         self.assertEqual(["/tmp"], options["tmpdir"])
-        self.assertTrue("skip-external-locking" in options)
+        self.assertIn("skip-external-locking", options)
 
     def test_load_mysqld_options_contains_plugin_loads_options(self):
         output = ("mysqld would've been started with these args:\n"

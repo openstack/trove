@@ -70,28 +70,28 @@ class TestInstanceController(trove_testtools.TestCase):
     def test_get_schema_create(self):
         schema = self.controller.get_schema('create', {'instance': {}})
         self.assertIsNotNone(schema)
-        self.assertTrue('instance' in schema['properties'])
+        self.assertIn('instance', schema['properties'])
 
     def test_get_schema_action_restart(self):
         schema = self.controller.get_schema('action', {'restart': {}})
         self.assertIsNotNone(schema)
-        self.assertTrue('restart' in schema['properties'])
+        self.assertIn('restart', schema['properties'])
 
     def test_get_schema_action_resize_volume(self):
         schema = self.controller.get_schema(
             'action', {'resize': {'volume': {}}})
         self.assertIsNotNone(schema)
-        self.assertTrue('resize' in schema['properties'])
-        self.assertTrue(
-            'volume' in schema['properties']['resize']['properties'])
+        self.assertIn('resize', schema['properties'])
+        self.assertIn(
+            'volume', schema['properties']['resize']['properties'])
 
     def test_get_schema_action_resize_flavorRef(self):
         schema = self.controller.get_schema(
             'action', {'resize': {'flavorRef': {}}})
         self.assertIsNotNone(schema)
-        self.assertTrue('resize' in schema['properties'])
-        self.assertTrue(
-            'flavorRef' in schema['properties']['resize']['properties'])
+        self.assertIn('resize', schema['properties'])
+        self.assertIn(
+            'flavorRef', schema['properties']['resize']['properties'])
 
     def test_get_schema_action_other(self):
         schema = self.controller.get_schema(

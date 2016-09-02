@@ -222,7 +222,7 @@ class LimitMiddlewareTest(BaseLimitTestSuite):
         response = request.get_response(self.app)
         self.assertEqual(413, response.status_int)
 
-        self.assertTrue('Retry-After' in response.headers)
+        self.assertIn('Retry-After', response.headers)
         retry_after = int(response.headers['Retry-After'])
         self.assertAlmostEqual(retry_after, 60, 1)
 
@@ -231,7 +231,7 @@ class LimitMiddlewareTest(BaseLimitTestSuite):
         value = body["overLimit"]["details"].strip()
         self.assertEqual(expected, value)
 
-        self.assertTrue("retryAfter" in body["overLimit"])
+        self.assertIn("retryAfter", body["overLimit"])
         retryAfter = body["overLimit"]["retryAfter"]
         self.assertEqual("60", retryAfter)
 
