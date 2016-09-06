@@ -122,7 +122,7 @@ class BasePackagerMixin(object):
         return (i, match)
 
 
-class RedhatPackagerMixin(BasePackagerMixin):
+class RPMPackagerMixin(BasePackagerMixin):
 
     def _rpm_remove_nodeps(self, package_name):
         """
@@ -137,6 +137,62 @@ class RedhatPackagerMixin(BasePackagerMixin):
             LOG.exception(_("Error removing conflict %(package)s") %
                           package_name)
 
+    def _install(self, packages, time_out):
+        """must be overridden by an RPM based PackagerMixin"""
+        raise NotImplementedError()
+
+    def _remove(self, package_name, time_out):
+        """must be overridden by an RPM based PackagerMixin"""
+        raise NotImplementedError()
+
+    def pkg_install(self, packages, config_opts, time_out):
+        result = self._install(packages, time_out)
+        if result != OK:
+            while result == CONFLICT_REMOVED:
+                result = self._install(packages, time_out)
+            if result != OK:
+                raise PkgPackageStateError("Cannot install packages.")
+
+    def pkg_is_installed(self, packages):
+        packages = packages if isinstance(packages, list) else packages.split()
+        std_out = getoutput("rpm", "-qa")
+        for pkg in packages:
+            found = False
+            for line in std_out.split("\n"):
+                if line.find(pkg) != -1:
+                    found = True
+                    break
+            if not found:
+                return False
+        return True
+
+    def pkg_version(self, package_name):
+        std_out = getoutput("rpm", "-qa",
+                            "--qf", "'%{VERSION}-%{RELEASE}\n'",
+                            package_name)
+        # Need to capture the version string
+        # check the command output
+        for line in std_out.split("\n"):
+            regex = re.compile("[0-9.]+-.*")
+            matches = regex.match(line)
+            if matches:
+                line = matches.group()
+                return line
+
+        LOG.error(_("Unexpected output from rpm command. (%(output)s)") %
+                  {'output': std_out})
+
+    def pkg_remove(self, package_name, time_out):
+        """Removes a package."""
+        if self.pkg_version(package_name) is None:
+            return
+        result = self._remove(package_name, time_out)
+        if result != OK:
+            raise PkgPackageStateError("Package %s is in a bad state."
+                                       % package_name)
+
+
+class RedhatPackagerMixin(RPMPackagerMixin):
     def _install(self, packages, time_out):
         """Attempts to install packages.
 
@@ -195,52 +251,6 @@ class RedhatPackagerMixin(BasePackagerMixin):
         elif i == 1:
             raise PkgNotFoundError("Could not find pkg %s" % package_name)
         return OK
-
-    def pkg_install(self, packages, config_opts, time_out):
-        result = self._install(packages, time_out)
-        if result != OK:
-            while result == CONFLICT_REMOVED:
-                result = self._install(packages, time_out)
-            if result != OK:
-                raise PkgPackageStateError("Cannot install packages.")
-
-    def pkg_is_installed(self, packages):
-        packages = packages if isinstance(packages, list) else packages.split()
-        std_out = getoutput("rpm", "-qa")
-        for pkg in packages:
-            found = False
-            for line in std_out.split("\n"):
-                if line.find(pkg) != -1:
-                    found = True
-                    break
-            if not found:
-                return False
-        return True
-
-    def pkg_version(self, package_name):
-        std_out = getoutput("rpm", "-qa",
-                            "--qf", "'%{VERSION}-%{RELEASE}\n'",
-                            package_name)
-        # Need to capture the version string
-        # check the command output
-        for line in std_out.split("\n"):
-            regex = re.compile("[0-9.]+-.*")
-            matches = regex.match(line)
-            if matches:
-                line = matches.group()
-                return line
-
-        LOG.error(_("Unexpected output from rpm command. (%(output)s)") %
-                  {'output': std_out})
-
-    def pkg_remove(self, package_name, time_out):
-        """Removes a package."""
-        if self.pkg_version(package_name) is None:
-            return
-        result = self._remove(package_name, time_out)
-        if result != OK:
-            raise PkgPackageStateError("Package %s is in a bad state."
-                                       % package_name)
 
 
 class DebianPackagerMixin(BasePackagerMixin):
