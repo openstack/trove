@@ -43,6 +43,7 @@ class FlavorView(object):
             'name': self.flavor.name,
             'ram': self.flavor.ram,
             'vcpus': self.flavor.vcpus,
+            'disk': self.flavor.disk,
             'str_id': str(self.flavor.id),
         }
 

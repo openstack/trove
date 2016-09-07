@@ -24,7 +24,7 @@ from trove.common.remote import create_nova_client
 
 class Flavor(object):
 
-    _data_fields = ['id', 'links', 'name', 'ram', 'vcpus', 'ephemeral']
+    _data_fields = ['id', 'links', 'name', 'ram', 'vcpus', 'disk', 'ephemeral']
 
     def __init__(self, flavor=None, context=None, flavor_id=None):
         if flavor:
@@ -62,6 +62,10 @@ class Flavor(object):
     @property
     def links(self):
         return self.flavor.links
+
+    @property
+    def disk(self):
+        return self.flavor.disk
 
     @property
     def ephemeral(self):
