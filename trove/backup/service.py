@@ -64,12 +64,13 @@ class BackupController(wsgi.Controller):
         name = data['name']
         desc = data.get('description')
         parent = data.get('parent_id')
+        incremental = data.get('incremental')
         context.notification = notification.DBaaSBackupCreate(context,
                                                               request=req)
         with StartNotification(context, name=name, instance_id=instance,
                                description=desc, parent_id=parent):
             backup = Backup.create(context, instance, name, desc,
-                                   parent_id=parent)
+                                   parent_id=parent, incremental=incremental)
         return wsgi.Result(views.BackupView(backup).data(), 202)
 
     def delete(self, req, tenant_id, id):

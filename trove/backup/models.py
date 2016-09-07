@@ -48,7 +48,8 @@ class Backup(object):
                 operation=operation, datastore=instance.datastore.name)
 
     @classmethod
-    def create(cls, context, instance, name, description=None, parent_id=None):
+    def create(cls, context, instance, name, description=None,
+               parent_id=None, incremental=False):
         """
         create db record for Backup
         :param cls:
@@ -56,6 +57,9 @@ class Backup(object):
         :param instance:
         :param name:
         :param description:
+        :param parent_id:
+        :param incremental: flag to indicate incremental backup
+        based on previous backup
         :return:
         """
 
@@ -76,6 +80,7 @@ class Backup(object):
             ds = instance_model.datastore
             ds_version = instance_model.datastore_version
             parent = None
+            last_backup_id = None
             if parent_id:
                 # Look up the parent info or fail early if not found or if
                 # the user does not have access to the parent.
@@ -84,13 +89,22 @@ class Backup(object):
                     'location': _parent.location,
                     'checksum': _parent.checksum,
                 }
+            elif incremental:
+                _parent = Backup.get_last_completed(context, instance_id)
+                if _parent:
+                    parent = {
+                        'location': _parent.location,
+                        'checksum': _parent.checksum
+                    }
+                    last_backup_id = _parent.id
             try:
                 db_info = DBBackup.create(name=name,
                                           description=description,
                                           tenant_id=context.tenant,
                                           state=BackupState.NEW,
                                           instance_id=instance_id,
-                                          parent_id=parent_id,
+                                          parent_id=parent_id or
+                                          last_backup_id,
                                           datastore_version_id=ds_version.id,
                                           deleted=False)
             except exception.InvalidModelError as ex:
@@ -110,7 +124,6 @@ class Backup(object):
                            }
             api.API(context).create_backup(backup_info, instance_id)
             return db_info
-
         return run_with_quotas(context.tenant,
                                {'backups': 1},
                                _create_resources)

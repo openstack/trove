@@ -107,9 +107,14 @@ class BackupRunner(TestRunner):
         return [database.name for database in
                 self.auth_client.databases.list(instance_id)]
 
-    def assert_backup_create(self, name, desc, instance_id, parent_id=None):
-        result = self.auth_client.backups.create(
-            name, instance_id, desc, parent_id=parent_id)
+    def assert_backup_create(self, name, desc, instance_id, parent_id=None,
+                             incremental=False):
+        if incremental:
+            result = self.auth_client.backups.create(
+                name, instance_id, desc, incremental=incremental)
+        else:
+            result = self.auth_client.backups.create(
+                name, instance_id, desc, parent_id=parent_id)
         self.assert_equal(name, result.name,
                           'Unexpected backup name')
         self.assert_equal(desc, result.description,
@@ -285,7 +290,8 @@ class BackupRunner(TestRunner):
         suffix = '_inc_2'
         self.backup_inc_2_info = self.assert_backup_create(
             self.BACKUP_NAME + suffix, self.BACKUP_DESC + suffix,
-            self.instance_info.id, parent_id=self.backup_inc_1_info.id)
+            self.instance_info.id, parent_id=self.backup_inc_1_info.id,
+            incremental=True)
 
     def run_wait_for_inc_backup_2(self):
         self._verify_backup(self.backup_inc_2_info.id)

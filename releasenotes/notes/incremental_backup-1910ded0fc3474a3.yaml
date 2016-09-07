@@ -1,0 +1,6 @@
+features:
+  - The --incremental flag for backup-create will
+    add the ability to create incremental backup based
+    on last full or incremental backup. If no full or
+    incremental backup exists a new full backup will
+    be created.
