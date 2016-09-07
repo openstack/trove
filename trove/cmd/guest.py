@@ -30,6 +30,7 @@ from oslo_service import service as openstack_service
 
 from trove.common import cfg
 from trove.common import debug_utils
+from trove.common.i18n import _LE
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
