@@ -14,14 +14,10 @@
 
 from oslo_config import cfg
 
-ServiceAvailableGroup = [
-    cfg.BoolOpt('trove',
-                default=True,
-                help="Whether or not Trove is expected to be available")
-]
-
-service_available_group = cfg.OptGroup(name='service_available',
-                                       title='Available OpenStack services')
+service_option = cfg.BoolOpt('trove',
+                             default=True,
+                             help="Whether or not Trove is expected to be "
+                                  "available")
 
 database_group = cfg.OptGroup(name='database',
                               title='Database Service Options')
