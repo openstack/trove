@@ -50,6 +50,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
         self.cluster = api.MongoDbCluster(self.context, self.db_info,
                                           self.datastore,
                                           self.datastore_version)
+        self.cluster._server_group_loaded = True
         self.manager = mock.Mock()
         self.cluster.manager = self.manager
         self.volume_support = CONF.get('mongodb').volume_support
@@ -83,8 +84,9 @@ class MongoDBClusterTest(trove_testtools.TestCase):
 
         self.assertEqual(mock_prep_resize.called, True)
         mock_create_shard_instances.assert_called_with([instance1, instance2,
-                                                        instance3])
-        mock_create_query_router_instances.assert_called_with([instance4])
+                                                        instance3], None)
+        mock_create_query_router_instances.assert_called_with([instance4],
+                                                              None)
         mock_update_db.assert_called_with(
             task_status=tasks.ClusterTasks.GROWING_CLUSTER
         )

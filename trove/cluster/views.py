@@ -53,6 +53,8 @@ class ClusterView(object):
         if extended_properties:
             cluster_dict["extended_properties"] = extended_properties
 
+        if self.cluster.locality:
+            cluster_dict['locality'] = self.cluster.locality
         LOG.debug(cluster_dict)
         return {"cluster": cluster_dict}
 

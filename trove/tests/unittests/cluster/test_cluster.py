@@ -61,6 +61,7 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster = mongodb_api.MongoDbCluster(self.context, self.db_info,
                                                   self.datastore,
                                                   self.datastore_version)
+        self.cluster._server_group_loaded = True
         self.instances = [{'volume_size': 1, 'flavor_id': '1234'},
                           {'volume_size': 1, 'flavor_id': '1234'},
                           {'volume_size': 1, 'flavor_id': '1234'}]
@@ -80,7 +81,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           [],
-                          None
+                          None, None
                           )
 
     def test_create_unequal_flavors(self):
@@ -93,7 +94,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None
+                          None, None
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -110,7 +111,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None
+                          None, None
                           )
 
     @patch.object(remote, 'create_nova_client')
@@ -140,7 +141,7 @@ class ClusterTest(trove_testtools.TestCase):
                           self.datastore,
                           self.datastore_version,
                           instances,
-                          None
+                          None, None
                           )
 
     @patch('trove.cluster.models.LOG')

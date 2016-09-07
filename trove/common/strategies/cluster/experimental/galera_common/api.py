@@ -22,6 +22,7 @@ from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
 from trove.common import remote
+from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import base as cluster_base
 from trove.extensions.mgmt.clusters.views import MgmtClusterView
 from trove.instance.models import DBInstance
@@ -115,7 +116,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
     @staticmethod
     def _create_instances(context, db_info, datastore, datastore_version,
-                          instances):
+                          instances, extended_properties, locality):
         member_config = {"id": db_info.id,
                          "instance_type": "member"}
         name_index = 1
@@ -137,13 +138,14 @@ class GaleraCommonCluster(cluster_models.Cluster):
                                     'availability_zone', None),
                                 nics=instance.get('nics', None),
                                 configuration_id=None,
-                                cluster_config=member_config
+                                cluster_config=member_config,
+                                locality=locality
                                 )
                 for instance in instances]
 
     @classmethod
     def create(cls, context, name, datastore, datastore_version,
-               instances, extended_properties):
+               instances, extended_properties, locality):
         LOG.debug("Initiating Galera cluster creation.")
         cls._validate_cluster_instances(context, instances, datastore,
                                         datastore_version)
@@ -154,7 +156,7 @@ class GaleraCommonCluster(cluster_models.Cluster):
             task_status=ClusterTasks.BUILDING_INITIAL)
 
         cls._create_instances(context, db_info, datastore, datastore_version,
-                              instances)
+                              instances, extended_properties, locality)
 
         # Calling taskmanager to further proceed for cluster-configuration
         task_api.load(context, datastore_version.manager).create_cluster(
@@ -187,8 +189,10 @@ class GaleraCommonCluster(cluster_models.Cluster):
             for instance in instances:
                 instance["nics"] = interface_ids
 
+            locality = srv_grp.ServerGroup.convert_to_hint(self.server_group)
             new_instances = self._create_instances(
-                context, db_info, datastore, datastore_version, instances)
+                context, db_info, datastore, datastore_version, instances,
+                None, locality)
 
             task_api.load(context, datastore_version.manager).grow_cluster(
                 db_info.id, [instance.id for instance in new_instances])

@@ -1,0 +1,7 @@
+---
+features:
+    - A locality flag was added to the trove ReST API to
+      allow a user to specify whether the instances of a
+      cluster should be on the same hypervisor (affinity)
+      or on different hypervisors (anti-affinity).
+
