@@ -27,6 +27,11 @@ from trove.versions import VersionsDataView
 
 BASE_URL = 'http://localhost'
 
+id = VERSIONS['1.0']['id']
+status = VERSIONS['1.0']['status']
+base_url = BASE_URL
+updated = VERSIONS['1.0']['updated']
+
 
 class VersionsControllerTest(trove_testtools.TestCase):
 
@@ -84,12 +89,6 @@ class BaseVersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(BaseVersionTestCase, self).setUp()
-
-        id = VERSIONS['1.0']['id']
-        status = VERSIONS['1.0']['status']
-        base_url = BASE_URL
-        updated = VERSIONS['1.0']['updated']
-
         self.base_version = BaseVersion(id, status, base_url, updated)
         self.assertIsNotNone(self.base_version,
                              'BaseVersion instance was None')
@@ -118,12 +117,6 @@ class VersionTestCase(trove_testtools.TestCase):
 
     def setUp(self):
         super(VersionTestCase, self).setUp()
-
-        id = VERSIONS['1.0']['id']
-        status = VERSIONS['1.0']['status']
-        base_url = BASE_URL
-        updated = VERSIONS['1.0']['updated']
-
         self.version = Version(id, status, base_url, updated)
         self.assertIsNotNone(self.version,
                              'Version instance was None')
@@ -147,10 +140,6 @@ class VersionDataViewTestCase(trove_testtools.TestCase):
         super(VersionDataViewTestCase, self).setUp()
 
         # get a version object first
-        id = VERSIONS['1.0']['id']
-        status = VERSIONS['1.0']['status']
-        base_url = BASE_URL
-        updated = VERSIONS['1.0']['updated']
 
         self.version = Version(id, status, base_url, updated)
         self.assertIsNotNone(self.version,
@@ -185,12 +174,6 @@ class VersionsDataViewTestCase(trove_testtools.TestCase):
 
         # get a version object, put it in a list
         self.versions = []
-
-        id = VERSIONS['1.0']['id']
-        status = VERSIONS['1.0']['status']
-        base_url = BASE_URL
-        updated = VERSIONS['1.0']['updated']
-
         self.version = Version(id, status, base_url, updated)
         self.assertIsNotNone(self.version,
                              'Version instance was None')
