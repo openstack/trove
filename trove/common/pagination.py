@@ -37,6 +37,8 @@ def paginate_list(li, limit=None, marker=None, include_marker=False,
     """
     sli = sorted(li, key=key)
     index = [key(item) for item in sli]
+    if marker is None:
+        marker = ''
     if include_marker:
         pos = bisect.bisect_left(index, marker)
     else:
