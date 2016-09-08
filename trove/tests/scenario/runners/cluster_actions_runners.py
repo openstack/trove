@@ -212,10 +212,11 @@ class ClusterActionsRunner(TestRunner):
     def run_cluster_grow(self, expected_task_name='GROWING_CLUSTER',
                          expected_http_code=202):
         # Add two instances. One with an explicit name.
+        flavor_href = self.get_flavor_href(self.get_instance_flavor())
         added_instance_defs = [
-            self._build_instance_def(self.instance_info.dbaas_flavor_href,
+            self._build_instance_def(flavor_href,
                                      self.instance_info.volume['size']),
-            self._build_instance_def(self.instance_info.dbaas_flavor_href,
+            self._build_instance_def(flavor_href,
                                      self.instance_info.volume['size'],
                                      self.EXTRA_INSTANCE_NAME)]
         self.assert_cluster_grow(
