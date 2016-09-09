@@ -68,7 +68,6 @@ class FakeFlavors(object):
         self._add(11, 0, "eph.rd-tiny", 512, 1)
         self._add(12, 20, "eph.rd-smaller", 768, 2)
         self._add("custom", 25, "custom.small", 512, 1)
-        # self._add(13, 20, "m1.heat", 512)
 
     def _add(self, *args, **kwargs):
         new_flavor = FakeFlavor(*args, **kwargs)
