@@ -20,7 +20,6 @@ from eventlet.green import subprocess
 from oslo_log import log as logging
 
 from trove.common import cfg
-from trove.common import exception
 from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.guestagent.common import operating_system
@@ -89,7 +88,7 @@ class PgDump(base.RestoreRunner):
                 for message in err.splitlines(False):
                     if not any(regex.match(message)
                                for regex in self.IGNORED_ERROR_PATTERNS):
-                        raise exception(message)
+                        raise Exception(message)
         except OSError:
             pass
 

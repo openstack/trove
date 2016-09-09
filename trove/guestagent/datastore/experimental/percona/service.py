@@ -15,6 +15,8 @@
 #
 
 from oslo_log import log as logging
+
+from trove.common.i18n import _
 from trove.guestagent.datastore.mysql_common import service
 
 LOG = logging.getLogger(__name__)

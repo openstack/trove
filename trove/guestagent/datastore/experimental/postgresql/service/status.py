@@ -16,6 +16,7 @@
 from oslo_log import log as logging
 import psycopg2
 
+from trove.common.i18n import _
 from trove.common import instance
 from trove.common import utils
 from trove.guestagent.datastore.experimental.postgresql import pgutil

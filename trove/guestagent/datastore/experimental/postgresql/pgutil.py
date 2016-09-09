@@ -16,6 +16,7 @@
 import psycopg2
 
 from trove.common import exception
+from trove.common.i18n import _
 
 PG_ADMIN = 'os_admin'
 
