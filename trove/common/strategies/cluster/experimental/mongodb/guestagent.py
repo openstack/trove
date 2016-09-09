@@ -60,7 +60,7 @@ class MongoDbGuestAgentAPI(guest_api.API):
 
     def cluster_complete(self):
         LOG.debug("Notify regarding cluster install completion")
-        return self._call("cluster_complete", guest_api.AGENT_LOW_TIMEOUT,
+        return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
                           self.version_cap)
 
     def get_key(self):
