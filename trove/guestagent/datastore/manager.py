@@ -319,12 +319,16 @@ class Manager(periodic_task.PeriodicTasks):
                     LOG.info(_("Creating databases (called from 'prepare')."))
                     self.create_database(context, databases)
                     LOG.info(_('Databases created successfully.'))
+            except Exception as ex:
+                LOG.exception(_("An error occurred creating databases: "
+                                "%s") % ex.message)
+            try:
                 if users:
                     LOG.info(_("Creating users (called from 'prepare')"))
                     self.create_user(context, users)
                     LOG.info(_('Users created successfully.'))
             except Exception as ex:
-                LOG.exception(_("An error occurred creating databases/users: "
+                LOG.exception(_("An error occurred creating users: "
                                 "%s") % ex.message)
 
             # We only enable-root automatically if not restoring a backup
