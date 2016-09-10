@@ -14,6 +14,7 @@
 #    under the License.
 
 import os
+import proboscis
 import time as timer
 
 from proboscis import asserts
@@ -30,6 +31,19 @@ from trove.tests.util import create_dbaas_client
 from trove.tests.util.users import Requirements
 
 CONF = cfg.CONF
+
+
+class SkipKnownBug(proboscis.SkipTest):
+    """Skip test failures due to known bug(s).
+    These should get fixed sometime in the future.
+    """
+
+    def __init__(self, *bugs):
+        """
+        :param bugs:    One or more bug references (e.g. link, bug #).
+        """
+        bug_ref = '; '.join(map(str, bugs))
+        super(SkipKnownBug, self).__init__("Known bug: %s" % bug_ref)
 
 
 class TestRunner(object):
