@@ -1095,7 +1095,7 @@ postgresql_opts = [
                 help='Whether to provision a Cinder volume for datadir.'),
     cfg.StrOpt('device_path', default='/dev/vdb'),
     cfg.ListOpt('ignore_users', default=['os_admin', 'postgres', 'root']),
-    cfg.ListOpt('ignore_dbs', default=['postgres']),
+    cfg.ListOpt('ignore_dbs', default=['os_admin', 'postgres']),
     cfg.StrOpt('root_controller',
                default='trove.extensions.postgresql.service'
                '.PostgreSQLRootController',
