@@ -311,12 +311,14 @@ class MongoDBApp(object):
 
         MongoDBAdmin().rs_initiate()
         # TODO(ramashri) see if hardcoded values can be removed
-        utils.poll_until(check_initiate_status, sleep_time=30, time_out=100)
+        utils.poll_until(check_initiate_status, sleep_time=30,
+                         time_out=CONF.mongodb.add_members_timeout)
 
         # add replica-set members
         MongoDBAdmin().rs_add_members(members)
         # TODO(ramashri) see if hardcoded values can be removed
-        utils.poll_until(check_rs_status, sleep_time=10, time_out=100)
+        utils.poll_until(check_rs_status, sleep_time=10,
+                         time_out=CONF.mongodb.add_members_timeout)
 
     def _set_localhost_auth_bypass(self, enabled):
         """When active, the localhost exception allows connections from the
