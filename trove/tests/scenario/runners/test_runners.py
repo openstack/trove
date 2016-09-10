@@ -15,6 +15,7 @@
 
 import datetime
 import os
+import proboscis
 import time as timer
 
 from oslo_config.cfg import NoSuchOptError
@@ -39,6 +40,19 @@ TEST_RUNNERS_NS = 'trove.tests.scenario.runners'
 TEST_HELPERS_NS = 'trove.tests.scenario.helpers'
 TEST_HELPER_MODULE_NAME = 'test_helper'
 TEST_HELPER_BASE_NAME = 'TestHelper'
+
+
+class SkipKnownBug(proboscis.SkipTest):
+    """Skip test failures due to known bug(s).
+    These should get fixed sometime in the future.
+    """
+
+    def __init__(self, *bugs):
+        """
+        :param bugs:    One or more bug references (e.g. link, bug #).
+        """
+        bug_ref = '; '.join(map(str, bugs))
+        super(SkipKnownBug, self).__init__("Known bug: %s" % bug_ref)
 
 
 class RunnerFactory(object):

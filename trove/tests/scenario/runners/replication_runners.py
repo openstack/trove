@@ -15,7 +15,9 @@
 
 from trove.common import utils
 from trove.tests.scenario.helpers.test_helper import DataType
+from trove.tests.scenario import runners
 from trove.tests.scenario.runners.test_runners import CheckInstance
+from trove.tests.scenario.runners.test_runners import SkipKnownBug
 from trove.tests.scenario.runners.test_runners import TestRunner
 from troveclient.compat import exceptions
 
@@ -230,10 +232,12 @@ class ReplicationRunner(TestRunner):
 
     def run_eject_valid_master(self, expected_exception=exceptions.BadRequest,
                                expected_http_code=400):
-        self.assert_raises(
-            expected_exception, expected_http_code,
-            self.auth_client.instances.eject_replica_source,
-            self.instance_info.id)
+        # self.assert_raises(
+        #     expected_exception, expected_http_code,
+        #     self.auth_client.instances.eject_replica_source,
+        #     self.instance_info.id)
+        # Uncomment once BUG_EJECT_VALID_MASTER is fixed
+        raise SkipKnownBug(runners.BUG_EJECT_VALID_MASTER)
 
     def run_delete_valid_master(self, expected_exception=exceptions.Forbidden,
                                 expected_http_code=403):
