@@ -88,19 +88,21 @@ Some packages in Ubuntu repositories are outdated. Please make sure to update to
 
 Use latest setuptools:
 
+Go https://pypi.python.org/pypi/setuptools, download the lastest source setuptools, and move it under ~
+
 .. code-block:: bash
 
     $ cd ~
-    $ wget https://pypi.python.org/packages/source/s/setuptools/setuptools-{{latest}}.tar.gz
     $ tar xfvz setuptools-{{latest}}.tar.gz
     $ cd setuptools-{{latest}}
     $ python setup.py install --user
 
 Use latest pip:
 
+Go https://pypi.python.org/pypi/pip, download the lastest source pip, and move it under ~
+
 .. code-block:: bash
 
-    $ wget https://pypi.python.org/packages/source/p/pip/pip-{{latest}}.tar.gz
     $ tar xfvz pip-{{latest}}.tar.gz
     $ cd pip-{{latest}}
     $ python setup.py install --user
