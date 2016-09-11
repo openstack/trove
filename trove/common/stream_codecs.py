@@ -19,11 +19,12 @@ import base64
 import csv
 import json
 import re
+import sys
+
 import six
-from six.moves.configparser import SafeConfigParser
+from six.moves import configparser
 import xmltodict
 import yaml
-
 
 from trove.common import utils as trove_utils
 
@@ -227,7 +228,11 @@ class IniCodec(StreamCodec):
         return buf
 
     def _init_config_parser(self, sections=None):
-        parser = SafeConfigParser(allow_no_value=True)
+        # SafeConfigParser was deprecated in Python 3.2
+        if sys.version_info >= (3, 2):
+            parser = configparser.ConfigParser(allow_no_value=True)
+        else:
+            parser = configparser.SafeConfigParser(allow_no_value=True)
         if sections:
             for section in sections:
                 parser.add_section(section)
