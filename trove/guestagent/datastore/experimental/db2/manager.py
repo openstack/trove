@@ -13,6 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os
+
 from oslo_log import log as logging
 
 from trove.common.i18n import _
@@ -42,6 +44,10 @@ class Manager(manager.Manager):
     def status(self):
         return self.appStatus
 
+    @property
+    def configuration_manager(self):
+        return self.app.configuration_manager
+
     def do_prepare(self, context, packages, databases, memory_mb, users,
                    device_path, mount_point, backup_info,
                    config_contents, root_password, overrides,
@@ -51,13 +57,18 @@ class Manager(manager.Manager):
             device = volume.VolumeDevice(device_path)
             device.unmount_device(device_path)
             device.format()
-            device.mount(mount_point)
-            LOG.debug('Mounted the volume.')
+            if os.path.exists(mount_point):
+                device.migrate_data(mount_point)
+                device.mount(mount_point)
+                LOG.debug("Mounted the volume.")
         self.app.update_hostname()
         self.app.change_ownership(mount_point)
         self.app.start_db()
         if backup_info:
             self._perform_restore(backup_info, context, mount_point)
+        if config_contents:
+            self.app.configuration_manager.save_configuration(
+                config_contents)
 
     def restart(self, context):
         """
@@ -133,3 +144,15 @@ class Manager(manager.Manager):
     def create_backup(self, context, backup_info):
         LOG.debug("Creating backup.")
         backup.backup(context, backup_info)
+
+    def update_overrides(self, context, overrides, remove=False):
+        LOG.debug("Updating overrides.")
+        if remove:
+            self.app.remove_overrides()
+        else:
+            self.app.update_overrides(context, overrides)
+
+    def apply_overrides(self, context, overrides):
+        if overrides:
+            LOG.debug("Applying overrides: " + str(overrides))
+            self.app.apply_overrides(overrides)

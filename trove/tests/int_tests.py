@@ -214,7 +214,7 @@ register(["user"], user_actions_groups)
 # Register: Datastore based groups
 # These should contain all functionality currently supported by the datastore
 register(["db2_supported"], common_groups,
-         database_actions_groups, user_actions_groups)
+         database_actions_groups, user_actions_groups, configuration_groups)
 register(["cassandra_supported"], common_groups,
          user_actions_groups, database_actions_groups,
          backup_groups, configuration_groups, cluster_actions_groups)

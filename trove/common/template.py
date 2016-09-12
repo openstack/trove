@@ -39,6 +39,7 @@ SERVICE_PARSERS = {
     'cassandra': configurations.CassandraConfParser,
     'redis': configurations.RedisConfParser,
     'vertica': configurations.VerticaConfParser,
+    'db2': configurations.DB2ConfParser,
 }
 
 

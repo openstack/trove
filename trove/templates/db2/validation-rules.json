@@ -1,0 +1,454 @@
+{
+    "configuration-parameters": [
+        {
+            "description": "Agent stack size",
+            "type": "integer",
+            "name": "AGENT_STACK_SZ",
+            "restart_required": true
+        },
+        {
+            "description": "Alternate encryption algorithm for incoming connections at server",
+            "type": "integer",
+            "name": "ALTERNATE_AUTH_ENC",
+            "restart_required": true
+        },
+        {
+            "description": "Max number of concurrently active databases",
+            "type": "integer",
+            "name": "NUMDB",
+            "restart_required": true
+        },
+        {
+            "description": "Federated Database Support",
+            "type": "integer",
+            "name": "FEDERATED",
+            "restart_required": false
+        },
+        {
+            "description": "Transaction processor monitor name",
+            "type": "string",
+            "name": "TP_MON_NAME",
+            "restart_required": true
+        },
+        {
+            "description": "Default charge-back account",
+            "type": "string",
+            "name": "DFT_ACCOUNT_STR",
+            "restart_required": false
+        },
+        {
+            "description": "Size of rotating db2diag & notify logs (MB)",
+            "type": "integer",
+            "name": "DIAGSIZE",
+            "restart_required": true
+        },
+        {
+            "description": "Default database monitor switch for Buffer pool",
+            "type": "integer",
+            "name": "DFT_MON_BUFPOOL",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Lock",
+            "type": "integer",
+            "name": "DFT_MON_LOCK",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Sort",
+            "type": "integer",
+            "name": "DFT_MON_SORT",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Statement",
+            "type": "integer",
+            "name": "DFT_MON_STMT",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Table",
+            "type": "integer",
+            "name": "DFT_MON_TABLE",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Timestamp",
+            "type": "integer",
+            "name": "DFT_MON_TIMESTAMP",
+            "restart_required": false
+        },
+        {
+            "description": "Default database monitor switch for Unit of work",
+            "type": "integer",
+            "name": "DFT_MON_UOW",
+            "restart_required": false
+        },
+        {
+            "description": "Monitor health of instance and databases",
+            "type": "integer",
+            "name": "HEALTH_MON",
+            "restart_required": false
+        },
+        {
+            "description": "SYSADM group name",
+            "type": "string",
+            "name": "SYSADM_GROUP",
+            "restart_required": true
+        },
+        {
+            "description": "SYSCTRL group name",
+            "type": "string",
+            "name": "SYSCTRL_GROUP",
+            "restart_required": true
+        },
+        {
+            "description": "SYSMAINT group name",
+            "type": "string",
+            "name": "SYSMAINT_GROUP",
+            "restart_required": true
+        },
+        {
+            "description": "SYSMON group name",
+            "type": "string",
+            "name": "SYSMAINT_GROUP",
+            "restart_required": true
+        },
+        {
+            "description": "Client Userid-Password Plugin",
+            "type": "string",
+            "name": "CLNT_PW_PLUGIN",
+            "restart_required": true
+        },
+        {
+            "description": "Client Kerberos Plugin",
+            "type": "string",
+            "name": "CLNT_KRB_PLUGIN",
+            "restart_required": true
+        },
+        {
+            "description": "Group Plugin",
+            "type": "string",
+            "name": "GROUP_PLUGIN",
+            "restart_required": true
+        },
+        {
+            "description": "GSS Plugin for Local Authorization",
+            "type": "string",
+            "name": "LOCAL_GSSPLUGIN",
+            "restart_required": true
+        },
+        {
+            "description": "Server Plugin Mode",
+            "type": "integer",
+            "name": "SRV_PLUGIN_MODE",
+            "restart_required": true
+        },
+        {
+            "description": "Server List of GSS Plugins",
+            "type": "string",
+            "name": "SRVCON_GSSPLUGIN_LIST",
+            "restart_required": true
+        },
+        {
+            "description": "Server Userid-Password Plugin",
+            "type": "string",
+            "name": "SRVCON_PW_PLUGIN",
+            "restart_required": true
+        },
+        {
+            "description": "Server Connection Authentication",
+            "type": "string",
+            "name": "SRVCON_AUTH",
+            "restart_required": true
+        },
+        {
+            "description": "Database manager authentication",
+            "type": "integer",
+            "name": "AUTHENTICATION",
+            "restart_required": true
+        },
+        {
+            "description": "Alternate authentication",
+            "type": "integer",
+            "name": "ALTERNATE_AUTH_ENC",
+            "restart_required": true
+        },
+        {
+            "description": "Cataloging allowed without authority",
+            "type": "integer",
+            "name": "CATALOG_NOAUTH",
+            "restart_required": false
+        },
+        {
+            "description": "Trust all clients",
+            "type": "integer",
+            "name": "TRUST_ALLCLNTS",
+            "restart_required": true
+        },
+        {
+            "description": "Trusted client authentication",
+            "type": "integer",
+            "name": "TRUST_CLNTAUTH",
+            "restart_required": true
+        },
+        {
+            "description": "Bypass federated authentication",
+            "type": "integer",
+            "name": "FED_NOAUTH",
+            "restart_required": false
+        },
+        {
+            "description": "Database monitor heap size(4KB)",
+            "type": "integer",
+            "name": "MON_HEAP_SZ",
+            "restart_required": false
+        },
+        {
+            "description": "Java Virtual Machine heap size(4KB)",
+            "type": "integer",
+            "name": "JAVA_HEAP_SZ",
+            "restart_required": true
+        },
+        {
+            "description": "Audit buffer size(4KB)",
+            "type": "integer",
+            "name": "AUDIT_BUF_SZ",
+            "restart_required": true
+        },
+        {
+            "description": "Agent stack size",
+            "type": "integer",
+            "name": "AGENT_STACK_SZ",
+            "restart_required": true
+        },
+        {
+            "description": "Sort heap threshold (4KB)",
+            "type": "integer",
+            "name": "SHEAPTHRES",
+            "restart_required": true
+        },
+        {
+            "description": "Directory cache support",
+            "type": "integer",
+            "name": "DIR_CACHE",
+            "restart_required": true
+        },
+        {
+            "description": "Application support layer heap size (4KB)",
+            "type": "integer",
+            "name": "ASLHEAPSZ",
+            "restart_required": true
+        },
+        {
+            "description": "Max requester I/O block size (bytes)",
+            "type": "integer",
+            "name": "RQRIOBLK",
+            "restart_required": true
+        },
+        {
+            "description": "Workload impact by throttled utilities",
+            "type": "integer",
+            "name": "UTIL_IMPACT_LIM",
+            "restart_required": true
+        },
+        {
+            "description": "Priority of agents",
+            "type": "integer",
+            "name": "AGENTPRI",
+            "restart_required": true
+        },
+        {
+            "description": "Agent pool size",
+            "type": "integer",
+            "name": "NUM_POOLAGENTS",
+            "restart_required": false
+        },
+        {
+            "description": "Initial number of agents in pool",
+            "type": "integer",
+            "name": "NUM_INITAGENTS",
+            "restart_required": true
+        },
+        {
+            "description": "Max number of coordinating agents",
+            "type": "integer",
+            "name": "MAX_COORDAGENTS",
+            "restart_required": false
+        },
+        {
+            "description": "Max number of client connections",
+            "type": "integer",
+            "name": "MAX_CONNECTIONS",
+            "restart_required": false
+        },
+        {
+            "description": "Keep fenced process",
+            "type": "integer",
+            "name": "KEEPFENCED",
+            "restart_required": true
+        },
+        {
+            "description": "Number of pooled fenced processes",
+            "type": "integer",
+            "name": "FENCED_POOL",
+            "restart_required": false
+        },
+        {
+            "description": "Initial number of fenced processes",
+            "type": "integer",
+            "name": "NUM_INITFENCED",
+            "restart_required": true
+        },
+        {
+            "description": "Index re-creation time and redo index build",
+            "type": "integer",
+            "name": "INDEXREC",
+            "restart_required": false
+        },
+        {
+            "description": "Transaction manager database name",
+            "type": "string",
+            "name": "TM_DATABASE",
+            "restart_required": true
+        },
+        {
+            "description": "Transaction resync interval (sec)",
+            "type": "integer",
+            "name": "RESYNC_INTERVAL",
+            "restart_required": true
+        },
+        {
+            "description": "SPM name",
+            "type": "string",
+            "name": "SPM_NAME",
+            "restart_required": true
+        },
+        {
+            "description": "SPM log size",
+            "type": "integer",
+            "name": "SPM_LOG_FILE_SZ",
+            "restart_required": true
+        },
+        {
+            "description": "SPM resync agent limit",
+            "type": "integer",
+            "name": "SPM_MAX_RESYNC",
+            "restart_required": true
+        },
+        {
+            "description": "Discovery mode",
+            "type": "integer",
+            "name": "DISCOVER",
+            "restart_required": true
+        },
+        {
+            "description": "Discover server instance",
+            "type": "integer",
+            "name": "DISCOVER_INST",
+            "restart_required": false
+        },
+        {
+            "description": "SSL server keydb file",
+            "type": "string",
+            "name": "SSL_SVR_KEYDB",
+            "restart_required": true
+        },
+        {
+            "description": "SSL server stash file",
+            "type": "string",
+            "name": "SSL_SVR_STASH",
+            "restart_required": true
+        },
+        {
+            "description": "SSL server certificate label",
+            "type": "string",
+            "name": "SSL_SVR_LABEL",
+            "restart_required": true
+        },
+        {
+            "description": "SSL cipher specs",
+            "type": "string",
+            "name": "SSL_CIPHERSPECS",
+            "restart_required": true
+        },
+        {
+            "description": "SSL versions",
+            "type": "string",
+            "name": "SSL_VERSIONS",
+            "restart_required": true
+        },
+        {
+            "description": "SSL client keydb file",
+            "type": "string",
+            "name": "SSL_CLNT_KEYDB",
+            "restart_required": true
+        },
+        {
+            "description": "SSL client stash file",
+            "type": "string",
+            "name": "SSL_CLNT_STASH",
+            "restart_required": true
+        },
+        {
+            "description": "Maximum query degree of parallelism",
+            "type": "integer",
+            "name": "MAX_QUERYDEGREE",
+            "restart_required": false
+        },
+        {
+            "description": "Enable intra-partition parallelism",
+            "type": "integer",
+            "name": "INTRA_PARALLEL",
+            "restart_required": true
+        },
+        {
+            "description": "No. of int. communication buffers(4KB)",
+            "type": "integer",
+            "name": "FCM_NUM_BUFFERS",
+            "restart_required": false
+        },
+        {
+            "description": "No. of int. communication channels",
+            "type": "integer",
+            "name": "FCM_NUM_CHANNELS",
+            "restart_required": false
+        },
+        {
+            "description": "db2start/db2stop timeout (min)",
+            "type": "integer",
+            "name": "START_STOP_TIME",
+            "restart_required": false
+        },
+        {
+            "description": "WLM dispatcher enabled",
+            "type": "integer",
+            "name": "WLM_DISPATCHER",
+            "restart_required": false
+        },
+        {
+            "description": "WLM dispatcher concurrency",
+            "type": "integer",
+            "name": "WLM_DISP_CONCUR",
+            "restart_required": false
+        },
+        {
+            "description": "WLM dispatcher CPU shares enabled",
+            "type": "integer",
+            "name": "WLM_DISP_CPU_SHARES",
+            "restart_required": false
+        },
+        {
+            "description": "WLM dispatcher min. utilization (%)",
+            "type": "integer",
+            "name": "WLM_DISP_MIN_UTIL",
+            "restart_required": false
+        },
+        {
+            "description": "Communication buffer exit library list",
+            "type": "string",
+            "name": "COMM_EXIT_LIST",
+            "restart_required": false
+        }
+    ]
+}
