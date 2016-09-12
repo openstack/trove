@@ -14,11 +14,11 @@ Restart instance
 
 Restarts the database service for an instance.
 
-The restart operation restarts only the MySQL instance. Restarting
-MySQL erases any dynamic configuration settings that you make in
-MySQL.
+The restart operation restarts only the database instance. Restarting
+the database erases any dynamic configuration settings that you make
+in the database instance.
 
-The MySQL service is unavailable until the instance restarts.
+The database instance is unavailable until the instance restarts.
 
 If the operation succeeds, it returns the ``Accepted (202)``
 response code.
@@ -65,7 +65,7 @@ Resize instance
 Resizes the memory for an instance.
 
 If you provide a valid ``flavorRef``, this operation changes the
-memory size of the instance, and restarts MySQL.
+memory size of the instance, and restarts the database.
 
 Error response codes:202,413,415,405,404,403,401,400,422,503,500,501,
 

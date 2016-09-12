@@ -7,7 +7,7 @@ Database instances (instances)
 Creates, lists, shows details for, attaches a configuration group
 to, detaches a configuration group from, deletes, lists
 configuration defaults, creates root, and determines whether root
-is enables for instances.
+is enabled for instances.
 
 
 Delete database instance
@@ -60,11 +60,11 @@ Lists the status and details of the database instance.
 Lists the volume size in gigabytes (GB) and the approximate GB
 used.
 
-After instance creation, the ``used`` value is greater than 0,
-which is expected and due to the automatic creation of non-empty
-transaction logs for MySQL optimization. The response does not
-include the ``used`` attribute when the instance status is
-``BUILD``, ``REBOOT``, ``RESIZE``, or ``ERROR``.
+After instance creation, the ``used`` value is greater than 0, which
+is expected as databases may create some basic (non empty) files to
+represent an empty schema. The response does not include the ``used``
+attribute when the instance status is ``BUILD``, ``REBOOT``,
+``RESIZE``, or ``ERROR``.
 
 The list operations return a DNS-resolvable host name for the
 database instance rather than an IP address. Because the host name
@@ -266,7 +266,8 @@ database instance.
 - You can create a database instance with one or more databases. You
   associate users with each database.
 
-- The default binding for the MySQL instance is port 3306.
+- The port on which the database instance is listening is database
+  specific.
 
 
 Normal response codes: 200
