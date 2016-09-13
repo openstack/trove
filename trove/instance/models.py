@@ -247,6 +247,10 @@ class SimpleInstance(object):
         return self.status in [InstanceStatus.BUILD]
 
     @property
+    def is_error(self):
+        return self.status in [InstanceStatus.ERROR]
+
+    @property
     def is_datastore_running(self):
         """True if the service status indicates datastore is up and running."""
         return self.datastore_status.status in MYSQL_RESPONSIVE_STATUSES
@@ -290,6 +294,10 @@ class SimpleInstance(object):
     def status(self):
         # Check for taskmanager errors.
         if self.db_info.task_status.is_error:
+            return InstanceStatus.ERROR
+
+        # If we've reset the status, show it as an error
+        if tr_instance.ServiceStatuses.UNKNOWN == self.datastore_status.status:
             return InstanceStatus.ERROR
 
         # Check for taskmanager status.
@@ -597,8 +605,9 @@ class BaseInstance(SimpleInstance):
     def delete(self):
         def _delete_resources():
             if self.is_building:
-                raise exception.UnprocessableEntity("Instance %s is not ready."
-                                                    % self.id)
+                raise exception.UnprocessableEntity(
+                    "Instance %s is not ready. (Status is %s)." %
+                    (self.id, self.status))
             LOG.debug("Deleting instance with compute id = %s.",
                       self.db_info.compute_instance_id)
 
@@ -718,6 +727,20 @@ class BaseInstance(SimpleInstance):
 
         return files
 
+    def reset_status(self):
+        if self.is_building or self.is_error:
+            LOG.info(_LI("Resetting the status to ERROR on instance %s."),
+                     self.id)
+            self.reset_task_status()
+
+            reset_instance = InstanceServiceStatus.find_by(instance_id=self.id)
+            reset_instance.set_status(tr_instance.ServiceStatuses.UNKNOWN)
+            reset_instance.save()
+        else:
+            raise exception.UnprocessableEntity(
+                "Instance %s status can only be reset in BUILD or ERROR "
+                "state." % self.id)
+
 
 class FreshInstance(BaseInstance):
     @classmethod
@@ -727,8 +750,8 @@ class FreshInstance(BaseInstance):
 
 class BuiltInstance(BaseInstance):
     @classmethod
-    def load(cls, context, id):
-        return load_instance(cls, context, id, needs_server=True)
+    def load(cls, context, id, needs_server=True):
+        return load_instance(cls, context, id, needs_server=needs_server)
 
 
 class Instance(BuiltInstance):

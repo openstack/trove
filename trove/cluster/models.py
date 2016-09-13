@@ -21,7 +21,8 @@ from trove.cluster.tasks import ClusterTasks
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common.notification import DBaaSClusterGrow, DBaaSClusterShrink
+from trove.common.notification import (DBaaSClusterGrow, DBaaSClusterShrink,
+                                       DBaaSClusterResetStatus)
 from trove.common.notification import StartNotification
 from trove.common import remote
 from trove.common import server_group as srv_grp
@@ -135,6 +136,16 @@ class Cluster(object):
     def reset_task(self):
         LOG.info(_("Setting task to NONE on cluster %s") % self.id)
         self.update_db(task_status=ClusterTasks.NONE)
+
+    def reset_status(self):
+        self.validate_cluster_available([ClusterTasks.BUILDING_INITIAL])
+        LOG.info(_("Resetting status to NONE on cluster %s") % self.id)
+        self.reset_task()
+        instances = inst_models.DBInstance.find_all(cluster_id=self.id,
+                                                    deleted=False).all()
+        for inst in instances:
+            instance = inst_models.load_any_instance(self.context, inst.id)
+            instance.reset_status()
 
     @property
     def id(self):
@@ -291,6 +302,12 @@ class Cluster(object):
             with StartNotification(context, cluster_id=self.id):
                 instance_ids = [instance['id'] for instance in param]
                 return self.shrink(instance_ids)
+        elif action == "reset-status":
+            context.notification = DBaaSClusterResetStatus(context,
+                                                           request=req)
+            with StartNotification(context, cluster_id=self.id):
+                return self.reset_status()
+
         else:
             raise exception.BadRequest(_("Action %s not supported") % action)
 

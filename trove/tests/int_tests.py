@@ -42,6 +42,7 @@ from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups import instance_delete_group
 from trove.tests.scenario.groups import instance_error_create_group
+from trove.tests.scenario.groups import instance_force_delete_group
 from trove.tests.scenario.groups import instance_upgrade_group
 from trove.tests.scenario.groups import module_group
 from trove.tests.scenario.groups import negative_cluster_actions_group
@@ -150,6 +151,9 @@ instance_error_create_groups.extend([instance_error_create_group.GROUP])
 instance_upgrade_groups = list(instance_create_groups)
 instance_upgrade_groups.extend([instance_upgrade_group.GROUP])
 
+instance_force_delete_groups = list(base_groups)
+instance_force_delete_groups.extend([instance_force_delete_group.GROUP])
+
 backup_groups = list(instance_create_groups)
 backup_groups.extend([groups.BACKUP,
                       groups.BACKUP_INST])
@@ -195,12 +199,13 @@ user_actions_groups.extend([user_actions_group.GROUP])
 # groups common to all datastores
 common_groups = list(instance_actions_groups)
 common_groups.extend([guest_log_groups, instance_error_create_groups,
-                      module_groups])
+                      instance_force_delete_groups, module_groups])
 
 # Register: Component based groups
 register(["backup"], backup_groups)
 register(["backup_incremental"], backup_incremental_groups)
 register(["cluster"], cluster_actions_groups)
+register(["common"], common_groups)
 register(["configuration"], configuration_groups)
 register(["configuration_create"], configuration_create_groups)
 register(["database"], database_actions_groups)
@@ -209,6 +214,7 @@ register(["instance", "instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
 register(["instance_error_create"], instance_error_create_groups)
 register(["instance_upgrade"], instance_upgrade_groups)
+register(["instance_force_delete"], instance_force_delete_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
 register(["replication"], replication_groups)

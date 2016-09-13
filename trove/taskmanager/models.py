@@ -619,7 +619,9 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
            status == rd_instance.ServiceStatuses.INSTANCE_READY):
                 return True
         elif status not in [rd_instance.ServiceStatuses.NEW,
-                            rd_instance.ServiceStatuses.BUILDING]:
+                            rd_instance.ServiceStatuses.BUILDING,
+                            rd_instance.ServiceStatuses.UNKNOWN,
+                            rd_instance.ServiceStatuses.DELETED]:
             raise TroveError(_("Service not active, status: %s") % status)
 
         c_id = self.db_info.compute_instance_id

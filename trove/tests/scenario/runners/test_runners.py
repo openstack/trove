@@ -139,7 +139,7 @@ class RunnerFactory(object):
                 # such as a missing override class.  Anything else
                 # shouldn't be suppressed.
                 l_msg = ie.message.lower()
-                if load_type not in l_msg or (
+                if (load_type and load_type not in l_msg) or (
                         'no module named' not in l_msg and
                         'cannot be found' not in l_msg):
                     raise
