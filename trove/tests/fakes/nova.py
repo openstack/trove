@@ -17,6 +17,7 @@ from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 from trove.common.exception import PollTimeOut
+from trove.common.i18n import _
 from trove.common import instance as rd_instance
 from trove.tests.fakes.common import authorize
 

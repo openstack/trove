@@ -149,4 +149,6 @@ class Manager(periodic_task.PeriodicTasks):
                         message, exception):
         notification = SerializableNotification.deserialize(
             context, serialized_notification)
+        LOG.error(_("Guest exception on request %(req)s:\n%(exc)s")
+                  % {'req': notification.request_id, 'exc': exception})
         notification.notify_exc_info(message, exception)

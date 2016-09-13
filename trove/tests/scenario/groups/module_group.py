@@ -374,7 +374,7 @@ class ModuleInstCreateGroup(TestGroup):
 
 @test(depends_on_groups=[groups.MODULE_INST_CREATE],
       groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_CREATE_WAIT],
-      runs_after_groups=[groups.INST_ACTIONS])
+      runs_after_groups=[groups.INST_ACTIONS, groups.INST_UPGRADE])
 class ModuleInstCreateWaitGroup(TestGroup):
     """Test that Module Instance Create Completes."""
 

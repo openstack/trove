@@ -54,6 +54,7 @@ class InstanceActionsGroup(TestGroup):
 @test(depends_on_groups=[groups.INST_CREATE_WAIT],
       groups=[GROUP, groups.INST_ACTIONS_RESIZE],
       runs_after_groups=[groups.INST_ACTIONS,
+                         groups.INST_UPGRADE,
                          groups.MODULE_INST_CREATE_WAIT,
                          groups.CFGGRP_INST_CREATE_WAIT,
                          groups.BACKUP_CREATE,

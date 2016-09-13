@@ -42,6 +42,7 @@ from trove.tests.scenario.groups import instance_actions_group
 from trove.tests.scenario.groups import instance_create_group
 from trove.tests.scenario.groups import instance_delete_group
 from trove.tests.scenario.groups import instance_error_create_group
+from trove.tests.scenario.groups import instance_upgrade_group
 from trove.tests.scenario.groups import module_group
 from trove.tests.scenario.groups import negative_cluster_actions_group
 from trove.tests.scenario.groups import replication_group
@@ -146,6 +147,9 @@ instance_create_groups.extend([instance_create_group.GROUP,
 instance_error_create_groups = list(base_groups)
 instance_error_create_groups.extend([instance_error_create_group.GROUP])
 
+instance_upgrade_groups = list(instance_create_groups)
+instance_upgrade_groups.extend([instance_upgrade_group.GROUP])
+
 backup_groups = list(instance_create_groups)
 backup_groups.extend([groups.BACKUP,
                       groups.BACKUP_INST])
@@ -204,6 +208,7 @@ register(["guest_log"], guest_log_groups)
 register(["instance", "instance_actions"], instance_actions_groups)
 register(["instance_create"], instance_create_groups)
 register(["instance_error_create"], instance_error_create_groups)
+register(["instance_upgrade"], instance_upgrade_groups)
 register(["module"], module_groups)
 register(["module_create"], module_create_groups)
 register(["replication"], replication_groups)
@@ -228,8 +233,8 @@ register(["postgresql_supported"], common_groups,
          backup_incremental_groups, replication_groups)
 register(["mysql_supported", "percona_supported"], common_groups,
          backup_groups, configuration_groups, database_actions_groups,
-         replication_promote_groups, root_actions_groups, user_actions_groups,
-         backup_incremental_groups)
+         replication_promote_groups, instance_upgrade_groups,
+         root_actions_groups, user_actions_groups, backup_incremental_groups)
 register(["mariadb_supported"], common_groups,
          backup_groups, cluster_actions_groups, configuration_groups,
          database_actions_groups, replication_promote_groups,

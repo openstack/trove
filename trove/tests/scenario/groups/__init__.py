@@ -64,6 +64,10 @@ INST_ACTIONS_RESIZE = "scenario.inst_actions_resize_grp"
 INST_ACTIONS_RESIZE_WAIT = "scenario.inst_actions_resize_wait_grp"
 
 
+# Instance Upgrade Group
+INST_UPGRADE = "scenario.inst_upgrade_grp"
+
+
 # Instance Create Group
 INST_CREATE = "scenario.inst_create_grp"
 INST_CREATE_WAIT = "scenario.inst_create_wait_grp"

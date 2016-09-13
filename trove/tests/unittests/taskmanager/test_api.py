@@ -122,6 +122,14 @@ class ApiTest(trove_testtools.TestCase):
                                 ('Could not transform %s' % flavor),
                                 self.api._transform_obj, flavor)
 
+    def test_upgrade(self):
+        self.api.upgrade('some-instance-id', 'some-datastore-version')
+
+        self._verify_rpc_prepare_before_cast()
+        self._verify_cast('upgrade',
+                          instance_id='some-instance-id',
+                          datastore_version_id='some-datastore-version')
+
 
 class TestAPI(trove_testtools.TestCase):
 

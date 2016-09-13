@@ -252,7 +252,7 @@ class Manager(periodic_task.PeriodicTasks):
         return True
 
     #################
-    # Prepare related
+    # Instance related
     #################
     def prepare(self, context, packages, databases, memory_mb, users,
                 device_path=None, mount_point=None, backup_info=None,
@@ -389,6 +389,18 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.info(_('No post_prepare work has been defined.'))
         pass
 
+    def pre_upgrade(self, context):
+        """Prepares the guest for upgrade, returning a dict to be passed
+        to post_upgrade
+        """
+        return {}
+
+    def post_upgrade(self, context, upgrade_info):
+        """Recovers the guest after the image is upgraded using infomation
+        from the pre_upgrade step
+        """
+        pass
+
     #################
     # Service related
     #################
@@ -407,11 +419,12 @@ class Manager(periodic_task.PeriodicTasks):
         LOG.debug("Getting file system stats for '%s'" % mount_point)
         return dbaas.get_filesystem_volume_stats(mount_point)
 
-    def mount_volume(self, context, device_path=None, mount_point=None):
+    def mount_volume(self, context, device_path=None, mount_point=None,
+                     write_to_fstab=False):
         LOG.debug("Mounting the device %s at the mount point %s." %
                   (device_path, mount_point))
         device = volume.VolumeDevice(device_path)
-        device.mount(mount_point, write_to_fstab=False)
+        device.mount(mount_point, write_to_fstab=write_to_fstab)
 
     def unmount_volume(self, context, device_path=None, mount_point=None):
         LOG.debug("Unmounting the device %s from the mount point %s." %

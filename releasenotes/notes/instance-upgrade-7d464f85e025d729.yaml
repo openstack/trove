@@ -1,0 +1,4 @@
+features:
+  - New instance upgrade API supports upgrading an instance of
+    a datastore to a new datastore version.  Includes implementation
+    for MySQL family of databases.

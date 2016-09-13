@@ -198,6 +198,14 @@ class API(object):
 
         self._cast("delete_cluster", self.version_cap, cluster_id=cluster_id)
 
+    def upgrade(self, instance_id, datastore_version_id):
+        LOG.debug("Making async call to upgrade guest to datastore "
+                  "version %s " % datastore_version_id)
+
+        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt.cast(self.context, "upgrade", instance_id=instance_id,
+                   datastore_version_id=datastore_version_id)
+
 
 def load(context, manager=None):
     if manager:

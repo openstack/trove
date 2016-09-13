@@ -18,6 +18,7 @@ import uuid
 
 from cinderclient import exceptions as cinder_exceptions
 import cinderclient.v2.client as cinderclient
+from cinderclient.v2 import volumes as cinderclient_volumes
 from mock import Mock, MagicMock, patch, PropertyMock, call
 from novaclient import exceptions as nova_exceptions
 import novaclient.v2.flavors
@@ -217,6 +218,9 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
         self.task_models_conf_patch = patch('trove.taskmanager.models.CONF')
         self.task_models_conf_mock = self.task_models_conf_patch.start()
         self.addCleanup(self.task_models_conf_patch.stop)
+        self.inst_models_conf_patch = patch('trove.instance.models.CONF')
+        self.inst_models_conf_mock = self.inst_models_conf_patch.start()
+        self.addCleanup(self.inst_models_conf_patch.stop)
 
     def tearDown(self):
         super(FreshInstanceTasksTest, self).tearDown()
@@ -252,9 +256,9 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
             else:
                 return ''
 
-        self.task_models_conf_mock.get.side_effect = fake_conf_getter
+        self.inst_models_conf_mock.get.side_effect = fake_conf_getter
         # execute
-        files = self.freshinstancetasks._get_injected_files("test")
+        files = self.freshinstancetasks.get_injected_files("test")
         # verify
         self.assertTrue(
             '/etc/trove/conf.d/guest_info.conf' in files)
@@ -275,9 +279,9 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
             else:
                 return ''
 
-        self.task_models_conf_mock.get.side_effect = fake_conf_getter
+        self.inst_models_conf_mock.get.side_effect = fake_conf_getter
         # execute
-        files = self.freshinstancetasks._get_injected_files("test")
+        files = self.freshinstancetasks.get_injected_files("test")
         # verify
         self.assertTrue(
             '/etc/guest_info' in files)
@@ -396,7 +400,7 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
     @patch.object(BaseInstance, 'update_db')
     @patch.object(backup_models.Backup, 'get_by_id')
     @patch.object(taskmanager_models.FreshInstanceTasks, 'report_root_enabled')
-    @patch.object(taskmanager_models.FreshInstanceTasks, '_get_injected_files')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'get_injected_files')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
@@ -417,7 +421,7 @@ class FreshInstanceTasksTest(trove_testtools.TestCase):
 
     @patch.object(BaseInstance, 'update_db')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_dns_entry')
-    @patch.object(taskmanager_models.FreshInstanceTasks, '_get_injected_files')
+    @patch.object(taskmanager_models.FreshInstanceTasks, 'get_injected_files')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_server')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_create_secgroup')
     @patch.object(taskmanager_models.FreshInstanceTasks, '_build_volume_info')
@@ -691,6 +695,10 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
                                                    True)
         stub_flavor_manager.get = MagicMock(return_value=nova_flavor)
 
+        self.instance_task._volume_client = MagicMock(spec=cinderclient)
+        self.instance_task._volume_client.volumes = Mock(
+            spec=cinderclient_volumes.VolumeManager)
+
         answers = (status for status in
                    self.get_inst_service_status('inst_stat-id',
                                                 [ServiceStatuses.SHUTDOWN,
@@ -916,6 +924,36 @@ class BuiltInstanceTasksTest(trove_testtools.TestCase):
     def test_demote_replication_master(self):
         self.instance_task.demote_replication_master()
         self.instance_task._guest.demote_replication_master.assert_any_call()
+
+    @patch.multiple(taskmanager_models.BuiltInstanceTasks,
+                    get_injected_files=Mock(return_value="the-files"))
+    def test_upgrade(self, *args):
+        pre_rebuild_server = self.instance_task.server
+        dsv = Mock(image_id='foo_image')
+        mock_volume = Mock(attachments=[{'device': '/dev/mock_dev'}])
+        with patch.object(self.instance_task._volume_client.volumes, "get",
+                          Mock(return_value=mock_volume)):
+            mock_server = Mock(status='ACTIVE')
+            with patch.object(self.instance_task._nova_client.servers,
+                              'get', Mock(return_value=mock_server)):
+                with patch.multiple(self.instance_task._guest,
+                                    pre_upgrade=Mock(return_value={}),
+                                    post_upgrade=Mock()):
+                    self.instance_task.upgrade(dsv)
+
+                    self.instance_task._guest.pre_upgrade.assert_called_with()
+                    pre_rebuild_server.rebuild.assert_called_with(
+                        dsv.image_id, files="the-files")
+                    self.instance_task._guest.post_upgrade.assert_called_with(
+                        mock_volume.attachments[0])
+
+    def test_fix_device_path(self):
+        self.assertEqual("/dev/vdb", self.instance_task.
+                         _fix_device_path("vdb"))
+        self.assertEqual("/dev/dev", self.instance_task.
+                         _fix_device_path("dev"))
+        self.assertEqual("/dev/vdb/dev", self.instance_task.
+                         _fix_device_path("vdb/dev"))
 
 
 class BackupTasksTest(trove_testtools.TestCase):

@@ -235,9 +235,11 @@ class ConfigurationInstCreateGroup(TestGroup):
       groups=[GROUP, groups.CFGGRP_INST,
               groups.CFGGRP_INST_CREATE_WAIT],
       runs_after_groups=[groups.INST_ACTIONS,
+                         groups.INST_UPGRADE,
                          groups.MODULE_INST_CREATE_WAIT])
 class ConfigurationInstCreateWaitGroup(TestGroup):
     """Test that Instance Configuration Group Create Completes."""
+
     def __init__(self):
         super(ConfigurationInstCreateWaitGroup, self).__init__(
             ConfigurationRunnerFactory.instance())

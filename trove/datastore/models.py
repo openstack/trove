@@ -336,6 +336,9 @@ class Datastore(object):
     def __init__(self, db_info):
         self.db_info = db_info
 
+    def __repr__(self, *args, **kwargs):
+        return "%s(%s)" % (self.name, self.id)
+
     @classmethod
     def load(cls, id_or_name):
         try:
@@ -386,6 +389,9 @@ class DatastoreVersion(object):
         self._capabilities = None
         self.db_info = db_info
         self._datastore_name = None
+
+    def __repr__(self, *args, **kwargs):
+        return "%s(%s)" % (self.name, self.id)
 
     @classmethod
     def load(cls, datastore, id_or_name):

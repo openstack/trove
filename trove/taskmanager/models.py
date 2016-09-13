@@ -336,32 +336,6 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
 
         LOG.debug("End _delete_resource for instance %s" % self.id)
 
-    def _get_injected_files(self, datastore_manager):
-        injected_config_location = CONF.get('injected_config_location')
-        guest_info = CONF.get('guest_info')
-
-        if ('/' in guest_info):
-            # Set guest_info_file to exactly guest_info from the conf file.
-            # This should be /etc/guest_info for pre-Kilo compatibility.
-            guest_info_file = guest_info
-        else:
-            guest_info_file = os.path.join(injected_config_location,
-                                           guest_info)
-
-        files = {guest_info_file: (
-            "[DEFAULT]\n"
-            "guest_id=%s\n"
-            "datastore_manager=%s\n"
-            "tenant_id=%s\n"
-            % (self.id, datastore_manager, self.tenant_id))}
-
-        if os.path.isfile(CONF.get('guest_config')):
-            with open(CONF.get('guest_config'), "r") as f:
-                files[os.path.join(injected_config_location,
-                                   "trove-guestagent.conf")] = f.read()
-
-        return files
-
     def wait_for_instance(self, timeout, flavor):
         # Make sure the service becomes active before sending a usage
         # record to avoid over billing a customer for an instance that
@@ -421,7 +395,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
                 LOG.debug("Successfully created security group for "
                           "instance: %s" % self.id)
 
-        files = self._get_injected_files(datastore_manager)
+        files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         if use_heat:
             volume_info = self._create_server_volume_heat(
@@ -1419,6 +1393,58 @@ class BuiltInstanceTasks(BuiltInstance, NotifyMixin, ConfigurationMixin):
         datastore_status = InstanceServiceStatus.find_by(instance_id=self.id)
         datastore_status.status = rd_instance.ServiceStatuses.PAUSED
         datastore_status.save()
+
+    def upgrade(self, datastore_version):
+        LOG.debug("Upgrading instance %s to new datastore version %s",
+                  self, datastore_version)
+
+        def server_finished_rebuilding():
+            self.refresh_compute_server_info()
+            return not self.server_status_matches(['REBUILD'])
+
+        try:
+            upgrade_info = self.guest.pre_upgrade()
+
+            if self.volume_id:
+                volume = self.volume_client.volumes.get(self.volume_id)
+                volume_device = self._fix_device_path(
+                    volume.attachments[0]['device'])
+
+            injected_files = self.get_injected_files(
+                datastore_version.manager)
+            LOG.debug("Rebuilding instance %(instance)s with image %(image)s.",
+                      {'instance': self, 'image': datastore_version.image_id})
+            self.server.rebuild(datastore_version.image_id,
+                                files=injected_files)
+            utils.poll_until(
+                server_finished_rebuilding,
+                sleep_time=2, time_out=600)
+            if not self.server_status_matches(['ACTIVE']):
+                raise TroveError(_("Instance %(instance)s failed to "
+                                   "upgrade to %(datastore_version)s")
+                                 % {'instance': self,
+                                    'datastore_version': datastore_version})
+
+            if volume:
+                upgrade_info['device'] = volume_device
+
+            self.guest.post_upgrade(upgrade_info)
+
+            self.reset_task_status()
+
+        except Exception as e:
+            LOG.exception(e)
+            err = inst_models.InstanceTasks.BUILDING_ERROR_SERVER
+            self.update_db(task_status=err)
+            raise e
+
+    # Some cinder drivers appear to return "vdb" instead of "/dev/vdb".
+    # We need to account for that.
+    def _fix_device_path(self, device):
+        if device.startswith("/dev"):
+            return device
+        else:
+            return "/dev/%s" % device
 
 
 class BackupTasks(object):

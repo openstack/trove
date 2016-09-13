@@ -1548,10 +1548,12 @@ class MySqlAppMockTest(trove_testtools.TestCase):
         utils.execute_with_timeout = self.orig_utils_execute_with_timeout
         super(MySqlAppMockTest, self).tearDown()
 
+    @patch('trove.guestagent.common.configuration.ConfigurationManager'
+           '.refresh_cache')
     @patch.object(mysql_common_service, 'clear_expired_password')
     @patch.object(utils, 'generate_random_password',
                   return_value='some_password')
-    def test_secure_keep_root(self, auth_pwd_mock, clear_pwd_mock):
+    def test_secure_keep_root(self, auth_pwd_mock, clear_pwd_mock, _):
         with patch.object(self.mock_client,
                           'execute', return_value=None) as mock_execute:
             utils.execute_with_timeout = MagicMock(return_value=None)
@@ -1569,10 +1571,12 @@ class MySqlAppMockTest(trove_testtools.TestCase):
                 app._reset_configuration.assert_has_calls(reset_config_calls)
                 self.assertTrue(mock_execute.called)
 
+    @patch('trove.guestagent.common.configuration.ConfigurationManager'
+           '.refresh_cache')
     @patch.object(mysql_common_service, 'clear_expired_password')
     @patch.object(mysql_common_service.BaseMySqlApp,
                   'get_auth_password', return_value='some_password')
-    def test_secure_with_mycnf_error(self, auth_pwd_mock, clear_pwd_mock):
+    def test_secure_with_mycnf_error(self, *args):
         with patch.object(self.mock_client,
                           'execute', return_value=None) as mock_execute:
             with patch.object(operating_system, 'service_discovery',
