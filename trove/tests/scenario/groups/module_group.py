@@ -83,12 +83,22 @@ class ModuleCreateGroup(TestGroup):
         """Check that create module works."""
         self.test_runner.run_module_create()
 
+    @test(runs_after=[module_create])
+    def module_create_for_update(self):
+        """Check that create module for update works."""
+        self.test_runner.run_module_create_for_update()
+
     @test(depends_on=[module_create])
     def module_create_dupe(self):
         """Ensure create with duplicate info fails."""
         self.test_runner.run_module_create_dupe()
 
-    @test(runs_after=[module_create])
+    @test(depends_on=[module_create_for_update])
+    def module_update_missing_datastore(self):
+        """Ensure update module with missing datastore fails."""
+        self.test_runner.run_module_update_missing_datastore()
+
+    @test(runs_after=[module_create_for_update])
     def module_create_bin(self):
         """Check that create module with binary contents works."""
         self.test_runner.run_module_create_bin()
@@ -325,8 +335,23 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that module-query works."""
         self.test_runner.run_module_query_after_apply()
 
+    @test(runs_after=[module_query_after_apply])
+    def module_apply_another(self):
+        """Check that module-apply works for another module."""
+        self.test_runner.run_module_apply_another()
+
+    @test(depends_on=[module_apply_another])
+    def module_list_instance_after_apply_another(self):
+        """Check that the instance has one module associated."""
+        self.test_runner.run_module_list_instance_after_apply_another()
+
+    @test(depends_on=[module_apply_another])
+    def module_query_after_apply_another(self):
+        """Check that module-query works after another apply."""
+        self.test_runner.run_module_query_after_apply_another()
+
     @test(depends_on=[module_apply],
-          runs_after=[module_query_after_apply])
+          runs_after=[module_query_after_apply_another])
     def create_inst_with_mods(self):
         """Check that creating an instance with modules works."""
         self.test_runner.run_create_inst_with_mods()
@@ -344,32 +369,44 @@ class ModuleInstCreateGroup(TestGroup):
         self.test_runner.run_module_remove()
 
     @test(depends_on=[module_remove])
-    def module_query_empty_after(self):
-        """Check that the instance has no modules applied after remove."""
-        self.test_runner.run_module_query_empty()
+    def module_query_after_remove(self):
+        """Check that the instance has one module applied after remove."""
+        self.test_runner.run_module_query_after_remove()
 
     @test(depends_on=[module_remove],
-          runs_after=[module_query_empty_after])
-    def module_apply_again(self):
-        """Check that module-apply works a second time."""
-        self.test_runner.run_module_apply()
+          runs_after=[module_query_after_remove])
+    def module_update_after_remove(self):
+        """Check that update module after remove works."""
+        self.test_runner.run_module_update_after_remove()
+
+    @test(depends_on=[module_remove],
+          runs_after=[module_update_after_remove])
+    def module_apply_another_again(self):
+        """Check that module-apply another works a second time."""
+        self.test_runner.run_module_apply_another()
 
     @test(depends_on=[module_apply],
-          runs_after=[module_apply_again])
-    def module_query_after_apply_again(self):
+          runs_after=[module_apply_another_again])
+    def module_query_after_apply_another2(self):
         """Check that module-query works after second apply."""
-        self.test_runner.run_module_query_after_apply()
+        self.test_runner.run_module_query_after_apply_another()
 
-    @test(depends_on=[module_apply_again],
-          runs_after=[module_query_after_apply_again])
+    @test(depends_on=[module_apply_another_again],
+          runs_after=[module_query_after_apply_another2])
     def module_remove_again(self):
         """Check that module-remove works again."""
         self.test_runner.run_module_remove()
 
     @test(depends_on=[module_remove_again])
     def module_query_empty_after_again(self):
-        """Check that the instance has no modules applied after remove."""
-        self.test_runner.run_module_query_empty()
+        """Check that the inst has one mod applied after 2nd remove."""
+        self.test_runner.run_module_query_after_remove()
+
+    @test(depends_on=[module_remove_again],
+          runs_after=[module_query_empty_after_again])
+    def module_update_after_remove_again(self):
+        """Check that update module after remove again works."""
+        self.test_runner.run_module_update_after_remove_again()
 
 
 @test(depends_on_groups=[groups.MODULE_INST_CREATE],

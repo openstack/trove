@@ -609,6 +609,8 @@ module = {
                     },
                     "auto_apply": boolean_string,
                     "all_tenants": boolean_string,
+                    "all_datastores": boolean_string,
+                    "all_datastore_versions": boolean_string,
                     "visible": boolean_string,
                     "live_update": boolean_string,
                 }
