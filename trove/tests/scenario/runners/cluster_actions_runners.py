@@ -172,12 +172,14 @@ class ClusterActionsRunner(TestRunner):
                 instance['id'])
             self.assert_true(root_enabled_test.rootEnabled)
 
-        ping_response = self.test_helper.ping(
-            cluster.ip[0],
-            username=self.current_root_creds[0],
-            password=self.current_root_creds[1]
-        )
-        self.assert_true(ping_response)
+        for ip in cluster.ip:
+            self.report.log("Pinging cluster as superuser via node: %s" % ip)
+            ping_response = self.test_helper.ping(
+                ip,
+                username=self.current_root_creds[0],
+                password=self.current_root_creds[1]
+            )
+            self.assert_true(ping_response)
 
     def run_add_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_add_cluster_data(data_type, self.cluster_id)
@@ -197,7 +199,9 @@ class ClusterActionsRunner(TestRunner):
 
     def assert_verify_cluster_data(self, data_type, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
-        self.test_helper.verify_data(data_type, cluster.ip[0])
+        for ip in cluster.ip:
+            self.report.log("Verifying cluster data via node: %s" % ip)
+            self.test_helper.verify_data(data_type, ip)
 
     def run_remove_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_remove_cluster_data(data_type, self.cluster_id)
