@@ -274,6 +274,15 @@ class QuotaEngine(object):
         return self._driver.get_all_quotas_by_tenant(tenant_id,
                                                      self._resources)
 
+    def get_all_quota_usages_by_tenant(self, tenant_id):
+        """Retrieve the quota usages for the given tenant.
+
+        :param tenant_id: The ID of the tenant to return quota usages for.
+        """
+
+        return self._driver.get_all_quota_usages_by_tenant(tenant_id,
+                                                           self._resources)
+
     def check_quotas(self, tenant_id, **deltas):
         self._driver.check_quotas(tenant_id, self._resources, deltas)
 

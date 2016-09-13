@@ -36,8 +36,11 @@ class QuotaController(wsgi.Controller):
                    "req : '%(req)s'\n\n") % {
                        "id": id, "req": req})
 
-        quotas = quota_engine.get_all_quotas_by_tenant(id)
-        return wsgi.Result(views.QuotaView(quotas).data(), 200)
+        usages = quota_engine.get_all_quota_usages_by_tenant(id)
+        limits = quota_engine.get_all_quotas_by_tenant(id)
+        map(lambda r: setattr(usages[r], "limit", limits[r].hard_limit),
+            usages.keys())
+        return wsgi.Result(views.QuotaUsageView(usages).data(), 200)
 
     @admin_context
     def update(self, req, body, tenant_id, id):
