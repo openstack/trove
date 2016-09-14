@@ -318,8 +318,8 @@ class CouchDBAdmin(object):
         except exception.ProcessExecutionError as pe:
             LOG.exception(_(
                 "There was an error while deleting user: %s.") % pe)
-            raise exception.GuestError(_("Unable to delete user: %s.") %
-                                       couchdb_user.name)
+            raise exception.GuestError(original_message=_(
+                "Unable to delete user: %s.") % couchdb_user.name)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         '''List all users and the databases they have access to.'''
@@ -548,8 +548,8 @@ class CouchDBAdmin(object):
             except exception.ProcessExecutionError:
                 LOG.exception(_(
                     "There was an error while deleting database:%s.") % dbName)
-                raise exception.GuestError(_("Unable to delete database: %s.")
-                                           % dbName)
+                raise exception.GuestError(original_message=_(
+                    "Unable to delete database: %s.") % dbName)
         else:
             LOG.warning(_('Cannot delete a reserved database '
                           '%(db)s') % {'db': dbName})

@@ -374,8 +374,8 @@ class DB2Admin(object):
         except exception.ProcessExecutionError:
             LOG.exception(_(
                 "There was an error while deleting database:%s.") % dbName)
-            raise exception.GuestError(_("Unable to delete database: %s.") %
-                                       dbName)
+            raise exception.GuestError(original_message=_(
+                "Unable to delete database: %s.") % dbName)
 
     def list_databases(self, limit=None, marker=None, include_marker=False):
         LOG.debug("Listing all the DB2 databases.")
@@ -494,8 +494,8 @@ class DB2Admin(object):
             except exception.ProcessExecutionError as pe:
                 LOG.exception(_(
                     "There was an error while deleting user: %s.") % pe)
-                raise exception.GuestError(_("Unable to delete user: %s.") %
-                                           userName)
+                raise exception.GuestError(original_message=_(
+                    "Unable to delete user: %s.") % userName)
 
     def list_users(self, limit=None, marker=None, include_marker=False):
         LOG.debug(
