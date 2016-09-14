@@ -402,5 +402,6 @@ def persisted_models():
     return {
         'configurations': DBConfiguration,
         'configuration_parameters': DBConfigurationParameter,
-        'datastore_configuration_parameters': DBDatastoreConfigurationParameters,  # noqa
+        'datastore_configuration_parameters':
+        DBDatastoreConfigurationParameters,
     }
