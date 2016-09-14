@@ -33,19 +33,6 @@ class TestModuleController(trove_testtools.TestCase):
             }
         }
 
-    def verify_errors(self, errors, msg=None, properties=None, path=None):
-        msg = msg or []
-        properties = properties or []
-        self.assertThat(len(errors), Is(len(msg)))
-        i = 0
-        while i < len(msg):
-            self.assertIn(errors[i].message, msg)
-            if path:
-                self.assertThat(path, Equals(properties[i]))
-            else:
-                self.assertThat(errors[i].path.pop(), Equals(properties[i]))
-            i += 1
-
     def test_get_schema_create(self):
         schema = self.controller.get_schema('create', {'module': {}})
         self.assertIsNotNone(schema)
