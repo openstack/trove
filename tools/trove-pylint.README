@@ -1,0 +1,167 @@
+trove-pylint
+------------
+
+trove-pylint.py is a wrapper around pylint which allows for some
+custom processing relevant to the trove source tree, and suitable to
+run as a CI job for trove.
+
+The purpose is to perform a lint check on the code and detect obvious
+(lintable) errors and fix them.
+
+How trove-pylint works
+----------------------
+
+trove-pylint is driven by a configuration file which is by default,
+located in tools/trove-pylint.config. This file is a json dump of the
+configuration. A default configuraiton file looks like this.
+
+   {
+      "include": ["*.py"],
+      "folder": "trove",
+      "options": ["--rcfile=./pylintrc", "-E"],
+      "ignored_files": ['trove/tests'],
+      "ignored_codes": [],
+      "ignored_messages": [],
+      "ignored_file_codes": [],
+      "ignored_file_messages": [],
+      "ignored_file_code_messages": [],
+      "always_error_messages": [
+         "Undefined variable '_'",
+         "Undefined variable '_LE'",
+         "Undefined variable '_LI'",
+         "Undefined variable '_LW'",
+         "Undefined variable '_LC'"
+      ]
+   }
+
+include
+-------
+
+    Provide a list of match specs (passed to fnmatch.fnmatch). The
+    default is only "*.py".
+
+folder
+------
+
+    Provide the name of the top level folder to lint. This is a single
+    value.
+
+options
+-------
+
+    These are the pylint launch options. The default is to specify an
+    rcfile and only errors. Specifying the rcfile is required, and the
+    file is a dummy, to suppress an annoying warning.
+
+ignored_files
+-------------
+
+    This is a list of paths that we wish to ignore. When a file is
+    considered for linting, if the path name begins with any of these
+    provided prefixes, the file will not be linted. We ignore the
+    tests directory because it has a high instance of false positives.
+
+ignored_codes, ignored_messages, ignored_file_codes,
+ignored_file_messages, and ignored_file_code_messages
+-----------------------------------------------------
+
+    These settings identify specific failures that are to be
+    ignored. Each is a list, some are lists of single elements, others
+    are lists of lists.
+
+    ignored_codes, and ignored_messages are lists of single elements
+    that are to be ignored. You could specify either the code name, or
+    the code numeric representation. You must specify the exact
+    message.
+
+    ignored_file_codes and ignored_file_messages are lists of lists
+    where each element is a code and a message.
+
+    ignored_file_code_messages is a list of lists where each element
+    consists of a filename, an errorcode, a message, a line number and
+    a function name.
+
+always_error_messages
+---------------------
+
+    This is a list of messages which have a low chance of false
+    positives, which are always flagged as errors.
+
+Using trove-pylint
+------------------
+
+You can check your code for errors by simply running:
+
+   tox -e pylint
+
+The equivalent result can be obtained by running the command:
+
+    tools/trove-pylint.py
+
+or
+
+    tools/trove-pylint.py check
+
+
+For example, here is the result from such a run.
+
+    $ tools/trove-pylint.py check
+    ERROR: trove/common/extensions.py 575: E1003 bad-super-call, \
+    TroveExtensionMiddleware.__init__: Bad first argument \
+    'ExtensionMiddleware' given to super()
+    Check failed. 367 files processed, 1 had errors, 1 errors recorded.
+
+I wish to ignore this error and keep going. To do this, I rebuild the
+list of errors to ignore as follows.
+
+    $ tools/trove-pylint.py rebuild
+    Rebuild completed. 367 files processed, 177 exceptions recorded.
+
+This caused the tool to add the following two things to the config file.
+
+    [
+      "trove/common/extensions.py",
+      "E1003",
+      "Bad first argument 'ExtensionMiddleware' given to super()",
+      "575",
+      "TroveExtensionMiddleware.__init__"
+    ],
+    [
+      "trove/common/extensions.py",
+      "bad-super-call",
+      "Bad first argument 'ExtensionMiddleware' given to super()",
+      "575",
+      "TroveExtensionMiddleware.__init__"
+    ],
+
+With that done, I can recheck as shown below.
+
+    $ tools/trove-pylint.py check
+    Check succeeded. 367 files processed
+
+You can review the errors that are being currently ignored by reading
+the file tools/trove-pylint.config.
+
+If you want to fix some of these errors, identify the configuration(s)
+that are causing those errors to be ignored and re-run the check. Once
+you see that the errors are in fact being reported by the tool, go
+ahead and fix the problem(s) and retest.
+
+Known issues
+------------
+
+1. The tool appears to be very sensitive to the version(s) of pylint
+and astroid. In testing, I've found that if the version of either of
+these changes, you could either have a failure of the tool (exceptions
+thrown, ...) or a different set of errors reported.
+
+Currently, test-requirements.txt sets these versions in this way.
+
+astroid<1.4.0  # LGPLv2.1 # breaks pylint 1.4.4
+pylint==1.4.5  # GPLv2
+
+If you run the tool on your machine and find that there are no errors,
+but find that either the CI generates errors, or that the tool run
+through tox generates errors, check what versions of astroid and
+pylint are being run in each configuration.
+

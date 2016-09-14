@@ -23,6 +23,7 @@ from oslo_log import log as logging
 from oslo_middleware import cors
 from osprofiler import opts as profiler
 
+from trove.common.i18n import _
 from trove.version import version_info as version
 
 

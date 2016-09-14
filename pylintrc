@@ -1,0 +1,7 @@
+# pylintrc
+#
+# For trove we use the defaults, this file is just to shut up an
+# annoying error message from pylint.
+#
+# Don't set pylint options here.
+#

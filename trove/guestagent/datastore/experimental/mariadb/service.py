@@ -16,6 +16,7 @@
 
 from oslo_log import log as logging
 
+from trove.common.i18n import _
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.galera_common import service as galera_service
 from trove.guestagent.datastore.mysql_common import service as mysql_service
