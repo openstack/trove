@@ -46,7 +46,8 @@ class MysqlHelper(SqlHelper):
                 'join_buffer_size': 10485760}
 
     def get_non_dynamic_group(self):
-        return {'innodb_buffer_pool_size': 10485760}
+        return {'innodb_buffer_pool_size': 10485760,
+                'long_query_time': 59.1}
 
     def get_invalid_groups(self):
         return [{'key_buffer_size': -1}, {"join_buffer_size": 'string_value'}]

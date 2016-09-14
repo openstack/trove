@@ -219,6 +219,12 @@
             "name": "collation_server",
             "restart_required": false,
             "type": "string"
+        },
+        {
+            "name": "long_query_time",
+            "restart_required": false,
+            "min": 0,
+            "type": "float"
         }
     ]
 }

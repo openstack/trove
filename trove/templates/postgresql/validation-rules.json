@@ -898,6 +898,12 @@
             "name": "restart_after_crash",
             "restart_required": false,
             "type": "boolean"
+        },
+        {
+            "name": "log_min_duration_statement",
+            "restart_required": false,
+            "min": -1,
+            "type": "integer"
         }
     ]
 }

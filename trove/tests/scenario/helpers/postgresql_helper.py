@@ -45,7 +45,8 @@ class PostgresqlHelper(SqlHelper):
                  'databases': [{'name': 'db1'}, {'name': 'db2'}]}]
 
     def get_dynamic_group(self):
-        return {'effective_cache_size': '528MB'}
+        return {'effective_cache_size': '528MB',
+                'log_min_duration_statement': 257}
 
     def get_non_dynamic_group(self):
         return {'max_connections': 113}

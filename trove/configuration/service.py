@@ -311,6 +311,8 @@ class ConfigurationsController(wsgi.Controller):
             return six.string_types
         elif value_type == "integer":
             return six.integer_types
+        elif value_type == "float":
+            return float
         else:
             raise exception.TroveError(_(
                 "Invalid or unsupported type defined in the "
