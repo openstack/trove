@@ -156,6 +156,7 @@ class TestClusterController(trove_testtools.TestCase):
                 'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
+                'modules': None,
                 "nics": [
                     {"net-id": "e89aa5fd-6b0a-436d-a75c-1545d34d5331"}
                 ]
@@ -165,6 +166,7 @@ class TestClusterController(trove_testtools.TestCase):
                 'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
+                'modules': None,
                 "nics": [
                     {"net-id": "e89aa5fd-6b0a-436d-a75c-1545d34d5331"}
                 ]
@@ -174,6 +176,7 @@ class TestClusterController(trove_testtools.TestCase):
                 'volume_type': None,
                 "flavor_id": "1234",
                 "availability_zone": "az",
+                'modules': None,
                 "nics": [
                     {"net-id": "e89aa5fd-6b0a-436d-a75c-1545d34d5331"}
                 ]

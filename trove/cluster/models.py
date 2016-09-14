@@ -295,6 +295,8 @@ class Cluster(object):
                         instance['name'] = node['name']
                     if 'volume' in node:
                         instance['volume_size'] = int(node['volume']['size'])
+                    if 'modules' in node:
+                        instance['modules'] = node['modules']
                     instances.append(instance)
                 return self.grow(instances)
         elif action == 'shrink':

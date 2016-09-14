@@ -133,17 +133,13 @@ class VerticaCluster(models.Cluster):
             instance_name = "%s-member-%s" % (db_info.name,
                                               str(i + num_existing + 1))
             minstances.append(
-                inst_models.Instance.create(context, instance_name,
-                                            flavor_id,
-                                            datastore_version.image_id,
-                                            [], [], datastore,
-                                            datastore_version,
-                                            volume_size, None,
-                                            nics=nics[i],
-                                            availability_zone=azs[i],
-                                            configuration_id=None,
-                                            cluster_config=member_config,
-                                            locality=locality)
+                inst_models.Instance.create(
+                    context, instance_name, flavor_id,
+                    datastore_version.image_id, [], [], datastore,
+                    datastore_version, volume_size, None,
+                    nics=nics[i], availability_zone=azs[i],
+                    configuration_id=None, cluster_config=member_config,
+                    locality=locality, modules=instances[i].get('modules'))
             )
         return minstances
 
