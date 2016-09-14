@@ -30,6 +30,7 @@ from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common.i18n import _
+from trove.common import utils
 
 
 LOG = logging.getLogger(__name__)
@@ -71,22 +72,6 @@ def datastore_registry():
                 get_custom_managers().items()))
 
 
-def to_gb(bytes):
-    if bytes == 0:
-        return 0.0
-    size = bytes / 1024.0 ** 3
-    # Make sure we don't return 0.0 if the size is greater than 0
-    return max(round(size, 2), 0.01)
-
-
-def to_mb(bytes):
-    if bytes == 0:
-        return 0.0
-    size = bytes / 1024.0 ** 2
-    # Make sure we don't return 0.0 if the size is greater than 0
-    return max(round(size, 2), 0.01)
-
-
 def get_filesystem_volume_stats(fs_path):
     try:
         stats = os.statvfs(fs_path)
@@ -97,8 +82,8 @@ def get_filesystem_volume_stats(fs_path):
     total = stats.f_blocks * stats.f_bsize
     free = stats.f_bfree * stats.f_bsize
     # return the size in GB
-    used_gb = to_gb(total - free)
-    total_gb = to_gb(total)
+    used_gb = utils.to_gb(total - free)
+    total_gb = utils.to_gb(total)
 
     output = {
         'block_size': stats.f_bsize,

@@ -99,3 +99,27 @@ class TestUtils(trove_testtools.TestCase):
         for index, datum in enumerate(data):
             self.assertEqual(datum[1], utils.format_output(datum[0]),
                              "Error formatting line %d of data" % index)
+
+    def test_to_gb(self):
+        result = utils.to_gb(123456789)
+        self.assertEqual(0.11, result)
+
+    def test_to_gb_small(self):
+        result = utils.to_gb(2)
+        self.assertEqual(0.01, result)
+
+    def test_to_gb_zero(self):
+        result = utils.to_gb(0)
+        self.assertEqual(0.0, result)
+
+    def test_to_mb(self):
+        result = utils.to_mb(123456789)
+        self.assertEqual(117.74, result)
+
+    def test_to_mb_small(self):
+        result = utils.to_mb(2)
+        self.assertEqual(0.01, result)
+
+    def test_to_mb_zero(self):
+        result = utils.to_mb(0)
+        self.assertEqual(0.0, result)

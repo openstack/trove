@@ -497,6 +497,11 @@ class InsufficientSpaceForReplica(TroveError):
                 "of data.")
 
 
+class InsufficientSpaceForBackup(TroveError):
+    message = _("The instance has only %(free)sG free while the estimated "
+                "backup size is %(backup_size)sG.")
+
+
 class ReplicaSourceDeleteForbidden(Forbidden):
     message = _("The replica source cannot be deleted without detaching the "
                 "replicas.")

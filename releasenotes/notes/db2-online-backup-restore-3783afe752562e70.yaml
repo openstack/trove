@@ -1,0 +1,14 @@
+---
+features:
+  - Add support for full online backup and restore for DB2
+    Express-C by enabling archive logging.
+other:
+  - In Mitaka release, support was added for full offline
+    backup and restore using the default circular logging.
+    In this release, the name of the strategy for offline
+    backup and restore was changed from DB2Backup to
+    DB2OfflineBackup. Hence, to enable offline backups, we
+    should set backup_strategy=DB2OfflineBackup and for
+    online backups, backup_strategy=DB2OnlineBackup. The
+    property backup_namespace and restore_namespace will
+    be the same for both types of backup and restore.
