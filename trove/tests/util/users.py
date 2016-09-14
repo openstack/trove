@@ -97,7 +97,6 @@ class Users(object):
         print("Black list")
         for item in black_list:
             print("\t" + str(item))
-        black_list = black_list or []
         return (user for user in self.users
                 if user.auth_user not in black_list and
                 user.requirements.satisfies(requirements))
