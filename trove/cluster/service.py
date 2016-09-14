@@ -161,7 +161,7 @@ class ClusterController(wsgi.Controller):
             modules = None
             if 'volume' in node:
                 volume_size = int(node['volume']['size'])
-                volume_type = node['volume'].get('volume_type')
+                volume_type = node['volume'].get('type')
             if 'nics' in node:
                 nics = node['nics']
             if 'availability_zone' in node:
