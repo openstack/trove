@@ -1,0 +1,3 @@
+---
+fixes:
+  - Allow specification of volume-type on cluster create. (Bug 1623005)
