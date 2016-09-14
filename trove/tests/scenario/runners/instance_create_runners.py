@@ -73,7 +73,8 @@ class InstanceCreateRunner(TestRunner):
                 "Configuration group used by instance create tests.",
                 datastore=self.instance_info.dbaas_datastore,
                 datastore_version=self.instance_info.dbaas_datastore_version)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
 
             self.config_group_id = result.id
         else:
@@ -309,7 +310,8 @@ class InstanceCreateRunner(TestRunner):
     def run_initialized_instance_delete(self, expected_http_code=202):
         if self.init_inst_id:
             self.auth_client.instances.delete(self.init_inst_id)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
         else:
             raise SkipTest("Cleanup is not required.")
 
@@ -331,7 +333,8 @@ class InstanceCreateRunner(TestRunner):
     def run_initial_configuration_delete(self, expected_http_code=202):
         if self.config_group_id:
             self.auth_client.configurations.delete(self.config_group_id)
-            self.assert_client_code(expected_http_code)
+            self.assert_client_code(expected_http_code,
+                                    client=self.auth_client)
         else:
             raise SkipTest("Cleanup is not required.")
         self.config_group_id = None

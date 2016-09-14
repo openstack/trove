@@ -88,7 +88,7 @@ class InstanceActionsRunner(TestRunner):
                         (resize_flavor_id, instance_id))
         self.auth_client.instances.resize_instance(
             instance_id, resize_flavor_id)
-        self.assert_client_code(expected_http_code)
+        self.assert_client_code(expected_http_code, client=self.auth_client)
 
     def run_wait_for_instance_resize_flavor(
             self, expected_states=['RESIZE', 'ACTIVE']):

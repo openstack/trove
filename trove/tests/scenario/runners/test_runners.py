@@ -572,7 +572,7 @@ class TestRunner(object):
 
     def _has_status(self, instance_id, status, fast_fail_status=None):
         fast_fail_status = fast_fail_status or []
-        instance = self.get_instance(instance_id)
+        instance = self.get_instance(instance_id, self.admin_client)
         self.report.log("Polling instance '%s' for state '%s', was '%s'."
                         % (instance_id, status, instance.status))
         if instance.status in fast_fail_status:
