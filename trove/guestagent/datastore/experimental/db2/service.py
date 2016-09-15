@@ -140,7 +140,28 @@ class DB2App(object):
                     lIndex = item[0].rfind(')')
                     if fIndex > -1:
                         param = item[0][fIndex + 1: lIndex]
-                        self.dbm_default_config.update({param: item[1]})
+                        value = item[1]
+                        '''
+                        Some of the configuration parameters have the keyword
+                        AUTOMATIC to indicate that DB2 will automatically
+                        adjust the setting depending on system resources.
+                        For some configuration parameters, DB2 also allows
+                        setting a starting value along with the AUTOMATIC
+                        setting. In the configuration parameter listing,
+                        this is displayed as:
+                        MON_HEAP_SZ = AUTOMATIC(90)
+                        This can be set using the following command:
+                        db2 update dbm cfg using mon_heap_sz 90 automatic
+                        '''
+                        if not value:
+                            value = 'NULL'
+                        elif 'AUTOMATIC' in value:
+                            fIndex = item[1].rfind('(')
+                            lIndex = item[1].rfind(')')
+                            if fIndex > -1:
+                                default_value = item[1][fIndex + 1: lIndex]
+                                value = default_value + " AUTOMATIC"
+                        self.dbm_default_config.update({param: value})
 
     def update_hostname(self):
         """
@@ -248,16 +269,14 @@ class DB2App(object):
         self.configuration_manager.apply_user_override(overrides)
 
     def _update_dbm_config(self, param, value):
-        out, err = run_command(
-            system.UPDATE_DBM_CONFIGURATION % {
-                "parameter": param,
-                "value": value})
-        if err:
-            if err.is_warning():
-                LOG.warning(err)
-            else:
-                LOG.error(err)
-                raise RuntimeError(_("Failed to update config %s") % param)
+        try:
+            run_command(
+                system.UPDATE_DBM_CONFIGURATION % {
+                    "parameter": param,
+                    "value": value})
+        except exception.ProcessExecutionError:
+            LOG.exception(_("Failed to update config %s") % param)
+            raise
 
     def _reset_config(self, config):
         try:
@@ -353,7 +372,7 @@ class DB2Admin(object):
                         'dbname': dbName})
                     run_command(system.RECOVER_FROM_BACKUP_PENDING_MODE % {
                         'dbname': dbName})
-            except exception:
+            except exception.ProcessExecutionError:
                 LOG.exception(_(
                     "There was an error while configuring the database for "
                     "online backup: %s.") % dbName)
