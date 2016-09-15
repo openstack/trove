@@ -571,12 +571,8 @@ class Manager(periodic_task.PeriodicTasks):
             config_man_values = cfg_values
             if section_label:
                 config_man_values = {section_label: cfg_values}
-            # Applying the changes with a group id lower than the one used
-            # by user overrides. Any user defined value will override these
-            # settings (irrespective of order in which they are applied).
-            # See Bug 1542485
-            self.configuration_manager._apply_override(
-                '10-system-low-priority', apply_label, config_man_values)
+            self.configuration_manager.apply_system_override(
+                config_man_values, change_id=apply_label, pre_user=True)
         if restart_required:
             self.status.set_status(instance.ServiceStatuses.RESTART_REQUIRED)
         else:

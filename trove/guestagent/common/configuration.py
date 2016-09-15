@@ -34,9 +34,13 @@ class ConfigurationManager(object):
     """
 
     # Configuration group names. The names determine the order in which the
-    # groups get applied. System group should get applied over the user group.
+    # groups get applied. System groups are divided into two camps; pre-user
+    # and post-user.  In general system overrides will get applied over the
+    # user group, unless specified otherwise (i.e. SYSTEM_POST_USER_GROUP
+    # will be used).
+    SYSTEM_PRE_USER_GROUP = '10-system'
     USER_GROUP = '20-user'
-    SYSTEM_GROUP = '50-system'
+    SYSTEM_POST_USER_GROUP = '50-system'
 
     DEFAULT_STRATEGY_OVERRIDES_SUB_DIR = 'overrides'
     DEFAULT_CHANGE_ID = 'common'
@@ -128,7 +132,8 @@ class ConfigurationManager(object):
             self.save_configuration(self._codec.serialize(options))
         else:
             self._override_strategy.remove(self.USER_GROUP)
-            self._override_strategy.remove(self.SYSTEM_GROUP)
+            self._override_strategy.remove(self.SYSTEM_PRE_USER_GROUP)
+            self._override_strategy.remove(self.SYSTEM_POST_USER_GROUP)
 
             operating_system.write_file(
                 self._base_config_path, options, as_root=self._requires_root)
@@ -144,9 +149,13 @@ class ConfigurationManager(object):
     def has_system_override(self, change_id):
         """Return whether a given 'system' change exists.
         """
-        return self._override_strategy.exists(self.SYSTEM_GROUP, change_id)
+        return (self._override_strategy.exists(self.SYSTEM_POST_USER_GROUP,
+                                               change_id) or
+                self._override_strategy.exists(self.SYSTEM_PRE_USER_GROUP,
+                                               change_id))
 
-    def apply_system_override(self, options, change_id=DEFAULT_CHANGE_ID):
+    def apply_system_override(self, options, change_id=DEFAULT_CHANGE_ID,
+                              pre_user=False):
         """Apply a 'system' change to the configuration.
 
         System overrides are always applied after all user changes so that
@@ -155,7 +164,10 @@ class ConfigurationManager(object):
         :param options        Configuration changes.
         :type options         string or dict
         """
-        self._apply_override(self.SYSTEM_GROUP, change_id, options)
+        group_name = (
+            self.SYSTEM_PRE_USER_GROUP if pre_user else
+            self.SYSTEM_POST_USER_GROUP)
+        self._apply_override(group_name, change_id, options)
 
     def apply_user_override(self, options, change_id=DEFAULT_CHANGE_ID):
         """Apply a 'user' change to the configuration.
@@ -183,7 +195,8 @@ class ConfigurationManager(object):
     def remove_system_override(self, change_id=DEFAULT_CHANGE_ID):
         """Revert a 'system' configuration change.
         """
-        self._remove_override(self.SYSTEM_GROUP, change_id)
+        self._remove_override(self.SYSTEM_POST_USER_GROUP, change_id)
+        self._remove_override(self.SYSTEM_PRE_USER_GROUP, change_id)
 
     def remove_user_override(self, change_id=DEFAULT_CHANGE_ID):
         """Revert a 'user' configuration change.
