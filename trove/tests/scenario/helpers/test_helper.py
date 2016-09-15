@@ -33,6 +33,10 @@ class DataType(Enum):
     micro = 1
     # another micro dataset (also for datastore logging)
     micro2 = 2
+    # another micro dataset (also for datastore logging)
+    micro3 = 3
+    # another micro dataset (also for datastore logging)
+    micro4 = 4
     # very tiny amount of data, useful for testing replication
     # propagation, etc.
     tiny = 3
@@ -110,6 +114,12 @@ class TestHelper(object):
                 self.DATA_SIZE: 10},
             DataType.micro2.name: {
                 self.DATA_START: 200,
+                self.DATA_SIZE: 10},
+            DataType.micro3.name: {
+                self.DATA_START: 300,
+                self.DATA_SIZE: 10},
+            DataType.micro4.name: {
+                self.DATA_START: 400,
                 self.DATA_SIZE: 10},
             DataType.tiny.name: {
                 self.DATA_START: 1000,
