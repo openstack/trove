@@ -1,0 +1,5 @@
+---
+features:
+  - Add 'max-prepared-stmt-cnt' to the list of valid
+    values which can be used in configuration groups
+    for Mysql, Percona, MariaDB and PXC
