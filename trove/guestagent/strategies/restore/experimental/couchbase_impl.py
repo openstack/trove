@@ -26,7 +26,6 @@ from trove.common import utils
 from trove.guestagent.common import operating_system
 from trove.guestagent.datastore.experimental.couchbase import service
 from trove.guestagent.datastore.experimental.couchbase import system
-from trove.guestagent import dbaas
 from trove.guestagent.strategies.restore import base
 
 
@@ -77,7 +76,7 @@ class CbBackup(base.RestoreRunner):
                     bucket_type = d[i]["bucketType"]
                     if bucket_type == "membase":
                         bucket_type = "couchbase"
-                    ram = int(dbaas.to_mb(d[i]["quota"]["ram"]))
+                    ram = int(utils.to_mb(d[i]["quota"]["ram"]))
                     auth_type = d[i]["authType"]
                     password = d[i]["saslPassword"]
                     port = d[i]["proxyPort"]
