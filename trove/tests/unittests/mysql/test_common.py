@@ -81,10 +81,18 @@ class MySqlCommonTest(trove_testtools.TestCase):
         self.assertRaises(DatabaseInitialUserDuplicateError,
                           populate_users, users)
 
+    def test_populate_unique_users_unique_host(self):
+        users = [{'name': 'bob', 'password': 'x', 'host': '127.0.0.1'},
+                 {'name': 'tom', 'password': 'x', 'host': '128.0.0.1'}]
+        result = populate_users(users)
+        self.assertThat(len(result), Is(2))
+
     def test_populate_users_intermingled(self):
         users = [{'name': 'bob', 'password': 'x', 'host': '127.0.0.1'},
-                 {'name': 'tom', 'password': 'y', 'host': '128.0.0.1'},
-                 {'name': 'bob', 'password': 'z', 'host': '127.0.0.1'}]
+                 {'name': 'tom', 'password': 'y', 'host': '127.0.0.1'},
+                 {'name': 'bob', 'password': 'z', 'host': '127.0.0.1'},
+                 {'name': 'bob', 'password': 'x', 'host': '128.0.0.1'},
+                 {'name': 'tom', 'password': 'x', 'host': '128.0.0.1'}]
         self.assertRaises(DatabaseInitialUserDuplicateError,
                           populate_users, users)
 
