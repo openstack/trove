@@ -507,7 +507,11 @@ common_opts = [
                      'management.'),
     cfg.BoolOpt(
         'online_volume_resize', default=True,
-        help='If online volume resize is supported.')
+        help='If online volume resize is supported.'),
+    cfg.BoolOpt(
+        'enable_volume_az', default=False,
+        help='If true create the volume in the same availability-zone as the '
+             'instance'),
 ]
 
 
