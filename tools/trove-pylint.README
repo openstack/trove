@@ -94,6 +94,10 @@ You can check your code for errors by simply running:
 
    tox -e pylint
 
+or explicitly as:
+
+   tox -e pylint check
+
 The equivalent result can be obtained by running the command:
 
     tools/trove-pylint.py
@@ -102,10 +106,14 @@ or
 
     tools/trove-pylint.py check
 
+Running the tool directly may require installing addition pip
+modules on your machine (such as pylint), so using 'tox' is the
+preferred method.
+
 
 For example, here is the result from such a run.
 
-    $ tools/trove-pylint.py check
+    $ tox -e pylint check
     ERROR: trove/common/extensions.py 575: E1003 bad-super-call, \
     TroveExtensionMiddleware.__init__: Bad first argument \
     'ExtensionMiddleware' given to super()
@@ -114,7 +122,7 @@ For example, here is the result from such a run.
 I wish to ignore this error and keep going. To do this, I rebuild the
 list of errors to ignore as follows.
 
-    $ tools/trove-pylint.py rebuild
+    $ tox -e pylint rebuild
     Rebuild completed. 367 files processed, 177 exceptions recorded.
 
 This caused the tool to add the following two things to the config file.
@@ -123,29 +131,27 @@ This caused the tool to add the following two things to the config file.
       "trove/common/extensions.py",
       "E1003",
       "Bad first argument 'ExtensionMiddleware' given to super()",
-      "575",
       "TroveExtensionMiddleware.__init__"
     ],
     [
       "trove/common/extensions.py",
       "bad-super-call",
       "Bad first argument 'ExtensionMiddleware' given to super()",
-      "575",
       "TroveExtensionMiddleware.__init__"
     ],
 
 With that done, I can recheck as shown below.
 
-    $ tools/trove-pylint.py check
+    $ tox -e pylint
     Check succeeded. 367 files processed
 
 You can review the errors that are being currently ignored by reading
 the file tools/trove-pylint.config.
 
 If you want to fix some of these errors, identify the configuration(s)
-that are causing those errors to be ignored and re-run the check. Once
-you see that the errors are in fact being reported by the tool, go
-ahead and fix the problem(s) and retest.
+that are causing those errors to be ignored, remove them and re-run the
+check. Once you see that the errors are in fact being reported by the
+tool, go ahead and fix the problem(s) and retest.
 
 Known issues
 ------------

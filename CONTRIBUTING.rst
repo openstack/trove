@@ -46,7 +46,6 @@ The Trove project encourages the guidelines (below).
      * It is your opinion that the change, as proposed, should be
        considered for merging.
 
-
    - A rating of 0 on a code review is indicated if:
 
      * The reason why you believe that the proposed change needs
@@ -71,8 +70,9 @@ The Trove project encourages the guidelines (below).
      * The subject matter of the change (not the commit message)
        violates some well understood OpenStack procedure(s),
      * The change contains content that is demonstrably inappropriate,
-     * The test cases do not exercise the change(s) being proposed.
-
+     * The test cases do not exercise the change(s) being proposed,
+     * The change causes a failure in the pylint job (see pylint
+       section below).
 
 Some other reviewing guidelines:
 
@@ -89,6 +89,7 @@ Other references:
    - https://wiki.openstack.org/wiki/GitCommitMessages
    - http://docs.openstack.org/developer/hacking/
    - https://review.openstack.org/#/c/116176/
+   - trove-pylint readme file in tools/trove-pylint.README
 
 Approving changes
 -----------------
@@ -151,6 +152,61 @@ To build the API reference, run::
 The generated documentation is found::
 
     api-ref/html/index.html
+
+Trove PyLint Failures
+=====================
+
+The Trove project uses trove-pylint (tools/trove-pylint) in the gate
+and this job is intended to help catch coding errors that sometimes
+may not get caught in a code review, or by the automated tests.
+
+The gate-trove-tox-pylint jobs are run by the CI, and these invoke the
+command in tools/trove-pylint.
+
+The tool can produce false-positive notifications and therefore
+supports a mechanism to provide a list of errors that are to be
+ignored.
+
+Before submitting a change, please do run
+
+.. code-block:: bash
+
+    $ tox -e pylint
+
+on your development environment. If this fails, you will have to
+resolve all the errors before you can commit the code.
+
+This means you either must fix the problem being identified, or
+regenerate the list of ignored errors and submit that as part of your
+review.
+
+To regenerate the list of ignored errors, you run the command(s):
+
+.. code-block:: bash
+
+    $ tox -e pylint rebuild
+
+Warning: trove-pylint is very sensitive to the version(s) of pylint
+and astroid that are installed on your system and for this reason, a
+tox environment is provided that will mimic the environment that
+pylint will encouter in the gate.
+
+Pre-commit checklist
+====================
+
+Before commiting code to Gerrit for review, please at least do the
+following on your development system and ensure that they pass.
+
+.. code-block:: bash
+
+    $ tox -e pep8
+    $ tox -e py27
+    $ tox -e py34
+    $ tox -e pylint
+
+If you are unable to get these to pass locally, it is a waste of the
+CI resources to push up a change for review.
+
 
 Testing
 =======

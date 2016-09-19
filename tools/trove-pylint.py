@@ -16,8 +16,10 @@ from __future__ import print_function
 
 import fnmatch
 import json
+from collections import OrderedDict
 import os
 import re
+import six
 import sys
 
 from pylint import lint
@@ -56,12 +58,24 @@ class Config(object):
 
         self.config = self.default_config
 
+    def sort_config(self):
+        sorted_config = OrderedDict()
+        for key in sorted(self.config.keys()):
+            value = self.get(key)
+            if isinstance(value, list) and not isinstance(value,
+                                                          six.string_types):
+                sorted_config[key] = sorted(value)
+            else:
+                sorted_config[key] = value
+
+        return sorted_config
+
     def save(self, filename=DEFAULT_CONFIG_FILE):
         if os.path.isfile(filename):
             os.rename(filename, "%s~" % filename)
 
         with open(filename, 'w') as fp:
-            json.dump(self.config, fp, encoding="utf-8",
+            json.dump(self.sort_config(), fp, encoding="utf-8",
                       indent=2, separators=(',', ': '))
 
     def load(self, filename=DEFAULT_CONFIG_FILE):
@@ -130,7 +144,7 @@ class Config(object):
                 [filename, codename] in self.config['ignored_file_codes']):
             return True
 
-        fcm_ignore1 = [filename, codename, message]
+        fcm_ignore1 = [filename, code, message]
         fcm_ignore2 = [filename, codename, message]
         for fcm in self.config['ignored_file_code_messages']:
             if fcm_ignore1 == [fcm[0], fcm[1], fcm[2]]:
@@ -166,9 +180,9 @@ class Config(object):
         _c.add((f, m))
         self.config['ignored_file_messages'] = list(_c)
 
-    def ignore_file_code_message(self, f, c, m, l, fn):
+    def ignore_file_code_message(self, f, c, m, fn):
         _c = set(self.config['ignored_file_code_messages'])
-        _c.add((f, c, m, l, fn))
+        _c.add((f, c, m, fn))
         self.config['ignored_file_code_messages'] = list(_c)
 
 def main():
@@ -230,6 +244,7 @@ class LintRunner(object):
         files_with_errors = 0
         errors_recorded = 0
         exceptions_recorded = 0
+        all_exceptions = []
 
         for (root, dirs, files) in os.walk(self.config.get('folder')):
             # if we shouldn't even bother about this part of the
@@ -262,25 +277,26 @@ class LintRunner(object):
                     # what we do with this exception depents on the
                     # kind of exception, and the mode
                     if self.config.is_always_error(e[5]):
-                        print("ERROR: %s %s: %s %s, %s: %s" %
-                              (e[0], e[1], e[2], e[3], e[4], e[5]))
+                        all_exceptions.append(e)
                         errors_recorded += 1
                         file_had_errors += 1
                     elif mode == MODE_REBUILD:
                         # parameters to ignore_file_code_message are
-                        # filename, code, message, linenumber, and function
-                        self.config.ignore_file_code_message(e[0], e[2], e[-1], e[1], e[4])
-                        self.config.ignore_file_code_message(e[0], e[3], e[-1], e[1], e[4])
+                        # filename, code, message and function
+                        self.config.ignore_file_code_message(e[0], e[2], e[-1], e[4])
+                        self.config.ignore_file_code_message(e[0], e[3], e[-1], e[4])
                         exceptions_recorded += 1
                     elif mode == MODE_CHECK:
-                        print("ERROR: %s %s: %s %s, %s: %s" %
-                              (e[0], e[1], e[2], e[3], e[4], e[5]))
+                        all_exceptions.append(e)
                         errors_recorded += 1
                         file_had_errors += 1
 
-
                 if file_had_errors:
                     files_with_errors += 1
+
+        for e in sorted(all_exceptions):
+            print("ERROR: %s %s: %s %s, %s: %s" %
+                  (e[0], e[1], e[2], e[3], e[4], e[5]))
 
         return (files_processed, files_with_errors, errors_recorded,
                 exceptions_recorded)
@@ -333,7 +349,5 @@ def rebuild():
 def initialize():
     exit(LintRunner().initialize())
 
-
 if __name__ == "__main__":
     main()
-
