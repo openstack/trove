@@ -468,7 +468,7 @@ class InstanceController(wsgi.Controller):
         return wsgi.Result({'modules': result_list}, 200)
 
     def _module_list(self, context, id, include_contents):
-        """Return information about instnace modules."""
+        """Return information about instance modules."""
         client = create_guest_client(context, id)
         result_list = client.module_list(include_contents)
         return wsgi.Result({'modules': result_list}, 200)
