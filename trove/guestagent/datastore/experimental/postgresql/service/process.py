@@ -102,7 +102,7 @@ class PgSqlProcess(object):
         on a hot standby, so grab what we have written to the recovery
         file
         """
-        r = operating_system.read_file(self.PGSQL_RECOVERY_CONFIG,
+        r = operating_system.read_file(self.pgsql_recovery_config,
                                        as_root=True)
         regexp = re.compile("host=(\d+.\d+.\d+.\d+) ")
         m = regexp.search(r)
