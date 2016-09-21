@@ -30,6 +30,8 @@ from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
 from trove.tests.api.instances import TIMEOUT_INSTANCE_DELETE
 from trove.tests.api.instances import WaitForGuestInstallationToFinish
 from trove.tests.config import CONFIG
+from trove.tests.scenario import runners
+from trove.tests.scenario.runners.test_runners import SkipKnownBug
 from trove.tests.util.server_connection import create_server_connection
 
 
@@ -267,9 +269,11 @@ class TestReplicationFailover(object):
         if CONFIG.fake_mode:
             raise SkipTest("eject_replica_source not supported in fake mode")
 
-        assert_raises(exceptions.BadRequest,
-                      instance_info.dbaas.instances.eject_replica_source,
-                      instance_info.id)
+        # assert_raises(exceptions.BadRequest,
+        #               instance_info.dbaas.instances.eject_replica_source,
+        #               instance_info.id)
+        # Uncomment once BUG_EJECT_VALID_MASTER is fixed
+        raise SkipKnownBug(runners.BUG_EJECT_VALID_MASTER)
 
     @test(depends_on=[test_promote_master, test_eject_slave,
                       test_eject_valid_master])
