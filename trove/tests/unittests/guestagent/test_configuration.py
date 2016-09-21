@@ -75,11 +75,17 @@ class TestConfigurationManager(trove_testtools.TestCase):
         manager.apply_user_override(sample_data)
         manager.apply_system_override(sample_data, change_id='sys1')
         manager.apply_user_override(sample_data, change_id='usr1')
+        manager.apply_system_override(sample_data, change_id='sys2',
+                                      pre_user=True)
         sample_strategy.apply.has_calls([
-            call(manager.SYSTEM_GROUP, manager.DEFAULT_CHANGE_ID, sample_data),
+            call(manager.SYSTEM_POST_USER_GROUP,
+                 manager.DEFAULT_CHANGE_ID, sample_data),
             call(manager.USER_GROUP, manager.DEFAULT_CHANGE_ID, sample_data),
-            call(manager.SYSTEM_GROUP, 'sys1', sample_data),
-            call(manager.USER_GROUP, 'usr1', sample_data)
+            call(manager.SYSTEM_POST_USER_GROUP,
+                 'sys1', sample_data),
+            call(manager.USER_GROUP, 'usr1', sample_data),
+            call(manager.SYSTEM_PRE_USER_GROUP,
+                 'sys2', sample_data),
         ])
 
 

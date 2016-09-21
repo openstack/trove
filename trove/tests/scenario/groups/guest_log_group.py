@@ -50,11 +50,6 @@ class GuestLogGroup(TestGroup):
         self.test_runner.run_test_admin_log_list()
 
     @test
-    def test_log_show(self):
-        """Test that log-show works on USER log."""
-        self.test_runner.run_test_log_show()
-
-    @test
     def test_log_enable_sys(self):
         """Ensure log-enable on SYS log fails."""
         self.test_runner.run_test_log_enable_sys()
@@ -108,6 +103,12 @@ class GuestLogGroup(TestGroup):
     def test_log_discard_unexposed_user(self):
         """Ensure log-discard on unexposed log fails for auth client."""
         self.test_runner.run_test_log_discard_unexposed_user()
+
+    # USER log tests
+    @test(runs_after=[test_log_list, test_admin_log_list])
+    def test_log_show(self):
+        """Test that log-show works on USER log."""
+        self.test_runner.run_test_log_show()
 
     @test(runs_after=[test_log_show])
     def test_log_enable_user(self):
@@ -211,6 +212,72 @@ class GuestLogGroup(TestGroup):
         """Wait for restart to complete again."""
         self.test_runner.run_test_wait_for_restart()
 
+    @test(runs_after=[test_wait_for_restart_again])
+    def test_log_show_after_stop_details(self):
+        """Get log-show details before adding data."""
+        self.test_runner.run_test_log_show_after_stop_details()
+
+    @test(runs_after=[test_log_show_after_stop_details])
+    def test_add_data_again_after_stop(self):
+        """Add more data to ensure logging has stopped on USER log."""
+        self.test_runner.run_test_add_data_again_after_stop()
+
+    @test(runs_after=[test_add_data_again_after_stop])
+    def test_verify_data_again_after_stop(self):
+        """Verify data for stopped logging on USER log."""
+        self.test_runner.run_test_verify_data_again_after_stop()
+
+    @test(runs_after=[test_verify_data_again_after_stop])
+    def test_log_show_after_stop(self):
+        """Test that log-show has same values on USER log."""
+        self.test_runner.run_test_log_show_after_stop()
+
+    @test(runs_after=[test_log_show_after_stop])
+    def test_log_enable_user_after_stop(self):
+        """Test log-enable still works on USER log."""
+        self.test_runner.run_test_log_enable_user_after_stop()
+
+    @test(runs_after=[test_log_enable_user_after_stop])
+    def test_restart_datastore_after_stop_start(self):
+        """Test restart datastore after stop/start if required."""
+        self.test_runner.run_test_restart_datastore()
+
+    @test(runs_after=[test_restart_datastore_after_stop_start])
+    def test_wait_for_restart_after_stop_start(self):
+        """Wait for restart to complete again after stop/start."""
+        self.test_runner.run_test_wait_for_restart()
+
+    @test(runs_after=[test_wait_for_restart_after_stop_start])
+    def test_add_data_again_after_stop_start(self):
+        """Add more data to ensure logging works again on USER log."""
+        self.test_runner.run_test_add_data_again_after_stop_start()
+
+    @test(runs_after=[test_add_data_again_after_stop_start])
+    def test_verify_data_again_after_stop_start(self):
+        """Verify data for re-enabled logging on USER log."""
+        self.test_runner.run_test_verify_data_again_after_stop_start()
+
+    @test(runs_after=[test_verify_data_again_after_stop_start])
+    def test_log_publish_after_stop_start(self):
+        """Test log-publish after stop/start on USER log."""
+        self.test_runner.run_test_log_publish_after_stop_start()
+
+    @test(runs_after=[test_log_publish_after_stop_start])
+    def test_log_disable_user_after_stop_start(self):
+        """Test log-disable on USER log after stop/start."""
+        self.test_runner.run_test_log_disable_user_after_stop_start()
+
+    @test(runs_after=[test_log_disable_user_after_stop_start])
+    def test_restart_datastore_after_final_stop(self):
+        """Test restart datastore again if required after final stop."""
+        self.test_runner.run_test_restart_datastore()
+
+    @test(runs_after=[test_restart_datastore_after_final_stop])
+    def test_wait_for_restart_after_final_stop(self):
+        """Wait for restart to complete again after final stop."""
+        self.test_runner.run_test_wait_for_restart()
+
+    # SYS log tests
     @test
     def test_log_show_sys(self):
         """Test that log-show works for SYS log."""

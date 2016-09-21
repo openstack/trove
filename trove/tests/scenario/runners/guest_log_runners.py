@@ -35,6 +35,7 @@ class GuestLogRunner(TestRunner):
 
         self.container = CONF.guest_log_container_name
         self.prefix_pattern = '%(instance_id)s/%(datastore)s-%(log)s/'
+        self.stopped_log_details = None
         self._last_log_published = {}
         self._last_log_contents = {}
 
@@ -610,6 +611,62 @@ class GuestLogRunner(TestRunner):
                 log_name,
                 expected_status=expected_status,
                 expected_published=0, expected_pending=1)
+
+    def run_test_log_show_after_stop_details(self):
+        self.stopped_log_details = self.auth_client.instances.log_show(
+            self.instance_info.id, self._get_exposed_user_log_name())
+        self.assert_is_not_none(self.stopped_log_details)
+
+    def run_test_add_data_again_after_stop(self):
+        # Add some more data to make sure logging has stopped
+        self.test_helper.add_data(DataType.micro3, self.get_instance_host())
+
+    def run_test_verify_data_again_after_stop(self):
+        self.test_helper.verify_data(DataType.micro3, self.get_instance_host())
+
+    def run_test_log_show_after_stop(self):
+        self.assert_log_show(
+            self.auth_client, self._get_exposed_user_log_name(),
+            expected_published=self.stopped_log_details.published,
+            expected_pending=self.stopped_log_details.pending)
+
+    def run_test_log_enable_user_after_stop(self):
+        expected_status = guest_log.LogStatus.Ready.name
+        expected_pending = 1
+        if self.test_helper.log_enable_requires_restart():
+            expected_status = guest_log.LogStatus.Restart_Required.name
+
+        self.assert_log_enable(
+            self.auth_client,
+            self._get_exposed_user_log_name(),
+            expected_status=expected_status,
+            expected_published=0, expected_pending=expected_pending)
+
+    def run_test_add_data_again_after_stop_start(self):
+        # Add some more data to make sure logging has started again
+        self.test_helper.add_data(DataType.micro4, self.get_instance_host())
+
+    def run_test_verify_data_again_after_stop_start(self):
+        self.test_helper.verify_data(DataType.micro4, self.get_instance_host())
+
+    def run_test_log_publish_after_stop_start(self):
+        log_name = self._get_exposed_user_log_name()
+        self.assert_log_publish(
+            self.auth_client,
+            log_name,
+            expected_status=guest_log.LogStatus.Published.name,
+            expected_published=self._get_last_log_published(log_name) + 1,
+            expected_pending=0)
+
+    def run_test_log_disable_user_after_stop_start(self):
+        expected_status = guest_log.LogStatus.Disabled.name
+        if self.test_helper.log_enable_requires_restart():
+            expected_status = guest_log.LogStatus.Restart_Required.name
+        self.assert_log_disable(
+            self.auth_client,
+            self._get_exposed_user_log_name(), discard=True,
+            expected_status=expected_status,
+            expected_published=0, expected_pending=1)
 
     def run_test_log_show_sys(self):
         self.assert_log_show(

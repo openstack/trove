@@ -481,12 +481,6 @@
             "type": "string"
         },
         {
-            "name": "log_min_duration_statement",
-            "restart_required": false,
-            "min": -1,
-            "type": "integer"
-        },
-        {
             "name": "debug_print_parse",
             "restart_required": false,
             "type": "boolean"
@@ -902,8 +896,7 @@
         {
             "name": "log_min_duration_statement",
             "restart_required": false,
-            "min": -1,
-            "type": "integer"
+            "type": "string"
         }
     ]
 }
