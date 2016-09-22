@@ -739,7 +739,7 @@
             "restart_required": false
         },
         {
-            "description": "Interval (in seconds) at which heartbeat messsages are sent to vertica.log. (Set to 0 to disable.)",
+            "description": "Interval (in seconds) at which heartbeat messages are sent to vertica.log. (Set to 0 to disable.)",
             "type": "integer",
             "name": "LogHeartbeatInterval",
             "restart_required": false
