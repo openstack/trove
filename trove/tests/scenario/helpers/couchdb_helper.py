@@ -81,7 +81,7 @@ class CouchdbHelper(TestHelper):
         for i in db:
             items = db[i].items()
             actual_data = ([value for key, value in items
-                           if key not in ['_id', '_rev']])
+                            if key not in ['_id', '_rev']])
 
         TestRunner.assert_equal(len(expected_data),
                                 len(actual_data),
