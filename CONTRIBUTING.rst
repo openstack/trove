@@ -72,7 +72,8 @@ The Trove project encourages the guidelines (below).
      * The change contains content that is demonstrably inappropriate,
      * The test cases do not exercise the change(s) being proposed,
      * The change causes a failure in the pylint job (see pylint
-       section below).
+       section below),
+     * A user visible change does not provide a release note.
 
 Some other reviewing guidelines:
 
@@ -140,6 +141,34 @@ process.
    or if the patch is not being actively maintained by the author and
    there is no available volunteer who will step up to take over the
    patch set.
+
+Launchpad Bugs
+--------------
+
+Bugs should be filed on Launchpad at:
+
+    https://bugs.launchpad.net/trove
+
+All changes that address a Launchpad bug should include the bug in the
+Commit Message using the Closes-Bug, Related-Bug, or Partial-Bug keyword.
+
+It is not required that a Launchpad bug be filed for every change.
+
+Release Notes
+-------------
+
+All user visible changes should include a release note. Trove uses
+reno to generate release notes and therefore only those release notes
+that are submitted as part of a change will be included in the release
+notes. The failure to add a release note for a user visible change
+should be identified in review, and corrected.
+
+If a Launchpad bug is being fixed, the release note should list the
+bug number.
+
+For help using reno, the release notes tool, see:
+
+    https://wiki.openstack.org/wiki/Trove/create-release-notes-with-reno
 
 Trove Documentation
 ===================
