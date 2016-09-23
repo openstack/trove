@@ -237,6 +237,13 @@
             "restart_required": false,
             "min": 0,
             "type": "float"
+        },
+        {
+            "name": "max_prepared_stmt_count",
+            "restart_required": false,
+            "max": 1048576,
+            "min": 0,
+            "type": "integer"
         }
     ]
 }
