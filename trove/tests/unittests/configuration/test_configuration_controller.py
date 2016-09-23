@@ -53,6 +53,19 @@ class TestConfigurationController(trove_testtools.TestCase):
         super(TestConfigurationController, self).setUp()
         self.controller = ConfigurationsController()
 
+    def _test_validate_configuration_with_action(self, body, action,
+                                                 is_valid=True):
+        schema = self.controller.get_schema(action, body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        if is_valid:
+            self.assertTrue(validator.is_valid(body))
+        else:
+            self.assertFalse(validator.is_valid(body))
+            errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+            error_messages = [error.message for error in errors]
+            return error_messages
+
     def test_validate_create_configuration(self):
         body = {
             "configuration": {
@@ -64,10 +77,7 @@ class TestConfigurationController(trove_testtools.TestCase):
                 }
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertTrue(validator.is_valid(body))
+        self._test_validate_configuration_with_action(body, action='create')
 
     def test_validate_create_configuration_no_datastore(self):
         body = {
@@ -76,10 +86,7 @@ class TestConfigurationController(trove_testtools.TestCase):
                 "name": "test"
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertTrue(validator.is_valid(body))
+        self._test_validate_configuration_with_action(body, action='create')
 
     def test_validate_create_invalid_values_param(self):
         body = {
@@ -92,12 +99,10 @@ class TestConfigurationController(trove_testtools.TestCase):
                 }
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertFalse(validator.is_valid(body))
-        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        error_messages = [error.message for error in errors]
+        error_messages = (
+            self._test_validate_configuration_with_action(body,
+                                                          action='create',
+                                                          is_valid=False))
         self.assertIn("'' is not of type 'object'", error_messages)
 
     def test_validate_create_invalid_name_param(self):
@@ -111,12 +116,10 @@ class TestConfigurationController(trove_testtools.TestCase):
                 }
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertFalse(validator.is_valid(body))
-        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        error_messages = [error.message for error in errors]
+        error_messages = (
+            self._test_validate_configuration_with_action(body,
+                                                          action='create',
+                                                          is_valid=False))
         self.assertIn("'' is too short", error_messages)
 
     def test_validate_edit_configuration(self):
@@ -125,10 +128,7 @@ class TestConfigurationController(trove_testtools.TestCase):
                 "values": {}
             }
         }
-        schema = self.controller.get_schema('edit', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertTrue(validator.is_valid(body))
+        self._test_validate_configuration_with_action(body, action="edit")
 
     def _test_validate_configuration(self, input_values, config_rules=None):
         if config_rules is None:
@@ -186,6 +186,19 @@ class TestConfigurationsParameterController(trove_testtools.TestCase):
         super(TestConfigurationsParameterController, self).setUp()
         self.controller = service.ConfigurationsParameterController()
 
+    def _test_validate_configuration_with_action(self, body, action,
+                                                 is_valid=True):
+        schema = self.controller.get_schema(action, body)
+        self.assertIsNotNone(schema)
+        validator = jsonschema.Draft4Validator(schema)
+        if is_valid:
+            self.assertTrue(validator.is_valid(body))
+        else:
+            self.assertFalse(validator.is_valid(body))
+            errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
+            error_messages = [error.message for error in errors]
+            return error_messages
+
     def test_validate_create_configuration_param(self):
         body = {
             'configuration-parameter': {
@@ -196,10 +209,8 @@ class TestConfigurationsParameterController(trove_testtools.TestCase):
                 'max': '255'
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertTrue(validator.is_valid(body))
+
+        self._test_validate_configuration_with_action(body, action='create')
 
     def test_validate_create_invalid_restart_required(self):
         body = {
@@ -211,12 +222,10 @@ class TestConfigurationsParameterController(trove_testtools.TestCase):
                 'max': 255
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertFalse(validator.is_valid(body))
-        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        error_messages = [error.message for error in errors]
+        error_messages = (
+            self._test_validate_configuration_with_action(body,
+                                                          action='create',
+                                                          is_valid=False))
         self.assertIn("5 is greater than the maximum of 1", error_messages)
         self.assertIn("0 is not of type 'string'", error_messages)
         self.assertIn("255 is not of type 'string'", error_messages)
@@ -231,12 +240,10 @@ class TestConfigurationsParameterController(trove_testtools.TestCase):
                 'max': '255'
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertFalse(validator.is_valid(body))
-        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        error_messages = [error.message for error in errors]
+        error_messages = (
+            self._test_validate_configuration_with_action(body,
+                                                          action='create',
+                                                          is_valid=False))
         self.assertIn("-1 is less than the minimum of 0", error_messages)
 
     def test_validate_create_invalid_restart_required_3(self):
@@ -249,10 +256,8 @@ class TestConfigurationsParameterController(trove_testtools.TestCase):
                 'max': '255'
             }
         }
-        schema = self.controller.get_schema('create', body)
-        self.assertIsNotNone(schema)
-        validator = jsonschema.Draft4Validator(schema)
-        self.assertFalse(validator.is_valid(body))
-        errors = sorted(validator.iter_errors(body), key=lambda e: e.path)
-        error_messages = [error.message for error in errors]
+        error_messages = (
+            self._test_validate_configuration_with_action(body,
+                                                          action='create',
+                                                          is_valid=False))
         self.assertIn("'yes' is not of type 'integer'", error_messages)
