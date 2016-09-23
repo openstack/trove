@@ -77,8 +77,8 @@ bus and performs the requested operation.
 * Entry point - Trove/bin/trove-guestagent
 * Runs as a RpcService configured by
   Trove/etc/trove/trove-guestagent.conf.sample which defines
-  trove.guestagent.manager.Manager as the manager - basically this is
-  the entry point for requests arriving through the queue
+  trove.guestagent.datastore.manager.Manager as the manager - basically
+  this is the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
   from another component using the GuestAgent's api module using
   _cast() or _call() (sync/a-sync) and putting the method's name as a
