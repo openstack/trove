@@ -1,0 +1,4 @@
+---
+other:
+  - Add ephemeral column in flavor-list (Bug 1617980)
+
