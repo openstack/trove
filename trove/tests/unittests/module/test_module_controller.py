@@ -36,7 +36,7 @@ class TestModuleController(trove_testtools.TestCase):
     def test_get_schema_create(self):
         schema = self.controller.get_schema('create', {'module': {}})
         self.assertIsNotNone(schema)
-        self.assertTrue('module' in schema['properties'])
+        self.assertIn('module', schema['properties'])
 
     def test_validate_create_complete(self):
         body = self.module

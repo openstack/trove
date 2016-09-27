@@ -50,7 +50,7 @@ class TestDatastoreVersionController(trove_testtools.TestCase):
     def test_get_schema_create(self):
         schema = self.controller.get_schema('create', self.version)
         self.assertIsNotNone(schema)
-        self.assertTrue('version' in schema['properties'])
+        self.assertIn('version', schema['properties'])
 
     def test_validate_create(self):
         body = self.version

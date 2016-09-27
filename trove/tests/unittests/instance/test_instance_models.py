@@ -73,8 +73,8 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         ip = filter_ips(
             ip, CONF.ip_regex, CONF.black_list_regex)
         self.assertEqual(2, len(ip))
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
+        self.assertIn('123.123.123.123', ip)
+        self.assertIn('15.123.123.123', ip)
 
     def test_filter_ips_black_list(self):
         CONF.network_label_regex = '.*'
@@ -95,16 +95,16 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         CONF.network_label_regex = '^(private|public)$'
         ip = self.instance.get_visible_ip_addresses()
         self.assertEqual(2, len(ip))
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
+        self.assertIn('123.123.123.123', ip)
+        self.assertIn('15.123.123.123', ip)
 
     def test_all_network_labels(self):
         CONF.network_label_regex = '.*'
         ip = self.instance.get_visible_ip_addresses()
         self.assertEqual(3, len(ip))
-        self.assertTrue('10.123.123.123' in ip)
-        self.assertTrue('123.123.123.123' in ip)
-        self.assertTrue('15.123.123.123' in ip)
+        self.assertIn('10.123.123.123', ip)
+        self.assertIn('123.123.123.123', ip)
+        self.assertIn('15.123.123.123', ip)
 
     def test_locality(self):
         self.assertEqual('affinity', self.instance.locality)

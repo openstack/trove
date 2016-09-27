@@ -58,7 +58,7 @@ class TestTroveContext(trove_testtools.TestCase):
         ctx_dict = ctx.to_dict()
         self.assertThat(ctx_dict.get('user'), Equals('test_user_id'))
         self.assertThat(ctx_dict.get('request_id'), Equals('test_req_id'))
-        self.assertTrue('trove_notification' in ctx_dict)
+        self.assertIn('trove_notification', ctx_dict)
         n_dict = ctx_dict['trove_notification']
         self.assertThat(n_dict.get('notification_classname'),
                         Equals('trove.common.notification.'
