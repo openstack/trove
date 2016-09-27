@@ -174,6 +174,8 @@ class InstanceTestInfo(object):
         self.user = None  # The user instance who owns the instance.
         self.users = None  # The users created on the instance.
         self.databases = None  # The databases created on the instance.
+        self.helper_user = None  # Test helper user if exists.
+        self.helper_database = None  # Test helper database if exists.
 
 
 class TestRunner(object):

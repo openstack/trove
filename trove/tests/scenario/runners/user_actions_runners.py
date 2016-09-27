@@ -43,7 +43,7 @@ class UserActionsRunner(TestRunner):
         if self.user_defs:
             # Try to use the first user with databases if any.
             for user_def in self.user_defs:
-                if user_def['databases']:
+                if 'databases' in user_def and user_def['databases']:
                     return user_def
             return self.user_defs[0]
         raise SkipTest("No valid user definitions provided.")
