@@ -4,9 +4,9 @@
 # Hacking already pins down pep8, pyflakes and flake8
 hacking<0.11,>=0.10.0
 bandit>=1.1.0 # Apache-2.0
-sphinx!=1.3b1,<1.3,>=1.2.1 # BSD
+sphinx!=1.3b1,<1.4,>=1.2.1 # BSD
 os-api-ref>=1.0.0 # Apache-2.0
-oslosphinx!=3.4.0,>=2.5.0 # Apache-2.0
+oslosphinx>=4.7.0 # Apache-2.0
 reno>=1.8.0 # Apache2
 coverage>=3.6 # Apache-2.0
 nose # LGPL
@@ -14,7 +14,7 @@ nosexcover # BSD
 openstackdocstheme>=1.5.0 # Apache-2.0
 openstack.nose-plugin>=0.7 # Apache-2.0
 WebTest>=2.0 # MIT
-wsgi-intercept>=0.6.1 # MIT License
+wsgi-intercept>=1.4.1 # MIT License
 proboscis>=1.2.5.3 # Apache-2.0
 python-troveclient>=2.2.0 # Apache-2.0
 mock>=2.0 # BSD
