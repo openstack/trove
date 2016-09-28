@@ -20,8 +20,8 @@ The trove-api service provides a RESTful API that supports JSON and
 XML to provision and manage Trove instances.
 
 * A REST-ful component
-* Entry point - Trove/bin/trove-api
-* Uses a WSGI launcher configured by Trove/etc/trove/api-paste.ini
+* Entry point - trove/bin/trove-api
+* Uses a WSGI launcher configured by etc/trove/api-paste.ini
 * Defines the pipeline of filters; authtoken, ratelimit, etc.
 * Defines the app_factory for the troveapp as
   trove.common.api:app_factory
@@ -44,18 +44,18 @@ provisioning instances, managing the lifecycle of instances, and
 performing operations on the Database instance.
 
 * A service that listens on a RabbitMQ topic
-* Entry point - Trove/bin/trove-taskmanager
+* Entry point - trove/bin/trove-taskmanager
 * Runs as a RpcService configured by
-  Trove/etc/trove/trove-taskmanager.conf.sample which defines
+  etc/trove/trove-taskmanager.conf.sample which defines
   trove.taskmanager.manager.Manager as the manager - basically this is
   the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
   from another component using the TaskManager's api module using
   _cast() or _call() (sync/a-sync) and putting the method's name as a
   parameter
-* Trove/openstack/common/rpc/dispatcher.py- RpcDispatcher.dispatch()
-  invokes the proper method in the Manager by some equivalent to
-  reflection
+* In module oslo.messaging, oslo_messaging/rpc/dispatcher.py
+  - RpcDispatcher.dispatch() invokes the proper method in the Manager
+  by some equivalent to reflection
 * The Manager then redirect the handling to an object from the
   models.py module. It loads an object from the relevant class with
   the context and instance_id
@@ -74,18 +74,18 @@ bus and performs the requested operation.
   listens on a RabbitMQ topic
 * GuestAgent runs on every DB instance, and a dedicated MQ topic is
   used (identified as the instance's id)
-* Entry point - Trove/bin/trove-guestagent
+* Entry point - trove/bin/trove-guestagent
 * Runs as a RpcService configured by
-  Trove/etc/trove/trove-guestagent.conf.sample which defines
+  etc/trove/trove-guestagent.conf.sample which defines
   trove.guestagent.datastore.manager.Manager as the manager - basically
   this is the entry point for requests arriving through the queue
 * As described above, requests for this component are pushed to MQ
   from another component using the GuestAgent's api module using
   _cast() or _call() (sync/a-sync) and putting the method's name as a
   parameter
-* Trove/openstack/common/rpc/dispatcher.py- RpcDispatcher.dispatch()
-  invokes the proper method in the Manager by some equivalent to
-  reflection
+* In module oslo.messaging, oslo_messaging/rpc/dispatcher.py
+  - RpcDispatcher.dispatch()invokes the proper method in the Manager
+  by some equivalent to reflection
 * The Manager then redirect the handling to an object (usually) from
   the dbaas.py module.
 * Actual handling is usually done in the dbaas.py module
@@ -107,9 +107,9 @@ bus and performs the relevant operation.
 * Guest agents communicate to conductor by putting messages on the
   topic defined in cfg as conductor_queue. By default this is
   "trove-conductor".
-* Entry point - Trove/bin/trove-conductor
+* Entry point - trove/bin/trove-conductor
 * Runs as RpcService configured by
-  Trove/etc/trove/trove-conductor.conf.sample which defines
+  etc/trove/trove-conductor.conf.sample which defines
   trove.conductor.manager.Manager as the manager. This is the entry
   point for requests arriving on the queue.
 * As guestagent above, requests are pushed to MQ from another component
