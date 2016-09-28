@@ -15,12 +15,10 @@
 
 from oslo_log import log as logging
 
-from trove.common import cfg
 from trove.common.views import create_links
 from trove.instance import models
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
 
 
 class InstanceView(object):

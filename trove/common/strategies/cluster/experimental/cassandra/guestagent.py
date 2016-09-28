@@ -15,13 +15,11 @@
 
 from oslo_log import log as logging
 
-from trove.common import cfg
 from trove.common.strategies.cluster import base
 from trove.guestagent import api as guest_api
 
 
 LOG = logging.getLogger(__name__)
-CONF = cfg.CONF
 
 
 class CassandraGuestAgentStrategy(base.BaseGuestAgentStrategy):

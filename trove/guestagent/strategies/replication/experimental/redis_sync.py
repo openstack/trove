@@ -17,10 +17,7 @@
 from oslo_log import log as logging
 from oslo_utils import netutils
 
-from trove.common import cfg
 from trove.guestagent.strategies.replication import base
-
-CONF = cfg.CONF
 
 LOG = logging.getLogger(__name__)
 

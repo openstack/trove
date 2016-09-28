@@ -20,7 +20,6 @@ import webob.exc
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 import trove.common.apischema as apischema
-from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.i18n import _LI
@@ -38,7 +37,6 @@ from trove.module import models as module_models
 from trove.module import views as module_views
 
 
-CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 

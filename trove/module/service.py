@@ -19,7 +19,6 @@ import copy
 from oslo_log import log as logging
 
 import trove.common.apischema as apischema
-from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common import pagination
@@ -31,7 +30,6 @@ from trove.module import models
 from trove.module import views
 
 
-CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
