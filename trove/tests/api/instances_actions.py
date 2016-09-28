@@ -149,7 +149,7 @@ class ActionTestBase(object):
         server = create_server_connection(self.instance_id)
         cmd = "ps acux | grep mysqld " \
               "| grep -v mysqld_safe | awk '{print $2}'"
-        stdout, stderr = server.execute(cmd)
+        stdout, _ = server.execute(cmd)
         try:
             return int(stdout)
         except ValueError:
@@ -407,7 +407,7 @@ class ResizeInstanceTest(ActionTestBase):
 
     def get_flavor_href(self, flavor_id=2):
         res = instance_info.dbaas.find_flavor_and_self_href(flavor_id)
-        dbaas_flavor, dbaas_flavor_href = res
+        _, dbaas_flavor_href = res
         return dbaas_flavor_href
 
     def wait_for_resize(self):
@@ -462,7 +462,7 @@ class ResizeInstanceTest(ActionTestBase):
         old_id = self.instance.flavor['id']
         self.expected_old_flavor_id = old_id
         res = instance_info.dbaas.find_flavor_and_self_href(old_id)
-        self.expected_dbaas_flavor, _dontcare_ = res
+        self.expected_dbaas_flavor, _ = res
         if EPHEMERAL_SUPPORT:
             flavor_name = CONFIG.values.get('instance_bigger_eph_flavor_name',
                                             'eph.rd-smaller')
