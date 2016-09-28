@@ -126,6 +126,7 @@ function configure_trove {
         iniset_conditional $TROVE_CONF DEFAULT max_volumes_per_tenant $TROVE_MAX_VOLUMES_PER_TENANT
 
         iniset $TROVE_CONF DEFAULT rpc_backend "rabbit"
+        iniset $TROVE_CONF DEFAULT control_exchange trove
         iniset $TROVE_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
         iniset $TROVE_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
         iniset $TROVE_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
@@ -151,6 +152,7 @@ function configure_trove {
         iniset_conditional $TROVE_TASKMANAGER_CONF DEFAULT state_change_wait_time $TROVE_STATE_CHANGE_WAIT_TIME
 
         iniset $TROVE_TASKMANAGER_CONF DEFAULT rpc_backend "rabbit"
+        iniset $TROVE_TASKMANAGER_CONF DEFAULT control_exchange trove
         iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_hosts $RABBIT_HOST
         iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_password $RABBIT_PASSWORD
         iniset $TROVE_TASKMANAGER_CONF oslo_messaging_rabbit rabbit_userid $RABBIT_USERID
