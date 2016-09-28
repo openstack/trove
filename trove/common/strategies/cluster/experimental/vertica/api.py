@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from novaclient import exceptions as nova_exceptions
 from oslo_log import log as logging
 
 from trove.cluster import models
@@ -19,7 +18,6 @@ from trove.cluster.tasks import ClusterTasks
 from trove.cluster.views import ClusterView
 from trove.common import cfg
 from trove.common import exception
-from trove.common import remote
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import base
 from trove.common import utils
@@ -85,38 +83,20 @@ class VerticaCluster(models.Cluster):
             raise exception.ClusterNumInstancesNotSupported(
                 num_instances=vertica_conf.cluster_member_count)
 
-        # Checking flavors
-        flavor_ids = [instance['flavor_id'] for instance in instances]
-        if len(set(flavor_ids)) != 1:
-            raise exception.ClusterFlavorsNotEqual()
-        flavor_id = flavor_ids[0]
-        nova_client = remote.create_nova_client(context)
-        try:
-            flavor = nova_client.flavors.get(flavor_id)
-        except nova_exceptions.NotFound:
-            raise exception.FlavorNotFound(uuid=flavor_id)
-        deltas = {'instances': num_instances}
+        models.validate_instance_flavors(
+            context, instances, vertica_conf.volume_support,
+            vertica_conf.device_path)
 
-        # Checking volumes
-        volume_sizes = [instance['volume_size'] for instance in instances
-                        if instance.get('volume_size', None)]
-        volume_size = None
-        if vertica_conf.volume_support:
-            if len(volume_sizes) != num_instances:
-                raise exception.ClusterVolumeSizeRequired()
-            if len(set(volume_sizes)) != 1:
-                raise exception.ClusterVolumeSizesNotEqual()
-            volume_size = volume_sizes[0]
-            models.validate_volume_size(volume_size)
-            deltas['volumes'] = volume_size * num_instances
-        else:
-            if len(volume_sizes) > 0:
-                raise exception.VolumeNotSupported()
-            ephemeral_support = vertica_conf.device_path
-            if ephemeral_support and flavor.ephemeral == 0:
-                raise exception.LocalStorageNotSpecified(flavor=flavor_id)
+        req_volume_size = models.get_required_volume_size(
+            instances, vertica_conf.volume_support)
+        models.assert_homogeneous_cluster(instances)
+
+        deltas = {'instances': num_instances, 'volumes': req_volume_size}
 
         check_quotas(context.tenant, deltas)
+
+        flavor_id = instances[0]['flavor_id']
+        volume_size = instances[0].get('volume_size', None)
 
         nics = [instance.get('nics', None) for instance in instances]
 

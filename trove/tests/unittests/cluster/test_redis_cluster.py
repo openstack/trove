@@ -98,7 +98,7 @@ class ClusterTest(trove_testtools.TestCase):
     def test_create_volume_no_specified(self, mock_conf, mock_client):
         mock_conf.get = Mock(
             return_value=FakeOptGroup(volume_support=True))
-        self.assertRaises(exception.VolumeSizeNotSpecified,
+        self.assertRaises(exception.ClusterVolumeSizeRequired,
                           Cluster.create,
                           Mock(),
                           self.cluster_name,

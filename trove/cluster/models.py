@@ -339,8 +339,8 @@ def is_cluster_deleting(context, cluster_id):
             cluster.db_info.task_status == ClusterTasks.SHRINKING_CLUSTER)
 
 
-def get_flavors_from_instance_defs(context, instances,
-                                   volume_enabled, ephemeral_enabled):
+def validate_instance_flavors(context, instances,
+                              volume_enabled, ephemeral_enabled):
     """Load and validate flavors for given instance definitions."""
     flavors = dict()
     nova_client = remote.create_nova_client(context)
@@ -382,7 +382,46 @@ def get_required_volume_size(instances, volume_enabled):
     return None
 
 
+def assert_homogeneous_cluster(instances, required_flavor=None,
+                               required_volume_size=None):
+    """Verify that all instances have the same flavor and volume size
+    (volume size = 0 if there should be no Trove volumes).
+    """
+    assert_same_instance_flavors(instances, required_flavor=required_flavor)
+    assert_same_instance_volumes(instances, required_size=required_volume_size)
+
+
+def assert_same_instance_flavors(instances, required_flavor=None):
+    """Verify that all instances have the same flavor.
+
+    :param required_flavor            The flavor all instances should have or
+                                      None if no specific flavor is required.
+    :type required_flavor             flavor_id
+    """
+    flavors = {instance['flavor_id'] for instance in instances}
+    if len(flavors) != 1 or (required_flavor is not None and
+                             required_flavor not in flavors):
+        raise exception.ClusterFlavorsNotEqual()
+
+
+def assert_same_instance_volumes(instances, required_size=None):
+    """Verify that all instances have the same volume size (size = 0 if there
+    is not a Trove volume for the instance).
+
+    :param required_size              Size in GB all instance's volumes should
+                                      have or 0 if there should be no attached
+                                      volumes.
+                                      None if no particular size is required.
+    :type required_size               int
+    """
+    sizes = {instance.get('volume_size', 0) for instance in instances}
+    if len(sizes) != 1 or (required_size is not None and
+                           required_size not in sizes):
+        raise exception.ClusterVolumeSizesNotEqual()
+
+
 def validate_volume_size(size):
+    """Verify the volume size is within the maximum limit for Trove volumes."""
     if size is None:
         raise exception.VolumeSizeNotSpecified()
     max_size = CONF.max_accepted_volume_size

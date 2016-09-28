@@ -39,7 +39,7 @@ class ClusterTest(trove_testtools.TestCase):
 
     @patch.object(inst_models.Instance, 'create')
     @patch.object(quota.QUOTAS, 'check_quotas')
-    @patch.object(models, 'get_flavors_from_instance_defs')
+    @patch.object(models, 'validate_instance_flavors')
     @patch.object(models, 'get_required_volume_size', return_value=3)
     def test_create_cluster_instances(self, get_vol_size, _, check_quotas,
                                       inst_create):
