@@ -107,7 +107,7 @@ class TemplateTest(trove_testtools.TestCase):
 
 class HeatTemplateLoadTest(trove_testtools.TestCase):
 
-    class FakeTemplate():
+    class FakeTemplate(object):
         def __init__(self):
             self.name = 'mysql/heat.template'
 

@@ -174,7 +174,7 @@ class ClusterTest(trove_testtools.TestCase):
                                                                   mock_client,
                                                                   m_find_all,
                                                                   mock_create):
-        class FakeFlavor:
+        class FakeFlavor(object):
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
 
@@ -253,7 +253,7 @@ class ClusterTest(trove_testtools.TestCase):
                                           mock_task_api, mock_db_create,
                                           mock_ins_create, mock_conf,
                                           mock_find_all):
-        class FakeFlavor:
+        class FakeFlavor(object):
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
 
