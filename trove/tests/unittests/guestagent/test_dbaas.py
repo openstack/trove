@@ -105,7 +105,7 @@ FAKE_USER = [{"_name": "random", "_password": "guesswhat",
               "_host": "%", "_databases": [FAKE_DB]}]
 
 
-class FakeTime:
+class FakeTime(object):
     COUNTER = 0
 
     @classmethod
@@ -1669,7 +1669,7 @@ class MySqlRootStatusTest(trove_testtools.TestCase):
         enable_root_mock.assert_called_once_with(root_password=None)
 
 
-class MockStats:
+class MockStats(object):
     f_blocks = 1024 ** 2
     f_bsize = 4096
     f_bfree = 512 * 1024

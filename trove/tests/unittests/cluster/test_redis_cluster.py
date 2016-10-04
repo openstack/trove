@@ -129,7 +129,7 @@ class ClusterTest(trove_testtools.TestCase):
     def test_create_storage_not_specified_and_no_ephemeral_flavor(self,
                                                                   mock_conf,
                                                                   mock_client):
-        class FakeFlavor:
+        class FakeFlavor(object):
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
 
@@ -180,7 +180,7 @@ class ClusterTest(trove_testtools.TestCase):
     def test_create_with_ephemeral_flavor(self, mock_client, mock_check_quotas,
                                           mock_task_api, mock_ins_create,
                                           mock_conf):
-        class FakeFlavor:
+        class FakeFlavor(object):
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
 

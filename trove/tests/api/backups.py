@@ -144,7 +144,7 @@ class AfterBackupCreation(object):
         assert_unprocessable(instance_info.dbaas.backups.delete, backup.id)
 
 
-class BackupRestoreMixin():
+class BackupRestoreMixin(object):
 
     def verify_backup(self, backup_id):
         def result_is_active():

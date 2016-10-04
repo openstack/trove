@@ -118,7 +118,7 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(remote, 'create_nova_client')
     def test_create_storage_not_specified(self,
                                           mock_client):
-        class FakeFlavor:
+        class FakeFlavor(object):
             def __init__(self, flavor_id):
                 self.flavor_id = flavor_id
 

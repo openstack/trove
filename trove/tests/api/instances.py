@@ -1610,7 +1610,7 @@ class CheckInstance(AttrCheck):
 
 
 @test(groups=[GROUP])
-class BadInstanceStatusBug():
+class BadInstanceStatusBug(object):
 
     @before_class()
     def setUp(self):

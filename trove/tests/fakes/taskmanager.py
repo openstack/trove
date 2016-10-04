@@ -54,7 +54,7 @@ class FakeRpcClient(object):
         return self
 
 
-class FakeNotifier:
+class FakeNotifier(object):
 
     def info(self, ctxt, event_type, payload):
         usage.notify(event_type, payload)

@@ -159,7 +159,7 @@ class MockRestoreRunner(RestoreRunner):
         return False
 
 
-class MockStats:
+class MockStats(object):
     f_blocks = 1024 ** 2
     f_bsize = 4096
     f_bfree = 512 * 1024
