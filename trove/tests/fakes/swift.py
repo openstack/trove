@@ -27,7 +27,6 @@ import six
 from six.moves import http_client
 from swiftclient import client as swift
 
-from trove.common.i18n import _  # noqa
 
 LOG = logging.getLogger(__name__)
 
