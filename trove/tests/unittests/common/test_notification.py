@@ -365,7 +365,7 @@ class TestDBaaSNotification(trove_testtools.TestCase):
         self.assertIn('name', payload)
         self.assertIn('flavor_id', payload)
         self.assertIn('datastore', payload)
-        self.assertTrue('users' not in payload)
+        self.assertNotIn('users', payload)
 
     @patch.object(rpc, 'get_notifier')
     def test_verify_optional_start_args(self, notifier):

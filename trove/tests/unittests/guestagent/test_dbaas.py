@@ -1594,7 +1594,7 @@ class MySqlAppMockTest(trove_testtools.TestCase):
                     self.assertRaises(RuntimeError, app.secure, None)
                     self.assertTrue(mock_execute.called)
                     # At least called twice
-                    self.assertTrue(mock_execute.call_count >= 2)
+                    self.assertGreaterEqual(mock_execute.call_count, 2)
                     (mock_status.wait_for_real_status_to_change_to.
                      assert_called_with(rd_instance.ServiceStatuses.SHUTDOWN,
                                         app.state_change_wait_time, False))

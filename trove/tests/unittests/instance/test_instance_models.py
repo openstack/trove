@@ -84,7 +84,7 @@ class SimpleInstanceTest(trove_testtools.TestCase):
         ip = filter_ips(
             ip, CONF.ip_regex, CONF.black_list_regex)
         self.assertEqual(2, len(ip))
-        self.assertTrue('10.123.123.123' not in ip)
+        self.assertNotIn('10.123.123.123', ip)
 
     def test_one_network_label(self):
         CONF.network_label_regex = 'public'

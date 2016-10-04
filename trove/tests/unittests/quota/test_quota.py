@@ -139,7 +139,7 @@ class QuotaControllerTest(trove_testtools.TestCase):
             result = self.controller.update(self.req, body, FAKE_TENANT1,
                                             FAKE_TENANT2)
             self.assertEqual(0, instance_quota.save.call_count)
-            self.assertFalse('instances' in result._data['quotas'])
+            self.assertNotIn('instances', result._data['quotas'])
             self.assertEqual(1, volume_quota.save.call_count)
             self.assertEqual(200, result.status)
             self.assertEqual(10, result._data['quotas']['volumes'])

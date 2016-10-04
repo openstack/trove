@@ -82,7 +82,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
 
         self.cluster.grow([instance1, instance2, instance3, instance4])
 
-        self.assertEqual(mock_prep_resize.called, True)
+        self.assertTrue(mock_prep_resize.called)
         mock_create_shard_instances.assert_called_with([instance1, instance2,
                                                         instance3], None)
         mock_create_query_router_instances.assert_called_with([instance4],
@@ -166,7 +166,7 @@ class MongoDBClusterTest(trove_testtools.TestCase):
 
         self.cluster.shrink(['id1', 'id2', 'id3', 'id4'])
 
-        self.assertEqual(mock_prep_resize.called, True)
+        self.assertTrue(mock_prep_resize.called)
         mock_check_shard_status.assert_called_with('id1')
         mock_update_db.assert_called_with(
             task_status=tasks.ClusterTasks.SHRINKING_CLUSTER
