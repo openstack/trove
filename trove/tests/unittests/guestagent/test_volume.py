@@ -19,6 +19,7 @@ import pexpect
 
 from trove.common.exception import GuestError, ProcessExecutionError
 from trove.common import utils
+from trove.guestagent.common import operating_system
 from trove.guestagent import volume
 from trove.tests.unittests import trove_testtools
 
@@ -160,8 +161,8 @@ class VolumeDeviceTest(trove_testtools.TestCase):
 
     @patch.object(pexpect, 'spawn', Mock())
     def _test_unmount(self, positive=True):
-        origin_ = os.path.exists
-        os.path.exists = MagicMock(return_value=positive)
+        origin_is_mount = operating_system.is_mount
+        operating_system.is_mount = MagicMock(return_value=positive)
         fake_spawn = _setUp_fake_spawn()
 
         self.volumeDevice.unmount('/mnt/volume')
@@ -169,18 +170,14 @@ class VolumeDeviceTest(trove_testtools.TestCase):
         if not positive:
             COUNT = 0
         self.assertEqual(COUNT, fake_spawn.expect.call_count)
-        os.path.exists = origin_
+        operating_system.is_mount = origin_is_mount
 
-    @patch.object(utils, 'execute', return_value=('/var/lib/mysql', ''))
+    @patch.object(utils, 'execute')
     def test_mount_points(self, mock_execute):
+        mock_execute.return_value = (
+            ("/dev/vdb /var/lib/mysql xfs rw 0 0", ""))
         mount_point = self.volumeDevice.mount_points('/dev/vdb')
         self.assertEqual(['/var/lib/mysql'], mount_point)
-
-    @patch.object(utils, 'execute', side_effect=ProcessExecutionError)
-    @patch('trove.guestagent.volume.LOG')
-    def test_fail_mount_points(self, mock_logging, mock_execute):
-        self.assertRaises(GuestError, self.volumeDevice.mount_points,
-                          '/mnt/volume')
 
     def test_set_readahead_size(self):
         origin_check_device_exists = self.volumeDevice._check_device_exists

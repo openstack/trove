@@ -135,7 +135,7 @@ class VolumeDevice(object):
                 "Error resizing the filesystem: %s") % self.device_path)
 
     def unmount(self, mount_point):
-        if os.path.exists(mount_point):
+        if operating_system.is_mount(mount_point):
             cmd = "sudo umount %s" % mount_point
             child = pexpect.spawn(cmd)
             child.expect(pexpect.EOF)
@@ -151,16 +151,10 @@ class VolumeDevice(object):
 
     def mount_points(self, device_path):
         """Returns a list of mount points on the specified device."""
-        try:
-            cmd = "grep %s /etc/mtab | awk '{print $2}'" % device_path
-            stdout, stderr = utils.execute(cmd, shell=True)
-            return stdout.strip().split('\n')
-
-        except ProcessExecutionError:
-            LOG.exception(_("Error retrieving mount points"))
-            raise GuestError(original_message=_(
-                "Could not obtain a list of mount points for device: %s") %
-                device_path)
+        stdout, stderr = utils.execute(
+            "grep %s /etc/mtab" % device_path,
+            shell=True, check_exit_code=[0, 1])
+        return [entry.strip().split()[1] for entry in stdout.splitlines()]
 
     def set_readahead_size(self, readahead_size,
                            execute_function=utils.execute):
