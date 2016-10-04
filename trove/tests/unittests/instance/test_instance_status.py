@@ -18,6 +18,7 @@ from trove.datastore import models
 from trove.instance.models import InstanceServiceStatus
 from trove.instance.models import InstanceStatus
 from trove.instance.models import SimpleInstance
+from trove.instance.tasks import InstanceTasks
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
 import uuid
@@ -135,3 +136,14 @@ class InstanceStatusTest(BaseInstanceStatusTestCase):
         self.status.set_status(ServiceStatuses.RUNNING)
         instance = SimpleInstance('dummy context', self.db_info, self.status)
         self.assertEqual(InstanceStatus.ACTIVE, instance.status)
+
+    def test_service_status_reset_status(self):
+        self.status.set_status(ServiceStatuses.UNKNOWN)
+        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        self.assertEqual(InstanceStatus.ERROR, instance.status)
+
+    def test_service_status_force_deleteing(self):
+        self.status.set_status(ServiceStatuses.UNKNOWN)
+        self.db_info.task_status = InstanceTasks.DELETING
+        instance = SimpleInstance('dummy context', self.db_info, self.status)
+        self.assertEqual(InstanceStatus.SHUTDOWN, instance.status)
