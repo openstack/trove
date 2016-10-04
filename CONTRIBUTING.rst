@@ -223,7 +223,7 @@ pylint will encouter in the gate.
 Pre-commit checklist
 ====================
 
-Before commiting code to Gerrit for review, please at least do the
+Before committing code to Gerrit for review, please at least do the
 following on your development system and ensure that they pass.
 
 .. code-block:: bash

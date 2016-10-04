@@ -57,7 +57,7 @@ class DB2Backup(base.BackupRunner):
                                                                 dbname})
                 size = size + int(out[0])
         except exception.ProcessExecutionError:
-            LOG.exception(_("An error occured while trying to "
+            LOG.exception(_("An error occurred while trying to "
                             "estimate backup size"))
         LOG.debug("Estimated size for databases: " + str(size))
         return size

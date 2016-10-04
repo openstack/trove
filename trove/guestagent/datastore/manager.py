@@ -400,7 +400,7 @@ class Manager(periodic_task.PeriodicTasks):
         return {}
 
     def post_upgrade(self, context, upgrade_info):
-        """Recovers the guest after the image is upgraded using infomation
+        """Recovers the guest after the image is upgraded using information
         from the pre_upgrade step
         """
         pass
