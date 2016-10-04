@@ -727,7 +727,7 @@
             "restart_required": false
         },
         {
-            "description": "Controls the maximum ROS output in data load; Negative and zero will be considerred as 1.",
+            "description": "Controls the maximum ROS output in data load; Negative and zero will be considered as 1.",
             "type": "integer",
             "name": "LoadMaxFinalROSCount",
             "restart_required": false
@@ -1159,7 +1159,7 @@
             "restart_required": false
         },
         {
-            "description": "If the average of the rows scanned squared during a delete is higher than this limit, a warning message about the projection is printed to the conole. Disable by setting to -1.",
+            "description": "If the average of the rows scanned squared during a delete is higher than this limit, a warning message about the projection is printed to the console. Disable by setting to -1.",
             "type": "integer",
             "name": "SlowDeleteConsoleWarningLimit",
             "restart_required": false
