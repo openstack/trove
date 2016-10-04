@@ -140,7 +140,7 @@ class TestManager(trove_testtools.TestCase):
     @patch('trove.taskmanager.manager.LOG')
     def test_exception_TroveError_eject_replica_source(
             self, mock_logging, mock_most_current_replica,
-            mock_set_tast_status):
+            mock_set_task_status):
         self.mock_slave2.detach_replica = Mock(side_effect=TroveError)
         mock_most_current_replica.return_value = self.mock_slave1
         with patch.object(models.BuiltInstanceTasks, 'load',
@@ -178,7 +178,7 @@ class TestManager(trove_testtools.TestCase):
     @patch.object(Manager, '_set_task_status')
     @patch.object(Manager, '_most_current_replica')
     def test_error_eject_replica_source(self, mock_most_current_replica,
-                                        mock_set_tast_status):
+                                        mock_set_task_status):
         self.mock_slave2.detach_replica = Mock(
             side_effect=RuntimeError('Error'))
         mock_most_current_replica.return_value = self.mock_slave1
