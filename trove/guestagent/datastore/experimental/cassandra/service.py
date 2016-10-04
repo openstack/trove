@@ -491,7 +491,7 @@ class CassandraApp(object):
 
     def _make_host_reachable(self):
         """
-        Some of these settings may be overriden by user defined
+        Some of these settings may be overridden by user defined
         configuration groups.
 
         authenticator and authorizer
