@@ -1,0 +1,6 @@
+
+---
+fixes:
+  - Since SafeConfigParser is deprecated in Python version 3.2,
+    Trove uses ConfigParser for versions of Python >= 3.2 and
+    SafeConfigParser for earlier versions. (Bug 1618666)
