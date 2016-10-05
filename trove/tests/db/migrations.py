@@ -56,25 +56,22 @@ class ProjectTestCase(object):
         py_glob = os.path.join(topdir, "trove", "db", "sqlalchemy",
                                "migrate_repo", "versions", "*.py")
 
-        missing_downgrade = []
+        downgrades_found = []
         for path in glob.iglob(py_glob):
-            has_upgrade = False
             has_downgrade = False
             with open(path, "r") as f:
                 for line in f:
-                    if 'def upgrade(' in line:
-                        has_upgrade = True
                     if 'def downgrade(' in line:
                         has_downgrade = True
 
-                if has_upgrade and not has_downgrade:
+                if has_downgrade:
                     fname = os.path.basename(path)
-                    missing_downgrade.append(fname)
+                    downgrades_found.append(fname)
 
-        helpful_msg = (_("The following migration scripts are missing a "
+        helpful_msg = (_("The following migration scripts have a "
                          "downgrade implementation:\n\t%s") %
-                       '\n\t'.join(sorted(missing_downgrade)))
-        assert_true(not missing_downgrade, helpful_msg)
+                       '\n\t'.join(sorted(downgrades_found)))
+        assert_equal(downgrades_found, [], helpful_msg)
 
 
 @test(depends_on_classes=[ProjectTestCase],
@@ -171,10 +168,7 @@ class TestTroveMigrations(object):
         """Walk through and test the migration scripts
 
         Determine latest version script from the repo, then
-        upgrade from 1 through to the latest, then downgrade from
-        the latest back to 1, with no data in the databases. This
-        just checks that the schema itself upgrades and downgrades
-        successfully.
+        upgrade from 1 through to the latest.
         """
         # Place the database under version control
         migration_api.version_control(engine, self.REPOSITORY,
@@ -185,26 +179,9 @@ class TestTroveMigrations(object):
         LOG.debug('Latest version is %s' % self.REPOSITORY.latest)
         versions = range(self.INIT_VERSION + 1, self.REPOSITORY.latest + 1)
 
-        # Snake walk from version 1 to the latest, testing the upgrade paths.
-        # upgrade -> downgrade -> upgrade
+        # Walk from version 1 to the latest, testing the upgrade paths.
         for version in versions:
             self._migrate_up(engine, version)
-            self._migrate_down(engine, version - 1)
-            self._migrate_up(engine, version)
-
-        # Now snake walk back down to version 1 from the latest, testing the
-        # downgrade paths.
-        # downgrade -> upgrade -> downgrade
-        for version in reversed(versions):
-            self._migrate_down(engine, version - 1)
-            self._migrate_up(engine, version)
-            self._migrate_down(engine, version - 1)
-
-    def _migrate_down(self, engine, version):
-        """Migrate down to an old version of database."""
-        migration_api.downgrade(engine, self.REPOSITORY, version)
-        assert_equal(version,
-                     migration_api.db_version(engine, self.REPOSITORY))
 
     def _migrate_up(self, engine, version):
         """Migrate up to a new version of database."""

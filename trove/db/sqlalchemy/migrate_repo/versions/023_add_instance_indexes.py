@@ -40,16 +40,3 @@ def upgrade(migrate_engine):
         deleted_idx.create()
     except OperationalError as e:
         logger.info(e)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    instances = Table('instances', meta, autoload=True)
-
-    tenant_id_idx = Index("instances_tenant_id", instances.c.tenant_id)
-    tenant_id_idx.drop()
-
-    deleted_idx = Index("instances_deleted", instances.c.deleted)
-    deleted_idx.drop()

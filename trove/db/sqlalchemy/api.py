@@ -107,10 +107,6 @@ def db_upgrade(options, version=None, repo_path=None):
     migration.upgrade(options, version, repo_path)
 
 
-def db_downgrade(options, version, repo_path=None):
-    migration.downgrade(options, version, repo_path)
-
-
 def db_reset(options, *plugins):
     drop_db(options)
     db_sync(options)

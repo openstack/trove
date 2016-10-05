@@ -53,30 +53,3 @@ def upgrade(migrate_engine):
         logger.warn(e)
 
     create_tables([new_agent_heartbeats])
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    # new table with desired columns, indexes, and constraints
-    new_agent_heartbeats = Table('agent_heartbeats', meta, autoload=True)
-
-    try:
-        drop_tables([new_agent_heartbeats])
-    except OperationalError as e:
-        logger.warn("This table may have been dropped by some other means.")
-        logger.warn(e)
-
-    # reset the migrate_engine
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    # original table from migration 005_heartbeat.py
-    previous_agent_heartbeats = Table(
-        'agent_heartbeats', meta, Column('id', String(36), primary_key=True,
-                                         nullable=False),
-        Column('instance_id', String(36), nullable=False),
-        Column('updated_at', DateTime()), extend_existing=True)
-
-    create_tables([previous_agent_heartbeats])

@@ -15,7 +15,6 @@
 from sqlalchemy.schema import MetaData
 
 from trove.db.sqlalchemy.migrate_repo.schema import Integer
-from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
 
 
@@ -33,13 +32,3 @@ def upgrade(migrate_engine):
         instances = Table('instances', meta, autoload=True)
         # modify column
         instances.c.flavor_id.alter(type=Integer())
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-    # int->char casts in pgsql still work fine without any USING clause,
-    #  so downgrade is not affected.
-    # modify column:
-    instances = Table('instances', meta, autoload=True)
-    instances.c.flavor_id.alter(type=String(36))

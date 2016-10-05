@@ -26,10 +26,3 @@ def upgrade(migrate_engine):
     updated = Column('updated', DateTime())
     configurations.create_column(created)
     configurations.create_column(updated)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData(bind=migrate_engine)
-    configurations = Table('configurations', meta, autoload=True)
-    configurations.drop_column('created')
-    configurations.drop_column('updated')

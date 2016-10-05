@@ -31,14 +31,3 @@ def upgrade(migrate_engine):
 
     instances.create_column(flavor_id)
     instances.create_column(volume_size)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    # drop column:
-    instances = Table('instances', meta, autoload=True)
-
-    instances.drop_column('flavor_id')
-    instances.drop_column('volume_size')

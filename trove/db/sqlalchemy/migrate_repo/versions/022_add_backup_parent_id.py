@@ -26,12 +26,3 @@ def upgrade(migrate_engine):
     # add column:
     backups = Table('backups', meta, autoload=True)
     backups.create_column(Column('parent_id', String(36), nullable=True))
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    # drop column:
-    backups = Table('backups', meta, autoload=True)
-    backups.drop_column('parent_id')

@@ -21,11 +21,9 @@ from sqlalchemy.schema import MetaData
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
-from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import Integer
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
-from trove.db.sqlalchemy import utils as db_utils
 
 
 meta = MetaData()
@@ -59,37 +57,3 @@ def upgrade(migrate_engine):
     instances.create_column(Column('type', String(64)))
     cluster_id_idx = Index("instances_cluster_id", instances.c.cluster_id)
     cluster_id_idx.create()
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-
-    datastore_versions = Table('datastore_versions', meta, autoload=True)
-    constraint_names = db_utils.get_foreign_key_constraint_names(
-        engine=migrate_engine,
-        table='clusters',
-        columns=['datastore_version_id'],
-        ref_table='datastore_versions',
-        ref_columns=['id'])
-    db_utils.drop_foreign_key_constraints(
-        constraint_names=constraint_names,
-        columns=[clusters.c.datastore_version_id],
-        ref_columns=[datastore_versions.c.id])
-
-    instances = Table('instances', meta, autoload=True)
-    constraint_names = db_utils.get_foreign_key_constraint_names(
-        engine=migrate_engine,
-        table='instances',
-        columns=['cluster_id'],
-        ref_table='clusters',
-        ref_columns=['id'])
-    db_utils.drop_foreign_key_constraints(
-        constraint_names=constraint_names,
-        columns=[instances.c.cluster_id],
-        ref_columns=[clusters.c.id])
-
-    instances.drop_column('cluster_id')
-    instances.drop_column('shard_id')
-    instances.drop_column('type')
-
-    drop_tables([clusters])

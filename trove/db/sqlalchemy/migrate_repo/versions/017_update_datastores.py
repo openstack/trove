@@ -46,18 +46,3 @@ def upgrade(migrate_engine):
 
     # drop column from datastores
     datastores.drop_column('manager')
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    datastores = Table('datastores', meta, autoload=True)
-    datastore_versions = Table('datastore_versions', meta, autoload=True)
-
-    # drop column from datastore_versions
-    datastore_versions.drop_column('manager')
-
-    # add column to datastores
-    manager = Column('manager', String(255))
-    datastores.create_column(manager)
