@@ -20,6 +20,7 @@ import webob.exc
 from trove.backup.models import Backup as backup_model
 from trove.backup import views as backup_views
 import trove.common.apischema as apischema
+from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
 from trove.common.i18n import _LI
@@ -37,6 +38,7 @@ from trove.module import models as module_models
 from trove.module import views as module_views
 
 
+CONF = cfg.CONF
 LOG = logging.getLogger(__name__)
 
 
@@ -302,6 +304,7 @@ class InstanceController(wsgi.Controller):
                     'Cannot specify locality when adding replicas to existing '
                     'master.')
                 raise exception.BadRequest(msg=dupe_locality_msg)
+        region_name = body['instance'].get('region_name', CONF.os_region_name)
 
         instance = models.Instance.create(context, name, flavor_id,
                                           image_id, databases, users,
@@ -312,7 +315,8 @@ class InstanceController(wsgi.Controller):
                                           replica_count=replica_count,
                                           volume_type=volume_type,
                                           modules=modules,
-                                          locality=locality)
+                                          locality=locality,
+                                          region_name=region_name)
 
         view = views.InstanceDetailView(instance, req=req)
         return wsgi.Result(view.data(), 200)

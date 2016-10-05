@@ -361,6 +361,9 @@ class FakeGuest(object):
     def backup_required_for_replication(self):
         return True
 
+    def post_processing_required_for_replication(self):
+        return False
+
     def module_list(self, context, include_contents=False):
         return []
 

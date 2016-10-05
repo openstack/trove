@@ -428,13 +428,14 @@ class Manager(periodic_task.PeriodicTasks):
             mgmtmodels.publish_exist_events(self.exists_transformer,
                                             self.admin_context)
 
-    @periodic_task.periodic_task(spacing=CONF.quota_notification_interval)
-    def publish_quota_notifications(self, context):
-        nova_client = remote.create_nova_client(self.admin_context)
-        for tenant in nova_client.tenants.list():
-            for quota in QUOTAS.get_all_quotas_by_tenant(tenant.id):
-                usage = QUOTAS.get_quota_usage(quota)
-                DBaaSQuotas(self.admin_context, quota, usage).notify()
+    if CONF.quota_notification_interval:
+        @periodic_task.periodic_task(spacing=CONF.quota_notification_interval)
+        def publish_quota_notifications(self, context):
+            nova_client = remote.create_nova_client(self.admin_context)
+            for tenant in nova_client.tenants.list():
+                for quota in QUOTAS.get_all_quotas_by_tenant(tenant.id):
+                    usage = QUOTAS.get_quota_usage(quota)
+                    DBaaSQuotas(self.admin_context, quota, usage).notify()
 
     def __getattr__(self, name):
         """

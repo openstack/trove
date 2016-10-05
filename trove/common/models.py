@@ -103,21 +103,28 @@ class NetworkRemoteModelBase(RemoteModelBase):
     network_driver = None
 
     @classmethod
-    def get_driver(cls, context):
+    def get_driver(cls, context, region_name):
         if not cls.network_driver:
             cls.network_driver = import_class(CONF.network_driver)
-        return cls.network_driver(context)
+        return cls.network_driver(context, region_name)
 
 
 class NovaRemoteModelBase(RemoteModelBase):
 
     @classmethod
-    def get_client(cls, context):
-        return remote.create_nova_client(context)
+    def get_client(cls, context, region_name):
+        return remote.create_nova_client(context, region_name)
 
 
 class SwiftRemoteModelBase(RemoteModelBase):
 
     @classmethod
+    def get_client(cls, context, region_name):
+        return remote.create_swift_client(context, region_name)
+
+
+class CinderRemoteModelBase(RemoteModelBase):
+
+    @classmethod
     def get_client(cls, context):
-        return remote.create_swift_client(context)
+        return remote.create_cinder_client(context)

@@ -87,7 +87,7 @@ def guest_client(context, id, manager=None):
     return clazz(context, id)
 
 
-def nova_client(context):
+def nova_client(context, region_name=None):
     if CONF.nova_compute_url:
         url = '%(nova_url)s%(tenant)s' % {
             'nova_url': normalize_url(CONF.nova_compute_url),
@@ -95,7 +95,7 @@ def nova_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.nova_compute_service_type,
-                           endpoint_region=CONF.os_region_name,
+                           endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.nova_compute_endpoint_type)
 
     client = Client(CONF.nova_client_version, context.user, context.auth_token,
@@ -116,7 +116,7 @@ def create_admin_nova_client(context):
     return client
 
 
-def cinder_client(context):
+def cinder_client(context, region_name=None):
     if CONF.cinder_url:
         url = '%(cinder_url)s%(tenant)s' % {
             'cinder_url': normalize_url(CONF.cinder_url),
@@ -124,7 +124,7 @@ def cinder_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.cinder_service_type,
-                           endpoint_region=CONF.os_region_name,
+                           endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.cinder_endpoint_type)
 
     client = CinderClient.Client(context.user, context.auth_token,
@@ -135,7 +135,7 @@ def cinder_client(context):
     return client
 
 
-def heat_client(context):
+def heat_client(context, region_name=None):
     if CONF.heat_url:
         url = '%(heat_url)s%(tenant)s' % {
             'heat_url': normalize_url(CONF.heat_url),
@@ -143,7 +143,7 @@ def heat_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.heat_service_type,
-                           endpoint_region=CONF.os_region_name,
+                           endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.heat_endpoint_type)
 
     client = HeatClient.Client(token=context.auth_token,
@@ -152,7 +152,7 @@ def heat_client(context):
     return client
 
 
-def swift_client(context):
+def swift_client(context, region_name=None):
     if CONF.swift_url:
         # swift_url has a different format so doesn't need to be normalized
         url = '%(swift_url)s%(tenant)s' % {'swift_url': CONF.swift_url,
@@ -160,7 +160,7 @@ def swift_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.swift_service_type,
-                           endpoint_region=CONF.os_region_name,
+                           endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.swift_endpoint_type)
 
     client = Connection(preauthurl=url,
@@ -170,7 +170,7 @@ def swift_client(context):
     return client
 
 
-def neutron_client(context):
+def neutron_client(context, region_name=None):
     from neutronclient.v2_0 import client as NeutronClient
     if CONF.neutron_url:
         # neutron endpoint url / publicURL does not include tenant segment
@@ -178,7 +178,7 @@ def neutron_client(context):
     else:
         url = get_endpoint(context.service_catalog,
                            service_type=CONF.neutron_service_type,
-                           endpoint_region=CONF.os_region_name,
+                           endpoint_region=region_name or CONF.os_region_name,
                            endpoint_type=CONF.neutron_endpoint_type)
 
     client = NeutronClient.Client(token=context.auth_token,

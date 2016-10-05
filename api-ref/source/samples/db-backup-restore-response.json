@@ -31,6 +31,7 @@
             }
         ],
         "name": "backup_instance",
+        "region": "RegionOne",
         "status": "BUILD",
         "updated": "2014-10-30T12:30:00",
         "volume": {

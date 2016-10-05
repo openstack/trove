@@ -41,8 +41,8 @@ class StorageDevice(object):
 class StorageDevices(object):
 
     @staticmethod
-    def load(context):
-        client = create_cinder_client(context)
+    def load(context, region_name):
+        client = create_cinder_client(context, region_name)
         rdstorages = client.rdstorage.list()
         for rdstorage in rdstorages:
             LOG.debug("rdstorage=" + str(rdstorage))

@@ -38,11 +38,15 @@ class TestModels(trove_testtools.TestCase):
         mock_flv.ephemeral = 0
 
         test_instances = [{'flavor_id': 1, 'volume_size': 10},
-                          {'flavor_id': 1, 'volume_size': 1.5},
-                          {'flavor_id': 2, 'volume_size': 3}]
+                          {'flavor_id': 1, 'volume_size': 1.5,
+                           'region_name': 'home'},
+                          {'flavor_id': 2, 'volume_size': 3,
+                           'region_name': 'work'}]
         models.validate_instance_flavors(Mock(), test_instances,
                                          True, True)
-        create_nove_cli_mock.assert_called_once_with(ANY)
+        create_nove_cli_mock.assert_has_calls([call(ANY, None),
+                                               call(ANY, 'home'),
+                                               call(ANY, 'work')])
 
         self.assertRaises(exception.LocalStorageNotSpecified,
                           models.validate_instance_flavors,

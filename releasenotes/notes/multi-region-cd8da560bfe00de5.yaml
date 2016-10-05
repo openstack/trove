@@ -1,0 +1,3 @@
+features:
+  - Adds a region property to the instance model and table.  This is the
+    first step in multi-region support.

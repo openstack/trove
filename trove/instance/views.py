@@ -37,6 +37,7 @@ class InstanceView(object):
             "flavor": self._build_flavor_info(),
             "datastore": {"type": self.instance.datastore.name,
                           "version": self.instance.datastore_version.name},
+            "region": self.instance.region_name
         }
         if self.instance.volume_support:
             instance_dict['volume'] = {'size': self.instance.volume_size}

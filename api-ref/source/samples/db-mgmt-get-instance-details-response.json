@@ -36,6 +36,7 @@
             }
         ],
         "name": "json_rack_instance",
+        "region": "RegionOne",
         "root_enabled": "2014-10-30T12:30:00",
         "root_enabled_by": "3000",
         "server": {

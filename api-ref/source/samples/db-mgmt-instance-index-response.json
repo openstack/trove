@@ -34,6 +34,7 @@
                 }
             ],
             "name": "json_rack_instance",
+            "region": "RegionOne",
             "server": {
                 "deleted": false,
                 "deleted_at": null,

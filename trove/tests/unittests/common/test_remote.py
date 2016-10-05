@@ -24,6 +24,7 @@ from testtools import ExpectedException, matchers
 from trove.common import cfg
 from trove.common.context import TroveContext
 from trove.common import exception
+from trove.common import glance_remote
 from trove.common import remote
 from trove.tests.fakes.swift import SwiftClientStub
 from trove.tests.unittests import trove_testtools
@@ -572,6 +573,47 @@ class TestCreateSwiftClient(trove_testtools.TestCase):
             TroveContext(service_catalog=self.service_catalog))
         self.assertEqual(self.swiftv3_public_url_region_two,
                          client.url)
+
+
+class TestCreateGlanceClient(trove_testtools.TestCase):
+    def setUp(self):
+        super(TestCreateGlanceClient, self).setUp()
+        self.glance_public_url = 'http://publicURL/v2'
+        self.glancev3_public_url_region_two = 'http://publicURL-r2/v3'
+        self.service_catalog = [
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': self.glance_public_url,
+                    }
+                ],
+                'type': 'image'
+            },
+            {
+                'endpoints': [
+                    {
+                        'region': 'RegionOne',
+                        'publicURL': 'http://publicURL-r1/v1',
+                    },
+                    {
+                        'region': 'RegionTwo',
+                        'publicURL': self.glancev3_public_url_region_two,
+                    }
+                ],
+                'type': 'imagev3'
+            }
+        ]
+
+    def test_create_with_no_conf_no_catalog(self):
+        self.assertRaises(exception.EmptyCatalog,
+                          glance_remote.create_glance_client,
+                          TroveContext())
+
+    def test_create(self):
+        client = glance_remote.create_glance_client(
+            TroveContext(service_catalog=self.service_catalog))
+        self.assertIsNotNone(client)
 
 
 class TestEndpoints(trove_testtools.TestCase):

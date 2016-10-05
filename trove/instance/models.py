@@ -27,6 +27,7 @@ from oslo_log import log as logging
 from trove.backup.models import Backup
 from trove.common import cfg
 from trove.common import exception
+from trove.common.glance_remote import create_glance_client
 from trove.common.i18n import _, _LE, _LI, _LW
 import trove.common.instance as tr_instance
 from trove.common.notification import StartNotification
@@ -36,6 +37,7 @@ from trove.common.remote import create_guest_client
 from trove.common.remote import create_nova_client
 from trove.common import server_group as srv_grp
 from trove.common import template
+from trove.common.trove_remote import create_trove_client
 from trove.common import utils
 from trove.configuration.models import Configuration
 from trove.datastore import models as datastore_models
@@ -62,7 +64,7 @@ def filter_ips(ips, white_list_regex, black_list_regex):
             and not re.search(black_list_regex, ip)]
 
 
-def load_server(context, instance_id, server_id):
+def load_server(context, instance_id, server_id, region_name):
     """
     Loads a server or raises an exception.
     :param context: request context used to access nova
@@ -74,7 +76,7 @@ def load_server(context, instance_id, server_id):
     :type server_id: unicode
     :rtype: novaclient.v2.servers.Server
     """
-    client = create_nova_client(context)
+    client = create_nova_client(context, region_name=region_name)
     try:
         server = client.servers.get(server_id)
     except nova_exceptions.NotFound:
@@ -120,7 +122,7 @@ def load_simple_instance_server_status(context, db_info):
         db_info.server_status = "BUILD"
         db_info.addresses = {}
     else:
-        client = create_nova_client(context)
+        client = create_nova_client(context, db_info.region_id)
         try:
             server = client.servers.get(db_info.compute_instance_id)
             db_info.server_status = server.status
@@ -427,6 +429,10 @@ class SimpleInstance(object):
     def shard_id(self):
         return self.db_info.shard_id
 
+    @property
+    def region_name(self):
+        return self.db_info.region_id
+
 
 class DetailInstance(SimpleInstance):
     """A detailed view of an Instance.
@@ -511,7 +517,8 @@ def load_instance(cls, context, id, needs_server=False,
     else:
         try:
             server = load_server(context, db_info.id,
-                                 db_info.compute_instance_id)
+                                 db_info.compute_instance_id,
+                                 region_name=db_info.region_id)
             # TODO(tim.simpson): Remove this hack when we have notifications!
             db_info.server_status = server.status
             db_info.addresses = server.addresses
@@ -547,7 +554,7 @@ def load_guest_info(instance, context, id):
             instance.volume_used = volume_info['used']
             instance.volume_total = volume_info['total']
         except Exception as e:
-            LOG.error(e)
+            LOG.exception(e)
     return instance
 
 
@@ -646,8 +653,8 @@ class BaseInstance(SimpleInstance):
         self.set_instance_fault_deleted()
         # Delete associated security group
         if CONF.trove_security_groups_support:
-            SecurityGroup.delete_for_instance(self.db_info.id,
-                                              self.context)
+            SecurityGroup.delete_for_instance(self.db_info.id, self.context,
+                                              self.db_info.region_id)
 
     @property
     def guest(self):
@@ -658,7 +665,8 @@ class BaseInstance(SimpleInstance):
     @property
     def nova_client(self):
         if not self._nova_client:
-            self._nova_client = create_nova_client(self.context)
+            self._nova_client = create_nova_client(
+                self.context, region_name=self.db_info.region_id)
         return self._nova_client
 
     def update_db(self, **values):
@@ -684,7 +692,8 @@ class BaseInstance(SimpleInstance):
     @property
     def volume_client(self):
         if not self._volume_client:
-            self._volume_client = create_cinder_client(self.context)
+            self._volume_client = create_cinder_client(
+                self.context, region_name=self.db_info.region_id)
         return self._volume_client
 
     def reset_task_status(self):
@@ -774,12 +783,60 @@ class Instance(BuiltInstance):
             return False
 
     @classmethod
+    def _validate_remote_datastore(cls, context, region_name, flavor,
+                                   datastore, datastore_version):
+        remote_nova_client = create_nova_client(context,
+                                                region_name=region_name)
+        try:
+            remote_flavor = remote_nova_client.flavors.get(flavor.id)
+            if (flavor.ram != remote_flavor.ram or
+                    flavor.vcpus != remote_flavor.vcpus):
+                raise exception.TroveError(
+                    "Flavors differ between regions"
+                    " %(local)s and %(remote)s." %
+                    {'local': CONF.os_region_name, 'remote': region_name})
+        except nova_exceptions.NotFound:
+            raise exception.TroveError(
+                "Flavors %(flavor)s not found in region %(remote)s."
+                % {'flavor': flavor.id, 'remote': region_name})
+
+        remote_trove_client = create_trove_client(
+            context, region_name=region_name)
+        try:
+            remote_ds_ver = remote_trove_client.datastore_versions.get(
+                datastore.name, datastore_version.name)
+            if datastore_version.name != remote_ds_ver.name:
+                raise exception.TroveError(
+                    "Datastore versions differ between regions "
+                    "%(local)s and %(remote)s." %
+                    {'local': CONF.os_region_name, 'remote': region_name})
+        except exception.NotFound:
+            raise exception.TroveError(
+                "Datastore Version %(dsv)s not found in region %(remote)s."
+                % {'dsv': datastore_version.name, 'remote': region_name})
+
+        glance_client = create_glance_client(context)
+        local_image = glance_client.images.get(datastore_version.image)
+        remote_glance_client = create_glance_client(
+            context, region_name=region_name)
+        remote_image = remote_glance_client.images.get(
+            remote_ds_ver.image)
+        if local_image.checksum != remote_image.checksum:
+            raise exception.TroveError(
+                "Images for Datastore %(ds)s do not match"
+                "between regions %(local)s and %(remote)s." %
+                {'ds': datastore.name, 'local': CONF.os_region_name,
+                 'remote': region_name})
+
+    @classmethod
     def create(cls, context, name, flavor_id, image_id, databases, users,
                datastore, datastore_version, volume_size, backup_id,
                availability_zone=None, nics=None,
                configuration_id=None, slave_of_id=None, cluster_config=None,
                replica_count=None, volume_type=None, modules=None,
-               locality=None):
+               locality=None, region_name=None):
+
+        region_name = region_name or CONF.os_region_name
 
         call_args = {
             'name': name,
@@ -788,6 +845,7 @@ class Instance(BuiltInstance):
             'datastore_version': datastore_version.name,
             'image_id': image_id,
             'availability_zone': availability_zone,
+            'region_name': region_name,
         }
 
         # All nova flavors are permitted for a datastore-version unless one
@@ -811,6 +869,12 @@ class Instance(BuiltInstance):
             flavor = client.flavors.get(flavor_id)
         except nova_exceptions.NotFound:
             raise exception.FlavorNotFound(uuid=flavor_id)
+
+        # If a different region is specified for the instance, ensure
+        # that the flavor and image are the same in both regions
+        if region_name and region_name != CONF.os_region_name:
+            cls._validate_remote_datastore(context, region_name, flavor,
+                                           datastore, datastore_version)
 
         deltas = {'instances': 1}
         volume_support = datastore_cfg.volume_support
@@ -945,10 +1009,12 @@ class Instance(BuiltInstance):
                     task_status=InstanceTasks.BUILDING,
                     configuration_id=configuration_id,
                     slave_of_id=slave_of_id, cluster_id=cluster_id,
-                    shard_id=shard_id, type=instance_type)
+                    shard_id=shard_id, type=instance_type,
+                    region_id=region_name)
                 LOG.debug("Tenant %(tenant)s created new Trove instance "
-                          "%(db)s.",
-                          {'tenant': context.tenant, 'db': db_info.id})
+                          "%(db)s in region %(region)s.",
+                          {'tenant': context.tenant, 'db': db_info.id,
+                           'region': region_name})
 
                 instance_id = db_info.id
                 cls.add_instance_modules(context, instance_id, modules)
@@ -1009,8 +1075,7 @@ class Instance(BuiltInstance):
                 context, instance_id, module.id, module.md5)
 
     def get_flavor(self):
-        client = create_nova_client(self.context)
-        return client.flavors.get(self.flavor_id)
+        return self.nova_client.flavors.get(self.flavor_id)
 
     def get_default_configuration_template(self):
         flavor = self.get_flavor()
@@ -1036,13 +1101,12 @@ class Instance(BuiltInstance):
             raise exception.BadRequest(_("The new flavor id must be different "
                                          "than the current flavor id of '%s'.")
                                        % self.flavor_id)
-        client = create_nova_client(self.context)
         try:
-            new_flavor = client.flavors.get(new_flavor_id)
+            new_flavor = self.nova_client.flavors.get(new_flavor_id)
         except nova_exceptions.NotFound:
             raise exception.FlavorNotFound(uuid=new_flavor_id)
 
-        old_flavor = client.flavors.get(self.flavor_id)
+        old_flavor = self.nova_client.flavors.get(self.flavor_id)
         if self.volume_support:
             if new_flavor.ephemeral != 0:
                 raise exception.LocalStorageNotSupported()
@@ -1322,8 +1386,8 @@ class Instances(object):
     @staticmethod
     def load(context, include_clustered, instance_ids=None):
 
-        def load_simple_instance(context, db, status, **kwargs):
-            return SimpleInstance(context, db, status)
+        def load_simple_instance(context, db_info, status, **kwargs):
+            return SimpleInstance(context, db_info, status)
 
         if context is None:
             raise TypeError("Argument context not defined.")
@@ -1375,7 +1439,14 @@ class Instances(object):
                     db.addresses = {}
                 else:
                     try:
-                        server = find_server(db.id, db.compute_instance_id)
+                        if (not db.region_id
+                                or db.region_id == CONF.os_region_name):
+                            server = find_server(db.id, db.compute_instance_id)
+                        else:
+                            nova_client = create_nova_client(
+                                context, region_name=db.region_id)
+                            server = nova_client.servers.get(
+                                db.compute_instance_id)
                         db.server_status = server.status
                         db.addresses = server.addresses
                     except exception.ComputeInstanceNotFound:
@@ -1402,13 +1473,12 @@ class Instances(object):
 
 
 class DBInstance(dbmodels.DatabaseModelBase):
-    """Defines the task being executed plus the start time."""
 
     _data_fields = ['name', 'created', 'compute_instance_id',
                     'task_id', 'task_description', 'task_start_time',
                     'volume_id', 'deleted', 'tenant_id',
                     'datastore_version_id', 'configuration_id', 'slave_of_id',
-                    'cluster_id', 'shard_id', 'type']
+                    'cluster_id', 'shard_id', 'type', 'region_id']
 
     def __init__(self, task_status, **kwargs):
         """

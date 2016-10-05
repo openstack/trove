@@ -250,6 +250,7 @@ cluster = {
                                 "nics": nics,
                                 "availability_zone": non_empty_string,
                                 "modules": module_list,
+                                "region_name": non_empty_string
                             }
                         }
                     },
@@ -287,7 +288,8 @@ cluster = {
                         "availability_zone": non_empty_string,
                         "modules": module_list,
                         "related_to": non_empty_string,
-                        "type": non_empty_string
+                        "type": non_empty_string,
+                        "region_name": non_empty_string
                     }
                 }
             }
@@ -349,6 +351,7 @@ instance = {
                     },
                     "nics": nics,
                     "modules": module_list,
+                    "region_name": non_empty_string,
                     "locality": non_empty_string
                 }
             }

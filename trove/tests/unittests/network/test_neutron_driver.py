@@ -19,6 +19,7 @@ from mock import Mock, patch
 from neutronclient.common import exceptions as neutron_exceptions
 from neutronclient.v2_0 import client as NeutronClient
 
+from trove.common import cfg
 from trove.common import exception
 from trove.common.models import NetworkRemoteModelBase
 from trove.common import remote
@@ -26,6 +27,9 @@ from trove.extensions.security_group.models import RemoteSecurityGroup
 from trove.network import neutron
 from trove.network.neutron import NeutronDriver as driver
 from trove.tests.unittests import trove_testtools
+
+
+CONF = cfg.CONF
 
 
 class NeutronDriverTest(trove_testtools.TestCase):
@@ -50,26 +54,30 @@ class NeutronDriverTest(trove_testtools.TestCase):
     def test_create_security_group(self):
         driver.create_security_group = Mock()
         RemoteSecurityGroup.create(name=Mock(), description=Mock(),
-                                   context=self.context)
+                                   context=self.context,
+                                   region_name=CONF.os_region_name)
         self.assertEqual(1, driver.create_security_group.call_count)
 
     def test_add_security_group_rule(self):
         driver.add_security_group_rule = Mock()
         RemoteSecurityGroup.add_rule(sec_group_id=Mock(), protocol=Mock(),
                                      from_port=Mock(), to_port=Mock(),
-                                     cidr=Mock(), context=self.context)
+                                     cidr=Mock(), context=self.context,
+                                     region_name=CONF.os_region_name)
         self.assertEqual(1, driver.add_security_group_rule.call_count)
 
     def test_delete_security_group_rule(self):
         driver.delete_security_group_rule = Mock()
         RemoteSecurityGroup.delete_rule(sec_group_rule_id=Mock(),
-                                        context=self.context)
+                                        context=self.context,
+                                        region_name=CONF.os_region_name)
         self.assertEqual(1, driver.delete_security_group_rule.call_count)
 
     def test_delete_security_group(self):
         driver.delete_security_group = Mock()
         RemoteSecurityGroup.delete(sec_group_id=Mock(),
-                                   context=self.context)
+                                   context=self.context,
+                                   region_name=CONF.os_region_name)
         self.assertEqual(1, driver.delete_security_group.call_count)
 
 
@@ -81,7 +89,7 @@ class NeutronDriverExceptionTest(trove_testtools.TestCase):
         self.orig_NeutronClient = NeutronClient.Client
         self.orig_get_endpoint = remote.get_endpoint
         remote.get_endpoint = MagicMock(return_value="neutron_url")
-        mock_driver = neutron.NeutronDriver(self.context)
+        mock_driver = neutron.NeutronDriver(self.context, "regionOne")
         NetworkRemoteModelBase.get_driver = MagicMock(
             return_value=mock_driver)
 
@@ -98,23 +106,27 @@ class NeutronDriverExceptionTest(trove_testtools.TestCase):
     def test_create_sg_with_exception(self, mock_logging):
         self.assertRaises(exception.SecurityGroupCreationError,
                           RemoteSecurityGroup.create,
-                          "sg_name", "sg_desc", self.context)
+                          "sg_name", "sg_desc", self.context,
+                          region_name=CONF.os_region_name)
 
     @patch('trove.network.neutron.LOG')
     def test_add_sg_rule_with_exception(self, mock_logging):
         self.assertRaises(exception.SecurityGroupRuleCreationError,
                           RemoteSecurityGroup.add_rule,
                           "12234", "tcp", "22", "22",
-                          "0.0.0.0/8", self.context)
+                          "0.0.0.0/8", self.context,
+                          region_name=CONF.os_region_name)
 
     @patch('trove.network.neutron.LOG')
     def test_delete_sg_rule_with_exception(self, mock_logging):
         self.assertRaises(exception.SecurityGroupRuleDeletionError,
                           RemoteSecurityGroup.delete_rule,
-                          "12234", self.context)
+                          "12234", self.context,
+                          region_name=CONF.os_region_name)
 
     @patch('trove.network.neutron.LOG')
     def test_delete_sg_with_exception(self, mock_logging):
         self.assertRaises(exception.SecurityGroupDeletionError,
                           RemoteSecurityGroup.delete,
-                          "123445", self.context)
+                          "123445", self.context,
+                          region_name=CONF.os_region_name)

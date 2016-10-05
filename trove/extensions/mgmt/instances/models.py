@@ -33,7 +33,7 @@ CONF = cfg.CONF
 def load_mgmt_instances(context, deleted=None, client=None,
                         include_clustered=None):
     if not client:
-        client = remote.create_nova_client(context)
+        client = remote.create_nova_client(context, CONF.os_region_name)
     try:
         mgmt_servers = client.rdservers.list()
     except AttributeError:
@@ -56,7 +56,7 @@ def load_mgmt_instance(cls, context, id, include_deleted):
     try:
         instance = load_instance(cls, context, id, needs_server=True,
                                  include_deleted=include_deleted)
-        client = remote.create_nova_client(context)
+        client = remote.create_nova_client(context, CONF.os_region_name)
         try:
             server = client.rdservers.get(instance.server_id)
         except AttributeError:
@@ -169,7 +169,7 @@ def _load_servers(instances, find_server):
             server = find_server(db.id, db.compute_instance_id)
             instance.server = server
         except Exception as ex:
-            LOG.error(ex)
+            LOG.exception(ex)
     return instances
 
 
