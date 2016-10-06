@@ -212,14 +212,8 @@ class ConfigurationInstCreateGroup(TestGroup):
         """Ensure deleting attached non-dynamic group fails."""
         self.test_runner.run_delete_attached_non_dynamic_group()
 
-    @test(runs_after=[list_dynamic_inst_conf_groups_after,
-                      list_non_dynamic_inst_conf_groups_after])
-    def create_instance_with_conf(self):
-        """Test create instance with conf group."""
-        self.test_runner.run_create_instance_with_conf()
-
     @test(depends_on=[attach_non_dynamic_group],
-          runs_after=[create_instance_with_conf])
+          runs_after=[delete_attached_non_dynamic_group])
     def update_non_dynamic_group(self):
         """Test update non-dynamic group."""
         self.test_runner.run_update_non_dynamic_group()
@@ -229,6 +223,11 @@ class ConfigurationInstCreateGroup(TestGroup):
     def detach_non_dynamic_group(self):
         """Test detach non-dynamic group."""
         self.test_runner.run_detach_non_dynamic_group()
+
+    @test(runs_after=[detach_non_dynamic_group])
+    def create_instance_with_conf(self):
+        """Test create instance with conf group."""
+        self.test_runner.run_create_instance_with_conf()
 
 
 @test(depends_on_groups=[groups.CFGGRP_INST_CREATE],

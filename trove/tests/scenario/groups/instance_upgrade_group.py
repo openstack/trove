@@ -65,6 +65,16 @@ class InstanceUpgradeGroup(TestGroup):
         self.user_actions_runner.run_users_create()
 
     @test(runs_after=[create_users])
+    def add_test_data(self):
+        """Add test data."""
+        self.test_runner.run_add_test_data()
+
+    @test(depends_on=[add_test_data])
+    def verify_test_data(self):
+        """Verify test data."""
+        self.test_runner.run_verify_test_data()
+
+    @test(runs_after=[verify_test_data])
     def instance_upgrade(self):
         """Upgrade an existing instance."""
         self.test_runner.run_instance_upgrade()
@@ -79,6 +89,17 @@ class InstanceUpgradeGroup(TestGroup):
     def list_users(self):
         """List the created users."""
         self.user_actions_runner.run_users_list()
+
+    @test(depends_on=[verify_test_data, instance_upgrade])
+    def verify_test_data_after_upgrade(self):
+        """Verify test data after upgrade."""
+        self.test_runner.run_verify_test_data()
+
+    @test(depends_on=[add_test_data],
+          runs_after=[verify_test_data_after_upgrade])
+    def remove_test_data(self):
+        """Remove test data."""
+        self.test_runner.run_remove_test_data()
 
     @test(depends_on=[create_users],
           runs_after=[list_users])

@@ -41,14 +41,41 @@ class InstanceActionsGroup(TestGroup):
             InstanceActionsRunnerFactory.instance())
 
     @test
+    def add_test_data(self):
+        """Add test data."""
+        self.test_runner.run_add_test_data()
+
+    @test(depends_on=[add_test_data])
+    def verify_test_data(self):
+        """Verify test data."""
+        self.test_runner.run_verify_test_data()
+
+    @test(runs_after=[verify_test_data])
     def instance_restart(self):
         """Restart an existing instance."""
         self.test_runner.run_instance_restart()
 
-    @test(depends_on=[instance_restart])
+    @test(depends_on=[verify_test_data, instance_restart])
+    def verify_test_data_after_restart(self):
+        """Verify test data after restart."""
+        self.test_runner.run_verify_test_data()
+
+    @test(depends_on=[instance_restart],
+          runs_after=[verify_test_data_after_restart])
     def instance_resize_volume(self):
         """Resize attached volume."""
         self.test_runner.run_instance_resize_volume()
+
+    @test(depends_on=[verify_test_data, instance_resize_volume])
+    def verify_test_data_after_volume_resize(self):
+        """Verify test data after volume resize."""
+        self.test_runner.run_verify_test_data()
+
+    @test(depends_on=[add_test_data],
+          runs_after=[verify_test_data_after_volume_resize])
+    def remove_test_data(self):
+        """Remove test data."""
+        self.test_runner.run_remove_test_data()
 
 
 @test(depends_on_groups=[groups.INST_CREATE_WAIT],
@@ -67,6 +94,16 @@ class InstanceActionsResizeGroup(TestGroup):
             InstanceActionsRunnerFactory.instance())
 
     @test
+    def add_test_data(self):
+        """Add test data."""
+        self.test_runner.run_add_test_data()
+
+    @test(depends_on=[add_test_data])
+    def verify_test_data(self):
+        """Verify test data."""
+        self.test_runner.run_verify_test_data()
+
+    @test(runs_after=[verify_test_data])
     def instance_resize_flavor(self):
         """Resize instance flavor."""
         self.test_runner.run_instance_resize_flavor()
@@ -88,3 +125,13 @@ class InstanceActionsResizeWaitGroup(TestGroup):
     def wait_for_instance_resize_flavor(self):
         """Wait for resize instance flavor to complete."""
         self.test_runner.run_wait_for_instance_resize_flavor()
+
+    @test(depends_on=[wait_for_instance_resize_flavor])
+    def verify_test_data_after_flavor_resize(self):
+        """Verify test data after flavor resize."""
+        self.test_runner.run_verify_test_data()
+
+    @test(runs_after=[verify_test_data_after_flavor_resize])
+    def remove_test_data(self):
+        """Remove test data."""
+        self.test_runner.run_remove_test_data()
