@@ -1,0 +1,3 @@
+[[post-config|\$CINDER_CONF]]
+[DEFAULT]
+notification_driver = messagingv2

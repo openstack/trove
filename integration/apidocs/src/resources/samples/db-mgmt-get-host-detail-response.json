@@ -1,0 +1,29 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 411
+Date: Tue, 24 Jul 2012 19:48:33 GMT
+
+{
+    "host": {
+        "instances": [
+            {
+                "id": "6e038c18-902f-4a41-b2a2-5f46fa62fc1b", 
+                "name": "json_rack_instance", 
+                "server_id": "64438fb6-4b98-4bd8-975e-222bc11daf74", 
+                "status": "ACTIVE",
+                "tenant_id": "1234"
+            }, 
+            {
+                "id": "72eed896-134e-4212-9f25-f81b4e0795e2", 
+                "name": "xml_rack_instance", 
+                "server_id": "6d93bc48-f736-41db-9ad7-c8594aac25fb", 
+                "status": "ACTIVE",
+                "tenant_id": "1234"
+            }
+        ], 
+        "name": "hostname", 
+        "percentUsed": 51, 
+        "totalRAM": 2004, 
+        "usedRAM": 1024
+    }
+}

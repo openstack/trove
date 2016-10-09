@@ -1,0 +1,100 @@
+# These passwords originally come from redstack.rc.
+MYSQL_PASSWORD=$MYSQL_PASSWORD
+RABBIT_PASSWORD=$RABBIT_PASSWORD
+SERVICE_TOKEN=$SERVICE_TOKEN
+ADMIN_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$SERVICE_PASSWORD
+
+PUBLIC_INTERFACE=eth0
+TROVE_LOGDIR=$TROVE_LOGDIR
+TROVE_AUTH_CACHE_DIR=$TROVE_AUTH_CACHE_DIR
+
+# Enable the Trove plugin for devstack
+if [[ $USE_DEVSTACK_TROVE_PLUGIN = true ]]; then
+    enable_plugin trove $TROVE_REPO $TROVE_BRANCH
+fi
+
+# Enable Trove, Swift, and Heat
+ENABLED_SERVICES+=,trove,tr-api,tr-tmgr,tr-cond
+ENABLED_SERVICES+=,s-proxy,s-object,s-container,s-account
+ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+ENABLED_SERVICES+=,-n-novnc,-n-xvnc
+if [[ $ENABLE_NEUTRON = true ]]; then
+    ENABLED_SERVICES+=,neutron,q-svc,q-agt,q-dhcp,q-l3,q-meta
+    disable_service n-net
+else
+    enable_service n-net
+    disable_service neutron q-svc q-agt q-dhcp q-l3 q-meta
+fi
+# OSprofiler depends on Ceilometer
+if [[ $ENABLE_CEILOMETER = true ]] || [[ $ENABLE_PROFILER = true ]]; then
+    CEILOMETER_BACKEND=mysql
+    CEILOMETER_NOTIFICATION_TOPICS=notifications,profiler
+    PROJ_BRANCH=$(get_project_branch CEILOMETER_BRANCH $PROJECT_BRANCH)
+    enable_plugin ceilometer ${GIT_OPENSTACK}/ceilometer.git $PROJ_BRANCH
+fi
+
+# Enable Mistral, if configured
+if [[ $ENABLE_MISTRAL = true ]]; then
+    PROJ_BRANCH=$(get_project_branch MISTRAL_BRANCH $PROJECT_BRANCH)
+    enable_plugin mistral ${GIT_OPENSTACK}/mistral.git $PROJ_BRANCH
+fi
+
+# Use Git repositories for client components
+LIBS_FROM_GIT=python-troveclient
+if [[ $LIBS_FROM_GIT_ALL_CLIENTS = true ]]; then
+    LIBS_FROM_GIT+=,python-ceilometerclient
+    LIBS_FROM_GIT+=,python-cinderclient
+    LIBS_FROM_GIT+=,python-glanceclient
+    LIBS_FROM_GIT+=,python-heatclient
+    LIBS_FROM_GIT+=,python-keystoneclient
+    LIBS_FROM_GIT+=,python-mistralclient
+    LIBS_FROM_GIT+=,python-neutronclient
+    LIBS_FROM_GIT+=,python-novaclient
+    LIBS_FROM_GIT+=,python-openstackclient
+    LIBS_FROM_GIT+=,python-swiftclient
+else
+    if [[ $ENABLE_NEUTRON = true ]]; then
+        LIBS_FROM_GIT+=,python-neutronclient
+    fi
+    if [[ $ENABLE_MISTRAL = true ]]; then
+        LIBS_FROM_GIT+=,python-mistralclient
+    fi
+    if [[ $ENABLE_CEILOMETER = true ]]; then
+        LIBS_FROM_GIT+=,python-ceilometerclient
+    fi
+fi
+# Add Git repositories for libraries
+if [[ $LIBS_FROM_GIT_ALL_OSLO = true ]]; then
+    LIBS_FROM_GIT+=,cliff,futurist
+    LIBS_FROM_GIT+=,debtcollector,automaton
+    LIBS_FROM_GIT+=,oslo.cache,oslo.concurrency
+    LIBS_FROM_GIT+=,oslo.config,oslo.context
+    LIBS_FROM_GIT+=,oslo.db,oslo.i18n
+    LIBS_FROM_GIT+=,oslo.log,oslo.messaging
+    LIBS_FROM_GIT+=,oslo.middleware,oslo.policy
+    LIBS_FROM_GIT+=,oslo.reports,oslo.rootwrap
+    LIBS_FROM_GIT+=,oslo.serialization,oslo.service
+    LIBS_FROM_GIT+=,oslo.utils,oslo.versionedobjects
+    LIBS_FROM_GIT+=,oslo.vmware
+    LIBS_FROM_GIT+=,pycadf,stevedore
+    LIBS_FROM_GIT+=,taskflow,tooz
+    LIBS_FROM_GIT+=,pbr
+fi
+
+NOVNC_FROM_PACKAGE=false
+SWIFT_HASH=$SWIFT_HASH
+# Set Cinder Volume from Redstack so that later Redstack can help manage
+# reconnecting Volume Group to Backing File
+DEST=$DEST
+DATA_DIR=$DATA_DIR
+SERVICE_DIR=$SERVICE_DIR
+VOLUME_GROUP=${VOLUME_GROUP}
+VOLUME_BACKING_FILE=${VOLUME_BACKING_FILE}
+VOLUME_BACKING_FILE_SIZE=${VOLUME_BACKING_FILE_SIZE}
+# The lock_path is by default /opt/stack/nova; if this path is a shared
+# folder in VirtualBox things seem to break. We fix it by setting EXTRA_OPS
+# to force lock_path to /tmp.
+EXTRA_OPTS=(lock_path=$USERHOME/nova_locks rescan_timeout=180 resizefs_timeout=240 force_dhcp_release=False)
+UNDO_REQUIREMENTS=False
+

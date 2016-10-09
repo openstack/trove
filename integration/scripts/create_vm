@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+"""
+Sets up a VM with hardcoded paths to multiple source trees.
+Creates a script for use with VMWare or a Vagrantfile.
+
+Uses a configuration file (in JSON format) that stores the paths to checked-out
+copies of OpenStack projects on the host machine. If the path is None then
+it lets devstack download them.
+"""
+
+import json
+
+
+class Config(object):
+    """
+    Very simple configuration file thats just some JSON.
+    """
+
+    vm_paths = {
+        'devstack':"/devstack",
+        'glance': '/opt/stack/glance',
+        'horizon': '/opt/stack/horizon',
+        'keystone': "/opt/stack/keystone",
+        'nova': "/opt/stack/nova",
+        'python_openstackclient': "/opt/stack/python-openstackclient",
+        'python_novaclient': "/opt/stack/python-novaclient",
+        'trove':"/opt/stack/trove",
+        'python_troveclient':"/opt/stack/python-troveclient",
+        'tempest':"/opt/stack/tempest"
+    }
+
+    def __init__(self, **kwargs):
+        for name in Config.vm_paths.keys():
+            if name not in kwargs:
+                raise RuntimeError('Missing configuration value "%s".' % name)
+            value = kwargs[name]
+            if value is not None and type(value) is not str \
+               and type(value) is not unicode:
+                raise RuntimeError('Path "%s" must be a string or None but is '
+                                   'of type %s.' % (name, type(value)))
+            setattr(self, name, kwargs[name])
+        self.vagrant_path = kwargs.get("vagrant_path", "Vagrantfile")
+
+    @staticmethod
+    def load(file_path):
+        file_contents = open(file_path, "r").read()
+        dict = json.loads(file_contents);
+        return Config(**dict)
+
+    def write_vagrant_file(self):
+        with open(self.vagrant_path, 'w') as file:
+            file.write("""
+Vagrant::Config.run do |global_config|
+  # Host config
+  global_config.vm.define :host do |config|
+
+    config.vm.network "33.33.44.11"
+
+    config.vm.box = "precise"
+    config.vm.host_name = "host"
+
+    config.ssh.timeout  = 3600
+    config.vm.customize do |vm|
+        vm.memory_size = 2048
+    end
+
+    config.vm.share_folder "integration", "/integration", "../"
+
+""")
+            for key in Config.vm_paths.keys():
+                local_path = getattr(self, key)
+                vm_path = Config.vm_paths[key]
+                if local_path is not None:
+                    file.write('\tconfig.vm.share_folder "%s", "%s", "%s" \n'
+                               % (key, vm_path, local_path))
+            file.write("""
+
+  end
+end
+            """)
+
+if __name__=="__main__":
+    conf = Config.load("conf.json")
+    conf.write_vagrant_file()

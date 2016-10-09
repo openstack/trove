@@ -1,0 +1,21 @@
+POST /v1.0/1234/instances/1f19ee9e-6124-46b3-a6c6-fc46a5756814/users HTTP/1.1
+User-Agent: python-example-client
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: bb64d788-2dec-4a6b-a670-7151d108cacf
+Accept: application/xml
+Content-Type: application/xml
+
+<?xml version="1.0" ?>
+<users xmlns="http://docs.openstack.org/database/api/v1.0">
+	<user name="testuser" password="password">
+		<databases>
+			<database name="databaseC"/>
+		</databases>
+	</user>
+	<user name="userwith2dbs" password="password">
+		<databases>
+			<database name="databaseA"/>
+			<database name="databaseB"/>
+		</databases>
+	</user>
+</users>

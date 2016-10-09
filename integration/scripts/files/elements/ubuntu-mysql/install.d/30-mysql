@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+# The fix to make versions of percona-xtrabackup > v2.2 work with Trove
+# was put into the mysql guestagent code for Mitaka. There are no current
+# plans to backport so we need to make sure the guest generated when the
+# tests are run for Kilo or Liberty get the 2.2 verson of PXB
+if [[ $BRANCH_OVERRIDE == "stable/kilo" || $BRANCH_OVERRIDE == "stable/liberty" ]]; then
+    PXB_VERSION_OVERRIDE="-22"
+fi
+apt-get -y install libmysqlclient18 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+
+cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = off
+_EOF_

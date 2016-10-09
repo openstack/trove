@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+# PURPOSE: Stages the package installer file from DATASTORE_PKG_LOCATION,
+# so that guest image has the package file.
+
+set -e
+set -o xtrace
+
+source $_LIB/die
+
+[ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+[ -f "$DATASTORE_PKG_LOCATION" ] || die "Datastore package installer file not found at:" $DATASTORE_PKG_LOCATION
+dd if=${DATASTORE_PKG_LOCATION} of=${TMP_HOOKS_PATH}/vertica.deb

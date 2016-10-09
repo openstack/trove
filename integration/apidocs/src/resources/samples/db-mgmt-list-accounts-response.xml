@@ -1,0 +1,9 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 119
+Date: Tue, 24 Jul 2012 19:48:33 GMT
+
+<accounts xmlns="http://docs.openstack.org/database/api/v1.0">
+    <account id="1234" num_instances="2"/>
+</accounts>
+

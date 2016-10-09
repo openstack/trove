@@ -1,0 +1,72 @@
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 477
+Date: Thu, 12 Apr 2012 18:45:13 GMT
+
+{
+    "auth": {
+        "serviceCatalog": {
+            "cloudDNS": [
+                {
+                    "publicURL": "https://dns.api.rackspacecloud.com/v1.0/1234"
+                }
+            ],
+            "cloudDatabases": [
+                {           
+                    "publicURL": "https://dfw.databases.api.rackspacecloud.com/v1.0/1234",
+                    "region": "DFW"
+                },
+                {
+                    "publicURL": "https://ord.databases.api.rackspacecloud.com/v1.0/1234",
+                    "region": "ORD"
+                }
+            ],
+            "cloudFiles": [
+                {
+                    "internalURL": "https://snet-storage101.dfw1.clouddrive.com/v1/ MossoCloudFS_aaaa-bbbbb-cccc-ddddd ",
+                    "publicURL": "https://storage101.dfw1.clouddrive.com/v1/ MossoCloudFS_aaaa-bbbbb-cccc-ddddd ",
+                    "region": "DFW",
+                    "v1Default": true
+                }
+            ],
+            "cloudFilesCDN": [
+                {
+                    "publicURL": "https://cdn1.clouddrive.com/v1/MossoCloudFS_aaaa-bbbbb-cccc-ddddd",
+                    "region": "DFW",
+                    "v1Default": true
+                }
+            ],
+            "cloudLoadBalancers": [
+                {
+                    "publicURL": "https://ord.loadbalancers.api.rackspacecloud.com/v1.0/1234",
+                    "region": "ORD"
+                },
+                {
+                    "publicURL": "https://dfw.loadbalancers.api.rackspacecloud.com/v1.0/1234",
+                    "region": "DFW"
+                }
+            ],
+            "cloudMonitoring": [
+                {
+                    "publicURL": "https://monitoring.api.rackspacecloud.com/v1.0/1234"
+                }
+            ],
+            "cloudServers": [
+                {
+                    "publicURL": "https://servers.api.rackspacecloud.com/v1.0/1234",
+                    "v1Default": true
+                }
+            ],
+            "cloudServersOpenStack": [
+                {
+                    "publicURL": "https://dfw.servers.api.rackspacecloud.com/v2/1234",
+                    "region": "DFW"
+                }
+            ]
+        },
+        "token": {
+            "expires": "2012-04-12T13:15:52.000-05:00",
+            "id": "aaaaa-bbbbbb-cccccc-ddddd"
+        }
+    }
+}

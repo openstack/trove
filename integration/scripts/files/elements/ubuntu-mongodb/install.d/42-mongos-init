@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+cat > /etc/init/mongos.conf << '_EOF_'
+limit fsize unlimited unlimited
+limit cpu unlimited unlimited
+limit as unlimited unlimited
+limit nofile 64000 64000
+limit rss unlimited unlimited
+limit nproc 64000 64000
+
+pre-start script
+  mkdir -p /var/run/mongodb/
+  touch /var/run/mongodb/mongos.pid
+  chown mongodb -R /var/run/mongodb/
+end script
+
+start on runlevel [2345]
+stop on runlevel [06]
+
+script
+    exec start-stop-daemon --start \
+        --chuid mongodb \
+        --pidfile /var/run/mongos.pid \
+        --make-pidfile \
+        --exec  /usr/bin/mongos -- --config /etc/mongos.conf
+end script
+_EOF_

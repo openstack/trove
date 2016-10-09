@@ -1,0 +1,12 @@
+POST /v1.0/1234/instances/5d891bb6-6c61-4b0a-8b85-26f4ee461c9d/action HTTP/1.1
+User-Agent: python-example-client
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: 2eeb3252-0164-40f5-8fb7-85df5faa2698
+Accept: application/xml
+Content-Type: application/xml
+
+<?xml version="1.0" ?>
+<resize xmlns="http://docs.openstack.org/database/api/v1.0">
+	<flavorRef>https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/2</flavorRef>
+</resize>
+

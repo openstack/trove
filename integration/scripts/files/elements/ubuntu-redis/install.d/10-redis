@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -ex
+
+export DEBIAN_FRONTEND=noninteractive
+
+cat > "/etc/sysctl.d/10-redis-performance.conf" << _EOF_
+# See 'http://redis.io/topics/admin' for best practices.
+# Make sure to set the Linux kernel overcommit memory setting to 1.
+vm.overcommit_memory=1
+
+# Linux kernel will silently truncate 'tcp-backlog' to the value of
+# '/proc/sys/net/core/somaxconn' so make sure to raise both the value of
+# 'somaxconn' and 'tcp_max_syn_backlog' in order to get the desired effect.
+net.ipv4.tcp_max_syn_backlog=1024
+net.core.somaxconn=1024
+
+_EOF_
+
+cat > "/etc/rc.local" << _EOF_
+# Make sure to disable Linux kernel feature transparent huge pages,
+# it will affect greatly both memory usage and latency in a negative way.
+if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+  echo never > /sys/kernel/mm/transparent_hugepage/defrag
+fi
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+  echo never > /sys/kernel/mm/transparent_hugepage/enabled
+fi
+
+_EOF_
+
+add-apt-repository -y ppa:chris-lea/redis-server
+apt-get -y update
+apt-get install -y redis-server
+
+cat > "/etc/default/redis-server" << _EOF_
+# Call ulimit -n with this argument prior to invoking Redis itself.
+# This may be required for high-concurrency environments. Redis itself cannot
+# alter its limits as it is not being run as root.
+ULIMIT=65536
+
+_EOF_
+
+# Install Python driver for Redis ('redis-py').
+pip install redis
+
+# By default, redis-py will attempt to use the HiredisParser if installed.
+# Using Hiredis can provide up to a 10x speed improvement in parsing responses
+# from the Redis server.
+pip install hiredis

@@ -1,0 +1,24 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 380
+Date: Thu, 17 Nov 2011 02:37:37 GMT
+
+<instance created="2011-11-03T15:57:52Z"
+    hostname="d735f61b985bb003a61dc72948dbf4e7174da12c.rackspaceclouddb.com"
+    id="00ff11ee-22dd-33cc-44bb-55aa66007799" name="orion" status="BUILD" updated="2011-11-03T15:57:55Z"
+    xmlns="http://docs.openstack.org/database/api/v1.0">
+    <links>
+        <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/00ff11ee-22dd-33cc-44bb-55aa66007799" rel="self"/>
+        <link href="https://ord.databases.api.rackspacecloud.com/instances/00ff11ee-22dd-33cc-44bb-55aa66007799" rel="bookmark"
+        />
+    </links>
+    <volume size="2"/>
+    <flavor id="2">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/2"
+                rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/flavors/2"
+                rel="bookmark"/>
+        </links>
+    </flavor>
+</instance>

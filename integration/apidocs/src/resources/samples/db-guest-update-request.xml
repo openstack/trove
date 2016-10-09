@@ -1,0 +1,10 @@
+POST /v1.0/1234/mgmt/instances/f3a9e303-1542-4663-9dca-bfdcd7abe095/action HTTP/1.1
+User-Agent: python-example-client
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: 570ef429-78eb-43ec-ad69-de9456cd88c9
+Accept: application/xml
+Content-Type: application/xml
+
+<?xml version="1.0" ?>
+<update xmlns="http://docs.openstack.org/database/api/v1.0"/>
+

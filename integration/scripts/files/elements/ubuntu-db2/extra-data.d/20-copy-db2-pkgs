@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+# CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+# PURPOSE: Download the DB2 Express-C v10.5 packages to a directory on the local filesystem or
+#          to a private repository. The download location is specified using the env variable:
+#          DATASTORE_PKG_LOCATION
+
+[ -n "${TMP_HOOKS_PATH}" ] || die "Temp hook path not set"
+[ -n "${DATASTORE_PKG_LOCATION}" ] || die "DATASTORE_PKG_LOCATION not set"
+
+# First check if the package is available on the local filesystem.
+if [ -f "${DATASTORE_PKG_LOCATION}" ]; then
+    echo "Found the DB2 Express-C packages in ${DATASTORE_PKG_LOCATION}."
+    dd if="${DATASTORE_PKG_LOCATION}" of=${TMP_HOOKS_PATH}/db2.tar.gz
+# else, check if the package is available for download in a private repository.
+elif wget ${DATASTORE_DOWNLOAD_OPTS} "${DATASTORE_PKG_LOCATION}" -O ${TMP_HOOKS_PATH}/db2.tar.gz; then
+    echo "Downloaded the DB2 Express-C package from the private repository"
+else
+    echo "Unable to find the DB2 package at ${DATASTORE_PKG_LOCATION}"
+    echo "Please register and download the DB2 Express-C packages to a private repository or local filesystem."
+    exit -1
+fi

@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT - install.d
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+export DEBIAN_FRONTEND=noninteractive
+
+
+# Copy the package file to the image,
+#  as it needs to be used later during configuration.
+dd if=/tmp/in_target.d/vertica.deb of=/vertica.deb
+
+# Install base packages
+apt-get install -qy build-essential bc iptables
+apt-get install -qy curl sysstat pstack mcelog
+apt-get install -qy python-dev g++ unixODBC unixODBC-dev dialog
+apt-get install -qy dialog libbz2-dev libboost-all-dev libcurl4-gnutls-dev
+apt-get install -qy openjdk-7-jdk
+
+# Install Vertica package
+dpkg -i /vertica.deb
+
+# Creating dbadmin user and verticadba group
+groupadd verticadba
+useradd -g verticadba -d /home/dbadmin -s /bin/bash -m dbadmin
+echo "export PATH=/opt/vertica/bin:\$PATH" >> ~dbadmin/.profile
+echo "export TZ=`date +%Z`" >>  ~dbadmin/.profile
+
+# Create base directory for to be used for database creation
+mkdir /var/lib/vertica
+chown dbadmin:verticadba /var/lib/vertica
+
+# Backup /etc/hosts
+cp -p /etc/hosts /etc/hosts.bkp
+
+# Compile the SDK examples - the supplied UDFs can then be loaded
+cd /opt/vertica/sdk/examples
+TMPDIR=/tmp JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64 make
+cd
+
+cat > "/etc/rc.local" << _EOF_
+# Vertica requires THP to be turned off
+if test -f /sys/kernel/mm/transparent_hugepage/defrag; then
+  echo never > /sys/kernel/mm/transparent_hugepage/defrag
+fi
+if test -f /sys/kernel/mm/transparent_hugepage/enabled; then
+  echo never > /sys/kernel/mm/transparent_hugepage/enabled
+fi
+
+exit \$?
+
+_EOF_

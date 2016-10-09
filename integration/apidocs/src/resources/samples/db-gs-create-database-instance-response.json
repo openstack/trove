@@ -1,0 +1,41 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 756
+Date: Thu, 05 Apr 2012 16:48:44 GMT
+
+{
+    "instance": {
+        "status": "BUILD", 
+        "updated": "2012-04-05T16:48:44Z", 
+        "name": "myrackinstance", 
+        "links": [
+            {
+                "href": "http://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/d379ba5c-9a1f-4aa9-9a17-afe237d04c65", 
+                "rel": "self"
+            }, 
+            {
+                "href": "http://ord.databases.api.rackspacecloud.com/instances/d379ba5c-9a1f-4aa9-9a17-afe237d04c65", 
+                "rel": "bookmark"
+            }
+         ], 
+         "created": "2012-04-05T16:48:44Z", 
+         "hostname": "ca9fa2985e47b351915c75f1a8e95d0729068892.rackspaceclouddb.com", 
+         "volume": {
+            "size": 2
+         }, 
+         "flavor": {
+            "id": "1", 
+            "links": [
+                {
+                    "href": "http://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1", 
+                    "rel": "self"
+                }, 
+                {   "href": "http://ord.databases.api.rackspacecloud.com/flavors/1",
+                    "rel": "bookmark"
+                }
+             ]
+          }, 
+          "id": "d379ba5c-9a1f-4aa9-9a17-afe237d04c65"
+       }
+}
+

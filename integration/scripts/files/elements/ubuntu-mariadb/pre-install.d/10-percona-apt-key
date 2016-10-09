@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during PRE-CONSTRUCTION as ROOT
+# PURPOSE: Setup apt-repo list so that we can connect to Percona's repo
+
+set -e
+set -o xtrace
+
+[ -n "${GUEST_USERNAME}" ] || die "GUEST_USERNAME needs to be set to the user for the guest image"
+[ -n "${RELEASE}" ] || die "RELEASE must be set to either Trusty or Precise"
+
+# Add Percona GPG key
+mkdir -p /home/${GUEST_USERNAME}/.gnupg
+
+# sometimes the primary key server is unavailable and we should try an
+# alternate.  see
+# https://bugs.launchpad.net/percona-server/+bug/907789.  Disable
+# shell errexit so we can interrogate the exit code and take action
+# based on the exit code. We will reenable it later.
+set +e
+apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 1C4CBDCDCD2EFD2A
+
+if [ "$?" -ne "0" ];
+then
+    echo "Trying alternate keyserver hkp://keyserver.ubuntu.com"
+    set -e
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys 1C4CBDCDCD2EFD2A
+fi
+
+set -e
+
+# Add Percona repo
+# Creates the Percona sources list
+cat <<EOL > /etc/apt/sources.list.d/percona.list
+deb http://repo.percona.com/apt $RELEASE main
+deb-src http://repo.percona.com/apt $RELEASE main
+EOL
+
+# Force an update
+apt-get -y update

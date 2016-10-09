@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Uncompress the DB2 packages and install and configure DB2 on Ubuntu.
+
+# DB2_PKG_LOCATION points to the directory where the DB2 packages
+# are located to install.
+DB2_PKG_LOCATION="/db2"
+mkdir ${DB2_PKG_LOCATION}
+cd ${DB2_PKG_LOCATION}
+
+# DB2 install requires the hostname to be resolved correctly
+host_name=`hostname`
+echo "127.0.0.1 ${host_name}" >> /etc/hosts
+
+tar -xvzf /tmp/in_target.d/db2.tar.gz
+
+# installing dependencies
+apt-get install libaio1
+apt-get install libstdc++6
+
+# start the installation process. Accepts the default installation directory '/opt/ibm/db2/V10.5'
+${DB2_PKG_LOCATION}/expc/db2_install -b /opt/ibm/db2/V10.5 -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log
+
+# create the DB2 users.
+# DB2 instance owner - db2inst1
+# DB2 fence user - db2fenc1
+# DB2 admin user - db2das1
+useradd -m db2inst1
+useradd -m db2fenc1
+useradd -m db2das1
+
+# Create the DB2 server instance
+/opt/ibm/db2/V10.5/instance/db2icrt -a server -u db2fenc1 db2inst1
+/opt/ibm/db2/V10.5/cfg/db2ln
+
+# Configure DB2 server instance to communicate via TCP/IP on a particulat port.
+echo 'db2c_db2inst1 50000/tcp # DB2 connection service port' >> /etc/services
+
+# Configure DB2 to use the TCP/IP settings defined above.
+su - db2inst1 -c "db2 update database manager configuration using svcename db2c_db2inst1"
+
+# Start the actual TCP/IP communication.
+su - db2inst1 -c "db2set DB2COMM=tcpip"
+
+# DB2 requires the hostname to be resolved correctly. Delete this entry from the
+# /etc/hosts since this is the hostname of the instance where the image is being
+# built. The correct hostname will be set in the guest agent.
+sed -i "/127.0.0.1[[:space:]]*${host_name}/d" /etc/hosts

@@ -1,0 +1,174 @@
+#!/bin/bash
+#
+# Additional functions that would mostly just pertain to a Ubuntu + Qemu setup
+#
+
+function build_vm() {
+    exclaim "Actually building the image, this can take up to 15 minutes"
+
+    # set variables here and ensure they are not changed during the duration of this script
+    readonly HOMEDIR=$1
+    readonly HOST_USERNAME=$2
+    GUEST_USERNAME=${GUEST_USERNAME:-$2}
+    HOST_SCP_USERNAME=${HOST_SCP_USERNAME:-$2}
+    VM=$3
+    DISTRO=$4
+    SERVICE_TYPE=$5
+
+    readonly SSH_DIR=${KEY_DIR:-${HOMEDIR}/.ssh}
+    manage_ssh_keys
+
+    if [ $DISTRO == 'ubuntu' ]; then
+        export RELEASE=trusty
+        export DIB_RELEASE=$RELEASE
+        export DIB_CLOUD_IMAGES=cloud-images.ubuntu.com
+        # Use the apt sources.list on the build host, its almost always preferred
+        if [ -f /etc/apt/sources.list ]; then
+            export DIB_APT_SOURCES=/etc/apt/sources.list
+            EXTRA_ELEMENTS="apt-sources apt-conf-dir"
+        fi
+    fi
+    if [ $DISTRO == 'fedora' ]; then
+        EXTRA_ELEMENTS=selinux-permissive
+    fi
+
+    export HOST_USERNAME
+    export HOST_SCP_USERNAME
+    export GUEST_USERNAME
+    export CONTROLLER_IP
+    export REDSTACK_SCRIPTS
+    export SERVICE_TYPE
+    export PATH_TROVE
+    export ESCAPED_PATH_TROVE
+    export SSH_DIR
+    export GUEST_LOGDIR
+    export ESCAPED_GUEST_LOGDIR
+    export ELEMENTS_PATH=$REDSTACK_SCRIPTS/files/elements
+    export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
+    export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
+    export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
+    export DATASTORE_PKG_LOCATION
+    export BRANCH_OVERRIDE
+    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
+    export DIB_CLOUD_INIT_ETC_HOSTS=true
+    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && echo "--qemu-img-options compat=0.10")
+    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
+        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm heat-cfntools \
+        cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
+}
+
+function build_guest_image() {
+    exclaim "Building an image for use with development and integration tests."
+    if [ -z "$1" ]
+    then
+        echo "You must pass an image type to build, like mysql"
+        exit 1
+    fi
+    SERVICE_TYPE=$1
+    VALID_SERVICES='mysql percona mariadb redis cassandra couchbase mongodb postgresql couchdb vertica db2 pxc'
+    if ! [[ " $VALID_SERVICES " =~ " $SERVICE_TYPE " ]]; then
+        exclaim "You did not pass in a valid image type. Valid types are:" $VALID_SERVICES
+        exit 1
+    fi
+
+    GUEST_LOGDIR=$(iniget $PATH_TROVE/etc/trove/trove-guestagent.conf.sample DEFAULT log_dir)
+    GUEST_LOGFILE=$(iniget $PATH_TROVE/etc/trove/trove-guestagent.conf.sample DEFAULT log_file)
+
+    if [ -z $GUEST_LOGDIR ] || [ -z $GUEST_LOGFILE ]
+    then
+        exclaim "error: log_dir and log_file are required in: " $PATH_TROVE/etc/trove/trove-guestagent.conf.sample
+        exit 1
+    fi
+
+    ESCAPED_GUEST_LOGDIR=`echo $GUEST_LOGDIR | sed 's/\//\\\\\//g'`
+
+    USERNAME=`whoami`
+    # To change the distro, edit the redstack.rc file
+    readonly IMAGENAME=${DISTRO}_${SERVICE_TYPE}
+    readonly VM_PATH=$USERHOME/images/${IMAGENAME}
+    readonly VM_PATH_NAME=${VM_PATH}/${IMAGENAME}
+    mkdir -p $VM_PATH
+
+    # If the path does not exist, build it, otherwise just upload it
+    # (unless we're explicitly told to rebuild it)
+    REBUILD_IMAGE=$(echo "${REBUILD_IMAGE}" | tr '[:upper:]' '[:lower:]')
+    if [ "${REBUILD_IMAGE}" = "true" ] || [ ! -d $VM_PATH ] || [ `ls -1 $VM_PATH | wc -l` -eq '0' ]
+    then
+        if [ "${REBUILD_IMAGE}" = "true" ]
+        then
+            exclaim "Rebuilding image"
+            rm -rf "${VM_PATH}"
+        fi
+        build_vm $USERHOME $USERNAME $VM_PATH_NAME $DISTRO $SERVICE_TYPE
+        touch -c "${VM_PATH}"
+    else
+        exclaim "Found image in $VM_PATH - using the qcow2 image found here..."
+        ELEMENTS_DIR="files/elements/${DISTRO}-${SERVICE_TYPE}"
+        ELEMENTS_DIR_GUEST="files/elements/${DISTRO}-guest"
+        # Print out a warning on all the elements files that are newer than the image.
+        # Directories are not excluded as that is the only way to determine if a file
+        # has been removed.
+        # The rebuild is not automatically triggered as there are valid reasons for a
+        # new file to be present (rollback of change, inadvertent .log files present,
+        # feature half implemented, etc.).
+        IMAGE_OLD=
+        while IFS= read -r -d '' ELEMENT_FILE
+        do
+            if [ "${ELEMENT_FILE}" -nt "${VM_PATH}" ]
+            then
+                IMAGE_OLD=true
+                exclaim "${COLOR_RED}WARNING: Element file '${ELEMENT_FILE}' is newer than cached image${COLOR_NONE}"
+            fi
+        done < <(find "${ELEMENTS_DIR}" "${ELEMENTS_DIR_GUEST}" -depth -print0)
+        if [ "${IMAGE_OLD}" = "true" ]
+        then
+            exclaim "${COLOR_RED}Use ${COLOR_NONE}REBUILD_IMAGE=True${COLOR_RED} to rebuild image${COLOR_NONE}"
+        fi
+
+    fi
+}
+
+function clean_instances() {
+    LIST=`virsh -q list|awk '{print $1}'`
+    for i in $LIST; do sudo virsh destroy $i; done
+}
+
+function manage_ssh_keys() {
+    if [ -e ${SSH_DIR} ]; then
+        echo "${SSH_DIR} already exists"
+    else
+        echo "Creating ${SSH_DIR} for ${HOST_USERNAME}"
+        sudo -Hiu ${HOST_USERNAME} mkdir -m go-w -p ${SSH_DIR}
+    fi
+
+    if [ ! -f ${SSH_DIR}/id_rsa.pub ]; then
+        sudo ${PKG_MGR} ${PKG_GET_ARGS} install expect
+        generate_empty_passphrase_ssh_key ${HOST_USERNAME}
+    fi
+
+    add_host_key_to_authorizedkeys
+}
+
+function generate_empty_passphrase_ssh_key () {
+    echo "generating a empty passphrase DEV ONLY rsa key"
+    expect -c "
+spawn sudo -Hiu ${HOST_USERNAME} /usr/bin/ssh-keygen -f ${SSH_DIR}/id_rsa -q
+expect \"empty for no passphrase\"
+send \n
+expect assphrase
+send \n
+expect eof"
+}
+
+function add_host_key_to_authorizedkeys () {
+    # test to see if the host key is already in its own authorized_keys file - if not then add it.  This is then later copied
+    # to the guest image
+    is_in_keyfile=`cat ${SSH_DIR}/id_rsa.pub | grep -f - ${SSH_DIR}/authorized_keys | wc -l`
+    if [ $is_in_keyfile == 0 ]; then
+        echo "Adding keyfile to authorized_keys, it does not yet exist"
+        cat ${SSH_DIR}/id_rsa.pub >> ${SSH_DIR}/authorized_keys
+        chmod 600 ${SSH_DIR}/authorized_keys
+    else
+        echo "Keyfile already exists in authorized_keys - skipping"
+    fi
+}

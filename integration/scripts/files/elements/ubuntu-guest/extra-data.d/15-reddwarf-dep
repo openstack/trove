@@ -1,0 +1,48 @@
+#!/bin/bash
+
+set -e
+set -o xtrace
+
+# CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+# PURPOSE: Setup the requirements file for use by 15-reddwarf-dep
+
+source $_LIB/die
+
+BRANCH_OVERRIDE=${BRANCH_OVERRIDE:-default}
+ADD_BRANCH=$(basename ${BRANCH_OVERRIDE})
+REQUIREMENTS_FILE=${REDSTACK_SCRIPTS}/files/requirements/ubuntu-requirements-${ADD_BRANCH}.txt
+
+[ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+[ -e ${REQUIREMENTS_FILE} ] || die "Requirements not found"
+[ -n "$HOST_USERNAME" ] || die "HOST_USERNAME not set"
+
+sudo -Hiu ${HOST_USERNAME} dd if=${REQUIREMENTS_FILE} of=${TMP_HOOKS_PATH}/requirements.txt
+
+# Grab the upper constraints file, but don't fail if we can't find it.
+# If we are running in the CI environment, $DEST will be set and stackrc
+# will use $DEST/requirements as the location for the requirements repo.
+# Use that as it will help us chain a job with something that is changing UC.
+
+UC_FILE=upper-constraints.txt
+
+if [ -f "${DEST}/requirements/${UC_FILE}" ]; then
+    echo "Found ${DEST}/requirements/${UC_FILE}, using that"
+    sudo -Hiu ${HOST_USERNAME} dd if="${DEST}/requirements/${UC_FILE}" \
+        of="${TMP_HOOKS_PATH}/${UC_FILE}"
+else
+    UC_DIR=$(pwd)
+    UC_BRANCH=${BRANCH_OVERRIDE}
+    if [ "${ADD_BRANCH}" == "default" ]; then
+        UC_BRANCH=master
+    fi
+
+    set +e
+    curl -o "${UC_DIR}/${UC_FILE}" \
+        https://git.openstack.org/cgit/openstack/requirements/plain/${UC_FILE}?h=${UC_BRANCH}
+    set -e
+
+    if [ -f "${UC_DIR}/${UC_FILE}" ]; then
+        sudo -Hiu ${HOST_USERNAME} dd if="${UC_DIR}/${UC_FILE}" of=${TMP_HOOKS_PATH}/${UC_FILE}
+        rm -f "${UC_DIR}/${UC_FILE}"
+    fi
+fi

@@ -1,0 +1,34 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 1492
+Date: Tue, 19 Jun 2012 19:53:04 GMT
+
+<instances xmlns="http://docs.openstack.org/database/api/v1.0">
+    <instance id="28d1b8f3-172a-4f6d-983d-36021508444a" name="json_rack_instance" status="ACTIVE">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/28d1b8f3-172a-4f6d-983d-36021508444a" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/28d1b8f3-172a-4f6d-983d-36021508444a" rel="bookmark"/>
+        </links>
+        <volume size="2"/>
+        <flavor id="1">
+            <links>
+                <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1" rel="self"/>
+                <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+            </links>
+        </flavor>
+    </instance>
+    <instance id="8fb081af-f237-44f5-80cc-b46be1840ca9" name="xml_rack_instance" status="ACTIVE">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/8fb081af-f237-44f5-80cc-b46be1840ca9" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/8fb081af-f237-44f5-80cc-b46be1840ca9" rel="bookmark"/>
+        </links>
+        <volume size="2"/>
+        <flavor id="1">
+            <links>
+                <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1" rel="self"/>
+                <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+            </links>
+        </flavor>
+    </instance>
+</instances>
+

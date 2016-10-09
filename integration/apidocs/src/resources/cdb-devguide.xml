@@ -1,0 +1,1675 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book [
+        <!-- Some useful entities borrowed from HTML -->
+        <!ENTITY ndash  "&#x2013;">
+        <!ENTITY mdash  "&#x2014;">
+        <!ENTITY hellip "&#x2026;">
+
+        <!-- Useful for describing APIs -->
+        <!ENTITY GET    '<command xmlns="http://docbook.org/ns/docbook">GET</command>'>
+        <!ENTITY PUT    '<command xmlns="http://docbook.org/ns/docbook">PUT</command>'>
+        <!ENTITY POST   '<command xmlns="http://docbook.org/ns/docbook">POST</command>'>
+        <!ENTITY DELETE '<command xmlns="http://docbook.org/ns/docbook">DELETE</command>'>
+        
+        <!-- changing authentication endpoints; define entities for US & UK rather than maintaining in text -->
+        <!ENTITY ENDPOINT-US "https://identity.api.rackspacecloud.com/v1.1/">
+        <!ENTITY ENDPOINT-UK "https://lon.identity.api.rackspacecloud.com/v1.1/">
+        <!ENTITY ENDPOINT-US-20 "https://identity.api.rackspacecloud.com/v2.0/">
+        <!ENTITY ENDPOINT-UK-20 "https://lon.identity.api.rackspacecloud.com/v2.0/">
+
+        <!ENTITY CHECK  '<inlinemediaobject xmlns="http://docbook.org/ns/docbook">
+                 <imageobject>
+                  <imagedata fileref="img/Check_mark_23x20_02.svg"
+                             format="SVG" scale="60"/>
+                </imageobject>
+              </inlinemediaobject>'>
+
+        <!ENTITY ARROW  '<inlinemediaobject xmlns="http://docbook.org/ns/docbook">
+                 <imageobject>
+                  <imagedata fileref="img/Arrow_east.svg"
+                             format="SVG" scale="60"/>
+                </imageobject>
+              </inlinemediaobject>'>
+]>
+<book xmlns="http://docbook.org/ns/docbook"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xi="http://www.w3.org/2001/XInclude"
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:m="http://www.w3.org/1998/Math/MathML"
+    xmlns:html="http://www.w3.org/1999/xhtml" 
+    xml:id="cdb-devguide"
+    version="5.0">
+    
+    <?rax title.font.size="35px" subtitle.font.size="20px"?>
+    <title>Rackspace Cloud Databases Developer Guide</title>
+    <titleabbrev>Rackspace Cloud Databases Developer
+        Guide</titleabbrev>
+    <info>
+        <author>
+            <personname>
+                <firstname/>
+                <surname/>
+            </personname>
+            <affiliation>
+                <orgname>Rackspace Cloud</orgname>
+            </affiliation>
+        </author>
+        <copyright>
+            <year>2010</year>
+            <year>2011</year>
+            <year>2012</year>
+            <holder>Rackspace US, Inc.</holder>
+        </copyright>
+        <releaseinfo>API v1.0</releaseinfo>
+        <productname>Rackspace Cloud Databases</productname>
+        <pubdate>2012-09-04</pubdate>
+        <legalnotice role="rs-api">
+            <annotation>
+                <remark>Copyright details are filled in by the template.</remark>
+            </annotation>
+        </legalnotice>
+        <abstract>
+            <para>This document is intended for software developers
+                interested in developing applications using the
+                Rackspace Cloud Databases Application Programming
+                Interface (<abbrev>API</abbrev>). </para>
+        </abstract>
+        
+        <revhistory>
+            <revision>
+                <date>2012-09-04</date>
+                <revdescription>
+                    <itemizedlist spacing="compact">
+                        <listitem>
+                            <para>Added information for pricing and
+                                service level (refer to <xref
+                                   linkend="Pricing_SLA-d1e1362"
+                                />).</para>
+                        </listitem>
+                        <listitem>
+                            <para>Updated maximum volume size for a
+                                database instance (refer to <xref
+                                   linkend="Absolute_Limits-d1e1397"
+                                />).</para>
+                        </listitem>
+                    </itemizedlist>
+                </revdescription>
+            </revision>
+            <revision>
+                <date>2012-08-21</date>
+                <revdescription>
+                    <itemizedlist spacing="compact">
+                        <listitem>
+                            <para>Changed FAILED status for database
+                                instance to ERROR instead (see <xref
+                                   linkend="database_instance_status"
+                                />).</para>
+                        </listitem>
+                        <listitem>
+                            <para>List reserved names that cannot be
+                                used for creating databases (see <xref
+                                   linkend="POST_createDatabase__version___accountId__instances__instanceId__databases_"
+                                />) and users (see <xref
+                                   linkend="POST_createUser__version___accountId__instances__instanceId__users_"
+                                />).</para>
+                        </listitem>
+                    </itemizedlist>
+                </revdescription>
+            </revision>
+            <revision>
+                <date>2012-08-01</date>
+                <revdescription>
+                    <itemizedlist spacing="compact">
+                        <listitem>
+                            <para>Initial Unlimited Availability (UA)
+                                release for Rackspace Cloud
+                                Databases.</para>
+                        </listitem>
+                    </itemizedlist>
+                </revdescription>
+            </revision>           
+        </revhistory>
+        
+    <cover>
+        <para>this is a placeholder for the front cover</para>
+    </cover>
+    <cover>
+        <para>this is a placeholder for the back cover</para>
+    </cover>
+    <raxm:metadata xmlns:raxm="http://docs.rackspace.com/api/metadata">
+      <raxm:product version="v1.0">cdb</raxm:product>
+      <raxm:priority>2</raxm:priority>
+    </raxm:metadata> 
+    </info>
+    <chapter xml:id="overview">
+        <title>Overview</title>
+        <para>Rackspace Cloud Databases is an OpenStack-based MySQL
+            relational database service that allows Rackspace
+            customers to easily provision database instances of
+            varying virtual resource sizes without the need to
+            maintain and/or update MySQL. Interactions with Cloud
+            Databases occur programmatically via the Cloud Databases
+            API as described in this developer guide.</para>
+        <note>
+            <para>Rackspace recommends that Cloud Databases users back
+                up their data using <emphasis role="bold"
+                    >mysqldump</emphasis> until backups are supported
+                in Cloud Databases.</para>
+        </note>
+        <para>The following figure shows an
+            overview of Cloud Databases Infrastructure: <informalfigure>
+                <mediaobject>
+                    <imageobject role="fo">
+                        <imagedata
+                            fileref="images/Cloud_DB_Infographic-1.svg"
+                            contentwidth="6in"/>
+                    </imageobject>
+                    <imageobject role="html">
+                        <imagedata
+                            fileref="images/Cloud_DB_Infographic-1.png"/>
+                    </imageobject>
+                </mediaobject>
+            </informalfigure>
+        </para>
+        <remark>Writer: need to get architecture diagram for DBaaS.
+            Emailed Daniel 5/1/12.</remark>
+        <para security="writeronly">We welcome feedback, comments, and bug reports at <link
+                xlink:href="http://feedback.rackspacecloud.com"
+                >http://feedback.rackspacecloud.com</link>.</para>
+        <remark>Writer: check whether following statement should be
+            added back in for public (not private) beta: Issues and
+            bug reports can be directed to your support team via
+            ticket, chat, email, or phone.</remark>
+        <?hard-pagebreak?>
+        <section xml:id="Intended_Audience-d1e122">
+            <title>Intended Audience</title>
+            <para> This Guide is intended to assist software
+                developers who want to develop applications using the
+                Cloud Databases API. It assumes the reader has a
+                general understanding of databases and is familiar
+                with: </para>
+            <itemizedlist spacing="compact">
+                <listitem>
+                    <para>ReSTful web services</para>
+                </listitem>
+                <listitem>
+                    <para>HTTP/1.1 conventions</para>
+                </listitem>
+                <listitem>
+                    <para>JSON and/or XML data serialization
+                        formats</para>
+                </listitem>
+                <listitem>
+                    <para>ATOM Syndication Format</para>
+                </listitem>
+            </itemizedlist>
+        </section>
+        <?hard-pagebreak?>
+        <section xml:id="Document_Change_History-d1e166">
+            <title>Document Change History</title>
+            <para>This version of the Developer Guide replaces and
+                obsoletes all previous versions. The most recent
+                changes are described in the table below:</para>
+            <?rax revhistory?>
+        </section>
+        <section xml:id="Additional_Resources-d1e532">
+            <title>Additional Resources</title>
+            <para>Descriptive information about Cloud Databases is
+                also published in its Web Application Description
+                Language (WADL) and XML Schema Definition (XSD). You
+                are welcome to read this information here:</para>
+            <itemizedlist>
+                <listitem>
+                    <para>The WADL is <link
+                            xlink:href="http://docs.rackspace.com/cdb/api/v1.0/cdb.wadl"
+                        />.</para>
+                </listitem>
+                <listitem>
+                    <para>The XSD is <link
+                        xlink:href="http://docs.rackspace.com/cdb/api/v1.0/xsd/cdb.xsd"/>. </para>
+                </listitem>
+            </itemizedlist>
+            <para>You can download the most current versions of other
+                API-related documents from <link
+                    xlink:href="http://docs.rackspace.com/"
+                    >http://docs.rackspace.com/</link>. </para>
+            <para>For more details about Rackspace Cloud Databases,
+                refer to <link
+                    xlink:href="http://www.rackspace.com/cloud/cloud_hosting_products/databases/"
+                    >http://www.rackspace.com/cloud/cloud_hosting_products/databases/</link>.
+                This site also offers links to Rackspace's official
+                support channels, including knowledge center articles,
+                forums, phone, chat, and email. </para>
+            <para>Using this API document, your Rackspace Cloud
+                account, and at least one Cloud Server, you can get
+                started whenever you'd like. See the
+                    <citetitle>Getting Started with Rackspace Cloud
+                    Databases and Servers</citetitle> at <link
+                    xlink:href="http://docs.rackspace.com/"
+                    >http://docs.rackspace.com/</link> for information
+                about getting started using the API.</para>
+            <para>Please visit our <link
+                    xlink:href="http://feedback.rackspacecloud.com/forums/71021-product-feedback/category/42449-cloud-databases"
+                    >Product Feedback Forum</link> and let us know
+                what you think about Cloud Databases!</para>
+            <para>You can also follow Rackspace updates and
+                announcements via twitter at: <link
+                    xlink:href="http://www.twitter.com/rackspace"
+                    >http://www.twitter.com/rackspace</link>. </para>
+            <para>This API uses standard HTTP 1.1 response codes as
+                documented at: <link
+                    xlink:href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html"
+                    >http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html</link>. </para>
+        </section>
+        <?hard-pagebreak?>
+        <section xml:id="Pricing_SLA-d1e1362">
+            <title>Pricing and Service Level</title>
+            <para>Cloud Databases is part of the Rackspace Cloud and
+                your use through the API will be billed as per the
+                pricing schedule at <link
+                    xlink:href="http://www.rackspace.com/cloud/public/databases/pricing"
+                    >http://www.rackspace.com/cloud/public/databases/pricing</link>.</para>
+            <para>The Service Level Agreement (SLA) for Cloud
+                Databases is available at <link
+                    xlink:href="http://www.rackspace.com/cloud/legal/sla/#cloud_databases"
+                    >http://www.rackspace.com/cloud/legal/sla/#cloud_databases</link>.</para>
+        </section>
+    </chapter>
+    
+    <chapter xml:id="Concepts-d1e563">
+        <title>Concepts</title>
+        <?dbhtml stop-chunking?>
+        <para> To use the Cloud Databases API effectively, you should
+            understand several key concepts: </para>
+        <remark>Reviewer: Daniel  Morris is asking Daniel Salinas to
+            do an initial write-up of this chapter.</remark>
+        <section xml:id="DatabaseInstance-d1e588">
+            <title>Database Instance</title>
+            <para>A database instance is an isolated MySQL instance in
+                a single tenant environment on a shared physical host
+                machine.</para>
+            <remark security="writeronly">Writer: once we support
+                MSSQL, we need to describe here what is used for MSSQL
+                in place of database instance.</remark>
+        </section>
+        <section xml:id="Database">
+            <title>Database</title>
+            <para>A MySQL database within a database instance.</para>
+            <remark security="writeronly">Writer: once we support
+                MSSQL, we need to modify the wording here, such as:
+                The actual database, whether it is in MySQL or
+                MSSQL.</remark>
+        </section>
+        <section xml:id="Flavor">
+            <title>Flavor</title>
+            <para>A flavor is an available hardware configuration for
+                a database instance. Each flavor has a unique
+                combination of memory capacity and priority for CPU
+                time.</para>
+        </section>
+        <section xml:id="Volume">
+            <title>Volume</title>
+            <para>A volume is user-specified storage that contains the
+                MySQL data directory. Volumes are automatically
+                provisioned on shared Internet Small Computer System
+                Interface (iSCSI) storage area networks (SAN) that
+                provide for increased performance, scalability,
+                availability and manageability. Applications with high
+                I/O demands are performance optimized and data is
+                protected through both local and network RAID-10.
+                Additionally, network RAID provides synchronous
+                replication of volumes with automatic failover and
+                load balancing across available storage
+                clusters.</para>
+        </section>
+    </chapter>
+    <chapter xml:id="General_API_Information-d1e633">
+        <title>General API Information</title>
+        <para> The Cloud Databases API is implemented using a ReSTful
+            web service interface. Like other products in the
+            Rackspace Cloud suite, the Database Service shares a
+            common token-based authentication system that allows
+            seamless access between products and services. </para>
+        <note>
+            <para> All requests to authenticate against and operate the service are performed using
+                SSL over HTTP (HTTPS) on TCP port 443. </para>
+        </note>
+        <section xml:id="Authentication-d1e647">
+            <title>Authentication</title>
+            <para> Every ReST request against the Database Service
+                requires the inclusion of a specific authorization
+                token, supplied by the <code>X-Auth-Token</code> HTTP
+                header. Customers obtain this token by first using the
+                Rackspace Cloud Authentication Service and supplying a
+                valid username and API access key. </para>
+            <section xml:id="Geographic_Endpoints">
+                <title>Geographic Endpoints</title>
+                <para> The Rackspace Cloud Authentication Service
+                    serves as the entry point to all Rackspace Cloud
+                    APIs and is itself a ReSTful web service. </para>
+                <para> To access the Authentication Service, you must
+                    know whether your account is US-based or UK-based: </para>
+                <itemizedlist spacing="compact">
+                    <listitem>
+                        <para> US-based accounts authenticate through
+                                <link xlink:href="&ENDPOINT-US-20;"
+                                >&ENDPOINT-US-20;</link>. </para>
+                    </listitem>
+                    <listitem>
+                        <para> UK-based accounts authenticate through
+                                <link xlink:href="&ENDPOINT-UK-20;"
+                                >&ENDPOINT-UK-20;</link>. </para>
+                    </listitem>
+                </itemizedlist>
+                <para> Your account may be based in either the US or
+                    the UK; this is not determined by your physical
+                    location but by the location of the Rackspace
+                    retail site which was used to create your account: </para>
+                <itemizedlist spacing="compact">
+                    <listitem>
+                        <para> If your account was created via <link
+                                xlink:href="http://www.rackspacecloud.com"
+                                >http://www.rackspacecloud.com</link>,
+                            it is a US-based account. </para>
+                    </listitem>
+                    <listitem>
+                        <para> If your account was created via <link
+                                xlink:href="http://www.rackspace.co.uk"
+                                >http://www.rackspace.co.uk</link>, it
+                            is a UK-based account. </para>
+                    </listitem>
+                </itemizedlist>
+                <para> If you are unsure how your account was created,
+                    use the Rackspace contact information at either
+                    site to ask for help. </para>
+            </section>
+            <section xml:id="Retrieving_Auth_Token">
+                <title>Retrieving the Authentication Token</title>
+                <informaltable rules="all">
+                    <tbody>
+                        <tr>
+                            <td colspan="1">&POST; </td>
+                            <td colspan="1"> v2.0/tokens </td>
+                            <td colspan="4"> Authenticate to receive a
+                                token and a service catalog. </td>
+                        </tr>
+                    </tbody>
+                </informaltable>
+                <simpara> Normal Response Code(s):
+                        <returnvalue>200</returnvalue>,
+                        <returnvalue>203</returnvalue>
+                </simpara>
+                <simpara> Error Response Code(s): unauthorized
+                        (<errorcode>401</errorcode>), userDisabled
+                        (<errorcode>403</errorcode>), badRequest
+                        (<errorcode>400</errorcode>), authFault
+                        (<errorcode>500</errorcode>),
+                    serviceUnavailable (<errorcode>503</errorcode>) </simpara>
+                <para> The authenticate operation provides clients
+                    with an authentication token and a list of
+                    regional cloud endpoints. The sample requests and
+                    responses in this section illustrate a general
+                    case. In your authentication request, use your own
+                    credentials rather than the sample values shown
+                    here for <code>username</code> and
+                        <code>apiKey</code>. When you authenticate
+                    successfully, the response to your authentication
+                    request will include a catalog of the services to
+                    which you have subscribed rather than the sample
+                    values shown here.</para>
+                <example>
+                    <title>Auth Request: XML</title>
+                    <programlistingco>
+                        <areaspec>
+                            <area xml:id="credentials.xml.user"
+                                units="linecolumn" coords="13 17"/>
+                            <area xml:id="credentials.xml.key"
+                                units="linecolumn" coords="14 15"/>
+                        </areaspec>
+                        <programlisting language="xml">
+<xi:include href="samples/db-credentials-20.xml" parse="text"/>
+                    </programlisting>
+                    </programlistingco>
+                </example>
+                <example>
+                    <title>Auth Request: JSON</title>
+                    <programlistingco>
+                        <areaspec>
+                            <area xml:id="credentials.json.user"
+                                units="linecolumn" coords="14 22"/>
+                            <area xml:id="credentials.json.key"
+                                units="linecolumn" coords="15 20"/>
+                        </areaspec>
+                        <programlisting language="json">
+<xi:include href="samples/db-credentials-20.json" parse="text"/>
+                    </programlisting>
+                    </programlistingco>
+                </example>
+                <calloutlist>
+                    <callout arearefs="credentials.xml.user">
+                        <para> The username supplied here is your
+                            common Rackspace Cloud username. </para>
+                    </callout>
+                    <callout arearefs="credentials.xml.key">
+                        <para> The key is your API access key. The key
+                            can be obtained from the Rackspace Cloud
+                            Control Panel in the <guimenu>&lt;Your
+                                Account></guimenu>/<guimenuitem>API
+                                Access</guimenuitem> section (login
+                            here: <link
+                                xlink:href="http://mycloud.rackspace.com/"
+                                >Control Panel Login</link>). </para>
+                    </callout>
+                </calloutlist>
+                <example>
+                    <title>Auth Response: XML</title>
+                    
+                    <programlistingco>
+                        <areaspec>
+                            <area xml:id="response.xml.namespaces" units="linecolumn" coords="7 9"/>
+                            <area xml:id="response.xml.token" units="linecolumn" coords="12 10"/>
+                            <area xml:id="response.xml.role" units="linecolumn" coords="14 12"/>
+                            <area xml:id="response.xml.catalog" units="linecolumn" coords="19 21"/>
+                            <area xml:id="response.xml.servicetype" units="linecolumn" coords="43 34"/>
+                            <area xml:id="response.xml.servicename" units="linecolumn" coords="43 54"/>
+                            <area xml:id="response.xml.region" units="linecolumn" coords="44 30"/>
+                            <area xml:id="response.xml.tenant" units="linecolumn" coords="45 66"/>
+                            <area xml:id="response.xml.url" units="linecolumn" coords="46 9"/>
+                        </areaspec>
+                        <programlisting language="xml"><xi:include href="samples/db-auth-20.xml" parse="text"/></programlisting>
+                    </programlistingco>
+                </example>
+              
+                
+                <example xml:id="auth-response-example-json">
+                    <title>Auth Response: JSON</title>
+                    
+                    <programlistingco>
+                        <areaspec>
+                            <area xml:id="response.json.namespaces" units="linecolumn" coords="200 1"/>
+                            <area xml:id="response.json.token" units="linecolumn" coords="9 8"/>
+                            <area xml:id="response.json.role" units="linecolumn" coords="16 12"/>
+                            <area xml:id="response.json.catalog" units="linecolumn" coords="29 8"/>
+                            <area xml:id="response.json.servicetype" units="linecolumn" coords="102 16"/>
+                            <area xml:id="response.json.servicename" units="linecolumn" coords="101 16"/>
+                            <area xml:id="response.json.region" units="linecolumn" coords="94 24"/>
+                            <area xml:id="response.json.tenant" units="linecolumn" coords="91 24"/>
+                            <area xml:id="response.json.url" units="linecolumn" coords="92 24"/>
+                        </areaspec>	
+                        <programlisting language="json"><xi:include href="samples/db-auth-20.json" parse="text"/>
+                    </programlisting>
+                    </programlistingco>
+                </example>
+                <note>
+                    <para>The information shown in the Auth Response
+                        examples is for US-based accounts. If you
+                        authenticate against the UK-endpoint for auth,
+                        you will see the service catalog information
+                        for UK-based accounts.</para>
+                </note>
+                <calloutlist>
+                    <callout arearefs="response.xml.namespaces">
+                        <para>
+                            In XML responses only,
+                            a list of namespaces identifies API extensions that add functionality to the core API.
+                        </para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.token">
+                        <para> This token can be presented to a service as evidence of authentication.
+                            Tokens are valid for a finite duration; a token's default lifespan is twenty-four hours.
+                        </para>
+                        <para> The token's <code>expires</code> attribute denotes the time
+                            after which the token will automatically become
+                            invalid. A token may be manually revoked before
+                            the time identified by the <code>expires</code>
+                            attribute; <code>expires</code> predicts a token's
+                            maximum possible lifespan but does not guarantee
+                            that it will reach that lifespan. Clients are
+                            encouraged to cache a token until it expires. </para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.role">
+                        <para> Users can be assigned multiple roles,
+                            with each role providing specific
+                            privileges. In this example,
+                                <code>jsmith</code> is the
+                            administrative user for the account,
+                            holding the fully-privileged
+                                <code>identity:admin</code> role.
+                            Other users might hold other roles with
+                            different privileges. Roles need not be
+                            associated with actual job functions such
+                            as Administrator, Operator, Developer,
+                            Tester, or Trainer. </para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.catalog">
+                        <para> The service catalog lists the services
+                            this user can access. In this example, the
+                            user can access one database service, one
+                            loadbalancing service, two compute
+                            services (Cloud Servers OpenStack and
+                            Cloud Servers), two object storage
+                            services (Cloud Files Content Distribution
+                            Network (CDN), and Cloud Files),  and one
+                            DNS service. The catalog listing for each
+                            service provides at least one endpoint URL
+                            for that service. Other information, such
+                            as regions, versions, and tenants, is
+                            provided if it's relevant to this user's
+                            access to this service. </para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.servicetype">
+                        <para>
+                            The service type attribute identifies services that perform similar functions, whatever those services might be named.
+                            In this example, the services named cloudServers and cloudServersOpenstack are both identified as <code>type="compute"</code>,
+                            identifying them as compute services even though the word "compute" does not appear in their names.
+                        </para>
+                        <important>
+                            <para>Use service type as the primary value for
+                                locating a service. If multiple endpoints of the
+                                same service type exist in the same region, use
+                                service name as the tiebreaker.</para>
+                        </important>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.servicename">
+                        <para>
+                            The service name attribute identifies each unique service in the catalog.
+                            Once a service is created, its name does not change. However, new services of the same service type may be added to the catalog with new names.
+                        </para>
+                        <important>
+                            <para> If you are programmatically parsing an authentication
+                                response, use service type rather than service name as
+                                the basis for determining whether a user has access to
+                                a particular kind of service. Service type is stable
+                                across all releases; new service types may be developed,
+                                but existing service types are not renamed.
+                                In this example,
+                                <code>type="compute"</code> identifies all the
+                                available compute services, one of which is named
+                                cloudServers and one of which is named
+                                cloudServersOpenStack. New compute service names may be added
+                                in future releases; whatever the compute services are
+                                named, you can always
+                                recognize them by parsing for
+                                <code>type="compute"</code> in the authentication
+                                response's service catalog. </para>
+                        </important>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.region">
+                        <para> A service may expose endpoints in different regions.
+                            Regional endpoints allow clients to provision
+                            resources in a manner that provides high
+                            availability. </para>
+                        <para> Some services are not region-specific. These services supply a single
+                            non-regional endpoint and do not provide access to internal URLs. </para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.tenant">
+                        <para> Some services recognize specification of a tenant. If a
+                            service does recognize tenants, the format of the
+                            tenant specification is defined only by the
+                            service; for details about whether and how to
+                            specify a tenant, check the documentation for the
+                            service you are using.</para>
+                        <para> </para>
+                    </callout>
+                    <callout arearefs="response.xml.url">
+                        <para>
+                            An endpoint can be assigned public and internal URLs. A
+                            public URL is accessible from anywhere. Access to a public
+                            URL usually incurs traffic charges. Internal URLs are only
+                            accessible to services within the same region. Access to
+                            an internal URL is free of charge.
+                        </para>
+                        <para> </para>
+                    </callout>
+                </calloutlist>
+                <para>Authentication tokens are typically valid for 24
+                    hours. Applications should be designed to
+                    re-authenticate after receiving a 401
+                    (Unauthorized) response from a service endpoint. </para>
+                <important>
+                    <para>If you are programmatically parsing an
+                        authentication response, please be aware that
+                        service names are stable for the life of the
+                        particular service and can be used as keys.
+                        You should also be aware that a user's service
+                        catalog can include multiple uniquely-named
+                        services which perform similar functions. For
+                        example, cloudServersOpenStack is the
+                        OpenStack version of compute whereas
+                        cloudServers is the legacy version of compute;
+                        the same user can have access to both
+                        services. In Auth 2.0, the service type
+                        attribute can be used as a key by which to
+                        recognize similar services; see the tip
+                        below.</para>
+                </important>
+                <tip>
+                    <para>Beginning with Auth 2.0, the service catalog
+                        includes a service type attribute to identify
+                        services that perform similar functions but
+                        have different names; for example,
+                            <code>type="compute"</code> identifies
+                        compute services such as cloudServers and
+                        cloudServersOpenStack. Some developers have
+                        found the service type attribute to be useful
+                        in parsing the service catalog. For additional
+                        information on Auth 2.0 (also known as the
+                        Cloud Identity Service), refer to the
+                            <citetitle>Cloud Identity Client Developer
+                            Guide</citetitle> at <link
+                                xlink:href="http://docs.rackspace.com"
+                            >http://docs.rackspace.com/</link>.</para>
+                </tip>
+                <para>Databases service endpoints are published in the
+                    service catalog in the Auth response with the
+                    account number, which is a required element of the
+                    service endpoints. The examples shown here are for
+                    authentication for US customers. Customers with
+                    UK-based accounts will see different values in the
+                    service catalog. Refer to the next section for
+                    more information about service endpoints. </para>
+            </section>
+        </section>
+        <section xml:id="Service_Access_Endpoints-d1e753">
+            <title>Service Access/Endpoints</title>
+            <para>The Database Service is a regionalized service. The
+                user of the service is therefore responsible for
+                appropriate replication, caching, and overall
+                maintenance of Cloud Databases data across regional
+                boundaries to other Cloud Databases servers.</para>
+            <para>You can find the available service access/endpoints
+                for Cloud Databases summarized in the table
+                below.</para>
+            <?rax-fo keep-with-next?>
+            <para>
+                <table rules="all">
+                    <caption>Regionalized Service Endpoints</caption>
+                    <thead>
+                        <tr align="center">
+                            <td colspan="2">Region</td>
+                            <td colspan="5">Endpoint</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr align="left">
+                            <td colspan="2">Chicago (ORD)</td>
+                            <td colspan="5"
+                                ><code>https://ord.databases.api.rackspacecloud.com/v1.0/</code><parameter>1234</parameter>/ </td>
+                        </tr>
+                        <tr align="left">
+                            <td colspan="2">Dallas/Ft. Worth (DFW)</td>
+                            <td colspan="5"
+                                ><code>https://dfw.databases.api.rackspacecloud.com/v1.0/</code><parameter>1234</parameter>/ </td>
+                        </tr>
+                        <tr align="left" >
+                            <td colspan="2">London (LON)</td>
+                            <td colspan="5">
+                                <code>https://lon.databases.api.rackspacecloud.com/v1.0/</code><parameter>1234</parameter>/ </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </para>
+            
+            <para>Replace the sample account ID number,
+                    <parameter>1234</parameter>, with your actual
+                account number returned as part of the authentication
+                service response.</para>
+            <para>You will find the actual account number after the
+                final '/' in the <code>publicURL</code> field returned
+                by the authentication response. For example, in <xref
+                    linkend="auth-response-example-json"/> you can see
+                from the <code>publicURL</code> field for
+                    <code>cloudServers</code>
+                    ("https://servers.api.rackspacecloud.com/v1.0/<emphasis
+                    role="bold">1100111</emphasis>") that the account
+                number is 1100111.</para>
+        </section>
+        <section xml:id="DB_service_versions">
+            <title>Cloud Databases Service Versions</title>
+            <para> The Cloud Databases version defines the contract
+                and build information for the API. </para>
+            <section xml:id="Contract_Version-d1e825">
+                <title>Contract Version</title>
+                <para> The contract version denotes the data model and
+                    behavior that the API supports. The requested
+                    contract version is included in all request URLs.
+                    Different contract versions of the API may be
+                    available at any given time and are not guaranteed
+                    to be compatible with one another. 
+                </para>
+                <example>
+                        <title>Example Request URL (contract version
+                            in <emphasis role="strong"
+                            >bold</emphasis>)</title>
+                        <programlisting>https://ord.databases.api.rackspacecloud.com/<emphasis role="strong">v1.0</emphasis>/1234</programlisting>
+                </example>
+                    <note>
+                        <para>This document pertains to contract
+                            version 1.0.</para>
+                    </note>
+                
+            </section>
+            <section xml:id="API_Version_Headers-d1e855">
+                <title>API Version</title>
+                <para>The API List Versions call is available to show
+                    the current API version as well as information
+                    about all versions of the API. Refer to <xref
+                        linkend="API_Versions"/> for details.</para>
+            </section>
+        </section>
+        <section xml:id="Request_Response_Types-d1e903">
+            <title>Request/Response Types</title>
+            <para> The Cloud Databases API supports both the JSON and
+                XML data serialization formats. The request format is
+                specified using the <code>Content-Type</code> header
+                and is <emphasis>required</emphasis> for calls that
+                have a request body. The response format can be
+                specified in requests either by using the
+                    <code>Accept</code> header or by adding an
+                    <code>.xml</code> or <code>.json</code> extension
+                to the request URI. Note that it is possible for a
+                response to be serialized using a format different
+                from the request. If no response format is specified,
+                JSON is the default. If conflicting formats are
+                specified using both an <code>Accept</code> header and
+                a query extension, the query extension takes
+                precedence.</para>
+            <para security="writeronly">Some operations support an Atom representation that
+                can be used to efficiently determine when the state of
+                services has changed. </para>
+            <remark>Reviewer:  the previous sentence will be hidden
+                for the Private Beta, since it does not appear that
+                Atom will be supported yet. Correct?</remark>
+            <table rules="all">
+                <caption>Response Formats</caption>
+                <?dbfo keep-together="always"?>
+                <thead>
+                    <tr align="center">
+                        <td>Format</td>
+                        <td>Accept Header</td>
+                        <td>Query Extension</td>
+                        <td>Default</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>JSON</td>
+                        <td>application/json</td>
+                        <td>.json</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td>XML</td>
+                        <td>application/xml</td>
+                        <td>.xml</td>
+                        <td>No</td>
+                    </tr>
+                    <tr security="writeronly">
+                        <td>ATOM</td>
+                        <td>application/atom+xml</td>
+                        <td>.atom</td>
+                        <td>No</td>
+                    </tr>
+                </tbody>
+            </table>
+            <remark>Reviewer:  the ATOM row in the table above will be
+                hidden for the Private Beta, since it does not appear
+                that Atom will be supported yet. Correct?</remark>
+            <para>In the request example below, notice that
+                    <parameter>Content-Type</parameter> is set to
+                    <parameter>application/json</parameter>, but
+                    <parameter>application/xml</parameter> is
+                requested via the <parameter>Accept</parameter>
+                header:</para>
+            <example xml:id="request_with_headers_json">
+                <title>Request with Headers: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json"><xi:include href="samples/db-request-types.json" parse="text"><xi:fallback>Missing code sample!<?rax fail?></xi:fallback></xi:include></programlisting>
+            </example>
+            <para><?rax-fo keep-with-next?>Therefore an XML response format is returned:</para>
+            <example>
+                <title>Response with Headers: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml"><xi:include href="samples/db-response-types.xml" parse="text"><xi:fallback>Missing code sample!<?rax fail?></xi:fallback></xi:include></programlisting>
+            </example>
+        </section>
+        <section xml:id="sync_asynch_responses" security="writeronly">
+            <title>Synchronous and Asynchronous Responses</title>
+            <remark>Reviewer: please give me the updated info for this
+                section. Need to replace info about callback URL,
+                etc.</remark>
+            <para> All successful &GET; requests are
+                    <emphasis>synchronous</emphasis> calls, since they
+                are always retrieving (reading) existing information.
+                With these requests, the caller waits until the call
+                returns with the specified code and response body. For
+                an example, see XXXX.</para>
+            <para>&PUT;, &POST;, and &DELETE; calls are <emphasis>asynchronous</emphasis>, however,
+                since they may take some time to process. Therefore they return 202 ACCEPTED
+                responses containing information with a callback URL, which allows the progress,
+                status, and/or response information of the call to be retrieved at a later point in
+                time. The asynchronous response body will look similar to the following examples,
+                depending on the format requested:</para>
+            <example>
+                <title>202 ACCEPTED Response: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">Reviewer: need code example</programlisting>
+            </example>
+            <example>
+                <title>202 ACCEPTED Response: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">Reviewer: need code example</programlisting>
+            </example>
+            <para>The following table shows the attributes for asynchronous responses:</para>
+            <table rules="all">
+                <caption>Attributes for Asynchronous Responses</caption>
+                <?dbfo keep-together="always"?>
+                <thead>
+                    <tr align="center">
+                        <td colspan="1">Attribute</td>
+                        <td colspan="4">Description</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="1">jobId</td>
+                        <td colspan="4">An identifier for the specific request.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="1">callbackUrl</td>
+                        <td colspan="4">Resource locator for querying the status of the request.</td>
+                    </tr>
+                </tbody>
+            </table>
+            <note>
+                <para>The status for asynchronous calls is retained for up to 24 hours.</para>
+            </note>
+            <note>
+                <para>If a request body does not pass initial validation or an error condition
+                    arises, you may receive an immediate error response from the request.</para>
+            </note>
+            <para>When a request is made to the callback URL provided
+                and the job is still running, another
+                    <returnvalue>202</returnvalue> ACCEPTED response
+                is returned with the same information as the previous
+                one. If the request is complete, the response will be
+                as if the original call returned as normal, without
+                waiting. For example, if a Create Database request was
+                issued and a 202 asynchronous response was returned,
+                the response from querying the callback URL for a
+                completed successful database creation would be a
+                    <returnvalue>200</returnvalue> OK and contain the
+                information for the created database. See XXXX for a
+                specific example.</para>
+            <para>If an error occurs during the processing of the
+                create request, querying the callback URL will return
+                the details of the error, as if the original call
+                returned the error response. For example, if a
+                validation error occurs during the Create Database
+                request above, the response from querying the callback
+                URL would be a <returnvalue>400</returnvalue> BAD
+                REQUEST and contain details regarding the specific
+                validation error.</para>
+            <note>
+                <para>If the response from querying a callback URL is a
+                        <returnvalue>404</returnvalue> NOT FOUND, the details of the error in the
+                    response body will contain information the caller may use to determine whether
+                    the specified job itself was not found, or if the response from the original
+                    request was a <returnvalue>404</returnvalue> NOT FOUND. </para>
+            </note>
+            <para>The description of each &PUT;, &POST;, and &DELETE;
+                request identifies the response codes that can
+                indicate success or error for that request. For
+                example, see XXXX immediately below the table for a
+                list of the successful and error response codes for
+                the POST /xxxx call.</para>
+        </section>
+           <section xml:id="Content_Compression-d1e1120" security="writeronly">
+            <title>Content Compression</title>
+            <remark>Reviewer: I am hiding this entire section for the
+                Private Beta, since I'm not sure that it applies. Is
+                that correct?</remark>
+            <para> Request and response body data may be encoded with gzip compression to accelerate
+                interactive performance of API calls and responses. This is controlled using the
+                    <code>Accept-Encoding</code> header on the request from the client and indicated
+                by the <code>Content-Encoding</code> header in the server response. Unless the
+                header is explicitly set, encoding defaults to disabled. </para>
+            <table rules="all">
+                <caption>Encoding Headers</caption>
+                <?dbfo keep-together="always"?>
+                <thead>
+                    <tr align="center">
+                        <td>Header Type</td>
+                        <td>Name</td>
+                        <td>Value</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>HTTP/1.1 Request</td>
+                        <td><code>Accept-Encoding</code></td>
+                        <td>gzip</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP/1.1 Response</td>
+                        <td><code>Content-Encoding</code></td>
+                        <td>gzip</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section xml:id="Persistent_Connections-d1e1187" security="writeronly">
+            <title>Persistent Connections</title>
+            <remark>Reviewer: I am hiding this entire section for the
+                Private Beta, since I'm not sure that it applies. Is
+                that correct?</remark>
+            <para>
+                By default, the API supports persistent connections
+                via HTTP/1.1 keepalives.  All connections will be kept
+                alive unless the connection header is set to close.
+            </para>
+            <para>
+                To prevent abuse, HTTP sessions have a timeout of 20
+                seconds before being closed.
+            </para>
+            <note>
+                <para>
+                    The server may close the connection at any time
+                    and clients should not rely on this behavior.
+                </para>
+            </note>
+        </section>
+        <?hard-pagebreak?>
+        <section xml:id="Limits-d1e1208">
+            <title>Limits</title>
+            <para>
+                All accounts, by default, have a preconfigured set of
+                thresholds (or limits) to manage capacity and prevent
+                abuse of the system.  The system recognizes two kinds
+                of limits: <firstterm>rate limits</firstterm> and
+                <firstterm>absolute limits</firstterm>. Rate limits
+                are thresholds that are reset after a certain amount
+                of time passes. Absolute limits are fixed.
+            </para>
+            <section xml:id="Rate_Limits-d1e1222">
+                <title>Rate Limits</title>
+                <para> Rate limits are specified in terms of both a
+                    human-readable wild-card URI and a
+                    machine-processable regular expression. The
+                    regular expression boundary matcher '^' takes
+                    effect after the root URI path. For example, the
+                    regular expression ^/v1.0/instances would match
+                    the bolded portion of the following URI:
+                        https://ord.databases.api.rackspacecloud.com<emphasis
+                        role="bold">/v1.0/instances</emphasis>. </para>
+                <para>The following table specifies the default rate
+                    limits for all API operations for all &GET;,
+                    &POST;, &PUT;, and &DELETE; calls for databases
+                    and database instances: </para>
+                <table rules="all">
+                    <caption>Default Rate Limits</caption>
+                    <thead>
+                        <tr align="center">
+                            <td colspan="1">Verb</td>
+                            <td colspan="2">URI</td>
+                            <td colspan="2">RegEx</td>
+                            <td colspan="1">Default</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="1">&GET; changes-since</td>
+                            <td colspan="2">*/instances/*</td>
+                            <td colspan="2">^/vd+.d+/instances.*</td>
+                            <td colspan="1">3/minute</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">&POST;</td>
+                            <td colspan="2">*/instances/*</td>
+                            <td colspan="2">^/vd+.d+/instances.*</td>
+                            <td colspan="1">10/minute</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">&POST; instances</td>
+                            <td colspan="2">*/instances/*</td>
+                            <td colspan="2">^/vd+.d+/instances.*</td>
+                            <td colspan="1">50/day</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">&PUT;</td>
+                            <td colspan="2">*/instances/*</td>
+                            <td colspan="2">^/vd+.d+/instances.*</td>
+                            <td colspan="1">10/minute</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">&DELETE;</td>
+                            <td colspan="2">*/instances/*</td>
+                            <td colspan="2">^/vd+.d+/instances.*</td>
+                            <td colspan="1">100/minute</td>
+                        </tr>
+                    </tbody>
+                </table>
+               <para> Rate limits are applied in order relative to the
+                    verb, going from least to most specific. For
+                    example, although the threshold for &POST; to
+                    /v1.0/* is 10 per minute, one cannot &POST; to
+                    /v1.0/* more than 50 times within a single day. </para>
+                <para> If you exceed the thresholds established for
+                    your account, a <errorcode>413 (Rate
+                        Control)</errorcode> HTTP response will be
+                    returned with a <code>Retry-After</code> header to
+                    notify the client when it can attempt to try
+                    again. </para>
+            </section>
+            <section xml:id="Absolute_Limits-d1e1397">
+                <title>Absolute Limits</title>
+                <remark>Reviewer: Need to update this entire section.
+                    Please give me your updates.</remark>
+                <para>Refer to the following table for the absolute
+                    limits that are set.</para>
+                <table rules="all">
+                    <caption>Absolute Limits</caption>
+                    <thead>
+                        <tr>
+                            <td colspan="1">Name</td>
+                            <td colspan="3">Description</td>
+                            <td colspan="1">Limit</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="1">Instances</td>
+                            <td colspan="3">Maximum number of instances allowed
+                                for your account</td>
+                            <td colspan="1">5</td>
+                        </tr>
+                        <tr>
+                            <td colspan="1">Volume Size</td>
+                            <td colspan="3">Maximum volume size per
+                                instance in gigabytes (GB) for your
+                                account</td>
+                            <td colspan="1">50</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </section>
+        <section xml:id="datetimeformat">
+            <title>Date/Time Format</title>
+            <para> The Database Service uses an ISO-8601 compliant
+                date format for the display and consumption of
+                date/time values. </para>
+            <para>The system timezone is in UTC. MySQL converts TIMESTAMP values from
+                    the current time zone to UTC for storage, and back
+                    from UTC to the current time zone for retrieval.
+                    This does not occur for other types, such as DATETIME.
+            </para>
+                <example>
+                    <title>DB Service Date/Time Format</title>
+                    <programlisting>yyyy-MM-dd'T'HH:mm:ss.SSSZ</programlisting>
+                <para>See the table below for a description of the date/time format codes.</para>
+                    <para>May 19th, 2011 at 8:07:08 AM, GMT-5 would have the following
+                    format:</para>
+                    <programlisting>2011-05-19T08:07:08-05:00</programlisting>
+                </example>
+            <table rules="all">
+                <caption>Explanation of Date/Time Format Codes</caption>
+                <thead>
+                    <tr>
+                        <td>Code</td>
+                        <td>Description</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>yyyy</td>
+                        <td>Four digit year</td>
+                    </tr>
+                    <tr>
+                        <td>MM</td>
+                        <td>Two digit month</td>
+                    </tr>
+                    <tr>
+                        <td>dd</td>
+                        <td>Two digit day of month</td>
+                    </tr>
+                    <tr>
+                        <td>T</td>
+                        <td>Separator for date/time</td>
+                    </tr>
+                    <tr>
+                        <td>HH</td>
+                        <td>Two digit hour of day (00-23)</td>
+                    </tr>
+                    <tr>
+                        <td>mm</td>
+                        <td>Two digit minutes of hour</td>
+                    </tr>
+                    <tr>
+                        <td>ss</td>
+                        <td>Two digit seconds of the minute</td>
+                    </tr>
+                    <tr>
+                        <td>SSS</td>
+                        <td>Three digit milliseconds of the second</td>
+                    </tr>
+                    <tr>
+                        <td>Z</td>
+                        <td>RFC-822 timezone</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+        </section>
+        <section xml:id="pagination">
+            <title>Pagination</title>
+            <para>To reduce load on the service, list operations
+                return a maximum of 20 items at a time. This is
+                referred to as <emphasis>pagination</emphasis>. Cloud
+                Databases has separate paging limits for instances,
+                databases, and users, which are currently all set to
+                20. If a request supplies no limit or one that exceeds
+                the configured default limit, the default is used
+                instead.</para>
+            <para> Pagination provides the ability to limit the size
+                of the returned data as well as retrieve a specified
+                subset of a large data set. Pagination has two key
+                concepts: limit and marker. <emphasis>Limit</emphasis>
+                is the restriction on the maximum number of items for
+                that type that can be returned.
+                    <emphasis>Marker</emphasis> is the ID of the last
+                item in the previous list returned. The ID is the UUID
+                in the case of instances, and the name in the case of
+                databases and users. For example, a query could
+                request the next 10 instances after the instance
+                "1234" as follows:
+                    <code>?limit=10&amp;marker=1234</code>. Items are
+                displayed sorted by ID. </para>
+            <para>Pagination applies only to the calls listed in the
+                following table: </para>
+            <informaltable rules="all">
+                <thead>
+                    <tr align="center">
+                        <td colspan="1">Verb</td>
+                        <td colspan="2">URI</td>
+                        <td colspan="3">Description</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="1">&GET;</td>
+                        <td colspan="2">/instances/</td>
+                        <td colspan="3">Lists the status and
+                            information for all database
+                            instances.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="1">&GET;</td>
+                        <td colspan="2">
+                            /instances/{instanceId}/databases </td>
+                        <td colspan="3">Lists databases for the
+                            specified instance.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="1">&GET;</td>
+                        <td colspan="2"> /instances/{instanceId}/users </td>
+                        <td colspan="3">Lists the users in the
+                            specified database instance.</td>
+                    </tr>
+                </tbody>
+            </informaltable>
+            <para>If the content returned by a call is paginated, the
+                response includes a structured link much like an
+                instance item's links, with the basic structure
+                    <code>{"href": "&lt;url>", "rel": "next"}</code>.
+                Any response that is truncated by pagination will have
+                a <emphasis>next</emphasis> link, which points to the
+                next item in the collection. If there are no more
+                items, no <emphasis>next</emphasis> link is
+                returned.</para>
+            <para>See the examples of paged List Instances calls that
+                follow.</para>
+            <example>
+                <title>List Instances Paged Request: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">
+<xi:include href="samples/db-instances-index-pagination-request.xml" parse="text"/>
+                    </programlisting>
+            </example>
+            <example>
+                <title>List Instances Paged Request: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">
+<xi:include href="samples/db-instances-index-pagination-request.json" parse="text"/>
+                    </programlisting>
+            </example>
+            <para>Notice that the paged request examples above set the
+                limit to 2 (<code>?limit=2</code>), so the responses
+                that follow each show 2 instances and return a
+                    <emphasis>marker</emphasis> set to the UUID of the
+                last item in the returned list
+                    (<code>?marker=4137d6a4-03b7-4b66-b0ef-8c7c35c470d3</code>).
+                Also a link is provided to retrieve the next 2 results
+                    (<code>limit=2</code>) in the link element
+                identified by the attribute <code>rel="next"</code>
+                (XML) or <code>"rel":"next"</code> (JSON):</para>
+            <example>
+                <title>List Instances Paged Response: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">
+<xi:include href="samples/db-instances-index-pagination-response.xml" parse="text"/>
+                    </programlisting>
+            </example>
+            <example>
+                <title>List Instances Paged Response: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">
+<xi:include href="samples/db-instances-index-pagination-response.json" parse="text"/>
+                    </programlisting>
+            </example>
+        </section>
+        <section xml:id="efficient_polling_changes_since_parm" security="writeronly">
+            <title>Efficient Polling with the
+                    <parameter>Changes-Since</parameter>
+                Parameter</title>
+            <remark>Reviewer: I have hidden this section, since it
+                does not appear that it will be supported for Private
+                Beta. Correct?</remark>
+            <para> The ReST API allows you to poll for the status of
+                certain operations by performing a &GET; on various
+                URIs. Rather than re-downloading and re-parsing the
+                full status at each polling interval, your ReST client
+                may use the <parameter>changes-since</parameter>
+                parameter to check for changes since a previous
+                request. The <parameter>changes-since</parameter> time
+                is specified as <link
+                    xlink:href="http://en.wikipedia.org/wiki/Unix_time"
+                    >Unix time</link> (the number of seconds since
+                January 1, 1970, 00:00:00 UTC, not counting leap
+                seconds). If nothing has changed since the
+                    <parameter>changes-since</parameter> time, a
+                    <returnvalue>304 (Not Modified)</returnvalue>
+                response will be returned. If data has changed, only
+                the items changed since the specified time will be
+                returned in the response. </para>
+            <remark>Reviewer: does the following sentence apply, and
+                should it be included?</remark>
+            <para>For example, performing a &GET; against
+                    https://api.servers.rackspacecloud.com/v1.0/224532/servers?<parameter>changes-since</parameter>=1244012982
+                would list all servers that have changed since Wed, 03
+                Jun 2009 07:09:42 UTC. </para>
+        </section>
+        <section xml:id="DB_faults">
+            <title>Faults</title>
+            <para> When an error occurs, the Database Service returns
+                a fault object containing an HTTP error response code
+                that denotes the type of error. In the body of the
+                response, the system will return additional
+                information about the fault. </para>
+            <para>The following table lists possible fault types with their associated error codes
+                and descriptions.</para>
+            <informaltable rules="all">
+                <thead>
+                    <tr align="center">
+                        <td colspan="2">Fault Type</td>
+                        <td colspan="1">Associated Error Code</td>
+                        <td colspan="3">Description</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="2"><code>badRequest</code></td>
+                        <td colspan="1">400</td>
+                        <td colspan="3">There was one or more errors in the user request.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>unauthorized</code></td>
+                        <td colspan="1">401</td>
+                        <td colspan="3">The supplied token is not authorized to access the resources, either it's expired or invalid.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>forbidden</code></td>
+                        <td colspan="1">403</td>
+                        <td colspan="3">Access to the requested
+                            resource was denied.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>itemNotFound</code></td>
+                        <td colspan="1">404</td>
+                        <td colspan="3">The back-end services did not
+                            find anything matching the
+                            Request-URI.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>badMethod</code></td>
+                        <td colspan="1">405</td>
+                        <td colspan="3">The request method is not allowed for this resource.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>overLimit</code></td>
+                        <td colspan="1">413</td>
+                        <td colspan="3">Either the number of entities in the request is larger than
+                            allowed limits, or the user has exceeded allowable request rate limits.
+                            See the <code>details</code> element for more specifics. Contact support
+                            if you think you need higher request rate limits.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><code>badMediaType</code></td>
+                        <td colspan="1">415</td>
+                        <td colspan="3">The requested content type is not supported by this service.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"
+                                ><code>unprocessableEntity</code></td>
+                        <td colspan="1">422</td>
+                        <td colspan="3">The requested resource could
+                            not be processed on at the moment.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"
+                            ><code>instanceFault</code></td>
+                        <td colspan="1">500</td>
+                        <td colspan="3">This is a generic server error and the message contains the reason for the error. This error could wrap several error messages and is a catch all.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"
+                            ><code>notImplemented</code></td>
+                        <td colspan="1">501</td>
+                        <td colspan="3">The requested method or resource is not implemented.</td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"
+                                ><code>serviceUnavailable</code></td>
+                        <td colspan="1">503</td>
+                        <td colspan="3">The Database Service is not
+                            available.</td>
+                    </tr>
+                </tbody>
+            </informaltable>
+            <para>The following two  <code>instanceFault</code>
+                examples show errors when the server has erred or
+                cannot perform the requested operation:</para>
+            
+            <example>
+                <title>Example instanceFault Response: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">
+<xi:include href="samples/db-faults-instanceFault.xml" parse="text"/>
+                    </programlisting>
+            </example>
+            <example>
+                <title>Example Fault Response: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">
+<xi:include href="samples/db-faults-instanceFault.json" parse="text"/>
+                    </programlisting>
+            </example>
+            <para> The error code (<code>code</code>) is returned in the body of the response for
+                convenience. The <code>message</code> element returns a human-readable message that
+                is appropriate for display to the end user. The <code>details</code> element is
+                optional and may contain information that is useful for tracking down an error, such
+                as a stack trace. The <code>details</code> element may or may not be appropriate for
+                display to an end user, depending on the role and experience of the end user.</para>
+            <para>The fault's root element (for example,
+                    <code>instanceFault</code>) may change depending
+                on the type of error. </para>
+            <para><?rax-fo keep-with-next?>The following two <code>badRequest</code> examples
+                show errors when the volume size is invalid:</para>
+            <example>
+                <title>Example badRequest Fault on Volume Size Errors:
+                    XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">
+<xi:include href="samples/db-faults-badRequest.xml" parse="text"/>
+                    </programlisting>
+            </example>
+            <example>
+                <title>Example badRequest Fault on Volume Size Errors:
+                    JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">
+<xi:include href="samples/db-faults-badRequest.json" parse="text"/>
+                    </programlisting>
+            </example>
+            <para> The next two examples show
+                    <code>itemNotFound</code> errors:</para>
+            <example>
+                <title>Example itemNotFound Fault: XML</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="xml">
+<xi:include href="samples/db-faults-itemNotFound.xml" parse="text"/>
+                    </programlisting>
+            </example>
+            <example>
+                <title>Example itemNotFound Fault: JSON</title>
+                <?dbfo keep-together="always"?>
+                <programlisting language="json">
+<xi:include href="samples/db-faults-itemNotFound.json" parse="text"/>
+                    </programlisting>
+            </example>
+        </section>
+        <section xml:id="database_instance_status">
+            <title>Database Instance Status</title>
+            <para><?rax-fo keep-with-next?>When making an API call to create, list, or delete
+                database instance(s), the following database instance
+                status values are possible:</para>
+            <itemizedlist spacing="compact">
+                <listitem>
+                    <para>BUILD &ndash; The database instance is being provisioned.</para>
+                </listitem>
+                <listitem>
+                    <para>REBOOT &ndash; The database instance is
+                        rebooting.</para>
+                </listitem>
+                <listitem>
+                    <para>ACTIVE &ndash; The database instance is
+                        online and available to take requests.</para>     
+                </listitem>
+                <listitem>
+                    <para>BLOCKED &ndash; The database instance is
+                        unresponsive at the moment.</para>
+                </listitem>
+                <listitem>
+                    <para>RESIZE &ndash; The database instance is being
+                        resized at the moment.</para>
+                </listitem>
+                <listitem>
+                    <para>SHUTDOWN &ndash; The database instance is
+                        terminating services. Also, SHUTDOWN is
+                        returned if for any reason the MySQL instance
+                        is shut down but not the actual server. </para>
+                    <para>
+                        <note>
+                            <para>If MySQL has crashed (causing the
+                                SHUTDOWN status), please call support
+                                for assistance.</para>
+                        </note>
+                    </para>
+                </listitem>
+                <listitem>
+                    <para>ERROR &ndash; The last operation for the
+                        database instance failed due to an
+                        error.</para>     
+                </listitem> 
+            </itemizedlist>
+        </section>
+        <section xml:id="Accessibility">
+            <title>Database Instance Accessibility</title>
+            <para>Database instances are directly accessible only on
+                the internal ServiceNet network and using a Cloud
+                resource within the same regional datacenter. For
+                example, a database instance in DFW can only be
+                accessed by a Cloud Server in DFW.</para>
+            <para>Note that using a public Cloud Load Balancer allows
+                you to access your ServiceNet database instance from
+                the public network by performing the following steps:<orderedlist>
+                    <listitem>
+                        <para>Using the Cloud Databases API, create a
+                            database instance. For details see <xref
+                                linkend="POST_createInstance__version___accountId__instances_"
+                            />.</para>
+                    </listitem>
+                    <listitem>
+                        <para>Using the Cloud Load Balancers API,
+                            create a public load balancer and specify
+                            your database instance hostname as a node,
+                            or use the API to add your instance
+                            hostname as a node to an existing public
+                            load balancer. For details refer to the
+                                <citetitle>Cloud Load Balancers
+                                Developer Guide</citetitle> at <link
+                                xlink:href="http://docs.rackspace.com/api/"
+                                >http://docs.rackspace.com/api/</link>.</para>
+                    </listitem>
+                </orderedlist></para>
+        </section>
+    </chapter>
+    
+    <chapter xml:id="API_Operations-d1e2264" 
+        xmlns="http://docbook.org/ns/docbook"
+        role="api-reference">
+        <title>API Operations</title>
+        <note>
+            <para>Do not use trailing slashes (/) at the end of calls
+                to API operations, since this may cause the call to
+                fail. For example, do not use &GET; /instances/detail/
+                (with the trailing slash at the end). Rather, use
+                &GET; /instances/detail instead.</para>
+        </note>
+        <?hard-pagebreak?>
+        <section xml:id="API_Versions">
+            <title>API Versions</title>
+            <para>This section describes the versions that are
+                supported for the Cloud Databases API.</para>
+            <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#versions">
+                    <wadl:method href="getVersions"/>
+                </wadl:resource>
+                <wadl:resource href="../../../xsd/dbaas.wadl#version">
+                    <wadl:method href="getVersionInfo" />
+                </wadl:resource>
+            </wadl:resources>
+            
+        </section>
+        
+        <section xml:id="Database_Instances">
+            <title>Database Instances</title>
+            <para>This section describes the operations that are supported for database instances.</para>
+            <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#instances" >
+                    <wadl:method href="createInstance"/>
+                    <wadl:method href="getInstance"/>
+                </wadl:resource>
+
+                <wadl:resource href="../../../xsd/dbaas.wadl#instanceId">
+                    <wadl:method href="getInstanceById"/>
+                    <wadl:method href="deleteInstance"/>  
+                </wadl:resource>
+                <wadl:resource href="../../../xsd/dbaas.wadl#root">
+                    <wadl:method href="createRoot"/>
+                    <wadl:method href="isRootEnabled"/>
+                </wadl:resource>
+            </wadl:resources>               
+        </section>
+
+        <section xml:id="Database_Instances_Actions">
+            <title>Database Instance Actions</title>
+            <para>This section describes the actions that are supported for database instances.</para>
+            <wadl:resources xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#instanceAction" >
+                    <wadl:method href="restartInstance"/>
+                    <wadl:method href="resizeInstance"/>
+                    <wadl:method href="resizeVolume"/>
+                </wadl:resource>
+            </wadl:resources>
+        </section>
+
+        <section xml:id="databases">
+            <title>Databases</title>
+            <para>This section describes the operations that are
+                supported for databases.</para>
+            <wadl:resources
+                xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#databases">
+                    <wadl:method href="createDatabase"/>
+                    <wadl:method href="getDatabases"/>
+                </wadl:resource>
+                <wadl:resource href="../../../xsd/dbaas.wadl#databaseName">
+                    <wadl:method href="deleteDatabase"/>
+                </wadl:resource>
+            </wadl:resources>
+        </section>      
+        
+        <section xml:id="user_management">
+            <title>Users</title>
+            <para>This section describes the operations that are
+                supported for managing database users.</para>
+            <wadl:resources
+                xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#users">
+                    <wadl:method href="createUser"/>
+                    <wadl:method href="getUsers"/>
+                </wadl:resource>
+                <wadl:resource href="../../../xsd/dbaas.wadl#userId">
+                    <wadl:method href="deleteUser"/>
+                </wadl:resource>
+            </wadl:resources>
+        </section>
+           
+        <section xml:id="flavors">
+            <title>Flavors</title>
+            <para>This section describes the operations that are
+                supported for flavors.</para>
+            <wadl:resources
+                xmlns:wadl="http://wadl.dev.java.net/2009/02">
+                <wadl:resource href="../../../xsd/dbaas.wadl#flavors">
+                    <wadl:method href="getFlavors"/>
+                </wadl:resource>
+
+                <wadl:resource href="../../../xsd/dbaas.wadl#flavorId">
+                    <wadl:method href="getFlavorById"/>
+                </wadl:resource>
+            </wadl:resources>
+        </section>
+    </chapter>
+    <glossary>
+        <title>Glossary</title>
+        <glossentry xml:id="Database-d1e017">
+            <glossterm>database</glossterm>
+            <glossdef>
+                <para>A MySQL database within a database instance.</para>
+            </glossdef>
+        </glossentry>
+        <glossentry xml:id="Database-Instance-d1e016">
+            <glossterm>database instance</glossterm>
+            <glossdef>
+                <para>A database instance is an isolated MySQL instance in a single tenant environment on a
+                    shared physical host machine. Also referred to as instance.</para>
+            </glossdef>
+        </glossentry>
+        <glossentry xml:id="Flavor-d1e018">
+            <glossterm>flavor</glossterm>
+            <glossdef>
+                <para>A flavor is an available hardware configuration for a database instance. Each flavor has a unique combination of memory capacity and priority for CPU time.</para>
+            </glossdef>
+        </glossentry>
+        <glossentry xml:id="Volume-d1e019">
+            <glossterm>volume</glossterm>
+            <glossdef>
+                <para>A volume is user-specified storage that contains the MySQL data directory. 
+                    Volumes are automatically provisioned on shared Internet Small Computer System Interface (iSCSI) 
+                    storage area networks (SAN) that provide for increased performance, scalability, availability 
+                    and manageability. Applications with high I/O demands are performance optimized and data is 
+                    protected through both local and network RAID-10. Additionally, network RAID provides synchronous 
+                    replication of volumes with automatic failover and load balancing across available storage clusters.</para>
+            </glossdef>
+        </glossentry>
+    </glossary>
+</book>

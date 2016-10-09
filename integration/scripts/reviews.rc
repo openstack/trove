@@ -1,0 +1,5 @@
+# This file will contain variables such as below, uncommented. 
+# There will be a : separator between multiple inflight reviews
+# The path comes from the gerrit review system, and is the only
+# unique portion of each gerrit review.
+#REVIEW_PYTHON_NOVACLIENT=18/5018/2

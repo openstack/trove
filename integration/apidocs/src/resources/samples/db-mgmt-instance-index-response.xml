@@ -1,0 +1,34 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 1896
+Date: Tue, 24 Jul 2012 19:48:33 GMT
+
+<instances xmlns="http://docs.openstack.org/database/api/v1.0">
+    <instance created="2012-07-24 19:48:27.675753" deleted="False" deleted_at="None" host="hostname" id="6e038c18-902f-4a41-b2a2-5f46fa62fc1b" local_id="0" name="json_rack_instance" server_id="64438fb6-4b98-4bd8-975e-222bc11daf74" status="ACTIVE" task_description="No tasks for the instance." tenant_id="1234" updated="2012-07-24 19:48:29.957559">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/6e038c18-902f-4a41-b2a2-5f46fa62fc1b" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/6e038c18-902f-4a41-b2a2-5f46fa62fc1b" rel="bookmark"/>
+        </links>
+        <volume size="2"/>
+        <flavor id="1">
+            <links>
+                <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1" rel="self"/>
+                <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+            </links>
+        </flavor>
+    </instance>
+    <instance created="2012-07-24 19:48:27.945748" deleted="False" deleted_at="None" host="hostname" id="72eed896-134e-4212-9f25-f81b4e0795e2" local_id="0" name="xml_rack_instance" server_id="6d93bc48-f736-41db-9ad7-c8594aac25fb" status="ACTIVE" task_description="No tasks for the instance." tenant_id="1234" updated="2012-07-24 19:48:30.016100">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/72eed896-134e-4212-9f25-f81b4e0795e2" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/72eed896-134e-4212-9f25-f81b4e0795e2" rel="bookmark"/>
+        </links>
+        <volume size="2"/>
+        <flavor id="1">
+            <links>
+                <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1" rel="self"/>
+                <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+            </links>
+        </flavor>
+    </instance>
+</instances>
+

@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 887
+Date: Tue, 19 Jun 2012 15:44:54 GMT
+
+<instances xmlns="http://docs.openstack.org/database/api/v1.0">
+    <instance id="13d940c4-70bb-4ff4-8866-6ee9ab5e5cae" name="xml_rack_instance" status="ACTIVE">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/a9f6a78d736a41d89177e0367d96ee2e/instances/13d940c4-70bb-4ff4-8866-6ee9ab5e5cae" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/13d940c4-70bb-4ff4-8866-6ee9ab5e5cae" rel="bookmark"/>
+        </links>
+    </instance>
+    <instance id="4137d6a4-03b7-4b66-b0ef-8c7c35c470d3" name="xml_rack_instance" status="ACTIVE">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/a9f6a78d736a41d89177e0367d96ee2e/instances/4137d6a4-03b7-4b66-b0ef-8c7c35c470d3" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/instances/4137d6a4-03b7-4b66-b0ef-8c7c35c470d3" rel="bookmark"/>
+        </links>
+    </instance>
+    <links>
+        <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances?marker=4137d6a4-03b7-4b66-b0ef-8c7c35c470d3&limit=2" rel="next" />
+    </links>
+</instances>
+

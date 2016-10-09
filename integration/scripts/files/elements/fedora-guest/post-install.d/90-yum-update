@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# CONTEXT: GUEST after packages installed
+# PURPOSE: do dnf update to save each instance having to do all the work
+
+set -e
+set -o xtrace
+
+dnf -y update

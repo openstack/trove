@@ -1,0 +1,3 @@
+[[post-config|\$NOVA_CONF]]
+[DEFAULT]
+instance_usage_audit = True

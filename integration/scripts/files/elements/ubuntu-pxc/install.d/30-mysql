@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y install percona-xtradb-cluster-server-5.6 percona-xtradb-cluster-client-5.6 percona-xtrabackup
+
+# Don't auto start mysql (we'll start it up in guest)
+update-rc.d mysql defaults
+update-rc.d mysql disable

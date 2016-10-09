@@ -1,0 +1,8 @@
+GET /v1.0/1234/mgmt/instances/72eed896-134e-4212-9f25-f81b4e0795e2/root HTTP/1.1
+User-Agent: python-troveclient
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: 87c6033c-9ff6-405f-943e-2deb73f278b7
+Accept: application/xml
+Content-Type: application/xml
+
+

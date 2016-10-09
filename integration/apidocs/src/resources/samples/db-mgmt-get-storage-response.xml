@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 254
+Date: Tue, 24 Jul 2012 19:48:35 GMT
+
+<devices xmlns="http://docs.openstack.org/database/api/v1.0">
+    <device name="fake_storage" type="test_type" used="10">
+        <provision available="40" percent="10" total="50"/>
+        <capacity available="90" total="100"/>
+    </device>
+</devices>
+
