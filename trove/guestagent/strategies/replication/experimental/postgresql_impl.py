@@ -143,7 +143,8 @@ class PostgresqlReplicationStreaming(base.Replication):
 
         repl_user = models.PostgreSQLUser(name=REPL_USER, password=pw)
         admin._create_user(context=None, user=repl_user)
-        admin.alter_user(None, repl_user, True, 'REPLICATION', 'LOGIN')
+        admin.alter_user(None, repl_user, True,
+                         'REPLICATION', 'SUPERUSER', 'LOGIN')
 
         return pw
 
@@ -219,8 +220,8 @@ class PostgresqlReplicationStreaming(base.Replication):
         tmprec = "/tmp/recovery.conf.bak"
         operating_system.move(rec, tmprec, as_root=True)
 
-        cmd_full = " ".join(["pg_rewind", "-D", service.pgsql_data_dir,
-                             '--source-pgdata=' + service.pgsql_data_dir,
+        cmd_full = " ".join(["pg_rewind",
+                             '--target-pgdata=' + service.pgsql_data_dir,
                              '--source-server=' + conninfo])
         out, err = utils.execute("sudo", "su", "-", service.pgsql_owner,
                                  "-c", "%s" % cmd_full, check_exit_code=0)

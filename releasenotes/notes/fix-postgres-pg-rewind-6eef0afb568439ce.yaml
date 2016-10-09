@@ -1,0 +1,2 @@
+fixes:
+  - Fix Postgresql promote (bug 1633515).
