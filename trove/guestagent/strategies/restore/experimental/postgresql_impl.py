@@ -24,10 +24,7 @@ from trove.common.i18n import _
 from trove.common import stream_codecs
 from trove.guestagent.common import operating_system
 from trove.guestagent.common.operating_system import FileMode
-from trove.guestagent.datastore.experimental.postgresql.service.config import(
-    PgSqlConfig)
-from trove.guestagent.datastore.experimental.postgresql.service.process import(
-    PgSqlProcess)
+from trove.guestagent.datastore.experimental.postgresql.service import PgSqlApp
 from trove.guestagent.strategies.restore import base
 
 CONF = cfg.CONF
@@ -93,7 +90,7 @@ class PgDump(base.RestoreRunner):
             pass
 
 
-class PgBaseBackup(base.RestoreRunner, PgSqlConfig):
+class PgBaseBackup(base.RestoreRunner):
     """Implementation of Restore Strategy for pg_basebackup."""
     __strategy_name__ = 'pg_basebackup'
     location = ""
@@ -104,24 +101,35 @@ class PgBaseBackup(base.RestoreRunner, PgSqlConfig):
     ]
 
     def __init__(self, *args, **kwargs):
+        self._app = None
         self.base_restore_cmd = 'sudo -u %s tar xCf %s - ' % (
-            self.PGSQL_OWNER, self.pgsql_data_dir
+            self.app.pgsql_owner, self.app.pgsql_data_dir
         )
 
         super(PgBaseBackup, self).__init__(*args, **kwargs)
 
+    @property
+    def app(self):
+        if self._app is None:
+            self._app = self._build_app()
+        return self._app
+
+    def _build_app(self):
+        return PgSqlApp()
+
     def pre_restore(self):
-        self.stop_db(context=None)
-        PgSqlProcess.recreate_wal_archive_dir()
-        datadir = self.pgsql_data_dir
+        self.app.stop_db()
+        LOG.info("Preparing WAL archive dir")
+        self.app.recreate_wal_archive_dir()
+        datadir = self.app.pgsql_data_dir
         operating_system.remove(datadir, force=True, recursive=True,
                                 as_root=True)
-        operating_system.create_directory(datadir, user=self.PGSQL_OWNER,
-                                          group=self.PGSQL_OWNER, force=True,
-                                          as_root=True)
+        operating_system.create_directory(datadir, user=self.app.pgsql_owner,
+                                          group=self.app.pgsql_owner,
+                                          force=True, as_root=True)
 
     def post_restore(self):
-        operating_system.chmod(self.pgsql_data_dir,
+        operating_system.chmod(self.app.pgsql_data_dir,
                                FileMode.SET_USR_RWX(),
                                as_root=True, recursive=True, force=True)
 
@@ -135,12 +143,12 @@ class PgBaseBackup(base.RestoreRunner, PgSqlConfig):
             recovery_conf += ("restore_command = '" +
                               self.pgsql_restore_cmd + "'\n")
 
-        recovery_file = os.path.join(self.pgsql_data_dir, 'recovery.conf')
+        recovery_file = os.path.join(self.app.pgsql_data_dir, 'recovery.conf')
         operating_system.write_file(recovery_file, recovery_conf,
                                     codec=stream_codecs.IdentityCodec(),
                                     as_root=True)
-        operating_system.chown(recovery_file, user=self.PGSQL_OWNER,
-                               group=self.PGSQL_OWNER, as_root=True)
+        operating_system.chown(recovery_file, user=self.app.pgsql_owner,
+                               group=self.app.pgsql_owner, as_root=True)
 
 
 class PgBaseBackupIncremental(PgBaseBackup):
@@ -149,12 +157,12 @@ class PgBaseBackupIncremental(PgBaseBackup):
         super(PgBaseBackupIncremental, self).__init__(*args, **kwargs)
         self.content_length = 0
         self.incr_restore_cmd = 'sudo -u %s tar -xf - -C %s ' % (
-                                self.PGSQL_OWNER, WAL_ARCHIVE_DIR
+                                self.app.pgsql_owner, WAL_ARCHIVE_DIR
         )
         self.pgsql_restore_cmd = "cp " + WAL_ARCHIVE_DIR + '/%f "%p"'
 
     def pre_restore(self):
-        self.stop_db(context=None)
+        self.app.stop_db()
 
     def post_restore(self):
         self.write_recovery_file(restore=True)
@@ -185,7 +193,7 @@ class PgBaseBackupIncremental(PgBaseBackup):
             cmd = self._incremental_restore_cmd(incr=False)
             self.content_length += self._unpack(location, checksum, cmd)
 
-            operating_system.chmod(self.pgsql_data_dir,
+            operating_system.chmod(self.app.pgsql_data_dir,
                                    FileMode.SET_USR_RWX(),
                                    as_root=True, recursive=True, force=True)
 
