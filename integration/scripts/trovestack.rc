@@ -63,7 +63,7 @@ PATH_TROVE_DASHBOARD=$DEST/trove-dashboard
 PATH_DISKIMAGEBUILDER=$DEST/diskimage-builder
 PATH_TRIPLEO_ELEMENTS=$DEST/tripleo-image-elements
 
-# Save the state of TROVE_BRANCH first, since it's used in redstack
+# Save the state of TROVE_BRANCH first, since it's used in trovestack
 TROVE_BRANCH_ORIG=${TROVE_BRANCH}
 # Devstack and OpenStack git repo source paths, etc.
 GIT_BASE=${GIT_BASE:-git://git.openstack.org}
@@ -109,7 +109,7 @@ DISTRO=${DISTRO:-ubuntu}
 # The following values can be used to tweak how devstack sets
 # up Trove. If not explicitly set, the defaults in the code are used.
 # To make changes without modifying the repo, add these variables
-# to options.rc or ~/redstack.options.rc
+# to options.rc or ~/trovestack.options.rc
 #export TROVE_MAX_ACCEPTED_VOLUME_SIZE=10
 #export TROVE_MAX_INSTANCES_PER_TENANT=10
 #export TROVE_MAX_VOLUMES_PER_TENANT=40

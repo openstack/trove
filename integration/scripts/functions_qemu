@@ -36,14 +36,14 @@ function build_vm() {
     export HOST_SCP_USERNAME
     export GUEST_USERNAME
     export CONTROLLER_IP
-    export REDSTACK_SCRIPTS
+    export TROVESTACK_SCRIPTS
     export SERVICE_TYPE
     export PATH_TROVE
     export ESCAPED_PATH_TROVE
     export SSH_DIR
     export GUEST_LOGDIR
     export ESCAPED_GUEST_LOGDIR
-    export ELEMENTS_PATH=$REDSTACK_SCRIPTS/files/elements
+    export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
     export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
     export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
@@ -83,7 +83,7 @@ function build_guest_image() {
     ESCAPED_GUEST_LOGDIR=`echo $GUEST_LOGDIR | sed 's/\//\\\\\//g'`
 
     USERNAME=`whoami`
-    # To change the distro, edit the redstack.rc file
+    # To change the distro, edit the trovestack.rc file
     readonly IMAGENAME=${DISTRO}_${SERVICE_TYPE}
     readonly VM_PATH=$USERHOME/images/${IMAGENAME}
     readonly VM_PATH_NAME=${VM_PATH}/${IMAGENAME}

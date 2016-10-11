@@ -136,7 +136,7 @@ def import_tests():
         # trove.tests.int_tests module
         from trove.tests import int_tests
 
-        # Groups defined in trove-integration, or any other externally
+        # Groups defined in trove/integration, or any other externally
         # defined groups can be registered here
         heavy_black_box_groups = [
             "dbaas.api.instances.pagination",

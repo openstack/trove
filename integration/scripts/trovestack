@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ###############################################################################
-# RedStack, the Trove Dev Machine Controller                               #
+# Trove Stack Builder, the Trove Dev Machine Controller                       #
 ###############################################################################
 #                                                                             #
 # This script provides all the functionality to run all the steps from        #
@@ -9,8 +9,8 @@
 #                                                                             #
 ###############################################################################
 
-REDSTACK_SCRIPTS=${REDSTACK_SCRIPTS:-`pwd`}
-REDSTACK_TESTS=$REDSTACK_SCRIPTS/../tests/
+TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:-`pwd`}
+TROVESTACK_TESTS=$TROVESTACK_SCRIPTS/../tests/
 
 DEFAULT_LOCAL_CONF=local.conf.rc
 DEFAULT_LOCALRC=localrc.rc
@@ -21,11 +21,11 @@ USER_LOCAL_CONF_NAME=.devstack.$LOCAL_CONF
 
 USERHOME=$HOME
 # Load options not checked into VCS.
-if [ -f $USERHOME/.redstack.options.rc ]; then
-    . $USERHOME/.redstack.options.rc
+if [ -f $USERHOME/.trovestack.options.rc ]; then
+    . $USERHOME/.trovestack.options.rc
 fi
-if [ -f $REDSTACK_SCRIPTS/options.rc ]; then
-    . $REDSTACK_SCRIPTS/options.rc
+if [ -f $TROVESTACK_SCRIPTS/options.rc ]; then
+    . $TROVESTACK_SCRIPTS/options.rc
 fi
 
 # NOTE(mriedem): The gate-trove-functional-dsvm-* job config in project-config
@@ -45,12 +45,12 @@ function get_default_host_ip() {
 }
 
 # Load functions devstack style
-. $REDSTACK_SCRIPTS/functions
-. $REDSTACK_SCRIPTS/functions_qemu
+. $TROVESTACK_SCRIPTS/functions
+. $TROVESTACK_SCRIPTS/functions_qemu
 
 # Load global configuration variables.
-. $REDSTACK_SCRIPTS/redstack.rc
-. $REDSTACK_SCRIPTS/reviews.rc
+. $TROVESTACK_SCRIPTS/trovestack.rc
+. $TROVESTACK_SCRIPTS/reviews.rc
 
 # allow overrides from devstack if already set
 [[ -f $PATH_DEVSTACK_SRC/functions-common ]] && source $PATH_DEVSTACK_SRC/functions-common
@@ -65,7 +65,7 @@ set +e
 [[ -f $PATH_DEVSTACK_SRC/$LOCALRC_AUTO ]] && source $PATH_DEVSTACK_SRC/$LOCALRC_AUTO
 set -e
 
-# Set up variables for the CONF files - this has to happen after loading redstack.rc, since
+# Set up variables for the CONF files - this has to happen after loading trovestack.rc, since
 # TROVE_CONF_DIR is defined there - these will be used by devstack too
 export TROVE_CONF=$TROVE_CONF_DIR/trove.conf
 export TROVE_TASKMANAGER_CONF=$TROVE_CONF_DIR/trove-taskmanager.conf
@@ -94,7 +94,7 @@ TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_PROTOCOL://$KEYSTONE_AUTH_HOST:$KEYSTONE_AUTH
 # PATH_TROVE more than likely has file separators, which sed does not like
 # This will escape them
 ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
-ESCAPED_REDSTACK_SCRIPTS=$(echo $REDSTACK_SCRIPTS | sed 's/\//\\\//g')
+ESCAPED_TROVESTACK_SCRIPTS=$(echo $TROVESTACK_SCRIPTS | sed 's/\//\\\//g')
 TROVE_AUTH_CACHE_DIR=${TROVE_AUTH_CACHE_DIR:-/var/cache/trove}
 TROVE_LOGDIR=${TROVE_LOGDIR:-$DEST/logs}
 # DATASTORE_PKG_LOCATION defines the location from where the datastore packages
@@ -300,8 +300,8 @@ function install_devstack_code() {
     fi
     # Clones all of the code to where devstack expects it to be
     pushd $PATH_DEVSTACK_OUTPUT
-    cmd_clone_projects do_not_force_update $REDSTACK_SCRIPTS/projects-list \
-        $REDSTACK_SCRIPTS/image-projects-list
+    cmd_clone_projects do_not_force_update $TROVESTACK_SCRIPTS/projects-list \
+        $TROVESTACK_SCRIPTS/image-projects-list
     popd
 }
 
@@ -377,7 +377,7 @@ function add_file_contents() {
     local PARSE_FILE=${4:-true}
     local BLANK_LINE_TO_START=${5:-false}
 
-    TEMP_FILE=".redstack.$$"
+    TEMP_FILE=".trovestack.$$"
     rm -f "$TEMP_FILE"
     if [ "$BLANK_LINE_TO_START" = "true" ]; then
         echo "" > "$TEMP_FILE"
@@ -404,7 +404,7 @@ function run_devstack() {
     rm -rf "$USERHOME/nova_locks"
     mkdir -p "$USERHOME/nova_locks"
 
-    TROVE_PRESENT_TAG="# Trove-integration"
+    TROVE_PRESENT_TAG="# generated-by-trovestack"
     LOCAL_CONF_D=local.conf.d
     CONF_MATCH="*.rc"
     MARKER_TOKEN="#####"
@@ -435,12 +435,12 @@ function run_devstack() {
                 echo "Please remove and try again."
                 exit 1
             fi
-            # Otherwise append the redstack version to the existing file
-            eval echo "\"$(cat "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC")\"" >> "$DEVSTACK_LOCAL_CONF"
+            # Otherwise append the trovestack version to the existing file
+            eval echo "\"$(cat "$TROVESTACK_SCRIPTS/$DEFAULT_LOCALRC")\"" >> "$DEVSTACK_LOCAL_CONF"
         fi
     else
         # If a devstack config file doesn't exist, create it
-        eval echo "\"$(cat "$REDSTACK_SCRIPTS/$DEFAULT_LOCAL_CONF")\"" > "$DEVSTACK_LOCAL_CONF"
+        eval echo "\"$(cat "$TROVESTACK_SCRIPTS/$DEFAULT_LOCAL_CONF")\"" > "$DEVSTACK_LOCAL_CONF"
     fi
 
     # We can only replace sections from the LOCAL_CONF style files
@@ -453,8 +453,8 @@ function run_devstack() {
         # Add the main localrc file
         PARSE_FILE="true"
         BLANK_LINE_TO_START="true"
-        if [ -f "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC" ]; then
-            add_file_contents "$DEVSTACK_LOCAL_CONF" "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC" "$LOCALRC_OPTS_TAG" "$PARSE_FILE" "$BLANK_LINE_TO_START"
+        if [ -f "$TROVESTACK_SCRIPTS/$DEFAULT_LOCALRC" ]; then
+            add_file_contents "$DEVSTACK_LOCAL_CONF" "$TROVESTACK_SCRIPTS/$DEFAULT_LOCALRC" "$LOCALRC_OPTS_TAG" "$PARSE_FILE" "$BLANK_LINE_TO_START"
         fi
 
         # Add any user options
@@ -466,7 +466,7 @@ function run_devstack() {
 
         # Add all the files in the LOCAL_CONF_D directory that match CONF_MATCH (except for sample files)
         # and that aren't excluded.  Files are excluded by having a variable
-        # 'FILENAME_IN_UPPERCASE_MINUS_RC=false' in redstack.rc
+        # 'FILENAME_IN_UPPERCASE_MINUS_RC=false' in trovestack.rc
         # For Example: USING_VAGRANT=false (for the using_vagrant.rc file).
         PARSE_FILE="true"
         BLANK_LINE_TO_START="false"
@@ -479,7 +479,7 @@ function run_devstack() {
                 echo "Skipping $CONF_FILE"
                 echo "Use $FILE_NAME_VAR=true to include"
             fi
-        done < <(find "$REDSTACK_SCRIPTS/${LOCAL_CONF_D}" -name "${CONF_MATCH}" -follow -not -name "sample*.rc" -type f -print0)
+        done < <(find "$TROVESTACK_SCRIPTS/${LOCAL_CONF_D}" -name "${CONF_MATCH}" -follow -not -name "sample*.rc" -type f -print0)
         # this is to add a blank line for readability
         add_file_contents "$DEVSTACK_LOCAL_CONF" "" "$ADD_OPTS_TAG"
     fi
@@ -665,20 +665,20 @@ function install_test_packages() {
 function mod_confs() {
     DATASTORE_TYPE=$1
 
-    sudo install -b --mode 0664 $REDSTACK_SCRIPTS/conf/test_begin.conf $TEST_CONF
-    TROVE_REPORT_DIR=$REDSTACK_SCRIPTS/../report/
-    EXTRA_CONF=$REDSTACK_SCRIPTS/conf/test.extra.conf
+    sudo install -b --mode 0664 $TROVESTACK_SCRIPTS/conf/test_begin.conf $TEST_CONF
+    TROVE_REPORT_DIR=$TROVESTACK_SCRIPTS/../report/
+    EXTRA_CONF=$TROVESTACK_SCRIPTS/conf/test.extra.conf
     if [ -e $EXTRA_CONF ]; then
         cat $EXTRA_CONF >> $TEST_CONF
     fi
     # Append datastore specific configuration file
-    DATASTORE_CONF=$REDSTACK_SCRIPTS/conf/$DATASTORE_TYPE.conf
+    DATASTORE_CONF=$TROVESTACK_SCRIPTS/conf/$DATASTORE_TYPE.conf
     if [ ! -f $DATASTORE_CONF ]; then
         exclaim "Datastore configuration file ${DATASTORE_CONF} not found"
         exit 1
     fi
     cat $DATASTORE_CONF | sudo tee -a $TEST_CONF > /dev/null
-    cat $REDSTACK_SCRIPTS/conf/test_end.conf | sudo tee -a $TEST_CONF > /dev/null
+    cat $TROVESTACK_SCRIPTS/conf/test_end.conf | sudo tee -a $TEST_CONF > /dev/null
 
     #Add the paths to the test conf
     sed -i "s,%report_directory%,$TROVE_REPORT_DIR,g" $TEST_CONF
@@ -795,7 +795,7 @@ function cmd_build_image() {
 
     install_devstack_code
 
-    cmd_clone_projects do_not_force_update $REDSTACK_SCRIPTS/image-projects-list
+    cmd_clone_projects do_not_force_update $TROVESTACK_SCRIPTS/image-projects-list
 
     exclaim "Use tripleo-diskimagebuilder to actually build the Trove Guest Agent Image."
     build_guest_image $IMAGE_DATASTORE_TYPE
@@ -980,7 +980,7 @@ function cmd_int_tests() {
     if [ ! $USAGE_ENDPOINT ]; then
         export USAGE_ENDPOINT=trove.tests.util.usage.FakeVerifier
     fi
-    cd $REDSTACK_SCRIPTS
+    cd $TROVESTACK_SCRIPTS
     if [ $# -lt 1 ]; then
         args="--group=blackbox"
     else
@@ -990,14 +990,14 @@ function cmd_int_tests() {
     # -- verbose makes it prettier.
     # -- logging-clear-handlers keeps the novaclient and other things from
     #    spewing logs to stdout.
-    args="$INT_TEST_OPTIONS -B $REDSTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
+    args="$INT_TEST_OPTIONS -B $TROVESTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
     echo "python $args"
     python $args
 }
 
 function cmd_int_tests_simple() {
     exclaim "Running Trove Simple Integration Tests..."
-    cd $REDSTACK_SCRIPTS
+    cd $TROVESTACK_SCRIPTS
     if [ $# -lt 1 ]; then
         args="--group=simple_blackbox"
     else
@@ -1007,7 +1007,7 @@ function cmd_int_tests_simple() {
     # -- verbose makes it prettier.
     # -- logging-clear-handlers keeps the novaclient and other things from
     #    spewing logs to stdout.
-    args="$INT_TEST_OPTIONS -B $REDSTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
+    args="$INT_TEST_OPTIONS -B $TROVESTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
     echo "python $args"
     python $args
 }
@@ -1028,7 +1028,7 @@ function cmd_example_tests() {
     sleep 3
     echo "
 {
-    \"directory\": \"$REDSTACK_TESTS/../apidocs/src/resources/samples/\",
+    \"directory\": \"$TROVESTACK_TESTS/../apidocs/src/resources/samples/\",
     \"auth_url\":\"http://$KEYSTONE_AUTH_HOST:35357/v2.0/tokens\",
     \"api_url\":\"http://$SERVICE_HOST:8779\",
     \"replace_host\":\"https://ord.databases.api.rackspacecloud.com\",
@@ -1037,8 +1037,8 @@ function cmd_example_tests() {
     \"password\":\"examples\",
     \"tenant\":\"trove\"
 }" > /tmp/example-tests.conf
-    python $REDSTACK_TESTS/examples/examples/example_generation.py /tmp/example-tests.conf
-    pushd $REDSTACK_TESTS/../apidocs
+    python $TROVESTACK_TESTS/examples/examples/example_generation.py /tmp/example-tests.conf
+    pushd $TROVESTACK_TESTS/../apidocs
     mvn clean
     mvn generate-sources
     popd
@@ -1230,10 +1230,9 @@ function cmd_dsvm_gate_tests() {
     sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
 
     sudo chown -R $(whoami) /etc/trove
-    sudo chown -R $(whoami) $DEST/trove-integration
     iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $CONTROLLER_IP
     iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $CONTROLLER_IP
-    cd $DEST/trove-integration/scripts
+    cd $TROVESTACK_SCRIPTS
     sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
 
     cmd_kick_start $DATASTORE_TYPE
@@ -1347,7 +1346,7 @@ function print_usage() {
 
         --helper for environment--
           kick-start      - kick start the setup of trove.
-                            (redstack test-init/build-image in one step)
+                            (trovestack test-init/build-image in one step)
                             [mysql no-clean] no clean avoids rebuilding packages from scratch
                           - Set REBUILD_IMAGE=True to force rebuild (won't use cached image)
 
@@ -1417,8 +1416,8 @@ function run_command() {
         "run-fake" ) shift; cmd_run_fake $@;;
         "start-fake" ) shift; cmd_start_fake $@;;
         "update-projects" ) cmd_clone_projects force_update \
-                            $REDSTACK_SCRIPTS/projects-list \
-                            $REDSTACK_SCRIPTS/image-projects-list;;
+                            $TROVESTACK_SCRIPTS/projects-list \
+                            $TROVESTACK_SCRIPTS/image-projects-list;;
         "reset-task" ) shift; cmd_reset_task $@;;
         "wipe-queues" ) shift; cmd_wipe_queues $@;;
         "example-tests" ) shift; cmd_example_tests $@;;

@@ -17,7 +17,7 @@
     e.g. export DATASTORE_PKG_LOCATION="http://www.foo.com/db2/v10.5_linuxx64_expc.tar.gz"
 
   - download the package and place it in any directory on the local
-    filesystem that the trove-integration scripts can access. Set the
+    filesystem that the trovestack script can access. Set the
     environment variable DATASTORE_PKG_LOCATION with the full path to
     the downloaded package.
     e.g. export DATASTORE_PKG_LOCATION="/home/stack/db2/v10.5_linuxx64_expc.tar.gz"
