@@ -13,9 +13,7 @@ import re
 
 from mock import Mock
 
-from trove.common import exception
 from trove.common import template
-from trove.common import utils
 from trove.datastore.models import DatastoreVersion
 from trove.tests.unittests import trove_testtools
 from trove.tests.unittests.util import util
@@ -103,87 +101,3 @@ class TemplateTest(trove_testtools.TestCase):
                                                 self.flavor_dict,
                                                 self.server_id)
         self.assertTrue(self._find_in_template(config.render(), "relay_log"))
-
-
-class HeatTemplateLoadTest(trove_testtools.TestCase):
-
-    class FakeTemplate(object):
-        def __init__(self):
-            self.name = 'mysql/heat.template'
-
-    def setUp(self):
-        self.default = 'default.heat.template'
-        self.orig_1 = utils.ENV.list_templates
-        self.orig_2 = utils.ENV.get_template
-        super(HeatTemplateLoadTest, self).setUp()
-
-    def tearDown(self):
-        utils.ENV.list_templates = self.orig_1
-        utils.ENV.get_template = self.orig_2
-        super(HeatTemplateLoadTest, self).tearDown()
-
-    def test_heat_template_load_with_invalid_datastore(self):
-        invalid_datastore = 'mysql-blah'
-        self.assertRaises(exception.InvalidDatastoreManager,
-                          template.load_heat_template,
-                          invalid_datastore)
-
-    def test_heat_template_load_non_default(self):
-        orig = utils.ENV._load_template
-        utils.ENV._load_template = Mock(return_value=self.FakeTemplate())
-        mysql_tmpl = template.load_heat_template('mysql')
-        self.assertNotEqual(mysql_tmpl.name, self.default)
-        utils.ENV._load_template = orig
-
-    def test_heat_template_load_success(self):
-        mysql_tmpl = template.load_heat_template('mysql')
-        redis_tmpl = template.load_heat_template('redis')
-        cassandra_tmpl = template.load_heat_template('cassandra')
-        mongo_tmpl = template.load_heat_template('mongodb')
-        percona_tmpl = template.load_heat_template('percona')
-        couchbase_tmpl = template.load_heat_template('couchbase')
-        self.assertIsNotNone(mysql_tmpl)
-        self.assertIsNotNone(redis_tmpl)
-        self.assertIsNotNone(cassandra_tmpl)
-        self.assertIsNotNone(mongo_tmpl)
-        self.assertIsNotNone(percona_tmpl)
-        self.assertIsNotNone(couchbase_tmpl)
-        self.assertEqual(self.default, mysql_tmpl.name)
-        self.assertEqual(self.default, redis_tmpl.name)
-        self.assertEqual(self.default, cassandra_tmpl.name)
-        self.assertEqual(self.default, mongo_tmpl.name)
-        self.assertEqual(self.default, percona_tmpl.name)
-        self.assertEqual(self.default, couchbase_tmpl.name)
-
-    def test_render_templates_with_ports_from_config(self):
-        mysql_tmpl = template.load_heat_template('mysql')
-        tcp_rules = [{'cidr': "0.0.0.0/0",
-                      'from_': 3306,
-                      'to_': 3309},
-                     {'cidr': "0.0.0.0/0",
-                      'from_': 3320,
-                      'to_': 33022}]
-        output = mysql_tmpl.render(
-            volume_support=True,
-            ifaces=[], ports=[],
-            tcp_rules=tcp_rules,
-            udp_rules=[],
-            files={})
-        self.assertIsNotNone(output)
-        self.assertIn('FromPort: "3306"', output)
-        self.assertIn('ToPort: "3309"', output)
-        self.assertIn('CidrIp: "0.0.0.0/0"', output)
-        self.assertIn('FromPort: "3320"', output)
-        self.assertIn('ToPort: "33022"', output)
-
-    def test_no_rules_if_no_ports(self):
-        mysql_tmpl = template.load_heat_template('mysql')
-        output = mysql_tmpl.render(
-            volume_support=True,
-            ifaces=[], ports=[],
-            tcp_rules=[],
-            udp_rules=[],
-            files={})
-        self.assertIsNotNone(output)
-        self.assertNotIn('- IpProtocol: "tcp"', output)
-        self.assertNotIn('- IpProtocol: "udp"', output)

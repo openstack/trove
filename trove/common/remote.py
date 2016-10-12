@@ -20,7 +20,6 @@ from trove.common import exception
 from trove.common.strategies.cluster import strategy
 
 from cinderclient.v2 import client as CinderClient
-from heatclient.v1 import client as HeatClient
 from keystoneclient.service_catalog import ServiceCatalog
 from novaclient.client import Client
 from swiftclient.client import Connection
@@ -135,23 +134,6 @@ def cinder_client(context, region_name=None):
     return client
 
 
-def heat_client(context, region_name=None):
-    if CONF.heat_url:
-        url = '%(heat_url)s%(tenant)s' % {
-            'heat_url': normalize_url(CONF.heat_url),
-            'tenant': context.tenant}
-    else:
-        url = get_endpoint(context.service_catalog,
-                           service_type=CONF.heat_service_type,
-                           endpoint_region=region_name or CONF.os_region_name,
-                           endpoint_type=CONF.heat_endpoint_type)
-
-    client = HeatClient.Client(token=context.auth_token,
-                               os_no_client_auth=True,
-                               endpoint=url)
-    return client
-
-
 def swift_client(context, region_name=None):
     if CONF.swift_url:
         # swift_url has a different format so doesn't need to be normalized
@@ -191,5 +173,4 @@ create_guest_client = import_class(CONF.remote_guest_client)
 create_nova_client = import_class(CONF.remote_nova_client)
 create_swift_client = import_class(CONF.remote_swift_client)
 create_cinder_client = import_class(CONF.remote_cinder_client)
-create_heat_client = import_class(CONF.remote_heat_client)
 create_neutron_client = import_class(CONF.remote_neutron_client)

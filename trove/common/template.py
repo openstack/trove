@@ -14,14 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import jinja2
 from oslo_config import cfg as oslo_config
 from oslo_log import log as logging
 
 from trove.common import cfg
 from trove.common import configurations
 from trove.common import exception
-from trove.common.i18n import _
 from trove.common import utils
 
 CONF = cfg.CONF
@@ -124,20 +122,6 @@ def _validate_datastore(datastore_manager):
     except oslo_config.NoSuchOptError:
         raise exception.InvalidDatastoreManager(
             datastore_manager=datastore_manager)
-
-
-def load_heat_template(datastore_manager):
-    patterns = ["%s/heat.template" % datastore_manager,
-                "default.heat.template"]
-    _validate_datastore(datastore_manager)
-    try:
-        template_obj = ENV.select_template(patterns)
-        return template_obj
-    except jinja2.TemplateNotFound:
-        msg = _("Missing heat template for %(s_datastore_manager)s.") % (
-            {"s_datastore_manager": datastore_manager})
-        LOG.error(msg)
-        raise exception.TroveError(msg)
 
 
 class ReplicaSourceConfigTemplate(SingleInstanceConfigTemplate):
