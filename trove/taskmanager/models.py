@@ -398,6 +398,10 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         files = self.get_injected_files(datastore_manager)
         cinder_volume_type = volume_type or CONF.cinder_volume_type
         if use_heat:
+            msg = _("Support for heat templates in Trove is scheduled for "
+                    "removal. You will no longer be able to provide a heat "
+                    "template to Trove for the provisioning of resources.")
+            LOG.warning(msg)
             volume_info = self._create_server_volume_heat(
                 flavor,
                 image_id,

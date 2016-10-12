@@ -29,6 +29,11 @@ from trove.version import version_info as version
 
 LOG = logging.getLogger(__name__)
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
+HEAT_REMOVAL_DEPRECATION_WARNING = _('Support for heat templates in Trove is '
+                                     'scheduled for removal. You will no '
+                                     'longer be able to provide a heat '
+                                     'template to Trove for the provisioning '
+                                     'of resources.')
 
 path_opts = [
     cfg.StrOpt('pybasedir',
@@ -71,10 +76,16 @@ common_opts = [
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('cinder_endpoint_type', default='publicURL',
                help='Service endpoint type to use when searching catalog.'),
-    cfg.URIOpt('heat_url', help='URL without the tenant segment.'),
+    cfg.URIOpt('heat_url', deprecated_for_removal=True,
+               deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
+               help='URL without the tenant segment.'),
     cfg.StrOpt('heat_service_type', default='orchestration',
+               deprecated_for_removal=True,
+               deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
                help='Service type to use when searching catalog.'),
     cfg.StrOpt('heat_endpoint_type', default='publicURL',
+               deprecated_for_removal=True,
+               deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
                help='Service endpoint type to use when searching catalog.'),
     cfg.URIOpt('swift_url', help='URL ending in ``AUTH_``.'),
     cfg.StrOpt('swift_service_type', default='object-store',
@@ -198,7 +209,8 @@ common_opts = [
     cfg.BoolOpt('use_nova_server_volume', default=False,
                 help='Whether to provision a Cinder volume for the '
                      'Nova instance.'),
-    cfg.BoolOpt('use_heat', default=False,
+    cfg.BoolOpt('use_heat', default=False, deprecated_for_removal=True,
+                deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
                 help='Use Heat for provisioning.'),
     cfg.StrOpt('device_path', default='/dev/vdb',
                help='Device path for volume if volume support is enabled.'),
@@ -215,7 +227,8 @@ common_opts = [
                help='Maximum time (in seconds) to wait for a server delete.'),
     cfg.IntOpt('volume_time_out', default=60,
                help='Maximum time (in seconds) to wait for a volume attach.'),
-    cfg.IntOpt('heat_time_out', default=60,
+    cfg.IntOpt('heat_time_out', default=60, deprecated_for_removal=True,
+               deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
                help='Maximum time (in seconds) to wait for a Heat request to '
                     'complete.'),
     cfg.IntOpt('reboot_time_out', default=60 * 2,
@@ -308,7 +321,8 @@ common_opts = [
     cfg.StrOpt('remote_cinder_client',
                default='trove.common.remote.cinder_client',
                help='Client to send Cinder calls to.'),
-    cfg.StrOpt('remote_heat_client',
+    cfg.StrOpt('remote_heat_client', deprecated_for_removal=True,
+               deprecated_reason=HEAT_REMOVAL_DEPRECATION_WARNING,
                default='trove.common.remote.heat_client',
                help='Client to send Heat calls to.'),
     cfg.StrOpt('remote_swift_client',
