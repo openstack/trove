@@ -1,0 +1,83 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+cat > "/etc/sysctl.d/10-postgresql-performance.conf" << _EOF_
+# See 'http://www.postgresql.org/docs/9.3/static/kernel-resources.html'
+# for best practices.
+# It is recommended to disable memory overcommit,
+# but the Python interpreter may require it on smaller flavors.
+# We therefore stick with the heuristic overcommit setting.
+vm.overcommit_memory=0
+
+_EOF_
+
+cat > "/etc/rc.local" << _EOF_
+# See 'http://www.postgresql.org/docs/9.3/static/kernel-resources.html'
+# Disable Linux kernel transparent huge pages. This feature is not supported by
+# by Postgres 9.3 and may negatively impact performance of the database.
+if test -f /sys/kernel/mm/redhat_transparent_hugepage/defrag; then
+  echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag
+fi
+if test -f /sys/kernel/mm/redhat_transparent_hugepage/enabled; then
+  echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+fi
+
+exit \$?
+
+_EOF_
+
+dnf install -y http://yum.postgresql.org/9.4/fedora/fedora-22-x86_64/pgdg-fedora94-9.4-4.noarch.rpm
+
+dnf install -y postgresql94-server postgresql94-contrib postgresql94-devel gcc
+
+###########################################
+# Hack alert:
+# For Postgresql 9.4, pg_rewind is not in the main source tree and
+# no packages exist in the repos, so it must be compiled manually
+# and installed on the image until we can move to 9.5
+# See README at
+# https://github.com/vmware/pg_rewind/tree/REL9_4_STABLE
+
+dev_pkgs="readline-devel zlib-devel krb5-devel openssl-devel pam-devel libxml2-devel libxslt-devel"
+
+yum install -y $dev_pkgs
+
+# We need pg_config to be accessible on the path
+mkdir -p /tmp/build
+cd /tmp/build
+git clone https://github.com/vmware/pg_rewind.git --branch REL9_4_STABLE
+git clone https://github.com/postgres/postgres.git --branch REL9_4_STABLE
+
+ln -s /usr/pgsql-9.4/bin/pg_config /usr/bin/pg_config
+
+cd pg_rewind
+make USE_PGXS=1 top_srcdir=/tmp/build/postgres install
+ln -s /usr/pgsql-9.4/bin/pg_rewind /usr/bin/pg_rewind
+
+# Cleanup
+
+cd
+rm -rf /tmp/build
+yum remove -y $dev_pkgs
+
+
+# Though /var/lib/pgsql is the preferred directory, need to move it as
+# this is where the volume will be mounted
+su - postgres -c "/usr/pgsql-9.4/bin/initdb /var/lib/pgsql/9.4/data"
+mv /var/lib/pgsql /var/lib/postgresql
+
+mv /lib/systemd/system/postgresql-9.4.service /lib/systemd/system/postgresql.service
+
+sed -i 's/PGDATA=\/var\/lib\/pgsql\/9.4\/data/PGDATA=\/var\/lib\/postgresql\/9.4\/data/' /lib/systemd/system/postgresql.service
+
+# Create a volatile directory for runtime files.
+echo "d /var/run/postgresql/ 0755 postgres postgres" > /lib/tmpfiles.d/postgresql.conf
+
+# Install the native Python client.
+dnf install -y postgresql-devel python-devel
+pip install psycopg2
+
+systemctl enable postgresql.service
+systemctl start postgresql.service

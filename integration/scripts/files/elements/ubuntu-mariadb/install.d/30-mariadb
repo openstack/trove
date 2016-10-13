@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+# NOTE(vkmc): Using MariaDB repositories is required
+# https://mariadb.com/kb/en/mariadb/installing-mariadb-deb-files/
+apt-get -y install software-properties-common
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+add-apt-repository 'deb http://ftp.osuosl.org/pub/mariadb/repo/10.1/ubuntu trusty main'
+
+# Pin MariaDB repository
+sudo echo -e "Package: *\nPin: origin ftp.osuosl.org\nPin-Priority: 1000" > /etc/apt/preferences.d/mariadb.pref
+
+apt-get -y update
+# The fix to make versions of percona-xtrabackup > v2.2 work with Trove
+# was put into the mysql guestagent code for Mitaka. There are no current
+# plans to backport so we need to make sure the guest generated when the
+# tests are run for Kilo or Liberty get the 2.2 verson of PXB
+if [[ $BRANCH_OVERRIDE == "stable/kilo" || $BRANCH_OVERRIDE == "stable/liberty" ]]; then
+    PXB_VERSION_OVERRIDE="-22"
+fi
+apt-get -y install socat percona-xtrabackup${PXB_VERSION_OVERRIDE}
+apt-get -y install libmariadbclient18 mariadb-server
+
+cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = off
+_EOF_

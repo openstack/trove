@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 21
+Date: Wed, 25 Jan 2012 21:58:13 GMT
+
+{
+    "rootEnabled": true
+}

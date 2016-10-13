@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during PRE-CONSTRUCTION as ROOT
+# PURPOSE: Setup apt-repo list so that we can connect to Percona's repo
+
+set -e
+set -o xtrace
+
+curl -o /etc/pki/rpm-gpg/RPM-GPG-KEY-percona http://www.percona.com/downloads/RPM-GPG-KEY-percona
+cat <<EOL > /etc/yum.repos.d/Percona.repo
+[percona]
+name = CentOS \$releasever - Percona
+baseurl=http://repo.percona.com/centos/latest/os/\$basearch/
+enabled = 1
+gpgkey = file:///etc/pki/rpm-gpg/RPM-GPG-KEY-percona
+gpgcheck = 1
+EOL

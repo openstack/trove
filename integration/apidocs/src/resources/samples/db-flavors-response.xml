@@ -1,0 +1,32 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 2300
+Date: Tue, 19 Jun 2012 19:52:45 GMT
+
+<flavors xmlns="http://docs.openstack.org/database/api/v1.0">
+    <flavor id="1" name="m1.tiny" ram="512">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/flavors/1" rel="bookmark"/>
+        </links>
+    </flavor>
+    <flavor id="2" name="m1.small" ram="1024">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/2" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/flavors/2" rel="bookmark"/>
+        </links>
+    </flavor>
+    <flavor id="3" name="m1.medium" ram="2048">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/3" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/flavors/3" rel="bookmark"/>
+        </links>
+    </flavor>
+    <flavor id="4" name="m1.large" ram="4096">
+        <links>
+            <link href="https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/4" rel="self"/>
+            <link href="https://ord.databases.api.rackspacecloud.com/flavors/4" rel="bookmark"/>
+        </links>
+    </flavor>
+</flavors>
+

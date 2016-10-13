@@ -1,0 +1,90 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 648
+Date: Wed, 25 Jan 2012 21:58:14 GMT
+
+{
+    "instances": [
+        {
+            "id": "28290db6-2f47-80d4-1b62-92bde6ff1a6e",
+            "links": [
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/28290db6-2f47-80d4-1b62-92bde6ff1a6e",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/instances/28290db6-2f47-80d4-1b62-92bde6ff1a6e",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "example_rack_instance",
+            "status": "ACTIVE"
+        },
+        {
+            "id": "ae939ae2-3827-d005-4de6-0028a5f438d0",
+            "links": [
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/ae939ae2-3827-d005-4de6-0028a5f438d0",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/instances/ae939ae2-3827-d005-4de6-0028a5f438d0",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "example_rack_instance",
+            "status": "ACTIVE"
+        },
+        {
+            "id": "006e4db2-5729-3f8e-77b0-075a1723ad37",
+            "links": [
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/006e4db2-5729-3f8e-77b0-075a1723ad37",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/instances/006e4db2-5729-3f8e-77b0-075a1723ad37",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "example_rack_instance",
+            "status": "ACTIVE"
+        },
+        {
+            "id": "2806d85e-d363-2a27-f7fd-4e9911ebd8a9",
+            "links": [
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/2806d85e-d363-2a27-f7fd-4e9911ebd8a9",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/instances/2806d85e-d363-2a27-f7fd-4e9911ebd8a9",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "example_rack_instance",
+            "status": "ACTIVE"
+        },
+        {
+            "id": "e0846e3b-3df4-398f-1e9a-d53650573dd1",
+            "links": [
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances/e0846e3b-3df4-398f-1e9a-d53650573dd1",
+                    "rel": "self"
+                },
+                {
+                    "href": "https://ord.databases.api.rackspacecloud.com/instances/e0846e3b-3df4-398f-1e9a-d53650573dd1",
+                    "rel": "bookmark"
+                }
+            ],
+            "name": "example_rack_instance",
+            "status": "ACTIVE"
+        }
+    ],
+    "links": [
+        {
+            "rel": "next",
+            "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/instances?marker=e0846e3b-3df4-398f-1e9a-d53650573dd1&limit=5"
+        }
+    ]
+}

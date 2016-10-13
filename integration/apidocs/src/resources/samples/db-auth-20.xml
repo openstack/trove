@@ -1,0 +1,63 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml; charset=UTF-8
+Content-Length: 477
+Date: Thu, 12 Apr 2012 18:50:20 GMT
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<access xmlns="http://docs.openstack.org/identity/api/v2.0"
+  xmlns:ns2="http://docs.rackspace.com/identity/api/ext/RAX-KSKEY/v1.0"
+  xmlns:ns3="http://docs.rackspace.com/identity/api/ext/RAX-KSGRP/v1.0"
+  xmlns:ns4="http://docs.openstack.org/common/api/v1.0"
+  xmlns:ns5="http://www.w3.org/2005/Atom">
+  <token id="vvvvvvvv-wwww-xxxx-yyyy-zzzzzzzzzzzz" expires="2011-12-08T22:51:02.000-06:00"/>
+  <user id="123456" name="jsmith">
+    <roles>
+      <role id="identity:admin" name="identity:admin" description="Admin Role."/>
+      <role id="identity:default" name="identity:default" description="Default Role."/>
+    </roles>
+  </user>
+  <serviceCatalog>
+    <service type="rax:database" name="cloudDatabases">
+      <endpoint region="ORD" tenantId="1100111" publicURL="https://ord.databases.api.rackspacecloud.com/v1.0/1100111"/>
+      <endpoint region="DFW" tenantId="1100111" publicURL="https://dfw.databases.api.rackspacecloud.com/v1.0/1100111"/>
+    </service>
+    <service type="rax:load-balancer" name="cloudLoadBalancers">
+      <endpoint region="ORD" tenantId="1100111" publicURL="https://ord.loadbalancers.api.rackspacecloud.com/v1.0/1100111"/>
+      <endpoint region="DFW" tenantId="1100111" publicURL="https://dfw.loadbalancers.api.rackspacecloud.com/v1.0/1100111"/>
+    </service>
+    <service type="compute" name="cloudServersOpenStack">
+      <endpoint region="DFW" tenantId="1100111"
+        publicURL="https://dfw.servers.api.rackspacecloud.com/v2/1100111">
+        <version id="2" info="https://dfw.servers.api.rackspacecloud.com/v2/"
+          list="https://dfw.servers.api.rackspacecloud.com/" />
+      </endpoint>
+    </service>
+    <service type="compute" name="cloudServers">
+      <endpoint tenantId="1100111"
+        publicURL="https://servers.api.rackspacecloud.com/v1.0/1100111">
+        <version id="1.0"
+          info="https://servers.api.rackspacecloud.com/v1.0/"
+          list="https://servers.api.rackspacecloud.com/"/>
+      </endpoint>
+    </service>
+    <service type="object-store" name="cloudFiles">
+      <endpoint region="ORD"
+        tenantId="MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee"
+        publicURL="https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee"
+        internalURL="https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee"/>
+    </service>
+    <service type="rax:object-cdn" name="cloudFilesCDN">
+      <endpoint region="ORD"
+        tenantId="MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee"
+        publicURL="https://cdn2.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee">
+        <version id="1"
+          info="https://cdn2.clouddrive.com/v1/"
+          list="https://cdn2.clouddrive.com/"/>
+      </endpoint>
+    </service>
+    <service type="rax:dns" name="cloudDNS">
+      <endpoint tenantId="1100111"
+        publicURL="https://dns.api.rackspacecloud.com/v1.0/1100111"/>
+    </service>
+  </serviceCatalog>
+</access>

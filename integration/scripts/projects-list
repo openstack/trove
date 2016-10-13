@@ -1,0 +1,12 @@
+keystone
+nova
+glance
+horizon
+swift
+neutron
+heat
+python-openstackclient
+python-novaclient
+python-troveclient
+python-neutronclient
+python-heatclient

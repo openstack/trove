@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Add the guest image user that will own the trove agent source...if the user does not already exist
+
+set -e
+set -o xtrace
+
+# Difference from apt, -G admin option
+if ! id -u ${GUEST_USERNAME} >/dev/null 2>&1; then
+    echo "Adding ${GUEST_USERNAME} user"
+    useradd -m ${GUEST_USERNAME} -s /bin/bash
+    passwd ${GUEST_USERNAME} <<_EOF_
+${GUEST_USERNAME}
+${GUEST_USERNAME}
+_EOF_
+fi

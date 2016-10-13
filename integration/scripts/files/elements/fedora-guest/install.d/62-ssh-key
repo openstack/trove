@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: take "staged" ssh keys (see extra-data.d/62-ssh-key) and put them in the GUEST_USERS home directory
+
+set -e
+set -o xtrace
+
+SSH_DIR="/home/${GUEST_USERNAME}/.ssh"
+TMP_HOOKS_DIR="/tmp/in_target.d"
+
+if [ -e "${TMP_HOOKS_DIR}/ssh-authorized-keys" ]; then
+    if [ ! -e ${SSH_DIR} ]; then
+        # this method worked more reliable in vmware fusion over doing sudo -Hiu ${GUEST_USERNAME}
+        mkdir ${SSH_DIR}
+        chown ${GUEST_USERNAME}:${GUEST_USERNAME} ${SSH_DIR}
+    fi
+    sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/authorized_keys conv=notrunc if=${TMP_HOOKS_DIR}/ssh-authorized-keys
+    sudo -Hiu ${GUEST_USERNAME} chmod 600 ${SSH_DIR}/authorized_keys
+    if [ ! -e "${SSH_DIR}/id_rsa" ]; then
+        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa if=${TMP_HOOKS_DIR}/id_rsa
+        # perms have to be right on this file for ssh to work
+        sudo -Hiu ${GUEST_USERNAME} chmod 600 ${SSH_DIR}/id_rsa
+        sudo -Hiu ${GUEST_USERNAME} dd of=${SSH_DIR}/id_rsa.pub if=${TMP_HOOKS_DIR}/id_rsa.pub
+    fi
+else
+    echo "SSH Keys were not staged by host"
+    exit -1
+fi

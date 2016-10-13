@@ -1,0 +1,128 @@
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=UTF-8
+Content-Length: 477
+Date: Thu, 12 Apr 2012 18:45:13 GMT
+
+{
+    "access": {
+     
+        "token": {
+            "expires": "2011-12-08T22:51:02.000-06:00", 
+            "id": "vvvvvvvv-wwww-xxxx-yyyy-zzzzzzzzzzzz"
+        }, 
+        "user": {
+            "id": "123456", 
+            "name": "jsmith", 
+            "roles": [
+                {
+                    "description": "Admin Role.", 
+                    "id": "identity:admin", 
+                    "name": "identity:admin"
+                }, 
+                {
+                    "description": "Default Role.", 
+                    "id": "identity:default", 
+                    "name": "identity:default"
+                }
+            ]
+        },
+        "serviceCatalog": [
+            {
+                "endpoints": [
+                    {
+                        "publicURL": "https://ord.databases.api.rackspacecloud.com/v1.0/1100111", 
+                        "region": "ORD", 
+                        "tenantId": "1100111"
+                    }, 
+                    {
+                        "publicURL": "https://dfw.databases.api.rackspacecloud.com/v1.0/1100111", 
+                        "region": "DFW", 
+                        "tenantId": "1100111"
+                    }
+                ], 
+                "name": "cloudDatabases", 
+                "type": "rax:database"
+            },
+            {
+                "endpoints": [
+                    {
+                        "publicURL": "https://dfw.loadbalancers.api.rackspacecloud.com/v1.0/1100111", 
+                        "region": "DFW", 
+                        "tenantId": "1100111"
+                    }, 
+                    {
+                        "publicURL": "https://ord.loadbalancers.api.rackspacecloud.com/v1.0/1100111", 
+                        "region": "ORD", 
+                        "tenantId": "1100111"
+                    }
+                ], 
+                "name": "cloudLoadBalancers", 
+                "type": "rax:load-balancer"
+            }, 
+            {
+                "endpoints": [
+                    {
+                        "tenantId": "1100111", 
+                        "publicURL": "https://servers.api.rackspacecloud.com/v1.0/1100111", 
+                        "versionId": "1.0", 
+                        "versionInfo": "https://servers.api.rackspacecloud.com/v1.0/", 
+                        "versionList": "https://servers.api.rackspacecloud.com/"
+                    }
+                ],
+                "name": "cloudServersOpenStack", 
+                "type": "compute"
+            },
+            {
+                "endpoints": [
+                    {
+                        "tenantId": "1100111", 
+                        "publicURL": "https://servers.api.rackspacecloud.com/v1.0/1100111", 
+                        "versionId": "1.0", 
+                        "versionInfo": "https://servers.api.rackspacecloud.com/v1.0/", 
+                        "versionList": "https://servers.api.rackspacecloud.com/"
+                    }
+                ],
+                "name": "cloudServers", 
+                "type": "compute"
+            }, 
+            {
+                "endpoints": [
+                    {
+                        "tenantId": "MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee",
+                        "publicURL": "https://storage101.ord1.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee", 
+                        "internalURL": "https://snet-storage101.ord1.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee", 
+                        "region": "ORD", 
+                        "versionId": "1", 
+                        "versionInfo": "https://cdn2.clouddrive.com/v1/", 
+                        "versionList": "https://cdn2.clouddrive.com/"
+                         
+                    }
+                ], 
+                "name": "cloudFiles", 
+                "type": "object-store"
+            }, 
+            {
+                "endpoints": [
+                    {
+                        "tenantId": "MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee", 
+                        "publicURL": "https://cdn2.clouddrive.com/v1/MossoCloudFS_aaaaaaaa-bbbb-cccc-dddd-eeeeeeee", 
+                        "region": "ORD"
+                    }
+                ],
+                "name": "cloudFilesCDN", 
+                "type": "rax:object-cdn"
+            }, 
+            {
+ 
+                "endpoints": [
+                    {
+                        "tenantId": "1100111",
+                        "publicURL": "https://dns.api.rackspacecloud.com/v1.0/1100111"
+                    }
+                ],
+                "name": "cloudDNS", 
+                "type": "rax:dns"
+            }
+        ]
+    }
+}

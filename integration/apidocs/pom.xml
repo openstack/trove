@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.rackspace.cloud.dbaas</groupId>
+  <artifactId>dbaas-docs</artifactId>
+  <version>1.0.0</version>
+
+  <name>Database Public API Spec</name>
+  <packaging>jar</packaging>
+
+  <profiles>
+  <profile>
+    <id>Rackspace Research Repositories</id>
+    <activation>
+    <activeByDefault>true</activeByDefault>
+    </activation>
+    <repositories>
+    <repository>
+      <id>rackspace-research</id>
+      <name>Rackspace Research Repository</name>
+      <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>
+    </repository>
+    </repositories>
+    <pluginRepositories>
+    <pluginRepository>
+      <id>rackspace-research</id>
+      <name>Rackspace Research Repository</name>
+      <url>http://maven.research.rackspacecloud.com/content/groups/public/</url>
+    </pluginRepository>
+    </pluginRepositories>
+  </profile>
+  </profiles>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  <doctools.version>1.5.0</doctools.version>
+  </properties>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>../xsd</directory>
+      </resource>
+    </resources>
+    <plugins>
+      <plugin>
+        <groupId>com.rackspace.cloud.api</groupId>
+        <artifactId>clouddocs-maven-plugin</artifactId>
+        <!-- this <version> relates only to the *plugin* used for document formatting -->
+        <!-- the version of the *API* that is the subject of the document is indicated within each document -->
+        <version>${doctools.version}</version>
+        <executions>
+          <execution>
+            <id>g1</id>
+            <goals>
+              <goal>generate-pdf</goal>
+              <goal>generate-webhelp</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <xincludeSupported>true</xincludeSupported>
+              <sourceDirectory>src/resources</sourceDirectory>
+              <highlightSource>false</highlightSource>
+              <!-- this is the Rackspace-internal service developer guide formerly known as ManagementAPISpec.xml -->
+              <includes>cdb-mgmt-devguide.xml</includes>
+			            <pdfUrl>../../cdb-mgmt-devguide-internal.pdf</pdfUrl>
+              <enableDisqus>intranet</enableDisqus>
+              <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail><postProcess>
+              <copy todir="target/docbkx/webhelp/cdb-mgmt-devguide/content/images">
+                <fileset dir="src/resources/images" includes="**/*.png"/>
+              </copy>
+              </postProcess>
+            </configuration>
+          </execution>
+          <execution>
+            <id>g2</id>
+            <goals>
+              <goal>generate-pdf</goal>
+              <goal>generate-webhelp</goal>
+            </goals>
+            <phase>generate-sources</phase>
+            <configuration>
+              <xincludeSupported>true</xincludeSupported>
+              <sourceDirectory>src/resources</sourceDirectory>
+              <highlightSource>false</highlightSource>
+              <trimWadlUriCount>2</trimWadlUriCount>
+              <!-- this is the public-facing client developer guide formerly known as PublicAPISpec.xml -->
+              <!-- this document that will be published as cdb-devguide-latest.pdf at http://docs.rackspacecloud.com/api/ -->
+              <pdfUrl>../../../cdb-devguide-latest.pdf</pdfUrl>
+              <enableDisqus>1</enableDisqus>
+			          <googleAnalyticsId>UA-23102455-4</googleAnalyticsId>
+              <includes>cdb-devguide.xml</includes>
+              <canonicalUrlBase>http://docs.rackspace.com/cdb/api/v1.0/cdb-devguide/content</canonicalUrlBase>
+              <postProcess>
+              <copy todir="target/docbkx/webhelp/cdb-devguide/content/images">
+                <fileset dir="src/resources/images" includes="**/*.png"/>
+              </copy>
+              </postProcess>
+            </configuration>
+          </execution>
+          <execution>
+          <id>g3</id>
+          <goals>
+            <goal>generate-pdf</goal>
+            <goal>generate-webhelp</goal>
+          </goals>
+          <phase>generate-sources</phase>
+          <configuration>
+            <xincludeSupported>true</xincludeSupported>
+            <sourceDirectory>src/resources</sourceDirectory>
+            <highlightSource>false</highlightSource>
+            <!-- this is the Rackspace Getting Started guide -->
+            <includes>cdb-getting-started.xml</includes>
+            <pdfUrl>../../../cdb-getting-started.pdf</pdfUrl>
+            <enableDisqus>1</enableDisqus>
+            <googleAnalyticsId>UA-23102455-4</googleAnalyticsId>
+            <canonicalUrlBase>http://docs.rackspace.com/cdb/api/v1.0/cdb-getting-started/content</canonicalUrlBase>
+            <postProcess>
+            <copy todir="target/docbkx/webhelp/cdb-getting-started/content/images">
+              <fileset dir="src/resources/images" includes="**/*.png"/>
+            </copy>
+            </postProcess>
+          </configuration>
+          </execution>
+          <!-- MA: added this to generate public release notes -->
+          <execution>
+          <id>g4</id>
+          <goals>
+            <goal>generate-webhelp</goal>
+            <goal>generate-pdf</goal>
+          </goals>
+          <phase>generate-sources</phase>
+          <configuration>
+            <xincludeSupported>true</xincludeSupported>
+            <sourceDirectory>src/resources</sourceDirectory>
+            <highlightSource>false</highlightSource>
+            <pdfUrl>../../../cdb-releasenotes-latest.pdf</pdfUrl>
+            <includes>cdb-releasenotes.xml</includes>
+            <enableDisqus>1</enableDisqus>
+            <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail>
+            <enableGoogleAnalytics>1</enableGoogleAnalytics>
+            <chapterAutolabel>0</chapterAutolabel>
+            <security>external</security>
+            <canonicalUrlBase>http://docs.rackspace.com/cdb/api/v1.0/cdb-releasenotes/content</canonicalUrlBase>
+            <postProcess>
+            <move todir="target/docbkx/webhelp/cdb-releasenotes-external" failonerror="false">
+              <fileset dir="target/docbkx/webhelp/cdb-releasenotes"/>
+            </move>
+            <move file="target/docbkx/pdf/cdb-releasenotes.pdf" tofile="target/docbkx/pdf/cdb-releasenotes-YYYYMMDD.pdf" failonerror="false"/>
+            <delete file="target/docbkx/pdf/cdb-releasenotes.fo" failonerror="false"/>
+            </postProcess>
+          </configuration>
+          </execution>
+          <execution>
+          <id>g5</id>
+          <goals>
+            <goal>generate-pdf</goal>
+            <goal>generate-webhelp</goal>
+          </goals>
+          <phase>generate-sources</phase>
+          <configuration>
+            <xincludeSupported>true</xincludeSupported>
+            <sourceDirectory>src/resources</sourceDirectory>
+            <highlightSource>false</highlightSource>
+            <pdfUrl>../../../cdb-releasenotes-latest.pdf</pdfUrl>
+            <includes>cdb-releasenotes.xml</includes>
+            <enableDisqus>intranet</enableDisqus>
+            <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail>
+            <enableGoogleAnalytics>1</enableGoogleAnalytics>
+            <chapterAutolabel>0</chapterAutolabel>
+            <security>internal</security>
+            <canonicalUrlBase>http://docs-internal.rackspace.com/cdb/api/v1.0/cdb-releasenotes/content</canonicalUrlBase>
+            <postProcess>
+            <move todir="target/docbkx/webhelp/cdb-releasenotes-internal" failonerror="false">
+              <fileset dir="target/docbkx/webhelp/cdb-releasenotes"/>
+            </move>
+            <move file="target/docbkx/pdf/cdb-releasenotes.pdf" tofile="target/docbkx/pdf/cdb-releasenotes-internal.pdf" failonerror="false"/>
+            <delete file="target/docbkx/pdf/cdb-releasenotes.fo" failonerror="false"/>
+            </postProcess>
+          </configuration>
+          </execution>
+        </executions>
+        <configuration>
+        <socialIcons>1</socialIcons>
+        <feedbackEmail>mike.asthalter@rackspace.com</feedbackEmail>
+        <branding>rackspace</branding>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

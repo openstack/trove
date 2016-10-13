@@ -1,0 +1,16 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 125
+Date: Tue, 24 Jul 2012 19:48:33 GMT
+
+{
+    "diagnostics": {
+        "fdSize": 64, 
+        "threads": 2, 
+        "version": "1", 
+        "vmHwm": 2872, 
+        "vmPeak": 29160, 
+        "vmRss": 2872, 
+        "vmSize": 29096
+    }
+}

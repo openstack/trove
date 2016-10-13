@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: take "staged" trove-guest.conf file and put it in the init directory on guest image
+
+dd if=/tmp/in_target.d/trove-guest.conf of=/etc/init/trove-guest.conf
+
+

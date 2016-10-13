@@ -1,0 +1,1 @@
+Sets up a MongoDB install in the image.

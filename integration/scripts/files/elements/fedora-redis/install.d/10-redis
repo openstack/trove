@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -ex
+
+dnf -y install redis
+service redis start

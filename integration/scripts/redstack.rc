@@ -1,0 +1,120 @@
+# Paths inside the VM.
+[ -z $SERVICE_HOST ] && SERVICE_HOST=`get_default_host_ip`
+[ -z $DEST ] && DEST=/opt/stack
+[ -z $BRIDGE_IP ] && BRIDGE_IP=172.24.4.1
+[ -z $PATH_DEVSTACK_SRC ] && PATH_DEVSTACK_SRC=~/devstack
+[ -z $TROVE_CONF_DIR ] && TROVE_CONF_DIR=/etc/trove
+[ -z $MYSQL_HOST ] && MYSQL_HOST=$SERVICE_HOST
+
+# Set up the region name
+# Try REGION_NAME then OS_REGION_NAME then RegionOne (the devstack default)
+REGION_NAME=${REGION_NAME:-${OS_REGION_NAME:-RegionOne}}
+
+# Enable neutron instead of nova-network
+# Note: Until a few key changesets land, we can't enable Neutron properly.
+# See: https://review.openstack.org/#/c/356026
+#      https://review.openstack.org/#/c/356763
+#      https://review.openstack.org/#/c/356701
+# NEUTRON_DEFAULT=true
+NEUTRON_DEFAULT=false
+if [[ $BRANCH_OVERRIDE == "stable/liberty" || $BRANCH_OVERRIDE == "stable/mitaka" ]]; then
+    NEUTRON_DEFAULT=false
+fi
+ENABLE_NEUTRON=$(get_bool ENABLE_NEUTRON $NEUTRON_DEFAULT)
+
+# Enable osprofiler - note: Enables Ceilometer as well
+ENABLE_PROFILER=$(get_bool ENABLE_PROFILER false)
+PROFILER_TRACE_SQL=$(get_bool PROFILER_TRACE_SQL false)
+[ -z $PROFILER_HMAC_KEYS ] && PROFILER_HMAC_KEYS=SECRET_KEY
+
+# Enable ceilometer
+ENABLE_CEILOMETER=$(get_bool ENABLE_CEILOMETER $ENABLE_PROFILER)
+
+# Enable Mistral
+ENABLE_MISTRAL=$(get_bool ENABLE_MISTRAL false)
+
+# Enable LIBS_FROM_GIT
+LIBS_FROM_GIT_ALL_CLIENTS=$(get_bool LIBS_FROM_GIT_ALL_CLIENTS false)
+LIBS_FROM_GIT_ALL_OSLO=$(get_bool LIBS_FROM_GIT_ALL_OSLO false)
+
+# Don't include certain .rc files in local.conf.d by default
+USING_VAGRANT=$(get_bool USING_VAGRANT false)
+USE_KVM=$(get_bool USE_KVM false)
+USE_UUID_TOKEN=$(get_bool USE_UUID_TOKEN false)
+
+# Specify configuration for Ceilometer
+CEILOMETER_SERVICES_CONF=$(get_bool CEILOMETER_SERVICES_CONF $ENABLE_CEILOMETER)
+CEILOMETER_CINDER_CONF=$(get_bool CEILOMETER_CINDER_CONF false)
+CEILOMETER_NOVA_CONF=$(get_bool CEILOMETER_NOVA_CONF false)
+
+# Paths for various OpenStack components
+PATH_DEVSTACK_OUTPUT=$DEST
+PATH_NOVA=$DEST/nova
+PATH_KEYSTONE=$DEST/keystone
+PATH_GLANCE=$DEST/glance
+PATH_SWIFT=$DEST/swift
+PATH_TROVE=$DEST/trove
+PATH_PYTHON_NOVACLIENT=$DEST/python-novaclient
+PATH_KEYSTONECLIENT=$DEST/python-keystoneclient
+PATH_OPENSTACKCLIENT=$DEST/python-openstackclient
+PATH_PYTHON_SWIFTCLIENT=$DEST/python-swiftclient
+PATH_PYTHON_TROVECLIENT=$DEST/python-troveclient
+PATH_TROVE_DASHBOARD=$DEST/trove-dashboard
+PATH_DISKIMAGEBUILDER=$DEST/diskimage-builder
+PATH_TRIPLEO_ELEMENTS=$DEST/tripleo-image-elements
+
+# Save the state of TROVE_BRANCH first, since it's used in redstack
+TROVE_BRANCH_ORIG=${TROVE_BRANCH}
+# Devstack and OpenStack git repo source paths, etc.
+GIT_BASE=${GIT_BASE:-git://git.openstack.org}
+GIT_OPENSTACK=${GIT_OPENSTACK:-${GIT_BASE}/openstack}
+DEVSTACK_REPO=${DEVSTACK_REPO:-${GIT_BASE}/openstack-dev/devstack.git}
+TROVE_REPO=${TROVE_REPO:-${GIT_OPENSTACK}/trove.git}
+TROVE_DIR=${TROVE_DIR:-${PATH_TROVE}}
+TROVE_BRANCH=${TROVE_BRANCH:-master}
+TROVE_CLIENT_REPO=${TROVE_CLIENT_REPO:-${TROVECLIENT_REPO:-${GIT_OPENSTACK}/python-troveclient.git}}
+TROVE_CLIENT_DIR=${TROVE_CLIENT_DIR:-${TROVECLIENT_DIR:-${PATH_PYTHON_TROVECLIENT}}}
+TROVE_CLIENT_BRANCH=${TROVE_CLIENT_BRANCH:-${TROVECLIENT_BRANCH:-master}}
+TROVE_DASHBOARD_REPO=${TROVE_DASHBOARD_REPO:-${TROVEDASHBOARD_REPO:-${GIT_OPENSTACK}/trove-dashboard.git}}
+TROVE_DASHBOARD_DIR=${TROVE_DASHBOARD_DIR:-${TROVEDASHBOARD_DIR:-${PATH_TROVE_DASHBOARD}}}
+TROVE_DASHBOARD_BRANCH=${TROVE_DASHBOARD_BRANCH:-${TROVEDASHBOARD_BRANCH:-master}}
+
+# Destination for working data
+DATA_DIR=${DEST}/data
+# Destination for status files
+SERVICE_DIR=${DEST}/status
+
+# Cinder Volume Group Name
+VOLUME_GROUP=${VOLUME_GROUP:-stack-volumes}
+VOLUME_BACKING_FILE=${VOLUME_BACKING_FILE:-${DATA_DIR}/${VOLUME_GROUP}-backing-file}
+VOLUME_BACKING_FILE_SIZE=${VOLUME_BACKING_FILE_SIZE:-51200M}
+
+# Passwords used by devstack.
+MYSQL_PASSWORD=e1a2c042c828d3566d0a
+RABBIT_PASSWORD=f7999d1955c5014aa32c
+SERVICE_TOKEN=be19c524ddc92109a224
+ADMIN_PASSWORD=3de4922d8b6ac5a1aad9
+SERVICE_PASSWORD=7de4162d826bc5a11ad9
+
+# Swift hash used by devstack.
+SWIFT_HASH=12go358snjw24501
+
+# Swift Disk Image
+SWIFT_DATA_DIR=${DATA_DIR}/swift
+SWIFT_DISK_IMAGE=${SWIFT_DATA_DIR}/drives/images/swift.img
+
+DISTRO=${DISTRO:-ubuntu}
+#DISTRO=fedora
+
+# The following values can be used to tweak how devstack sets
+# up Trove. If not explicitly set, the defaults in the code are used.
+# To make changes without modifying the repo, add these variables
+# to options.rc or ~/redstack.options.rc
+#export TROVE_MAX_ACCEPTED_VOLUME_SIZE=10
+#export TROVE_MAX_INSTANCES_PER_TENANT=10
+#export TROVE_MAX_VOLUMES_PER_TENANT=40
+#export TROVE_AGENT_CALL_LOW_TIMEOUT=15
+#export TROVE_AGENT_CALL_HIGH_TIMEOUT=300
+#export TROVE_RESIZE_TIME_OUT=900
+#export TROVE_USAGE_TIMEOUT=1500
+#export TROVE_STATE_CHANGE_WAIT_TIME=180

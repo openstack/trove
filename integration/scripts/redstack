@@ -1,0 +1,1433 @@
+#!/usr/bin/env bash
+###############################################################################
+# RedStack, the Trove Dev Machine Controller                               #
+###############################################################################
+#                                                                             #
+# This script provides all the functionality to run all the steps from        #
+# setting up the environment, resetting the nova database to running the      #
+# test.                                                                       #
+#                                                                             #
+###############################################################################
+
+REDSTACK_SCRIPTS=${REDSTACK_SCRIPTS:-`pwd`}
+REDSTACK_TESTS=$REDSTACK_SCRIPTS/../tests/
+
+DEFAULT_LOCAL_CONF=local.conf.rc
+DEFAULT_LOCALRC=localrc.rc
+LOCAL_CONF=local.conf
+LOCALRC=localrc
+LOCALRC_AUTO=.localrc.auto
+USER_LOCAL_CONF_NAME=.devstack.$LOCAL_CONF
+
+USERHOME=$HOME
+# Load options not checked into VCS.
+if [ -f $USERHOME/.redstack.options.rc ]; then
+    . $USERHOME/.redstack.options.rc
+fi
+if [ -f $REDSTACK_SCRIPTS/options.rc ]; then
+    . $REDSTACK_SCRIPTS/options.rc
+fi
+
+# NOTE(mriedem): The gate-trove-functional-dsvm-* job config in project-config
+# sets this value for Jenkins runs.
+BRANCH_OVERRIDE=${BRANCH_OVERRIDE:-default}
+if [[ $BRANCH_OVERRIDE == "default" && $OVERRIDE_ZUUL_BRANCH != "master" ]]; then
+    BRANCH_OVERRIDE=$OVERRIDE_ZUUL_BRANCH
+fi
+
+# Bail on errors.
+set -e
+
+# Get default host ip from interface
+function get_default_host_ip() {
+    host_iface=$(ip route | sed -n '/^default/{ s/.*dev \(\w\+\)\s\+.*/\1/; p; }' | head -1)
+    echo `LC_ALL=C ip -f inet addr show ${host_iface} | awk '/inet/ {split($2,parts,"/");  print parts[1]}' | head -1`
+}
+
+# Load functions devstack style
+. $REDSTACK_SCRIPTS/functions
+. $REDSTACK_SCRIPTS/functions_qemu
+
+# Load global configuration variables.
+. $REDSTACK_SCRIPTS/redstack.rc
+. $REDSTACK_SCRIPTS/reviews.rc
+
+# allow overrides from devstack if already set
+[[ -f $PATH_DEVSTACK_SRC/functions-common ]] && source $PATH_DEVSTACK_SRC/functions-common
+[[ -f $PATH_DEVSTACK_SRC/functions ]] && source $PATH_DEVSTACK_SRC/functions
+
+# Source the old-style localrc, or new-style .local.auto - only one should exist.
+# Note: The devstack localrc's have references to 'enable_plugin' which causes
+# errors when sourcing them in the stable/juno and stable/kilo branches.
+# These errors are safe to ignore when sourcing these files.
+set +e
+[[ -f $PATH_DEVSTACK_SRC/$LOCALRC ]] && source $PATH_DEVSTACK_SRC/$LOCALRC
+[[ -f $PATH_DEVSTACK_SRC/$LOCALRC_AUTO ]] && source $PATH_DEVSTACK_SRC/$LOCALRC_AUTO
+set -e
+
+# Set up variables for the CONF files - this has to happen after loading redstack.rc, since
+# TROVE_CONF_DIR is defined there - these will be used by devstack too
+export TROVE_CONF=$TROVE_CONF_DIR/trove.conf
+export TROVE_TASKMANAGER_CONF=$TROVE_CONF_DIR/trove-taskmanager.conf
+export TROVE_CONDUCTOR_CONF=$TROVE_CONF_DIR/trove-conductor.conf
+export TROVE_GUESTAGENT_CONF=$TROVE_CONF_DIR/trove-guestagent.conf
+export TROVE_API_PASTE_INI=$TROVE_CONF_DIR/api-paste.ini
+export TEST_CONF=$TROVE_CONF_DIR/test.conf
+
+# Public facing bits
+SERVICE_PROTOCOL=${SERVICE_PROTOCOL:-http}
+NETWORK_INTERFACE=${NETWORK_INTERFACE:-eth0}
+NETWORK_SUBNET=${NETWORK_SUBNET:-10.0.0.0/24}
+NETWORK_GATEWAY=${NETWORK_GATEWAY:-10.0.0.1}
+BRIDGE_IP=${BRIDGE_IP:-172.24.4.1}
+KEYSTONE_AUTH_HOST=${KEYSTONE_AUTH_HOST:-$SERVICE_HOST}
+KEYSTONE_AUTH_PROTOCOL=${KEYSTONE_AUTH_PROTOCOL:-$SERVICE_PROTOCOL}
+KEYSTONE_AUTH_PORT=${KEYSTONE_AUTH_PORT:-35357}
+GLANCE_HOSTPORT=${GLANCE_HOSTPORT:-$SERVICE_HOST:9292}
+GLANCE_SERVICE_PROTOCOL=${GLANCE_SERVICE_PROTOCOL:-http}
+TROVE_AUTH_ENDPOINT=$KEYSTONE_AUTH_PROTOCOL://$KEYSTONE_AUTH_HOST:$KEYSTONE_AUTH_PORT/v2.0
+
+# The following depends on whether neutron is used or nova-network
+# neutron uses a bridge, nova-network does not
+[[ $ENABLE_NEUTRON = true ]] && CONTROLLER_IP=$BRIDGE_IP || CONTROLLER_IP=$NETWORK_GATEWAY
+
+# PATH_TROVE more than likely has file separators, which sed does not like
+# This will escape them
+ESCAPED_PATH_TROVE=$(echo $PATH_TROVE | sed 's/\//\\\//g')
+ESCAPED_REDSTACK_SCRIPTS=$(echo $REDSTACK_SCRIPTS | sed 's/\//\\\//g')
+TROVE_AUTH_CACHE_DIR=${TROVE_AUTH_CACHE_DIR:-/var/cache/trove}
+TROVE_LOGDIR=${TROVE_LOGDIR:-$DEST/logs}
+# DATASTORE_PKG_LOCATION defines the location from where the datastore packages
+# can be accessed by the DIB elements. This is applicable only for datastores
+# that do not have a public repository from where their packages can be accessed.
+# This can either be a url to a private repository or a location on the local
+# filesystem that contains the datastore packages.
+DATASTORE_PKG_LOCATION=${DATASTORE_PKG_LOCATION:-}
+
+# Support entry points installation of console scripts
+if [[ -d $PATH_TROVE/bin ]]; then
+    TROVE_BIN_DIR=$PATH_TROVE/bin
+else
+    TROVE_BIN_DIR=$(get_python_exec_prefix)
+fi
+
+# Allow sourcing config values from env.rc for overrides
+if [ -f /tmp/integration/env.rc ]; then
+    source /tmp/integration/env.rc
+fi
+
+# set up respective package managers
+if is_fedora; then
+    PKG_INSTALL_OPTS=""
+    PKG_MGR=dnf
+    PKG_GET_ARGS="-y"
+else
+    PKG_INSTALL_OPTS="DEBIAN_FRONTEND=noninteractive"
+    PKG_MGR=apt-get
+    PKG_GET_ARGS="-y --allow-unauthenticated --force-yes"
+fi
+PKG_INSTALL_ARG="install"
+PKG_UPDATE_ARG="update"
+
+###############################################################################
+# Utility functions
+###############################################################################
+
+# Colors that can be used in 'exclaim'
+COLOR_RED='\033[0;31m'
+COLOR_GREEN='\033[0;32m'
+COLOR_BLUE='\033[0;34m'
+COLOR_NONE='\033[0m'
+
+function exclaim () {
+    echo "*******************************************************************************"
+    echo -e "$@"
+    echo "*******************************************************************************"
+}
+
+# Set the location of the Trove setup commands file for devstack - either in
+# the devstack repo, or the Trove one.  Also sets the flag which activates the
+# devstack trove plugin, if required.  We'll use the devstack version if it
+# exists, otherwise we assume the plugin method.
+function set_trove_plugin_vars () {
+    FAIL_IF_MISSING=${1:-true}
+
+    TROVE_SETUP_CMD_FILE="$PATH_DEVSTACK_SRC/lib/trove"
+    if [ -f "$TROVE_SETUP_CMD_FILE" ]; then
+        USE_DEVSTACK_TROVE_PLUGIN=false
+    else
+        TROVE_SETUP_CMD_FILE="$DEST/trove/devstack/plugin.sh"
+        USE_DEVSTACK_TROVE_PLUGIN=true
+    fi
+    # Only complain if we have a devstack directory and are told to
+    if [ "$FAIL_IF_MISSING" = "true" ] && [ -d "$PATH_DEVSTACK_SRC" ] && [ ! -f "$TROVE_SETUP_CMD_FILE" ]; then
+        exclaim "${COLOR_RED}Trove setup file '${TROVE_SETUP_CMD_FILE}' not found!${COLOR_NONE}"
+        exit 1
+    fi
+}
+
+function pkg_install () {
+    echo Installing $@...
+    sudo -E $PKG_INSTALL_OPTS $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS $PKG_INSTALL_ARG $@
+}
+
+function pkg_update () {
+    echo Updating $@...
+    sudo -E $PKG_INSTALL_OPTS $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS $PKG_UPDATE_ARG $@
+}
+
+function set_home_dir() {
+    exclaim "set_home_dir has been nooped."
+    exit 1
+}
+
+function set_http_proxy() {
+    if [ ! "${http_proxy}" = '' ]; then
+        HTTP_PROXY="http_proxy=$http_proxy https_proxy=$https_proxy"
+    fi
+}
+
+function get_ip_for_device() {
+    /sbin/ifconfig $1 | awk '/inet addr/{gsub(/addr:/,"");print $2}'
+}
+
+function ip_chunk() {
+    # Given 1-4 returns a bit of where the ip range starts.
+    # Full IP= `ip_chunk 1`.`ip_chunk 2`.`ip_chunk 3`.`ip_chunk 4`
+    get_ip_for_device $1 | cut -d. -f$2
+}
+
+# Add a flavor and a corresponding flavor.resize
+# (flavor.resize adds 16 to the memory and one more vcpu)
+function add_flavor() {
+    local FLAVOR_NAME=$1
+    local FLAVOR_ID=$2
+    local FLAVOR_MEMORY_MB=$3
+    local FLAVOR_ROOT_GB=$4
+    local FLAVOR_VCPUS=$5
+
+    credentials="--os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT"
+    if [[ -z "$FLAVOR_LIST_FOR_ADD" ]]; then
+        FLAVOR_LIST_FOR_ADD=$(nova $credentials flavor-list | cut -d'|' -f3 | sed -e's/ /,/g')
+    fi
+
+    base_id=${FLAVOR_ID}
+    base_name_prefix=test
+    ephemeral_name_prefix=${base_name_prefix}.eph
+    for name_prefix in $base_name_prefix $ephemeral_name_prefix; do
+        reg_name=${name_prefix}.${FLAVOR_NAME}-${FLAVOR_ROOT_GB}
+        resize_name=${reg_name}.resize
+        ephemeral=0
+        if [[ $name_prefix == $ephemeral_name_prefix ]]; then
+            ephemeral=1
+        fi
+        for name in ${reg_name} ${resize_name}; do
+            id=$base_id
+            memory=${FLAVOR_MEMORY_MB}
+            vcpus=${FLAVOR_VCPUS}
+            if [[ $ephemeral != 0 ]]; then
+                if [[ $BRANCH_OVERRIDE == "stable/juno" || $BRANCH_OVERRIDE == "stable/kilo" ]]; then
+                    id=1${id}
+                else
+                    id=${id}e
+                fi
+            fi
+            if [[ $name == ${resize_name} ]]; then
+                if [[ $BRANCH_OVERRIDE == "stable/juno" || $BRANCH_OVERRIDE == "stable/kilo" ]]; then
+                    id=2${id}
+                else
+                    id=${id}r
+                fi
+                memory=$((${FLAVOR_MEMORY_MB} + 16))
+                vcpus=$((${FLAVOR_VCPUS} + 1))
+            fi
+            if [[ $FLAVOR_LIST_FOR_ADD != *",$name,"* ]]; then
+                nova $credentials flavor-create $name $id $memory $FLAVOR_ROOT_GB $vcpus --ephemeral $ephemeral
+            fi
+        done
+    done
+}
+
+function get_attribute_id() {
+    openstack --os-auth-url=$TROVE_AUTH_ENDPOINT --os-username=admin --os-password=$ADMIN_PASSWORD --os-project-name=admin $1 list | grep " $2" | get_field $3
+}
+
+
+###############################################################################
+# Install all the required dependencies
+###############################################################################
+
+function install_prep_packages() {
+    # Called before devstack
+    exclaim 'Updating dependencies (part 1a)...'
+    pkg_update
+    exclaim 'Installing dependencies (part 1b)...'
+    pkg_install python-pip
+    if is_fedora; then
+      pkg_install git gettext
+    else
+      pkg_install git-core kvm-ipxe gettext
+    fi
+    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
+}
+
+function install_devstack_code() {
+    exclaim "Installing devstack..."
+    # Installs devstack (if needed).
+    if [ ! -d $PATH_DEVSTACK_SRC ]; then
+        echo "DevStack not in a shared folder, cloning from git."
+        mkdir -p $PATH_DEVSTACK_SRC
+        git clone $DEVSTACK_REPO $PATH_DEVSTACK_SRC
+    fi
+
+    source $PATH_DEVSTACK_SRC/functions-common
+    source $PATH_DEVSTACK_SRC/functions
+
+    # Switch to a branch if specified.  The order the variables are checked is:
+    # DEVSTACK_BRANCH then PROJECT_BRANCH
+    BRANCH_SPECIFIED=$(test -z "${DEVSTACK_BRANCH}${PROJECT_BRANCH}" || echo 'True')
+    if [[ "${BRANCH_SPECIFIED}" = "True" ]]; then
+        PROJ_BRANCH=$(get_project_branch DEVSTACK_BRANCH $PROJECT_BRANCH)
+        ENV_VARS="DEVSTACK_BRANCH' or 'PROJECT_BRANCH"
+        git_checkout "devstack" "$PATH_DEVSTACK_SRC" "$PROJ_BRANCH" "$ENV_VARS"
+    fi
+
+    exclaim "Installing devstack projects..."
+    # Ensures present user can get to the devstack dirs
+    sudo mkdir -p $PATH_DEVSTACK_OUTPUT
+    if [ ! -w $PATH_DEVSTACK_OUTPUT ]; then
+        sudo chown `whoami` $PATH_DEVSTACK_OUTPUT
+    fi
+    # Clones all of the code to where devstack expects it to be
+    pushd $PATH_DEVSTACK_OUTPUT
+    cmd_clone_projects do_not_force_update $REDSTACK_SCRIPTS/projects-list \
+        $REDSTACK_SCRIPTS/image-projects-list
+    popd
+}
+
+function install_reviews_on_top_of_devstack() {
+    exclaim "Putting gerrit review code on top of the existing devstack code"
+    run_review_for nova $PATH_NOVA $REVIEW_NOVA
+    run_review_for python-novaclient $PATH_PYTHON_NOVACLIENT $REVIEW_PYTHON_NOVACLIENT
+    run_review_for keystone $PATH_KEYSTONE $REVIEW_KEYSTONE
+    run_review_for python-keystoneclient $PATH_KEYSTONECLIENT $REVIEW_PYTHON_KEYSTONECLIENT
+    run_review_for python-openstackclient $PATH_OPENSTACKCLIENT $REVIEW_PYTHON_OPENSTACKCLIENT
+    run_review_for glance $PATH_GLANCE $REVIEW_GLANCE
+    run_review_for swift $PATH_SWIFT $REVIEW_SWIFT
+    run_review_for python-swiftclient $PATH_PYTHON_SWIFTCLIENT $REVIEW_PYTHON_SWIFTCLIENT
+    run_review_for trove $PATH_TROVE $REVIEW_TROVE
+    run_review_for python-troveclient $PATH_PYTHON_TROVECLIENT $REVIEW_PYTHON_TROVECLIENT
+}
+
+function run_review_for() {
+    # Splits based on colon in the REVIEW_ARG and pulls from
+    GIT_NAME=$1
+    PATH_ARG=$2
+    REVIEW_ARG=$3
+    for review in `echo $REVIEW_ARG| tr ":" "\n"`
+    do
+        # This should be the ref spec for what we pull
+        pushd $PATH_ARG
+        git_timed pull https://review.openstack.org/p/openstack/$GIT_NAME refs/changes/$review
+        popd
+    done
+}
+
+function fixup_broken_devstack() {
+    # Nothing to do here, devstack is working
+    :
+}
+
+# Delete all the lines from FILE_NAME between START_TAG and END_TAG
+# Tags must appear at the beginning of a line
+function clear_file_lines() {
+    local FILE_NAME=$1
+    local START_TAG=$2
+    local END_TAG=$3
+
+    sed -i "/^$START_TAG$/,/^$END_TAG$/{/^$START_TAG/!{/^$END_TAG/!d;}}" "$FILE_NAME"
+}
+
+# Checks to see if a variable with the same name as FILE_NAME exists.
+# Returns 'true' if no varable exists or if the value of the variable
+# is set to 'true' - returns the VAR_NAME to set otherwise.
+# FILE_NAME is first converted to uppercase, the extension is removed
+# and all remaining '.' and spaces are replaced with '_'
+function check_filename_var() {
+    local FILE_NAME=$1
+
+    DEREF_VALUE=false
+    if [ -f "$FILE_NAME" ]; then
+        VAR_NAME=$(basename "$FILE_NAME" ".rc" | tr '[:lower:][:blank:][:punct:]' '[:upper:]__')
+        DEREF_VALUE=$(get_bool "$VAR_NAME" "true")
+        if [ "$DEREF_VALUE" != "true" ]; then
+            DEREF_VALUE=$VAR_NAME
+        fi
+    fi
+    echo "$DEREF_VALUE"
+}
+
+# Add the contents of one file to another, after the given tag
+# Run through 'eval' if PARSE_FILE is true (defaults to true)
+# Start with a blank line if BLANK_LINE_TO_START is true (defaults to false)
+function add_file_contents() {
+    local FILE_NAME=$1
+    local FILE_TO_ADD=$2
+    local TAG=$3
+    local PARSE_FILE=${4:-true}
+    local BLANK_LINE_TO_START=${5:-false}
+
+    TEMP_FILE=".redstack.$$"
+    rm -f "$TEMP_FILE"
+    if [ "$BLANK_LINE_TO_START" = "true" ]; then
+        echo "" > "$TEMP_FILE"
+    fi
+    if [ -f "$FILE_TO_ADD" ]; then
+        echo "Adding $FILE_TO_ADD to $FILE_NAME"
+        echo "# Contents from $FILE_TO_ADD" >> "$TEMP_FILE"
+        if [ "$PARSE_FILE" = "true" ]; then
+            eval echo "\"$(cat "$FILE_TO_ADD")\"" >> "$TEMP_FILE"
+        else
+            cat "$FILE_TO_ADD" >> "$TEMP_FILE"
+        fi
+        echo "# End Of Contents from $FILE_TO_ADD" >> "$TEMP_FILE"
+    fi
+    echo "" >> "$TEMP_FILE"
+    sed -i "/^$TAG/r $TEMP_FILE" "$FILE_NAME"
+    rm -f "$TEMP_FILE"
+}
+
+function run_devstack() {
+    exclaim "Running devstack..."
+
+    # (Re)Creating this lock directory seems sure-fire.
+    rm -rf "$USERHOME/nova_locks"
+    mkdir -p "$USERHOME/nova_locks"
+
+    TROVE_PRESENT_TAG="# Trove-integration"
+    LOCAL_CONF_D=local.conf.d
+    CONF_MATCH="*.rc"
+    MARKER_TOKEN="#####"
+    USER_LOCAL_CONF=$(readlink -f "${USER_LOCAL_CONF:-$USERHOME/$USER_LOCAL_CONF_NAME}")
+    LOCALRC_OPTS_TAG="$MARKER_TOKEN Redstack Localrc Options $MARKER_TOKEN"
+    LOCALRC_OPTS_TAG_END="$MARKER_TOKEN End Of Redstack Localrc Options $MARKER_TOKEN"
+    USER_OPTS_TAG="$MARKER_TOKEN User Specified Options $MARKER_TOKEN"
+    USER_OPTS_TAG_END="$MARKER_TOKEN End Of User Specified Options $MARKER_TOKEN"
+    ADD_OPTS_TAG="$MARKER_TOKEN Additional Options $MARKER_TOKEN"
+    ADD_OPTS_TAG_END="$MARKER_TOKEN End Of Additional Options $MARKER_TOKEN"
+    set_trove_plugin_vars false
+
+    pushd "$PATH_DEVSTACK_SRC"
+    DEVSTACK_LOCAL_CONF=$LOCAL_CONF
+    # remain backwards compatible with existing localrc files
+    if [ -f "$LOCALRC" ]; then
+        DEVSTACK_LOCAL_CONF=$LOCALRC
+        echo "Old-style devstack config file $PATH_DEVSTACK_SRC/$DEVSTACK_LOCAL_CONF found."
+        echo "Consider removing to generate the preferred-sytle config file $LOCAL_CONF."
+    fi
+    if [ -f "$DEVSTACK_LOCAL_CONF" ]; then
+        # Check if we have already configured the devstack config file
+        already_in_conf=$(grep "$TROVE_PRESENT_TAG" "$DEVSTACK_LOCAL_CONF" | wc -l)
+        if [ "$already_in_conf" == 0 ]; then
+            # We can no longer append to an existing old-style localrc file
+            if [ "$DEVSTACK_LOCAL_CONF" == "$LOCALRC" ]; then
+                echo "The devstack config file $PATH_DEVSTACK_SRC/$DEVSTACK_LOCAL_CONF is too old to append to."
+                echo "Please remove and try again."
+                exit 1
+            fi
+            # Otherwise append the redstack version to the existing file
+            eval echo "\"$(cat "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC")\"" >> "$DEVSTACK_LOCAL_CONF"
+        fi
+    else
+        # If a devstack config file doesn't exist, create it
+        eval echo "\"$(cat "$REDSTACK_SCRIPTS/$DEFAULT_LOCAL_CONF")\"" > "$DEVSTACK_LOCAL_CONF"
+    fi
+
+    # We can only replace sections from the LOCAL_CONF style files
+    if [ "$DEVSTACK_LOCAL_CONF" == "$LOCAL_CONF" ]; then
+        # Clear out all the options
+        clear_file_lines "$DEVSTACK_LOCAL_CONF" "$LOCALRC_OPTS_TAG" "$LOCALRC_OPTS_TAG_END"
+        clear_file_lines "$DEVSTACK_LOCAL_CONF" "$USER_OPTS_TAG" "$USER_OPTS_TAG_END"
+        clear_file_lines "$DEVSTACK_LOCAL_CONF" "$ADD_OPTS_TAG" "$ADD_OPTS_TAG_END"
+
+        # Add the main localrc file
+        PARSE_FILE="true"
+        BLANK_LINE_TO_START="true"
+        if [ -f "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC" ]; then
+            add_file_contents "$DEVSTACK_LOCAL_CONF" "$REDSTACK_SCRIPTS/$DEFAULT_LOCALRC" "$LOCALRC_OPTS_TAG" "$PARSE_FILE" "$BLANK_LINE_TO_START"
+        fi
+
+        # Add any user options
+        PARSE_FILE="false"
+        BLANK_LINE_TO_START="true"
+        if [ -f "$USER_LOCAL_CONF" ]; then
+            add_file_contents "$DEVSTACK_LOCAL_CONF" "$USER_LOCAL_CONF" "$USER_OPTS_TAG" "$PARSE_FILE" "$BLANK_LINE_TO_START"
+        fi
+
+        # Add all the files in the LOCAL_CONF_D directory that match CONF_MATCH (except for sample files)
+        # and that aren't excluded.  Files are excluded by having a variable
+        # 'FILENAME_IN_UPPERCASE_MINUS_RC=false' in redstack.rc
+        # For Example: USING_VAGRANT=false (for the using_vagrant.rc file).
+        PARSE_FILE="true"
+        BLANK_LINE_TO_START="false"
+        while IFS= read -r -d '' CONF_FILE
+        do
+            FILE_NAME_VAR=$(check_filename_var "$CONF_FILE")
+            if [ "$FILE_NAME_VAR" = "true" ]; then
+                add_file_contents "$DEVSTACK_LOCAL_CONF" "$CONF_FILE" "$ADD_OPTS_TAG" "$PARSE_FILE" "$BLANK_LINE_TO_START"
+            else
+                echo "Skipping $CONF_FILE"
+                echo "Use $FILE_NAME_VAR=true to include"
+            fi
+        done < <(find "$REDSTACK_SCRIPTS/${LOCAL_CONF_D}" -name "${CONF_MATCH}" -follow -not -name "sample*.rc" -type f -print0)
+        # this is to add a blank line for readability
+        add_file_contents "$DEVSTACK_LOCAL_CONF" "" "$ADD_OPTS_TAG"
+    fi
+    ./stack.sh
+    popd
+}
+
+
+function cmd_install() {
+    sudo mkdir -p $TROVE_LOGDIR # Creates TROVE_LOGDIR if it does not exist
+    if [ ! -w $TROVE_LOGDIR ]; then
+        sudo chown `whoami` $TROVE_LOGDIR
+    fi
+    install_prep_packages
+    install_devstack_code
+    install_reviews_on_top_of_devstack
+    fixup_broken_devstack
+    run_devstack
+    exclaim "${COLOR_GREEN}FINISHED INSTALL${COLOR_NONE}"
+}
+
+
+###############################################################################
+# Build the image
+# see functions_qemu
+###############################################################################
+
+# Grab a numbered field from python prettytable output
+# Fields are numbered starting with 1
+# Reverse syntax is supported: -1 is the last field, -2 is second to last, etc.
+# get_field field-number
+function get_field() {
+    while read data; do
+        if [ "$1" -lt 0 ]; then
+            field="(\$(NF$1))"
+        else
+            field="\$$(($1 + 1))"
+        fi
+        echo "$data" | awk -F'[ \t]*\\|[ \t]*' "{print $field}"
+    done
+}
+
+function get_glance_id () {
+    echo `$@ | grep ' id ' | get_field 2`
+}
+
+function set_bin_path() {
+    if is_fedora; then
+       sed -i "s|%bin_path%|/usr/bin|g" $TEST_CONF
+    else
+       sed -i "s|%bin_path%|/usr/local/bin|g" $TEST_CONF
+    fi
+}
+
+function set_mysql_pkg() {
+    if is_fedora; then
+       MYSQL_PKG="mysql-community-server"
+    else
+       MYSQL_PKG="mysql-server-5.6"
+    fi
+}
+
+
+function cmd_set_datastore() {
+    IMAGEID=$1
+    DATASTORE_TYPE=$2
+    # rd_manage datastore_update <datastore_name> <default_version>
+    rd_manage datastore_update "$DATASTORE_TYPE" ""
+    PACKAGES=${PACKAGES:-""}
+    if [ "$DATASTORE_TYPE" == "mysql" ]; then
+        set_mysql_pkg
+        PACKAGES=${PACKAGES:-$MYSQL_PKG}
+        VERSION="5.6"
+    elif [ "$DATASTORE_TYPE" == "percona" ]; then
+        PACKAGES=${PACKAGES:-"percona-server-server-5.6"}
+        VERSION="5.6"
+    elif [ "$DATASTORE_TYPE" == "pxc" ]; then
+        PACKAGES=${PACKAGES:-"percona-xtradb-cluster-server-5.6"}
+        VERSION="5.6"
+    elif [ "$DATASTORE_TYPE" == "mariadb" ]; then
+        PACKAGES=${PACKAGES:-"mariadb-server"}
+        VERSION="10.1"
+    elif [ "$DATASTORE_TYPE" == "mongodb" ]; then
+        PACKAGES=${PACKAGES:-"mongodb-org"}
+        VERSION="3.2"
+    elif [ "$DATASTORE_TYPE" == "redis" ]; then
+        PACKAGES=${PACKAGES:-"redis-server"}
+        VERSION="3.0"
+    elif [ "$DATASTORE_TYPE" == "cassandra" ]; then
+        PACKAGES=${PACKAGES:-"cassandra"}
+        VERSION="2.1.0"
+    elif [ "$DATASTORE_TYPE" == "couchbase" ]; then
+        PACKAGES=${PACKAGES:-"couchbase-server"}
+        VERSION="2.2.0"
+    elif [ "$DATASTORE_TYPE" == "postgresql" ]; then
+        PACKAGES=${PACKAGES:-"postgresql-9.4"}
+        VERSION="9.4"
+    elif [ "$DATASTORE_TYPE" == "couchdb" ]; then
+        PACKAGES=${PACKAGES:-"couchdb"}
+        VERSION="1.6.1"
+    elif [ "$DATASTORE_TYPE" == "vertica" ]; then
+        PACKAGES=${PACKAGES:-"vertica"}
+        VERSION="7.1"
+    elif [ "$DATASTORE_TYPE" == "db2" ]; then
+        PACKAGES=${PACKAGES:-""}
+        VERSION="10.5"
+    else
+        echo "Unrecognized datastore type. ($DATASTORE_TYPE)"
+        exit 1
+    fi
+
+    sed -i "s/%datastore_type%/$DATASTORE_TYPE/g" $TEST_CONF
+    sed -i "s/%datastore_version%/$VERSION/g" $TEST_CONF
+
+    #rd_manage datastore_version_update <datastore_name> <version_name> <datastore_manager> <image_id> <packages> <active>
+    rd_manage datastore_version_update "$DATASTORE_TYPE" "$VERSION" "$DATASTORE_TYPE" $IMAGEID "$PACKAGES" 1
+    rd_manage datastore_version_update "$DATASTORE_TYPE" "inactive_version" "manager1" $IMAGEID "" 0
+    rd_manage datastore_update "$DATASTORE_TYPE" "$VERSION"
+    rd_manage datastore_update Test_Datastore_1 ""
+
+    if [ -f "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json ]; then
+        # add the configuration parameters to the database for the kick-start datastore
+        rd_manage db_load_datastore_config_parameters "$DATASTORE_TYPE" "$VERSION" "$PATH_TROVE"/trove/templates/$DATASTORE_TYPE/validation-rules.json
+    fi
+
+    cmd_stop
+    iniset $TROVE_CONF DEFAULT default_datastore "$DATASTORE_TYPE"
+    sleep 1.5
+    cmd_start
+}
+
+###############################################################################
+# Run Unit Tests
+###############################################################################
+
+function cmd_unit_tests() {
+    exclaim "Running Trove Unit Tests..."
+    $PATH_TROVE/run_tests.sh -N
+}
+
+###############################################################################
+# Start various OpenStack daemons interactively in a screen session
+###############################################################################
+
+function cmd_start_deps() {
+    if ! sudo vgs $VOLUME_GROUP; then
+        exclaim "Reconnecting Volume Group to Backing File"
+        sudo losetup -f --show ${VOLUME_BACKING_FILE}
+    fi
+
+    if ! egrep -q ${SWIFT_DATA_DIR}/drives/sdb1 /proc/mounts; then
+        exclaim "Re-mounting Swift Disk Image"
+        sudo mount -t xfs -o loop,noatime,nodiratime,nobarrier,logbufs=8  ${SWIFT_DISK_IMAGE} ${SWIFT_DATA_DIR}/drives/sdb1 || true
+    fi
+
+    if [[ -e $PATH_DEVSTACK_SRC/stack-screenrc ]]; then
+        screen -dmS stack -c $PATH_DEVSTACK_SRC/stack-screenrc
+    fi
+}
+
+function cmd_stop_deps() {
+    if screen -ls | grep -q stack; then
+        screen -S stack -X quit
+        rm -f $DEST/status/stack/*
+    fi
+}
+
+
+###############################################################################
+# Initialize Trove
+###############################################################################
+
+function rd_manage() {
+    pushd $PATH_TROVE
+    $TROVE_BIN_DIR/trove-manage --config-file=$TROVE_CONF "$@"
+    popd
+}
+
+function install_test_packages() {
+    sudo -H $HTTP_PROXY pip install openstack.nose_plugin proboscis pexpect
+}
+
+function mod_confs() {
+    DATASTORE_TYPE=$1
+
+    sudo install -b --mode 0664 $REDSTACK_SCRIPTS/conf/test_begin.conf $TEST_CONF
+    TROVE_REPORT_DIR=$REDSTACK_SCRIPTS/../report/
+    EXTRA_CONF=$REDSTACK_SCRIPTS/conf/test.extra.conf
+    if [ -e $EXTRA_CONF ]; then
+        cat $EXTRA_CONF >> $TEST_CONF
+    fi
+    # Append datastore specific configuration file
+    DATASTORE_CONF=$REDSTACK_SCRIPTS/conf/$DATASTORE_TYPE.conf
+    if [ ! -f $DATASTORE_CONF ]; then
+        exclaim "Datastore configuration file ${DATASTORE_CONF} not found"
+        exit 1
+    fi
+    cat $DATASTORE_CONF | sudo tee -a $TEST_CONF > /dev/null
+    cat $REDSTACK_SCRIPTS/conf/test_end.conf | sudo tee -a $TEST_CONF > /dev/null
+
+    #Add the paths to the test conf
+    sed -i "s,%report_directory%,$TROVE_REPORT_DIR,g" $TEST_CONF
+    sed -i "s,%keystone_path%,$PATH_KEYSTONE,g" $TEST_CONF
+    sed -i "s,%nova_path%,$PATH_NOVA,g" $TEST_CONF
+    sed -i "s,%glance_path%,$PATH_GLANCE,g" $TEST_CONF
+    sed -i "s,%trove_path%,$PATH_TROVE,g" $TEST_CONF
+    sed -i "s,%service_host%,$SERVICE_HOST,g" $TEST_CONF
+    sed -i "s,%swifth_path%,$PATH_SWIFT,g" $TEST_CONF
+
+    # Add the region name into test.conf
+    sed -i "s/%region_name%/${REGION_NAME}/g" $TEST_CONF
+
+    # Add the tenant id's into test.conf
+    sed -i "s/%admin_tenant_id%/$(get_attribute_id project admin 1)/g" $TEST_CONF
+    sed -i "s/%alt_demo_tenant_id%/$(get_attribute_id project alt_demo 1)/g" $TEST_CONF
+    sed -i "s/%demo_tenant_id%/$(get_attribute_id project demo 1)/g" $TEST_CONF
+    sed -i "s/%admin_password%/$ADMIN_PASSWORD/g" $TEST_CONF
+
+    # Enable neutron tests if needed
+    sed -i "s/%neutron_enabled%/$ENABLE_NEUTRON/g" $TEST_CONF
+
+    # If neutron is enabled, we create a shared network and write this info to the
+    # confs so that the integration tests can use it.
+    if [[ $ENABLE_NEUTRON = true ]]; then
+        management_network_id=$(neutron --os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT net-list | awk '/ alt-private / {print $2}')
+        management_subnet=$(neutron --os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT subnet-list | awk '/ alt-private-subnet / {print $2}')
+        echo "Using neutron network $management_network_id and subnet $management_subnet"
+        sed -i "s,%shared_network%,$management_network_id,g" $TEST_CONF
+        sed -i "s,%shared_network_subnet%,$management_subnet,g" $TEST_CONF
+    else
+        # do not leave invalid keys in the configuration when using Nova for networking
+        sed -i "/%shared_network%/d" $TEST_CONF
+        sed -i "/%shared_network_subnet%/d" $TEST_CONF
+    fi
+
+    if [ "$DATASTORE_TYPE" = "vertica" ]; then
+        # Vertica needs more time than mysql for its boot/start/stop operations.
+        setup_cluster_configs cluster_member_count 3
+    elif [ "$DATASTORE_TYPE" = "pxc" ]; then
+        setup_cluster_configs min_cluster_member_count 2
+    elif [ "$DATASTORE_TYPE" = "cassandra" ]; then
+        setup_cluster_configs cluster_member_count 2
+    elif [ "$DATASTORE_TYPE" = "mongodb" ]; then
+        setup_cluster_configs cluster_member_count 2
+        # Decrease the number of required config servers per cluster to save resources.
+        iniset $TROVE_CONF $DATASTORE_TYPE num_config_servers_per_cluster 1
+    fi
+
+    set_bin_path
+
+}
+
+function setup_cluster_configs() {
+    # Setting cluster_member_count to 2 to decrease cluster spawn time.
+    iniset $TROVE_CONF $DATASTORE_TYPE $1 $2
+}
+
+# Add useful flavors for testing (with corresponding *.resize flavors)
+function add_test_flavors() {
+    # name id ram root_vol vcpu
+    # the ram and vcpu for name.resize are automatically calculated
+    # eph and non-eph flavors are created for each entry
+    add_flavor 'tiny' 10 512 3 1
+
+    add_flavor 'small' 15 768 3 1
+    add_flavor 'small' 16 768 4 1
+    add_flavor 'small' 17 768 5 1
+
+    add_flavor 'medium' 20 1024 4 1
+    add_flavor 'medium' 21 1024 5 1
+
+    add_flavor 'large' 25 2048 5 1
+    add_flavor 'large' 26 2048 10 1
+    add_flavor 'large' 27 2048 15 1
+
+    # This will allow Nova to create an instance, but not enough disk to boot the image
+    add_flavor 'fault_1' 30 512 1 1
+    # This should be enough memory to cause Nova to fail entirely due to too much allocation
+    add_flavor 'fault_2' 31 131072 5 1
+}
+
+function cmd_test_init() {
+    exclaim 'Initializing Configuration for Running Tests...'
+
+    exclaim "Installing python test packages."
+    install_test_packages
+
+    exclaim "Modifying test.conf and guest.conf with appropriate values."
+    mod_confs $1
+
+    exclaim "Creating Test Flavors."
+    add_test_flavors
+
+    if [[ -n $KEY_DIR ]]; then
+        exclaim "Installing the SSH key from $KEY_DIR to the test environment."
+        mkdir -m 700 -p $USERHOME/.ssh
+        install -b --mode 0400 $KEY_DIR/id_rsa $USERHOME/.ssh
+        cat $KEY_DIR/authorized_keys >> $USERHOME/.ssh/authorized_keys
+        chmod 600 $USERHOME/.ssh/authorized_keys
+    fi
+}
+
+function cmd_build_image() {
+    IMAGE_DATASTORE_TYPE=${1:-'mysql'}
+    ESCAPED_PATH_TROVE=${2:-'\/opt\/stack\/trove'}
+    HOST_SCP_USERNAME=${3:-'ubuntu'}
+    GUEST_USERNAME=${4:-'ubuntu'}
+
+    exclaim "Ensuring we have all packages needed to build image."
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS update
+    sudo $HTTP_PROXY $PKG_MGR $PKG_GET_ARGS install qemu
+    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
+
+    install_devstack_code
+
+    cmd_clone_projects do_not_force_update $REDSTACK_SCRIPTS/image-projects-list
+
+    exclaim "Use tripleo-diskimagebuilder to actually build the Trove Guest Agent Image."
+    build_guest_image $IMAGE_DATASTORE_TYPE
+}
+
+function cmd_build_and_upload_image() {
+    local IMAGE_URL=""
+    # Use /tmp as file_cache
+    FILES=/tmp
+    if [[ -n $IMAGE_DOWNLOAD_URL ]]; then
+        exclaim "Downloading and using cached image"
+        IMAGE_URL=$IMAGE_DOWNLOAD_URL
+    else
+        exclaim "Trying to build image"
+        build_guest_image $1
+        QCOW_IMAGE=`find $VM_PATH -name '*.qcow2'`
+        IMAGE_URL="file://$QCOW_IMAGE"
+    fi
+
+    # The devstack openrc has references to 'enable_plugin' which causes errors
+    # in the stable/juno and stable/kilo branches. These are safe to ignore.
+    set +e; source $PATH_DEVSTACK_SRC/openrc admin admin; set -e
+    TOKEN=$(openstack token issue | grep ' id ' | get_field 2)
+    GLANCE_IMAGEIDS=$(glance image-list | grep $(basename $IMAGE_URL .qcow2) | get_field 1)
+    if [[ -n $GLANCE_IMAGEIDS ]]; then
+        glance image-delete $GLANCE_IMAGEIDS
+    fi
+    GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL $TOKEN`
+    set +e; source $PATH_DEVSTACK_SRC/openrc demo demo; set -e
+    [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
+    echo "IMAGE ID: $GLANCE_IMAGEID"
+
+    exclaim "Updating Datastores"
+    cmd_set_datastore $GLANCE_IMAGEID $1
+}
+
+
+function cmd_initialize() {
+    exclaim '(Re)Initializing Trove...'
+    pushd $PATH_DEVSTACK_SRC
+    ./unstack.sh
+    ./stack.sh
+    popd
+}
+
+
+###############################################################################
+# Start Trove specific daemons interactively in a screen session
+###############################################################################
+
+function tr_screen_it {
+    if screen -ls | grep -q stack; then
+        echo "Starting $@..."
+        screen -S stack -p $1 -X stuff "$2"$'\015'
+    fi
+}
+
+function init_fake_mode() {
+    # Create a test conf which, unlike the conf which runs on a user's machine,
+    # takes advantage of the running keystone service we have in our VM.
+    # You could think of this fake mode, which runs in the VM as being
+    # slightly less fake than the default one which runs outside of it.
+    CONF_FILE=/tmp/trove.conf.test
+    cp $PATH_TROVE/etc/trove/trove.conf.test $CONF_FILE
+    # Switch keystone from the fake class to the real one.
+    sed -i \
+        "s/trove.tests.fakes.keystone/keystone.middleware.auth_token/g" \
+        $CONF_FILE
+    sed -i "s/log_file = rdtest.log//g" $CONF_FILE
+    sed -i "s/use_stderr = False/use_stderr = True/g" $CONF_FILE
+    cd $PATH_TROVE
+    set -e
+    rm -f trove_test.sqlite
+    set +e
+    $TROVE_BIN_DIR/trove-manage --config-file=$CONF_FILE db_sync
+    sqlite3 trove_test.sqlite \
+        "INSERT INTO datastores VALUES ('a00000a0-00a0-0a00-00a0-000a000000aa', \
+            'mysql', 'b00000b0-00b0-0b00-00b0-000b000000bb'); \
+         INSERT INTO datastores values ('e00000e0-00e0-0e00-00e0-000e000000ee', \
+            'Test_Datastore_1', ''); \
+         INSERT INTO datastore_versions VALUES ('b00000b0-00b0-0b00-00b0-000b000000bb', \
+            'a00000a0-00a0-0a00-00a0-000a000000aa', '5.6', \
+            'c00000c0-00c0-0c00-00c0-000c000000cc', $MYSQL_PKG, 1, 'mysql'); \
+         INSERT INTO datastore_versions VALUES ('d00000d0-00d0-0d00-00d0-000d000000dd', \
+            'a00000a0-00a0-0a00-00a0-000a000000aa', 'inactive_version', \
+            '', '', 0, 'manager1'); \
+        INSERT INTO datastore_configuration_parameters VALUES \
+            ('00000000-0000-0000-0000-000000000001', \
+            'key_buffer_size', 'b00000b0-00b0-0b00-00b0-000b000000bb', \
+            0, 4294967296, 0, 'integer', 0, NULL); \
+        INSERT INTO datastore_configuration_parameters VALUES \
+            ('00000000-0000-0000-0000-000000000002', \
+            'connect_timeout', 'b00000b0-00b0-0b00-00b0-000b000000bb', \
+            0, 65535, 1, 'integer', 0, NULL); \
+        INSERT INTO datastore_configuration_parameters VALUES \
+            ('00000000-0000-0000-0000-000000000003', \
+            'join_buffer_size', 'b00000b0-00b0-0b00-00b0-000b000000bb', \
+            0, 4294967296, 0, 'integer', 0, NULL); \
+        INSERT INTO datastore_configuration_parameters VALUES \
+            ('00000000-0000-0000-0000-000000000004', \
+            'local_infile', 'b00000b0-00b0-0b00-00b0-000b000000bb', \
+            0, 1, 0, 'integer', 0, NULL); \
+        INSERT INTO datastore_configuration_parameters VALUES \
+            ('00000000-0000-0000-0000-000000000005', \
+            'collation_server', 'b00000b0-00b0-0b00-00b0-000b000000bb', \
+            0, NULL, NULL, 'string', 0, NULL); \
+        "
+}
+
+function cmd_start() {
+    if screen -ls | grep -q stack; then
+        set_trove_plugin_vars
+        USE_SCREEN=True
+        TOP_DIR=$PATH_DEVSTACK_SRC
+        LOGDIR=$TROVE_LOGDIR
+        RUNNING=$(screen -S stack -Q windows)
+        if [[ "$RUNNING" =~ " tr-" ]]; then
+            exclaim "${COLOR_RED}WARNING: Trove services appear to be running. Please run 'stop' or 'restart'${COLOR_NONE}"
+        else
+            source /dev/stdin < <(sed -n '/^function start_trove\(\)/,/^}/p' "$TROVE_SETUP_CMD_FILE")
+            start_trove
+        fi
+    else
+        echo "WARNING: Could not start Trove services because there is no stack screen session running"
+    fi
+}
+
+function cmd_start_fake() {
+    init_fake_mode
+    CONF_FILE=/tmp/trove.conf.test
+    tr_screen_it tr-fake "cd $PATH_TROVE; $TROVE_BIN_DIR/trove-fake-mode --config-file=$CONF_FILE $@"
+}
+
+function cmd_run() {
+    cd $PATH_TROVE; $TROVE_BIN_DIR/trove-api \
+        --config-file=$TROVE_CONF $@
+}
+
+function cmd_run_fake() {
+    init_fake_mode
+    CONF_FILE=/tmp/trove.conf.test
+    $TROVE_BIN_DIR/trove-fake-mode --config-file=$CONF_FILE $@
+}
+
+###############################################################################
+# Stop any active Trove screen session
+###############################################################################
+
+function cmd_stop() {
+    if screen -ls | grep -q stack; then
+        set_trove_plugin_vars
+        rm -f $DEST/status/stack/tr-*
+        USE_SCREEN=True
+        source /dev/stdin < <(sed -n '/^function stop_trove\(\)/,/^}/p' "$TROVE_SETUP_CMD_FILE")
+        MAX_RETRY=5
+        COUNT=1
+        while true; do
+            RUNNING=$(screen -S stack -Q windows)
+            if [[ "$RUNNING" =~ " tr-" ]]; then
+                stop_trove
+            else
+                break
+            fi
+            ((COUNT++))
+            if [ "$COUNT" -gt "$MAX_RETRY" ]; then
+                exclaim "${COLOR_RED}WARNING: Could not stop Trove services after ${MAX_RETRY} attempts${COLOR_NONE}"
+                break
+            fi
+        done
+    else
+        echo "WARNING: Could not stop Trove services because there is no stack screen session running"
+    fi
+}
+
+
+###############################################################################
+# Run Integration Tests
+###############################################################################
+
+function cmd_int_tests() {
+    exclaim "Running Trove Integration Tests..."
+    if [ ! $USAGE_ENDPOINT ]; then
+        export USAGE_ENDPOINT=trove.tests.util.usage.FakeVerifier
+    fi
+    cd $REDSTACK_SCRIPTS
+    if [ $# -lt 1 ]; then
+        args="--group=blackbox"
+    else
+        args="$@"
+    fi
+
+    # -- verbose makes it prettier.
+    # -- logging-clear-handlers keeps the novaclient and other things from
+    #    spewing logs to stdout.
+    args="$INT_TEST_OPTIONS -B $REDSTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
+    echo "python $args"
+    python $args
+}
+
+function cmd_int_tests_simple() {
+    exclaim "Running Trove Simple Integration Tests..."
+    cd $REDSTACK_SCRIPTS
+    if [ $# -lt 1 ]; then
+        args="--group=simple_blackbox"
+    else
+        args="$@"
+    fi
+
+    # -- verbose makes it prettier.
+    # -- logging-clear-handlers keeps the novaclient and other things from
+    #    spewing logs to stdout.
+    args="$INT_TEST_OPTIONS -B $REDSTACK_TESTS/integration/int_tests.py --verbose --logging-clear-handlers $args"
+    echo "python $args"
+    python $args
+}
+
+function cmd_int_tests_white_box() {
+    export PYTHONPATH=$PYTHONPATH:$PATH_TROVE
+    export PYTHONPATH=$PYTHONPATH:$PATH_NOVA
+    cmd_int_tests --test-config white_box=True \
+        --config-file=$TROVE_CONF \
+        --nova-flags=/etc/nova/nova.conf $@
+}
+
+function cmd_example_tests() {
+    set +e
+    cmd_stop
+    set -e
+    cmd_start_fake
+    sleep 3
+    echo "
+{
+    \"directory\": \"$REDSTACK_TESTS/../apidocs/src/resources/samples/\",
+    \"auth_url\":\"http://$KEYSTONE_AUTH_HOST:35357/v2.0/tokens\",
+    \"api_url\":\"http://$SERVICE_HOST:8779\",
+    \"replace_host\":\"https://ord.databases.api.rackspacecloud.com\",
+    \"replace_dns_hostname\": \"e09ad9a3f73309469cf1f43d11e79549caf9acf2.rackspaceclouddb.com\",
+    \"username\":\"examples\",
+    \"password\":\"examples\",
+    \"tenant\":\"trove\"
+}" > /tmp/example-tests.conf
+    python $REDSTACK_TESTS/examples/examples/example_generation.py /tmp/example-tests.conf
+    pushd $REDSTACK_TESTS/../apidocs
+    mvn clean
+    mvn generate-sources
+    popd
+    cmd_stop
+}
+
+
+###############################################################################
+# Misc. tools
+###############################################################################
+
+function mysql_nova() {
+    echo mysql nova --execute "$@"
+    mysql -u root -p$MYSQL_PASSWORD nova --execute "$@"
+}
+
+function mysql_trove() {
+    echo mysql trove --execute "$@"
+    mysql -u root -p$MYSQL_PASSWORD trove --execute "$@"
+}
+
+function cmd_wipe_logs() {
+    for file in `ls $TROVE_LOGDIR/*.log`
+    do
+        echo "Reseting log file $file..."
+        echo "Reset at `date`" > $file
+    done
+}
+
+function cmd_rd_sql() {
+    mysql -u root -p$MYSQL_PASSWORD trove
+}
+
+function cmd_fake_sql() {
+    pushd $PATH_TROVE
+    sqlite3 trove_test.sqlite $@
+    popd
+}
+
+function cmd_vagrant_ssh() {
+    # Runs a command on a vagrant VM from the host machine.
+    VHOST=`vagrant ssh_config host | awk '/HostName/{print $2}'`
+    VUSER=`vagrant ssh_config host | awk '/User /{print $2}'`
+    VPORT=`vagrant ssh_config host | awk '/Port/{print $2}'`
+    VIDFILE=`vagrant ssh_config host | awk '/IdentityFile/{print $2}'`
+    echo ssh ${VUSER}@${VHOST} -p ${VPORT} -i ${VIDFILE} -o NoHostAuthenticationForLocalhost=yes "$@"
+    ssh ${VUSER}@${VHOST} -p ${VPORT} -i ${VIDFILE} -o NoHostAuthenticationForLocalhost=yes "$@"
+}
+
+
+function cmd_run_ci() {
+    exclaim "Running CI suite..."
+    set +e
+    cmd_stop_deps
+    cmd_stop
+    set -e
+    cmd_install
+    cmd_test_init $1
+    # The arg will be the image type
+    cmd_build_and_upload_image $1
+
+    # Test in fake mode.
+    exclaim "Testing in fake mode."
+    cmd_start_fake
+    FAKE_MODE=True cmd_int_tests
+    cmd_stop
+
+    # Test in real mode.
+    exclaim "Testing in real mode."
+    cmd_start
+    FAKE_MODE=False cmd_int_tests
+}
+
+function cmd_wipe_queues() {
+    # Obliterate rabbit.
+    for i in stop_app reset start_app "change_password guest $RABBIT_PASSWORD"; \
+    do sudo rabbitmqctl $i; done
+}
+
+function cmd_clear() {
+    cmd_int_tests --group=dbaas.api.instances.delete
+    clean_instances
+    mysql_nova "DELETE FROM instance_info_caches;"
+    mysql_nova "DELETE FROM instances;"
+    mysql_trove "DELETE FROM instances;"
+    mysql_trove "DELETE FROM service_statuses;"
+    cmd_wipe_queues
+}
+
+function exec_cmd_on_output() {
+    local output_cmd=$1
+    local exec_cmd=$2
+    local delete_sleep_time=${3:-0}
+    local skip_pattern=${4:-""}
+
+    echo "Cleaning up objects from '${output_cmd}'"
+    local skip_cmd="cat"
+    if [[ -n "${skip_pattern}" ]]; then
+        local temp_skip_cmd=(grep -v "${skip_pattern}")
+        skip_cmd=${temp_skip_cmd[*]}
+    fi
+    local max_retry=10
+    local count=1
+    local again=
+    while true; do
+        ids=$($output_cmd | ${skip_cmd} | grep -v -e'---' | grep -iv ' id ' | cut -d'|' -f2)
+        if [[ -n $ids ]]; then
+            for id in $ids; do
+                echo -e "Executing: ${exec_cmd} ${id} ${again}"
+                # don't stop if we get an error executing the delete, and don't print
+                # out anything from stderr
+                set +e
+                ${exec_cmd} "${id}" &> /dev/null
+                set -e
+            done
+            sleep "${delete_sleep_time}"
+        else
+            break
+        fi
+        ((count++))
+        if [[ "$count" -gt "$max_retry" ]]; then
+            exclaim "${COLOR_RED}WARNING: '$output_cmd' still returning output after ${max_retry} delete attempts${COLOR_NONE}"
+            break
+        fi
+        again="${COLOR_BLUE}(again)${COLOR_NONE}"
+    done
+}
+
+function cmd_clean() {
+    echo "Cleaning up project '${OS_PROJECT_NAME}'"
+    # reset any stuck backups
+    mysql_trove "update backups set state='COMPLETED'"
+    # clear out any DS version metadata
+    mysql_trove "delete from datastore_version_metadata"
+    # reset any stuck instances, and clear all replicas
+    mysql_trove "update instances set task_id=2, slave_of_id=null"
+    # reset any stuck clusters
+    mysql_trove "update clusters set task_id=1"
+    # get rid of any extraneous quota usage
+    mysql_trove "delete from quota_usages"
+    # mark all instance modules as deleted
+    mysql_trove "update instance_modules set deleted=1"
+
+    source "${PATH_DEVSTACK_SRC}"/openrc admin "${OS_PROJECT_NAME}"
+    # delete any trove clusters
+    exec_cmd_on_output "trove cluster-list" "trove cluster-delete" 20
+    # delete any trove instances
+    exec_cmd_on_output "trove list" "trove delete" 10
+    # delete any backups
+    exec_cmd_on_output "trove backup-list" "trove backup-delete"
+    # clean up any remaining nova instances or cinder volumes
+    exec_cmd_on_output "nova list" "nova delete" 5
+    exec_cmd_on_output "cinder list" "cinder delete" 1
+    # delete any config groups since all instances should be gone now
+    exec_cmd_on_output "trove configuration-list" "trove configuration-delete"
+    # delete any modules too
+    exec_cmd_on_output "trove module-list" "trove module-delete"
+    # make sure that security groups are also gone, except the default
+    exec_cmd_on_output "openstack security group list" "nova security group delete" 0 "default"
+    # delete server groups
+    exec_cmd_on_output "nova server-group-list" "nova server-group-delete"
+}
+
+function cmd_kick_start() {
+    cmd_test_init $1
+    cmd_build_and_upload_image $1
+}
+
+function cmd_dsvm_gate_tests() {
+    DATASTORE_TYPE=${1:-'mysql'}
+    TEST_GROUP=${2:-${DATASTORE_TYPE}}
+    HOST_SCP_USERNAME=${3:-'jenkins'}
+    GUEST_USERNAME=${4:-'ubuntu'}
+    CONTROLLER_IP=${5:-'10.1.0.1'}
+    ESCAPED_PATH_TROVE=${6:-'\/opt\/stack\/new\/trove'}
+
+    if [[ $BRANCH_OVERRIDE == "stable/liberty" ]]; then
+        # Devstack in liberty doesn't copy the clouds.yaml file to /etc so we need to
+        # ensure we have access to the clouds.yaml file set up by devstack-gate
+        sudo mkdir -p ~/.config/openstack
+        sudo ln -s $DEST/.config/openstack/clouds.yaml ~/.config/openstack/clouds.yaml
+        sudo chown -R $(whoami) ~/.config
+    fi
+
+    # Devstack vm-gate runs as the jenkins user, but needs to connect to the guest image as ubuntu
+    echo "User=ubuntu" >> /home/jenkins/.ssh/config
+
+    # Fix iptables rules that prevent amqp connections from the devstack box to the guests
+    sudo iptables -D openstack-INPUT -j REJECT --reject-with icmp-host-prohibited || true
+
+    sudo chown -R $(whoami) /etc/trove
+    sudo chown -R $(whoami) $DEST/trove-integration
+    iniset $TROVE_GUESTAGENT_CONF DEFAULT rabbit_host $CONTROLLER_IP
+    iniset $TROVE_GUESTAGENT_CONF oslo_messaging_rabbit rabbit_hosts $CONTROLLER_IP
+    cd $DEST/trove-integration/scripts
+    sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
+
+    cmd_kick_start $DATASTORE_TYPE
+
+    # Update the local swift endpoint in the catalog to use the CONTROLLER_IP instead of 127.0.0.1
+    source $DEST/devstack/accrc/admin/admin
+    # NOTE(mriedem): We have to treat stable branches before liberty special
+    # due to constraints with older versions of python-openstackclient.
+    if [[ $BRANCH_OVERRIDE == "stable/juno" || $BRANCH_OVERRIDE == "stable/kilo" ]]; then
+        SWIFT_ENDPOINT=$(openstack endpoint list | grep 'swift' | get_field 1)
+        openstack endpoint create swift --region RegionOne --publicurl 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' \
+            --internalurl 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --adminurl 'http://'$CONTROLLER_IP':8080'
+        openstack endpoint delete $SWIFT_ENDPOINT
+    else
+        OS_CLIENT_ARGS="--os-auth-type v3password --os-auth-url $KEYSTONE_AUTH_PROTOCOL://$KEYSTONE_AUTH_HOST:5000/v3 --os-identity-api-version=3"
+        SWIFT_ENDPOINTS=$(openstack endpoint list $OS_CLIENT_ARGS --service swift -c ID -f value)
+        openstack endpoint create $OS_CLIENT_ARGS swift public 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
+        openstack endpoint create $OS_CLIENT_ARGS swift internal 'http://'$CONTROLLER_IP':8080/v1/AUTH_$(tenant_id)s' --region RegionOne
+        openstack endpoint create $OS_CLIENT_ARGS swift admin 'http://'$CONTROLLER_IP':8080' --region RegionOne
+        echo $SWIFT_ENDPOINTS | xargs -n 1 openstack endpoint delete $OS_CLIENT_ARGS
+    fi
+
+    cmd_int_tests --group=$TEST_GROUP
+}
+
+function cmd_reset_task() {
+    mysql_trove "UPDATE instances SET task_id=1 WHERE id='$1'"
+}
+
+function cmd_clone_projects() {
+    UPDATE_PROJECTS=$1
+    PROJECT_LIST_FILES=${@:2}
+    for project in $(cat $PROJECT_LIST_FILES); do
+        if [ ! -d $PATH_DEVSTACK_OUTPUT/$project ]; then
+            echo "Creating a new clone of $project..."
+            git_clone $GIT_OPENSTACK/"$project".git ${PATH_DEVSTACK_OUTPUT}/$project master
+        else
+            if [ $UPDATE_PROJECTS != "force_update" ]; then
+                echo "$project was already cloned or exists in a shared folder. Ignoring..."
+            else
+                echo "$project was already cloned. Pulling changes to update."
+                cd $PATH_DEVSTACK_OUTPUT/$project
+                git pull
+            fi
+        fi
+        # Switch to a branch if specified.  The order the variables are checked is:
+        # <PROJECT>_BRANCH then PROJECT_CLIENT_BRANCH (if a client) then PROJECT_BRANCH
+        # Note: For the Trove project, only TROVE_BRANCH and PYTHON_TROVECLIENT_BRANCH are used
+        PROJECT_BRANCH_NAME=$(eval echo "${project}_BRANCH" | tr '[:lower:]-' '[:upper:]_')
+        PROJECT_BRANCH_VALUE=${!PROJECT_BRANCH_NAME}
+        # TROVE_BRANCH is defaulted to master if not set, so use the original value here
+        if [[ "$project" = "trove" ]]; then
+            PROJECT_BRANCH_VALUE=${TROVE_BRANCH_ORIG}
+        fi
+        BRANCH_SPECIFIED=$(test -z "${PROJECT_BRANCH_VALUE}${PROJECT_CLIENT_BRANCH}${PROJECT_BRANCH}" || echo 'True')
+        if [[ "${BRANCH_SPECIFIED}" = "True" ]]; then
+            # Set up the default branch and env var names for the project
+            DEFAULT_BRANCH="$PROJECT_BRANCH"
+            ENV_VARS="$PROJECT_BRANCH_NAME' or 'PROJECT_BRANCH"
+            # Don't use 'PROJECT_BRANCH' or 'PROJECT_CLIENT_BRANCH' for the Trove project
+            if [[ "$project" =~ "trove" ]]; then
+                DEFAULT_BRANCH=master
+                ENV_VARS="$PROJECT_BRANCH_NAME"
+            # Use 'PROJECT_CLIENT_BRANCH' first for clients
+            elif [[ "$project" =~ "client" ]]; then
+                DEFAULT_BRANCH="${PROJECT_CLIENT_BRANCH:-$PROJECT_BRANCH}"
+                ENV_VARS="$PROJECT_BRANCH_NAME' or 'PROJECT_CLIENT_BRANCH' or 'PROJECT_BRANCH"
+            fi
+            PROJ_BRANCH=$(get_project_branch $PROJECT_BRANCH_NAME $DEFAULT_BRANCH)
+            git_checkout "$project" "$PATH_DEVSTACK_OUTPUT/$project" "$PROJ_BRANCH" "$ENV_VARS"
+        fi
+    done
+}
+
+function cmd_repl() {
+    INT_TEST_OPTIONS=-i cmd_int_tests_white_box --repl --group=_does_not_exist_ $@
+}
+
+
+###############################################################################
+# Process the user provided command and run the appropriate command
+###############################################################################
+
+# Let's not run this as the root user
+if [ $EUID -eq 0 ]; then
+   echo "You are running this script as root. You need to run as a regular user"
+   exit 1
+fi
+
+# Set this to exit immediately on error
+set -o errexit
+
+# set_home_dir
+set_http_proxy
+set_trove_plugin_vars false
+
+function print_usage() {
+    echo "Usage: $0 [command]"
+    echo "
+    Commands :
+        --setup environment--
+          install         - Install all the required dependencies and bring up tr-api and tr-tmgr
+                          - devstack config can be altered by using a USER_LOCAL_CONF file
+                            which will be copied into devstack/local.conf on each 'install' run
+                            (defaults to \$HOME/$USER_LOCAL_CONF_NAME)
+                          - Set DEVSTACK_BRANCH to switch the branch/commit of devstack
+                            (i.e. 'stable/kilo' or '7ef2462')
+          test-init       - Configure the test configuration files and add keystone test users
+          build-image     - Builds the vm image for the trove guest
+          initialize      - Reinitialize the trove database, users, services, and test config
+
+        --helper for environment--
+          kick-start      - kick start the setup of trove.
+                            (redstack test-init/build-image in one step)
+                            [mysql no-clean] no clean avoids rebuilding packages from scratch
+                          - Set REBUILD_IMAGE=True to force rebuild (won't use cached image)
+
+        --trove dependency services--
+          start-deps      - Start or resume daemons Trove depends on.
+          stop-deps       - Kill daemons Trove depends on.
+
+        --trove services--
+          start           - Start or resume daemons Trove depends on.
+          stop            - Kill daemons Trove depends on.
+          restart         - Runs stop then start for Trove services.
+
+        --tests--
+          unit-tests      - Run the unit tests.dependencies
+          int-tests       - Runs the integration tests (requires all daemons).
+          simple-tests    - Runs the simple integration tests (requires all daemons).
+          dsvm-gate-tests - Configures and runs the int-tests in a devstack vm-gate environment.
+
+        --tools--
+          debug           - Debug this script (shows all commands).
+          wipe-logs       - Resets all log files.
+          rd-sql          - Opens the Trove MySQL database.
+          vagrant-ssh     - Runs a command from the host on the server.
+          clear           - Destroy instances and rabbit queues.
+          clean           - Clean up resources created by a failed test run.
+          run             - Starts RD but not in a screen.
+          run-fake        - Runs the server in fake mode.
+          update-projects - Git pull on all the daemons trove dependencies.
+          reset-task      - Sets an instance task to NONE.
+          wipe-queues     - Resets RabbitMQ queues.
+    "
+    exit 1
+}
+
+function run_command() {
+    # Print the available commands
+    if [ $# -lt 1 ]; then
+        print_usage
+    fi
+
+    case "$1" in
+        "install" ) cmd_install;;
+        "test-init" ) cmd_test_init $@;;
+        "build-image" ) shift; cmd_build_image $@;;
+        "initialize" ) cmd_initialize;;
+        "unit-tests" ) cmd_unit_tests;;
+        "start-deps" ) cmd_start_deps;;
+        "stop-deps" ) cmd_stop_deps;;
+        "start" ) cmd_start;;
+        "int-tests" ) shift; cmd_int_tests $@;;
+        "int-tests-wb" ) shift; cmd_int_tests_white_box $@;;
+        "simple-tests") shift; cmd_int_tests_simple $@;;
+        "stop" ) cmd_stop;;
+        "restart" ) cmd_stop; cmd_start;;
+        "wipe-logs" ) cmd_wipe_logs;;
+        "rd-sql" ) shift; cmd_rd_sql $@;;
+        "fake-sql" ) shift; cmd_fake_sql $@;;
+        "run-ci" ) shift; cmd_run_ci $@;;
+        "vagrant-ssh" ) shift; cmd_vagrant_ssh $@;;
+        "debug" ) shift; echo "Enabling debugging."; \
+                  set -o xtrace; run_command $@;;
+        "clear" ) shift; cmd_clear $@;;
+        "clean" ) shift; cmd_clean $@;;
+        "run" ) shift; cmd_run $@;;
+        "kick-start" ) shift; cmd_kick_start $@;;
+        "dsvm-gate-tests" ) shift; cmd_dsvm_gate_tests $@;;
+        "run-fake" ) shift; cmd_run_fake $@;;
+        "start-fake" ) shift; cmd_start_fake $@;;
+        "update-projects" ) cmd_clone_projects force_update \
+                            $REDSTACK_SCRIPTS/projects-list \
+                            $REDSTACK_SCRIPTS/image-projects-list;;
+        "reset-task" ) shift; cmd_reset_task $@;;
+        "wipe-queues" ) shift; cmd_wipe_queues $@;;
+        "example-tests" ) shift; cmd_example_tests $@;;
+        "repl" ) shift; cmd_repl $@;;
+        "help" ) print_usage;;
+        * )
+            echo "'$1' not a valid command"
+            exit 1
+    esac
+}
+
+run_command $@

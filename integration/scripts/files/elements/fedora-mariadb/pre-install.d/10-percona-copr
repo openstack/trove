@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during PRE-CONSTRUCTION as ROOT
+# PURPOSE: Setup COPR Percona repository
+
+set -e
+set -o xtrace
+
+# install from Fedora repos
+dnf -y install percona-xtrabackup

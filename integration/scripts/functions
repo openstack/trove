@@ -1,0 +1,324 @@
+#!/bin/bash
+# This file format was stolen from devstack <3
+
+# This method was stolen from devstack
+# git clone only if directory doesn't exist already.  Since ``DEST`` might not
+# be owned by the installation user, we create the directory and change the
+# ownership to the proper user.
+# Set global RECLONE=yes to simulate a clone when dest-dir exists
+# git_clone remote dest-dir branch
+function git_clone {
+    [[ "$OFFLINE" = "True" ]] && return
+
+    GIT_REMOTE=$1
+    GIT_DEST=$2
+    GIT_BRANCH=$3
+
+    if echo $GIT_BRANCH | egrep -q "^refs"; then
+        # If our branch name is a gerrit style refs/changes/...
+        if [[ ! -d $GIT_DEST ]]; then
+            git_timed clone $GIT_REMOTE $GIT_DEST
+        fi
+        cd $GIT_DEST
+        git_timed fetch $GIT_REMOTE $GIT_BRANCH && git_timed checkout FETCH_HEAD
+    else
+        # do a full clone only if the directory doesn't exist
+        if [[ ! -d $GIT_DEST ]]; then
+            git_timed clone $GIT_REMOTE $GIT_DEST
+            cd $GIT_DEST
+            # This checkout syntax works for both branches and tags
+            git_timed checkout $GIT_BRANCH
+        elif [[ "$RECLONE" == "yes" ]]; then
+            # if it does exist then simulate what clone does if asked to RECLONE
+            cd $GIT_DEST
+            # set the url to pull from and fetch
+            git_timed remote set-url origin $GIT_REMOTE
+            git_timed fetch origin
+            # remove the existing ignored files (like pyc) as they cause breakage
+            # (due to the py files having older timestamps than our pyc, so python
+            # thinks the pyc files are correct using them)
+            find $GIT_DEST -name '*.pyc' -delete
+            git_timed checkout -f origin/$GIT_BRANCH
+            # a local branch might not exist
+            git_timed branch -D $GIT_BRANCH || true
+            git_timed checkout -b $GIT_BRANCH
+        fi
+    fi
+}
+
+# Determinate is the given option present in the INI file
+# ini_has_option config-file section option
+function ini_has_option() {
+    local file=$1
+    local section=$2
+    local option=$3
+    local line
+    line=$(sed -ne "/^\[$section\]/,/^\[.*\]/ { /^$option[ \t]*=/ p; }" "$file")
+    [ -n "$line" ]
+}
+
+# Get an option from an INI file
+# iniget config-file section option
+function iniget() {
+    local file=$1
+    local section=$2
+    local option=$3
+    local line
+    line=$(sed -ne "/^\[$section\]/,/^\[.*\]/ { /^$option[ \t]*=/ p; }" "$file")
+    echo ${line#*=}
+}
+
+# Set an option in an INI file
+# iniset config-file section option value
+function iniset() {
+    local file=$1
+    local section=$2
+    local option=$3
+    local value=$4
+    if ! grep -q "^\[$section\]" "$file"; then
+        # Add section at the end
+        echo -e "\n[$section]" >>"$file"
+    fi
+    if ! ini_has_option "$file" "$section" "$option"; then
+        # Add it
+        sed -i -e "/^\[$section\]/ a\\
+$option = $value
+" "$file"
+    else
+        # Replace it
+        sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
+    fi
+}
+
+# Determine OS Vendor, Release and Update
+# Tested with OS/X, Ubuntu, RedHat, CentOS, Fedora
+# Returns results in global variables:
+# os_VENDOR - vendor name
+# os_RELEASE - release
+# os_UPDATE - update
+# os_PACKAGE - package type
+# os_CODENAME - vendor's codename for release
+# GetOSVersion
+GetOSVersion() {
+    # Figure out which vendor we are
+    if [[ -x "`which sw_vers 2>/dev/null`" ]]; then
+        # OS/X
+        os_VENDOR=`sw_vers -productName`
+        os_RELEASE=`sw_vers -productVersion`
+        os_UPDATE=${os_RELEASE##*.}
+        os_RELEASE=${os_RELEASE%.*}
+        os_PACKAGE=""
+        if [[ "$os_RELEASE" =~ "10.7" ]]; then
+            os_CODENAME="lion"
+        elif [[ "$os_RELEASE" =~ "10.6" ]]; then
+            os_CODENAME="snow leopard"
+        elif [[ "$os_RELEASE" =~ "10.5" ]]; then
+            os_CODENAME="leopard"
+        elif [[ "$os_RELEASE" =~ "10.4" ]]; then
+            os_CODENAME="tiger"
+        elif [[ "$os_RELEASE" =~ "10.3" ]]; then
+            os_CODENAME="panther"
+        else
+            os_CODENAME=""
+        fi
+    elif [[ -x $(which lsb_release 2>/dev/null) ]]; then
+        os_VENDOR=$(lsb_release -i -s)
+        os_RELEASE=$(lsb_release -r -s)
+        os_UPDATE=""
+        os_PACKAGE="rpm"
+        if [[ "Debian,Ubuntu,LinuxMint" =~ $os_VENDOR ]]; then
+            os_PACKAGE="deb"
+        elif [[ "SUSE LINUX" =~ $os_VENDOR ]]; then
+            lsb_release -d -s | grep -q openSUSE
+            if [[ $? -eq 0 ]]; then
+                os_VENDOR="openSUSE"
+            fi
+        elif [[ $os_VENDOR == "openSUSE project" ]]; then
+            os_VENDOR="openSUSE"
+        elif [[ $os_VENDOR =~ Red.*Hat ]]; then
+            os_VENDOR="Red Hat"
+        fi
+        os_CODENAME=$(lsb_release -c -s)
+    elif [[ -r /etc/redhat-release ]]; then
+        # Red Hat Enterprise Linux Server release 5.5 (Tikanga)
+        # Red Hat Enterprise Linux Server release 7.0 Beta (Maipo)
+        # CentOS release 5.5 (Final)
+        # CentOS Linux release 6.0 (Final)
+        # Fedora release 16 (Verne)
+        # XenServer release 6.2.0-70446c (xenenterprise)
+        os_CODENAME=""
+        for r in "Red Hat" CentOS Fedora XenServer; do
+            os_VENDOR=$r
+            if [[ -n "`grep \"$r\" /etc/redhat-release`" ]]; then
+                ver=`sed -e 's/^.* \([0-9].*\) (\(.*\)).*$/\1\|\2/' /etc/redhat-release`
+                os_CODENAME=${ver#*|}
+                os_RELEASE=${ver%|*}
+                os_UPDATE=${os_RELEASE##*.}
+                os_RELEASE=${os_RELEASE%.*}
+                break
+            fi
+            os_VENDOR=""
+        done
+        os_PACKAGE="rpm"
+    elif [[ -r /etc/SuSE-release ]]; then
+        for r in openSUSE "SUSE Linux"; do
+            if [[ "$r" = "SUSE Linux" ]]; then
+                os_VENDOR="SUSE LINUX"
+            else
+                os_VENDOR=$r
+            fi
+
+            if [[ -n "`grep \"$r\" /etc/SuSE-release`" ]]; then
+                os_CODENAME=`grep "CODENAME = " /etc/SuSE-release | sed 's:.* = ::g'`
+                os_RELEASE=`grep "VERSION = " /etc/SuSE-release | sed 's:.* = ::g'`
+                os_UPDATE=`grep "PATCHLEVEL = " /etc/SuSE-release | sed 's:.* = ::g'`
+                break
+            fi
+            os_VENDOR=""
+        done
+        os_PACKAGE="rpm"
+    # If lsb_release is not installed, we should be able to detect Debian OS
+    elif [[ -f /etc/debian_version ]] && [[ $(cat /proc/version) =~ "Debian" ]]; then
+        os_VENDOR="Debian"
+        os_PACKAGE="deb"
+        os_CODENAME=$(awk '/VERSION=/' /etc/os-release | sed 's/VERSION=//' | sed -r 's/\"|\(|\)//g' | awk '{print $2}')
+        os_RELEASE=$(awk '/VERSION_ID=/' /etc/os-release | sed 's/VERSION_ID=//' | sed 's/\"//g')
+    fi
+    export os_VENDOR os_RELEASE os_UPDATE os_PACKAGE os_CODENAME
+}
+
+
+# Translate the OS version values into common nomenclature
+# Sets ``DISTRO`` from the ``os_*`` values
+function GetDistro() {
+    GetOSVersion
+    if [[ "$os_VENDOR" =~ (Ubuntu) || "$os_VENDOR" =~ (Debian) ]]; then
+        # 'Everyone' refers to Ubuntu / Debian releases by the code name adjective
+        DISTRO=$os_CODENAME
+    elif [[ "$os_VENDOR" =~ (Fedora) ]]; then
+        # For Fedora, just use 'f' and the release
+        DISTRO="f$os_RELEASE"
+    elif [[ "$os_VENDOR" =~ (openSUSE) ]]; then
+        DISTRO="opensuse-$os_RELEASE"
+    elif [[ "$os_VENDOR" =~ (SUSE LINUX) ]]; then
+        # For SLE, also use the service pack
+        if [[ -z "$os_UPDATE" ]]; then
+            DISTRO="sle${os_RELEASE}"
+        else
+            DISTRO="sle${os_RELEASE}sp${os_UPDATE}"
+        fi
+    elif [[ "$os_VENDOR" =~ (Red Hat) || "$os_VENDOR" =~ (CentOS) ]]; then
+        # Drop the . release as we assume it's compatible
+        DISTRO="rhel${os_RELEASE::1}"
+    elif [[ "$os_VENDOR" =~ (XenServer) ]]; then
+        DISTRO="xs$os_RELEASE"
+    else
+        # Catch-all for now is Vendor + Release + Update
+        DISTRO="$os_VENDOR-$os_RELEASE.$os_UPDATE"
+    fi
+    export DISTRO
+}
+
+
+# Determine if current distribution is a Fedora-based distribution
+# (Fedora, RHEL, CentOS, etc).
+# is_fedora
+function is_fedora {
+    if [[ -z "$os_VENDOR" ]]; then
+        GetOSVersion
+    fi
+
+    [ "$os_VENDOR" = "Fedora" ] || [ "$os_VENDOR" = "Red Hat" ] || [ "$os_VENDOR" = "CentOS" ]
+}
+
+
+# Determine if current distribution is a SUSE-based distribution
+# (openSUSE, SLE).
+# is_suse
+function is_suse {
+    if [[ -z "$os_VENDOR" ]]; then
+        GetOSVersion
+    fi
+
+    [ "$os_VENDOR" = "openSUSE" ] || [ "$os_VENDOR" = "SUSE LINUX" ]
+}
+
+# Get the path to the direcotry where python executables are installed.
+# get_python_exec_prefix
+function get_python_exec_prefix() {
+    if is_fedora || is_suse; then
+        echo "/usr/bin"
+    else
+        echo "/usr/local/bin"
+    fi
+}
+
+# Returns 'true' if 'true', 'yes', 'on' or '1' - false, otherwise.
+# Converts values to lower case first.
+# If no default is provided, assumes false.
+function get_bool() {
+    local VARIABLE="$1"
+    local DEFAULT=${2:-false}
+
+    VALUE=${!VARIABLE:-$DEFAULT}
+
+    VALUE=$(eval echo "$VALUE" | tr '[:upper:]' '[:lower:]')
+    if [[ "1 yes true on" =~ "$VALUE" ]]; then
+        VALUE=true
+    else
+        VALUE=false
+    fi
+
+    echo $VALUE
+}
+
+# Get the project branch to switch to.  Uses PROJECT_BRANCH_NAME,
+# then BRANCH_DEFAULT, then 'master'
+function get_project_branch() {
+    local PROJECT_BRANCH_NAME=$1
+    local BRANCH_DEFAULT=${2:-master}
+
+    PROJECT_BRANCH_OVERRIDE=${!PROJECT_BRANCH_NAME}
+
+    BRANCH=${PROJECT_BRANCH_OVERRIDE:-$BRANCH_DEFAULT}
+
+    echo "$BRANCH"
+}
+
+# Try to switch to a branch or commit in a repo
+# Fails if the branch/commit doesn't exist
+function git_checkout() {
+    local PROJECT=$1
+    local REPO_DIR=$2
+    local REPO_BRANCH=$3
+    local REPO_BRANCH_VAR_NAME=$4
+
+    if [ -n "$REPO_BRANCH" ]; then
+        pushd "$REPO_DIR"
+        if [ $PROJECT == "diskimage-builder" ] || [ $PROJECT == "tripleo-image-elements" ]; then
+            REPO_BRANCH=master
+        fi
+        CURRENT_BRANCH=$(git branch | grep "\*" | awk '{print $2}')
+        GIT_STATUS=$(git checkout "$REPO_BRANCH" &> /dev/null || echo "failed")
+        if [[ "$GIT_STATUS" = "failed" ]]; then
+            exclaim "${COLOR_RED}Could not switch to branch/commit '$REPO_BRANCH' in $PROJECT, exiting${COLOR_NONE}"
+            echo "Please set '$REPO_BRANCH_VAR_NAME' to a valid branch/commit and try again."
+            if [[ "$CURRENT_BRANCH" != "master" ]]; then
+                echo "Note: This repo is currently on branch ${CURRENT_BRANCH} - if this is correct,"
+                echo "you should set $REPO_BRANCH_VAR_NAME=${CURRENT_BRANCH} and re-run your command."
+            else
+                echo "Note: This error may also mean that there are modified files in $PROJECT."
+                echo "      If that is the case, please stash them and re-run your command."
+            fi
+            exit 1
+        else
+            if [[ "$REPO_BRANCH" != "$CURRENT_BRANCH" ]]; then
+                exclaim "${COLOR_BLUE}Switched to $PROJECT branch '$REPO_BRANCH'${COLOR_NONE}"
+            else
+                echo "Using $PROJECT branch '$REPO_BRANCH'"
+            fi
+        fi
+        popd
+    fi
+}
+

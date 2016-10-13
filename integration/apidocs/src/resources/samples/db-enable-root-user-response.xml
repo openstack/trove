@@ -1,0 +1,7 @@
+HTTP/1.1 200 OK
+Content-Type: application/xml
+Content-Length: 120
+Date: Wed, 25 Jan 2012 21:58:12 GMT
+
+<user name="root" password="7dbfe27c-789f-4880-967c-7c6e601c4166" xmlns="http://docs.openstack.org/database/api/v1.0"/>
+

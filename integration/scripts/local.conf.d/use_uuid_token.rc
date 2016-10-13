@@ -1,0 +1,3 @@
+[[local|localrc]]
+
+KEYSTONE_TOKEN_FORMAT=UUID

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+cat > "/etc/rc.local" << _EOF_
+# Make sure to disable Linux kernel feature transparent huge pages,
+# it will affect greatly both memory usage and latency in a negative way.
+# See: http://docs.mongodb.org/manual/tutorial/transparent-huge-pages/
+if test -f /sys/kernel/mm/redhat_transparent_hugepage/defrag; then
+  echo never > /sys/kernel/mm/redhat_transparent_hugepage/defrag
+fi
+if test -f /sys/kernel/mm/redhat_transparent_hugepage/enabled; then
+  echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled
+fi
+
+exit \$?
+
+_EOF_
+
+dnf -y install mongodb-server

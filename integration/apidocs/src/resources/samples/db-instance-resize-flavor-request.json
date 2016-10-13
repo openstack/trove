@@ -1,0 +1,12 @@
+POST /v1.0/1234/instances/aeb0b280-7c21-42cc-938f-275c0cc83c08/action HTTP/1.1
+User-Agent: python-example-client
+Host: ord.databases.api.rackspacecloud.com
+X-Auth-Token: d45346d7-b313-41fb-a29b-e8f5f7c59de2
+Accept: application/json
+Content-Type: application/json
+
+{
+    "resize": {
+        "flavorRef": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/3"
+    }
+}

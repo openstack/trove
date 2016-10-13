@@ -1,0 +1,13 @@
+Example Generator
+
+Settings for the example generator are in examples/local.conf
+
+After customizing examples/local.conf, run:
+./example_gen.sh
+
+2012-06-12
+    - Updated to work with trove
+    - All XML calls are commented out
+    - Management calls are also commented out
+2012-06-14
+    - Renabled XML calls 

@@ -1,0 +1,22 @@
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 209
+Date: Wed, 25 Jan 2012 21:53:05 GMT
+
+{
+    "flavor": {
+        "id": 1, 
+        "links": [
+            {
+                "href": "https://ord.databases.api.rackspacecloud.com/v1.0/1234/flavors/1", 
+                "rel": "self"
+            }, 
+            {
+                "href": "https://ord.databases.api.rackspacecloud.com/flavors/1", 
+                "rel": "bookmark"
+            }
+        ], 
+        "name": "m1.tiny", 
+        "ram": 512
+    }
+}
