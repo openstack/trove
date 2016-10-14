@@ -56,6 +56,7 @@
             "status": "ACTIVE",
             "tenant_id": "3000"
         },
+        "server_id": "44b277eb-39be-4921-be31-3d61b43651d7",
         "service_status": "ACTIVE",
         "status": "ACTIVE",
         "task_description": "No tasks for the instance.",
@@ -75,6 +76,7 @@
             "status": "in-use",
             "total": 4.0,
             "used": 0.16
-        }
+        },
+        "volume_id": "VOL_44b277eb-39be-4921-be31-3d61b43651d7"
     }
 }

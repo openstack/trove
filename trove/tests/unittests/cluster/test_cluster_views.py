@@ -127,6 +127,10 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.get_visible_ip_addresses = lambda: ["1.2.3.4"]
         self.instance.slave_of_id = None
         self.instance.slaves = None
+        self.context = trove_testtools.TroveTestContext(self)
+        self.req = Mock()
+        self.req.environ = Mock()
+        self.req.environ.__getitem__ = Mock(return_value=self.context)
 
     def tearDown(self):
         super(ClusterInstanceDetailViewTest, self).tearDown()
@@ -135,7 +139,7 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
     @patch.object(ClusterInstanceDetailView, '_build_flavor_links')
     @patch.object(ClusterInstanceDetailView, '_build_configuration_info')
     def test_data(self, *args):
-        view = ClusterInstanceDetailView(self.instance, Mock())
+        view = ClusterInstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.instance.created, result['instance']['created'])
         self.assertEqual(self.instance.updated, result['instance']['updated'])
@@ -150,7 +154,7 @@ class ClusterInstanceDetailViewTest(trove_testtools.TestCase):
     @patch.object(ClusterInstanceDetailView, '_build_configuration_info')
     def test_data_ip(self, *args):
         self.instance.hostname = None
-        view = ClusterInstanceDetailView(self.instance, Mock())
+        view = ClusterInstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.instance.created, result['instance']['created'])
         self.assertEqual(self.instance.updated, result['instance']['updated'])

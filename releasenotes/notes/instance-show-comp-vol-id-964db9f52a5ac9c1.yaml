@@ -1,0 +1,4 @@
+---
+other:
+  - Add Compute ID (server_id) and Volume ID (volume_id)
+    to trove show output for admin users. Bug #1633581

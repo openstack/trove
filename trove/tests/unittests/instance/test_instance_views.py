@@ -63,6 +63,8 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.slave_of_id = None
         self.instance.slaves = []
         self.instance.locality = 'affinity'
+        self.instance.server_id = 'server_abc'
+        self.instance.volume_id = 'volume_abc'
         self.fault_message = 'Error'
         self.fault_details = 'details'
         self.fault_date = 'now'
@@ -70,6 +72,10 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         self.instance.fault.message = self.fault_message
         self.instance.fault.details = self.fault_details
         self.instance.fault.updated = self.fault_date
+        self.context = trove_testtools.TroveTestContext(self)
+        self.req = Mock()
+        self.req.environ = Mock()
+        self.req.environ.__getitem__ = Mock(return_value=self.context)
 
     def tearDown(self):
         super(InstanceDetailViewTest, self).tearDown()
@@ -78,7 +84,7 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
         InstanceDetailView._build_configuration_info = self.build_config_method
 
     def test_data_hostname(self):
-        view = InstanceDetailView(self.instance, Mock())
+        view = InstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.instance.created, result['instance']['created'])
         self.assertEqual(self.instance.updated, result['instance']['updated'])
@@ -90,7 +96,7 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
 
     def test_data_ip(self):
         self.instance.hostname = None
-        view = InstanceDetailView(self.instance, Mock())
+        view = InstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.instance.created, result['instance']['created'])
         self.assertEqual(self.instance.updated, result['instance']['updated'])
@@ -101,13 +107,13 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
 
     def test_locality(self):
         self.instance.hostname = None
-        view = InstanceDetailView(self.instance, Mock())
+        view = InstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.instance.locality,
                          result['instance']['locality'])
 
     def test_fault(self):
-        view = InstanceDetailView(self.instance, Mock())
+        view = InstanceDetailView(self.instance, self.req)
         result = view.data()
         self.assertEqual(self.fault_message,
                          result['instance']['fault']['message'])
@@ -115,3 +121,17 @@ class InstanceDetailViewTest(trove_testtools.TestCase):
                          result['instance']['fault']['details'])
         self.assertEqual(self.fault_date,
                          result['instance']['fault']['created'])
+
+    def test_admin_view(self):
+        self.context.is_admin = True
+        view = InstanceDetailView(self.instance, self.req)
+        result = view.data()
+        self.assertIn('server_id', result['instance'])
+        self.assertIn('volume_id', result['instance'])
+
+    def test_non_admin_view(self):
+        self.context.is_admin = False
+        view = InstanceDetailView(self.instance, self.req)
+        result = view.data()
+        self.assertNotIn('server_id', result['instance'])
+        self.assertNotIn('volume_id', result['instance'])
