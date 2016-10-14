@@ -129,8 +129,11 @@ class GuestLogRunner(TestRunner):
         self.assert_equal(expected_type, log_details.type,
                           "Wrong log type for '%s' log" % expected_log_name)
         current_status = log_details.status.replace(' ', '_')
-        self.assert_equal(expected_status, current_status,
-                          "Wrong log status for '%s' log" % expected_log_name)
+        if not isinstance(expected_status, list):
+            expected_status = [expected_status]
+        self.assert_is_sublist([current_status], expected_status,
+                               "Wrong log status for '%s' log" %
+                               expected_log_name)
         if expected_published is None:
             pass
         elif expected_published == 0:
@@ -654,9 +657,10 @@ class GuestLogRunner(TestRunner):
         self.assert_log_publish(
             self.auth_client,
             log_name,
-            expected_status=guest_log.LogStatus.Published.name,
+            expected_status=[guest_log.LogStatus.Published.name,
+                             guest_log.LogStatus.Partial.name],
             expected_published=self._get_last_log_published(log_name) + 1,
-            expected_pending=0)
+            expected_pending=None)
 
     def run_test_log_disable_user_after_stop_start(self):
         expected_status = guest_log.LogStatus.Disabled.name
