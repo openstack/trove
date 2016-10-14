@@ -7,7 +7,7 @@ eventlet!=0.18.3,>=0.18.2 # MIT
 keystonemiddleware!=4.5.0,>=4.2.0 # Apache-2.0
 Routes!=2.0,!=2.1,!=2.3.0,>=1.12.3;python_version=='2.7' # MIT
 Routes!=2.0,!=2.3.0,>=1.12.3;python_version!='2.7' # MIT
-WebOb>=1.2.3 # MIT
+WebOb>=1.6.0 # MIT
 PasteDeploy>=1.5.0 # MIT
 Paste # MIT
 sqlalchemy-migrate>=0.9.6 # Apache-2.0
