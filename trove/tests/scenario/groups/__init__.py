@@ -50,6 +50,34 @@ CFGGRP_INST_DELETE = "scenario.cfggrp_inst_delete_grp"
 CFGGRP_INST_DELETE_WAIT = "scenario.cfggrp_inst_delete_wait_grp"
 
 
+# Cluster Actions Group
+CLUSTER_ACTIONS = "scenario.cluster_actions_grp"
+CLUSTER_ACTIONS_ROOT_ENABLE = "scenario.cluster_actions_root_enable_grp"
+CLUSTER_ACTIONS_ROOT_ACTIONS = "scenario.cluster_actions_root_actions_grp"
+CLUSTER_ACTIONS_ROOT_GROW = "scenario.cluster_actions_root_grow_grp"
+CLUSTER_ACTIONS_ROOT_SHRINK = "scenario.cluster_actions_root_shrink_grp"
+CLUSTER_ACTIONS_GROW_SHRINK = "scenario.cluster_actions_grow_shrink_grp"
+CLUSTER_ACTIONS_GROW = "scenario.cluster_actions_grow_grp"
+CLUSTER_ACTIONS_GROW_WAIT = "scenario.cluster_actions_grow_wait_grp"
+CLUSTER_ACTIONS_SHRINK = "scenario.cluster_actions_shrink_grp"
+CLUSTER_ACTIONS_SHRINK_WAIT = "scenario.cluster_actions_shrink_wait_grp"
+
+
+# Cluster Create Group (in cluster_actions file)
+CLUSTER_CREATE = "scenario.cluster_create_grp"
+CLUSTER_CREATE_WAIT = "scenario.cluster_create_wait_grp"
+
+
+# Cluster Delete Group (in cluster_actions file)
+CLUSTER_DELETE = "scenario.cluster_delete_grp"
+CLUSTER_DELETE_WAIT = "scenario.cluster_delete_wait_grp"
+
+
+# Cluster Upgrade Group (in cluster_actions file)
+CLUSTER_UPGRADE = "scenario.cluster_upgrade_grp"
+CLUSTER_UPGRADE_WAIT = "scenario.cluster_upgrade_wait_grp"
+
+
 # Database Actions Group
 DB_ACTION_CREATE = "scenario.db_action_create_grp"
 DB_ACTION_DELETE = "scenario.db_action_delete_grp"

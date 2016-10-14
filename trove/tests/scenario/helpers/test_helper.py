@@ -44,11 +44,13 @@ class DataType(Enum):
     tiny2 = 4
     # a third tiny dataset (also for replication propagation)
     tiny3 = 5
+    # a forth tiny dataset (for cluster propagation)
+    tiny4 = 6
     # small amount of data (this can be added to each instance
     # after creation, for example).
-    small = 6
+    small = 7
     # large data, enough to make creating a backup take 20s or more.
-    large = 7
+    large = 8
 
 
 class TestHelper(object):
@@ -129,6 +131,9 @@ class TestHelper(object):
                 self.DATA_SIZE: 100},
             DataType.tiny3.name: {
                 self.DATA_START: 3000,
+                self.DATA_SIZE: 100},
+            DataType.tiny4.name: {
+                self.DATA_START: 4000,
                 self.DATA_SIZE: 100},
             DataType.small.name: {
                 self.DATA_START: 10000,
@@ -481,9 +486,24 @@ class TestHelper(object):
         """
         return False
 
-    ##############
+    ################
     # Module related
-    ##############
+    ################
     def get_valid_module_type(self):
         """Return a valid module type."""
         return "Ping"
+
+    #################
+    # Cluster related
+    #################
+    def get_cluster_types(self):
+        """Returns a list of cluster type lists to use when creating instances.
+        The list should be the same size as the number of cluster instances
+        that will be created.  If not specified, no types are sent to
+        cluster-create.  Cluster grow uses the first type in the list for the
+        first instance, and doesn't use anything for the second instance
+        (i.e. doesn't pass in anything for 'type').
+        An example for this method would be:
+            return [['data', 'other_type'], ['third_type']]
+        """
+        return None

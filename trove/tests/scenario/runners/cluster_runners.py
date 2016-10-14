@@ -29,7 +29,7 @@ from trove.tests.util.check import TypeCheck
 from troveclient.compat import exceptions
 
 
-class ClusterActionsRunner(TestRunner):
+class ClusterRunner(TestRunner):
 
     USE_CLUSTER_ID_FLAG = 'TESTS_USE_CLUSTER_ID'
     DO_NOT_DELETE_CLUSTER_FLAG = 'TESTS_DO_NOT_DELETE_CLUSTER'
@@ -37,7 +37,7 @@ class ClusterActionsRunner(TestRunner):
     EXTRA_INSTANCE_NAME = "named_instance"
 
     def __init__(self):
-        super(ClusterActionsRunner, self).__init__()
+        super(ClusterRunner, self).__init__()
 
         self.cluster_name = 'test_cluster'
         self.cluster_id = 0
@@ -46,6 +46,9 @@ class ClusterActionsRunner(TestRunner):
         self.srv_grp_id = None
         self.current_root_creds = None
         self.locality = 'affinity'
+        self.initial_instance_count = None
+        self.cluster_instances = None
+        self.cluster_removed_instances = None
 
     @property
     def is_using_existing_cluster(self):
@@ -60,7 +63,6 @@ class ClusterActionsRunner(TestRunner):
         return 2
 
     def run_cluster_create(self, num_nodes=None, expected_task_name='BUILDING',
-                           expected_instance_states=['BUILD', 'ACTIVE'],
                            expected_http_code=200):
         self.cluster_count_before_create = len(
             self.auth_client.clusters.list())
@@ -69,59 +71,70 @@ class ClusterActionsRunner(TestRunner):
 
         instance_flavor = self.get_instance_flavor()
 
-        instances_def = [
+        instance_defs = [
             self.build_flavor(
                 flavor_id=self.get_flavor_href(instance_flavor),
-                volume_size=self.instance_info.volume['size'])] * num_nodes
+                volume_size=self.instance_info.volume['size'])
+            for count in range(0, num_nodes)]
+        types = self.test_helper.get_cluster_types()
+        for index, instance_def in enumerate(instance_defs):
+            instance_def['nics'] = self.instance_info.nics
+            if types and index < len(types):
+                instance_def['type'] = types[index]
 
         self.cluster_id = self.assert_cluster_create(
-            self.cluster_name, instances_def, self.locality,
-            expected_task_name, expected_instance_states, expected_http_code)
+            self.cluster_name, instance_defs, self.locality,
+            expected_task_name, expected_http_code)
 
     def assert_cluster_create(
             self, cluster_name, instances_def, locality, expected_task_name,
-            expected_instance_states, expected_http_code):
+            expected_http_code):
+
         self.report.log("Testing cluster create: %s" % cluster_name)
 
+        client = self.auth_client
         cluster = self.get_existing_cluster()
         if cluster:
             self.report.log("Using an existing cluster: %s" % cluster.id)
-            cluster_instances = self._get_cluster_instances(cluster.id)
-            self.assert_all_instance_states(
-                cluster_instances, expected_instance_states[-1:])
         else:
-            cluster = self.auth_client.clusters.create(
+            cluster = client.clusters.create(
                 cluster_name, self.instance_info.dbaas_datastore,
                 self.instance_info.dbaas_datastore_version,
                 instances=instances_def, locality=locality)
+            self.assert_client_code(client, expected_http_code)
             self._assert_cluster_values(cluster, expected_task_name)
-            # Don't give an expected task here or it will do a 'get' on
-            # the cluster.  We tested the cluster values above.
-            self._assert_cluster_action(cluster.id, None,
-                                        expected_http_code)
-            cluster_instances = self._get_cluster_instances(cluster.id)
-            self.assert_all_instance_states(
-                cluster_instances, expected_instance_states)
-            # Create the helper user/database on the first node.
-            # The cluster should handle the replication itself.
-            self.create_test_helper_on_instance(cluster_instances[0])
-            # make sure the server_group was created
-            self.cluster_inst_ids = [inst.id for inst in cluster_instances]
-            for id in self.cluster_inst_ids:
-                srv_grp_id = self.assert_server_group_exists(id)
-                if self.srv_grp_id and self.srv_grp_id != srv_grp_id:
-                    self.fail("Found multiple server groups for cluster")
-                self.srv_grp_id = srv_grp_id
+        return cluster.id
 
-        cluster_id = cluster.id
+    def run_cluster_create_wait(self,
+                                expected_instance_states=['BUILD', 'ACTIVE']):
+
+        self.assert_cluster_create_wait(
+            self.cluster_id, expected_instance_states=expected_instance_states)
+
+    def assert_cluster_create_wait(
+            self, cluster_id, expected_instance_states):
+        client = self.auth_client
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
+        self.assert_all_instance_states(
+            cluster_instances, expected_instance_states)
+        # Create the helper user/database on the first node.
+        # The cluster should handle the replication itself.
+        if not self.get_existing_cluster():
+            self.create_test_helper_on_instance(cluster_instances[0])
 
         # Although all instances have already acquired the expected state,
         # we still need to poll for the final cluster task, because
         # it may take up to the periodic task interval until the task name
         # gets updated in the Trove database.
-        self._assert_cluster_states(cluster_id, ['NONE'])
+        self._assert_cluster_states(client, cluster_id, ['NONE'])
 
-        return cluster_id
+        # make sure the server_group was created
+        self.cluster_inst_ids = [inst.id for inst in cluster_instances]
+        for id in self.cluster_inst_ids:
+            srv_grp_id = self.assert_server_group_exists(id)
+            if self.srv_grp_id and self.srv_grp_id != srv_grp_id:
+                self.fail("Found multiple server groups for cluster")
+            self.srv_grp_id = srv_grp_id
 
     def get_existing_cluster(self):
         if self.is_using_existing_cluster:
@@ -134,10 +147,10 @@ class ClusterActionsRunner(TestRunner):
             self.cluster_count_before_create + 1,
             expected_http_code)
 
-    def assert_cluster_list(self, expected_count,
-                            expected_http_code):
-        count = len(self.auth_client.clusters.list())
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+    def assert_cluster_list(self, expected_count, expected_http_code):
+        client = self.auth_client
+        count = len(client.clusters.list())
+        self.assert_client_code(client, expected_http_code)
         self.assert_equal(expected_count, count, "Unexpected cluster count")
 
     def run_cluster_show(self, expected_http_code=200,
@@ -147,19 +160,23 @@ class ClusterActionsRunner(TestRunner):
 
     def assert_cluster_show(self, cluster_id, expected_task_name,
                             expected_http_code):
-        self._assert_cluster_response(cluster_id, expected_task_name)
+        self._assert_cluster_response(self.auth_client,
+                                      cluster_id, expected_task_name)
 
     def run_cluster_root_enable(self, expected_task_name=None,
                                 expected_http_code=200):
         root_credentials = self.test_helper.get_helper_credentials_root()
-        self.current_root_creds = self.auth_client.root.create_cluster_root(
+        if not root_credentials or not root_credentials.get('name'):
+            raise SkipTest("No root credentials provided.")
+        client = self.auth_client
+        self.current_root_creds = client.root.create_cluster_root(
             self.cluster_id, root_credentials['password'])
+        self.assert_client_code(client, expected_http_code)
+        self._assert_cluster_response(client, cluster_id, expected_task_name)
         self.assert_equal(root_credentials['name'],
                           self.current_root_creds[0])
         self.assert_equal(root_credentials['password'],
                           self.current_root_creds[1])
-        self._assert_cluster_action(self.cluster_id, expected_task_name,
-                                    expected_http_code)
 
     def run_verify_cluster_root_enable(self):
         if not self.current_root_creds:
@@ -181,17 +198,11 @@ class ClusterActionsRunner(TestRunner):
     def run_add_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_add_cluster_data(data_type, self.cluster_id)
 
-    def run_add_extra_cluster_data(self, data_type=DataType.tiny2):
-        self.assert_add_cluster_data(data_type, self.cluster_id)
-
     def assert_add_cluster_data(self, data_type, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
         self.test_helper.add_data(data_type, self.extract_ipv4s(cluster.ip)[0])
 
     def run_verify_initial_cluster_data(self, data_type=DataType.tiny):
-        self.assert_verify_cluster_data(data_type, self.cluster_id)
-
-    def run_verify_extra_cluster_data(self, data_type=DataType.tiny2):
         self.assert_verify_cluster_data(data_type, self.cluster_id)
 
     def assert_verify_cluster_data(self, data_type, cluster_id):
@@ -201,9 +212,6 @@ class ClusterActionsRunner(TestRunner):
             self.test_helper.verify_data(data_type, ipv4)
 
     def run_remove_initial_cluster_data(self, data_type=DataType.tiny):
-        self.assert_remove_cluster_data(data_type, self.cluster_id)
-
-    def run_remove_extra_cluster_data(self, data_type=DataType.tiny2):
         self.assert_remove_cluster_data(data_type, self.cluster_id)
 
     def assert_remove_cluster_data(self, data_type, cluster_id):
@@ -221,6 +229,10 @@ class ClusterActionsRunner(TestRunner):
             self._build_instance_def(flavor_href,
                                      self.instance_info.volume['size'],
                                      self.EXTRA_INSTANCE_NAME)]
+        types = self.test_helper.get_cluster_types()
+        if types and types[0]:
+            added_instance_defs[0]['type'] = types[0]
+
         self.assert_cluster_grow(
             self.cluster_id, added_instance_defs, expected_task_name,
             expected_http_code)
@@ -230,115 +242,200 @@ class ClusterActionsRunner(TestRunner):
             flavor_id=flavor_id, volume_size=volume_size)
         if name:
             instance_def.update({'name': name})
+        instance_def.update({'nics': self.instance_info.nics})
         return instance_def
 
     def assert_cluster_grow(self, cluster_id, added_instance_defs,
                             expected_task_name, expected_http_code):
-        cluster = self.auth_client.clusters.get(cluster_id)
+        client = self.auth_client
+        cluster = client.clusters.get(cluster_id)
         initial_instance_count = len(cluster.instances)
 
-        cluster = self.auth_client.clusters.grow(cluster_id,
-                                                 added_instance_defs)
-        self._assert_cluster_action(cluster_id, expected_task_name,
-                                    expected_http_code)
+        cluster = client.clusters.grow(cluster_id, added_instance_defs)
+        self.assert_client_code(client, expected_http_code)
+        self._assert_cluster_response(client, cluster_id, expected_task_name)
 
         self.assert_equal(len(added_instance_defs),
                           len(cluster.instances) - initial_instance_count,
                           "Unexpected number of added nodes.")
 
-        cluster_instances = self._get_cluster_instances(cluster_id)
+    def run_cluster_grow_wait(self):
+        self.assert_cluster_grow_wait(self.cluster_id)
+
+    def assert_cluster_grow_wait(self, cluster_id):
+        client = self.auth_client
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
         self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
 
-        self._assert_cluster_states(cluster_id, ['NONE'])
-        self._assert_cluster_response(cluster_id, 'NONE')
+        self._assert_cluster_states(client, cluster_id, ['NONE'])
+        self._assert_cluster_response(client, cluster_id, 'NONE')
 
-    def run_cluster_shrink(
-            self, expected_task_name=None, expected_http_code=202):
-        self.assert_cluster_shrink(self.cluster_id, [self.EXTRA_INSTANCE_NAME],
+    def run_add_grow_cluster_data(self, data_type=DataType.tiny2):
+        self.assert_add_cluster_data(data_type, self.cluster_id)
+
+    def run_verify_grow_cluster_data(self, data_type=DataType.tiny2):
+        self.assert_verify_cluster_data(data_type, self.cluster_id)
+
+    def run_remove_grow_cluster_data(self, data_type=DataType.tiny2):
+        self.assert_remove_cluster_data(data_type, self.cluster_id)
+
+    def run_cluster_upgrade(self, expected_task_name='UPGRADING_CLUSTER',
+                            expected_http_code=202):
+        self.assert_cluster_upgrade(self.cluster_id,
+                                    expected_task_name, expected_http_code)
+
+    def assert_cluster_upgrade(self, cluster_id,
+                               expected_task_name, expected_http_code):
+        client = self.auth_client
+        cluster = client.clusters.get(cluster_id)
+        self.initial_instance_count = len(cluster.instances)
+
+        client.clusters.upgrade(
+            cluster_id, self.instance_info.dbaas_datastore_version)
+        self.assert_client_code(client, expected_http_code)
+        self._assert_cluster_response(client, cluster_id, expected_task_name)
+
+    def run_cluster_upgrade_wait(self):
+        self.assert_cluster_upgrade_wait(
+            self.cluster_id, expected_last_instance_state='ACTIVE')
+
+    def assert_cluster_upgrade_wait(self, cluster_id,
+                                    expected_last_instance_state):
+        client = self.auth_client
+        self._assert_cluster_states(client, cluster_id, ['NONE'])
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
+        self.assert_equal(
+            self.initial_instance_count,
+            len(cluster_instances),
+            "Unexpected number of instances after upgrade.")
+        self.assert_all_instance_states(cluster_instances,
+                                        [expected_last_instance_state])
+        self._assert_cluster_response(client, cluster_id, 'NONE')
+
+    def run_add_upgrade_cluster_data(self, data_type=DataType.tiny3):
+        self.assert_add_cluster_data(data_type, self.cluster_id)
+
+    def run_verify_upgrade_cluster_data(self, data_type=DataType.tiny3):
+        self.assert_verify_cluster_data(data_type, self.cluster_id)
+
+    def run_remove_upgrade_cluster_data(self, data_type=DataType.tiny3):
+        self.assert_remove_cluster_data(data_type, self.cluster_id)
+
+    def run_cluster_shrink(self, expected_task_name='SHRINKING_CLUSTER',
+                           expected_http_code=202):
+        self.assert_cluster_shrink(self.auth_client,
+                                   self.cluster_id, [self.EXTRA_INSTANCE_NAME],
                                    expected_task_name, expected_http_code)
 
-    def assert_cluster_shrink(self, cluster_id, removed_instance_names,
+    def assert_cluster_shrink(self, client, cluster_id, removed_instance_names,
                               expected_task_name, expected_http_code):
-        cluster = self.auth_client.clusters.get(cluster_id)
-        initial_instance_count = len(cluster.instances)
+        cluster = client.clusters.get(cluster_id)
+        self.initial_instance_count = len(cluster.instances)
 
-        removed_instances = self._find_cluster_instances_by_name(
-            cluster, removed_instance_names)
+        self.cluster_removed_instances = (
+            self._find_cluster_instances_by_name(
+                cluster, removed_instance_names))
 
-        cluster = self.auth_client.clusters.shrink(
-            cluster_id, [{'id': instance['id']}
-                         for instance in removed_instances])
+        client.clusters.shrink(
+            cluster_id, [{'id': instance.id}
+                         for instance in self.cluster_removed_instances])
 
-        self._assert_cluster_action(cluster_id, expected_task_name,
-                                    expected_http_code)
-
-        self._assert_cluster_states(cluster_id, ['NONE'])
-        cluster = self.auth_client.clusters.get(cluster_id)
-        self.assert_equal(
-            len(removed_instance_names),
-            initial_instance_count - len(cluster.instances),
-            "Unexpected number of removed nodes.")
-
-        cluster_instances = self._get_cluster_instances(cluster_id)
-        self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
-
-        self._assert_cluster_response(cluster_id, 'NONE')
+        self.assert_client_code(client, expected_http_code)
+        self._assert_cluster_response(client, cluster_id, expected_task_name)
 
     def _find_cluster_instances_by_name(self, cluster, instance_names):
-        return [instance for instance in cluster.instances
+        return [self.auth_client.instances.get(instance['id'])
+                for instance in cluster.instances
                 if instance['name'] in instance_names]
 
+    def run_cluster_shrink_wait(self):
+        self.assert_cluster_shrink_wait(
+            self.cluster_id, expected_last_instance_state='SHUTDOWN')
+
+    def assert_cluster_shrink_wait(self, cluster_id,
+                                   expected_last_instance_state):
+        client = self.auth_client
+        self._assert_cluster_states(client, cluster_id, ['NONE'])
+        cluster = client.clusters.get(cluster_id)
+        self.assert_equal(
+            len(self.cluster_removed_instances),
+            self.initial_instance_count - len(cluster.instances),
+            "Unexpected number of removed nodes.")
+
+        cluster_instances = self._get_cluster_instances(client, cluster_id)
+        self.assert_all_instance_states(cluster_instances, ['ACTIVE'])
+        self.assert_all_gone(self.cluster_removed_instances,
+                             expected_last_instance_state)
+        self._assert_cluster_response(client, cluster_id, 'NONE')
+
+    def run_add_shrink_cluster_data(self, data_type=DataType.tiny4):
+        self.assert_add_cluster_data(data_type, self.cluster_id)
+
+    def run_verify_shrink_cluster_data(self, data_type=DataType.tiny4):
+        self.assert_verify_cluster_data(data_type, self.cluster_id)
+
+    def run_remove_shrink_cluster_data(self, data_type=DataType.tiny4):
+        self.assert_remove_cluster_data(data_type, self.cluster_id)
+
     def run_cluster_delete(
-            self, expected_task_name='DELETING',
-            expected_last_instance_state='SHUTDOWN', expected_http_code=202):
+            self, expected_task_name='DELETING', expected_http_code=202):
         if self.has_do_not_delete_cluster:
             self.report.log("TESTS_DO_NOT_DELETE_CLUSTER=True was "
                             "specified, skipping delete...")
             raise SkipTest("TESTS_DO_NOT_DELETE_CLUSTER was specified.")
 
         self.assert_cluster_delete(
-            self.cluster_id, expected_task_name, expected_last_instance_state,
-            expected_http_code)
+            self.cluster_id, expected_http_code)
 
-    def assert_cluster_delete(
-            self, cluster_id, expected_task_name, expected_last_instance_state,
-            expected_http_code):
+    def assert_cluster_delete(self, cluster_id, expected_http_code):
         self.report.log("Testing cluster delete: %s" % cluster_id)
-        cluster_instances = self._get_cluster_instances(cluster_id)
+        client = self.auth_client
+        self.cluster_instances = self._get_cluster_instances(client,
+                                                             cluster_id)
 
-        self.auth_client.clusters.delete(cluster_id)
+        client.clusters.delete(cluster_id)
+        self.assert_client_code(client, expected_http_code)
+
+    def _get_cluster_instances(self, client, cluster_id):
+        cluster = client.clusters.get(cluster_id)
+        return [client.instances.get(instance['id'])
+                for instance in cluster.instances]
+
+    def run_cluster_delete_wait(
+            self, expected_task_name='DELETING',
+            expected_last_instance_state='SHUTDOWN'):
+        if self.has_do_not_delete_cluster:
+            self.report.log("TESTS_DO_NOT_DELETE_CLUSTER=True was "
+                            "specified, skipping delete wait...")
+            raise SkipTest("TESTS_DO_NOT_DELETE_CLUSTER was specified.")
+
+        self.assert_cluster_delete_wait(
+            self.cluster_id, expected_task_name, expected_last_instance_state)
+
+    def assert_cluster_delete_wait(
+            self, cluster_id, expected_task_name,
+            expected_last_instance_state):
+        client = self.auth_client
         # Since the server_group is removed right at the beginning of the
         # cluster delete process we can't check for locality anymore.
-        self._assert_cluster_action(cluster_id, expected_task_name,
-                                    expected_http_code, check_locality=False)
+        self._assert_cluster_response(client, cluster_id, expected_task_name,
+                                      check_locality=False)
 
-        self.assert_all_gone(cluster_instances, expected_last_instance_state)
-        self._assert_cluster_gone(cluster_id)
+        self.assert_all_gone(self.cluster_instances,
+                             expected_last_instance_state)
+        self._assert_cluster_gone(client, cluster_id)
         # make sure the server group is gone too
         self.assert_server_group_gone(self.srv_grp_id)
 
-    def _get_cluster_instances(self, cluster_id):
-        cluster = self.auth_client.clusters.get(cluster_id)
-        return [self.auth_client.instances.get(instance['id'])
-                for instance in cluster.instances]
-
-    def _assert_cluster_action(
-            self, cluster_id, expected_task_name, expected_http_code,
-            check_locality=True):
-        if expected_http_code is not None:
-            self.assert_client_code(expected_http_code,
-                                    client=self.auth_client)
-        if expected_task_name:
-            self._assert_cluster_response(cluster_id, expected_task_name,
-                                          check_locality=check_locality)
-
-    def _assert_cluster_states(self, cluster_id, expected_states,
+    def _assert_cluster_states(self, client, cluster_id, expected_states,
                                fast_fail_status=None):
         for status in expected_states:
             start_time = timer.time()
             try:
-                poll_until(lambda: self._has_task(
-                    cluster_id, status, fast_fail_status=fast_fail_status),
+                poll_until(
+                    lambda: self._has_task(
+                        client, cluster_id, status,
+                        fast_fail_status=fast_fail_status),
                     sleep_time=self.def_sleep_time,
                     time_out=self.def_timeout)
                 self.report.log("Cluster has gone '%s' in %s." %
@@ -351,8 +448,8 @@ class ClusterActionsRunner(TestRunner):
 
         return True
 
-    def _has_task(self, cluster_id, task, fast_fail_status=None):
-        cluster = self.auth_client.clusters.get(cluster_id)
+    def _has_task(self, client, cluster_id, task, fast_fail_status=None):
+        cluster = client.clusters.get(cluster_id)
         task_name = cluster.task['name']
         self.report.log("Waiting for cluster '%s' to become '%s': %s"
                         % (cluster_id, task, task_name))
@@ -361,10 +458,9 @@ class ClusterActionsRunner(TestRunner):
                                % (cluster_id, task))
         return task_name == task
 
-    def _assert_cluster_response(self, cluster_id, expected_task_name,
-                                 expected_http_code=200, check_locality=True):
-        cluster = self.auth_client.clusters.get(cluster_id)
-        self.assert_client_code(expected_http_code, client=self.auth_client)
+    def _assert_cluster_response(self, client, cluster_id, expected_task_name,
+                                 check_locality=True):
+        cluster = client.clusters.get(cluster_id)
         self._assert_cluster_values(cluster, expected_task_name,
                                     check_locality=check_locality)
 
@@ -391,63 +487,63 @@ class ClusterActionsRunner(TestRunner):
             self.assert_equal(self.locality, cluster.locality,
                               "Unexpected cluster locality")
 
-    def _assert_cluster_gone(self, cluster_id):
+    def _assert_cluster_gone(self, client, cluster_id):
         t0 = timer.time()
         try:
             # This will poll until the cluster goes away.
-            self._assert_cluster_states(cluster_id, ['NONE'])
+            self._assert_cluster_states(client, cluster_id, ['NONE'])
             self.fail(
                 "Cluster '%s' still existed after %s seconds."
                 % (cluster_id, self._time_since(t0)))
         except exceptions.NotFound:
-            self.assert_client_code(404, client=self.auth_client)
+            self.assert_client_code(client, 404)
 
 
-class CassandraClusterActionsRunner(ClusterActionsRunner):
-
-    def run_cluster_root_enable(self):
-        raise SkipTest("Operation is currently not supported.")
-
-
-class MariadbClusterActionsRunner(ClusterActionsRunner):
-
-    @property
-    def min_cluster_node_count(self):
-        return self.get_datastore_config_property('min_cluster_member_count')
+class CassandraClusterRunner(ClusterRunner):
 
     def run_cluster_root_enable(self):
         raise SkipTest("Operation is currently not supported.")
 
 
-class PxcClusterActionsRunner(ClusterActionsRunner):
+class MariadbClusterRunner(ClusterRunner):
 
     @property
     def min_cluster_node_count(self):
         return self.get_datastore_config_property('min_cluster_member_count')
+
+
+class MongodbClusterRunner(ClusterRunner):
+
+    @property
+    def min_cluster_node_count(self):
+        return 3
 
     def run_cluster_delete(self, expected_task_name='NONE',
                            expected_http_code=202):
         raise SkipKnownBug(runners.BUG_STOP_DB_IN_CLUSTER)
 
 
-class VerticaClusterActionsRunner(ClusterActionsRunner):
+class PxcClusterRunner(ClusterRunner):
+
+    @property
+    def min_cluster_node_count(self):
+        return self.get_datastore_config_property('min_cluster_member_count')
+
+
+class RedisClusterRunner(ClusterRunner):
+
+    # Since Redis runs all the shrink code in the API server, the call
+    # will not return until the task name has been set back to 'NONE' so
+    # we can't check it.
+    def run_cluster_shrink(self, expected_task_name='NONE',
+                           expected_http_code=202):
+        return super(RedisClusterRunner, self).run_cluster_shrink(
+            expected_task_name=expected_task_name,
+            expected_http_code=expected_http_code)
+
+
+class VerticaClusterRunner(ClusterRunner):
 
     @property
     def min_cluster_node_count(self):
         return self.get_datastore_config_property('cluster_member_count')
-
-
-class RedisClusterActionsRunner(ClusterActionsRunner):
-
-    def run_cluster_root_enable(self):
-        raise SkipTest("Operation is currently not supported.")
-
-
-class MongodbClusterActionsRunner(ClusterActionsRunner):
-
-    def run_cluster_root_enable(self):
-        raise SkipTest("Operation is currently not supported.")
-
-    @property
-    def min_cluster_node_count(self):
-        return 3
