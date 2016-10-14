@@ -35,25 +35,26 @@ Install a fresh Ubuntu 14.04 (Trusty Tahr) image ( _We suggest creating a develo
 #### Login with ubuntu:
 
     # su ubuntu
-    $ cd ~
+    $ mkdir -p /opt/stack
+    $ cd /opt/stack
 
 #### Clone this repo:
 
-    $ git clone https://github.com/openstack/trove-integration.git
+    $ git clone https://github.com/openstack/trove.git
 
 #### Go into the scripts directory:
 
-    $ cd trove-integration/scripts/
+    $ cd trove/integration/scripts/
 
-#### Running redstack is the core script:
+#### Running trovestack is the core script:
 *Run this to get the command list with a short description of each*
 
-    $ ./redstack
+    $ ./trovestack
 
-#### Install all the dependencies and then install trove via redstack.
+#### Install all the dependencies and then install trove via trovestack.
 *This brings up trove (rd-api rd-tmgr) and initializes the trove database.*
 
-    $ ./redstack install
+    $ ./trovestack install
 
 ***
 
@@ -103,17 +104,17 @@ Allows the services to continue running in the background
 #### Kick start the build/test-init/build-image commands
 *Add mysql as a parameter to set build and add the mysql guest image. This will also populate /etc/trove/test.conf with appropriate values for running the integration tests.*
 
-    $ ./redstack kick-start mysql
+    $ ./trovestack kick-start mysql
 
 *Optional commands if you did not run kick-start*
 
 #### Initialize the test configuration and set up test users (overwrites /etc/trove/test.conf)
 
-    $ ./redstack test-init
+    $ ./trovestack test-init
 
 #### Build the image and add it to glance
 
-    $ ./redstack build-image mysql
+    $ ./trovestack build-image mysql
 
 ***
 
@@ -123,22 +124,22 @@ Allows the services to continue running in the background
 
     $ killall -9 screen
     $ screen -wipe
-    $ RECLONE=yes ./redstack install
-    $ ./redstack kick-start mysql
+    $ RECLONE=yes ./trovestack install
+    $ ./trovestack kick-start mysql
 
  or
 
-    $ RECLONE=yes ./redstack install
-    $ ./redstack test-init
-    $ ./redstack build-image mysql
+    $ RECLONE=yes ./trovestack install
+    $ ./trovestack test-init
+    $ ./trovestack build-image mysql
 
 ***
 
 ### Recover after reboot
 If the VM was restarted, then the process for bringing up Openstack and Trove is quite simple
 
-    $./redstack start-deps
-    $./redstack start
+    $./trovestack start-deps
+    $./trovestack start
 
 Use screen to ensure all modules have started without error
 
@@ -159,15 +160,15 @@ should be:
 
 Once Trove is running on DevStack, you can use the dev scripts to run the integration tests locally.
 
-    $./redstack int-tests
+    $./trovestack int-tests
 
 This will runs all of the blackbox tests by default. Use the --group option to run a different group:
 
-    $./redstack int-tests --group=simple_blackbox
+    $./trovestack int-tests --group=simple_blackbox
 
 You can also specify the TESTS_USE_INSTANCE_ID environment variable to have the integration tests use an existing instance for the tests rather than creating a new one.
 
-    $./TESTS_DO_NOT_DELETE_INSTANCE=True TESTS_USE_INSTANCE_ID=INSTANCE_UUID ./redstack int-tests --group=simple_blackbox
+    $./TESTS_DO_NOT_DELETE_INSTANCE=True TESTS_USE_INSTANCE_ID=INSTANCE_UUID ./trovestack int-tests --group=simple_blackbox
 
 ***
 
@@ -184,7 +185,7 @@ Running Ubuntu with KVM or Qemu can be extremely slow without certain optimizati
 
 4. After setting these create a snapshot so that in cases where things break down you can revert to a clean snapshot.
 
-5. Boot up the VM and run the `./redstack install`
+5. Boot up the VM and run the `./trovestack install`
 
 6. To verify that KVM is setup properly after the devstack installation you can run these commands.
 ```

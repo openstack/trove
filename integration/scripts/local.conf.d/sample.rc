@@ -13,7 +13,7 @@
 # as the order of inserting the files is not guaranteed.
 #
 # All files are inherently included by default - to exclude a file,
-# add a variable 'FILENAME_IN_UPPERCASE_MINUS_RC=false' in redstack.rc
+# add a variable 'FILENAME_IN_UPPERCASE_MINUS_RC=false' in trovestack.rc
 # For Example: USING_VAGRANT=false (for the using_vagrant.rc file).
 #
 # Symbolic links are followed, so additional files can be loaded
@@ -21,7 +21,7 @@
 # local.conf.d (this should allow complete flexibility in setting
 # up testing options).
 # For Example:
-#   cd /path/to/trove-integration/scripts/local.conf.d
+#   cd /path/to/trove/integration/scripts/local.conf.d
 #   ln -s $HOME/local.conf.d local.conf.d
 #   cp /path/to/my_conf.rc $HOME/local.conf.d
 
