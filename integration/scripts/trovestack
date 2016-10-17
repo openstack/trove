@@ -40,7 +40,7 @@ set -e
 
 # Get default host ip from interface
 function get_default_host_ip() {
-    host_iface=$(ip route | sed -n '/^default/{ s/.*dev \(\w\+\)\s\+.*/\1/; p; }' | head -1)
+    host_iface=$(ip route | grep default | awk '{print $5}' | head -1)
     echo `LC_ALL=C ip -f inet addr show ${host_iface} | awk '/inet/ {split($2,parts,"/");  print parts[1]}' | head -1`
 }
 
