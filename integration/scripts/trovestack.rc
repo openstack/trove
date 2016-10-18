@@ -53,7 +53,7 @@ PATH_NOVA=$DEST/nova
 PATH_KEYSTONE=$DEST/keystone
 PATH_GLANCE=$DEST/glance
 PATH_SWIFT=$DEST/swift
-PATH_TROVE=$DEST/trove
+# PATH_TROVE is set at the top of trovestack
 PATH_PYTHON_NOVACLIENT=$DEST/python-novaclient
 PATH_KEYSTONECLIENT=$DEST/python-keystoneclient
 PATH_OPENSTACKCLIENT=$DEST/python-openstackclient

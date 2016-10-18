@@ -9,9 +9,9 @@
 #                                                                             #
 ###############################################################################
 
-TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:-`pwd`}
+PATH_TROVE=${PATH_TROVE:=$(readlink -f $(dirname $0)/../..)}
+TROVESTACK_SCRIPTS=${TROVESTACK_SCRIPTS:=$(readlink -f $(dirname $0))}
 TROVESTACK_TESTS=$TROVESTACK_SCRIPTS/../tests/
-
 DEFAULT_LOCAL_CONF=local.conf.rc
 DEFAULT_LOCALRC=localrc.rc
 LOCAL_CONF=local.conf
