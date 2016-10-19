@@ -205,7 +205,7 @@ class VolumeMountPoint(object):
         LOG.debug("Writing new line to fstab:%s" % fstab_line)
         with open('/etc/fstab', "r") as fstab:
             fstab_content = fstab.read()
-        with NamedTemporaryFile(delete=False) as tempfstab:
+        with NamedTemporaryFile(mode='w', delete=False) as tempfstab:
             tempfstab.write(fstab_content + fstab_line)
         utils.execute("sudo", "install", "-o", "root", "-g", "root", "-m",
                       "644", tempfstab.name, "/etc/fstab")
