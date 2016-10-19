@@ -659,7 +659,19 @@ function rd_manage() {
 }
 
 function install_test_packages() {
+    DATASTORE_TYPE=$1
+
     sudo -H $HTTP_PROXY pip install openstack.nose_plugin proboscis pexpect
+    if [ "$DATASTORE_TYPE" = "couchbase" ]; then
+        if [ "$DISTRO" == "ubuntu" ]; then
+	        # Install Couchbase SDK for scenario tests.
+	        sudo -H $HTTP_PROXY curl http://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
+	        echo "deb http://packages.couchbase.com/ubuntu trusty trusty/main" | sudo tee /etc/apt/sources.list.d/couchbase-csdk.list
+	        sudo -H $HTTP_PROXY apt-get update
+	        sudo -H $HTTP_PROXY apt-get -y install libcouchbase-dev
+	        sudo -H $HTTP_PROXY pip install --upgrade couchbase
+        fi
+    fi
 }
 
 function mod_confs() {
@@ -768,7 +780,7 @@ function cmd_test_init() {
     exclaim 'Initializing Configuration for Running Tests...'
 
     exclaim "Installing python test packages."
-    install_test_packages
+    install_test_packages $1
 
     exclaim "Modifying test.conf and guest.conf with appropriate values."
     mod_confs $1
