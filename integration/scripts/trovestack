@@ -668,7 +668,7 @@ function mod_confs() {
 
     sudo install -b --mode 0664 $TROVESTACK_SCRIPTS/conf/test_begin.conf $TEST_CONF
     # cmd_dsvm_gate_tests will set this to be $HOME/report
-    TROVE_REPORT_DIR=${TROVE_REPORT_DIR:=TROVESTACK_SCRIPTS/../report/}
+    TROVE_REPORT_DIR=${TROVE_REPORT_DIR:=$TROVESTACK_SCRIPTS/../report/}
 
     EXTRA_CONF=$TROVESTACK_SCRIPTS/conf/test.extra.conf
     if [ -e $EXTRA_CONF ]; then
