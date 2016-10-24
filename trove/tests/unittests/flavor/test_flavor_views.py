@@ -29,6 +29,9 @@ class FlavorViewsTest(trove_testtools.TestCase):
         self.flavor.name = 'test_flavor'
         self.flavor.ram = 512
         self.links = 'my_links'
+        self.flavor.vcpus = '10'
+        self.flavor.disk = '0'
+        self.flavor.ephemeral = '0'
 
     def tearDown(self):
         super(FlavorViewsTest, self).tearDown()
@@ -64,5 +67,12 @@ class FlavorViewsTest(trove_testtools.TestCase):
                                  msg + 'invalid name')
                 self.assertEqual(self.flavor.ram, result['flavor']['ram'],
                                  msg + 'invalid ram')
+                self.assertEqual(self.flavor.vcpus, result['flavor']['vcpus'],
+                                 msg + 'invalid vcpus')
+                self.assertEqual(self.flavor.disk, result['flavor']['disk'],
+                                 msg + 'invalid disk')
+                self.assertEqual(self.flavor.ephemeral,
+                                 result['flavor']['ephemeral'],
+                                 msg + 'invalid ephemeral')
                 self.assertEqual(self.links, result['flavor']['links'],
                                  msg + 'invalid links')
