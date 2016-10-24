@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # CONTEXT: GUEST during PRE-CONSTRUCTION as ROOT
 # PURPOSE: Setup apt-repo list so that we can connect to Percona's repo
@@ -17,17 +17,24 @@ mkdir -p /home/${GUEST_USERNAME}/.gnupg
 # https://bugs.launchpad.net/percona-server/+bug/907789.  Disable
 # shell errexit so we can interrogate the exit code and take action
 # based on the exit code. We will reenable it later.
-set +e
-apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys 1C4CBDCDCD2EFD2A
+function get_key_robust() {
+    KEY=$1
+    set +e
 
-if [ "$?" -ne "0" ];
-then
-    echo "Trying alternate keyserver hkp://keyserver.ubuntu.com"
+    apt-key adv --keyserver hkp://keys.gnupg.net --recv-keys ${KEY}
+
+    if [ "$?" -ne "0" ];
+    then
+        echo "Trying alternate keyserver hkp://keyserver.ubuntu.com"
+        set -e
+        apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys ${KEY}
+    fi
+
     set -e
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys 1C4CBDCDCD2EFD2A
-fi
+}
 
-set -e
+get_key_robust 1C4CBDCDCD2EFD2A
+get_key_robust 9334A25F8507EFA5
 
 # Add Percona repo
 # Creates the percona sources list
