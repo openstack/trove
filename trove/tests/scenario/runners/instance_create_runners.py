@@ -255,9 +255,11 @@ class InstanceCreateRunner(TestRunner):
         self.report.log("Test helpers are ready.")
 
     def run_add_initialized_instance_data(self):
-        self.init_inst_data = DataType.small
-        self.init_inst_host = self.get_instance_host(self.init_inst_info.id)
-        self.test_helper.add_data(self.init_inst_data, self.init_inst_host)
+        if self.init_inst_info:
+            self.init_inst_data = DataType.small
+            self.init_inst_host = self.get_instance_host(
+                self.init_inst_info.id)
+            self.test_helper.add_data(self.init_inst_data, self.init_inst_host)
 
     def run_validate_initialized_instance(self):
         if self.init_inst_info:
