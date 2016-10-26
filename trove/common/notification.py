@@ -549,6 +549,28 @@ class DBaaSInstanceDetachConfiguration(DBaaSAPINotification):
         return ['instance_id']
 
 
+class DBaaSClusterAttachConfiguration(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'cluster_attach_configuration'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['cluster_id', 'configuration_id']
+
+
+class DBaaSClusterDetachConfiguration(DBaaSAPINotification):
+
+    @abc.abstractmethod
+    def event_type(self):
+        return 'cluster_detach_configuration'
+
+    @abc.abstractmethod
+    def required_start_traits(self):
+        return ['cluster_id']
+
+
 class DBaaSClusterCreate(DBaaSAPINotification):
 
     @abc.abstractmethod

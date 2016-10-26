@@ -15,6 +15,7 @@
 
 import datetime
 import inspect
+import json
 import netaddr
 import os
 import proboscis
@@ -902,6 +903,25 @@ class TestRunner(object):
     def get_db_names(self, client, instance_id):
         full_list = client.databases.list(instance_id)
         return {database.name: database for database in full_list}
+
+    def create_initial_configuration(self, expected_http_code):
+        client = self.auth_client
+        dynamic_config = self.test_helper.get_dynamic_group()
+        non_dynamic_config = self.test_helper.get_non_dynamic_group()
+        values = dynamic_config or non_dynamic_config
+        if values:
+            json_def = json.dumps(values)
+            result = client.configurations.create(
+                'initial_configuration_for_create_tests',
+                json_def,
+                "Configuration group used by create tests.",
+                datastore=self.instance_info.dbaas_datastore,
+                datastore_version=self.instance_info.dbaas_datastore_version)
+            self.assert_client_code(client, expected_http_code)
+
+            return (result.id, dynamic_config is None)
+
+        return (None, False)
 
 
 class CheckInstance(AttrCheck):

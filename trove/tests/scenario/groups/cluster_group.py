@@ -29,7 +29,7 @@ class ClusterRunnerFactory(test_runners.RunnerFactory):
     _runner_cls = 'ClusterRunner'
 
 
-@test(groups=[GROUP, groups.CLUSTER_CREATE],
+@test(groups=[GROUP, groups.CLUSTER_CFGGRP_CREATE],
       runs_after_groups=[groups.MODULE_DELETE,
                          groups.CFGGRP_INST_DELETE,
                          groups.INST_ACTIONS_RESIZE_WAIT,
@@ -39,6 +39,20 @@ class ClusterRunnerFactory(test_runners.RunnerFactory):
                          groups.ROOT_ACTION_INST_DELETE,
                          groups.REPL_INST_DELETE_WAIT,
                          groups.INST_DELETE])
+class ClusterConfigurationCreateGroup(TestGroup):
+
+    def __init__(self):
+        super(ClusterConfigurationCreateGroup, self).__init__(
+            ClusterRunnerFactory.instance())
+
+    @test
+    def create_initial_configuration(self):
+        """Create a configuration group for a new cluster."""
+        self.test_runner.run_initial_configuration_create()
+
+
+@test(groups=[GROUP, groups.CLUSTER_ACTIONS, groups.CLUSTER_CREATE],
+      runs_after_groups=[groups.CLUSTER_CFGGRP_CREATE])
 class ClusterCreateGroup(TestGroup):
 
     def __init__(self):
@@ -69,6 +83,11 @@ class ClusterCreateWaitGroup(TestGroup):
     def cluster_create_wait(self):
         """Wait for cluster create to complete."""
         self.test_runner.run_cluster_create_wait()
+
+    @test(depends_on=[cluster_create_wait])
+    def verify_initial_configuration(self):
+        """Verify initial configuration values on the cluster."""
+        self.test_runner.run_verify_initial_configuration()
 
     @test(depends_on=[cluster_create_wait])
     def add_initial_cluster_data(self):
@@ -179,6 +198,11 @@ class ClusterGrowWaitGroup(TestGroup):
         self.test_runner.run_cluster_grow_wait()
 
     @test(depends_on=[cluster_grow_wait])
+    def verify_initial_configuration(self):
+        """Verify initial configuration values on the cluster."""
+        self.test_runner.run_verify_initial_configuration()
+
+    @test(depends_on=[cluster_grow_wait])
     def verify_initial_cluster_data_after_grow(self):
         """Verify the initial data still exists after cluster grow."""
         self.test_runner.run_verify_initial_cluster_data()
@@ -246,6 +270,11 @@ class ClusterUpgradeWaitGroup(TestGroup):
         self.test_runner.run_cluster_upgrade_wait()
 
     @test(depends_on=[cluster_upgrade_wait])
+    def verify_initial_configuration(self):
+        """Verify initial configuration values on the cluster."""
+        self.test_runner.run_verify_initial_configuration()
+
+    @test(depends_on=[cluster_upgrade_wait])
     def verify_initial_cluster_data_after_upgrade(self):
         """Verify the initial data still exists after cluster upgrade."""
         self.test_runner.run_verify_initial_cluster_data()
@@ -299,6 +328,11 @@ class ClusterShrinkWaitGroup(TestGroup):
         self.test_runner.run_cluster_shrink_wait()
 
     @test(depends_on=[cluster_shrink_wait])
+    def verify_initial_configuration(self):
+        """Verify initial configuration values on the cluster."""
+        self.test_runner.run_verify_initial_configuration()
+
+    @test(depends_on=[cluster_shrink_wait])
     def verify_initial_cluster_data_after_shrink(self):
         """Verify the initial data still exists after cluster shrink."""
         self.test_runner.run_verify_initial_cluster_data()
@@ -337,6 +371,93 @@ class ClusterRootEnableShrinkGroup(TestGroup):
 
 
 @test(groups=[GROUP, groups.CLUSTER_ACTIONS,
+              groups.CLUSTER_ACTIONS_CFGGRP_ACTIONS],
+      depends_on_groups=[groups.CLUSTER_CREATE_WAIT],
+      runs_after_groups=[groups.CLUSTER_ACTIONS_ROOT_SHRINK])
+class ClusterConfigurationActionsGroup(TestGroup):
+
+    def __init__(self):
+        super(ClusterConfigurationActionsGroup, self).__init__(
+            ClusterRunnerFactory.instance())
+
+    @test
+    def detach_initial_configuration(self):
+        """Detach initial configuration group."""
+        self.test_runner.run_detach_initial_configuration()
+
+    @test(depends_on=[detach_initial_configuration])
+    def restart_cluster_after_detach(self):
+        """Restarting cluster after configuration change."""
+        self.test_runner.restart_after_configuration_change()
+
+    @test
+    def create_dynamic_configuration(self):
+        """Create a configuration group with only dynamic entries."""
+        self.test_runner.run_create_dynamic_configuration()
+
+    @test
+    def create_non_dynamic_configuration(self):
+        """Create a configuration group with only non-dynamic entries."""
+        self.test_runner.run_create_non_dynamic_configuration()
+
+    @test(depends_on=[create_dynamic_configuration,
+                      restart_cluster_after_detach])
+    def attach_dynamic_configuration(self):
+        """Test attach dynamic group."""
+        self.test_runner.run_attach_dynamic_configuration()
+
+    @test(depends_on=[attach_dynamic_configuration])
+    def verify_dynamic_configuration(self):
+        """Verify dynamic values on the cluster."""
+        self.test_runner.run_verify_dynamic_configuration()
+
+    @test(depends_on=[attach_dynamic_configuration],
+          runs_after=[verify_dynamic_configuration])
+    def detach_dynamic_configuration(self):
+        """Test detach dynamic group."""
+        self.test_runner.run_detach_dynamic_configuration()
+
+    @test(depends_on=[create_non_dynamic_configuration,
+                      detach_initial_configuration],
+          runs_after=[detach_dynamic_configuration])
+    def attach_non_dynamic_configuration(self):
+        """Test attach non-dynamic group."""
+        self.test_runner.run_attach_non_dynamic_configuration()
+
+    @test(depends_on=[attach_non_dynamic_configuration])
+    def restart_cluster_after_attach(self):
+        """Restarting cluster after configuration change."""
+        self.test_runner.restart_after_configuration_change()
+
+    @test(depends_on=[restart_cluster_after_attach])
+    def verify_non_dynamic_configuration(self):
+        """Verify non-dynamic values on the cluster."""
+        self.test_runner.run_verify_non_dynamic_configuration()
+
+    @test(depends_on=[attach_non_dynamic_configuration],
+          runs_after=[verify_non_dynamic_configuration])
+    def detach_non_dynamic_configuration(self):
+        """Test detach non-dynamic group."""
+        self.test_runner.run_detach_non_dynamic_configuration()
+
+    @test(runs_after=[detach_dynamic_configuration,
+                      detach_non_dynamic_configuration])
+    def verify_initial_cluster_data(self):
+        """Verify the initial data still exists."""
+        self.test_runner.run_verify_initial_cluster_data()
+
+    @test(depends_on=[detach_dynamic_configuration])
+    def delete_dynamic_configuration(self):
+        """Test delete dynamic configuration group."""
+        self.test_runner.run_delete_dynamic_configuration()
+
+    @test(depends_on=[detach_non_dynamic_configuration])
+    def delete_non_dynamic_configuration(self):
+        """Test delete non-dynamic configuration group."""
+        self.test_runner.run_delete_non_dynamic_configuration()
+
+
+@test(groups=[GROUP, groups.CLUSTER_ACTIONS,
               groups.CLUSTER_DELETE],
       depends_on_groups=[groups.CLUSTER_CREATE_WAIT],
       runs_after_groups=[groups.CLUSTER_ACTIONS_ROOT_ENABLE,
@@ -345,7 +466,9 @@ class ClusterRootEnableShrinkGroup(TestGroup):
                          groups.CLUSTER_ACTIONS_GROW_WAIT,
                          groups.CLUSTER_ACTIONS_SHRINK_WAIT,
                          groups.CLUSTER_UPGRADE_WAIT,
-                         groups.CLUSTER_ACTIONS_RESTART_WAIT])
+                         groups.CLUSTER_ACTIONS_RESTART_WAIT,
+                         groups.CLUSTER_CFGGRP_CREATE,
+                         groups.CLUSTER_ACTIONS_CFGGRP_ACTIONS])
 class ClusterDeleteGroup(TestGroup):
 
     def __init__(self):
@@ -376,3 +499,19 @@ class ClusterDeleteWaitGroup(TestGroup):
     def cluster_delete_wait(self):
         """Wait for the existing cluster to be gone."""
         self.test_runner.run_cluster_delete_wait()
+
+
+@test(groups=[GROUP, groups.CLUSTER_ACTIONS,
+              groups.CLUSTER_CFGGRP_DELETE],
+      depends_on_groups=[groups.CLUSTER_CFGGRP_CREATE],
+      runs_after_groups=[groups.CLUSTER_DELETE_WAIT])
+class ClusterConfigurationDeleteGroup(TestGroup):
+
+    def __init__(self):
+        super(ClusterConfigurationDeleteGroup, self).__init__(
+            ClusterRunnerFactory.instance())
+
+    @test
+    def delete_initial_configuration(self):
+        """Delete initial configuration group."""
+        self.test_runner.run_delete_initial_configuration()

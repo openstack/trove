@@ -1,0 +1,3 @@
+features:
+  - Support attaching and detaching of configuration
+    groups on clusters.

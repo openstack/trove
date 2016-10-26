@@ -55,6 +55,8 @@ class ClusterView(object):
 
         if self.cluster.locality:
             cluster_dict['locality'] = self.cluster.locality
+        if self.cluster.configuration_id:
+            cluster_dict['configuration'] = self.cluster.configuration_id
         LOG.debug(cluster_dict)
         return {"cluster": cluster_dict}
 

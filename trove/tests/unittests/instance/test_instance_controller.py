@@ -257,8 +257,8 @@ class TestInstanceController(trove_testtools.TestCase):
     def _setup_modify_instance_mocks(self):
         instance = Mock()
         instance.detach_replica = Mock()
-        instance.assign_configuration = Mock()
-        instance.unassign_configuration = Mock()
+        instance.attach_configuration = Mock()
+        instance.detach_configuration = Mock()
         instance.update_db = Mock()
         return instance
 
@@ -270,8 +270,8 @@ class TestInstanceController(trove_testtools.TestCase):
                                          instance, **args)
 
         self.assertEqual(0, instance.detach_replica.call_count)
-        self.assertEqual(0, instance.unassign_configuration.call_count)
-        self.assertEqual(0, instance.assign_configuration.call_count)
+        self.assertEqual(0, instance.detach_configuration.call_count)
+        self.assertEqual(0, instance.attach_configuration.call_count)
         self.assertEqual(0, instance.update_db.call_count)
 
     def test_modify_instance_with_nonempty_args_calls_update_db(self):
@@ -312,7 +312,7 @@ class TestInstanceController(trove_testtools.TestCase):
         self.controller._modify_instance(self.context, self.req,
                                          instance, **args)
 
-        self.assertEqual(1, instance.assign_configuration.call_count)
+        self.assertEqual(1, instance.attach_configuration.call_count)
 
     def test_modify_instance_with_None_configuration_id_arg(self):
         instance = self._setup_modify_instance_mocks()
@@ -322,7 +322,7 @@ class TestInstanceController(trove_testtools.TestCase):
         self.controller._modify_instance(self.context, self.req,
                                          instance, **args)
 
-        self.assertEqual(1, instance.unassign_configuration.call_count)
+        self.assertEqual(1, instance.detach_configuration.call_count)
 
     def test_modify_instance_with_all_args(self):
         instance = self._setup_modify_instance_mocks()
@@ -334,5 +334,5 @@ class TestInstanceController(trove_testtools.TestCase):
                                          instance, **args)
 
         self.assertEqual(1, instance.detach_replica.call_count)
-        self.assertEqual(1, instance.assign_configuration.call_count)
+        self.assertEqual(1, instance.attach_configuration.call_count)
         instance.update_db.assert_called_once_with(**args)

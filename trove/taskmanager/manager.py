@@ -387,15 +387,6 @@ class Manager(periodic_task.PeriodicTasks):
         with EndNotification(context):
             instance_tasks.upgrade(datastore_version)
 
-    def update_overrides(self, context, instance_id, overrides):
-        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.update_overrides(overrides)
-
-    def unassign_configuration(self, context, instance_id, flavor,
-                               configuration_id):
-        instance_tasks = models.BuiltInstanceTasks.load(context, instance_id)
-        instance_tasks.unassign_configuration(flavor, configuration_id)
-
     def create_cluster(self, context, cluster_id):
         with EndNotification(context, cluster_id=cluster_id):
             cluster_tasks = models.load_cluster_tasks(context, cluster_id)
