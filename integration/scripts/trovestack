@@ -1095,6 +1095,12 @@ function cmd_vagrant_ssh() {
 
 function cmd_run_ci() {
     exclaim "Running CI suite..."
+
+    if [ -z $1 ]; then
+        exclaim "Datastore argument was not specified."
+        exit 1
+    fi
+
     set +e
     cmd_stop_deps
     cmd_stop
@@ -1207,6 +1213,11 @@ function cmd_clean() {
 }
 
 function cmd_kick_start() {
+    if [ -z $1 ]; then
+        exclaim "Datastore argument was not specified."
+        exit 1
+    fi
+
     cmd_test_init $1
     cmd_build_and_upload_image $1
 }
