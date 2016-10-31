@@ -19,7 +19,6 @@ from oslo_log import log as logging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.i18n import _
-from trove.common import utils
 from trove.common import wsgi
 from trove.datastore.models import DatastoreVersion
 from trove.extensions.security_group import models
@@ -103,9 +102,9 @@ class SecurityGroupRuleController(wsgi.Controller):
             rules = []
             try:
                 for port_or_range in set(ports):
-                    from_, to_ = utils.gen_ports(port_or_range)
+                    from_, to_ = port_or_range[0], port_or_range[-1]
                     rule = models.SecurityGroupRule.create_sec_group_rule(
-                        sec_group, protocol, int(from_), int(to_),
+                        sec_group, protocol, from_, to_,
                         body['security_group_rule']['cidr'], context,
                         CONF.os_region_name)
                     rules.append(rule)

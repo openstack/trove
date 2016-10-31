@@ -19,6 +19,7 @@ import os.path
 
 from oslo_config import cfg
 from oslo_config.cfg import NoSuchOptError
+from oslo_config import types
 from oslo_log import log as logging
 from oslo_middleware import cors
 from osprofiler import opts as profiler
@@ -26,6 +27,7 @@ from osprofiler import opts as profiler
 from trove.common.i18n import _
 from trove.version import version_info as version
 
+ListOfPortsType = types.Range(1, 65535)
 
 LOG = logging.getLogger(__name__)
 UNKNOWN_SERVICE_ID = 'unknown-service-id-error'
@@ -509,11 +511,11 @@ mysql_group = cfg.OptGroup(
 mysql_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
-    cfg.ListOpt('tcp_ports', default=["3306"],
+    cfg.ListOpt('tcp_ports', default=["3306"], item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -592,11 +594,11 @@ percona_group = cfg.OptGroup(
 percona_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
-    cfg.ListOpt('tcp_ports', default=["3306"],
+    cfg.ListOpt('tcp_ports', default=["3306"], item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -681,10 +683,11 @@ pxc_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports', default=["3306", "4444", "4567", "4568"],
+                item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -774,10 +777,11 @@ redis_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports', default=["6379", "16379"],
+                item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -851,10 +855,11 @@ cassandra_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports', default=["7000", "7001", "7199", "9042", "9160"],
+                item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -953,13 +958,13 @@ couchbase_group = cfg.OptGroup(
 couchbase_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
-    cfg.ListOpt('tcp_ports',
+    cfg.ListOpt('tcp_ports', item_type=ListOfPortsType,
                 default=["8091", "8092", "4369", "11209-11211",
                          "21100-21199"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -1018,10 +1023,11 @@ mongodb_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports', default=["2500", "27017", "27019"],
+                item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -1110,11 +1116,11 @@ postgresql_group = cfg.OptGroup(
 postgresql_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
-    cfg.ListOpt('tcp_ports', default=["5432"],
+    cfg.ListOpt('tcp_ports', default=["5432"], item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -1187,11 +1193,11 @@ couchdb_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports',
-                default=["5984"],
+                default=["5984"], item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
@@ -1248,12 +1254,12 @@ vertica_group = cfg.OptGroup(
 vertica_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
-    cfg.ListOpt('tcp_ports',
+    cfg.ListOpt('tcp_ports', item_type=ListOfPortsType,
                 default=["5433", "5434", "22", "5444", "5450", "4803"],
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports',
+    cfg.ListOpt('udp_ports', item_type=ListOfPortsType,
                 default=["5433", "4803", "4804", "6453"],
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
@@ -1319,11 +1325,11 @@ db2_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports',
-                default=["50000"],
+                default=["50000"], item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                 'in the security group (only applicable '
                 'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                 'in the security group (only applicable '
                 'if trove_security_groups_support is True).'),
@@ -1379,10 +1385,11 @@ mariadb_opts = [
     cfg.BoolOpt('icmp', default=False,
                 help='Whether to permit ICMP.'),
     cfg.ListOpt('tcp_ports', default=["3306", "4444", "4567", "4568"],
+                item_type=ListOfPortsType,
                 help='List of TCP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),
-    cfg.ListOpt('udp_ports', default=[],
+    cfg.ListOpt('udp_ports', default=[], item_type=ListOfPortsType,
                 help='List of UDP ports and/or port ranges to open '
                      'in the security group (only applicable '
                      'if trove_security_groups_support is True).'),

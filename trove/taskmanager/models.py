@@ -761,7 +761,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         final = []
         cidr = CONF.trove_security_group_rule_cidr
         for port_or_range in set(rule_ports):
-            from_, to_ = utils.gen_ports(port_or_range)
+            from_, to_ = port_or_range[0], port_or_range[-1]
             final.append({'cidr': cidr,
                           'from_': str(from_),
                           'to_': str(to_)})
@@ -1014,7 +1014,7 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
             for port_or_range in set(ports):
                 try:
                     from_, to_ = (None, None)
-                    from_, to_ = utils.gen_ports(port_or_range)
+                    from_, to_ = port_or_range[0], port_or_range[-1]
                     SecurityGroupRule.create_sec_group_rule(
                         s_group, protocol, int(from_), int(to_),
                         cidr, self.context, self.region_name)
