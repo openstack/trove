@@ -160,6 +160,34 @@ class ClusterRunner(TestRunner):
         self.assert_cluster_show(
             self.cluster_id, expected_task_name, expected_http_code)
 
+    def run_cluster_restart(self, expected_http_code=202,
+                            expected_task_name='RESTARTING_CLUSTER'):
+        self.assert_cluster_restart(
+            self.cluster_id, expected_task_name, expected_http_code)
+
+    def assert_cluster_restart(
+            self, cluster_id, expected_task_name, expected_http_code):
+        client = self.auth_client
+        client.clusters.restart(cluster_id)
+        self.assert_client_code(client, expected_http_code)
+        self._assert_cluster_response(
+            client, cluster_id, expected_task_name)
+
+    def run_cluster_restart_wait(self):
+        self.assert_cluster_restart_wait(self.cluster_id)
+
+    def assert_cluster_restart_wait(self, cluster_id):
+        client = self.auth_client
+        cluster_instances = self._get_cluster_instances(
+            client, cluster_id)
+        self.assert_all_instance_states(
+            cluster_instances, ['REBOOT', 'ACTIVE'])
+
+        self._assert_cluster_states(
+            client, cluster_id, ['NONE'])
+        self._assert_cluster_response(
+            client, cluster_id, 'NONE')
+
     def assert_cluster_show(self, cluster_id, expected_task_name,
                             expected_http_code):
         self._assert_cluster_response(self.auth_client,

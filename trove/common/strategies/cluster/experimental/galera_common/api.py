@@ -197,6 +197,12 @@ class GaleraCommonCluster(cluster_models.Cluster):
         return self.__class__(self.context, self.db_info,
                               self.ds, self.ds_version)
 
+    def restart(self):
+        self.rolling_restart()
+
+    def upgrade(self, datastore_version):
+        self.rolling_upgrade(datastore_version)
+
 
 class GaleraCommonClusterView(ClusterView):
 

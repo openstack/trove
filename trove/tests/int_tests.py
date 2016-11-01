@@ -162,6 +162,9 @@ cluster_root_groups.extend([groups.CLUSTER_ACTIONS_ROOT_ENABLE])
 cluster_root_actions_groups = list(cluster_actions_groups)
 cluster_root_actions_groups.extend([groups.CLUSTER_ACTIONS_ROOT_ACTIONS])
 
+cluster_restart_groups = list(cluster_create_groups)
+cluster_restart_groups.extend([groups.CLUSTER_ACTIONS_RESTART_WAIT])
+
 cluster_upgrade_groups = list(cluster_create_groups)
 cluster_upgrade_groups.extend([groups.CLUSTER_UPGRADE_WAIT])
 
@@ -247,6 +250,7 @@ register(["cluster"], cluster_actions_groups)
 register(["cluster_actions"], cluster_actions_groups)
 register(["cluster_create"], cluster_create_groups)
 register(["cluster_negative_actions"], cluster_negative_actions_groups)
+register(["cluster_restart"], cluster_restart_groups)
 register(["cluster_root"], cluster_root_groups)
 register(["cluster_root_actions"], cluster_root_actions_groups)
 register(["cluster_upgrade"], cluster_upgrade_groups)

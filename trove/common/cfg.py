@@ -938,6 +938,26 @@ cassandra_opts = [
                help='Character length of generated passwords.',
                deprecated_name='default_password_length',
                deprecated_group='DEFAULT'),
+    cfg.BoolOpt('enable_cluster_instance_backup',
+                default=False,
+                help='Allows backup of single instance in the cluster.'),
+    cfg.BoolOpt('enable_saslauthd', default=False,
+                help='Enable the saslauth daemon.'),
+    cfg.StrOpt('user_controller',
+               default='trove.extensions.cassandra.service.'
+               'CassandraUserController',
+               help='User controller implementation.'),
+    cfg.StrOpt('database_controller',
+               default='trove.extensions.cassandra.service.'
+               'CassandraDatabaseController',
+               help='Database controller implementation.'),
+    cfg.StrOpt('user_access_controller',
+               default='trove.extensions.cassandra.service.'
+               'CassandraUserAccessController',
+               help='User access controller implementation.'),
+    cfg.IntOpt('node_sync_time', default=60,
+               help='Time (in seconds) given to a node after a state change '
+               'to finish rejoining the cluster.'),
 ]
 
 # Couchbase

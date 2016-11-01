@@ -114,6 +114,9 @@ class InstanceTasks(object):
     SHRINKING_ERROR = InstanceTask(0x58, 'SHRINKING',
                                          'Shrinking Cluster Error.',
                                          is_error=True)
+    UPGRADING_ERROR = InstanceTask(0x59, 'UPGRADING',
+                                         'Upgrading Cluster Error.',
+                                         is_error=True)
     UPGRADING = InstanceTask(0x59, 'UPGRADING', 'Upgrading the instance.')
 
 # Dissuade further additions at run-time.

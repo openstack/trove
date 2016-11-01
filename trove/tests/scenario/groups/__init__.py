@@ -61,6 +61,8 @@ CLUSTER_ACTIONS_GROW = "scenario.cluster_actions_grow_grp"
 CLUSTER_ACTIONS_GROW_WAIT = "scenario.cluster_actions_grow_wait_grp"
 CLUSTER_ACTIONS_SHRINK = "scenario.cluster_actions_shrink_grp"
 CLUSTER_ACTIONS_SHRINK_WAIT = "scenario.cluster_actions_shrink_wait_grp"
+CLUSTER_ACTIONS_RESTART = "scenario.cluster_actions_restart_grp"
+CLUSTER_ACTIONS_RESTART_WAIT = "scenario.cluster_actions_restart_wait_grp"
 
 
 # Cluster Create Group (in cluster_actions file)

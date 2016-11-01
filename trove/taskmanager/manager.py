@@ -371,7 +371,7 @@ class Manager(periodic_task.PeriodicTasks):
                         cluster_config, volume_type, modules, locality):
         with EndNotification(context,
                              instance_id=(instance_id[0]
-                                          if type(instance_id) is list
+                                          if isinstance(instance_id, list)
                                           else instance_id)):
             self._create_instance(context, instance_id, name, flavor,
                                   image_id, databases, users,
@@ -408,6 +408,15 @@ class Manager(periodic_task.PeriodicTasks):
     def shrink_cluster(self, context, cluster_id, instance_ids):
         cluster_tasks = models.load_cluster_tasks(context, cluster_id)
         cluster_tasks.shrink_cluster(context, cluster_id, instance_ids)
+
+    def restart_cluster(self, context, cluster_id):
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.restart_cluster(context, cluster_id)
+
+    def upgrade_cluster(self, context, cluster_id, datastore_version_id):
+        datastore_version = DatastoreVersion.load_by_uuid(datastore_version_id)
+        cluster_tasks = models.load_cluster_tasks(context, cluster_id)
+        cluster_tasks.upgrade_cluster(context, cluster_id, datastore_version)
 
     def delete_cluster(self, context, cluster_id):
         with EndNotification(context):

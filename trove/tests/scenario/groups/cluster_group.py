@@ -92,8 +92,44 @@ class ClusterCreateWaitGroup(TestGroup):
 
 
 @test(groups=[GROUP, groups.CLUSTER_ACTIONS,
-              groups.CLUSTER_ACTIONS_ROOT_ENABLE],
+              groups.CLUSTER_ACTIONS_RESTART],
       depends_on_groups=[groups.CLUSTER_CREATE_WAIT])
+class ClusterRestartGroup(TestGroup):
+
+    def __init__(self):
+        super(ClusterRestartGroup, self).__init__(
+            ClusterRunnerFactory.instance())
+
+    @test
+    def cluster_restart(self):
+        """Restart the cluster."""
+        self.test_runner.run_cluster_restart()
+
+
+@test(groups=[GROUP, groups.CLUSTER_ACTIONS,
+              groups.CLUSTER_ACTIONS_RESTART_WAIT],
+      depends_on_groups=[groups.CLUSTER_ACTIONS_RESTART])
+class ClusterRestartWaitGroup(TestGroup):
+
+    def __init__(self):
+        super(ClusterRestartWaitGroup, self).__init__(
+            ClusterRunnerFactory.instance())
+
+    @test
+    def cluster_restart_wait(self):
+        """Wait for cluster restart to complete."""
+        self.test_runner.run_cluster_restart_wait()
+
+    @test(depends_on=[cluster_restart_wait])
+    def verify_initial_cluster_data(self):
+        """Verify the initial data still exists after cluster restart."""
+        self.test_runner.run_verify_initial_cluster_data()
+
+
+@test(groups=[GROUP, groups.CLUSTER_ACTIONS,
+              groups.CLUSTER_ACTIONS_ROOT_ENABLE],
+      depends_on_groups=[groups.CLUSTER_CREATE_WAIT],
+      runs_after_groups=[groups.CLUSTER_ACTIONS_RESTART_WAIT])
 class ClusterRootEnableGroup(TestGroup):
 
     def __init__(self):
@@ -308,7 +344,8 @@ class ClusterRootEnableShrinkGroup(TestGroup):
                          groups.CLUSTER_ACTIONS_ROOT_SHRINK,
                          groups.CLUSTER_ACTIONS_GROW_WAIT,
                          groups.CLUSTER_ACTIONS_SHRINK_WAIT,
-                         groups.CLUSTER_UPGRADE_WAIT])
+                         groups.CLUSTER_UPGRADE_WAIT,
+                         groups.CLUSTER_ACTIONS_RESTART_WAIT])
 class ClusterDeleteGroup(TestGroup):
 
     def __init__(self):
