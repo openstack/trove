@@ -20,10 +20,8 @@ from sqlalchemy.schema import MetaData
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
-from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
-from trove.db.sqlalchemy import utils as db_utils
 
 
 meta = MetaData()
@@ -59,20 +57,3 @@ def upgrade(migrate_engine):
     instances = Table('instances', meta, autoload=True)
     instances.create_column(Column('configuration_id', String(36),
                                    ForeignKey("configurations.id")))
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-    instances = Table('instances', meta, autoload=True)
-    constraint_names = db_utils.get_foreign_key_constraint_names(
-        engine=migrate_engine,
-        table='instances',
-        columns=['configuration_id'],
-        ref_table='configurations',
-        ref_columns=['id'])
-    db_utils.drop_foreign_key_constraints(
-        constraint_names=constraint_names,
-        columns=[instances.c.configuration_id],
-        ref_columns=[configurations.c.id])
-    instances.drop_column('configuration_id')
-    drop_tables([configuration_parameters, configurations])

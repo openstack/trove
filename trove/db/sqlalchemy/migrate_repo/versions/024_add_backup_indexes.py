@@ -40,17 +40,3 @@ def upgrade(migrate_engine):
         backups_deleted_idx.create()
     except OperationalError as e:
         logger.info(e)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    backups = Table('backups', meta, autoload=True)
-    backups_instance_id_idx = Index("backups_instance_id",
-                                    backups.c.instance_id)
-    backups_deleted_idx = Index("backups_deleted", backups.c.deleted)
-
-    meta.bind = migrate_engine
-    backups_instance_id_idx.drop()
-    backups_deleted_idx.drop()

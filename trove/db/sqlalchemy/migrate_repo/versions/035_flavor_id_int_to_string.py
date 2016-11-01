@@ -15,7 +15,6 @@
 
 from sqlalchemy.schema import MetaData
 
-from trove.db.sqlalchemy.migrate_repo.schema import Integer
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
 
@@ -27,9 +26,3 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
     instances = Table('instances', meta, autoload=True)
     instances.c.flavor_id.alter(String(255))
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-    instances = Table('instances', meta, autoload=True)
-    instances.c.flavor_id.alter(Integer())

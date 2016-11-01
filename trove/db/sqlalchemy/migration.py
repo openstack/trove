@@ -64,22 +64,6 @@ def upgrade(options, version=None, repo_path=None):
     return versioning_api.upgrade(sql_connection, repo_path, version)
 
 
-def downgrade(options, version, repo_path=None):
-    """Downgrade the database's current migration level.
-
-    :param options: options dict
-    :param version: version to downgrade to
-    :retval version number
-
-    """
-    db_version(options, repo_path)  # Ensure db is under migration control
-    repo_path = get_migrate_repo_path(repo_path)
-    sql_connection = options['database']['connection']
-    logger.info("Downgrading %(sql_connection)s to version %(version)s" %
-                {'sql_connection': sql_connection, 'version': version})
-    return versioning_api.downgrade(sql_connection, repo_path, version)
-
-
 def version_control(options, repo_path=None):
     """Place a database under migration control.
 

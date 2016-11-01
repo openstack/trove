@@ -33,12 +33,3 @@ def upgrade(migrate_engine):
         idx.create()
     except OperationalError as e:
         logger.info(e)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    service_statuses = Table('service_statuses', meta, autoload=True)
-    idx = Index("service_statuses_instance_id", service_statuses.c.instance_id)
-    idx.drop()

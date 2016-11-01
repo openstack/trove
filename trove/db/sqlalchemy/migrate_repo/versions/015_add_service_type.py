@@ -26,11 +26,3 @@ def upgrade(migrate_engine):
     service_type = Column('service_type', String(36))
     instances.create_column(service_type)
     instances.update().values({'service_type': 'mysql'}).execute()
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-    # modify column:
-    instances = Table('instances', meta, autoload=True)
-    instances.drop_column('service_type')

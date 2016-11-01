@@ -18,7 +18,6 @@ from sqlalchemy.schema import MetaData
 from trove.db.sqlalchemy.migrate_repo.schema import Boolean
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
-from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import Float
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
@@ -46,8 +45,3 @@ backups = Table('backups', meta,
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
     create_tables([backups, ])
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-    drop_tables([backups, ])

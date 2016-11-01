@@ -18,7 +18,6 @@ from sqlalchemy.schema import UniqueConstraint
 
 from trove.db.sqlalchemy.migrate_repo.schema import create_tables
 from trove.db.sqlalchemy.migrate_repo.schema import DateTime
-from trove.db.sqlalchemy.migrate_repo.schema import drop_tables
 from trove.db.sqlalchemy.migrate_repo.schema import Integer
 from trove.db.sqlalchemy.migrate_repo.schema import String
 from trove.db.sqlalchemy.migrate_repo.schema import Table
@@ -60,8 +59,3 @@ reservations = Table('reservations', meta,
 def upgrade(migrate_engine):
     meta.bind = migrate_engine
     create_tables([quotas, quota_usages, reservations])
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-    drop_tables([quotas, quota_usages, reservations])

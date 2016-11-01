@@ -28,13 +28,3 @@ def upgrade(migrate_engine):
     instances = Table('instances', meta, autoload=True)
     instances.create_column(Column('deleted', Boolean()))
     instances.create_column(Column('deleted_at', DateTime()))
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-
-    # drop column:
-    instances = Table('instances', meta, autoload=True)
-    instances.drop_column('deleted')
-    instances.drop_column('deleted_at')

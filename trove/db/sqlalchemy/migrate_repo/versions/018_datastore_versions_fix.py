@@ -23,11 +23,3 @@ def upgrade(migrate_engine):
     datastore_versions = Table('datastore_versions', meta, autoload=True)
     # modify column
     datastore_versions.c.name.alter(unique=False)
-
-
-def downgrade(migrate_engine):
-    meta = MetaData()
-    meta.bind = migrate_engine
-    # modify column:
-    datastore_versions = Table('datastore_versions', meta, autoload=True)
-    datastore_versions.c.name.alter(unique=True)

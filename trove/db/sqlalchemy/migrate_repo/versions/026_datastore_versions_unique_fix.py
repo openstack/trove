@@ -41,10 +41,3 @@ def upgrade(migrate_engine):
             uc.drop()
         except (OperationalError, InternalError) as e:
             logger.info(e)
-
-
-def downgrade(migrate_engine):
-    # we aren't going to recreate the index in this case for 2 reasons:
-    # 1. this column being unique was a bug in the first place
-    # 2. adding a unique index to a column that has duplicates will fail
-    pass

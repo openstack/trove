@@ -13,7 +13,6 @@
 #    under the License.
 
 from sqlalchemy.schema import MetaData
-from sqlalchemy.sql.expression import delete
 from sqlalchemy.sql.expression import insert
 from sqlalchemy.sql.expression import select
 from sqlalchemy.sql.expression import update
@@ -129,33 +128,3 @@ def upgrade(migrate_engine):
         constraint_names=constraint_names,
         columns=[instance_table.c.datastore_version_id],
         ref_columns=[datastore_versions_table.c.id])
-
-
-def downgrade(migrate_engine):
-    meta.bind = migrate_engine
-
-    instance_table = Table('instances', meta, autoload=True)
-
-    instance_table.c.datastore_version_id.alter(nullable=True)
-
-    update(
-        table=instance_table,
-        whereclause="datastore_version_id='%s'" % LEGACY_VERSION_ID,
-        values=dict(datastore_version_id=None)
-    ).execute()
-
-    datastores_table = Table('datastores',
-                             meta,
-                             autoload=True)
-    datastore_versions_table = Table('datastore_versions',
-                                     meta,
-                                     autoload=True)
-
-    delete(
-        table=datastore_versions_table,
-        whereclause="id='%s'" % LEGACY_VERSION_ID
-    ).execute()
-    delete(
-        table=datastores_table,
-        whereclause="id='%s'" % LEGACY_DATASTORE_ID
-    ).execute()

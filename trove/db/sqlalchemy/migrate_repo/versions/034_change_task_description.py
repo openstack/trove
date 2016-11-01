@@ -23,7 +23,3 @@ def upgrade(migrate_engine):
     meta.bind = migrate_engine
     instances = Table('instances', meta, autoload=True)
     instances.c.task_description.alter(type=String(255))
-
-
-def downgrade(migrate_engine):
-    pass
