@@ -92,7 +92,36 @@ Other references:
    - https://review.openstack.org/#/c/116176/
    - trove-pylint readme file in tools/trove-pylint.README
 
-Approving changes
+Code Review Priority
+--------------------
+
+At the design summit in Barcelona (October 2016) we discussed code
+review priority. We have a significant number of priorities for what
+we want to get merged in each release. As we get closer to the release
+date the time crunch will become even more acute. Therefore, we
+consciously focus on taking steps to merge changes in a manner
+consistent with these priorities.
+
+All contributors to the project can help with this by reviewing the
+code submitted by others, and getting them merged in a timely
+manner.
+
+Reviewing code is an important community activity and if you would
+like others to prioritize the review of your changes, it is strongly
+advised that you take the time to review other contributors code, and
+provide useful feedback. You will notice that as you review others
+code, you will not only learn more about the project and the many
+supported databases, but also that others take a more proactive view
+to reviewing the changes that you submit.
+
+Merely submitting code and expecting others to review it will (most
+likely) not work. If you've submitted code and you find that it isn't
+getting reviewed, consider whether you've done your fair share for the
+project by reviewing others code, or testing, or documenting, or
+submitting significant improvements, or in one of many other ways in
+which you can help advance the project.
+
+Approving Changes
 -----------------
 
 The Trove project follows the conventions below in approving changes.
