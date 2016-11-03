@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -e
+set -o xtrace
+
+cat > /lib/systemd/system/redis-server.service << '_EOF_'
+[Unit]
+Description=Advanced key-value store
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/redis/redis-server.pid
+User=redis
+Group=redis
+
+Environment=statedir=/var/run/redis
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p ${statedir}
+ExecStartPre=/bin/chown -R redis:redis ${statedir}
+ExecStart=/usr/bin/redis-server /etc/redis/redis.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+ExecStop=/usr/bin/redis-cli shutdown
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+_EOF_

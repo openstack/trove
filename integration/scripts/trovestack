@@ -48,6 +48,12 @@ function get_default_host_ip() {
 . $TROVESTACK_SCRIPTS/functions
 . $TROVESTACK_SCRIPTS/functions_qemu
 
+# Pre-set DISTRO and RELEASE variables based on host OS
+# Can be overridden by env vars DISTRO and RELEASE
+GetDistro
+export DISTRO=${DISTRO:-$DISTRO_NAME}
+export RELEASE=${RELEASE:-$DISTRO_RELEASE}
+
 # Load global configuration variables.
 . $TROVESTACK_SCRIPTS/trovestack.rc
 . $TROVESTACK_SCRIPTS/reviews.rc
@@ -266,7 +272,8 @@ function install_prep_packages() {
     if is_fedora; then
       pkg_install git gettext
     else
-      pkg_install git-core kvm-ipxe gettext
+      #pkg_install git-core kvm-ipxe gettext
+      pkg_install git-core gettext
     fi
     sudo -H $HTTP_PROXY pip install --upgrade pip dib-utils
 }
@@ -1328,7 +1335,6 @@ function cmd_clone_projects() {
 function cmd_repl() {
     INT_TEST_OPTIONS=-i cmd_int_tests_white_box --repl --group=_does_not_exist_ $@
 }
-
 
 ###############################################################################
 # Process the user provided command and run the appropriate command
