@@ -361,6 +361,11 @@ class ModuleInstCreateGroup(TestGroup):
         self.test_runner.run_module_instances_empty()
 
     @test(runs_after=[module_instances_empty])
+    def module_instance_count_empty(self):
+        """Check that no instance count exists."""
+        self.test_runner.run_module_instance_count_empty()
+
+    @test(runs_after=[module_instance_count_empty])
     def module_query_empty(self):
         """Check that the instance has no modules applied."""
         self.test_runner.run_module_query_empty()
@@ -380,7 +385,17 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that the instance has one module associated."""
         self.test_runner.run_module_list_instance_after_apply()
 
-    @test(depends_on=[module_apply])
+    @test(runs_after=[module_list_instance_after_apply])
+    def module_instances_after_apply(self):
+        """Check that the instance shows up in the list."""
+        self.test_runner.run_module_instances_after_apply()
+
+    @test(runs_after=[module_instances_after_apply])
+    def module_instance_count_after_apply(self):
+        """Check that the instance count is right after apply."""
+        self.test_runner.run_module_instance_count_after_apply()
+
+    @test(runs_after=[module_instance_count_after_apply])
     def module_query_after_apply(self):
         """Check that module-query works."""
         self.test_runner.run_module_query_after_apply()
@@ -394,6 +409,16 @@ class ModuleInstCreateGroup(TestGroup):
     def module_list_instance_after_apply_another(self):
         """Check that the instance has one module associated."""
         self.test_runner.run_module_list_instance_after_apply_another()
+
+    @test(runs_after=[module_list_instance_after_apply_another])
+    def module_instances_after_apply_another(self):
+        """Check that the instance shows up in the list still."""
+        self.test_runner.run_module_instances_after_apply_another()
+
+    @test(runs_after=[module_instances_after_apply_another])
+    def module_instance_count_after_apply_another(self):
+        """Check that the instance count is right after another apply."""
+        self.test_runner.run_module_instance_count_after_apply_another()
 
     @test(depends_on=[module_apply_another])
     def module_query_after_apply_another(self):

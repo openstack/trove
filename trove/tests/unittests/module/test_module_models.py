@@ -17,6 +17,7 @@
 import copy
 from mock import Mock, patch
 
+from trove.common import crypto_utils
 from trove.common import exception
 from trove.datastore import models as datastore_models
 from trove.module import models
@@ -106,22 +107,42 @@ class CreateModuleTest(trove_testtools.TestCase):
                         context, 'action', tenant, auto_apply, visible,
                         priority_apply, full_access)
 
-    def test_validate_datastore(self):
-        # datastore, datastore_version, valid, exception
+    def _build_module(self, ds_id, ds_ver_id):
+        module = Mock()
+        module.datastore_id = ds_id
+        module.datastore_version_id = ds_ver_id
+        module.contents = crypto_utils.encode_data(
+            crypto_utils.encrypt_data(
+                'VGhpc2lzbXlkYXRhc3RyaW5n',
+                'thisismylongkeytouse'))
+        return module
+
+    def test_validate(self):
         data = [
-            [None, None, True],
-            ['ds', None, True],
-            ['ds', 'ds_ver', True],
-            [None, 'ds_ver', False,
-             exception.BadRequest],
+            [[self._build_module('ds', 'ds_ver')], 'ds', 'ds_ver', True],
+            [[self._build_module('ds', None)], 'ds', 'ds_ver', True],
+            [[self._build_module(None, None)], 'ds', 'ds_ver', True],
+
+            [[self._build_module('ds', 'ds_ver')], 'ds', 'ds2_ver', False,
+             exception.TroveError],
+            [[self._build_module('ds', 'ds_ver')], 'ds2', 'ds_ver', False,
+             exception.TroveError],
+            [[self._build_module('ds', 'ds_ver')], 'ds2', 'ds2_ver', False,
+             exception.TroveError],
+            [[self._build_module('ds', None)], 'ds2', 'ds2_ver', False,
+             exception.TroveError],
+            [[self._build_module(None, None)], 'ds2', 'ds2_ver', True],
+
+            [[self._build_module(None, 'ds_ver')], 'ds2', 'ds_ver', True],
         ]
         for datum in data:
-            ds_id = datum[0]
-            ds_ver_id = datum[1]
-            valid = datum[2]
+            modules = datum[0]
+            ds_id = datum[1]
+            ds_ver_id = datum[2]
+            match = datum[3]
             expected_exception = None
-            if not valid:
-                expected_exception = datum[3]
+            if not match:
+                expected_exception = datum[4]
             ds = Mock()
             ds.id = ds_id
             ds.name = ds_id
@@ -133,9 +154,10 @@ class CreateModuleTest(trove_testtools.TestCase):
                               return_value=ds):
                 with patch.object(datastore_models.DatastoreVersion, 'load',
                                   return_value=ds_ver):
-                    if valid:
-                        models.Module.validate_datastore(ds_id, ds_ver_id)
+                    if match:
+                        models.Modules.validate(modules, ds_id, ds_ver_id)
                     else:
                         self.assertRaises(
                             expected_exception,
-                            models.Module.validate_datastore, ds_id, ds_ver_id)
+                            models.Modules.validate,
+                            modules, ds_id, ds_ver_id)

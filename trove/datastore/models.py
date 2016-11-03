@@ -519,6 +519,38 @@ def get_datastore_version(type=None, version=None, return_inactive=False):
     return (datastore, datastore_version)
 
 
+def get_datastore_or_version(datastore=None, datastore_version=None):
+    """
+    Validate that the specified datastore/version exists, and return the
+    corresponding ids.  This differs from 'get_datastore_version' in that
+    you don't need to specify both - specifying only a datastore will
+    return 'None' in the ds_ver field.  Raises DatastoreNoVersion if
+    you pass in a ds_ver without a ds.  Originally designed for module
+    management.
+
+    :param datastore:           Datastore name or id
+    :param datastore_version:   Version name or id
+    :return:                    Tuple of ds_id, ds_ver_id if found
+    """
+
+    datastore_id = None
+    datastore_version_id = None
+    if datastore:
+        if datastore_version:
+            ds, ds_ver = get_datastore_version(
+                type=datastore, version=datastore_version)
+            datastore_id = ds.id
+            datastore_version_id = ds_ver.id
+        else:
+            ds = Datastore.load(datastore)
+            datastore_id = ds.id
+    elif datastore_version:
+        # Cannot specify version without datastore.
+        raise exception.DatastoreNoVersion(
+            datastore=datastore, version=datastore_version)
+    return datastore_id, datastore_version_id
+
+
 def update_datastore(name, default_version):
     db_api.configure_db(CONF)
     try:

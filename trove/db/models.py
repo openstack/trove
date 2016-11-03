@@ -116,6 +116,10 @@ class DatabaseModelBase(models.ModelBase):
         return model
 
     @classmethod
+    def find_by_filter(cls, **kwargs):
+        return db_query.find_by_filter(cls, **cls._process_conditions(kwargs))
+
+    @classmethod
     def get_by(cls, **kwargs):
         return get_db_api().find_by(cls, **cls._process_conditions(kwargs))
 

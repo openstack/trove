@@ -892,6 +892,24 @@ class ModuleRunner(TestRunner):
         self.assert_equal(expected_count, count,
                           "Wrong number of instances applied from module")
 
+    def run_module_instance_count_empty(self):
+        self.assert_module_instance_count(
+            self.auth_client, self.main_test_module.id, 0)
+
+    def assert_module_instance_count(self, client, module_id,
+                                     expected_rows, expected_count=None,
+                                     expected_http_code=200):
+        instance_count_list = client.modules.instances(module_id,
+                                                       count_only=True)
+        self.assert_client_code(client, expected_http_code)
+        rowcount = len(instance_count_list)
+        self.assert_equal(expected_rows, rowcount,
+                          "Wrong number of instance count records from module")
+        if expected_rows == 1:
+            self.assert_equal(expected_count,
+                              instance_count_list[0].instance_count,
+                              "Wrong count in record from module instances")
+
     def run_module_query_empty(self):
         self.assert_module_query(
             self.auth_client, self.instance_info.id,
@@ -1044,6 +1062,14 @@ class ModuleRunner(TestRunner):
             datastore_version=self.instance_info.dbaas_datastore_version,
             contents=contents)
 
+    def run_module_instances_after_apply(self):
+        self.assert_module_instances(
+            self.auth_client, self.main_test_module.id, 1)
+
+    def run_module_instance_count_after_apply(self):
+        self.assert_module_instance_count(
+            self.auth_client, self.main_test_module.id, 1, 1)
+
     def run_module_query_after_apply(self):
         expected_count = self.module_auto_apply_count_prior_to_create + 1
         expected_results = self.create_default_query_expected_results(
@@ -1077,6 +1103,14 @@ class ModuleRunner(TestRunner):
                 'contents': contents,
             }
         return expected_results
+
+    def run_module_instances_after_apply_another(self):
+        self.assert_module_instances(
+            self.auth_client, self.main_test_module.id, 1)
+
+    def run_module_instance_count_after_apply_another(self):
+        self.assert_module_instance_count(
+            self.auth_client, self.main_test_module.id, 1, 1)
 
     def run_module_query_after_apply_another(self):
         expected_count = self.module_auto_apply_count_prior_to_create + 2
