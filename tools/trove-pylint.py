@@ -79,16 +79,8 @@ class Config(object):
                       indent=2, separators=(',', ': '))
 
     def load(self, filename=DEFAULT_CONFIG_FILE):
-        self.config = self.default_config
-
-        try:
-            with open(filename) as fp:
-                _c = json.load(fp, encoding="utf-8")
-
-            self.config = _c
-        except Exception:
-            print("An error occured loading configuration, using default.")
-        return self
+        with open(filename) as fp:
+            self.config = json.load(fp, encoding="utf-8")
 
     def get(self, attribute):
         return self.config[attribute]
