@@ -1201,7 +1201,7 @@ function cmd_clean() {
     # delete any modules too
     exec_cmd_on_output "trove module-list" "trove module-delete"
     # make sure that security groups are also gone, except the default
-    exec_cmd_on_output "openstack security group list" "nova security group delete" 0 "default"
+    exec_cmd_on_output "openstack security group list" "openstack security group delete" 0 "default"
     # delete server groups
     exec_cmd_on_output "nova server-group-list" "nova server-group-delete"
 }
