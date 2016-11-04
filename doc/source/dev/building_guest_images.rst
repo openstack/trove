@@ -206,25 +206,35 @@ This command will create a guest image usable by Trove:
 
 .. code-block:: bash
 
+    # assign a suitable value for each of these environment
+    # variables that change the way the elements behave.
     export HOST_USERNAME
     export HOST_SCP_USERNAME
     export GUEST_USERNAME
-    export NETWORK_GATEWAY
-    export REDSTACK_SCRIPTS
+    export CONTROLLER_IP
+    export TROVESTACK_SCRIPTS
     export SERVICE_TYPE
     export PATH_TROVE
     export ESCAPED_PATH_TROVE
     export SSH_DIR
     export GUEST_LOGDIR
     export ESCAPED_GUEST_LOGDIR
-    export ELEMENTS_PATH=$REDSTACK_SCRIPTS/files/elements:$PATH_TRIPLEO_ELEMENTS/elements
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
-    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && \
-         echo "--qemu-img-options compat=0.10")
-    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${IMAGE_NAME}" \
-         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} \
-         vm heat-cfntools cloud-init-datasources ${DISTRO}-guest \
-         ${DISTRO}-${SERVICE_TYPE}
+    export DATASTORE_PKG_LOCATION
+    export BRANCH_OVERRIDE
+
+    # you typically do not have to change these variables
+    export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
+    export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
+    export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
+    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
+    export DIB_CLOUD_INIT_ETC_HOSTS=true
+    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && echo "--qemu-img-options compat=0.10")
+
+    # run disk-image-create that actually causes the image to be built
+    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
+        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm heat-cfntools \
+        cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
 -----------------------------
 Disk Image Builder 'Elements'
@@ -281,14 +291,13 @@ DIB comes with some tools that are located in the elements directory.
 
 In addition, projects like TripleO [5]_ provide elements as well.
 
-Trove provides a set of elements as part of the trove-integration [6]_
+Trove provides a set of elements as part of the trove [6]_
 project which will be described in the next section.
 
 Trove Reference Elements
 ========================
 
-Reference elements provided by Trove are part of the trove-integration
-project.
+Reference elements provided by Trove are part of the trove project.
 
 In keeping with the philosophy of making elements 'layered', Trove
 provides two sets of elements. The first implements the guest agent
@@ -300,14 +309,14 @@ Provided Reference Elements
 ---------------------------
 
 The Trove reference elements are located in the
-trove-integration/scripts/files/elements directory. The elements
+trove/integration/scripts/files/elements directory. The elements
 [operating-system]-guest provide the Trove Guest capabilities and the
 [operating-system]-[database] elements provide support for each
 database on the specified database.
 
 .. code-block:: bash
 
-  user@machine:/opt/stack/trove-integration/scripts/files/elements$ ls -l
+  user@machine:/opt/stack/trove/integration/scripts/files/elements$ ls -l
   total 56
   drwxrwxr-x 5 user group 4096 Jan  7 12:47 fedora-guest
   drwxrwxr-x 3 user group 4096 Jan  7 12:47 fedora-mongodb
@@ -323,7 +332,7 @@ database on the specified database.
   drwxrwxr-x 4 user group 4096 Jan  7 12:47 ubuntu-percona
   drwxrwxr-x 3 user group 4096 Jan  7 12:47 ubuntu-postgresql
   drwxrwxr-x 3 user group 4096 Jan  7 12:47 ubuntu-redis
-  user@machine:/opt/stack/trove-integration/scripts/files/elements$
+  user@machine:/opt/stack/trove/integration/scripts/files/elements$
 
 With this infrastructure in place, and the elements from DIB and
 TripleO accessible to the DIB command, one can generate the (for
@@ -347,7 +356,7 @@ that will allow any user of Trove to be able to build a guest image
 for that datastore.
 
 This is typically accomplished by submitting files into the
-trove-integration project, as above.
+trove project, as above.
 
 Getting the Guest Agent Code onto a Trove Guest Instance
 ========================================================
@@ -505,68 +514,89 @@ the guest image can be created by executing the following:
 
   DATASTORE_PKG_LOCATION=/path/to/new_db.deb ./script_to_call_dib.sh
 
-Assuming the elements for new_db are available in redstack, this would
-equate to:
+Assuming the elements for new_db are available in the trove
+repository, this would equate to:
 
 .. code-block:: bash
 
-  DATASTORE_PKG_LOCATION=/path/to/new_db.deb ./redstack kick-start new_db
+  DATASTORE_PKG_LOCATION=/path/to/new_db.deb ./trovestack kick-start new_db
 
 Building Guest Images Using Standard Elements
 =============================================
 
 A very good reference for how one builds guest images can be found by
-reviewing the redstack script (trove-integration/scripts). Lower level
+reviewing the trovestack script (trove/integration/scripts). Lower level
 routines that actually invoke Disk Image Builder can be found in
-trove-integration/scripts/functions_qemu.
+trove/integration/scripts/functions_qemu.
 
 The following block of code illustrates the most basic invocation of
 DIB to create a guest image. This code is in
-trove-integration/scripts/functions_qemu as part of the function
+trove/integration/scripts/functions_qemu as part of the function
 build_vm().  We look at this section of code in detail below.
 
 .. code-block:: bash
 
+    # assign a suitable value for each of these environment
+    # variables that change the way the elements behave.
     export HOST_USERNAME
     export HOST_SCP_USERNAME
     export GUEST_USERNAME
-    export NETWORK_GATEWAY
-    export REDSTACK_SCRIPTS
+    export CONTROLLER_IP
+    export TROVESTACK_SCRIPTS
     export SERVICE_TYPE
     export PATH_TROVE
     export ESCAPED_PATH_TROVE
     export SSH_DIR
     export GUEST_LOGDIR
     export ESCAPED_GUEST_LOGDIR
-    export ELEMENTS_PATH=$REDSTACK_SCRIPTS/files/elements:$PATH_TRIPLEO_ELEMENTS/elements
     export DIB_CLOUD_INIT_DATASOURCES="ConfigDrive"
-    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && \
-         echo "--qemu-img-options compat=0.10")
-    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${IMAGE_NAME}" \
-         -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} \
-         vm heat-cfntools cloud-init-datasources ${DISTRO}-guest \
-         ${DISTRO}-${SERVICE_TYPE}
+    export DATASTORE_PKG_LOCATION
+    export BRANCH_OVERRIDE
+
+    # you typically do not have to change these variables
+    export ELEMENTS_PATH=$TROVESTACK_SCRIPTS/files/elements
+    export ELEMENTS_PATH+=:$PATH_DISKIMAGEBUILDER/elements
+    export ELEMENTS_PATH+=:$PATH_TRIPLEO_ELEMENTS/elements
+    export DIB_APT_CONF_DIR=/etc/apt/apt.conf.d
+    export DIB_CLOUD_INIT_ETC_HOSTS=true
+    local QEMU_IMG_OPTIONS=$(! $(qemu-img | grep -q 'version 1') && echo "--qemu-img-options compat=0.10")
+
+    # run disk-image-create that actually causes the image to be built
+    ${PATH_DISKIMAGEBUILDER}/bin/disk-image-create -a amd64 -o "${VM}" \
+        -x ${QEMU_IMG_OPTIONS} ${DISTRO} ${EXTRA_ELEMENTS} vm heat-cfntools \
+        cloud-init-datasources ${DISTRO}-guest ${DISTRO}-${SERVICE_TYPE}
 
 Several of the environment variables referenced above are referenced
 in the course of the Disk Image Building process.
 
 For example, let's look at GUEST_LOGDIR. Looking at the element
-elements/fedora-guest/extra-data.d/20-guest-upstart, we find:
+elements/fedora-guest/extra-data.d/20-guest-systemd, we find:
 
 .. code-block:: bash
 
-   #!/bin/bash
+        #!/bin/bash
 
-   set -e
-   set -o xtrace
+        set -e
+        set -o xtrace
 
-   [...]
+        # CONTEXT: HOST prior to IMAGE BUILD as SCRIPT USER
+        # PURPOSE: stages the bootstrap file and upstart conf file while replacing variables so that guest image is properly
+        # configured
 
-   [ -n "${ESCAPED_GUEST_LOGDIR}" ] || die "ESCAPED_GUEST_LOGDIR must be set to the escaped guest log dir"
+        source $_LIB/die
 
-   sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/GUEST_LOGDIR/${ESCAPED_GUEST_LOGDIR}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/NETWORK_GATEWAY/${NETWORK_GATEWAY}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" \
-             ${REDSTACK_SCRIPTS}/files/trove-guest.systemd.conf > \
-             ${TMP_HOOKS_PATH}/trove-guest.service
+        [ -n "$TMP_HOOKS_PATH" ] || die "Temp hook path not set"
+
+        [ -n "${GUEST_USERNAME}" ] || die "GUEST_USERNAME needs to be set to the user for the guest image"
+        [ -n "${HOST_SCP_USERNAME}" ] || die "HOST_SCP_USERNAME needs to be set to the user for the host instance"
+        [ -n "${CONTROLLER_IP}" ] || die "CONTROLLER_IP needs to be set to the ip address that guests will use to contact the controller"
+        [ -n "${ESCAPED_PATH_TROVE}" ] || die "ESCAPED_PATH_TROVE needs to be set to the path to the trove directory on the trovestack host"
+        [ -n "${TROVESTACK_SCRIPTS}" ] || die "TROVESTACK_SCRIPTS needs to be set to the trove/integration/scripts dir"
+        [ -n "${ESCAPED_GUEST_LOGDIR}" ] || die "ESCAPED_GUEST_LOGDIR must be set to the escaped guest log dir"
+
+        sed "s/GUEST_USERNAME/${GUEST_USERNAME}/g;s/GUEST_LOGDIR/${ESCAPED_GUEST_LOGDIR}/g;s/HOST_SCP_USERNAME/${HOST_SCP_USERNAME}/g;s/CONTROLLER_IP/${CONTROLLER_IP}/g;s/PATH_TROVE/${ESCAPED_PATH_TROVE}/g" \
+        ${TROVESTACK_SCRIPTS}/files/trove-guest.systemd.conf >
+        ${TMP_HOOKS_PATH}/trove-guest.service
 
 As you can see, the value of GUEST_LOGDIR is used in the extra-data.d
 script to appropriately configure the trove-guest.systemd.conf file.
@@ -597,8 +627,8 @@ MySQL. And therefore these would end up being the elements:
   vm                            From diskimage-builder/elements/vm
   heat-cfntools                 From tripleo-image-elements/elements/heat-cfntools
   cloud-init-datasources        From diskimage-builder/elements/cloud-init-datasources
-  ubuntu-guest                  From trove-integration/scripts/files/elements/ubuntu-guest
-  ubuntu-mysql                  From trove-integration/scripts/files/elements/ubuntu-mysql
+  ubuntu-guest                  From trove/integration/scripts/files/elements/ubuntu-guest
+  ubuntu-mysql                  From trove/integration/scripts/files/elements/ubuntu-mysql
 
 References
 ==========
@@ -608,5 +638,4 @@ References
 .. [3] User (especially in the USA) are cautioned about this spelling which once resulted in several sleepless nights.
 .. [4] https://git.openstack.org/cgit/openstack/diskimage-builder/tree/README.rst#writing-an-element
 .. [5] https://git.openstack.org/cgit/openstack/tripleo-image-elements/tree/elements
-.. [6] https://git.openstack.org/cgit/openstack/trove-integration/tree/scripts/files/elements
-
+.. [6] https://git.openstack.org/cgit/openstack/trove/integration/tree/scripts/files/elements

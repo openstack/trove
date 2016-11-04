@@ -28,7 +28,5 @@ References
   http://docs.openstack.org/developer/trove/dev/install.html
 * Manual installation docs:
   http://docs.openstack.org/developer/trove/dev/manual_install.html
-* Trove integration:
-  https://github.com/openstack/trove-integration
 * Build guest image:
   http://docs.openstack.org/developer/trove/dev/building_guest_images.html
