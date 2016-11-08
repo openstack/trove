@@ -375,17 +375,33 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that module-apply works."""
         self.test_runner.run_module_apply()
 
-    @test(runs_after=[module_query_empty])
+    @test(runs_after=[module_apply])
     def module_apply_wrong_module(self):
         """Ensure that module-apply for wrong module fails."""
         self.test_runner.run_module_apply_wrong_module()
 
-    @test(depends_on=[module_apply])
+    @test(depends_on=[module_apply_wrong_module])
+    def module_update_not_live(self):
+        """Ensure updating a non live_update module fails."""
+        self.test_runner.run_module_update_not_live()
+
+    @test(depends_on=[module_apply],
+          runs_after=[module_update_not_live])
     def module_list_instance_after_apply(self):
-        """Check that the instance has one module associated."""
+        """Check that the instance has the modules associated."""
         self.test_runner.run_module_list_instance_after_apply()
 
     @test(runs_after=[module_list_instance_after_apply])
+    def module_apply_live_update(self):
+        """Check that module-apply works for live_update."""
+        self.test_runner.run_module_apply_live_update()
+
+    @test(depends_on=[module_apply_live_update])
+    def module_list_instance_after_apply_live(self):
+        """Check that the instance has the right modules."""
+        self.test_runner.run_module_list_instance_after_apply_live()
+
+    @test(runs_after=[module_list_instance_after_apply_live])
     def module_instances_after_apply(self):
         """Check that the instance shows up in the list."""
         self.test_runner.run_module_instances_after_apply()
@@ -401,13 +417,18 @@ class ModuleInstCreateGroup(TestGroup):
         self.test_runner.run_module_query_after_apply()
 
     @test(runs_after=[module_query_after_apply])
+    def module_update_live_update(self):
+        """Check that update module works on 'live' applied module."""
+        self.test_runner.run_module_update_live_update()
+
+    @test(runs_after=[module_update_live_update])
     def module_apply_another(self):
         """Check that module-apply works for another module."""
         self.test_runner.run_module_apply_another()
 
     @test(depends_on=[module_apply_another])
     def module_list_instance_after_apply_another(self):
-        """Check that the instance has one module associated."""
+        """Check that the instance has the right modules again."""
         self.test_runner.run_module_list_instance_after_apply_another()
 
     @test(runs_after=[module_list_instance_after_apply_another])
@@ -420,7 +441,8 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that the instance count is right after another apply."""
         self.test_runner.run_module_instance_count_after_apply_another()
 
-    @test(depends_on=[module_apply_another])
+    @test(depends_on=[module_apply_another],
+          runs_after=[module_instance_count_after_apply_another])
     def module_query_after_apply_another(self):
         """Check that module-query works after another apply."""
         self.test_runner.run_module_query_after_apply_another()
@@ -431,26 +453,26 @@ class ModuleInstCreateGroup(TestGroup):
         """Check that creating an instance with modules works."""
         self.test_runner.run_create_inst_with_mods()
 
-    @test(runs_after=[module_query_empty])
+    @test(runs_after=[create_inst_with_mods])
     def create_inst_with_wrong_module(self):
         """Ensure that creating an inst with wrong ds mod fails."""
         self.test_runner.run_create_inst_with_wrong_module()
 
-    @test(depends_on=[module_apply])
+    @test(depends_on=[module_apply],
+          runs_after=[create_inst_with_wrong_module])
     def module_delete_applied(self):
         """Ensure that deleting an applied module fails."""
         self.test_runner.run_module_delete_applied()
 
     @test(depends_on=[module_apply],
-          runs_after=[module_list_instance_after_apply,
-                      module_query_after_apply])
+          runs_after=[module_delete_applied])
     def module_remove(self):
         """Check that module-remove works."""
         self.test_runner.run_module_remove()
 
     @test(depends_on=[module_remove])
     def module_query_after_remove(self):
-        """Check that the instance has one module applied after remove."""
+        """Check that the instance has modules applied after remove."""
         self.test_runner.run_module_query_after_remove()
 
     @test(depends_on=[module_remove],
@@ -468,7 +490,7 @@ class ModuleInstCreateGroup(TestGroup):
     @test(depends_on=[module_apply],
           runs_after=[module_apply_another_again])
     def module_query_after_apply_another2(self):
-        """Check that module-query works after second apply."""
+        """Check that module-query works still."""
         self.test_runner.run_module_query_after_apply_another()
 
     @test(depends_on=[module_apply_another_again],
@@ -479,7 +501,7 @@ class ModuleInstCreateGroup(TestGroup):
 
     @test(depends_on=[module_remove_again])
     def module_query_empty_after_again(self):
-        """Check that the inst has one mod applied after 2nd remove."""
+        """Check that the inst has right mod applied after 2nd remove."""
         self.test_runner.run_module_query_after_remove()
 
     @test(depends_on=[module_remove_again],
@@ -533,6 +555,86 @@ class ModuleInstCreateWaitGroup(TestGroup):
         """Ensure that module-delete on auto-applied module fails."""
         self.test_runner.run_module_delete_auto_applied()
 
+    @test(runs_after=[module_delete_auto_applied])
+    def module_list_instance_after_mod_inst(self):
+        """Check that the new instance has the right modules."""
+        self.test_runner.run_module_list_instance_after_mod_inst()
+
+    @test(runs_after=[module_list_instance_after_mod_inst])
+    def module_instances_after_mod_inst(self):
+        """Check that the new instance shows up in the list."""
+        self.test_runner.run_module_instances_after_mod_inst()
+
+    @test(runs_after=[module_instances_after_mod_inst])
+    def module_instance_count_after_mod_inst(self):
+        """Check that the new instance count is right."""
+        self.test_runner.run_module_instance_count_after_mod_inst()
+
+    @test(runs_after=[module_instance_count_after_mod_inst])
+    def module_reapply_with_md5(self):
+        """Check that module reapply with md5 works."""
+        self.test_runner.run_module_reapply_with_md5()
+
+    @test(runs_after=[module_reapply_with_md5])
+    def module_reapply_with_md5_verify(self):
+        """Verify the dates after md5 reapply (no-op)."""
+        self.test_runner.run_module_reapply_with_md5_verify()
+
+    @test(runs_after=[module_reapply_with_md5_verify])
+    def module_list_instance_after_reapply_md5(self):
+        """Check that the instance's modules haven't changed."""
+        self.test_runner.run_module_list_instance_after_reapply_md5()
+
+    @test(runs_after=[module_list_instance_after_reapply_md5])
+    def module_instances_after_reapply_md5(self):
+        """Check that the new instance still shows up in the list."""
+        self.test_runner.run_module_instances_after_reapply_md5()
+
+    @test(runs_after=[module_instances_after_reapply_md5])
+    def module_instance_count_after_reapply_md5(self):
+        """Check that the instance count hasn't changed."""
+        self.test_runner.run_module_instance_count_after_reapply_md5()
+
+    @test(runs_after=[module_instance_count_after_reapply_md5])
+    def module_reapply_all(self):
+        """Check that module reapply works."""
+        self.test_runner.run_module_reapply_all()
+
+    @test(runs_after=[module_reapply_all])
+    def module_reapply_all_wait(self):
+        """Wait for module reapply to complete."""
+        self.test_runner.run_module_reapply_all_wait()
+
+    @test(runs_after=[module_reapply_all_wait])
+    def module_instance_count_after_reapply(self):
+        """Check that the reapply instance count is right."""
+        self.test_runner.run_module_instance_count_after_reapply()
+
+    @test(runs_after=[module_instance_count_after_reapply])
+    def module_reapply_with_force(self):
+        """Check that module reapply with force works."""
+        self.test_runner.run_module_reapply_with_force()
+
+    @test(runs_after=[module_reapply_with_force])
+    def module_reapply_with_force_wait(self):
+        """Wait for module reapply with force to complete."""
+        self.test_runner.run_module_reapply_with_force_wait()
+
+    @test(runs_after=[module_reapply_with_force_wait])
+    def module_list_instance_after_reapply_force(self):
+        """Check that the new instance still has the right modules."""
+        self.test_runner.run_module_list_instance_after_reapply()
+
+    @test(runs_after=[module_list_instance_after_reapply_force])
+    def module_instances_after_reapply_force(self):
+        """Check that the new instance still shows up in the list."""
+        self.test_runner.run_module_instances_after_reapply()
+
+    @test(runs_after=[module_instances_after_reapply_force])
+    def module_instance_count_after_reapply_force(self):
+        """Check that the instance count is right after reapply force."""
+        self.test_runner.run_module_instance_count_after_reapply()
+
 
 @test(depends_on_groups=[groups.MODULE_INST_CREATE_WAIT],
       groups=[GROUP, groups.MODULE_INST, groups.MODULE_INST_DELETE])
@@ -547,6 +649,11 @@ class ModuleInstDeleteGroup(TestGroup):
     def delete_inst_with_mods(self):
         """Check that instance with module can be deleted."""
         self.test_runner.run_delete_inst_with_mods()
+
+    @test(runs_after=[delete_inst_with_mods])
+    def remove_mods_from_main_inst(self):
+        """Check that modules can be removed from the main instance."""
+        self.test_runner.run_remove_mods_from_main_inst()
 
 
 @test(depends_on_groups=[groups.MODULE_INST_DELETE],

@@ -1,0 +1,6 @@
+---
+features:
+  - |
+    Support for the new 'reapply' command. This allows
+    a given module to be reapplied to all instances that
+    it had previously been applied to. Bug 1554903
