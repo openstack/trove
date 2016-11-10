@@ -5,7 +5,7 @@ pbr>=1.6
 SQLAlchemy<1.1.0,>=0.9.9
 eventlet>=0.17.4
 keystonemiddleware!=2.4.0,>=2.0.0
-kombu>=3.0.7
+kombu!=4.0.0,>=3.0.7 # BSD
 Routes!=2.0,!=2.1,!=2.3.0,>=1.12.3;python_version=='2.7' # MIT
 Routes!=2.0,!=2.3.0,>=1.12.3;python_version!='2.7' # MIT
 WebOb>=1.2.3
