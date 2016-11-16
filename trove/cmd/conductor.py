@@ -16,13 +16,13 @@ from oslo_concurrency import processutils
 from oslo_service import service as openstack_service
 
 from trove.cmd.common import with_initialize
+from trove.conductor import api as conductor_api
 
 
 @with_initialize
 def main(conf):
     from trove.common import notification
     from trove.common.rpc import service as rpc_service
-    from trove.common.rpc import version as rpc_version
     from trove.instance import models as inst_models
 
     notification.DBaaSAPINotification.register_notify_callback(
@@ -30,7 +30,7 @@ def main(conf):
     topic = conf.conductor_queue
     server = rpc_service.RpcService(
         manager=conf.conductor_manager, topic=topic,
-        rpc_api_version=rpc_version.RPC_API_VERSION)
+        rpc_api_version=conductor_api.API.API_LATEST_VERSION)
     workers = conf.trove_conductor_workers or processutils.get_worker_count()
     launcher = openstack_service.launch(conf, server, workers=workers)
     launcher.wait()

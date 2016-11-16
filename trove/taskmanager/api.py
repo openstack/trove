@@ -24,7 +24,6 @@ import oslo_messaging as messaging
 from trove.common import cfg
 from trove.common import exception
 from trove.common.notification import NotificationCastWrapper
-import trove.common.rpc.version as rpc_version
 from trove.common.strategies.cluster import strategy
 from trove.guestagent import models as agent_models
 from trove import rpc
@@ -34,18 +33,42 @@ LOG = logging.getLogger(__name__)
 
 
 class API(object):
-    """API for interacting with the task manager."""
+    """API for interacting with the task manager.
+
+    API version history:
+        * 1.0 - Initial version.
+
+    When updating this API, also update API_LATEST_VERSION
+    """
+
+    # API_LATEST_VERSION should bump the minor number each time
+    # a method signature is added or changed
+    API_LATEST_VERSION = '1.0'
+
+    # API_BASE_VERSION should only change on major version upgrade
+    API_BASE_VERSION = '1.0'
+
+    VERSION_ALIASES = {
+        'icehouse': '1.0',
+        'juno': '1.0',
+        'kilo': '1.0',
+        'liberty': '1.0',
+        'mitaka': '1.0',
+        'newton': '1.0',
+
+        'latest': API_LATEST_VERSION
+    }
 
     def __init__(self, context):
         self.context = context
         super(API, self).__init__()
 
+        version_cap = self.VERSION_ALIASES.get(
+            CONF.upgrade_levels.taskmanager, CONF.upgrade_levels.taskmanager)
         target = messaging.Target(topic=CONF.taskmanager_queue,
-                                  version=rpc_version.RPC_API_VERSION)
+                                  version=version_cap)
 
-        self.version_cap = rpc_version.VERSION_ALIASES.get(
-            CONF.upgrade_levels.taskmanager)
-        self.client = self.get_client(target, self.version_cap)
+        self.client = self.get_client(target, version_cap)
 
     def _cast(self, method_name, version, **kwargs):
         LOG.debug("Casting %s" % method_name)
@@ -79,72 +102,83 @@ class API(object):
     def resize_volume(self, new_size, instance_id):
         LOG.debug("Making async call to resize volume for instance: %s"
                   % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("resize_volume", self.version_cap,
+        self._cast("resize_volume", version=version,
                    new_size=new_size,
                    instance_id=instance_id)
 
     def resize_flavor(self, instance_id, old_flavor, new_flavor):
         LOG.debug("Making async call to resize flavor for instance: %s" %
                   instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("resize_flavor", self.version_cap,
+        self._cast("resize_flavor", version=version,
                    instance_id=instance_id,
                    old_flavor=self._transform_obj(old_flavor),
                    new_flavor=self._transform_obj(new_flavor))
 
     def reboot(self, instance_id):
         LOG.debug("Making async call to reboot instance: %s" % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("reboot", self.version_cap, instance_id=instance_id)
+        self._cast("reboot", version=version, instance_id=instance_id)
 
     def restart(self, instance_id):
         LOG.debug("Making async call to restart instance: %s" % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("restart", self.version_cap, instance_id=instance_id)
+        self._cast("restart", version=version, instance_id=instance_id)
 
     def detach_replica(self, instance_id):
         LOG.debug("Making async call to detach replica: %s" % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("detach_replica", self.version_cap,
+        self._cast("detach_replica", version=version,
                    instance_id=instance_id)
 
     def promote_to_replica_source(self, instance_id):
         LOG.debug("Making async call to promote replica to source: %s" %
                   instance_id)
-        self._cast("promote_to_replica_source", self.version_cap,
+        version = self.API_BASE_VERSION
+        self._cast("promote_to_replica_source", version=version,
                    instance_id=instance_id)
 
     def eject_replica_source(self, instance_id):
         LOG.debug("Making async call to eject replica source: %s" %
                   instance_id)
-        self._cast("eject_replica_source", self.version_cap,
+        version = self.API_BASE_VERSION
+        self._cast("eject_replica_source", version=version,
                    instance_id=instance_id)
 
     def migrate(self, instance_id, host):
         LOG.debug("Making async call to migrate instance: %s" % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("migrate", self.version_cap,
+        self._cast("migrate", version=version,
                    instance_id=instance_id, host=host)
 
     def delete_instance(self, instance_id):
         LOG.debug("Making async call to delete instance: %s" % instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("delete_instance", self.version_cap,
+        self._cast("delete_instance", version=version,
                    instance_id=instance_id)
 
     def create_backup(self, backup_info, instance_id):
         LOG.debug("Making async call to create a backup for instance: %s" %
                   instance_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("create_backup", self.version_cap,
+        self._cast("create_backup", version=version,
                    backup_info=backup_info,
                    instance_id=instance_id)
 
     def delete_backup(self, backup_id):
         LOG.debug("Making async call to delete backup: %s" % backup_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("delete_backup", self.version_cap, backup_id=backup_id)
+        self._cast("delete_backup", version=version, backup_id=backup_id)
 
     def create_instance(self, instance_id, name, flavor,
                         image_id, databases, users, datastore_manager,
@@ -155,7 +189,8 @@ class API(object):
                         modules=None, locality=None):
 
         LOG.debug("Making async call to create instance %s " % instance_id)
-        self._cast("create_instance", self.version_cap,
+        version = self.API_BASE_VERSION
+        self._cast("create_instance", version=version,
                    instance_id=instance_id, name=name,
                    flavor=self._transform_obj(flavor),
                    image_id=image_id,
@@ -176,33 +211,38 @@ class API(object):
 
     def create_cluster(self, cluster_id):
         LOG.debug("Making async call to create cluster %s " % cluster_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("create_cluster", self.version_cap, cluster_id=cluster_id)
+        self._cast("create_cluster", version=version, cluster_id=cluster_id)
 
     def grow_cluster(self, cluster_id, new_instance_ids):
         LOG.debug("Making async call to grow cluster %s " % cluster_id)
+        version = self.API_BASE_VERSION
 
-        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, "grow_cluster",
                    cluster_id=cluster_id, new_instance_ids=new_instance_ids)
 
     def shrink_cluster(self, cluster_id, instance_ids):
         LOG.debug("Making async call to shrink cluster %s " % cluster_id)
+        version = self.API_BASE_VERSION
 
-        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, "shrink_cluster",
                    cluster_id=cluster_id, instance_ids=instance_ids)
 
     def delete_cluster(self, cluster_id):
         LOG.debug("Making async call to delete cluster %s " % cluster_id)
+        version = self.API_BASE_VERSION
 
-        self._cast("delete_cluster", self.version_cap, cluster_id=cluster_id)
+        self._cast("delete_cluster", version=version, cluster_id=cluster_id)
 
     def upgrade(self, instance_id, datastore_version_id):
         LOG.debug("Making async call to upgrade guest to datastore "
                   "version %s " % datastore_version_id)
+        version = self.API_BASE_VERSION
 
-        cctxt = self.client.prepare(version=self.version_cap)
+        cctxt = self.client.prepare(version=version)
         cctxt.cast(self.context, "upgrade", instance_id=instance_id,
                    datastore_version_id=datastore_version_id)
 

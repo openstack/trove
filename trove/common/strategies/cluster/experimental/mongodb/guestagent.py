@@ -33,6 +33,16 @@ class MongoDbGuestAgentStrategy(base.BaseGuestAgentStrategy):
 
 
 class MongoDbGuestAgentAPI(guest_api.API):
+    """Cluster Specific Datastore Guest API
+
+    **** VERSION CONTROLLED API ****
+
+    The methods in this class are subject to version control as
+    coordinated by guestagent/api.py.  Whenever a change is made to
+    any API method in this class, add a version number and comment
+    to the top of guestagent/api.py and use the version number as
+    appropriate in this file
+    """
 
     def add_shard(self, replica_set_name, replica_set_member):
         LOG.debug("Adding shard with replSet %(replica_set_name)s and member "
@@ -40,66 +50,89 @@ class MongoDbGuestAgentAPI(guest_api.API):
                   "%(id)s" % {'replica_set_name': replica_set_name,
                               'replica_set_member': replica_set_member,
                               'id': self.id})
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("add_shard", guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap,
+                          version=version,
                           replica_set_name=replica_set_name,
                           replica_set_member=replica_set_member)
 
     def add_members(self, members):
         LOG.debug("Adding members %(members)s on instance %(id)s" % {
             'members': members, 'id': self.id})
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("add_members", ADD_MEMBERS_TIMEOUT,
-                          self.version_cap, members=members)
+                          version=version, members=members)
 
     def add_config_servers(self, config_servers):
         LOG.debug("Adding config servers %(config_servers)s for instance "
                   "%(id)s" % {'config_servers': config_servers,
                               'id': self.id})
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("add_config_servers", guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap, config_servers=config_servers)
+                          version=version,
+                          config_servers=config_servers)
 
     def cluster_complete(self):
         LOG.debug("Notify regarding cluster install completion")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("cluster_complete", guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap)
+                          version=version)
 
     def get_key(self):
         LOG.debug("Requesting cluster key from guest")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("get_key", guest_api.AGENT_LOW_TIMEOUT,
-                          self.version_cap)
+                          version=version)
 
     def prep_primary(self):
         LOG.debug("Preparing member to be primary member.")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("prep_primary", guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap)
+                          version=version)
 
     def create_admin_user(self, password):
         LOG.debug("Creating admin user")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("create_admin_user", guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap, password=password)
+                          version=version, password=password)
 
     def store_admin_password(self, password):
         LOG.debug("Storing admin password")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("store_admin_password",
                           guest_api.AGENT_LOW_TIMEOUT,
-                          self.version_cap,
+                          version=version,
                           password=password)
 
     def get_replica_set_name(self):
         LOG.debug("Querying member for its replica set name")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("get_replica_set_name",
                           guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap)
+                          version=version)
 
     def get_admin_password(self):
         LOG.debug("Querying instance for its admin password")
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("get_admin_password",
                           guest_api.AGENT_LOW_TIMEOUT,
-                          self.version_cap)
+                          version=version)
 
     def is_shard_active(self, replica_set_name):
         LOG.debug("Checking if replica set %s is active" % replica_set_name)
+        version = guest_api.API.API_BASE_VERSION
+
         return self._call("is_shard_active",
                           guest_api.AGENT_HIGH_TIMEOUT,
-                          self.version_cap,
+                          version=version,
                           replica_set_name=replica_set_name)

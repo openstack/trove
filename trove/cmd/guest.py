@@ -25,6 +25,7 @@ from oslo_service import service as openstack_service
 from trove.common import cfg
 from trove.common import debug_utils
 from trove.common.i18n import _LE
+from trove.guestagent import api as guest_api
 
 CONF = cfg.CONF
 # The guest_id opt definition must match the one in common/cfg.py
@@ -57,11 +58,10 @@ def main():
     rpc.init(CONF)
 
     from trove.common.rpc import service as rpc_service
-    from trove.common.rpc import version as rpc_version
     server = rpc_service.RpcService(
         topic="guestagent.%s" % CONF.guest_id,
         manager=manager, host=CONF.guest_id,
-        rpc_api_version=rpc_version.RPC_API_VERSION)
+        rpc_api_version=guest_api.API.API_LATEST_VERSION)
 
     launcher = openstack_service.launch(CONF, server)
     launcher.wait()

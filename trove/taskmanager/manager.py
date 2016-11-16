@@ -14,7 +14,6 @@
 #    under the License.
 
 from oslo_log import log as logging
-import oslo_messaging as messaging
 from oslo_service import periodic_task
 from oslo_utils import importutils
 
@@ -27,7 +26,6 @@ from trove.common.exception import TroveError
 from trove.common.i18n import _
 from trove.common.notification import DBaaSQuotas, EndNotification
 from trove.common import remote
-import trove.common.rpc.version as rpc_version
 from trove.common import server_group as srv_grp
 from trove.common.strategies.cluster import strategy
 from trove.datastore.models import DatastoreVersion
@@ -42,8 +40,6 @@ CONF = cfg.CONF
 
 
 class Manager(periodic_task.PeriodicTasks):
-
-    target = messaging.Target(version=rpc_version.RPC_API_VERSION)
 
     def __init__(self):
         super(Manager, self).__init__(CONF)

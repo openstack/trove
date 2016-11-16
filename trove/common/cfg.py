@@ -1449,18 +1449,19 @@ mariadb_opts = [
 upgrade_levels = cfg.OptGroup(
     'upgrade_levels',
     title='RPC upgrade levels group for handling versions',
-    help='Contains the support version caps for each RPC API')
+    help='Contains the support version caps (Openstack Release) for '
+    'each RPC API')
 
 rpcapi_cap_opts = [
     cfg.StrOpt(
-        'taskmanager', default="icehouse",
+        'taskmanager', default='latest',
         help='Set a version cap for messages sent to taskmanager services'),
     cfg.StrOpt(
-        'guestagent', default="icehouse",
+        'guestagent', default='latest',
         help='Set a version cap for messages sent to guestagent services'),
     cfg.StrOpt(
-        'conductor', default="icehouse",
-        help='Set a version cap for messages sent to conductor services'),
+        'conductor', default='latest',
+        help='Set Openstack Release compatibility for conductor services'),
 ]
 
 CONF = cfg.CONF
