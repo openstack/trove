@@ -16,6 +16,7 @@
 from proboscis import SkipTest
 
 from trove.tests.config import CONFIG
+from trove.tests.scenario.helpers.test_helper import DataType
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
@@ -35,6 +36,18 @@ class InstanceActionsRunner(TestRunner):
                 'instance_bigger_flavor_name', 'm1.rd-smaller')
 
         return self.get_flavor(flavor_name)
+
+    def run_add_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.add_data(DataType.small, host)
+
+    def run_verify_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.verify_data(DataType.small, host)
+
+    def run_remove_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.remove_data(DataType.small, host)
 
     def run_instance_restart(
             self, expected_states=['REBOOT', 'ACTIVE'],

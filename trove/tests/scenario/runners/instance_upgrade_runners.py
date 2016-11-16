@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from trove.tests.scenario.helpers.test_helper import DataType
 from trove.tests.scenario.runners.test_runners import TestRunner
 
 
@@ -20,6 +21,18 @@ class InstanceUpgradeRunner(TestRunner):
 
     def __init__(self):
         super(InstanceUpgradeRunner, self).__init__()
+
+    def run_add_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.add_data(DataType.small, host)
+
+    def run_verify_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.verify_data(DataType.small, host)
+
+    def run_remove_test_data(self):
+        host = self.get_instance_host(self.instance_info.id)
+        self.test_helper.remove_data(DataType.small, host)
 
     def run_instance_upgrade(
             self, expected_states=['UPGRADE', 'ACTIVE'],
