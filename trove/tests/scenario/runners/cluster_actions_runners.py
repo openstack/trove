@@ -168,13 +168,12 @@ class ClusterActionsRunner(TestRunner):
                 instance['id'])
             self.assert_true(root_enabled_test.rootEnabled)
 
-        for ip in cluster.ip:
-            self.report.log("Pinging cluster as superuser via node: %s" % ip)
+        for ipv4 in self.extract_ipv4s(cluster.ip):
+            self.report.log("Pinging cluster as superuser via node: %s" % ipv4)
             ping_response = self.test_helper.ping(
-                ip,
+                ipv4,
                 username=self.current_root_creds[0],
-                password=self.current_root_creds[1]
-            )
+                password=self.current_root_creds[1])
             self.assert_true(ping_response)
 
     def run_add_initial_cluster_data(self, data_type=DataType.tiny):
@@ -185,7 +184,7 @@ class ClusterActionsRunner(TestRunner):
 
     def assert_add_cluster_data(self, data_type, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
-        self.test_helper.add_data(data_type, cluster.ip[0])
+        self.test_helper.add_data(data_type, self.extract_ipv4s(cluster.ip)[0])
 
     def run_verify_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_verify_cluster_data(data_type, self.cluster_id)
@@ -195,9 +194,9 @@ class ClusterActionsRunner(TestRunner):
 
     def assert_verify_cluster_data(self, data_type, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
-        for ip in cluster.ip:
-            self.report.log("Verifying cluster data via node: %s" % ip)
-            self.test_helper.verify_data(data_type, ip)
+        for ipv4 in self.extract_ipv4s(cluster.ip):
+            self.report.log("Verifying cluster data via node: %s" % ipv4)
+            self.test_helper.verify_data(data_type, ipv4)
 
     def run_remove_initial_cluster_data(self, data_type=DataType.tiny):
         self.assert_remove_cluster_data(data_type, self.cluster_id)
@@ -207,7 +206,8 @@ class ClusterActionsRunner(TestRunner):
 
     def assert_remove_cluster_data(self, data_type, cluster_id):
         cluster = self.auth_client.clusters.get(cluster_id)
-        self.test_helper.remove_data(data_type, cluster.ip[0])
+        self.test_helper.remove_data(
+            data_type, self.extract_ipv4s(cluster.ip)[0])
 
     def run_cluster_grow(self, expected_task_name='GROWING_CLUSTER',
                          expected_http_code=202):
