@@ -88,7 +88,7 @@ class ClusterView(object):
             if self.load_servers and instance_ips:
                 instance_dict["ip"] = instance_ips
                 if instance.type in ip_to_be_published_for:
-                    ip_list.append(instance_ips[0])
+                    ip_list.extend(instance_ips)
             if instance.type in instance_dict_to_be_published_for:
                 instances.append(instance_dict)
         ip_list.sort()
