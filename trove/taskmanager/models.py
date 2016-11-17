@@ -633,10 +633,12 @@ class FreshInstanceTasks(FreshInstance, NotifyMixin, ConfigurationMixin):
         server_status = server.status
         if server_status in [InstanceStatus.ERROR,
                              InstanceStatus.FAILED]:
-            server_message = ''
-            if server.fault:
-                server_message = "\nServer error: %s" % (
-                    server.fault.get('message', 'Unknown'))
+            server_fault_message = 'No fault found'
+            try:
+                server_fault_message = server.fault.get('message', 'Unknown')
+            except AttributeError:
+                pass
+            server_message = "\nServer error: %s" % server_fault_message
             raise TroveError(_("Server not active, status: %(status)s"
                                "%(srv_msg)s") %
                              {'status': server_status,
