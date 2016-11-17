@@ -164,8 +164,8 @@ class SecurityGroupDeleteTest(trove_testtools.TestCase):
         sec_mod.SecurityGroupInstanceAssociation.find_by = Mock(
             return_value=fake_SecGr_Association())
         sec_mod.SecurityGroupInstanceAssociation.delete = self.fException
-        self.assertNotEqual(sec_mod.SecurityGroupInstanceAssociation.find_by(
-            i_id, deleted=False).get_security_group(), None)
+        self.assertIsNotNone(sec_mod.SecurityGroupInstanceAssociation.find_by(
+            i_id, deleted=False).get_security_group())
         self.assertTrue(hasattr(sec_mod.SecurityGroupInstanceAssociation.
                                 find_by(i_id, deleted=False).
                                 get_security_group(), 'delete'))
