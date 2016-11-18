@@ -1,7 +1,7 @@
 # The order of packages is significant, because pip processes them in the order
 # of appearance. Changing the order has an impact on the overall integration
 # process, which may cause wedges in the gate later.
-pbr>=1.6 # Apache-2.0
+pbr>=1.8 # Apache-2.0
 SQLAlchemy<1.1.0,>=1.0.10 # MIT
 eventlet!=0.18.3,>=0.18.2 # MIT
 keystonemiddleware!=4.5.0,>=4.2.0 # Apache-2.0
@@ -36,7 +36,7 @@ oslo.serialization>=1.10.0 # Apache-2.0
 oslo.service>=1.10.0 # Apache-2.0
 oslo.utils>=3.18.0 # Apache-2.0
 oslo.concurrency>=3.8.0 # Apache-2.0
-PyMySQL!=0.7.7,>=0.6.2 # MIT License
+PyMySQL!=0.7.7,>=0.7.6 # MIT License
 Babel>=2.3.4 # BSD
 six>=1.9.0 # MIT
 stevedore>=1.17.1 # Apache-2.0
@@ -46,4 +46,4 @@ oslo.log>=3.11.0 # Apache-2.0
 oslo.db!=4.13.1,!=4.13.2,>=4.11.0 # Apache-2.0
 enum34;python_version=='2.7' or python_version=='2.6' or python_version=='3.3' # BSD
 xmltodict>=0.10.1 # MIT
-pycrypto>=2.6  # Public Domain
+pycrypto>=2.6 # Public Domain
