@@ -1,0 +1,5 @@
+---
+fixes:
+  - Fix race condition in cluster-show that returned
+    erroneous not found error.
+    Bug 1643002
