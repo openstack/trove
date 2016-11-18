@@ -1359,9 +1359,18 @@ class Instances(object):
     def load_all_by_cluster_id(context, cluster_id, load_servers=True):
         db_instances = DBInstance.find_all(cluster_id=cluster_id,
                                            deleted=False)
-        return [load_any_instance(context, db_inst.id,
-                                  load_server=load_servers)
-                for db_inst in db_instances]
+        db_insts = []
+        for db_instance in db_instances:
+            try:
+                db_inst = load_any_instance(
+                    context, db_instance.id, load_server=load_servers)
+                db_insts.append(db_inst)
+            except exception.NotFound:
+                # The instance may be gone if we're in the middle of a
+                # shrink operation, so just log and continue
+                LOG.debug("Instance %s is no longer available, skipping." %
+                          db_instance.id)
+        return db_insts
 
     @staticmethod
     def _load_servers_status(load_instance, context, db_items, find_server):
