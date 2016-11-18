@@ -14,6 +14,7 @@
 #    under the License.
 
 import datetime
+import netaddr
 import os
 import proboscis
 import time as timer
@@ -628,10 +629,16 @@ class TestRunner(object):
         client = client or self.auth_client
         return client.instances.get(instance_id)
 
+    def extract_ipv4s(self, ips):
+        ipv4s = [str(ip) for ip in ips if netaddr.valid_ipv4(ip)]
+        if not ipv4s:
+            self.fail("No IPV4 ip found")
+        return ipv4s
+
     def get_instance_host(self, instance_id=None):
         instance_id = instance_id or self.instance_info.id
         instance = self.get_instance(instance_id)
-        host = str(instance._info['ip'][0])
+        host = self.extract_ipv4s(instance._info['ip'])[0]
         self.report.log("Found host %s for instance %s." % (host, instance_id))
         return host
 

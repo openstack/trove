@@ -206,8 +206,7 @@ class ReplicationRunner(TestRunner):
     def assert_verify_replica_data(self, master_id, data_type):
         replica_ids = self._get_replica_set(master_id)
         for replica_id in replica_ids:
-            replica_instance = self.get_instance(replica_id)
-            host = str(replica_instance._info['ip'][0])
+            host = self.get_instance_host(replica_id)
             self.report.log("Checking data on host %s" % host)
             self.assert_verify_replication_data(data_type, host)
 
