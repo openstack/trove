@@ -41,9 +41,9 @@ class NovaNetworkStruct(object):
 
 class NeutronDriver(base.NetworkDriver):
 
-    def __init__(self, context):
+    def __init__(self, context, region_name):
         try:
-            self.client = remote.create_neutron_client(context)
+            self.client = remote.create_neutron_client(context, region_name)
         except neutron_exceptions.NeutronClientException as e:
             raise exception.TroveError(str(e))
 

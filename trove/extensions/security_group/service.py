@@ -77,7 +77,7 @@ class SecurityGroupRuleController(wsgi.Controller):
                         "exist or does not belong to tenant %s") % tenant_id)
             raise exception.Forbidden("Unauthorized")
 
-        sec_group_rule.delete(context)
+        sec_group_rule.delete(context, CONF.os_region_name)
         sec_group.save()
         return wsgi.Result(None, 204)
 
@@ -106,7 +106,8 @@ class SecurityGroupRuleController(wsgi.Controller):
                     from_, to_ = utils.gen_ports(port_or_range)
                     rule = models.SecurityGroupRule.create_sec_group_rule(
                         sec_group, protocol, int(from_), int(to_),
-                        body['security_group_rule']['cidr'], context)
+                        body['security_group_rule']['cidr'], context,
+                        CONF.os_region_name)
                     rules.append(rule)
             except (ValueError, AttributeError) as e:
                 raise exception.BadRequest(msg=str(e))

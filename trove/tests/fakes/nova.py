@@ -870,13 +870,13 @@ def get_client_data(context):
     return CLIENT_DATA[context]
 
 
-def fake_create_nova_client(context):
+def fake_create_nova_client(context, region_name=None):
     return get_client_data(context)['nova']
 
 
-def fake_create_nova_volume_client(context):
+def fake_create_nova_volume_client(context, region_name=None):
     return get_client_data(context)['volume']
 
 
-def fake_create_cinder_client(context):
+def fake_create_cinder_client(context, region_name=None):
     return get_client_data(context)['volume']

@@ -93,6 +93,9 @@ class MongoDbCluster(models.Cluster):
         azs = [instance.get('availability_zone', None)
                for instance in instances]
 
+        regions = [instance.get('region_name', None)
+                   for instance in instances]
+
         db_info = models.DBCluster.create(
             name=name, tenant_id=context.tenant,
             datastore_version_id=datastore_version.id,
@@ -129,8 +132,9 @@ class MongoDbCluster(models.Cluster):
                                         nics=nics[i],
                                         configuration_id=None,
                                         cluster_config=member_config,
+                                        modules=instances[i].get('modules'),
                                         locality=locality,
-                                        modules=instances[i].get('modules'))
+                                        region_name=regions[i])
 
         for i in range(1, num_configsvr + 1):
             instance_name = "%s-%s-%s" % (name, "configsvr", str(i))
@@ -144,7 +148,8 @@ class MongoDbCluster(models.Cluster):
                                         nics=None,
                                         configuration_id=None,
                                         cluster_config=configsvr_config,
-                                        locality=locality)
+                                        locality=locality,
+                                        region_name=regions[i])
 
         for i in range(1, num_mongos + 1):
             instance_name = "%s-%s-%s" % (name, "mongos", str(i))
@@ -158,7 +163,8 @@ class MongoDbCluster(models.Cluster):
                                         nics=None,
                                         configuration_id=None,
                                         cluster_config=mongos_config,
-                                        locality=locality)
+                                        locality=locality,
+                                        region_name=regions[i])
 
         task_api.load(context, datastore_version.manager).create_cluster(
             db_info.id)

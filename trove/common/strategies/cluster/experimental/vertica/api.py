@@ -103,6 +103,9 @@ class VerticaCluster(models.Cluster):
         azs = [instance.get('availability_zone', None)
                for instance in instances]
 
+        regions = [instance.get('region_name', None)
+                   for instance in instances]
+
         # Creating member instances
         minstances = []
         for i in range(0, num_instances):
@@ -119,7 +122,8 @@ class VerticaCluster(models.Cluster):
                     datastore_version, volume_size, None,
                     nics=nics[i], availability_zone=azs[i],
                     configuration_id=None, cluster_config=member_config,
-                    locality=locality, modules=instances[i].get('modules'))
+                    modules=instances[i].get('modules'), locality=locality,
+                    region_name=regions[i])
             )
         return minstances
 

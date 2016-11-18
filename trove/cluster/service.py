@@ -174,6 +174,7 @@ class ClusterController(wsgi.Controller):
                               "volume_type": volume_type,
                               "nics": nics,
                               "availability_zone": availability_zone,
+                              'region_name': node.get('region_name'),
                               "modules": modules})
 
         locality = body['cluster'].get('locality')

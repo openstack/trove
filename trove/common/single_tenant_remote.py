@@ -52,7 +52,7 @@ remote_neutron_client = \
 PROXY_AUTH_URL = CONF.trove_auth_url
 
 
-def nova_client_trove_admin(context=None):
+def nova_client_trove_admin(context, region_name=None, compute_url=None):
     """
     Returns a nova client object with the trove admin credentials
     :param context: original context from user request
@@ -60,16 +60,19 @@ def nova_client_trove_admin(context=None):
     :return novaclient: novaclient with trove admin credentials
     :rtype: novaclient.v1_1.client.Client
     """
+
+    compute_url = compute_url or CONF.nova_compute_url
+
     client = NovaClient(CONF.nova_proxy_admin_user,
                         CONF.nova_proxy_admin_pass,
                         CONF.nova_proxy_admin_tenant_name,
                         auth_url=PROXY_AUTH_URL,
                         service_type=CONF.nova_compute_service_type,
-                        region_name=CONF.os_region_name)
+                        region_name=region_name or CONF.os_region_name)
 
-    if CONF.nova_compute_url and CONF.nova_proxy_admin_tenant_id:
+    if compute_url and CONF.nova_proxy_admin_tenant_id:
         client.client.management_url = "%s/%s/" % (
-            normalize_url(CONF.nova_compute_url),
+            normalize_url(compute_url),
             CONF.nova_proxy_admin_tenant_id)
 
     return client

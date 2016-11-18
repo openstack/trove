@@ -696,7 +696,8 @@ class CreateInstance(object):
 
         # Check these attrs only are returned in create response
         allowed_attrs = ['created', 'flavor', 'addresses', 'id', 'links',
-                         'name', 'status', 'updated', 'datastore', 'fault']
+                         'name', 'status', 'updated', 'datastore', 'fault',
+                         'region']
         if ROOT_ON_CREATE:
             allowed_attrs.append('password')
         if VOLUME_SUPPORT:
@@ -1138,7 +1139,8 @@ class TestInstanceListing(object):
     @test
     def test_index_list(self):
         allowed_attrs = ['id', 'links', 'name', 'status', 'flavor',
-                         'datastore', 'ip', 'hostname', 'replica_of']
+                         'datastore', 'ip', 'hostname', 'replica_of',
+                         'region']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         instances = dbaas.instances.list()
@@ -1159,7 +1161,7 @@ class TestInstanceListing(object):
     def test_get_instance(self):
         allowed_attrs = ['created', 'databases', 'flavor', 'hostname', 'id',
                          'links', 'name', 'status', 'updated', 'ip',
-                         'datastore', 'fault']
+                         'datastore', 'fault', 'region']
         if VOLUME_SUPPORT:
             allowed_attrs.append('volume')
         else:
@@ -1247,7 +1249,7 @@ class TestInstanceListing(object):
                          'flavor', 'guest_status', 'host', 'hostname', 'id',
                          'name', 'root_enabled_at', 'root_enabled_by',
                          'server_state_description', 'status', 'datastore',
-                         'updated', 'users', 'volume', 'fault']
+                         'updated', 'users', 'volume', 'fault', 'region']
         with CheckInstance(result._info) as check:
             check.contains_allowed_attrs(
                 result._info, allowed_attrs,

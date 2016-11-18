@@ -27,10 +27,10 @@ LOG = logging.getLogger(__name__)
 
 class NovaNetwork(base.NetworkDriver):
 
-    def __init__(self, context):
+    def __init__(self, context, region_name):
         try:
             self.client = remote.create_nova_client(
-                context)
+                context, region_name)
         except nova_exceptions.ClientException as e:
             raise exception.TroveError(str(e))
 
