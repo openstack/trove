@@ -559,9 +559,10 @@ class GuestLogRunner(TestRunner):
         self.assert_log_publish(
             self.auth_client,
             log_name,
-            expected_status=guest_log.LogStatus.Published.name,
+            expected_status=[guest_log.LogStatus.Published.name,
+                             guest_log.LogStatus.Partial.name],
             expected_published=self._get_last_log_published(log_name),
-            expected_pending=0)
+            expected_pending=None)
         # Now get the full contents of the log
         self.assert_log_generator(self.auth_client, log_name, lines=100000)
         log_lines = len(self._get_last_log_contents(log_name).splitlines())
