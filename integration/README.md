@@ -38,6 +38,15 @@ Install a fresh Ubuntu 14.04 (Trusty Tahr) image ( _We suggest creating a develo
     $ mkdir -p /opt/stack
     $ cd /opt/stack
 
+    *Note that it is important that you clone the repository
+     here. This is a change from the earlier trove-integration where
+     you could clone trove-integration anywhere you wanted (like HOME)
+     and trove would get cloned for you in the right place. Since
+     trovestack is now in the trove repository, if you wish to test
+     changes that you have made to trove, it is advisable for you to
+     have your trove repository in /opt/stack to avoid another trove
+     repository being cloned for you.
+
 #### Clone this repo:
 
     $ git clone https://github.com/openstack/trove.git
@@ -46,7 +55,7 @@ Install a fresh Ubuntu 14.04 (Trusty Tahr) image ( _We suggest creating a develo
 
     $ cd trove/integration/scripts/
 
-#### Running trovestack is the core script:
+#### Running trovestack:
 *Run this to get the command list with a short description of each*
 
     $ ./trovestack

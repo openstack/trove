@@ -6,15 +6,15 @@ Trove Installation
 
 Trove is constantly under development. The easiest way to install
 Trove is using the Trove integration scripts that can be found in
-git in the `Trove Integration Repository`_.
+git in the `Trove Repository`_.
 
 
 Steps to set up a Trove Developer Environment
 =============================================
 
-----------------------------
-Installing trove-integration
-----------------------------
+----------------
+Installing trove
+----------------
 
 * Install a fresh Ubuntu 14.04 (Trusty Tahr) image (preferably a
   virtual machine)
@@ -37,45 +37,36 @@ Installing trove-integration
 * Login with ubuntu::
 
     # su ubuntu
-    # cd ~
+    # mkdir -p /opt/stack
+    # cd /opt/stack
 
 * Clone this repo::
 
-    # git clone https://git.openstack.org/openstack/trove-integration.git
+    # git clone https://git.openstack.org/openstack/trove.git
 
 * cd into the scripts directory::
 
-    # cd trove-integration/scripts/
+    # cd trove/integration/scripts/
+
+It is important to understand that this process is different now with
+the elements and scripts being part of the trove repository. In the
+past, one could clone trove-integration into the home directory and
+run redstack from there, and it would clone trove in the right
+place. And if you were making changes in trove-integration, it didn't
+really matter where trove-integration was; it could be in home
+directory or /opt/stack, or for that matter, anywhere. This is no
+longer the case. If you are making changes to trove and would like to
+run the trovestack script, you have to be sure that trove is in fact
+cloned in /opt/stack as shown above.
 
 
 ---------------------------------
-Running redstack to install Trove
+Running trovestack to setup Trove
 ---------------------------------
 
-Redstack is the core script that allows you to install and interact
-with your developer installation of Trove. Redstack has the following
-options that you can run.
-
-* Get the command list with a short description of each command and
-  what it does::
-
-    # ./redstack
-
-* Install all the dependencies and then install Trove. This brings up
-  trove (tr-api tr-tmgr tr-cond) and initializes the trove database::
-
-    # ./redstack install
-
-* Kick start the build/test-init/build-image commands. Add mysql as a
-  parameter to set build and add the mysql guest image::
-
-    # ./redstack kick-start mysql
-
-* You may need to add this iptables rule, so be sure to save it!::
-
-    # sudo iptables -t nat -A POSTROUTING -s 10.0.0.0/24 -o eth0 -j
-    MASQUERADE
-
+Now you run trovestack to help setup your development environment. For
+complete details about the trovestack script refer to
+trove/integration/README.md
 
 ------------------------
 Running the trove client
@@ -96,14 +87,7 @@ Running the nova client
 
     # nova help
 
+References
+==========
 
-More information
-================
-
-For more information and help on how to use redstack and other
-trove-integration scripts, please look at the `README documentation`_
-in the `Trove Integration Repository`_.
-
-
-.. _Trove Integration Repository: https://git.openstack.org/cgit/openstack/trove-integration
-.. _README documentation: https://git.openstack.org/cgit/openstack/trove-integration/plain/README.md
+.. _Trove Repository: https://git.openstack.org/cgit/openstack/trove
