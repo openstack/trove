@@ -147,14 +147,6 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
         return cls(context, db_info, datastore, datastore_version)
 
-    def _get_cluster_network_interfaces(self):
-        nova_client = remote.create_nova_client(self.context)
-        nova_instance_id = self.db_instances[0].compute_instance_id
-        interfaces = nova_client.virtual_interfaces.list(nova_instance_id)
-        ret = [{"net-id": getattr(interface, 'net_id')}
-               for interface in interfaces]
-        return ret
-
     def grow(self, instances):
         LOG.debug("Growing cluster %s." % self.id)
 
@@ -167,11 +159,6 @@ class GaleraCommonCluster(cluster_models.Cluster):
 
         db_info.update(task_status=ClusterTasks.GROWING_CLUSTER)
         try:
-            # Get the network of the existing cluster instances.
-            interface_ids = self._get_cluster_network_interfaces()
-            for instance in instances:
-                instance["nics"] = interface_ids
-
             locality = srv_grp.ServerGroup.convert_to_hint(self.server_group)
             new_instances = self._create_instances(
                 context, db_info, datastore, datastore_version, instances,

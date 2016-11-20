@@ -310,8 +310,6 @@ class ClusterTest(trove_testtools.TestCase):
         self.cluster.delete()
         mock_update_db.assert_called_with(task_status=ClusterTasks.DELETING)
 
-    @patch.object(galera_api.GaleraCommonCluster,
-                  '_get_cluster_network_interfaces')
     @patch.object(DBCluster, 'update')
     @patch.object(galera_api, 'CONF')
     @patch.object(inst_models.Instance, 'create')
@@ -319,9 +317,8 @@ class ClusterTest(trove_testtools.TestCase):
     @patch.object(QUOTAS, 'check_quotas')
     @patch.object(remote, 'create_nova_client')
     def test_grow(self, mock_client, mock_check_quotas, mock_task_api,
-                  mock_inst_create, mock_conf, mock_update, mock_interfaces):
+                  mock_inst_create, mock_conf, mock_update):
         mock_client.return_value.flavors = Mock()
-        mock_interfaces.return_value = [Mock()]
         self.cluster.grow(self.instances)
         mock_update.assert_called_with(
             task_status=ClusterTasks.GROWING_CLUSTER)
@@ -329,7 +326,6 @@ class ClusterTest(trove_testtools.TestCase):
             self.db_info.id,
             [mock_inst_create.return_value.id] * 3)
         self.assertEqual(3, mock_inst_create.call_count)
-        self.assertEqual(1, mock_interfaces.call_count)
 
     @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(inst_models.Instance, 'load')
