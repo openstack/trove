@@ -454,7 +454,7 @@ class BaseMySqlAdmin(object):
             next_marker = None
             LOG.debug("database_names = %r." % database_names)
             for count, database in enumerate(database_names):
-                if count >= limit:
+                if limit is not None and count >= limit:
                     break
                 LOG.debug("database = %s." % str(database))
                 mysql_db = models.MySQLSchema(name=database[0],
@@ -517,7 +517,7 @@ class BaseMySqlAdmin(object):
             next_marker = None
             LOG.debug("result = " + str(result))
             for count, row in enumerate(result):
-                if count >= limit:
+                if limit is not None and count >= limit:
                     break
                 LOG.debug("user = " + str(row))
                 mysql_user = models.MySQLUser(name=row['User'],

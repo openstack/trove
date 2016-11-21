@@ -261,3 +261,13 @@ class Schemas(object):
                                         mysql_schema.collate,
                                         mysql_schema.character_set))
         return model_schemas, next_marker
+
+    @classmethod
+    def find(cls, context, instance_id, schema_id):
+        load_and_verify(context, instance_id)
+        client = create_guest_client(context, instance_id)
+        model_schemas, _ = cls.load_with_client(client, 1, schema_id, True)
+        if model_schemas and model_schemas[0].name == schema_id:
+            return model_schemas[0]
+
+        return None

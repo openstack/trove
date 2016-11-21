@@ -182,12 +182,12 @@ class DatabaseActionsRunner(TestRunner):
             self.fail("Database still listed after the poll timeout: %ds" %
                       self.GUEST_CAST_WAIT_TIMEOUT_SEC)
 
-    def run_nonexisting_database_delete(self, expected_http_code=202):
-        # Deleting a non-existing database is expected to succeed as if the
-        # database was deleted.
-        self.assert_database_delete(
+    def run_nonexisting_database_delete(
+            self, expected_exception=exceptions.NotFound,
+            expected_http_code=404):
+        self.assert_database_delete_failure(
             self.instance_info.id, self.non_existing_db_def['name'],
-            expected_http_code)
+            expected_exception, expected_http_code)
 
     def run_system_database_delete(
             self, expected_exception=exceptions.BadRequest,
