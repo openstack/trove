@@ -1,0 +1,6 @@
+---
+fixes:
+  - The payload for cluster GET now returns ips
+    for all networks, not just the first one
+    found for each instance.
+    Bug 1642695
