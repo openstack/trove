@@ -310,3 +310,13 @@ api_strategy = trove.common.strategies.cluster.experimental.vertica.api.VerticaA
 # Indicate which header field names may be used during the actual request.
 # (list value)
 #allow_headers = X-Auth-Token, X-Identity-Status, X-Roles, X-Service-Catalog, X-User-Id, X-Tenant-Id, X-OpenStack-Request-ID
+
+[oslo_middleware]
+
+#
+# From oslo.middleware
+#
+
+# Whether the application is behind a proxy or not. This determines if the
+# middleware should parse the headers or not. (boolean value)
+#enable_proxy_headers_parsing = false
