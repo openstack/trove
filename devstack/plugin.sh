@@ -54,16 +54,13 @@ function create_trove_accounts {
 
         create_service_user "trove"
 
-        if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
-
-            local trove_service=$(get_or_create_service "trove" \
-                "database" "Trove Service")
-            get_or_create_endpoint $trove_service \
-                "$REGION_NAME" \
-                "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
-                "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
-                "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s"
-        fi
+        local trove_service=$(get_or_create_service "trove" \
+            "database" "Trove Service")
+        get_or_create_endpoint $trove_service \
+            "$REGION_NAME" \
+            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
+            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
+            "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s"
     fi
 }
 
