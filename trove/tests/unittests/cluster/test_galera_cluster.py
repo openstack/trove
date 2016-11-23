@@ -25,6 +25,8 @@ from trove.common import exception
 from trove.common import remote
 from trove.common.strategies.cluster.experimental.galera_common import (
     api as galera_api)
+from trove.common.strategies.cluster.experimental.galera_common import (
+    taskmanager as galera_task)
 from trove.instance import models as inst_models
 from trove.quota.quota import QUOTAS
 from trove.taskmanager import api as task_api
@@ -327,6 +329,20 @@ class ClusterTest(trove_testtools.TestCase):
             [mock_inst_create.return_value.id] * 3)
         self.assertEqual(3, mock_inst_create.call_count)
 
+    @patch.object(DBCluster, 'update')
+    @patch.object(galera_api, 'CONF')
+    @patch.object(inst_models.Instance, 'create')
+    @patch.object(QUOTAS, 'check_quotas')
+    @patch.object(remote, 'create_nova_client')
+    def test_grow_exception(self, mock_client, mock_check_quotas,
+                            mock_inst_create, mock_conf, mock_update):
+        mock_client.return_value.flavors = Mock()
+        with patch.object(task_api, 'load') as mock_load:
+            mock_load.return_value.grow_cluster = Mock(
+                side_effect=exception.BadRequest)
+            self.assertRaises(exception.BadRequest, self.cluster.grow,
+                              self.instances)
+
     @patch.object(inst_models.DBInstance, 'find_all')
     @patch.object(inst_models.Instance, 'load')
     @patch.object(Cluster, 'validate_cluster_available')
@@ -356,3 +372,21 @@ class ClusterTest(trove_testtools.TestCase):
             self.db_info.id, [mock_load.return_value.id])
         mock_init.assert_called_with(self.context, self.db_info,
                                      self.datastore, self.datastore_version)
+
+    @patch.object(galera_task.GaleraCommonClusterTasks, 'shrink_cluster')
+    @patch.object(galera_api.GaleraCommonCluster, '__init__')
+    @patch.object(DBCluster, 'update')
+    @patch.object(inst_models.DBInstance, 'find_all')
+    @patch.object(inst_models.Instance, 'load')
+    @patch.object(Cluster, 'validate_cluster_available')
+    def test_shrink_exception(self, mock_validate, mock_load, mock_find_all,
+                              mock_update, mock_init, mock_shrink):
+        mock_init.return_value = None
+        existing_instances = [Mock(), Mock()]
+        mock_find_all.return_value.all.return_value = existing_instances
+        instance = Mock()
+        with patch.object(task_api, 'load') as mock_load:
+            mock_load.return_value.shrink_cluster = Mock(
+                side_effect=exception.BadRequest)
+            self.assertRaises(exception.BadRequest, self.cluster.shrink,
+                              [instance])
