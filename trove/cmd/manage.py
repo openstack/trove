@@ -116,6 +116,52 @@ class Commands(object):
         except exception.DatastoreVersionNotFound as e:
             print(e)
 
+    def datastore_version_volume_type_add(self, datastore_name,
+                                          datastore_version_name,
+                                          volume_type_ids):
+        """Adds volume type assiciation for a given datastore version id."""
+        try:
+            dsmetadata = datastore_models.DatastoreVersionMetadata
+            dsmetadata.add_datastore_version_volume_type_association(
+                datastore_name, datastore_version_name,
+                volume_type_ids.split(","))
+            print("Added volume type '%s' to the '%s' '%s'."
+                  % (volume_type_ids, datastore_name, datastore_version_name))
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
+
+    def datastore_version_volume_type_delete(self, datastore_name,
+                                             datastore_version_name,
+                                             volume_type_id):
+        """Deletes a volume type association with a given datastore."""
+        try:
+            dsmetadata = datastore_models.DatastoreVersionMetadata
+            dsmetadata.delete_datastore_version_volume_type_association(
+                datastore_name, datastore_version_name, volume_type_id)
+            print("Deleted volume type '%s' from '%s' '%s'."
+                  % (volume_type_id, datastore_name, datastore_version_name))
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
+
+    def datastore_version_volume_type_list(self, datastore_name,
+                                           datastore_version_name):
+        """Lists volume type association with a given datastore."""
+        try:
+            dsmetadata = datastore_models.DatastoreVersionMetadata
+            vtlist = dsmetadata.list_datastore_volume_type_associations(
+                datastore_name, datastore_version_name)
+            if vtlist.count() > 0:
+                for volume_type in vtlist:
+                    print ("Datastore: %s, Version: %s, Volume Type: %s" %
+                           (datastore_name, datastore_version_name,
+                            volume_type.value))
+            else:
+                print("No Volume Type Associations found for Datastore: %s, "
+                      "Version: %s." %
+                      (datastore_name, datastore_version_name))
+        except exception.DatastoreVersionNotFound as e:
+            print(e)
+
     def params_of(self, command_name):
         if Commands.has(command_name):
             return utils.MethodInspector(getattr(self, command_name))
@@ -205,6 +251,33 @@ def main():
                             'datastore version.')
         parser.add_argument('flavor_id', help='The flavor to be deleted for '
                             'a given datastore and datastore version.')
+        parser = subparser.add_parser(
+            'datastore_version_volume_type_add', help='Adds volume_type '
+            'association to a given datastore and datastore version.')
+        parser.add_argument('datastore_name', help='Name of the datastore.')
+        parser.add_argument('datastore_version_name', help='Name of the '
+                            'datastore version.')
+        parser.add_argument('volume_type_ids', help='Comma separated list of '
+                            'volume_type ids.')
+
+        parser = subparser.add_parser(
+            'datastore_version_volume_type_delete',
+            help='Deletes a volume_type '
+            'associated with a given datastore and datastore version.')
+        parser.add_argument('datastore_name', help='Name of the datastore.')
+        parser.add_argument('datastore_version_name', help='Name of the '
+                            'datastore version.')
+        parser.add_argument('volume_type_id', help='The volume_type to be '
+                            'deleted for a given datastore and datastore '
+                            'version.')
+
+        parser = subparser.add_parser(
+            'datastore_version_volume_type_list',
+            help='Lists the volume_types '
+            'associated with a given datastore and datastore version.')
+        parser.add_argument('datastore_name', help='Name of the datastore.')
+        parser.add_argument('datastore_version_name', help='Name of the '
+                            'datastore version.')
     cfg.custom_parser('action', actions)
     cfg.parse_args(sys.argv)
 
