@@ -2,6 +2,9 @@
 Trove
 =====
 
+.. image:: http://governance.openstack.org/badges/trove.svg
+    :target: http://governance.openstack.org/reference/tags/index.html
+
 Trove is Database as a Service for OpenStack.
 
 Getting Started
