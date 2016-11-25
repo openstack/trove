@@ -69,8 +69,20 @@ def build_group(*groups):
     return out
 
 
-def register(datastores, *test_groups):
-    proboscis.register(groups=build_group(datastores),
+def register(group_names, *test_groups, **kwargs):
+    if kwargs:
+        register(group_names, kwargs.values())
+        for suffix, grp_set in kwargs.items():
+            # Recursively call without the kwargs
+            register([name + '_' + suffix for name in group_names], *grp_set)
+        return
+
+    # Do the actual registration here
+    proboscis.register(groups=build_group(group_names),
+                       depends_on_groups=build_group(*test_groups))
+    # Now register the same groups with '-' instead of '_'
+    proboscis.register(groups=build_group(
+                       [name.replace('_', '-') for name in group_names]),
                        depends_on_groups=build_group(*test_groups))
 
 black_box_groups = [
@@ -230,97 +242,111 @@ register(["user"], user_actions_groups)
 # These should contain all functionality currently supported by the datastore.
 # Keeping them in alphabetical order may reduce the number of merge conflicts.
 register(
-    ["db2_supported"], common_groups,
-    configuration_groups,
-    database_actions_groups,
-    user_actions_groups,
+    ["db2_supported"],
+    single=[common_groups,
+            configuration_groups,
+            database_actions_groups,
+            user_actions_groups, ],
+    multi=[]
 )
 
 register(
-    ["cassandra_supported"], common_groups,
-    backup_groups,
-    database_actions_groups,
-    cluster_actions_groups,
-    configuration_groups,
-    user_actions_groups,
+    ["cassandra_supported"],
+    single=[common_groups,
+            backup_groups,
+            database_actions_groups,
+            configuration_groups,
+            user_actions_groups, ],
+    multi=[cluster_actions_groups, ]
 )
 
 register(
-    ["couchbase_supported"], common_groups,
-    backup_groups,
-    root_actions_groups,
+    ["couchbase_supported"],
+    single=[common_groups,
+            backup_groups,
+            root_actions_groups, ],
+    multi=[]
 )
 
 register(
-    ["couchdb_supported"], common_groups,
-    backup_groups,
-    database_actions_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["couchdb_supported"],
+    single=[common_groups,
+            backup_groups,
+            database_actions_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[]
 )
 
 register(
-    ["postgresql_supported"], common_groups,
-    backup_incremental_groups,
-    database_actions_groups,
-    configuration_groups,
-    replication_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["postgresql_supported"],
+    single=[common_groups,
+            backup_incremental_groups,
+            database_actions_groups,
+            configuration_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[replication_groups, ]
 )
 
 register(
-    ["mysql_supported", "percona_supported"], common_groups,
-    backup_incremental_groups,
-    configuration_groups,
-    database_actions_groups,
-    instance_upgrade_groups,
-    replication_promote_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["mysql_supported", "percona_supported"],
+    single=[common_groups,
+            backup_incremental_groups,
+            configuration_groups,
+            database_actions_groups,
+            instance_upgrade_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[replication_promote_groups, ]
 )
 
 register(
-    ["mariadb_supported"], common_groups,
-    backup_incremental_groups,
-    cluster_actions_groups,
-    configuration_groups,
-    database_actions_groups,
-    replication_promote_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["mariadb_supported"],
+    single=[common_groups,
+            backup_incremental_groups,
+            configuration_groups,
+            database_actions_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[replication_promote_groups,
+           cluster_actions_groups, ]
 )
 
 register(
-    ["mongodb_supported"], common_groups,
-    backup_groups,
-    cluster_actions_groups,
-    configuration_groups,
-    database_actions_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["mongodb_supported"],
+    single=[common_groups,
+            backup_groups,
+            configuration_groups,
+            database_actions_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[cluster_actions_groups, ]
 )
 
 register(
-    ["pxc_supported"], common_groups,
-    backup_incremental_groups,
-    cluster_actions_groups,
-    configuration_groups,
-    database_actions_groups,
-    root_actions_groups,
-    user_actions_groups,
+    ["pxc_supported"],
+    single=[common_groups,
+            backup_incremental_groups,
+            configuration_groups,
+            database_actions_groups,
+            root_actions_groups,
+            user_actions_groups, ],
+    multi=[cluster_actions_groups, ]
 )
 
 register(
-    ["redis_supported"], common_groups,
-    backup_groups,
-    cluster_actions_groups,
-    replication_promote_groups,
+    ["redis_supported"],
+    single=[common_groups,
+            backup_groups, ],
+    multi=[replication_promote_groups,
+           cluster_actions_groups, ]
 )
 
 register(
-    ["vertica_supported"], common_groups,
-    cluster_actions_groups,
-    configuration_groups,
-    root_actions_groups,
+    ["vertica_supported"],
+    single=[common_groups,
+            configuration_groups,
+            root_actions_groups, ],
+    multi=[cluster_actions_groups, ]
 )
