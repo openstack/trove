@@ -290,6 +290,7 @@ class MySqlManager(manager.Manager):
         operating_system.copy("%s/." % upgrade_info['home_save'],
                               os.path.expanduser('~'),
                               preserve=True, as_root=True)
+        self.configuration_manager.refresh_cache()
         app.start_mysql()
 
     def restart(self, context):
