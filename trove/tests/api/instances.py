@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import netaddr
 import os
 import re
 import time
@@ -126,9 +127,14 @@ class InstanceTestInfo(object):
     def get_address(self):
         result = self.dbaas_admin.mgmt.instances.show(self.id)
         if not hasattr(result, 'hostname'):
-            return result.ip[0]
+            try:
+                return next(str(ip) for ip in result.ip
+                            if netaddr.valid_ipv4(ip))
+            except StopIteration:
+                fail("No IPV4 ip found")
         else:
-            return result.server['addresses']
+            return [str(ip) for ip in result.server['addresses']
+                    if netaddr.valid_ipv4(ip)]
 
     def get_local_id(self):
         mgmt_instance = self.dbaas_admin.management.show(self.id)

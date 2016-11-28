@@ -115,8 +115,7 @@ class SqlAlchemyConnection(object):
     @staticmethod
     def _init_engine(user, password, host):
         return session.EngineFacade(
-            "mysql+pymysql://%s:%s@%s:3306" % (user, password, host),
-            pool_recycle=1800, echo=True
+            "mysql+pymysql://%s:%s@%s:3306" % (user, password, host)
         ).get_engine()
 
 
