@@ -26,7 +26,7 @@ Installation And Deployment
 
 Trove is constantly under development. The easiest way to install
 Trove is using the Trove integration scripts that can be found in
-git in the `Trove Integration`_ Repository.
+git in the `Trove`_ Repository.
 
 For further details on how to install Trove using the integration
 scripts please refer to the :doc:`dev/install` page.
@@ -55,7 +55,6 @@ functionality, the following resources are provided.
 * Source Code Repositories
 
   - `Trove`_
-  - `Trove Integration`_
   - `Trove Client`_
 
 * `Trove Wiki`_ on OpenStack
@@ -81,6 +80,5 @@ Search Trove Documentation
 
 .. _Trove Wiki: https://wiki.openstack.org/wiki/Trove
 .. _Trove: https://git.openstack.org/cgit/openstack/trove
-.. _Trove Integration: https://git.openstack.org/cgit/openstack/trove-integration
 .. _Trove Client: https://git.openstack.org/cgit/openstack/python-troveclient
 .. _Trove API Documentation: http://developer.openstack.org/api-ref-databases-v1.html
