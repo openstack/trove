@@ -1,0 +1,6 @@
+---
+fixes:
+  - Case where a new instance_modules record is written
+    for each apply has been fixed. This issue would have
+    potentially made it impossible to delete a module.
+    Bug 1640010
