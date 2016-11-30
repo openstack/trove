@@ -1,0 +1,4 @@
+---
+fixes:
+  - After upgrading the guestagent was in an inconsistent state. This became
+    apparent after restarting or resizing the instance after upgrading.

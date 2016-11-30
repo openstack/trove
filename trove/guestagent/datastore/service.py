@@ -97,16 +97,19 @@ class BaseDbStatus(object):
         """Called before restarting DB server."""
         self.restart_mode = True
 
+    def set_ready(self):
+        prepare_end_file = guestagent_utils.build_file_path(
+            self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME)
+        operating_system.write_file(prepare_end_file, '')
+        self.__refresh_prepare_completed()
+
     def end_install(self, error_occurred=False, post_processing=False):
         """Called after prepare has ended."""
 
         # Set the "we're done" flag if there's no error and
         # no post_processing is necessary
         if not (error_occurred or post_processing):
-            prepare_end_file = guestagent_utils.build_file_path(
-                self.GUESTAGENT_DIR, self.PREPARE_END_FILENAME)
-            operating_system.write_file(prepare_end_file, '')
-            self.__refresh_prepare_completed()
+            self.set_ready()
 
         final_status = None
         if error_occurred:
