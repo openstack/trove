@@ -10,17 +10,8 @@
 # Try REGION_NAME then OS_REGION_NAME then RegionOne (the devstack default)
 REGION_NAME=${REGION_NAME:-${OS_REGION_NAME:-RegionOne}}
 
-# Enable neutron instead of nova-network
-# Note: Until a few key changesets land, we can't enable Neutron properly.
-# See: https://review.openstack.org/#/c/356026
-#      https://review.openstack.org/#/c/356763
-#      https://review.openstack.org/#/c/356701
-# NEUTRON_DEFAULT=true
-NEUTRON_DEFAULT=false
-if [[ $BRANCH_OVERRIDE == "stable/liberty" || $BRANCH_OVERRIDE == "stable/mitaka" ]]; then
-    NEUTRON_DEFAULT=false
-fi
-ENABLE_NEUTRON=$(get_bool ENABLE_NEUTRON $NEUTRON_DEFAULT)
+# Enable Neutron
+ENABLE_NEUTRON=$(get_bool ENABLE_NEUTRON true)
 
 # Enable osprofiler - note: Enables Ceilometer as well
 ENABLE_PROFILER=$(get_bool ENABLE_PROFILER false)
@@ -78,6 +69,9 @@ TROVE_CLIENT_BRANCH=${TROVE_CLIENT_BRANCH:-${TROVECLIENT_BRANCH:-master}}
 TROVE_DASHBOARD_REPO=${TROVE_DASHBOARD_REPO:-${TROVEDASHBOARD_REPO:-${GIT_OPENSTACK}/trove-dashboard.git}}
 TROVE_DASHBOARD_DIR=${TROVE_DASHBOARD_DIR:-${TROVEDASHBOARD_DIR:-${PATH_TROVE_DASHBOARD}}}
 TROVE_DASHBOARD_BRANCH=${TROVE_DASHBOARD_BRANCH:-${TROVEDASHBOARD_BRANCH:-master}}
+# Trove specific networking options
+TROVE_PRIVATE_NETWORK_NAME=alt-private
+TROVE_PRIVATE_SUBNET_NAME=alt-private-subnet
 
 # Destination for working data
 DATA_DIR=${DEST}/data
