@@ -824,16 +824,13 @@ function cmd_build_and_upload_image() {
         IMAGE_URL="file://$QCOW_IMAGE"
     fi
 
-    # The devstack openrc has references to 'enable_plugin' which causes errors
-    # in the stable/juno and stable/kilo branches. These are safe to ignore.
-    set +e; source $PATH_DEVSTACK_SRC/openrc admin admin; set -e
-    TOKEN=$(openstack token issue | grep ' id ' | get_field 2)
-    GLANCE_IMAGEIDS=$(glance image-list | grep $(basename $IMAGE_URL .qcow2) | get_field 1)
+    local credentials="--os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT --os-region $REGION_NAME"
+    TOKEN=$(openstack $credentials token issue | grep ' id ' | get_field 2)
+    GLANCE_IMAGEIDS=$(glance $credentials image-list | grep $(basename $IMAGE_URL .qcow2) | get_field 1)
     if [[ -n $GLANCE_IMAGEIDS ]]; then
-        glance image-delete $GLANCE_IMAGEIDS
+        glance $credentials image-delete $GLANCE_IMAGEIDS
     fi
     GLANCE_IMAGEID=`get_glance_id upload_image $IMAGE_URL $TOKEN`
-    set +e; source $PATH_DEVSTACK_SRC/openrc demo demo; set -e
     [[ -z "$GLANCE_IMAGEID" ]] && echo "Glance upload failed!" && exit 1
     echo "IMAGE ID: $GLANCE_IMAGEID"
 
