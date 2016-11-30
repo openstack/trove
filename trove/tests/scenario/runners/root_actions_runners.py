@@ -223,3 +223,6 @@ class CouchbaseRootActionsRunner(RootActionsRunner):
 
     def run_enable_root_with_password(self):
         raise SkipTest("Operation is currently not supported.")
+
+    def run_delete_root(self):
+        raise SkipKnownBug(runners.BUG_WRONG_API_VALIDATION)
