@@ -97,9 +97,6 @@ SWIFT_HASH=12go358snjw24501
 SWIFT_DATA_DIR=${DATA_DIR}/swift
 SWIFT_DISK_IMAGE=${SWIFT_DATA_DIR}/drives/images/swift.img
 
-DISTRO=${DISTRO:-ubuntu}
-#DISTRO=fedora
-
 # The following values can be used to tweak how devstack sets
 # up Trove. If not explicitly set, the defaults in the code are used.
 # To make changes without modifying the repo, add these variables

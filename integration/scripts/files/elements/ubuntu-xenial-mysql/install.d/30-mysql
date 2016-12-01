@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# CONTEXT: GUEST during CONSTRUCTION as ROOT
+# PURPOSE: Install controller base required packages
+
+set -e
+set -o xtrace
+
+export DEBIAN_FRONTEND=noninteractive
+
+add-apt-repository 'deb http://archive.ubuntu.com/ubuntu trusty universe'
+apt-get -y  update
+
+apt-get -y install mysql-client-5.6 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+
+cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
+[mysqld]
+performance_schema = off
+_EOF_
+
+mv /etc/mysql/my.cnf.fallback /etc/mysql/my.cnf
+chown mysql:mysql /etc/mysql/my.cnf
+cat >/etc/mysql/my.cnf <<_EOF_
+[mysql]
+
+!includedir /etc/mysql/conf.d/
+_EOF_
+
+rm /etc/init/mysql.conf
+systemctl daemon-reload
+systemctl enable mysql
+
