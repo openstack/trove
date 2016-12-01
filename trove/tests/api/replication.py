@@ -92,9 +92,9 @@ def create_slave():
         instance_info.name + "_slave",
         instance_info.dbaas_flavor_href,
         instance_info.volume,
-        nics=instance_info.nics,
         datastore=instance_info.dbaas_datastore,
         datastore_version=instance_info.dbaas_datastore_version,
+        nics=instance_info.nics,
         replica_of=instance_info.id)
     assert_equal(200, instance_info.dbaas.last_http_code)
     assert_equal("BUILD", result.status)
@@ -132,6 +132,7 @@ class CreateReplicationSlave(object):
                       instance_info.volume,
                       datastore=instance_info.dbaas_datastore,
                       datastore_version=instance_info.dbaas_datastore_version,
+                      nics=instance_info.nics,
                       replica_of="Missing replica source")
         assert_equal(404, instance_info.dbaas.last_http_code)
 

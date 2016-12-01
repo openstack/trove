@@ -521,6 +521,7 @@ class ConfigurationRunner(TestRunner):
             [], [],
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version,
+            nics=self.instance_info.nics,
             availability_zone="nova",
             configuration=config_id)
         self.assert_client_code(200, client=self.auth_client)

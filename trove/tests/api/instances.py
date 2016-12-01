@@ -87,7 +87,10 @@ class InstanceTestInfo(object):
         self.id = None  # The ID of the instance in the database.
         self.local_id = None
         self.address = None
-        self.nics = None  # The dict of type/id for nics used on the intance.
+        self.nics = None  # The dict of type/id for nics used on the instance.
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            self.nics = [{'net-id': shared_network}]
         self.initial_result = None  # The initial result from the create call.
         self.user_ip = None  # The IP address of the instance, given to user.
         self.infra_ip = None  # The infrastructure network IP address.
@@ -263,7 +266,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                           dbaas.instances.create,
                           self.test_info.name,
                           self.test_info.dbaas_flavor_href,
-                          self.test_info.volume)
+                          self.test_info.volume,
+                          nics=instance_info.nics)
 
     def test_update_quota_invalid_resource_should_fail(self):
         quota_dict = {'invalid_resource': 100}
@@ -303,7 +307,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                       dbaas.instances.create,
                       self.test_info.name,
                       self.test_info.dbaas_flavor_href,
-                      self.test_info.volume)
+                      self.test_info.volume,
+                      nics=instance_info.nics)
 
         assert_equal(413, dbaas.last_http_code)
 
@@ -322,7 +327,8 @@ class CreateInstanceQuotaTest(unittest.TestCase):
                       dbaas.instances.create,
                       self.test_info.name,
                       self.test_info.dbaas_flavor_href,
-                      self.test_info.volume)
+                      self.test_info.volume,
+                      nics=instance_info.nics)
 
         assert_equal(413, dbaas.last_http_code)
 
@@ -364,7 +370,8 @@ class CreateInstanceFail(object):
         result = dbaas.instances.create(instance_name,
                                         instance_info.dbaas_flavor_href,
                                         volume, databases,
-                                        availability_zone="BAD_ZONE")
+                                        availability_zone="BAD_ZONE",
+                                        nics=instance_info.nics)
 
         poll_until(self.instance_in_error(result.id))
         instance = dbaas.instances.get(result.id)
@@ -401,7 +408,8 @@ class CreateInstanceFail(object):
             volume = None
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, '',
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test(enabled=VOLUME_SUPPORT)
@@ -411,7 +419,8 @@ class CreateInstanceFail(object):
         volume = {}
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test(enabled=VOLUME_SUPPORT)
@@ -421,7 +430,8 @@ class CreateInstanceFail(object):
         volume = {'size': None}
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test(enabled=not VOLUME_SUPPORT)
@@ -431,7 +441,8 @@ class CreateInstanceFail(object):
         volume = {'size': 2}
         assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(501, dbaas.last_http_code)
 
     def test_create_failure_with_volume_size_and_disabled_for_datastore(self):
@@ -442,7 +453,8 @@ class CreateInstanceFail(object):
         volume = {'size': 2}
         assert_raises(exceptions.HTTPNotImplemented, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases, datastore=datastore)
+                      volume, databases, datastore=datastore,
+                      nics=instance_info.nics)
         assert_equal(501, dbaas.last_http_code)
 
     @test(enabled=EPHEMERAL_SUPPORT)
@@ -452,7 +464,8 @@ class CreateInstanceFail(object):
         flavor_name = CONFIG.values.get('instance_flavor_name', 'm1.tiny')
         flavors = dbaas.find_flavors_by_name(flavor_name)
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
-                      instance_name, flavors[0].id, None, databases)
+                      instance_name, flavors[0].id, None, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test
@@ -465,7 +478,8 @@ class CreateInstanceFail(object):
         databases = []
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test
@@ -478,7 +492,8 @@ class CreateInstanceFail(object):
         databases = []
         assert_raises(exceptions.BadRequest, dbaas.instances.create,
                       instance_name, instance_info.dbaas_flavor_href,
-                      volume, databases)
+                      volume, databases,
+                      nics=instance_info.nics)
         assert_equal(400, dbaas.last_http_code)
 
     @test
@@ -517,7 +532,8 @@ class CreateInstanceFail(object):
             assert_raises(exceptions.NotFound,
                           dbaas.instances.create, instance_name,
                           instance_info.dbaas_flavor_href,
-                          volume, databases, users)
+                          volume, databases, users,
+                          nics=instance_info.nics)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Please specify datastore. No default datastore "
@@ -540,7 +556,8 @@ class CreateInstanceFail(object):
                           dbaas.instances.create, instance_name,
                           instance_info.dbaas_flavor_href,
                           volume, databases, users,
-                          datastore=datastore)
+                          datastore=datastore,
+                          nics=instance_info.nics)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Default version for datastore '%s' not found." %
@@ -561,7 +578,8 @@ class CreateInstanceFail(object):
                           dbaas.instances.create, instance_name,
                           instance_info.dbaas_flavor_href,
                           volume, databases, users,
-                          datastore=datastore)
+                          datastore=datastore,
+                          nics=instance_info.nics)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Datastore '%s' cannot be found." %
@@ -584,7 +602,8 @@ class CreateInstanceFail(object):
                           instance_info.dbaas_flavor_href,
                           volume, databases, users,
                           datastore=datastore,
-                          datastore_version=datastore_version)
+                          datastore_version=datastore_version,
+                          nics=instance_info.nics)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Datastore version '%s' cannot be found." %
@@ -607,7 +626,8 @@ class CreateInstanceFail(object):
                           instance_info.dbaas_flavor_href,
                           volume, databases, users,
                           datastore=datastore,
-                          datastore_version=datastore_version)
+                          datastore_version=datastore_version,
+                          nics=instance_info.nics)
         except exceptions.BadRequest as e:
             assert_equal(e.message,
                          "Datastore version '%s' is not active." %
@@ -666,10 +686,6 @@ class CreateInstance(object):
             instance_info.volume = {'size': CONFIG.get('trove_volume_size', 1)}
         else:
             instance_info.volume = None
-
-        shared_network = CONFIG.get('shared_network', None)
-        if shared_network:
-            instance_info.nics = [{'net-id': shared_network}]
 
         if create_new_instance():
             instance_info.initial_result = dbaas.instances.create(
@@ -760,7 +776,8 @@ class CreateInstanceFlavors(object):
         else:
             volume = None
         self.result = dbaas.instances.create(instance_name, flavor_id, volume,
-                                             databases)
+                                             databases,
+                                             nics=instance_info.nics)
         poll_until(self._result_is_active)
         self._delete_async(self.result.id)
 
@@ -799,7 +816,8 @@ class CreateInstanceWithNeutron(unittest.TestCase):
         self.result = self.dbaas_client.instances.create(
             self.instance_name,
             instance_info.dbaas_flavor_href,
-            volume, databases)
+            volume, databases,
+            nics=instance_info.nics)
         self.instance_id = self.result.id
 
         def verify_instance_is_active():
@@ -1650,7 +1668,8 @@ class BadInstanceStatusBug(object):
 
         result = self.client.instances.create('testbox',
                                               instance_info.dbaas_flavor_href,
-                                              size)
+                                              size,
+                                              nics=instance_info.nics)
         id = result.id
         self.instances.append(id)
 
