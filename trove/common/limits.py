@@ -77,7 +77,7 @@ class Limit(object):
         self.remaining = int(value)
 
         if value <= 0:
-            raise ValueError("Limit value must be > 0")
+            raise ValueError(_("Limit value must be > 0"))
 
         self.last_request = None
         self.next_request = None
@@ -299,15 +299,15 @@ class Limiter(object):
         for group in limits.split(';'):
             group = group.strip()
             if group[:1] != '(' or group[-1:] != ')':
-                raise ValueError("Limit rules must be surrounded by "
-                                 "parentheses")
+                raise ValueError(_("Limit rules must be surrounded by "
+                                   "parentheses"))
             group = group[1:-1]
 
             # Extract the Limit arguments
             args = [a.strip() for a in group.split(',')]
             if len(args) != 5:
-                raise ValueError("Limit rules must contain the following "
-                                 "arguments: verb, uri, regex, value, unit")
+                raise ValueError(_("Limit rules must contain the following "
+                                   "arguments: verb, uri, regex, value, unit"))
 
             # Pull out the arguments
             verb, uri, regex, value, unit = args
@@ -321,7 +321,7 @@ class Limiter(object):
             # Convert unit
             unit = unit.upper()
             if unit not in Limit.UNIT_MAP:
-                raise ValueError("Invalid units specified")
+                raise ValueError(_("Invalid units specified"))
             unit = Limit.UNIT_MAP[unit]
 
             # Build a limit
