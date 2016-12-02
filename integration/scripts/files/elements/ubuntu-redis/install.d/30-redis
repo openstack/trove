@@ -34,7 +34,7 @@ _EOF_
 
 add-apt-repository -y ppa:chris-lea/redis-server
 apt-get -y update
-apt-get install -y redis-server
+apt-get --allow-unauthenticated install -y redis-server
 
 cat > "/etc/default/redis-server" << _EOF_
 # Call ulimit -n with this argument prior to invoking Redis itself.

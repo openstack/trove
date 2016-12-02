@@ -11,7 +11,7 @@ export DEBIAN_FRONTEND=noninteractive
 add-apt-repository 'deb http://archive.ubuntu.com/ubuntu trusty universe'
 apt-get -y  update
 
-apt-get -y install mysql-client-5.6 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+apt-get --allow-unauthenticated -y install mysql-client-5.6 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
 
 cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
 [mysqld]

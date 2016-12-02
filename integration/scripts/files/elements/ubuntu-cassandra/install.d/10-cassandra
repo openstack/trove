@@ -4,16 +4,16 @@ set -ex
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -qy curl
+apt-get --allow-unauthenticated install -qy curl
 echo "deb http://debian.datastax.com/community stable main" >> /etc/apt/sources.list.d/cassandra.sources.list
 curl -L http://debian.datastax.com/debian/repo_key | apt-key add -
 apt-get update
-apt-get install -qy openjdk-7-jdk expect python-dev
-apt-get install -qy libxml2-dev ntp mc
-apt-get install -qy libxslt1-dev python-pexpect
-apt-get install -qy python-migrate build-essential
+apt-get --allow-unauthenticated install -qy openjdk-7-jdk expect python-dev
+apt-get --allow-unauthenticated install -qy libxml2-dev ntp mc
+apt-get --allow-unauthenticated install -qy libxslt1-dev python-pexpect
+apt-get --allow-unauthenticated install -qy python-migrate build-essential
 
-apt-get install dsc21=2.1.* cassandra=2.1.* -qy
+apt-get --allow-unauthenticated install dsc21=2.1.* cassandra=2.1.* -qy
 
 # The Python Driver 2.0 for Apache Cassandra.
 pip2 install cassandra-driver

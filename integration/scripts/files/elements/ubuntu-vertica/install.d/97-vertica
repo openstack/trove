@@ -13,11 +13,11 @@ export DEBIAN_FRONTEND=noninteractive
 dd if=/tmp/in_target.d/vertica.deb of=/vertica.deb
 
 # Install base packages
-apt-get install -qy build-essential bc iptables
-apt-get install -qy curl sysstat pstack mcelog
-apt-get install -qy python-dev g++ unixODBC unixODBC-dev dialog
-apt-get install -qy dialog libbz2-dev libboost-all-dev libcurl4-gnutls-dev
-apt-get install -qy openjdk-7-jdk
+apt-get --allow-unauthenticated install -qy build-essential bc iptables
+apt-get --allow-unauthenticated install -qy curl sysstat pstack mcelog
+apt-get --allow-unauthenticated install -qy python-dev g++ unixODBC unixODBC-dev dialog
+apt-get --allow-unauthenticated install -qy dialog libbz2-dev libboost-all-dev libcurl4-gnutls-dev
+apt-get --allow-unauthenticated install -qy openjdk-7-jdk
 
 # Install Vertica package
 dpkg -i /vertica.deb

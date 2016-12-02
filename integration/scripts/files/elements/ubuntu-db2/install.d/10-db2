@@ -19,8 +19,8 @@ echo "127.0.0.1 ${host_name}" >> /etc/hosts
 tar -xvzf /tmp/in_target.d/db2.tar.gz
 
 # installing dependencies
-apt-get install libaio1
-apt-get install libstdc++6
+apt-get --allow-unauthenticated install libaio1
+apt-get --allow-unauthenticated install libstdc++6
 
 # start the installation process. Accepts the default installation directory '/opt/ibm/db2/V10.5'
 ${DB2_PKG_LOCATION}/expc/db2_install -b /opt/ibm/db2/V10.5 -f sysreq -l ${DB2_PKG_LOCATION}/db2_install.log

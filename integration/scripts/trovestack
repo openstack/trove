@@ -672,7 +672,7 @@ function install_test_packages() {
 	        sudo -H $HTTP_PROXY curl http://packages.couchbase.com/ubuntu/couchbase.key | sudo apt-key add -
 	        echo "deb http://packages.couchbase.com/ubuntu trusty trusty/main" | sudo tee /etc/apt/sources.list.d/couchbase-csdk.list
 	        sudo -H $HTTP_PROXY apt-get update
-	        sudo -H $HTTP_PROXY apt-get -y install libcouchbase-dev
+	        sudo -H $HTTP_PROXY apt-get --allow-unauthenticated -y install libcouchbase-dev
 	        sudo -H $HTTP_PROXY pip install --upgrade couchbase
         fi
     fi

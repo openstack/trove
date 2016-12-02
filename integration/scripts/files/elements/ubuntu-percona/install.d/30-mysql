@@ -14,4 +14,4 @@ export DEBIAN_FRONTEND=noninteractive
 if [[ $BRANCH_OVERRIDE == "stable/kilo" || $BRANCH_OVERRIDE == "stable/liberty" ]]; then
     PXB_VERSION_OVERRIDE="-22"
 fi
-apt-get -y install percona-toolkit percona-server-common-5.6  percona-server-server-5.6 percona-server-test-5.6  percona-server-client-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+apt-get --allow-unauthenticated -y install percona-toolkit percona-server-common-5.6  percona-server-server-5.6 percona-server-test-5.6  percona-server-client-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}

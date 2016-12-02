@@ -7,4 +7,4 @@ set -e
 set -o xtrace
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get -y install ntp apparmor-utils
+apt-get --allow-unauthenticated -y install ntp apparmor-utils

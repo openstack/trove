@@ -31,7 +31,7 @@ exit \$?
 
 _EOF_
 
-apt-get -y install postgresql-9.4 postgresql-contrib-9.4 postgresql-server-dev-9.4
+apt-get --allow-unauthenticated -y install postgresql-9.4 postgresql-contrib-9.4 postgresql-server-dev-9.4
 
 ###########################################
 # Hack alert:
@@ -50,19 +50,19 @@ git clone https://github.com/vmware/pg_rewind.git --branch REL9_4_STABLE
 
 dev_pkgs="libreadline-dev libkrb5-dev libssl-dev libpam-dev libxml2-dev libxslt-dev libedit-dev libselinux1-dev bison flex"
 
-apt-get install $dev_pkgs -y
+apt-get --allow-unauthenticated install $dev_pkgs -y
 
 # Unfortunately, on ubuntu, was not able to get pg_rewind to build
 # outside of the pgsql source tree. Configure and compile postgres
 # but only call make install against the contrib/pg_rewind directory
 # so that support library is accessible to the server
 cd $tmpdir/postgres
-./configure 
+./configure
 make
 cd contrib/pg_rewind
 make install
 
-# Make the pg_rewind binary and the library used by the 
+# Make the pg_rewind binary and the library used by the
 # pg_rewind stored procedures accessible
 ln -s /usr/local/pgsql/bin/pg_rewind /usr/bin/pg_rewind
 ln -s /usr/local/pgsql/lib/pg_rewind_support.so /usr/lib/postgresql/9.4/lib/pg_rewind_support.so
@@ -75,5 +75,5 @@ apt-get remove -y $dev_pkgs
 ################################
 
 # Install the native Python client.
-apt-get -y install libpq-dev
+apt-get --allow-unauthenticated -y install libpq-dev
 pip2 install psycopg2

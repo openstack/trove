@@ -6,14 +6,14 @@ set -o xtrace
 export DEBIAN_FRONTEND=noninteractive
 
 # install the ppa-finding tool for ubuntu 12.0.4 release
-apt-get install -y python-software-properties
+apt-get --allow-unauthenticated install -y python-software-properties
 add-apt-repository -y ppa:couchdb/stable
 # update cached list of packages
 apt-get update -y
 # remove any existing couchdb binaries
 apt-get remove -yf couchdb couchdb-bin couchdb-common
 # install couchdb
-apt-get install -yV couchdb
+apt-get --allow-unauthenticated install -yV couchdb
 # install curl to provide a way to interact with CouchDB
 # over HTTP REST API
-apt-get install -qy curl
+apt-get --allow-unauthenticated install -qy curl

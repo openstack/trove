@@ -15,7 +15,7 @@ export DEBIAN_FRONTEND=noninteractive
 if [[ $BRANCH_OVERRIDE == "stable/kilo" || $BRANCH_OVERRIDE == "stable/liberty" ]]; then
     PXB_VERSION_OVERRIDE="-22"
 fi
-apt-get -y install libmysqlclient18 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
+apt-get --allow-unauthenticated -y install libmysqlclient18 mysql-server-5.6 percona-xtrabackup${PXB_VERSION_OVERRIDE}
 
 cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
 [mysqld]

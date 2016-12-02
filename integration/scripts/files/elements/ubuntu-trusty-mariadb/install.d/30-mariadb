@@ -10,7 +10,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # NOTE(vkmc): Using MariaDB repositories is required
 # https://mariadb.com/kb/en/mariadb/installing-mariadb-deb-files/
-apt-get -y install software-properties-common
+apt-get --allow-unauthenticated -y install software-properties-common
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
 add-apt-repository 'deb http://ftp.osuosl.org/pub/mariadb/repo/10.1/ubuntu trusty main'
 
@@ -25,8 +25,8 @@ apt-get -y update
 if [[ $BRANCH_OVERRIDE == "stable/kilo" || $BRANCH_OVERRIDE == "stable/liberty" ]]; then
     PXB_VERSION_OVERRIDE="-22"
 fi
-apt-get -y install socat percona-xtrabackup${PXB_VERSION_OVERRIDE}
-apt-get -y install libmariadbclient18 mariadb-server
+apt-get --allow-unauthenticated -y install socat percona-xtrabackup${PXB_VERSION_OVERRIDE}
+apt-get --allow-unauthenticated -y install libmariadbclient18 mariadb-server
 
 cat >/etc/mysql/conf.d/no_perf_schema.cnf <<_EOF_
 [mysqld]
