@@ -68,6 +68,7 @@ class ReplicationRunner(TestRunner):
             self.instance_info.volume,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version,
+            nics=self.instance_info.nics,
             locality='anti-affinity').id
         self.assert_client_code(expected_http_code, client=self.auth_client)
 
@@ -143,6 +144,7 @@ class ReplicationRunner(TestRunner):
             self.instance_info.volume,
             datastore=self.instance_info.dbaas_datastore,
             datastore_version=self.instance_info.dbaas_datastore_version,
+            nics=self.instance_info.nics,
             replica_of=self.non_affinity_master_id,
             replica_count=1).id
         self.assert_client_code(expected_http_code, client=self.auth_client)

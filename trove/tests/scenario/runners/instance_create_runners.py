@@ -162,10 +162,7 @@ class InstanceCreateRunner(TestRunner):
             instance_info.volume = {'size': trove_volume_size}
         else:
             instance_info.volume = None
-
-        shared_network = CONFIG.get('shared_network', None)
-        if shared_network:
-            instance_info.nics = [{'net-id': shared_network}]
+        instance_info.nics = self.instance_info.nics
 
         self.report.log("Testing create instance: %s"
                         % {'name': name,

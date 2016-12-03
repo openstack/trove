@@ -730,12 +730,9 @@ function mod_confs() {
         local credentials="--os-username=admin --os-password=$ADMIN_PASSWORD --os-tenant-name=admin --os-auth-url=$TROVE_AUTH_ENDPOINT --os-region $REGION_NAME"
         TROVE_NET_ID=$(openstack $credentials network list | grep " $TROVE_PRIVATE_NETWORK_NAME " | awk '{print $2}')
         TROVE_SUBNET_ID=$(openstack $credentials subnet list | grep " $TROVE_PRIVATE_SUBNET_NAME " | awk '{print $2}')
-        # echo "Using network ${TROVE_PRIVATE_NETWORK_NAME} (${TROVE_NET_ID}): ${TROVE_PRIVATE_SUBNET_NAME} (${TROVE_SUBNET_ID})"
-        # sed -i "s,%shared_network%,$TROVE_NET_ID,g" $TEST_CONF
-        # sed -i "s,%shared_network_subnet%,$TROVE_SUBNET_ID,g" $TEST_CONF
-        # remove the network stuff until the alt_demo network issues are sorted out
-        sed -i "/%shared_network%/d" $TEST_CONF
-        sed -i "/%shared_network_subnet%/d" $TEST_CONF
+        echo "Using network ${TROVE_PRIVATE_NETWORK_NAME} (${TROVE_NET_ID}): ${TROVE_PRIVATE_SUBNET_NAME} (${TROVE_SUBNET_ID})"
+        sed -i "s,%shared_network%,$TROVE_NET_ID,g" $TEST_CONF
+        sed -i "s,%shared_network_subnet%,$TROVE_SUBNET_ID,g" $TEST_CONF
     else
         # do not leave invalid keys in the configuration when using Nova for networking
         sed -i "/%shared_network%/d" $TEST_CONF

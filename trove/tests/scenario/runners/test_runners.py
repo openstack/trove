@@ -232,6 +232,10 @@ class TestRunner(object):
         else:
             self.instance_info.volume_size = None
             self.instance_info.volume = None
+        self.instance_info.nics = None
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            self.instance_info.nics = [{'net-id': shared_network}]
 
         self._auth_client = None
         self._unauth_client = None

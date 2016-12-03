@@ -25,6 +25,7 @@ from proboscis import test
 from trove.common.utils import poll_until
 from trove import tests
 from trove.tests.api.instances import TIMEOUT_INSTANCE_CREATE
+from trove.tests.config import CONFIG
 from trove.tests.util.check import AttrCheck
 from trove.tests.util import create_dbaas_client
 from trove.tests.util import create_nova_client
@@ -215,6 +216,10 @@ class DatastoreFlavorAssociation(object):
         self.name2 = "test_instance2"
         self.volume = {'size': 2}
         self.instance_id = None
+        self.nics = None
+        shared_network = CONFIG.get('shared_network', None)
+        if shared_network:
+            self.nics = [{'net-id': shared_network}]
 
     @test
     @time_out(TIMEOUT_INSTANCE_CREATE)
@@ -222,7 +227,8 @@ class DatastoreFlavorAssociation(object):
         # all the nova flavors are associated with the default datastore
         result = self.rd_client.instances.create(
             name=self.name1, flavor_id='1', volume=self.volume,
-            datastore=self.datastore.id)
+            datastore=self.datastore.id,
+            nics=self.nics)
         self.instance_id = result.id
         assert_equal(200, self.rd_client.last_http_code)
 
@@ -255,4 +261,5 @@ class DatastoreFlavorAssociation(object):
             assert_raises(exceptions.BadRequest,
                           self.rd_client.instances.create, self.name2,
                           flavor_not_associated, self.volume,
-                          datastore=self.datastore.id)
+                          datastore=self.datastore.id,
+                          nics=self.nics)

@@ -340,6 +340,7 @@ class RestoreUsingBackup(object):
             instance_info.volume,
             datastore=instance_info.dbaas_datastore,
             datastore_version=instance_info.dbaas_datastore_version,
+            nics=instance_info.nics,
             restorePoint=restorePoint)
         assert_equal(200, instance_info.dbaas.last_http_code)
         assert_equal("BUILD", result.status)
@@ -532,6 +533,7 @@ class FakeTestHugeBackupOnSmallInstance(BackupRestoreMixin):
                       datastore=instance_info.dbaas_datastore,
                       datastore_version=(instance_info.
                                          dbaas_datastore_version),
+                      nics=instance_info.nics,
                       restorePoint={"backupRef": self.new_backup.id})
         assert_equal(403, instance_info.dbaas.last_http_code)
 
@@ -549,6 +551,7 @@ class FakeTestHugeBackupOnSmallInstance(BackupRestoreMixin):
                       datastore=instance_info.dbaas_datastore,
                       datastore_version=(instance_info.
                                          dbaas_datastore_version),
+                      nics=instance_info.nics,
                       restorePoint={"backupRef": self.new_backup.id})
 
         assert_equal(403, instance_info.dbaas.last_http_code)
